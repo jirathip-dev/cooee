@@ -132,6 +132,13 @@ fn a_bad_write_keeps_the_last_good_layout_and_reset_restores_the_default() {
 
     fs::write(dir.join("default.json"), DEFAULT).unwrap();
     assert!(check(&c, &dir.join("default.json")).0);
+    let faded = DEFAULT.replace(
+        r#""place": "sheet" }"#,
+        r#""place": "sheet", "transition": "fade" }"#,
+    );
+    assert_ne!(faded, DEFAULT);
+    fs::write(dir.join("faded.json"), &faded).unwrap();
+    assert!(check(&c, &dir.join("faded.json")).0);
     let fixtures = Path::new(env!("CARGO_MANIFEST_DIR"))
         .join("../../apple/Tests/CooeeCoreTests/Fixtures/layouts");
     for f in fs::read_dir(fixtures).unwrap() {

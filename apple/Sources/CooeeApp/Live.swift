@@ -5,6 +5,10 @@ import CooeeFeatures
 import CooeeUI
 import SwiftUI
 
+#if os(iOS)
+    import LocalAuthentication
+#endif
+
 extension PairingClient: DependencyKey {
     public static let liveValue = PairingClient(
         pair: { url, code in try await Client(base: url).pair(code: code) },
@@ -18,6 +22,7 @@ extension ThreadsClient: DependencyKey {
     public static let liveValue = ThreadsClient(
         home: { server in try await Client(server).home() },
         personas: { server in try await Client(server).personas() },
+        looks: { server in try await Client(server).looks() },
         messages: { server, thread in try await Client(server).messages(thread) },
         events: { server, thread, since in Client(server).events(thread, since: since) },
         send: { server, thread, text, files, queue in
@@ -27,11 +32,14 @@ extension ThreadsClient: DependencyKey {
         unqueue: { server, thread, randomID in try await Client(server).unqueue(thread, randomID) },
         stop: { server, thread in try await Client(server).cancel(thread) },
         read: { server, thread, item in try await Client(server).read(thread, upTo: item) },
+        model: { server, thread, model, effort in
+            try await Client(server).model(thread, model: model, effort: effort)
+        },
         answer: { server, thread, item, option, value in
             try await Client(server).answer(thread, item: item, option: option, value: value)
         },
-        start: { server, persona, machine, text in
-            try await Client(server).newThread(persona: persona, machine: machine, text: text)
+        start: { server, persona, machine, text, setup in
+            try await Client(server).newThread(persona: persona, machine: machine, text: text, setup: setup)
         },
         move: { server, thread, machine in try await Client(server).move(thread, to: machine) },
         retry: { server, thread in try await Client(server).retry(thread) },
@@ -45,6 +53,7 @@ extension ThreadsClient: DependencyKey {
 extension PersonasClient: DependencyKey {
     public static let liveValue = PersonasClient(
         create: { server, persona in try await Client(server).create(persona) },
+        remove: { server, persona in try await Client(server).remove(persona) },
         agents: { server in try await Client(server).agents() },
         models: { server in try await Client(server).models() },
         machines: { server in try await Client(server).machines() },
@@ -57,6 +66,18 @@ extension PushClient: DependencyKey {
         token: { try await PushDelegate.token() },
         register: { server, token, enabled in try await Client(server).push(token, enabled: enabled) }
     )
+}
+
+extension OwnerCheck: DependencyKey {
+    public static let liveValue = OwnerCheck { reason in
+        #if os(iOS)
+            let context = LAContext()
+            guard context.canEvaluatePolicy(.deviceOwnerAuthentication, error: nil) else { return true }
+            return (try? await context.evaluatePolicy(.deviceOwnerAuthentication, localizedReason: reason)) ?? false
+        #else
+            return true
+        #endif
+    }
 }
 
 extension SettingsStore: DependencyKey {

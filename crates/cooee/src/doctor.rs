@@ -1,24 +1,23 @@
 use std::{
     net::{Ipv4Addr, SocketAddr, TcpStream},
-    process::Command,
     time::Duration,
 };
 
 use cooee_core::{Config, ROOTS_FIX, Shed, ShedError, agents_fix};
 use cooee_server::machine;
 
-use crate::service::{label, shed_install, tailnet_name};
+use crate::service::{app_items, label, shed_install, tailnet_name};
 
 pub(crate) fn doctor(config: &Config) -> Result<(), String> {
     let mut failed = Vec::new();
     let mut check = |ok: bool, what: String| {
-        println!("{} {what}", if ok { "ok  " } else { "FAIL" });
+        cooee_core::say!("{} {what}", if ok { "ok  " } else { "FAIL" });
         if !ok {
             failed.push(format!("FAIL {what}"));
         }
     };
     let label = label(&config.instance);
-    let loaded = Command::new("launchctl")
+    let loaded = cooee_core::runner::command("launchctl")
         .args(["list", &label])
         .output()
         .is_ok_and(|o| o.status.success());
@@ -26,6 +25,14 @@ pub(crate) fn doctor(config: &Config) -> Result<(), String> {
         loaded,
         format!("service {label} loaded (else: cooee install)"),
     );
+    let app = app_items();
+    if loaded && !app.is_empty() {
+        cooee_core::say!(
+            "warn both {label} and the Mac app's login items ({}) are installed: two servers on one Mac\n     \
+             fix: in the app, take over the CLI install, or remove the app's login items",
+            app.join(", ")
+        );
+    }
     let port = config.port;
     let addr = SocketAddr::from((Ipv4Addr::LOCALHOST, port));
     let up = TcpStream::connect_timeout(&addr, Duration::from_secs(2)).is_ok();
@@ -35,7 +42,7 @@ pub(crate) fn doctor(config: &Config) -> Result<(), String> {
         Ok(()) => {
             check(true, format!("shed at {}", shed.socket.display()));
             if shed.agents().is_ok_and(|a| a.is_empty()) {
-                println!(
+                cooee_core::say!(
                     "warn no agents installed in shed\n     fix: {}",
                     agents_fix()
                 );
@@ -51,20 +58,20 @@ pub(crate) fn doctor(config: &Config) -> Result<(), String> {
         check(ok, what);
     }
     if config.roots.is_empty() {
-        println!("warn no roots configured\n     fix: add {ROOTS_FIX} to config.toml");
+        cooee_core::say!("warn no roots configured\n     fix: add {ROOTS_FIX} to config.toml");
     }
     let data = config.data_dir().ok_or("no data folder")?;
     match cooee_server::Push::new(&data)
         .with_apns(config.apns.clone())
         .apns_ready()
     {
-        Ok(()) => println!("ok   apns ready"),
-        Err(why) => println!("warn apns: {why}: the native app gets no pushes"),
+        Ok(()) => cooee_core::say!("ok   apns ready"),
+        Err(why) => cooee_core::say!("warn apns: {why}: the native app gets no pushes"),
     }
     match cooee_server::Push::new(&data).has_key() {
-        Ok(true) => println!("ok   push keys stored"),
+        Ok(true) => cooee_core::say!("ok   push keys stored"),
         Ok(false) => {
-            println!("ok   push keys: none yet (made when a phone turns on notifications)");
+            cooee_core::say!("ok   push keys: none yet (made when a phone turns on notifications)");
         }
         Err(e) => check(false, format!("push keys: {e}")),
     }
@@ -76,7 +83,7 @@ pub(crate) fn doctor(config: &Config) -> Result<(), String> {
             if !config.allowed_hosts.contains(&name) {
                 check(false, format!("{url}: add {name:?} to allowed_hosts"));
             }
-            let reached = Command::new("curl")
+            let reached = cooee_core::runner::command("curl")
                 .args(["-sf", "-o", "/dev/null", "--max-time", "5"])
                 .arg(format!("{url}pair"))
                 .status()

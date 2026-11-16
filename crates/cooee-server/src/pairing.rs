@@ -110,7 +110,12 @@ async fn pair(cx: &Cx, Form(f): Form<PairForm>) -> Result<Response> {
             !m.is_empty()
         });
         let mine = misses.get(&who).map_or(&[][..], Vec::as_slice);
-        (mine.len() >= TRIES).then(|| (mine[0] + 60_000 - t).div_ceil(1000))
+        (mine.len() >= TRIES)
+            .then(|| {
+                mine.first()
+                    .map(|first| (first + 60_000 - t).div_ceil(1000))
+            })
+            .flatten()
     };
     if let Some(wait) = limited {
         return see_other(&format!("/pair?bad=limit&wait={wait}"), None);
@@ -289,7 +294,10 @@ fn ceremony(cx: &Cx, kind: &str, client: &[u8], auth: &[u8]) -> Result<(), &'sta
         return Err("That passkey is for another site.");
     }
     let hash = Sha256::digest(rp_id(host).as_bytes());
-    if auth.len() < 37 || auth[..32] != hash[..] || auth[32] & 0x05 != 0x05 {
+    if auth.len() < 37
+        || auth.get(..32) != Some(&hash[..])
+        || auth.get(32).is_none_or(|f| f & 0x05 != 0x05)
+    {
         return Err("That passkey wasn't checked with Face ID or a passcode.");
     }
     Ok(())

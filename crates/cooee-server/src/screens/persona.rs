@@ -3,7 +3,8 @@
 //! clears its memory.
 
 use cooee_core::{
-    personas::{self, Persona},
+    agents::{self, Agent},
+    memory,
     routines::{Place, Routine, Trigger},
 };
 use serde::Deserialize;
@@ -53,9 +54,9 @@ pub async fn action(cx: &Cx, Json(a): Json<Act>) -> Result<Answer<Value>> {
         return Ok(Answer(Err(refused(format!("no screen {}", a.screen)))));
     };
     match a.action.as_str() {
-        "save" => match serde_json::from_value::<Persona>(Value::Object(a.values)) {
+        "save" => match serde_json::from_value::<Agent>(Value::Object(a.values)) {
             Ok(p) => {
-                let Answer(saved) = persona_save(cx, Persona { id, ..p }).await?;
+                let Answer(saved) = persona_save(cx, Agent { id, ..p }).await?;
                 Ok(Answer(saved.map(|p| json!(p))))
             }
             Err(e) => Ok(Answer(Err(refused(e)))),
@@ -68,10 +69,11 @@ pub async fn action(cx: &Cx, Json(a): Json<Act>) -> Result<Answer<Value>> {
 async fn clear(cx: &Cx, id: String) -> Result<Value, HubError> {
     let (data, config) = data(cx);
     let id = blocking(cx, move |_| {
-        let id = personas::find(config.as_deref(), &data, &id)
+        let id = agents::find(config.as_deref(), &data, &id)
             .map_err(refused)?
             .id;
-        personas::forget(&data, &id).map_err(refused)?;
+        let config = config.ok_or_else(|| refused("no config folder"))?;
+        memory::forget(&agents::home(&config, &id).map_err(refused)?).map_err(refused)?;
         Ok(id)
     })
     .await?;
@@ -87,22 +89,25 @@ async fn fill(cx: &Cx, id: String) -> Result<Value, HubError> {
     let all = routines::on(cx, routines::Runner::list).await?;
     let (data, config) = data(cx);
     blocking(cx, move |hub| {
-        let p = personas::find(config.as_deref(), &data, &id).map_err(refused)?;
+        let p = agents::find(config.as_deref(), &data, &id).map_err(refused)?;
         let chats: Vec<String> = hub.list().into_iter().filter(|t| t.persona == p.id).map(|t| t.id).collect();
         let mine = |r: &&Routine| match &r.place {
             Place::Chat { thread } => chats.contains(thread),
             Place::NewThread { who } => who.profile == p.id,
         };
         let routines: Vec<Value> = all.iter().filter(mine).map(routine).collect();
-        let places = personas::places(config.as_deref(), &data, &p.id).map_err(refused)?;
+        let places = agents::places(config.as_deref(), &data, &p.id).map_err(refused)?;
         let places: Vec<Value> = places
             .iter()
             .map(|pl| json!({ "id": pl.id, "plugin": pl.plugin, "title": pl.label, "open": pl.screen }))
             .collect();
-        let notes = personas::notes(&data, &p.id);
+        let home = config.as_deref().and_then(|c| agents::home(c, &p.id).ok());
+        let notes = home.map(|h| memory::notes(&h)).unwrap_or_default();
         let mut screen: Value = serde_json::from_str(BUNDLED).map_err(refused)?;
-        screen["title"] = json!(p.name);
-        for block in screen["blocks"].as_array_mut().into_iter().flatten() {
+        if let Some(o) = screen.as_object_mut() {
+            o.insert("title".to_owned(), json!(p.name));
+        }
+        for block in screen.get_mut("blocks").and_then(Value::as_array_mut).into_iter().flatten() {
             match block["type"].as_str() {
                 Some("routines") => block["rows"] = json!(routines),
                 Some("places") => block["rows"] = json!(places),

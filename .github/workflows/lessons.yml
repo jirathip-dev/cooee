@@ -5,22 +5,21 @@ on:
     types: [opened, edited, synchronize, reopened]
 
 jobs:
-  # #323: the lesson checks in .herdsman/rules.md. A shadow check's failure goes to the job summary and never fails
-  # the job; its own fixture test does.
+  # #323, #202: drover's lesson-check runs each lesson check in .herdsman/rules.md (#510): a shadow one's failure goes
+  # to the job summary and never fails the job, an active one's fails it. The checkers' fixture tests fail it too.
   lessons:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
-      - name: pr-body checker test
-        run: ci/pr-body-test.sh
-      - name: pr-body (shadow)
+        with:
+          ref: ${{ github.head_ref }}
+      - uses: dtolnay/rust-toolchain@1.99.1
+      - name: install drover
+        run: cargo install --locked --git https://github.com/jirathip-dev/herdsman --branch staging drover
+      - name: checker tests
+        run: ci/pr-body-test.sh && ci/drover-checks-test.sh
+      - name: lesson checks
         env:
-          BODY: ${{ github.event.pull_request.body }}
-          HEAD: ${{ github.event.pull_request.head.sha }}
-        run: |
-          printf '%s\n' "$BODY" > "$RUNNER_TEMP/body.md"
-          if ! scripts/pr-body.sh "$RUNNER_TEMP/body.md" "$HEAD" > "$RUNNER_TEMP/out"; then
-            { echo "### pr-body would fail (shadow)"; echo '```'; cat "$RUNNER_TEMP/out"; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
-          fi
-          cat "$RUNNER_TEMP/out"
+          GH_TOKEN: ${{ github.token }}
+        run: drover lesson-check --rules .herdsman/rules.md

@@ -16,6 +16,9 @@ public struct PersonaFeature: Sendable {
         public var search = ""
         public var busy = false
         public var error: String?
+        public var showingAll = false
+        public var choosingPhoto = false
+        @Presents public var alert: AlertState<Action.Alert>?
 
         public var isNew: Bool { draft.id.isEmpty }
         public var path: String { "/screens/persona/\(draft.id)" }
@@ -40,14 +43,24 @@ public struct PersonaFeature: Sendable {
         case browsed(FolderListing)
         case folder(String?)
         case save
+        case chat
         case clearMemory
+        case showAll
+        case delete
+        case alert(PresentationAction<Alert>)
         case close
         case failed(String)
         case delegate(Delegate)
 
+        public enum Alert: Sendable, Equatable {
+            case delete
+        }
+
         @CasePathable
         public enum Delegate: Sendable, Equatable {
             case saved(APIPersona)
+            case deleted(String)
+            case chat(APIPersona)
         }
     }
 
@@ -82,6 +95,7 @@ public struct PersonaFeature: Sendable {
                 return loaded(&state, action)
             }
         }
+        .ifLet(\.$alert, action: \.alert)
     }
 
     private func loaded(_ state: inout State, _ action: Action) -> Effect<Action> {
@@ -106,11 +120,20 @@ public struct PersonaFeature: Sendable {
     private func act(_ state: inout State, _ action: Action) -> Effect<Action> {
         switch action {
         case .save:
-            state.busy = true
-            state.error = nil
-            return save(state)
+            return save(&state, chat: false)
+        case .chat:
+            return save(&state, chat: true)
         case .clearMemory:
             return forget(state)
+        case .showAll:
+            state.showingAll = true
+            return .none
+        case .delete:
+            state.alert = Self.deleting(state.draft.name)
+            return .none
+        case .alert(.presented(.delete)):
+            state.busy = true
+            return remove(state)
         case .close:
             let dismiss = dismiss
             return .run { _ in await dismiss() }
@@ -155,14 +178,36 @@ extension PersonaFeature {
         return run { await $0(.browsed(try await personas.folders(server, path))) }
     }
 
-    private func save(_ state: State) -> Effect<Action> {
+    private func save(_ state: inout State, chat: Bool) -> Effect<Action> {
+        state.busy = true
+        state.error = nil
         let (personas, plugins, server, draft, path) = (personas, plugins, state.server, state.draft, state.path)
+        let done: @Sendable (APIPersona) -> Action = { .delegate(chat ? .chat($0) : .saved($0)) }
         guard !state.isNew else {
-            return run { await $0(.delegate(.saved(try await personas.create(server, draft)))) }
+            return run { await $0(done(try await personas.create(server, draft))) }
         }
         return run { send in
             let saved = try JSONEncoder().encode(try await plugins.act(server, .core, path, .save(draft)))
-            await send(.delegate(.saved(try JSONDecoder().decode(APIPersona.self, from: saved))))
+            await send(done(try JSONDecoder().decode(APIPersona.self, from: saved)))
+        }
+    }
+
+    internal static func deleting(_ name: String) -> AlertState<Action.Alert> {
+        AlertState {
+            TextState("Delete \(name)?")
+        } actions: {
+            ButtonState(role: .destructive, action: .delete) { TextState("Delete \(name)") }
+            ButtonState(role: .cancel) { TextState("Cancel") }
+        } message: {
+            TextState("\(name) and its notes go. Its chats stay.")
+        }
+    }
+
+    private func remove(_ state: State) -> Effect<Action> {
+        let (personas, server, id) = (personas, state.server, state.draft.id)
+        return run { send in
+            try await personas.remove(server, id)
+            await send(.delegate(.deleted(id)))
         }
     }
 

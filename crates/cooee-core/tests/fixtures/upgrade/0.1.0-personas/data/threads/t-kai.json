@@ -1,0 +1,15 @@
+{
+  "format": 1,
+  "thread": {
+    "id": "t-kai",
+    "title": "Kai's chat",
+    "agent": "fake-acp",
+    "profile": "kai",
+    "messages": [
+      {
+        "role": "user",
+        "text": "What is due this week?"
+      }
+    ]
+  }
+}

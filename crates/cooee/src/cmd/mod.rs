@@ -1,4 +1,5 @@
 mod accounts;
+mod config;
 mod devices;
 mod doctor;
 mod install;
@@ -24,6 +25,12 @@ pub(crate) const ALL: &[Command] = &[
         usage: accounts::USAGE,
         flags: accounts::FLAGS,
         run: accounts::run,
+    },
+    Command {
+        name: "config",
+        usage: config::USAGE,
+        flags: config::FLAGS,
+        run: config::run,
     },
     Command {
         name: "devices",

@@ -5,7 +5,7 @@ One multiplatform SwiftUI app (iOS 26, macOS 26, q948) against a paired cooee se
 The Swift package (`Package.swift`) is layered (#147); each target imports only the layers before it:
 
 - `CooeeCore`: the models and the pure logic that draws them (Foundation only).
-- `CooeeAPI`: the client for `docs/api.md`, the SSE stream, the Keychain and Bonjour.
+- `CooeeAPI`: the client for the API (`docs/README.md` and each area's doc), the SSE stream, the Keychain and Bonjour.
 - `CooeeFeatures`: one TCA reducer per screen and the `@Dependency` clients they call.
 - `CooeeUI`: the SwiftUI views, the three styles (Modern, Terminal, Scene), the farm palette and the design fixtures.
 - `CooeeApp`: the composition root: the clients' live values, built from `CooeeAPI`.

@@ -15,15 +15,15 @@ extension ChatScreen {
             workflow: { pick(.workflow) }
         )
         let rows =
-            places.map { Self.row("square.grid.2x2", $0.label) }
+            places.map { Self.row("square.grid.2x2", $0.label, $0.count.map(String.init) ?? "") }
             + attachable.map { Self.row("plus", "Attach \($0.name)…") }
         let blocks = [Self.workflow(store.workflow ?? []), .object(["type": .string("places"), "rows": .array(rows)])]
         let screen = JSONValue.object(["blocks": .array(blocks)])
         return PersonaPanelBlocks(persona: persona, screen: screen, column: column, actions: actions)
     }
 
-    private static func row(_ symbol: String, _ title: String) -> JSONValue {
-        .object(["symbol": .string(symbol), "title": .string(title)])
+    private static func row(_ symbol: String, _ title: String, _ value: String = "") -> JSONValue {
+        .object(["symbol": .string(symbol), "title": .string(title), "value": .string(value)])
     }
 
     private static func workflow(_ chats: [ListedChat]) -> JSONValue {

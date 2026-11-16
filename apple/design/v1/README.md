@@ -1,6 +1,6 @@
 # cooee native app v1: the screens (#124)
 
-Drawn in SwiftUI (`apple/Sources/CooeeUI/`), fed by fixtures shaped like `docs/api.md`. No networking. Each PNG is the
+Drawn in SwiftUI (`apple/Sources/CooeeUI/`), fed by fixtures shaped like the API (`docs/README.md`). No networking. Each PNG is the
 real view, rendered by `swift run shots` (in `apple/`) with SwiftUI's `ImageRenderer`.
 
 **How these were made, and how they differ from a simulator shot.** This host has the Command Line Tools but no Xcode

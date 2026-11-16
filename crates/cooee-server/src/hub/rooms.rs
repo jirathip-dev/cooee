@@ -6,7 +6,7 @@ use std::{
 
 use cooee_core::{
     Body, Change, Item, Kind, Member, Reason, RoomTurn, Thread,
-    personas::{self, Persona},
+    agents::{self, Agent},
 };
 use serde::Serialize;
 use serde_json::json;
@@ -65,7 +65,7 @@ fn key(s: &str) -> String {
     s.replace(' ', "").to_lowercase()
 }
 
-fn named(text: &str, members: &[Member], names: &[Persona]) -> Vec<String> {
+fn named(text: &str, members: &[Member], names: &[Agent]) -> Vec<String> {
     let mut out: Vec<String> = Vec::new();
     for word in mentions(text) {
         let hit = members.iter().find(|m| {
@@ -85,7 +85,7 @@ fn addresses_owner(text: &str) -> bool {
     mentions(text).any(|w| w == "you" || w == OWNER)
 }
 
-fn display(names: &[Persona], id: &str) -> String {
+fn display(names: &[Agent], id: &str) -> String {
     match names.iter().find(|p| p.id == id) {
         _ if id == OWNER => "Owner".to_owned(),
         Some(p) => p.name.clone(),
@@ -97,7 +97,7 @@ pub(super) fn seated(room: &Thread) -> Vec<String> {
     room.members.iter().map(|m| m.persona.clone()).collect()
 }
 
-pub(super) fn said(names: &[Persona], speaker: &str, last: String) -> String {
+pub(super) fn said(names: &[Agent], speaker: &str, last: String) -> String {
     if speaker.is_empty() {
         last
     } else {
@@ -116,13 +116,13 @@ impl Hub {
             return note;
         };
         let room = lock(&room);
-        let names = personas::list(self.config_dir(), &self.data);
+        let names = agents::list(self.config_dir(), &self.data);
         let last = room.chat.items.last().map_or(0, |i| i.id);
         note.in_room(&room.meta, &display(&names, &meta.profile), last)
     }
 
     fn room_push(&self, room: &Thread, persona: &str, (key, line): (&str, &str), item: u64) {
-        let names = personas::list(self.config_dir(), &self.data);
+        let names = agents::list(self.config_dir(), &self.data);
         let name = display(&names, persona);
         let note = Note::new(room, (key, &name, line), item, &self.theme);
         self.push.send(&note.in_room(room, &name, item));
@@ -155,14 +155,14 @@ impl Hub {
             l.meta.asked_at += at.saturating_sub(l.asks.paused);
             l.asks.paused = 0;
             if let Err(e) = self.store.save(&l.meta) {
-                eprintln!("cooee: room {}: {e}", l.meta.id);
+                cooee_core::note!("cooee: room {}: {e}", l.meta.id);
             }
         }
     }
 
     /// Sets how a member's session starts (once).
     pub fn set_starter(&self, starter: Starter) {
-        let _ = self.starter.set(starter);
+        self.starter.set(starter).ok();
     }
 
     /// A new room of `members` (persona ids, in room order), titled `title` (empty: their ids); once per
@@ -180,7 +180,7 @@ impl Hub {
             return Err(refused(format!("a room has 2 to {MEMBERS} members")));
         }
         for (i, m) in members.iter().enumerate() {
-            if members[..i].contains(m) {
+            if members.iter().take(i).any(|o| o == m) {
                 return Err(refused(format!("{m} is in the room twice")));
             }
             self.joinable(m)?;
@@ -266,7 +266,7 @@ impl Hub {
                 "{persona} is a lane thread: it stays a Workflow chat, never a room member"
             )));
         }
-        personas::find(self.config_dir(), &self.data, persona)
+        agents::find(self.config_dir(), &self.data, persona)
             .map(drop)
             .map_err(|e| refused(e.to_string()))
     }
@@ -291,7 +291,7 @@ impl Hub {
         };
         let item = l.chat.said(now(), 0, OWNER.to_owned(), body);
         let idle = l.meta.round.is_empty();
-        let names = personas::list(self.config_dir(), &self.data);
+        let names = agents::list(self.config_dir(), &self.data);
         let mut turns = named(text, &l.meta.members, &names);
         let reason = if turns.is_empty() {
             turns = seated(&l.meta);
@@ -331,7 +331,7 @@ impl Hub {
             let last_turn = usize::from(l.meta.taken) >= TURNS;
             let event = json!({ "member": persona, "reason": reason });
             l.emit("room-turn", event.to_string());
-            let names = personas::list(self.config_dir(), &self.data);
+            let names = agents::list(self.config_dir(), &self.data);
             let name = |s: &str| display(&names, s);
             let last = l.chat.items.last().map_or(0, |i| i.id);
             let Live { meta, chat, .. } = &mut *l;
@@ -425,7 +425,7 @@ impl Hub {
             .place(&folder)
             .and_then(|folder| self.start(&agent, &folder, prompt, random_id, &recipe));
         if let Some((file, _)) = &recipe.launch.secrets {
-            let _ = fs::remove_file(file);
+            fs::remove_file(file).ok();
         }
         seated
     }
@@ -449,7 +449,7 @@ impl Hub {
             _ => true,
         });
         if let Some(Body::Agent { text, .. }) = &reply {
-            let names = personas::list(self.config_dir(), &self.data);
+            let names = agents::list(self.config_dir(), &self.data);
             for member in named(text, &l.meta.members, &names) {
                 if member == persona || l.meta.round.iter().any(|t| t.member == member) {
                     continue;
@@ -527,7 +527,7 @@ impl Hub {
         for room in due {
             let note = "10 minutes passed: this message's turns stopped";
             if let Err(e) = self.stop_round(&room, "deadline", note) {
-                eprintln!("cooee: room {room}: {e}");
+                cooee_core::note!("cooee: room {room}: {e}");
             }
         }
     }

@@ -25,8 +25,8 @@ pub(super) async fn device_rows(cx: &Cx) -> Result<Vec<Value>, HubError> {
         let list = paired.list().map_err(refused)?;
         let row = |d: cooee_core::Device| {
             let mut row = json!({ "type": "row", "id": d.id, "title": d.label });
-            if d.id == me {
-                row["subtitle"] = json!("this device");
+            if let (true, Some(o)) = (d.id == me, row.as_object_mut()) {
+                o.insert("subtitle".to_owned(), json!("this device"));
             }
             row
         };

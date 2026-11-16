@@ -41,8 +41,10 @@ public enum ChatStyle: String, Codable, Sendable {
     case chat, detailed
 }
 
-public enum Tint: Sendable, Equatable, CaseIterable {
+public enum Tint: String, Sendable, Equatable, CaseIterable {
     case lead, link, cyan, purple, green, amber
+
+    public var avatar: String { "initials-\(rawValue)" }
 }
 
 public struct PersonaLook: Sendable, Equatable {
@@ -87,10 +89,11 @@ public struct Persona: Identifiable, Sendable, Equatable {
         let words = api.name.split(separator: " ")
         let initials =
             words.count > 1 ? words.prefix(2).compactMap(\.first).map(String.init).joined() : String(api.name.prefix(2))
+        let picked = api.avatar.flatMap { avatar in Tint.allCases.first { $0.avatar == avatar } }
         let look = PersonaLook(
             initials: initials.uppercased(),
-            symbol: "person.fill",
-            tint: Tint.allCases[PersonaLook.seed(api.id) % Tint.allCases.count],
+            symbol: picked == nil ? "person.fill" : "",
+            tint: picked ?? Tint.allCases[PersonaLook.seed(api.id) % Tint.allCases.count],
             coat: PersonaLook.coat(api.id)
         )
         self.init(api: api, look: look, state: state)

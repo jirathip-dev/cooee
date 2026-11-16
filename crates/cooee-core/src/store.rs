@@ -89,6 +89,10 @@ pub struct Thread {
     /// A linked exchange (#156): the thread whose persona asked this one's (`ask_persona`).
     #[serde(default, skip_serializing_if = "String::is_empty")]
     pub asked_by: String,
+    /// A setup chat (#270): its persona's brief asks it to interview the owner and write its Character and
+    /// Instructions, and its `update_persona` saves at once.
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub setup: bool,
     /// The routine whose run started it (#75).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub routine: Option<crate::routines::Mark>,
@@ -487,15 +491,13 @@ fn io_err(path: &Path) -> impl FnOnce(io::Error) -> StoreError + '_ {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::{
-        env,
-        process::{Command, Stdio},
-        thread,
-    };
+    use std::{env, process::Stdio, thread};
 
     fn scratch(name: &str) -> PathBuf {
-        let dir = env::temp_dir().join(format!("cooee-store-{name}-{}", std::process::id()));
-        let _ = fs::remove_dir_all(&dir);
+        let dir = crate::scratch::owned(
+            env::temp_dir().join(format!("cooee-store-{name}-{}", std::process::id())),
+        );
+        fs::remove_dir_all(&dir).ok();
         dir
     }
 
@@ -585,7 +587,7 @@ mod tests {
         let dir = scratch("crash");
         let store = Store::open(&dir).unwrap();
         store.save(&sample("a", "old")).unwrap();
-        let status = Command::new(env::current_exe().unwrap())
+        let status = crate::runner::command(env::current_exe().unwrap())
             .args([
                 "--exact",
                 "store::tests::crash_child",
@@ -610,7 +612,7 @@ mod tests {
     #[test]
     #[ignore = "the child process of crash_between_temp_write_and_rename_keeps_old_file"]
     fn crash_child() {
-        let Some(dir) = env::var_os("COOEE_CRASH_DIR") else {
+        let Some(dir) = crate::env_var("COOEE_CRASH_DIR") else {
             return;
         };
         let store = Store::open(Path::new(&dir)).unwrap();

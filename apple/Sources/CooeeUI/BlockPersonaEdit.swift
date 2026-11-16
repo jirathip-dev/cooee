@@ -5,13 +5,21 @@ internal struct PersonaActions {
     internal var close: () -> Void
     internal var save: () -> Void
     internal var clear: () -> Void
+    internal var chat: () -> Void
     internal var agent: @MainActor @Sendable (String) -> Void = { _ in }
     internal var browse: () -> Void = {}
+    internal var more: () -> Void = {}
+    internal var delete: (() -> Void)?
+    internal var photo: () -> Void = {}
 
-    internal init(close: @escaping () -> Void = {}, save: @escaping () -> Void = {}, clear: @escaping () -> Void = {}) {
+    internal init(
+        close: @escaping () -> Void = {}, save: @escaping () -> Void = {}, clear: @escaping () -> Void = {},
+        chat: @escaping () -> Void = {}
+    ) {
         self.close = close
         self.save = save
         self.clear = clear
+        self.chat = chat
     }
 }
 
@@ -85,21 +93,27 @@ public struct PersonaEditBlocks: View {
     private var memory: JSONValue? { screen.list("blocks").first { $0.type == "memory" } }
 
     private var memoryCount: Int { Int(memory?["count"]?.number ?? 0) }
+
+    private var avatarLook: PersonaLook {
+        draft.avatar == persona.api.avatar ? persona.look : Persona(draft).look
+    }
 }
 
 extension PersonaEditBlocks {
     private var sections: some View {
         VStack(spacing: 18) {
             VStack(spacing: 8) {
-                Avatar(persona: persona, size: 92)
-                Text("Edit avatar").ui(14, .medium, look).foregroundStyle(look.palette.link)
+                Avatar(persona: Persona(api: draft, look: avatarLook, state: persona.state), size: 92)
+                AvatarEditor(avatar: $draft.avatar, photo: actions.photo)
             }
             Group2 {
                 field("Name", $draft.name)
                 HStack {
                     Text("Agent").ui(16, .regular, look)
                     Spacer()
-                    AgentMenu(draft: $draft, choices: choices, pick: actions.agent)
+                    AgentMenu(persona: Persona(draft), choices: choices, pick: actions.agent) {
+                        (draft.model, draft.effort) = ($0, $1)
+                    }
                 }
                 .padding(.horizontal, 14).frame(height: 48)
                 if !look.still {
@@ -109,7 +123,14 @@ extension PersonaEditBlocks {
                 }
             }
             Group2(header: "Character") { paragraph("Character", $draft.character) }
-            Group2(header: "Instructions") { paragraph("Instructions", $draft.instructions) }
+            Group2(header: "Instructions") { instructions }
+            if !look.still {
+                Button(action: actions.chat) {
+                    Text(draft.id.isEmpty ? "Set up by chat instead" : "Refine by chat").ui(15, .medium, look)
+                        .foregroundStyle(look.palette.link)
+                }
+                .buttonStyle(.plain)
+            }
             if memoryCount > 0 { Group2(header: "Memory · \(memoryCount) notes") { notes } }
             Group2 {
                 Button(action: actions.browse) {
@@ -123,6 +144,24 @@ extension PersonaEditBlocks {
                 if !choices.machines.isEmpty { machine }
             }
             if let error { Text(error).ui(13, .regular, look).foregroundStyle(look.palette.red) }
+            if let delete = actions.delete {
+                Group2 {
+                    Button(action: delete) {
+                        Text("Delete \(draft.name)…").ui(16, .regular, look).foregroundStyle(look.palette.red)
+                            .frame(maxWidth: .infinity).frame(height: 48)
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+        }
+    }
+
+    @ViewBuilder private var instructions: some View {
+        if let profile = draft.profile, draft.instructions.isEmpty {
+            Text("from profile \(profile)").ui(15, .regular, look).foregroundStyle(look.palette.mute).padding(14)
+                .frame(maxWidth: .infinity, alignment: .leading)
+        } else {
+            paragraph("Instructions", $draft.instructions)
         }
     }
 
@@ -163,10 +202,8 @@ extension PersonaEditBlocks {
 
     @ViewBuilder private var notes: some View {
         let palette = look.palette
-        let data = (try? JSONEncoder().encode(memory?["notes"] ?? .array([]))) ?? Data()
-        let notes = Listing.memory(
-            (try? JSONDecoder().decode([PersonaNote].self, from: data)) ?? [], persona: draft.name, now: now)
-        ForEach(Array(notes.enumerated()), id: \.offset) { _, note in
+        let newest = Self.notes(screen, persona: draft.name, now: now).prefix(3)
+        ForEach(Array(newest.enumerated()), id: \.offset) { _, note in
             VStack(alignment: .leading, spacing: 2) {
                 Text(note.key).ui(15, .regular, look).lineLimit(1)
                 Text(note.value).ui(12, .regular, look).foregroundStyle(palette.mute)
@@ -178,7 +215,10 @@ extension PersonaEditBlocks {
             }
         }
         HStack {
-            Text(notes.count < memoryCount ? "Show all \(memoryCount)" : "").foregroundStyle(palette.link)
+            if memoryCount > 3 {
+                Button("Show all \(memoryCount)", action: actions.more).buttonStyle(.plain).foregroundStyle(
+                    palette.link)
+            }
             Spacer()
             if look.still {
                 Text("Clear memory…").foregroundStyle(palette.red)

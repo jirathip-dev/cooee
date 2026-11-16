@@ -1,8 +1,9 @@
-//! Personas over the API (#126) with the fake shed (tests/support): one is created, edited and deleted; today's
-//! profile is read as a persona with nothing lost and runs as that profile; a note by the persona (its `remember`
+//! Personas over the API (#126) with the fake shed (tests/support): one is created, edited and deleted; an agent
+//! folder's launch keys are read-only over the API and it runs with them (#359); a note by the persona (its `remember`
 //! tool through cooee's MCP server) and one by the owner both list and reach its next session; clearing its memory,
 //! or deleting it, leaves its chats. Plugins attach to a persona and detach (#129); an installed drover goes with every
-//! orchestrator persona, by its role (#159).
+//! orchestrator persona, by its role (#159); the first start moves an old conductor profile or persona into an
+//! orchestrator's folder (#359).
 
 mod support;
 
@@ -13,9 +14,9 @@ use std::{
     process::{Command, Stdio},
 };
 
-use cooee_core::personas::PLAIN;
+use cooee_core::agents::PLAIN;
 use serde_json::{Value, json};
-use support::{Cooee, FakeShed, scratch, version};
+use support::{Cooee, FakeShed, agent, scratch, version};
 
 struct Setup {
     dir: PathBuf,
@@ -25,15 +26,9 @@ struct Setup {
 
 fn setup(name: &str) -> Setup {
     let dir = scratch(name);
-    let profiles = dir.join("profiles");
-    fs::create_dir_all(&profiles).unwrap();
-    fs::write(profiles.join("coder.md"), "Follow the house rules.\n").unwrap();
-    fs::write(
-        profiles.join("coder.toml"),
-        "name = \"coder\"\nlabel = \"Coder\"\nagent = \"fake-acp\"\ninstructions = \"coder.md\"\n\
-         policy = \"allow\"\navatar = \"idle\"\nenv = { MODE = \"review\" }\n",
-    )
-    .unwrap();
+    let toml = "name = \"Coder\"\nagent = \"fake-acp\"\npolicy = \"allow\"\navatar = \"idle\"\n\
+                [env]\nMODE = \"review\"\n";
+    agent(&dir, "coder", toml, "Follow the house rules.\n");
     let shed = FakeShed::start(&dir.join("shed"), version());
     let cooee = Cooee::start(&dir, &shed.dir);
     Setup { dir, shed, cooee }
@@ -80,25 +75,24 @@ impl Setup {
     }
 
     fn remember(&self, id: &str, args: &Value) -> Value {
+        self.tool((id, id), "remember", args)
+    }
+
+    fn tool(&self, (id, thread): (&str, &str), name: &str, args: &Value) -> Value {
         let file = self.shed.dir.join(format!("mcp-cooee-{id}.json"));
         let servers: Value = serde_json::from_str(&fs::read_to_string(file).unwrap()).unwrap();
         let cooee = &servers[0];
         assert_eq!(cooee["name"], "cooee");
+        let args_of = cooee["args"].as_array().unwrap().iter();
         let mut child = Command::new(cooee["command"].as_str().unwrap())
-            .args(
-                cooee["args"]
-                    .as_array()
-                    .unwrap()
-                    .iter()
-                    .map(|a| a.as_str().unwrap()),
-            )
+            .args(args_of.map(|a| a.as_str().unwrap().replace(id, thread)))
             .env("COOEE_MCP", cooee["env"][0]["value"].as_str().unwrap())
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
             .spawn()
             .unwrap();
         let call = json!({ "jsonrpc": "2.0", "id": 1, "method": "tools/call",
-                           "params": { "name": "remember", "arguments": args } });
+                           "params": { "name": name, "arguments": args } });
         writeln!(child.stdin.take().unwrap(), "{call}").unwrap();
         let out = child.wait_with_output().unwrap();
         serde_json::from_slice::<Value>(&out.stdout).unwrap()["result"].clone()
@@ -113,7 +107,7 @@ fn a_persona_is_created_edited_and_deleted_and_its_notes_reach_its_next_session(
     let (status, chief) = s.call("POST", "/personas", Some(&new));
     assert_eq!(status, 200, "{chief}");
     assert_eq!(chief["id"], "chief-cook");
-    let file = s.dir.join("personas/chief-cook.toml");
+    let file = s.dir.join("agents/chief-cook/agent.toml");
     assert!(
         fs::read_to_string(&file)
             .unwrap()
@@ -190,7 +184,7 @@ fn a_persona_is_created_edited_and_deleted_and_its_notes_reach_its_next_session(
     );
 
     assert_eq!(s.call("DELETE", "/personas/chief-cook", None).0, 200);
-    assert!(!file.exists());
+    assert!(!s.dir.join("agents/chief-cook").exists());
     assert_eq!(s.call("GET", "/personas/chief-cook", None).0, 400);
     assert!(
         s.cooee
@@ -221,7 +215,7 @@ fn a_detailed_persona_gets_no_plain_line() {
     let new = json!({ "name": "Chief", "character": "A calm chef.", "instructions": "Answer in two lines.",
                       "agent": "fake-acp", "folder": "scratch", "style": "detailed" });
     assert_eq!(s.call("POST", "/personas", Some(&new)).0, 200);
-    let file = fs::read_to_string(s.dir.join("personas/chief.toml")).unwrap();
+    let file = fs::read_to_string(s.dir.join("agents/chief/agent.toml")).unwrap();
     assert!(file.contains("style = \"detailed\""), "{file}");
     assert_eq!(s.cooee.json("/personas/chief")["style"], "detailed");
     let (_, _, prompt) = s.start("chief");
@@ -229,17 +223,16 @@ fn a_detailed_persona_gets_no_plain_line() {
 }
 
 #[test]
-fn a_profile_is_read_as_a_persona_with_nothing_lost_and_an_edit_keeps_it() {
-    let s = setup("personas-migrate");
-    let profile = s.dir.join("profiles/coder.toml");
-    let before = fs::read_to_string(&profile).unwrap();
+fn an_agents_launch_keys_are_read_only_and_an_edit_keeps_them() {
+    let s = setup("personas-launch");
+    let file = s.dir.join("agents/coder/agent.toml");
     let list = s.cooee.json("/personas");
     assert_eq!(
         list,
         json!([{ "id": "coder", "name": "Coder", "avatar": "idle", "character": "",
                  "instructions": "Follow the house rules.\n", "folder": "", "agent": "fake-acp",
-                 "model": "", "effort": "", "machine": "", "plugins": [], "can_message": [], "pinned": false, "profile": "coder",
-                 "role": "", "style": "chat", "fleets": [] }])
+                 "model": "", "effort": "", "machine": "", "plugins": [], "can_message": [], "pinned": false,
+                 "role": "", "style": "chat", "fleets": [], "env": { "MODE": "review" }, "policy": "allow" }])
     );
 
     let check = |prompt: &str| {
@@ -255,22 +248,77 @@ fn a_profile_is_read_as_a_persona_with_nothing_lost_and_an_edit_keeps_it() {
 
     let mut edit = list[0].clone();
     edit["character"] = json!("Gruff but kind.");
-    edit["profile"] = json!("someone-else");
+    edit["policy"] = json!("deny");
+    edit["env"] = json!({});
     let (status, saved) = s.call("PUT", "/personas/coder", Some(&edit));
     assert_eq!(
-        (status, &saved["profile"]),
-        (200, &json!("coder")),
+        (status, &saved["policy"]),
+        (200, &json!("allow")),
         "{saved}"
     );
-    assert!(s.dir.join("personas/coder.toml").exists());
-    assert_eq!(fs::read_to_string(&profile).unwrap(), before);
+    let text = fs::read_to_string(&file).unwrap();
+    assert!(
+        text.contains("policy = \"allow\"") && text.contains("MODE = \"review\""),
+        "{text}"
+    );
+    let character = fs::read_to_string(s.dir.join("agents/coder/CHARACTER.md")).unwrap();
+    assert_eq!(character, "Gruff but kind.");
     check(&format!(
         "Gruff but kind.\n\nFollow the house rules.\n\n{PLAIN}\n\nhi"
     ));
+    edit["profile"] = json!("coder");
+    assert_eq!(s.call("PUT", "/personas/coder", Some(&edit)).0, 400);
 
     assert_eq!(s.call("DELETE", "/personas/coder", None).0, 200);
-    assert!(!profile.exists() && !s.dir.join("personas/coder.toml").exists());
+    assert!(!s.dir.join("agents/coder").exists());
     assert_eq!(s.cooee.json("/personas"), json!([]));
+}
+
+#[test]
+fn a_migrated_persona_without_instructions_takes_its_profiles() {
+    let dir = scratch("personas-pinstr");
+    let (personas, profiles) = (dir.join("personas"), dir.join("profiles"));
+    fs::create_dir_all(&personas).unwrap();
+    fs::create_dir_all(&profiles).unwrap();
+    fs::write(
+        profiles.join("coder.toml"),
+        "name = \"coder\"\nlabel = \"Coder\"\nagent = \"fake-acp\"\ninstructions = \"coder.md\"\n\
+         policy = \"allow\"\n[env]\nMODE = \"review\"\n",
+    )
+    .unwrap();
+    fs::write(profiles.join("coder.md"), "Follow the house rules.\n").unwrap();
+    let persona = |id: &str, more: &str| {
+        let text = format!(
+            "name = \"{id}\"\nagent = \"fake-acp\"\nprofile = \"coder\"\nstyle = \"detailed\"\ncharacter = \"Calm.\"\n{more}"
+        );
+        fs::write(personas.join(format!("{id}.toml")), text).unwrap();
+    };
+    persona("lead", "");
+    persona("own", "instructions = \"My own rules.\"\n");
+    let shed = FakeShed::start(&dir.join("shed"), version());
+    let cooee = Cooee::start(&dir, &shed.dir);
+    let s = Setup { dir, shed, cooee };
+    assert_eq!(
+        fs::read_to_string(s.dir.join("agents/lead/INSTRUCTIONS.md")).unwrap(),
+        "Follow the house rules.\n"
+    );
+    let note = json!({ "text": "Tea, no sugar." });
+    let (status, added) = s.call("POST", "/personas/lead/memory", Some(&note));
+    assert_eq!(status, 200, "{added}");
+    let id = added["id"].as_str().unwrap();
+
+    let (_, line, brief) = s.start("lead");
+    assert!(
+        line.contains(" MODE=review "),
+        "runs as the profile: {line}"
+    );
+    assert_eq!(
+        brief,
+        format!(
+            "Calm.\n\nFollow the house rules.\n\nYour notes (edit them with your remember tool):\n- [{id}] Tea, no sugar.\n\nhi"
+        )
+    );
+    assert_eq!(s.start("own").2, "Calm.\n\nMy own rules.\n\nhi");
 }
 
 fn install_drover(s: &Setup) {
@@ -315,47 +363,72 @@ fn a_plugin_is_attached_to_a_persona_and_detached() {
     assert_eq!(s.cooee.json("/personas/chief")["plugins"], json!([]));
 }
 
+fn old_install(name: &str, drover: bool, old: &[(&str, &str)]) -> Setup {
+    let dir = scratch(name);
+    for (file, text) in old {
+        fs::create_dir_all(dir.join(file).parent().unwrap()).unwrap();
+        fs::write(dir.join(file), text).unwrap();
+    }
+    if drover {
+        let lock = json!([{ "name": "drover", "url": "https://example.com/drover", "commit": "c0",
+                            "version": "0.1.0", "tabs": ["queue"], "port": 1, "enabled": false }]);
+        fs::create_dir_all(dir.join("data")).unwrap();
+        fs::write(dir.join("data/plugins.lock"), lock.to_string()).unwrap();
+    }
+    let shed = FakeShed::start(&dir.join("shed"), version());
+    let cooee = Cooee::start(&dir, &shed.dir);
+    Setup { dir, shed, cooee }
+}
+
 #[test]
 fn migration_keeps_the_name_and_sets_the_orchestrator_role() {
-    let s = setup("personas-drover");
-    fs::write(
-        s.dir.join("profiles/conductor.toml"),
-        "name = \"conductor\"\nlabel = \"Maestro\"\nagent = \"fake-acp\"\n",
-    )
-    .unwrap();
-    let read = |id: &str| s.cooee.json(&format!("/personas/{id}"));
-    let seen = |id: &str| {
-        let p = read(id);
+    let conductor = "name = \"conductor\"\nlabel = \"Maestro\"\nagent = \"fake-acp\"\n";
+    let coder = "name = \"coder\"\nlabel = \"Coder\"\nagent = \"fake-acp\"\n";
+    let s = old_install(
+        "personas-drover",
+        false,
+        &[
+            ("profiles/conductor.toml", conductor),
+            ("profiles/coder.toml", coder),
+        ],
+    );
+    let seen = |s: &Setup, id: &str| {
+        let p = s.cooee.json(&format!("/personas/{id}"));
         (p["name"].clone(), p["role"].clone(), p["plugins"].clone())
     };
     assert_eq!(
-        seen("conductor"),
+        seen(&s, "conductor"),
         (json!("Maestro"), json!("orchestrator"), json!([]))
     );
-    assert_eq!(seen("coder"), (json!("Coder"), json!(""), json!([])));
-    assert_eq!(read("conductor")["style"], "detailed");
-    assert_eq!(read("coder")["style"], "chat");
+    assert_eq!(seen(&s, "coder"), (json!("Coder"), json!(""), json!([])));
+    assert!(s.dir.join("agents/conductor/agent.toml").exists());
+    let style = |s: &Setup, id: &str| s.cooee.json(&format!("/personas/{id}"))["style"].clone();
+    assert_eq!(style(&s, "conductor"), "detailed");
+    assert_eq!(style(&s, "coder"), "chat");
     install_drover(&s);
-    assert_eq!(seen("conductor").2, json!(["drover"]));
-    assert_eq!(seen("coder").2, json!([]));
+    assert_eq!(seen(&s, "conductor").2, json!(["drover"]));
+    assert_eq!(seen(&s, "coder").2, json!([]));
 
-    fs::create_dir_all(s.dir.join("personas")).unwrap();
-    fs::write(
-        s.dir.join("personas/conductor.toml"),
-        "name = \"Navi\"\nagent = \"fake-acp\"\nplugins = []\n",
-    )
-    .unwrap();
+    let navi = "name = \"Navi\"\nagent = \"fake-acp\"\nplugins = []\n";
+    let s = old_install(
+        "personas-drover-file",
+        true,
+        &[
+            ("personas/conductor.toml", navi),
+            ("profiles/conductor.toml", conductor),
+        ],
+    );
     assert_eq!(
-        seen("conductor"),
+        seen(&s, "conductor"),
         (json!("Navi"), json!("orchestrator"), json!(["drover"]))
     );
-    assert_eq!(read("conductor")["style"], "detailed");
+    assert_eq!(style(&s, "conductor"), "detailed");
     fs::write(
-        s.dir.join("personas/conductor.toml"),
-        "name = \"Navi\"\nagent = \"fake-acp\"\nstyle = \"chat\"\n",
+        s.dir.join("agents/conductor/agent.toml"),
+        "name = \"Navi\"\nrole = \"orchestrator\"\nagent = \"fake-acp\"\nstyle = \"chat\"\n",
     )
     .unwrap();
-    assert_eq!(read("conductor")["style"], "chat");
+    assert_eq!(style(&s, "conductor"), "chat");
 }
 
 #[test]
@@ -487,10 +560,9 @@ fn a_persona_and_its_threads_name_their_machine() {
     );
     s.shed.link("air", "up", 1_700_000_000, None);
 
-    let old = "name = \"Old\"\ncharacter = \"Kept.\"\ninstructions = \"Still.\"\nfolder = \"scratch\"\n\
-               agent = \"fake-acp\"\nmodel = \"\"\neffort = \"\"\nplugins = []\n";
-    fs::create_dir_all(s.dir.join("personas")).unwrap();
-    fs::write(s.dir.join("personas/old.toml"), old).unwrap();
+    let old = "name = \"Old\"\nfolder = \"scratch\"\nagent = \"fake-acp\"\nmodel = \"\"\neffort = \"\"\nplugins = []\n";
+    let home = agent(&s.dir, "old", old, "Still.");
+    fs::write(home.join("CHARACTER.md"), "Kept.").unwrap();
     let read = s.cooee.json("/personas/old");
     assert_eq!(
         read,
@@ -506,9 +578,10 @@ fn a_persona_and_its_threads_name_their_machine() {
     on_air["machine"] = json!("air");
     let (status, saved) = s.call("PUT", "/personas/old", Some(&on_air));
     assert_eq!((status, &saved["machine"]), (200, &json!("air")), "{saved}");
-    let file = fs::read_to_string(s.dir.join("personas/old.toml")).unwrap();
+    let file = fs::read_to_string(home.join("agent.toml")).unwrap();
+    let character = fs::read_to_string(home.join("CHARACTER.md")).unwrap();
     assert!(
-        file.contains("machine = \"air\"") && file.contains("character = \"Kept.\""),
+        file.contains("machine = \"air\"") && character == "Kept.",
         "{file}"
     );
     assert_eq!(s.cooee.json("/personas/old")["machine"], "air");
@@ -582,13 +655,10 @@ fn old_notes_past_the_cap_get_ids_and_a_session_keeps_its_brief() {
     assert_eq!(s.call("POST", "/personas", Some(&new)).0, 200);
 
     let big = "y".repeat(2000);
-    let file = s.dir.join("data/personas/cook/memory.jsonl");
-    fs::create_dir_all(file.parent().unwrap()).unwrap();
-    let old = [
-        json!({ "text": "Tea, no sugar.", "by": "persona", "at": 1 }),
-        json!({ "text": big, "by": "owner", "at": 2 }),
-    ];
-    fs::write(&file, format!("{}\n{}\n", old[0], old[1])).unwrap();
+    let file = s.dir.join("agents/cook/memory.md");
+    let old =
+        format!("- Tea, no sugar. <!-- by:persona at:1 -->\n- {big} <!-- by:owner at:2 -->\n");
+    fs::write(&file, old).unwrap();
     let (first, _, brief) = s.start("cook");
     let notes = memory(&s);
     let (tea, long) = (
@@ -678,4 +748,124 @@ fn remember_adds_replaces_and_forgets_one_note_under_the_cap() {
     let body = body.as_str().unwrap();
     assert!(body.contains("2000 of 2000 characters used"), "{body}");
     assert_eq!(memory(&s).len(), 2);
+}
+
+fn items(s: &Setup, id: &str) -> Vec<Value> {
+    let got = s.cooee.json(&format!("/threads/{id}/messages"));
+    got["items"].as_array().unwrap().clone()
+}
+
+fn cook_text(s: &Setup) -> (Value, Value) {
+    let p = s.cooee.json("/personas/cook");
+    (p["character"].clone(), p["instructions"].clone())
+}
+
+#[test]
+fn a_setup_chat_interviews_and_its_update_persona_saves_at_once_for_the_next_session() {
+    let s = setup("personas-setup");
+    let new = json!({ "name": "Cook", "agent": "fake-acp", "folder": "scratch" });
+    assert_eq!(s.call("POST", "/personas", Some(&new)).0, 200);
+
+    let start = json!({ "agent": "fake-acp", "profile": "cook", "text": "hi", "random_id": "setup-1", "setup": true });
+    let (status, body) = s.call("POST", "/threads", Some(&start));
+    assert_eq!(status, 200, "{body}");
+    let id = body["id"].as_str().unwrap().to_owned();
+    assert_eq!(s.row(&id)["setup"], true);
+    let sent = s.shed.sent(&format!("cooee-{id}"));
+    let prompt: Value = serde_json::from_str(sent[0].trim_start_matches('\x1e')).unwrap();
+    let prompt = prompt["prompt"].as_str().unwrap();
+    assert!(
+        prompt.contains("This is a setup chat. Interview the owner, one question at a time")
+            && prompt.ends_with("\n\nhi"),
+        "{prompt}"
+    );
+
+    let args = json!({ "character": "Calm and warm.", "instructions": "Answer in one line." });
+    let said = s.tool((&id, &id), "update_persona", &args);
+    assert_eq!(said["isError"], false, "{said}");
+    assert_eq!(
+        cook_text(&s),
+        (json!("Calm and warm."), json!("Answer in one line."))
+    );
+    let lines: Vec<Value> = items(&s, &id)
+        .iter()
+        .filter(|i| i["kind"] == "note")
+        .map(|i| i["text"].clone())
+        .collect();
+    assert_eq!(
+        lines,
+        [json!("Updated Character"), json!("Updated Instructions")]
+    );
+
+    let (next, _, brief) = s.start("cook");
+    assert!(
+        brief.starts_with("Calm and warm.\n\nAnswer in one line.\n\n"),
+        "{brief}"
+    );
+    assert_eq!(s.row(&next)["setup"], false);
+
+    let plain = json!({ "agent": "fake-acp", "text": "hi", "random_id": "setup-2", "setup": true });
+    let (status, body) = s.call("POST", "/threads", Some(&plain));
+    assert_eq!(status, 400, "{body}");
+}
+
+#[test]
+fn outside_setup_update_persona_is_a_card_saved_only_on_approve_and_never_for_another_persona() {
+    let s = setup("personas-update");
+    let id = cook(&s);
+    let before = cook_text(&s);
+
+    let args = json!({ "character": "Dry wit." });
+    let said = s.tool((&id, &id), "update_persona", &args);
+    assert_eq!(said["isError"], false, "{said}");
+    assert_eq!(cook_text(&s), before);
+    let card = |n: usize| {
+        let cards: Vec<Value> = items(&s, &id)
+            .into_iter()
+            .filter(|i| i["form"] == "persona")
+            .collect();
+        cards[n].clone()
+    };
+    let first = card(0);
+    assert_eq!(first["tool"], "update Cook's Character");
+    assert_eq!(first["detail"], "Character\n+Dry wit.");
+    let answer = |item: &Value, option: &str| {
+        let path = format!("/threads/{id}/approve");
+        s.call(
+            "POST",
+            &path,
+            Some(&json!({ "item": item["id"], "option": option })),
+        )
+    };
+
+    let (status, body) = answer(&first, "deny");
+    assert_eq!(status, 200, "{body}");
+    assert_eq!(cook_text(&s), before);
+    assert_eq!(card(0)["line"], "denied");
+
+    let said = s.tool((&id, &id), "update_persona", &args);
+    assert_eq!(said["isError"], false, "{said}");
+    let (status, body) = answer(&card(1), "approve");
+    assert_eq!(status, 200, "{body}");
+    assert_eq!(cook_text(&s).0, "Dry wit.");
+    assert_eq!(card(1)["line"], "updated Character");
+
+    let baker = json!({ "name": "Baker", "agent": "fake-acp", "folder": "scratch" });
+    assert_eq!(s.call("POST", "/personas", Some(&baker)).0, 200);
+    let theirs = s.start("baker").0;
+    let other = json!({ "persona": "baker", "character": "Loud." });
+    let named = s.tool((&id, &id), "update_persona", &other);
+    let text = |v: &Value| v["content"][0]["text"].as_str().unwrap().to_owned();
+    assert_eq!(named["isError"], true, "{named}");
+    assert!(text(&named).contains("unknown field `persona`"), "{named}");
+    let stolen = s.tool(
+        (&id, &theirs),
+        "update_persona",
+        &json!({ "character": "Loud." }),
+    );
+    assert_eq!(stolen["isError"], true, "{stolen}");
+    assert!(text(&stolen).contains("isn't thread"), "{stolen}");
+    assert_eq!(s.cooee.json("/personas/baker")["character"], "");
+    assert_eq!(cook_text(&s).0, "Dry wit.");
+    assert!(items(&s, &theirs).iter().all(|i| i["form"] != "persona"));
 }

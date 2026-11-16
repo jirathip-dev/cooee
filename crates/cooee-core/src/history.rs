@@ -127,13 +127,15 @@ pub fn read(store: &Store, id: &str, before: Option<u64>) -> Result<String, Stor
 
 #[cfg(test)]
 mod tests {
-    use std::{fs, time::Instant};
+    use std::fs;
 
     use super::*;
 
     fn store(name: &str) -> Store {
-        let dir = std::env::temp_dir().join(format!("cooee-history-{name}-{}", std::process::id()));
-        let _ = fs::remove_dir_all(&dir);
+        let dir = crate::scratch::owned(
+            std::env::temp_dir().join(format!("cooee-history-{name}-{}", std::process::id())),
+        );
+        fs::remove_dir_all(&dir).ok();
         Store::open(&dir).unwrap()
     }
 
@@ -246,7 +248,9 @@ mod tests {
     fn a_search_over_1000_threads_stays_under_200_ms() {
         let s = store("perf");
         let ids: Vec<String> = (0..1000).map(|n| format!("t{n:x}")).collect();
-        let dir = std::env::temp_dir().join(format!("cooee-history-perf-{}", std::process::id()));
+        let dir = crate::scratch::owned(
+            std::env::temp_dir().join(format!("cooee-history-perf-{}", std::process::id())),
+        );
         for (n, id) in (0u64..).zip(&ids) {
             let mut lines = String::new();
             for k in 0..10 {
@@ -257,7 +261,7 @@ mod tests {
             }
             fs::write(dir.join(format!("threads/{id}.jsonl")), lines).unwrap();
         }
-        let start = Instant::now();
+        let start = crate::clock::instant();
         let got = search(&s, &ids, "question 9 thread 999", 5).unwrap();
         let ms = start.elapsed().as_millis();
         assert!(got.starts_with("t3e7 "), "{got}");

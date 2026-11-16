@@ -26,6 +26,7 @@ internal struct LayoutTests {
         ("root-not-nav", .unknownType(path: "root", type: "screen")),
         ("bad-screen", .badScreen(path: "root.slots.main[0]")),
         ("unknown-place", .badPlace(path: "root.slots.side[0]", place: "colum")),
+        ("unknown-transition", .badTransition(path: "root.slots.menu[0]", transition: "spin")),
         ("unknown-slot", .unknownSlot(path: "root.slots.main[0]", slot: "header")),
         ("unknown-config", .unknownConfig(path: "root.slots.main[0]", key: "colour")),
         ("duplicate-id", .duplicateId("x")),
@@ -77,6 +78,16 @@ internal struct LayoutTests {
         #expect(side.map(\.resolvedPlaces) == [[.column, .column], [.sheet, .sheet]])
         #expect(side[1].content == .screen(.plugin("drover"), path: "/screens/queue"))
         #expect(layout.resolved(for: .wide).place == .inline)
+    }
+
+    @Test internal func aNodesTransitionIsDecodedAndKeptOnceResolved() throws {
+        let json = """
+            {"format": 1, "root": {"type": "nav", "slots": {"main": [
+              {"type": "screen", "source": "core", "path": "/screens/home", "place": "panel", "transition": "fade"},
+              {"type": "chat", "transition": "sheet"}, {"type": "composer", "transition": "none"}]}}}
+            """
+        let main = try #require(try Layout(json: Data(json.utf8), etag: "").resolved(for: .wide).slots["main"])
+        #expect(main.map(\.transition) == [.fade, .sheet, .none, .push])
     }
 }
 

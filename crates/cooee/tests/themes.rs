@@ -132,6 +132,23 @@ fn add_remove_and_list_with_the_lock() {
         !ok && out.contains("sea isn't a first-party theme (farm garden kitchen)"),
         "{out}"
     );
+    let looks = s.cooee.json("/api/v1/looks");
+    assert_eq!(
+        looks["themes"]["farm"]["scheme"],
+        json!({"dark": "farm", "light": "farm-light"})
+    );
+    assert_eq!(looks["schemes"]["farm"]["tokens"]["--bg"], "#0f1a13");
+    let (head, svg) = s.cooee.raw("GET", "/look/farm/sprites.svg", &[], "");
+    assert!(head.contains("image/svg+xml"), "{head}");
+    assert!(
+        svg.contains("id=\"s-needs\"") && svg.contains("--o1"),
+        "{svg}"
+    );
+    let (head, _) = s.cooee.raw("GET", "/look/farm/theme.json", &[], "");
+    assert!(
+        head.starts_with("HTTP/1.0 404") || head.starts_with("HTTP/1.1 404"),
+        "{head}"
+    );
 
     let broken = s.dir.join("broken.git").display().to_string();
     let (ok, out) = s.run(&["theme", "add", &broken, "--yes"]);
@@ -178,6 +195,16 @@ fn add_remove_and_list_with_the_lock() {
     assert!(ok, "{out}");
     assert!(!themes.join("farm").exists());
     assert_eq!(s.lock().as_array().unwrap().len(), 2);
+    assert!(
+        s.cooee.json("/api/v1/looks")["themes"]
+            .get("farm")
+            .is_none()
+    );
+    assert!(
+        s.cooee.json("/api/v1/looks")["themes"]
+            .get("kitchen")
+            .is_some()
+    );
     let (ok, out) = s.run(&["theme", "remove", "farm"]);
     assert!(!ok && out.contains("farm isn't installed"), "{out}");
 }
