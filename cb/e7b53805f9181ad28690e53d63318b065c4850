@@ -1,0 +1,7 @@
+Decided: apple_cap goes to 14316 in one step; line_cap stays 27500
+Because: "`ci/cap.toml`: `apple_cap = 14316`. `line_cap` stays 27,500."
+Decided: no code change for the red plugins test; it is a 200 ms timing bound missed by 3.5 ms on the runner
+Because: crates/cooee/tests/support/cooee.rs:295
+Rejected: loosening the 200 ms bound — out of this issue's scope, which is ci/cap.toml and a docs note
+Check: scripts/line-cap.sh on a clean export prints apple lines 12810 / 14316 and exits 0
+Owner: The app code's size limit rises to 14,316 lines for the whole queue; nothing else changes.
