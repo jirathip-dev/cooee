@@ -1,0 +1,73 @@
+Decided: the handlers of lib.rs, pairing.rs and routines.rs move as-is to routes/<area>.rs per shapes.md's route areas; Pairing and the routine Runner stay where they are
+Because: crates/cooee-server/src/pairing.rs:28
+Decided: serve.rs registers the runner with app_context, so routes/routines.rs exports routes(b) like every other area
+Because: crates/cooee-server/src/serve.rs:101
+Decided: plugins registers its own Dots; what two areas need (Answer, recipe, profiles, Code, Created, AgentAsk) lives in http.rs
+Because: crates/cooee-server/src/routes/plugins.rs:542
+Decided: layout stays a private module, though shapes.md's private list predates it
+Because: scripts/gen.sh:52
+Decided: root.rs also re-exports router and serve, which lived at the root before
+Because: crates/cooee-server/src/root.rs:9
+Rejected: dropping the server root.rs freeze until drover's arch-check catches up — drover#1075 (closed) reads frozen from the base, so CI passes it
+Check: sh scripts/gen.sh leaves no diff, and CI arch-check is green (a local drover older than #1075 flags only root.rs's new lines)
+Check: git diff origin/staging moves bodies only: imports, pub(crate) and the routes(b) wrappers differ
+Owner: Nothing changes in the app; adding a server route now means adding one file in routes/ and running just gen.
+
+Decided: #151's relaunch routes (attach, move_thread) become the routes/relaunch.rs area; attach leaves routes/folders.rs
+Because: crates/cooee-server/src/routes/relaunch.rs:93
+Decided: router takes the Config as staging's #151 does, registered with app_context in serve.rs
+Because: crates/cooee-server/src/serve.rs:111
+Decided: arch.toml keeps staging's apple frozen and collect lines beside slice 1's; the baseline is rewritten after the merge
+Because: .drover/arch.toml:3
+Rejected: keeping relaunch.rs at the crate root as staging has it — a route file outside routes/ breaks the ADR's one-file-per-area layout
+Check: sh scripts/gen.sh leaves no diff, and CI arch-check is green (a local drover older than #1075 flags only root.rs's new lines)
+Check: the perf.rs flake (a half-written perf.log line) is outside this PR; it passes alone 3 of 3
+Owner: Nothing changes in the app; the moved threads feature from #151 now lives in the server's routes folder too.
+
+Decided: staging's screens/ module stays its own module, registered in serve.rs beside routes::routes
+Because: crates/cooee-server/src/serve.rs:90
+Decided: manager, on_logins and persona_save move to http.rs, since screens and a route area both use them
+Because: crates/cooee-server/src/http.rs:250
+Decided: the routine runner's on stays in routines.rs as staging has it, so screens need no routes:: path
+Because: crates/cooee-server/src/routines.rs:219
+Decided: moved bodies take #201's comment strip and staging's plugin-stream and persona-start changes verbatim
+Because: crates/cooee-server/src/http.rs:264
+Rejected: moving screens/ into routes/ — that's outside slice 1, and screens are a staging feature that has no ADR row yet
+Check: the 106 registered routes match staging's set; gen.sh leaves no diff; arch-check --base origin/staging has 0 violations
+Owner: Nothing changes in the app; staging's new screens keep working on top of the split server files.
+
+Decided: the server's generated doc line points at docs/README.md, as #422 on staging does, since docs/api.md is gone
+Because: scripts/gen.sh:75
+Decided: arch.toml keeps slice 1's frozen and generated lines and adds staging's docs freezes and generated README.md
+Because: .drover/arch.toml:3
+Rejected: none
+Check: sh scripts/gen.sh leaves no diff; drover arch-check --base origin/staging has 0 violations
+Owner: Nothing changes in the app; the split server files now sit on top of staging's new docs layout.
+
+Decided: #417's empty-persona instructions fallback goes into http.rs's recipe, where lib.rs's recipe body moved in slice 1
+Because: crates/cooee-server/src/http.rs:182
+Decided: staging's #202 runner ban merges beside slice 1's arch lines; the baseline is rewritten for staging's look.rs, manage.rs and push.rs growth
+Because: .drover/arch.toml:59
+Rejected: none
+Check: sh scripts/gen.sh leaves no diff; drover arch-check --base origin/staging has 0 violations
+Owner: Nothing changes in the app; the split server files now include staging's persona fix.
+
+Decided: arch.toml's frozen and generated lists go back to one line each, as staging writes them
+Because: ci/drover-checks-test.sh:10
+Decided: recipe and profiles take staging's agents-based bodies verbatim, replacing the persona-based recipe as staging does
+Because: crates/cooee-server/src/http.rs:122
+Decided: #252's theme routes stay in themes.rs and are registered in serve.rs beside routes::routes, like screens
+Because: crates/cooee-server/src/serve.rs:94
+Decided: #270's mcp_persona joins the mcp route area
+Because: crates/cooee-server/src/routes/mcp.rs:123
+Rejected: editing ci/drover-checks-test.sh to handle multi-line arrays — it's a staging script outside slice 1, and a one-line list is enough
+Check: ci/drover-checks-test.sh exits 0; the 110 registered routes match staging's; gen.sh leaves no diff; arch-check --base origin/staging has 0 violations
+Owner: Nothing changes in the app; the red lessons check is fixed and the split server files carry staging's latest features.
+
+Decided: staging's #412 merges cleanly; it touches no server-crate file, so slice 1's layout is unchanged
+Because: crates/cooee/src/setup.rs:1
+Decided: round 2's FAIL was a pending dmg check at the old head; the new push re-runs CI rather than changing code
+Because: crates/cooee-server/src/serve.rs:90
+Rejected: drover done --no-change — staging had moved, so the head needed the merge anyway
+Check: sh scripts/gen.sh leaves no diff; drover arch-check --base origin/staging has 0 violations; dmg and macOS jobs green at the head
+Owner: Nothing changes in the app; the branch now carries staging's Mac install changes and CI runs again.
