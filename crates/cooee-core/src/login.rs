@@ -2,7 +2,7 @@ use std::{
     env,
     io::Read,
     path::Path,
-    process::{Child, Command, Stdio},
+    process::{Child, Stdio},
     thread,
     time::{Duration, Instant},
 };
@@ -111,7 +111,7 @@ impl dyn Provider + '_ {
         let Some((bin, args)) = cmd.split_first() else {
             return Err("no command".to_owned());
         };
-        let mut command = Command::new(bin);
+        let mut command = crate::runner::command(bin);
         for var in self.scrub() {
             command.env_remove(var);
         }
@@ -419,7 +419,9 @@ mod tests {
     #[cfg(unix)]
     #[test]
     fn a_timeout_kills_the_command_and_what_it_started() {
-        let pids = env::temp_dir().join(format!("cooee-hung-{}", std::process::id()));
+        let pids = crate::scratch::owned(
+            env::temp_dir().join(format!("cooee-hung-{}", std::process::id())),
+        );
         let p = plain(Spec {
             status: ["sh", "-c", r#"sleep 600 & echo $$ $! > "$H"; sleep 600"#]
                 .map(String::from)
@@ -433,7 +435,7 @@ mod tests {
         assert_eq!(s, Status::unknown(TIMED_OUT));
         let pids = std::fs::read_to_string(&pids).unwrap();
         let alive = |pid: &str| {
-            Command::new("kill")
+            crate::runner::command("kill")
                 .args(["-0", pid])
                 .stderr(Stdio::null())
                 .status()

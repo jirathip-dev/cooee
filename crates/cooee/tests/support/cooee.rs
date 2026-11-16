@@ -14,7 +14,9 @@ use super::{Events, is_item};
 
 /// A scratch folder, empty.
 pub fn scratch(name: &str) -> PathBuf {
-    let dir = env::temp_dir().join(format!("cooee-{name}-{}", std::process::id()));
+    let dir = cooee_core::scratch::owned(
+        env::temp_dir().join(format!("cooee-{name}-{}", std::process::id())),
+    );
     let _ = fs::remove_dir_all(&dir);
     fs::create_dir_all(&dir).unwrap();
     dir

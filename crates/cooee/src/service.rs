@@ -1,7 +1,6 @@
 use std::{
     env, fs,
     path::{Path, PathBuf},
-    process::Command,
 };
 
 use cooee_core::{Config, SHED_CARGO};
@@ -11,7 +10,7 @@ pub(crate) fn shed_install() -> String {
 }
 
 pub(crate) fn tailnet_name() -> Option<String> {
-    let out = Command::new("tailscale")
+    let out = cooee_core::runner::command("tailscale")
         .args(["status", "--json"])
         .output()
         .ok()?;

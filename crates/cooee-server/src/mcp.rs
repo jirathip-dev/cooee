@@ -12,7 +12,7 @@ use std::{
     fmt::Write as _,
     io::{self, BufRead, BufReader, Read, Write},
     net::TcpStream,
-    process::{Child, ChildStdin, Command, Stdio},
+    process::{Child, ChildStdin, Stdio},
     sync::{
         Arc, Mutex, PoisonError,
         mpsc::{self, Receiver, Sender},
@@ -115,7 +115,7 @@ enum Upstream {
 fn open(g: &Grant, tx: Sender<Value>) -> Result<Upstream, String> {
     match g.kind.as_str() {
         "stdio" => {
-            let mut child = Command::new(&g.command)
+            let mut child = cooee_core::runner::command(&g.command)
                 .args(&g.args)
                 .envs(g.env.iter().map(|(k, v)| (k, v)))
                 .env_remove(VAR)
@@ -180,7 +180,7 @@ impl Upstream {
             let _ = writeln!(config, "header = {}", quoted(&format!("{k}: {v}")));
         }
         let _ = writeln!(config, "data-binary = {}", quoted(&msg.to_string()));
-        let mut child = Command::new("curl")
+        let mut child = cooee_core::runner::command("curl")
             .args(["-K", "-"])
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())

@@ -13,11 +13,11 @@ fn every_earlier_release_loads_without_losing_data() {
     for release in fs::read_dir(&root).unwrap() {
         let release = release.unwrap().path();
         let store = Store::open(&release).unwrap();
-        let scratch = env::temp_dir().join(format!(
+        let scratch = cooee_core::scratch::owned(env::temp_dir().join(format!(
             "cooee-upgrade-{}-{}",
             release.file_name().unwrap().to_string_lossy(),
             std::process::id()
-        ));
+        )));
         let _ = fs::remove_dir_all(&scratch);
         let rewritten = Store::open(&scratch).unwrap();
         for id in store.ids().unwrap() {

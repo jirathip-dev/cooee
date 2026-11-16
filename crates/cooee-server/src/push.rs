@@ -2,7 +2,7 @@ use std::{
     io::{self, Write},
     os::unix::fs::PermissionsExt,
     path::{Path, PathBuf},
-    process::{Command, Stdio},
+    process::Stdio,
     sync::{Arc, Mutex, PoisonError},
     thread,
     time::{SystemTime, UNIX_EPOCH},
@@ -593,7 +593,7 @@ fn post(s: &Sub, k: &SecretKey, body: &[u8]) -> io::Result<(u16, String)> {
 }
 
 fn curl<'a>(args: impl IntoIterator<Item = &'a str>, body: &[u8]) -> io::Result<(u16, String)> {
-    let mut c = Command::new("curl")
+    let mut c = cooee_core::runner::command("curl")
         .args([
             "-sS",
             "--max-time",
@@ -626,7 +626,9 @@ mod tests {
     #[test]
     fn a_push_to_one_device_reaches_only_its_endpoint() {
         use std::{net::TcpListener, sync::mpsc};
-        let dir = std::env::temp_dir().join(format!("cooee-push-to-{}", std::process::id()));
+        let dir = cooee_core::scratch::owned(
+            std::env::temp_dir().join(format!("cooee-push-to-{}", std::process::id())),
+        );
         let _ = std::fs::remove_dir_all(&dir);
         let devices = Devices::new(&dir);
         let ids: Vec<String> = (0..2)
@@ -905,7 +907,9 @@ mod tests {
     }
 
     fn dir(name: &str) -> PathBuf {
-        let dir = std::env::temp_dir().join(format!("cooee-push-{name}-{}", std::process::id()));
+        let dir = cooee_core::scratch::owned(
+            std::env::temp_dir().join(format!("cooee-push-{name}-{}", std::process::id())),
+        );
         let _ = std::fs::remove_dir_all(&dir);
         std::fs::create_dir_all(&dir).unwrap();
         dir

@@ -132,7 +132,9 @@ mod tests {
     use super::*;
 
     fn store(name: &str) -> Store {
-        let dir = std::env::temp_dir().join(format!("cooee-history-{name}-{}", std::process::id()));
+        let dir = crate::scratch::owned(
+            std::env::temp_dir().join(format!("cooee-history-{name}-{}", std::process::id())),
+        );
         let _ = fs::remove_dir_all(&dir);
         Store::open(&dir).unwrap()
     }
@@ -246,7 +248,9 @@ mod tests {
     fn a_search_over_1000_threads_stays_under_200_ms() {
         let s = store("perf");
         let ids: Vec<String> = (0..1000).map(|n| format!("t{n:x}")).collect();
-        let dir = std::env::temp_dir().join(format!("cooee-history-perf-{}", std::process::id()));
+        let dir = crate::scratch::owned(
+            std::env::temp_dir().join(format!("cooee-history-perf-{}", std::process::id())),
+        );
         for (n, id) in (0u64..).zip(&ids) {
             let mut lines = String::new();
             for k in 0..10 {

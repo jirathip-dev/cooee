@@ -587,7 +587,9 @@ mod tests {
     use super::*;
 
     fn scratch(name: &str) -> Devices {
-        let dir = std::env::temp_dir().join(format!("cooee-devices-{name}-{}", std::process::id()));
+        let dir = crate::scratch::owned(
+            std::env::temp_dir().join(format!("cooee-devices-{name}-{}", std::process::id())),
+        );
         let _ = fs::remove_dir_all(&dir);
         Devices::new(&dir)
     }
@@ -745,7 +747,9 @@ mod tests {
 
     #[test]
     fn parallel_writes_never_share_a_temp_file() {
-        let dir = std::env::temp_dir().join(format!("cooee-write-{}", std::process::id()));
+        let dir = crate::scratch::owned(
+            std::env::temp_dir().join(format!("cooee-write-{}", std::process::id())),
+        );
         let _ = fs::remove_dir_all(&dir);
         let path = dir.join("state.json");
         std::thread::scope(|s| {

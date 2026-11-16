@@ -14,7 +14,6 @@ use std::{
     io::{self, BufRead, BufReader, Read, Write},
     net::{SocketAddr, TcpListener, TcpStream},
     path::PathBuf,
-    process::Command,
     sync::{Arc, Mutex, PoisonError},
     thread,
     time::{Duration, SystemTime, UNIX_EPOCH},
@@ -176,7 +175,7 @@ impl Machines {
     }
 
     fn shed(&self, args: &[&str]) -> Result<Value, String> {
-        let mut cmd = Command::new(&self.shed);
+        let mut cmd = cooee_core::runner::command(&self.shed);
         if let Some(dir) = &self.dir {
             cmd.arg("--dir").arg(dir);
         }
@@ -339,7 +338,7 @@ fn answer(stream: TcpStream, token: &str, machines: &Machines) -> io::Result<()>
 /// This machine's short host name, or `this machine`.
 #[must_use]
 pub fn local_name() -> String {
-    let host = Command::new("hostname").arg("-s").output();
+    let host = cooee_core::runner::command("hostname").arg("-s").output();
     let local = host.map_or_else(
         |_| String::new(),
         |o| String::from_utf8_lossy(&o.stdout).trim().to_owned(),

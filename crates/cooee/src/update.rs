@@ -3,7 +3,7 @@ use std::{
     fs::{self, OpenOptions},
     io::{IsTerminal, Write},
     path::{Path, PathBuf},
-    process::{Command, ExitCode},
+    process::ExitCode,
 };
 
 use cooee_core::Config;
@@ -130,7 +130,7 @@ fn bin() -> Result<PathBuf, String> {
 fn install(config: &Config, bin: &Path, sha: &str) -> Result<(), String> {
     let old = bin.with_extension("old");
     fs::copy(bin, &old).map_err(|e| format!("keeping {}: {e}", bin.display()))?;
-    let installed = Command::new("sh")
+    let installed = cooee_core::runner::command("sh")
         .args(["-c", INSTALL, "install.sh"])
         .env("COOEE_REV", sha)
         .status()

@@ -15,3 +15,7 @@
 - Don't change a design frame without its snapshot (apple/design/v1) — CooeeUITests SnapshotTests
 - Don't name a provider (claude, anthropic, codex, openai, gemini, hermes) outside crates/cooee-core/src/providers/ and tests — scripts/neutral-core.sh
 - don't push a PR body without a For humans section, with a placeholder, or with evidence at an older sha than the head (enforced by: pr-body `scripts/pr-body.sh`, shadow since 2026-11-13)
+- Don't break .drover/arch.toml's bans, size baselines, frozen or generated files — CI arch-check (drover arch-check, ci/drover-checks-test.sh)
+- Don't fail an active lesson check here (a shadow one only reports) — CI lessons (drover lesson-check, ci/drover-checks-test.sh)
+- Don't start a process outside crates/cooee-core/src/runner.rs: use `runner::command` — CI arch-check `Command::new` ban
+- Don't leave a temp folder behind a test, pass or fail — ci/gates/test.sh (fresh TMPDIR, ci/test-gate-test.sh)

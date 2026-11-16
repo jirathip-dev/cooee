@@ -301,7 +301,9 @@ mod tests {
 
     #[test]
     fn roots_under_home_are_expanded() {
-        let path = env::temp_dir().join(format!("cooee-roots-{}.toml", std::process::id()));
+        let path = crate::scratch::owned(
+            env::temp_dir().join(format!("cooee-roots-{}.toml", std::process::id())),
+        );
         fs::write(&path, r#"roots = ["~/Projects", "~", "/srv/~x"]"#).unwrap();
         let roots = Config::load(&path).unwrap().roots;
         fs::remove_file(&path).unwrap();
@@ -314,7 +316,9 @@ mod tests {
 
     #[test]
     fn missing_file_gives_defaults() {
-        let path = env::temp_dir().join(format!("cooee-no-config-{}.toml", std::process::id()));
+        let path = crate::scratch::owned(
+            env::temp_dir().join(format!("cooee-no-config-{}.toml", std::process::id())),
+        );
         assert_eq!(
             Config::load(&path).unwrap(),
             Config {
@@ -327,7 +331,9 @@ mod tests {
 
     #[test]
     fn saving_roots_keeps_the_other_lines() {
-        let path = env::temp_dir().join(format!("cooee-save-{}.toml", std::process::id()));
+        let path = crate::scratch::owned(
+            env::temp_dir().join(format!("cooee-save-{}.toml", std::process::id())),
+        );
         let home = PathBuf::from(env::var_os("HOME").unwrap());
         let text = "# mine\nport = 1\nroots = [\n  \"/a\",\n] # old\n\n[[plugins]]\nname = \"x\"\n";
         fs::write(&path, text).unwrap();
