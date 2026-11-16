@@ -1,0 +1,6 @@
+Decided: merged origin/staging (#314, #465); the lib.rs and routines.rs conflicts keep staging's code with every rule-breaking comment line dropped
+Because: "Strip every comment that breaks it: plain comments, and doc comments on non-public items"
+Rejected: keeping the branch side of the conflicts — it would drop #314's persona panel and sheet screens
+Check: every modified code file matches the merged staging commit once comments are removed, and scripts/comments.py exits 0
+Check: the msrv job's gates step runs ci/gates/comments.sh and is green at the head
+Owner: the branch is up to date with staging again, and the new persona screens follow the comment rule
