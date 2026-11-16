@@ -1,0 +1,38 @@
+$ cooee plugin check good.json
+ok   /Users/jkmacmini/.local/share/herdsman/work/.build/.scratch/cooee-verify-315-r2/cli/good.json
+exit 0
+$ cooee plugin check bad.json
+FAIL /Users/jkmacmini/.local/share/herdsman/work/.build/.scratch/cooee-verify-315-r2/cli/bad.json
+     $.blocks[0].swipe[0].label: is required
+     $.blocks[0].menu: an object is not array
+     $.blocks[1].menu[0].tone: "red" is not one of "ok", "warn", "bad", "info", "mute", "accent", "working", "needs", "done", "fail", "idle"
+     $.refresh: "yes" is not boolean
+cooee: 1 file(s) failed the check
+exit 1
+$ cooee layout check t-push.json
+ok   /Users/jkmacmini/.local/share/herdsman/work/.build/.scratch/cooee-verify-315-r2/cli/t-push.json
+exit 0
+$ cooee layout check t-sheet.json
+ok   /Users/jkmacmini/.local/share/herdsman/work/.build/.scratch/cooee-verify-315-r2/cli/t-sheet.json
+exit 0
+$ cooee layout check t-fade.json
+ok   /Users/jkmacmini/.local/share/herdsman/work/.build/.scratch/cooee-verify-315-r2/cli/t-fade.json
+exit 0
+$ cooee layout check t-none.json
+ok   /Users/jkmacmini/.local/share/herdsman/work/.build/.scratch/cooee-verify-315-r2/cli/t-none.json
+exit 0
+$ cooee layout check t-bad.json
+FAIL /Users/jkmacmini/.local/share/herdsman/work/.build/.scratch/cooee-verify-315-r2/cli/t-bad.json
+     line 1: root.slots.side[0]: unknown transition "slide"
+cooee: 1 file(s) failed the check
+exit 1
+$ cooee layout check t-num.json
+FAIL /Users/jkmacmini/.local/share/herdsman/work/.build/.scratch/cooee-verify-315-r2/cli/t-num.json
+     line 1: root.slots.side[0]: unknown transition "transition"
+cooee: 1 file(s) failed the check
+exit 1
+$ cooee layout check unknown-transition.json (fixture)
+FAIL apple/Tests/CooeeCoreTests/Fixtures/layouts/unknown-transition.json
+     line 1: root.slots.menu[0]: unknown transition "spin"
+cooee: 1 file(s) failed the check
+exit 1
