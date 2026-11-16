@@ -19,10 +19,13 @@ internal enum DiagramFrames {
         return screen.root
     }
 
-    @MainActor private static func sheet(_ screen: JSONValue, focus: String? = nil, width: CGFloat? = nil) -> some View
-    {
+    @MainActor private static func sheet(
+        _ screen: JSONValue, focus: String? = nil, width: CGFloat? = nil, beside: (String, JSONValue)? = nil
+    ) -> some View {
         Color.clear.overlay(alignment: .top) {
-            BlocksView(screen, focus: focus).padding(BlocksView.inset).frame(width: width).padding(
+            BlocksView(screen, focus: focus, picked: beside?.0, beside: beside?.1).padding(BlocksView.inset).frame(
+                width: width
+            ).padding(
                 .top, width == nil ? 0 : 36)
         }
         .clipped()
@@ -46,6 +49,9 @@ internal enum DiagramFrames {
             frame("map-terminal-dark", style: .terminal) { sheet(map) },
             frame("map-scene-light", .farmLight, style: .scene) { sheet(map) },
             frame("map-mac-dark", phone: false) { sheet(map, width: 760) },
+            frame("map-mac-split-dark", phone: false) {
+                sheet(map, width: 1090, beside: ("/screens/queue?state=fix", fix))
+            },
             frame("map-mac-terminal-dark", style: .terminal, phone: false) { sheet(map, width: 760) },
             frame("live-dark") { sheet(live) }, frame("state-dark") { sheet(fix) },
             frame("timer-dark") { sheet(global, focus: "limits.stall_minutes") },

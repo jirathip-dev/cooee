@@ -10,15 +10,29 @@ public struct BlocksView: View {
     private let open: @MainActor (String) -> Void
     private let openThread: @MainActor (String) -> Void
     private let focus: String?
+    private let picked: String?
+    private let beside: JSONValue?
 
     public var body: some View {
-        BlockNode(block: block).environment(\.act, act).environment(\.open, open)
-            .environment(\.openThread, openThread).environment(\.focus, focus)
+        Group {
+            if let beside {
+                HStack(alignment: .top, spacing: 24) {
+                    BlockNode(block: block).fixedSize(horizontal: true, vertical: false)
+                    BlockNode(block: beside).frame(maxWidth: .infinity, alignment: .leading)
+                }
+            } else {
+                BlockNode(block: block)
+            }
+        }
+        .environment(\.act, act).environment(\.open, open)
+        .environment(\.openThread, openThread).environment(\.focus, focus).environment(\.picked, picked)
     }
 
     public init(
         _ block: JSONValue,
         focus: String? = nil,
+        picked: String? = nil,
+        beside: JSONValue? = nil,
         act: @escaping @MainActor (BlockAction) -> Void = { _ in },
         open: @escaping @MainActor (String) -> Void = { _ in },
         openThread: @escaping @MainActor (String) -> Void = { _ in }
@@ -28,6 +42,8 @@ public struct BlocksView: View {
         self.open = open
         self.openThread = openThread
         self.focus = focus
+        self.picked = picked
+        self.beside = beside
     }
 }
 
@@ -50,6 +66,14 @@ private struct OpenThreadKey: EnvironmentKey {
 
 private struct FocusKey: EnvironmentKey {
     fileprivate static var defaultValue: String? { nil }
+}
+
+private struct PickedKey: EnvironmentKey {
+    fileprivate static var defaultValue: String? { nil }
+}
+
+private struct OpenBesideKey: EnvironmentKey {
+    fileprivate static var defaultValue: (@MainActor (String) -> Void)? { nil }
 }
 
 private struct CardKey: EnvironmentKey {
@@ -79,6 +103,16 @@ extension EnvironmentValues {
     internal var focus: String? {
         get { self[FocusKey.self] }
         set { self[FocusKey.self] = newValue }
+    }
+
+    internal var picked: String? {
+        get { self[PickedKey.self] }
+        set { self[PickedKey.self] = newValue }
+    }
+
+    internal var openBeside: (@MainActor (String) -> Void)? {
+        get { self[OpenBesideKey.self] }
+        set { self[OpenBesideKey.self] = newValue }
     }
 
     internal var card: CardContext {

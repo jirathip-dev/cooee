@@ -74,13 +74,17 @@ internal struct PluginScreenSheet: View {
         let palette = look.palette
         return Group {
             if let screen = store.screen {
-                BlocksView(screen.root, focus: store.focus) {
+                BlocksView(
+                    screen.root, focus: store.focus, picked: wide ? store.beside : nil,
+                    beside: wide ? store.besideScreen : nil
+                ) {
                     store.send(.act($0))
                 } open: {
                     store.send(.navigate($0))
                 } openThread: { thread in
                     if size == .compact { store.send(.push(thread)) } else { store.send(.open(thread)) }
                 }
+                .environment(\.openBeside, beside)
                 .disabled(store.offline || store.acting).opacity(store.offline ? 0.6 : 1)
             } else if store.offline {
                 Text("Nothing kept from \(store.label) yet.").foregroundStyle(palette.mute)
@@ -89,6 +93,13 @@ internal struct PluginScreenSheet: View {
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading).padding(BlocksView.inset)
+    }
+
+    private var wide: Bool { size != .compact }
+
+    private var beside: (@MainActor (String) -> Void)? {
+        guard wide else { return nil }
+        return { store.send(.beside($0)) }
     }
 
     private func scroll(_ proxy: ScrollViewProxy) {

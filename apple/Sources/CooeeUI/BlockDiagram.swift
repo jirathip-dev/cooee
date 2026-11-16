@@ -164,6 +164,7 @@ internal struct DiagramMap: View {
 
 internal struct DiagramNode: View {
     @Environment(\.look) private var look
+    @Environment(\.picked) private var picked
     internal let name: String
     internal let node: JSONValue
     internal let count: Int
@@ -198,6 +199,7 @@ internal struct DiagramNode: View {
         let palette = look.palette
         let tint = palette.tone(tone) ?? palette.mute
         let moved = was.map { $0 != count } ?? false
+        let ring = moved || (picked != nil && node["tap"]?.string("open") == picked)
         return VStack(alignment: .leading, spacing: 0) {
             Text(name).ui(12.5, .medium, look).foregroundStyle(palette.mute)
             HStack(alignment: .firstTextBaseline, spacing: 4) {
@@ -215,7 +217,8 @@ internal struct DiagramNode: View {
         .background(palette.background, in: .rect(cornerRadius: look.mono ? 0 : 12))
         .overlay(
             outline(
-                look.mono ? 0 : 12, moved ? tint : look.mono ? palette.foreground : palette.edge, width: moved ? 2 : 1)
+                look.mono ? 0 : 12, moved ? tint : ring ? palette.lead : look.mono ? palette.foreground : palette.edge,
+                width: ring ? 2 : 1)
         )
         .accessibilityLabel("\(name), \(count) issue\(count == 1 ? "" : "s")\(optional ? ", optional" : "")")
     }

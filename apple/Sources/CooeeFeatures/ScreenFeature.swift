@@ -18,6 +18,8 @@ public struct ScreenFeature: Sendable {
         public var said: String?
         public var path: [String] = []
         public var focus: String?
+        public var beside: String?
+        public var besideScreen: JSONValue?
         @Presents public var lane: ChatFeature.State?
 
         public var offline: Bool { unreachable != nil }
@@ -48,6 +50,8 @@ public struct ScreenFeature: Sendable {
         case navigate(String?)
         case open(String)
         case push(String)
+        case beside(String)
+        case besideLoaded(JSONValue)
         case lane(PresentationAction<ChatFeature.Action>)
         case delegate(Delegate)
 
@@ -57,7 +61,7 @@ public struct ScreenFeature: Sendable {
         }
     }
 
-    private enum CancelID { case follow }
+    private enum CancelID { case follow, beside }
 
     @Dependency(\.plugins) private var plugins
     @Dependency(\.screenCache) private var cache
@@ -85,7 +89,7 @@ public struct ScreenFeature: Sendable {
                 return acted(&state, answer, error)
             case .navigate(let path):
                 return navigate(&state, to: path)
-            case .open, .push, .lane, .delegate:
+            case .open, .push, .beside, .besideLoaded, .lane, .delegate:
                 return opened(&state, action)
             }
             return .none
@@ -125,6 +129,18 @@ extension ScreenFeature {
         case .push(let thread):
             let persona = Persona(APIPersona(id: "", name: thread, agent: ""))
             state.lane = ChatFeature.State(server: state.server, target: .thread(thread), persona: persona)
+        case .beside(let path):
+            state.beside = path
+            state.besideScreen = nil
+            let (plugins, server, source) = (plugins, state.server, state.source)
+            return .run { send in
+                await send(.besideLoaded(try await plugins.screen(server, source, path)))
+            } catch: { error, send in
+                await send(.failed(Self.who(error, source: source)))
+            }
+            .cancellable(id: CancelID.beside, cancelInFlight: true)
+        case .besideLoaded(let screen):
+            state.besideScreen = screen
         default:
             break
         }
@@ -171,6 +187,8 @@ extension ScreenFeature {
         let parts = path?.split(separator: "#", maxSplits: 1).map(String.init) ?? []
         if let first = parts.first { state.path.append(first) } else if state.path.popLast() == nil { return .none }
         state.focus = parts.dropFirst().first
+        state.beside = nil
+        state.besideScreen = nil
         state.screen = nil
         state.unreachable = nil
         return follow(state)
