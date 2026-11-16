@@ -145,18 +145,6 @@ internal struct ChatFeatureTests {
         #expect(calls.all == ["start coder  hi"])
     }
 
-    @Test internal func aSetupChatStartsInSetupMode() async {
-        let store = store(.setup(coder))
-        await store.send(.compose(.draftChanged("hi"))) { $0.draft = "hi" }
-        await store.send(.compose(.send)) {
-            $0.draft = ""
-            $0.outbox = [Outgoing(id: -1, text: "hi")]
-        }
-        await store.receive(\.outbox.delivered) { $0.outbox = [] }
-        await store.receive(\.delegate.started)
-        #expect(calls.all == ["start coder  hi setup"])
-    }
-
     @Test internal func queuedMessagesAreSteeredOrTakenBack() async {
         let store = store()
         await store.send(.event(.queue([Queued(text: "a", randomID: "q1"), Queued(text: "b", randomID: "q2")]))) {
@@ -174,5 +162,19 @@ internal struct ChatFeatureTests {
         let store = store { $0.threads.stop = { _, _ in throw APIError(status: 409, text: "Nothing runs.") } }
         await store.send(.compose(.stop))
         await store.receive(\.failed) { $0.error = "Nothing runs." }
+    }
+}
+
+extension ChatFeatureTests {
+    @Test internal func aSetupChatStartsInSetupMode() async {
+        let store = store(.setup(coder))
+        await store.send(.compose(.draftChanged("hi"))) { $0.draft = "hi" }
+        await store.send(.compose(.send)) {
+            $0.draft = ""
+            $0.outbox = [Outgoing(id: -1, text: "hi")]
+        }
+        await store.receive(\.outbox.delivered) { $0.outbox = [] }
+        await store.receive(\.delegate.started)
+        #expect(calls.all == ["start coder  hi setup"])
     }
 }

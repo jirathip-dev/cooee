@@ -95,18 +95,6 @@ internal struct ClientTests {
                     agent: "fake-acp", profile: "coder", machine: "mini", text: "hi", randomID: "r9", background: true))
     }
 
-    @Test internal func aSetupChatSaysSo() async throws {
-        let server = CannedServer(["/threads": [Answer(headers: json, chunks: [#"{"id":"n2"}"#])]])
-        let persona = APIPersona(id: "coder", name: "Coder", agent: "fake-acp")
-        #expect(
-            try await server.client().newThread(persona: persona, machine: "", text: "hi", setup: true, randomID: "r8")
-                == "n2")
-        let body = try server.decoded("/threads", as: Started.self)
-        let want = Started(
-            agent: "fake-acp", profile: "coder", machine: "", text: "hi", randomID: "r8", background: true, setup: true)
-        #expect(body == want)
-    }
-
     @Test internal func cooeesOwnSentenceIsTheError() async throws {
         let server = CannedServer([
             "/screens/home": [Answer(status: 500, headers: ["Cooee-Error": "1"], chunks: ["The store is locked."])],
@@ -175,5 +163,19 @@ internal struct ClientTests {
         #expect(client.base == server.url)
         #expect(try client.request("GET", "/threads").value(forHTTPHeaderField: "Cookie") == "cooee=t1")
         #expect(throws: APIError.self) { try Client.http(URLResponse()) }
+    }
+}
+
+extension ClientTests {
+    @Test internal func aSetupChatSaysSo() async throws {
+        let server = CannedServer(["/threads": [Answer(headers: json, chunks: [#"{"id":"n2"}"#])]])
+        let persona = APIPersona(id: "coder", name: "Coder", agent: "fake-acp")
+        #expect(
+            try await server.client().newThread(persona: persona, machine: "", text: "hi", setup: true, randomID: "r8")
+                == "n2")
+        let body = try server.decoded("/threads", as: Started.self)
+        let want = Started(
+            agent: "fake-acp", profile: "coder", machine: "", text: "hi", randomID: "r8", background: true, setup: true)
+        #expect(body == want)
     }
 }
