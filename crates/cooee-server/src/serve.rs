@@ -11,7 +11,7 @@ use cooee_machines::Machines;
 use topcoat::router::{BodyLimit, Router};
 
 use crate::{
-    Hub, Layouts, Logins, Manager,
+    Hub, Layouts, Logins, Manager, connectors,
     gate::{Gate, Timing, names},
     http::{Data, profiles, provider_name, recipe},
     hub, layout, look, pairing,
@@ -108,6 +108,10 @@ pub fn router(
     .app_context(hub)
     .app_context(runner)
     .app_context(Arc::new(Unlocks::default()))
+    .app_context(Arc::new(connectors::Connectors::new(
+        data,
+        connectors::KEYCHAIN,
+    )))
     .app_context(logins)
     .app_context(manager)
     .app_context(machines)
