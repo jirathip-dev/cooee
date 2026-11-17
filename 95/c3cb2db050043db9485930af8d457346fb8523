@@ -1,0 +1,13 @@
+Decided: the rule names the seven areas as where tests must exist, not the only place a test may live
+Because: "keep only tests that would catch a real regression in named areas"
+Decided: the enforcer is review, written without a backtick command so lesson-check does not run it
+Because: "The rule line names review as its enforcer"
+Decided: removed 8 tests of copy, constants, configuration, synthesized decoding or test scaffolding
+Because: "no tests of copy, wording, constants or configuration"
+Decided: kept cli.rs version, the only test of --version, which install.sh relies on to show the commit
+Because: scripts/install.sh:4
+Decided: kept DefaultLayoutTests, whose bundled-home load a SAFETY line relies on
+Because: apple/Sources/CooeeUI/Layout.swift:109
+Rejected: deleting every test outside the seven areas — most of the suite would go and CooeeCore would fall under 95%
+Check: CooeeCore 97.7%→97.6%, CooeeAPI 97.9%→97.9%; apple-check tests step 171s→173s
+Owner: Tests now have to catch a real regression; eight that only checked wording or settings are gone.
