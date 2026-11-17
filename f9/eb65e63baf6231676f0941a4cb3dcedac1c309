@@ -1,0 +1,7 @@
+Decided: merged origin/staging (e624714) and kept routines.rs at 800 lines by dropping the no-op serde(default) on Ask's when and github Options
+Because: crates/cooee-core/src/routines.rs:177
+Rejected: trimming the webhook doc lines — public fields need their one /// line
+Decided: the routines test helper waits until the MCP file parses, not just until it exists
+Because: crates/cooee/tests/routines.rs:37
+Check: CI msrv no longer races on an empty mcp-cooee file; arch-check reports 0 violations
+Owner: the branch is current with staging again, under the file size limit, and a flaky routines test is fixed
