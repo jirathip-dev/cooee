@@ -1,0 +1,5 @@
+Decided: merged origin/staging (95c3cb2, #557), which fixes the red Linux mcp test this branch never touched
+Because: crates/cooee-core/src/secrets.rs:94
+Rejected: a separate staging build fix here — #557 already makes of_persona read every saved name
+Check: Linux CI's mcp a_saved_secret_is_typed_again_without_asking_and_reaches_the_personas_environment_only passes at this head
+Owner: the branch is current with staging again; the failing secret test was a staging bug that staging has since fixed
