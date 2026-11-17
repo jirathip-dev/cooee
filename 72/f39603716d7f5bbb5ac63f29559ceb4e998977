@@ -1,0 +1,20 @@
+Decided: the Mac app probes its own port (config.toml, default 4747) and lists a cooee answering there first as This Mac, since the CLI server advertises no Bonjour service
+Because: "A cooee running on the same Mac shows in Nearby first, named as this Mac."
+Because: apple/Sources/CooeeAPI/Nearby.swift:18
+Decided: the first launch of the new app runs `launchctl bootout` on both old login items, then SMAppService unregister; a bootout that succeeds means it was running, and only then the one-line notice shows, so later launches stay quiet
+Because: "the first launch of the new version unregisters both login items once, and shows one line"
+Rejected: a UserDefaults "done once" flag — a remembered flag can't tell a Mac that still runs them, and swiftlint bans UserDefaults.standard there
+Decided: `cooee setup` drops a top-level shed key that points inside an app bundle (the app wrote Cooee.app/Contents/Helpers/shed), so the reused config finds shed on PATH
+Because: "`cooee setup` on a Mac that ran the app as the server reuses the same config and data folders"
+Because: crates/cooee/src/setup.rs:194
+Decided: the phone's ask test moves into the simulator e2e: it asks the e2e's `cooee serve` by address and 20-app.sh approves it with `cooee pair approve`
+Because: "Phone pairing against a CLI server is covered by a test that needs no Mac app"
+Decided: the Mac keeps its MacConnect screen minus the set-up-instead link, and doctor's both-installed warning now points at opening the new app
+Rejected: deleting infra/ci-runners/runner-user.* (the mac-setup runner user) — the issue does not list it and it is host setup the owner runs
+Check: the e2e merge-ready run shows testAsksAndTheCLIApprovesIt passing (simulator-shots/ask)
+Owner: The Mac app now only connects to a server; on a Mac the server is the `cooee setup` install, and an old app's server is switched off once with a note.
+
+Decided: merged origin/staging; in LiveUITests.swift kept #478's paired() title check with this branch's 60 s wait, and left testStaysPairedAfterTheMacUpdates deleted with mac-setup
+Because: apple/UITests/Live/LiveUITestCase.swift:49
+Rejected: none
+Owner: Brought the branch up to date with staging; the one clash in the phone pairing test keeps both changes.
