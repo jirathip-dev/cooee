@@ -87,11 +87,11 @@ pub fn persona(persona: &str, name: &str) -> String {
 /// Persona `persona`'s saved secrets, each as its variable and value (#163).
 ///
 /// # Errors
-/// As [`names`] and [`get`].
+/// When the keychain or the folder can't be listed, and as [`get`].
 pub fn of_persona(data: &Path, persona: &str) -> io::Result<Vec<(String, String)>> {
     let mine = format!("{persona}.");
     let mut vars = Vec::new();
-    for name in names(data)? {
+    for name in saved(data)? {
         if let (Some(var), Some(v)) = (name.strip_prefix(&mine), get(data, &name)?) {
             vars.push((var.to_owned(), v));
         }
@@ -117,17 +117,20 @@ pub fn remove(data: &Path, name: &str) -> io::Result<()> {
 /// # Errors
 /// When the keychain or the folder can't be listed.
 pub fn names(data: &Path) -> io::Result<Vec<String>> {
+    saved(data).map(|n| n.into_iter().filter(|n| !n.contains('.')).collect())
+}
+
+fn saved(data: &Path) -> io::Result<Vec<String>> {
     #[cfg(target_os = "macos")]
-    let all = keychain::accounts(prefix(data)).map(|a| {
+    return keychain::accounts(prefix(data)).map(|a| {
         let p = prefix(data);
         a.iter()
             .filter_map(|a| a.strip_prefix(&p))
             .map(str::to_owned)
-            .collect::<Vec<_>>()
+            .collect()
     });
     #[cfg(not(target_os = "macos"))]
-    let all = files(data);
-    all.map(|n| n.into_iter().filter(|n| !n.contains('.')).collect())
+    files(data)
 }
 
 fn files(data: &Path) -> io::Result<Vec<String>> {
@@ -332,7 +335,12 @@ mod tests {
         assert_eq!(get(&data, "TOKEN").unwrap().as_deref(), Some("s3cret"));
         fs::write(data.join("secrets/.run-x"), "handoff").unwrap();
         fs::write(data.join("secrets/connector.linear.main"), "{}").unwrap();
+        set(&data, &persona("coder", "SITE_KEY"), "k").unwrap();
         assert_eq!(names(&data).unwrap(), ["TOKEN"]);
+        assert_eq!(
+            of_persona(&data, "coder").unwrap(),
+            [("SITE_KEY".to_owned(), "k".to_owned())]
+        );
         assert_eq!(migrate(&data).unwrap(), Vec::<String>::new());
         assert!(path.exists());
     }
