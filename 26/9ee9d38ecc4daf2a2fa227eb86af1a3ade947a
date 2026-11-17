@@ -1,0 +1,23 @@
+Decided: one mention parser in CooeeCore (Mentions) mirrors the server's turn engine, and the popover, the who-replies line, the strip's preview, field tokens and message tokens all read it.
+Because: crates/cooee-server/src/hub/rooms.rs:48
+Decided: picking a member inserts its name without spaces (@AccountManager), the key the server matches; tokens are recognised by name or id the same way.
+Because: crates/cooee-server/src/hub/rooms.rs:62
+Decided: the strip and members pane preview the draft's turn order (named up next, the others waiting); a sent message's round state uses the same named list instead of "text contains @".
+Because: "the strip previews *up next* / *waiting*"
+Rejected: a rich-text TextEditor for tokens in the live field — it changes return-to-send and sizing for every chat; the room field draws its tokens in an overlay over a clear-text TextField instead.
+Rejected: server changes — R2 (#155) already runs mentioned members in mention order and queues a member named in a reply.
+Check: room-mention-dark and room-mention-terminal-dark against docs/design/rooms mention-390-dark and mention-terminal-390-dark.
+Check: the live field overlay lines up with the typed text on a device (the still frames draw the field as Text).
+Owner: In a room, typing @ lists the members with their reply order, and the line above the field says who will reply before you send.
+
+Decided: one mention parser in CooeeCore (Mentions) mirrors the server's turn engine, and the popover, the who-replies line, the strip's preview, field tokens and message tokens all read it.
+Because: crates/cooee-server/src/hub/rooms.rs:50
+Decided: picking a member inserts its name without spaces (@AccountManager), the key the server matches; tokens are recognised by name or id the same way.
+Because: crates/cooee-server/src/hub/rooms.rs:64
+Decided: the strip and members pane preview the draft's turn order (named up next, the others waiting); a sent message's round state uses the same named list instead of "text contains @".
+Because: "the strip previews *up next* / *waiting*"
+Rejected: a rich-text TextEditor for tokens in the live field — it changes return-to-send and sizing for every chat; the room field draws its tokens in an overlay over a clear-text TextField instead.
+Rejected: server changes — R2 (#155) already runs mentioned members in mention order and queues a member named in a reply.
+Check: room-mention-dark and room-mention-terminal-dark against docs/design/rooms mention-390-dark and mention-terminal-390-dark.
+Check: the live field overlay lines up with the typed text on a device (the still frames draw the field as Text).
+Owner: In a room, typing @ lists the members with their reply order, and the line above the field says who will reply before you send.
