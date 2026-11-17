@@ -1,0 +1,15 @@
+Decided: the starter set ships inside cooee (plugins/skills/, include_str!) and its index entry is first_party with no commit, like swag's first-party theme packs
+Because: crates/cooee-core/src/library.rs:25
+Rejected: pinning the starter set to a cooee commit — staging squash-merges, so a branch commit's sha never lands on staging
+Decided: a git source is fetched by its pinned sha only and FETCH_HEAD must equal it; any other answer is refused
+Because: "a tampered commit is refused"
+Decided: skills.lock in the persona folder records the sha of the file cooee wrote; a different file is the owner's edit and is never overwritten
+Because: crates/cooee-core/src/library.rs:317
+Decided: the update runs per thread (POST /threads/{id}/skills/update) because the skill diff card needs a thread to live in
+Because: crates/cooee-server/src/hub/mcp.rs:356
+Rejected: updating on every thread start — hidden writes to the persona folder on each chat
+Decided: the panel row lives in the persona edit sheet, the server-filled screen; the in-chat panel is built in the app and has no server screen
+Because: crates/cooee-server/src/screens/persona.rs:72
+Check: cargo test -p cooee --test skill_library covers add, the 21st, a tampered commit, the gate and an edited skill kept on update
+Check: the starter skills were not tried in a real thread from this lane; that needs the owner's cooee
+Owner: personas can pick from ten starter skills in one tap or with cooee skill add; edited skills are never overwritten by an update
