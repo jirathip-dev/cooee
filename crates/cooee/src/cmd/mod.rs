@@ -15,6 +15,7 @@ mod reports;
 mod secrets;
 mod serve;
 mod setup;
+mod skill;
 mod theme;
 mod update;
 
@@ -122,6 +123,12 @@ pub(crate) const ALL: &[Command] = &[
         usage: setup::USAGE,
         flags: setup::FLAGS,
         run: setup::run,
+    },
+    Command {
+        name: "skill",
+        usage: skill::USAGE,
+        flags: skill::FLAGS,
+        run: skill::run,
     },
     Command {
         name: "theme",

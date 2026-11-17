@@ -3,10 +3,12 @@
 //! clears its memory, and its `actions` (#495) ask a thread's persona to keep how it did the thread as a skill or a
 //! routine.
 
+use std::sync::Arc;
+
 use cooee_core::{
-    Kind,
+    Config, Kind,
     agents::{self, Agent},
-    memory,
+    library, memory,
     routines::{Mark, Place, Routine},
     skills,
 };
@@ -84,6 +86,14 @@ pub async fn action(cx: &Cx, Json(a): Json<Act>) -> Result<Answer<Value>> {
             Err(e) => Ok(Answer(Err(refused(e)))),
         },
         "clear" => Ok(Answer(clear(cx, id).await)),
+        "add_skill" => {
+            let name = a
+                .values
+                .get("name")
+                .and_then(Value::as_str)
+                .unwrap_or_default();
+            Ok(Answer(add_skill(cx, id, name.to_owned()).await))
+        }
         other => match TEACH.iter().find(|(t, ..)| *t == other) {
             Some(&teaching) => {
                 let thread = a.values.get("thread").and_then(Value::as_str);
@@ -154,6 +164,20 @@ async fn teach(
     .await
 }
 
+async fn add_skill(cx: &Cx, id: String, name: String) -> Result<Value, HubError> {
+    let (data, config) = data(cx);
+    let index = app_context::<Arc<Config>>(cx).skill_index.clone();
+    let who = id.clone();
+    blocking(cx, move |_| {
+        let config = config.ok_or_else(|| refused("no config folder"))?;
+        let sources = library::index(index.as_deref()).map_err(refused)?;
+        let home = agents::home(&config, &who).map_err(refused)?;
+        library::add(&home, &sources, &name, &data.join("skills-fetch")).map_err(refused)
+    })
+    .await?;
+    fill(cx, id).await
+}
+
 fn data(cx: &Cx) -> (std::path::PathBuf, Option<std::path::PathBuf>) {
     let d = app_context::<Data>(cx);
     (d.0.clone(), d.1.clone())
@@ -161,6 +185,7 @@ fn data(cx: &Cx) -> (std::path::PathBuf, Option<std::path::PathBuf>) {
 
 async fn fill(cx: &Cx, id: String) -> Result<Value, HubError> {
     let all = routines::on(cx, |r| r.list()).await?;
+    let index = app_context::<Arc<Config>>(cx).skill_index.clone();
     let (data, config) = data(cx);
     blocking(cx, move |hub| {
         let p = agents::find(config.as_deref(), &data, &id).map_err(refused)?;
@@ -176,7 +201,9 @@ async fn fill(cx: &Cx, id: String) -> Result<Value, HubError> {
             .map(|pl| json!({ "id": pl.id, "plugin": pl.plugin, "title": pl.label, "open": pl.screen }))
             .collect();
         let home = config.as_deref().and_then(|c| agents::home(c, &p.id).ok());
-        let notes = home.map(|h| memory::notes(&h)).unwrap_or_default();
+        let notes = home.as_ref().map(memory::notes).unwrap_or_default();
+        let skills = home.as_ref().map(skills_block).unwrap_or_default();
+        let library = library_rows(index.as_deref(), &skills);
         let mut screen: Value = serde_json::from_str(BUNDLED).map_err(refused)?;
         if let Some(o) = screen.as_object_mut() {
             o.insert("title".to_owned(), json!(p.name));
@@ -185,6 +212,10 @@ async fn fill(cx: &Cx, id: String) -> Result<Value, HubError> {
             match block["type"].as_str() {
                 Some("routines") => block["rows"] = json!(routines),
                 Some("places") => block["rows"] = json!(places),
+                Some("skills") => {
+                    block["rows"] = json!(skills);
+                    block["library"] = json!(library);
+                }
                 Some("memory") => {
                     block["count"] = json!(notes.len());
                     block["notes"] = json!(notes);
@@ -202,6 +233,29 @@ async fn fill(cx: &Cx, id: String) -> Result<Value, HubError> {
         Ok(super::core(screen))
     })
     .await
+}
+
+fn skills_block(home: &agents::Home) -> Vec<Value> {
+    let all = cooee_core::skills::list(home);
+    all.iter()
+        .map(|s| json!({ "name": s.name, "description": s.description }))
+        .collect()
+}
+
+fn library_rows(index: Option<&std::path::Path>, mine: &[Value]) -> Vec<Value> {
+    let starter = library::starter();
+    let sources = library::index(index).unwrap_or_default();
+    let names = sources.iter().flat_map(|s| s.skills.iter());
+    names
+        .filter(|n| !mine.iter().any(|m| m["name"] == n.as_str()))
+        .map(|n| {
+            let about = starter
+                .iter()
+                .find(|s| &s.name == n)
+                .map(|s| s.description.as_str());
+            json!({ "name": n, "description": about.unwrap_or_default() })
+        })
+        .collect()
 }
 
 fn routine(r: &Routine) -> Value {
