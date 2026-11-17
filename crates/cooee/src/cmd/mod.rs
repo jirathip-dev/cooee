@@ -3,6 +3,7 @@ mod agent;
 mod config;
 mod devices;
 mod doctor;
+mod export;
 mod install;
 mod layout;
 mod machine;
@@ -51,6 +52,12 @@ pub(crate) const ALL: &[Command] = &[
         usage: doctor::USAGE,
         flags: doctor::FLAGS,
         run: doctor::run,
+    },
+    Command {
+        name: "export",
+        usage: export::USAGE,
+        flags: export::FLAGS,
+        run: export::run,
     },
     Command {
         name: "install",

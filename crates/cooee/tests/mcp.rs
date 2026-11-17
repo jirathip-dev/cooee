@@ -3,7 +3,9 @@
 //! (their own `initialize`, id styles and order) and talks MCP to it. A fake stdio server offers tools a, b and c.
 //! The registry refuses a literal token; a profile's allowlist is all the agent sees and may call; references
 //! resolve when the proxy starts and their values reach no file, log or event; a closed thread's token stops
-//! working; `propose_server` only raises a card, which needs Face ID and adds the server off.
+//! working; `propose_server` only raises a card, which needs Face ID and adds the server off. A `secret` (#163) the owner
+//! drops with Face ID is typed into its terminal once, or saved for the persona, and reaches no transcript, event,
+//! file, log or model input; the agent only reads `secret NAME entered`.
 
 mod support;
 
@@ -350,7 +352,8 @@ fn propose_server_shows_the_exact_command_runs_nothing_and_needs_face_id_to_add_
             "history",
             "update_persona",
             "create_routine",
-            "skill"
+            "skill",
+            "secret"
         ]
     );
     let proposal = json!({ "name": "web", "type": "stdio", "command": web, "args": ["--port", "9 9"], "why": "browse the docs" });
@@ -476,4 +479,292 @@ fn the_mac_adds_toggles_and_removes_servers_with_references_only() {
         text.contains(r#"env = { "GIT_TOKEN" = "env:GIT_TOKEN" }"#),
         "{text}"
     );
+}
+
+const DROPPED: &str = "drop-v4lue-k9q2-unseen";
+
+struct SecretDrop {
+    s: Setup,
+    id: String,
+    agent: Mcp,
+    phone: Authenticator,
+}
+
+fn drop_setup(name: &str) -> SecretDrop {
+    let s = setup(name);
+    s.shed.plain("login");
+    let (id, servers) = s.thread("coder");
+    let agent = Mcp::start(named(&servers, "cooee"), Agent::Claude);
+    let phone = Authenticator::new(&s.cooee);
+    phone.save(&s.cooee);
+    SecretDrop {
+        s,
+        id,
+        agent,
+        phone,
+    }
+}
+
+impl SecretDrop {
+    fn card(&self) -> Value {
+        let items = self.s.cooee.json(&format!("/threads/{}/messages", self.id));
+        let cards = items["items"].as_array().unwrap().iter();
+        let mut cards = cards.filter(|i| i["form"] == "secret");
+        cards.next_back().expect("the secret card").clone()
+    }
+
+    fn drop_it(&self, card: &Value, passkey: &Value) -> (u16, String) {
+        let answer = card["block"]["blocks"][0]["values"]["choice"].clone();
+        self.s.cooee.post(
+            &format!("/threads/{}/approve", self.id),
+            &json!({ "item": card["id"], "option": answer, "value": DROPPED, "passkey": passkey }),
+        )
+    }
+
+    fn events(&self) -> support::Events {
+        let messages = self.s.cooee.json(&format!("/threads/{}/messages", self.id));
+        let boot = messages["cursor"]
+            .as_str()
+            .unwrap()
+            .split('.')
+            .next()
+            .unwrap();
+        self.s.cooee.events(&self.id, &format!("{boot}.0"), false)
+    }
+
+    fn told(&self) -> Vec<String> {
+        self.s.shed.sent(&format!("cooee-{}", self.id))
+    }
+
+    fn leaks(&self, events: &[support::Sse]) -> String {
+        let mut seen = self
+            .s
+            .cooee
+            .json(&format!("/threads/{}/messages", self.id))
+            .to_string();
+        seen.extend(events.iter().map(|e| e.data.to_string()));
+        seen.extend(self.told());
+        files(&self.s.dir, &mut seen);
+        seen
+    }
+}
+
+#[test]
+fn a_secret_dropped_once_is_typed_into_its_terminal_and_reaches_no_transcript_event_file_log_or_model()
+ {
+    let mut d = drop_setup("mcp-secret-once");
+    let own = d.agent.run(
+        "secret",
+        &json!({ "name": "SITE_PASSWORD", "terminal": format!("cooee-{}", d.id) }),
+    );
+    assert!(own.unwrap().contains("an agent's session"));
+    let bad = d.agent.run(
+        "secret",
+        &json!({ "name": "not a var", "terminal": "login" }),
+    );
+    assert!(bad.unwrap().contains("like a variable"));
+    let mut events = d.events();
+    let ask = json!({ "name": "SITE_PASSWORD", "why": "sign in to the vendor portal", "terminal": "login" });
+    let said = d.agent.run("secret", &ask).unwrap();
+    assert!(
+        said.starts_with("Asked the owner for secret SITE_PASSWORD"),
+        "{said}"
+    );
+    let card = d.card();
+    assert!(
+        card["tool"]
+            .as_str()
+            .unwrap()
+            .ends_with("typed once, never stored"),
+        "{card}"
+    );
+    assert_eq!(card["block"]["kind"], "secret", "{card}");
+
+    assert_eq!(d.drop_it(&card, &Value::Null).0, 403, "no Face ID");
+    assert_eq!(d.s.shed.sent("login"), Vec::<String>::new());
+    let (status, body) = d.drop_it(&card, &d.phone.get(&d.s.cooee));
+    assert_eq!(status, 200, "{body}");
+    let line = serde_json::from_str::<Value>(&body).unwrap()["line"].clone();
+    assert_eq!(line, "secret SITE_PASSWORD entered");
+    assert_eq!(d.s.shed.sent("login"), [DROPPED]);
+    assert_eq!(d.s.shed.calls("keys", "login").len(), 1, "then enter");
+    let seen = events.until(|e| e.data.to_string().contains("SITE_PASSWORD entered"));
+    let told = d.told();
+    assert!(
+        told.iter()
+            .any(|t| t.contains("secret SITE_PASSWORD entered")),
+        "{told:?}"
+    );
+    assert!(!d.leaks(&seen).contains(DROPPED), "the value leaked");
+    assert!(
+        d.s.dir
+            .join("data/secrets")
+            .read_dir()
+            .unwrap()
+            .all(|e| e.unwrap().file_name() == "TOKEN"),
+        "never stored"
+    );
+
+    let again = d.agent.run("secret", &ask).unwrap();
+    assert!(
+        again.starts_with("Asked the owner"),
+        "a once secret isn't kept: {again}"
+    );
+}
+
+#[cfg(not(target_os = "macos"))]
+#[test]
+fn a_saved_secret_is_typed_again_without_asking_and_reaches_the_personas_environment_only() {
+    let mut d = drop_setup("mcp-secret-saved");
+    let mut events = d.events();
+    let ask =
+        json!({ "name": "SITE_KEY", "why": "the vendor API", "terminal": "login", "save": true });
+    d.agent.run("secret", &ask).unwrap();
+    let card = d.card();
+    assert!(
+        card["tool"]
+            .as_str()
+            .unwrap()
+            .ends_with("saved in the keychain for coder"),
+        "{card}"
+    );
+    let (status, body) = d.drop_it(&card, &d.phone.get(&d.s.cooee));
+    assert_eq!(status, 200, "{body}");
+    let line = serde_json::from_str::<Value>(&body).unwrap()["line"].clone();
+    assert_eq!(line, "secret SITE_KEY entered");
+    let seen = events.until(|e| e.data.to_string().contains("SITE_KEY entered"));
+    assert!(!d.leaks(&seen).contains(DROPPED), "the value leaked");
+    let file = d.s.dir.join("data/secrets/coder.SITE_KEY");
+    assert_eq!(fs::read_to_string(&file).unwrap(), DROPPED);
+    assert_eq!(
+        fs::metadata(&file).unwrap().permissions().mode() & 0o777,
+        0o600
+    );
+
+    let said = d.agent.run("secret", &ask).unwrap();
+    assert_eq!(said, "secret SITE_KEY entered");
+    assert_eq!(d.s.shed.sent("login"), [DROPPED, DROPPED]);
+    assert_eq!(d.card()["id"], card["id"], "no second card");
+
+    let (coder, _) = d.s.thread("coder");
+    assert!(
+        d.s.shed
+            .adapter_env_of(&format!("cooee-{coder}"))
+            .contains(&format!("SITE_KEY={DROPPED}"))
+    );
+    let writer = "name = \"Writer\"\nagent = \"fake-acp\"\nenv = { MODE = \"write\" }\n";
+    agent(&d.s.dir, "writer", writer, "");
+    let (writer, _) = d.s.thread("writer");
+    let env = d.s.shed.adapter_env_of(&format!("cooee-{writer}"));
+    assert!(env.lines().any(|l| l == "MODE=write"), "{env}");
+    assert!(!env.contains(DROPPED), "only coder's");
+}
+
+const CHROMIUM: &str = r#"#!/bin/sh
+for a in "$@"; do
+  case "$a" in --user-data-dir=*) d=${a#--user-data-dir=} ;; esac
+done
+printf '%s\n' "$d" >>"$(dirname "$0")/chromium.log"
+printf '1\n/devtools/browser/x\n' >"$d/DevToolsActivePort"
+"#;
+
+const PLAYWRIGHT: &str = r#"#!/bin/sh
+printf '%s\n' "$*" >>"$(dirname "$0")/playwright.log"
+while IFS= read -r line; do
+  id=$(printf '%s' "$line" | sed -n 's/.*"id":\([^,}]*\).*/\1/p')
+  [ -n "$id" ] || continue
+  case "$line" in
+  *'"method":"initialize"'*) r='{"protocolVersion":"2025-06-18","capabilities":{"tools":{}},"serverInfo":{"name":"pw","version":"1"}}' ;;
+  *'"method":"tools/call"'*) printf '%s\n' "$line" >>"$(dirname "$0")/calls.log"; r='{"content":[{"type":"text","text":"done"}]}' ;;
+  *) r='{}' ;;
+  esac
+  printf '{"jsonrpc":"2.0","id":%s,"result":%s}\n' "$id" "$r"
+done
+"#;
+
+#[test]
+fn each_persona_gets_its_own_browser_and_every_call_is_checked_and_logged() {
+    let dir = scratch("mcp-browser");
+    let bin = dir.join("bin");
+    fs::create_dir_all(&bin).unwrap();
+    for (name, text) in [("chromium", CHROMIUM), ("playwright", PLAYWRIGHT)] {
+        fs::write(bin.join(name), text).unwrap();
+        fs::set_permissions(bin.join(name), fs::Permissions::from_mode(0o755)).unwrap();
+    }
+    for (id, site) in [("ann", "example.com"), ("bob", "github.com")] {
+        let toml = format!(
+            "name = \"{id}\"\nagent = \"fake-acp\"\n\n[[mcp]]\nserver = \"browser\"\n\n[[sites]]\nsite = \"{site}\"\naccount = true\n"
+        );
+        agent(&dir, id, &toml, "");
+    }
+    let shed = FakeShed::start(&dir.join("shed"), version());
+    let extra = format!(
+        "chromium = {:?}\n\n[[mcp]]\nname = \"browser\"\ncommand = {:?}\n",
+        bin.join("chromium").to_string_lossy(),
+        bin.join("playwright").to_string_lossy()
+    );
+    let cooee = Cooee::start_env(&dir, &shed.dir, &extra, &[]);
+    let s = Setup {
+        dir: dir.clone(),
+        shed,
+        cooee,
+        token: String::new(),
+    };
+    let navigate = |m: &mut Mcp, url: &str| m.run("browser_navigate", &json!({ "url": url }));
+    let (_, servers) = s.thread("ann");
+    let mut ann = Mcp::start(named(&servers, "browser"), Agent::Claude);
+    let (_, servers) = s.thread("bob");
+    let mut bob = Mcp::start(named(&servers, "browser"), Agent::Codex);
+    assert_eq!(
+        navigate(&mut ann, "https://www.example.com/a"),
+        Ok("done".to_owned())
+    );
+    assert_eq!(
+        navigate(&mut bob, "https://github.com/"),
+        Ok("done".to_owned())
+    );
+    let e = navigate(&mut ann, "https://github.com/").unwrap_err();
+    assert!(
+        e.contains("https://github.com/ isn't on ann's site allowlist"),
+        "{e}"
+    );
+    assert!(ann.run("browser_snapshot", &json!({})).is_ok());
+    drop((ann, bob));
+
+    let data = dir.join("data/browsers");
+    let launched = fs::read_to_string(bin.join("chromium.log")).unwrap();
+    let mut profiles: Vec<&str> = launched.lines().collect();
+    profiles.sort_unstable();
+    profiles.dedup();
+    let want = [data.join("ann"), data.join("bob")].map(|p| p.to_string_lossy().into_owned());
+    assert_eq!(profiles, want);
+    let started = fs::read_to_string(bin.join("playwright.log")).unwrap();
+    assert_eq!(
+        started.lines().collect::<Vec<_>>(),
+        ["--cdp-endpoint http://127.0.0.1:1"; 2]
+    );
+    let calls = fs::read_to_string(bin.join("calls.log")).unwrap();
+    assert_eq!(calls.lines().count(), 3, "{calls}");
+    assert_eq!(calls.matches("https://github.com/").count(), 1, "{calls}");
+    let logged = |id: &str| -> Vec<(String, Value, bool)> {
+        let text = fs::read_to_string(data.join(format!("{id}.log"))).unwrap();
+        text.lines()
+            .map(|l| serde_json::from_str::<Value>(l).unwrap())
+            .map(|v| {
+                (
+                    v["tool"].as_str().unwrap().to_owned(),
+                    v["arguments"].clone(),
+                    v["refused"].as_bool().unwrap(),
+                )
+            })
+            .collect()
+    };
+    let nav = |u: &str| ("browser_navigate".to_owned(), json!({ "url": u }), false);
+    let (mut off, snap) = (
+        nav("https://github.com/"),
+        ("browser_snapshot".to_owned(), json!({}), false),
+    );
+    off.2 = true;
+    assert_eq!(logged("ann"), [nav("https://www.example.com/a"), off, snap]);
+    assert_eq!(logged("bob"), [nav("https://github.com/")]);
 }

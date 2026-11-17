@@ -1,8 +1,18 @@
 //! A persona's history (#217): a search over its own threads and a paged read of one, as plain text for the `history`
-//! tool. A file scan of the store's item lines: no index, no model call. Only the owner's messages and the agent's
+//! tool. The search looks words up in the store's full-text index (#221), the read pages back from the store: no
+//! model call. Only the owner's messages and the agent's
 //! final replies are read (never tool calls, their output or cards), redacted, each result under a hard cap.
 
-use crate::{Body, Chat, Item, Store, StoreError, redact};
+use std::{
+    collections::{BTreeMap, HashSet},
+    fs, io,
+    path::Path,
+    sync::{Mutex, PoisonError},
+};
+
+use serde::{Deserialize, Serialize};
+
+use crate::{Body, Item, Store, StoreError, redact, store::Page};
 
 /// At most this many hits a search.
 pub const HITS: usize = 5;
@@ -10,8 +20,95 @@ pub const HITS: usize = 5;
 pub const SNIPPET: usize = 200;
 /// A read is at most this many characters.
 pub const PAGE: usize = 4000;
+/// A consolidation run reads at most this many characters of new history (#219).
+pub const NEW: usize = 20_000;
 
-fn said(i: &Item) -> Option<(&str, String)> {
+static MARKS: Mutex<()> = Mutex::new(());
+
+/// Where a routine stands in a persona's history (#219, the heartbeat's too): the newest line read and the newest
+/// due time run, in Unix ms.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(default)]
+pub struct Watermark {
+    /// The newest transcript line read.
+    pub line: u64,
+    /// The newest due time run (0: none seen yet).
+    pub due: u64,
+}
+
+/// Watermark `key` of `<data>/watermarks.json` changed by `f`, one change at a time, written when it changed: what
+/// `f` returns.
+///
+/// # Errors
+/// When the file can't be read or written.
+pub fn watermark<T>(data: &Path, key: &str, f: impl FnOnce(&mut Watermark) -> T) -> io::Result<T> {
+    let _held = MARKS.lock().unwrap_or_else(PoisonError::into_inner);
+    let path = data.join("watermarks.json");
+    let mut all: BTreeMap<String, Watermark> = match fs::read(&path) {
+        Ok(bytes) => serde_json::from_slice(&bytes)?,
+        Err(e) if e.kind() == io::ErrorKind::NotFound => BTreeMap::new(),
+        Err(e) => return Err(e),
+    };
+    let was = all.get(key).copied().unwrap_or_default();
+    let mut w = was;
+    let out = f(&mut w);
+    if w != was {
+        all.insert(key.to_owned(), w);
+        crate::write_private(&path, &serde_json::to_vec_pretty(&all)?)?;
+    }
+    Ok(out)
+}
+
+/// What `threads` said after line `mark` (ms), a routine's prompts left out: none when the owner said nothing since;
+/// else the newest lines that fit in [`NEW`] characters, oldest first, `<thread> <date> <who>: <text>` each, and the
+/// newest line's time, the next mark.
+///
+/// # Errors
+/// [`StoreError`] when a thread's items can't be read.
+pub fn since(
+    store: &Store,
+    threads: &[String],
+    mark: u64,
+) -> Result<Option<(String, u64)>, StoreError> {
+    let (mut lines, mut owner) = (Vec::new(), false);
+    for id in threads {
+        for i in store.items(id)?.iter().filter(|i| i.at > mark) {
+            if matches!(
+                &i.body,
+                Body::You {
+                    routine: Some(_),
+                    ..
+                }
+            ) {
+                continue;
+            }
+            let Some((who, text)) = said(i) else { continue };
+            owner |= matches!(i.body, Body::You { .. });
+            lines.push((i.at, format!("{id} {} {who}: {text}", date(i.at))));
+        }
+    }
+    if !owner {
+        return Ok(None);
+    }
+    lines.sort_by_key(|l| std::cmp::Reverse(l.0));
+    let newest = lines.first().map_or(mark, |l| l.0);
+    let (mut out, mut left) = (Vec::new(), NEW);
+    for (_, line) in lines {
+        let n = line.chars().count() + 1;
+        if n > left {
+            if out.is_empty() {
+                out.push(line.chars().take(left - 1).collect());
+            }
+            break;
+        }
+        left -= n;
+        out.push(line);
+    }
+    out.reverse();
+    Ok(Some((out.join("\n"), newest)))
+}
+
+pub(crate) fn said(i: &Item) -> Option<(&str, String)> {
     let (who, text) = match &i.body {
         Body::You { text, .. } => ("owner", text),
         Body::Agent { text, .. } if i.speaker.is_empty() => ("reply", text),
@@ -37,10 +134,6 @@ fn date(ms: u64) -> String {
     format!("{:04}-{m:02}-{d:02}", yoe + era * 400 + i64::from(m <= 2))
 }
 
-fn chat(store: &Store, id: &str, keep: impl FnOnce(&[u8]) -> bool) -> Result<Chat, StoreError> {
-    Ok(Chat::from_versions(store.items_if(id, keep)?))
-}
-
 /// The newest message across `threads` holding every word of `query` (case-insensitive) per thread, newest first,
 /// at most `limit` and [`HITS`]: one line each, `<thread> <date>: <snippet>`, the snippet at most [`SNIPPET`] characters.
 ///
@@ -53,38 +146,29 @@ pub fn search(
     limit: usize,
 ) -> Result<String, StoreError> {
     let words: Vec<String> = query.split_whitespace().map(str::to_lowercase).collect();
-    let raw = words.iter().all(|w| !w.contains(['"', '\\']));
-    let holds = |bytes: &[u8]| {
-        let lower = String::from_utf8_lossy(bytes).to_lowercase();
-        !raw || words.iter().all(|w| lower.contains(w.as_str()))
-    };
+    let mut left: HashSet<&str> = threads.iter().map(String::as_str).collect();
+    let want = limit.min(HITS);
     let mut hits = Vec::new();
-    for id in threads {
-        let chat = chat(store, id, holds)?;
-        let found = chat.items.iter().rev().find_map(|i| {
-            let (_, text) = said(i)?;
-            let lower = text.to_lowercase();
-            if !words.iter().all(|w| lower.contains(w.as_str())) {
-                return None;
-            }
-            let at = words.first().and_then(|w| lower.find(w.as_str()));
-            let at = lower[..at.unwrap_or(0)].chars().count();
-            let from = at.saturating_sub(SNIPPET / 4);
-            Some((
-                i.at,
-                text.chars().skip(from).take(SNIPPET).collect::<String>(),
-            ))
-        });
-        if let Some((at, snippet)) = found {
-            hits.push((at, format!("{id} {}: {snippet}", date(at))));
+    store.said(&words, |id, i| {
+        if hits.len() >= want {
+            return false;
         }
-    }
+        let Some((_, text)) = said(i) else {
+            return true;
+        };
+        let lower = text.to_lowercase();
+        if !words.iter().all(|w| lower.contains(w.as_str())) || !left.remove(id) {
+            return true;
+        }
+        let at = words.first().and_then(|w| lower.find(w.as_str()));
+        let at = lower[..at.unwrap_or(0)].chars().count();
+        let from = at.saturating_sub(SNIPPET / 4);
+        let snippet: String = text.chars().skip(from).take(SNIPPET).collect();
+        hits.push((i.at, format!("{id} {}: {snippet}", date(i.at))));
+        true
+    })?;
     hits.sort_by_key(|h| std::cmp::Reverse(h.0));
-    let lines: Vec<String> = hits
-        .into_iter()
-        .take(limit.min(HITS))
-        .map(|h| h.1)
-        .collect();
+    let lines: Vec<String> = hits.into_iter().map(|h| h.1).collect();
     Ok(if lines.is_empty() {
         "no match".to_owned()
     } else {
@@ -98,26 +182,26 @@ pub fn search(
 /// # Errors
 /// [`StoreError`] when its items can't be read.
 pub fn read(store: &Store, id: &str, before: Option<u64>) -> Result<String, StoreError> {
-    let chat = chat(store, id, |_| true)?;
-    let older = chat
-        .items
-        .iter()
-        .rev()
-        .filter(|i| before.is_none_or(|b| i.id < b));
     let (mut lines, mut left, mut more) = (Vec::new(), PAGE - 40, None);
-    for i in older {
-        let Some((who, text)) = said(i) else { continue };
-        let line = format!("{} {who}: {text}", date(i.at));
-        let n = line.chars().count();
-        if n > left && !lines.is_empty() {
-            more = lines.last().map(|l: &(u64, String)| l.0);
-            break;
-        }
-        lines.push((i.id, line.chars().take(left).collect()));
-        left = left.saturating_sub(n + 1);
-        if left == 0 {
-            more = Some(i.id);
-            break;
+    let mut from = before.map_or(Page::Last, Page::Before);
+    'pages: loop {
+        let page = store.page(id, from, 50)?;
+        let Some(oldest) = page.first() else { break };
+        from = Page::Before(oldest.id);
+        for i in page.iter().rev() {
+            let Some((who, text)) = said(i) else { continue };
+            let line = format!("{} {who}: {text}", date(i.at));
+            let n = line.chars().count();
+            if n > left && !lines.is_empty() {
+                more = lines.last().map(|l: &(u64, String)| l.0);
+                break 'pages;
+            }
+            lines.push((i.id, line.chars().take(left).collect()));
+            left = left.saturating_sub(n + 1);
+            if left == 0 {
+                more = Some(i.id);
+                break 'pages;
+            }
         }
     }
     let mut out: Vec<String> = lines.into_iter().rev().map(|l| l.1).collect();
@@ -245,8 +329,73 @@ mod tests {
     }
 
     #[test]
+    fn new_history_is_the_newest_20000_characters_after_the_mark_and_none_without_an_owner_turn() {
+        let s = store("since");
+        let prompt = Body::You {
+            text: "a routine's prompt".to_owned(),
+            random_id: String::new(),
+            files: Vec::new(),
+            routine: Some(crate::routines::Mark {
+                id: "consolidate".to_owned(),
+                name: "Consolidation".to_owned(),
+            }),
+        };
+        s.append("t1", &item(1, 10, you("old"))).unwrap();
+        s.append("t1", &item(2, 20, prompt)).unwrap();
+        s.append("t1", &item(3, 30, agent("a reply"))).unwrap();
+        let ids = vec!["t1".to_owned(), "t2".to_owned()];
+        assert_eq!(since(&s, &ids, 10).unwrap(), None, "no owner turn after 10");
+        let (text, newest) = since(&s, &ids, 0).unwrap().unwrap();
+        assert_eq!(newest, 30);
+        assert_eq!(
+            text,
+            "t1 1970-01-01 owner: old\nt1 1970-01-01 reply: a reply"
+        );
+        for n in 0..300u64 {
+            s.append(
+                "t2",
+                &item(
+                    n + 1,
+                    100 + n,
+                    you(&format!("turn {n} {}", "w".repeat(100))),
+                ),
+            )
+            .unwrap();
+        }
+        let (text, newest) = since(&s, &ids, 30).unwrap().unwrap();
+        assert!(text.chars().count() <= NEW, "{}", text.chars().count());
+        assert_eq!(newest, 399);
+        assert!(
+            text.ends_with(&format!("turn 299 {}", "w".repeat(100))),
+            "newest kept"
+        );
+        assert!(
+            !text.contains("turn 0 ") && !text.contains("a reply"),
+            "oldest dropped"
+        );
+        assert_eq!(
+            since(&s, &ids, newest).unwrap(),
+            None,
+            "nothing after the newest"
+        );
+    }
+
+    #[test]
+    fn a_watermark_changes_only_its_key_and_is_kept() {
+        let dir = crate::scratch::owned(
+            std::env::temp_dir().join(format!("cooee-marks-{}", std::process::id())),
+        );
+        fs::create_dir_all(&dir).unwrap();
+        watermark(&dir, "a", |w| w.line = 5).unwrap();
+        let got = watermark(&dir, "b", |w| *w).unwrap();
+        assert_eq!(got, Watermark::default());
+        assert_eq!(watermark(&dir, "a", |w| *w).unwrap().line, 5);
+        fs::remove_dir_all(&dir).unwrap();
+    }
+
+    #[test]
     fn a_search_over_1000_threads_stays_under_200_ms() {
-        let s = store("perf");
+        drop(store("perf"));
         let ids: Vec<String> = (0..1000).map(|n| format!("t{n:x}")).collect();
         let dir = crate::scratch::owned(
             std::env::temp_dir().join(format!("cooee-history-perf-{}", std::process::id())),
@@ -261,6 +410,7 @@ mod tests {
             }
             fs::write(dir.join(format!("threads/{id}.jsonl")), lines).unwrap();
         }
+        let s = Store::open(&dir).unwrap();
         let start = crate::clock::instant();
         let got = search(&s, &ids, "question 9 thread 999", 5).unwrap();
         let ms = start.elapsed().as_millis();
