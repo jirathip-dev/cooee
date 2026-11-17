@@ -1,8 +1,0 @@
-{
-  "type": "screen",
-  "id": "home",
-  "title": "cooee",
-  "blocks": [{ "type": "pinned", "id": "pinned" }, { "type": "chats", "id": "chats" }],
-  "threads": [],
-  "personas": []
-}
