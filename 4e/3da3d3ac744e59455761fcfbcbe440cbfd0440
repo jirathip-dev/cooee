@@ -1,0 +1,10 @@
+Decided: a new Trigger::Webhook with a per-routine secret name; POST /hooks/in/<id> on the #261 listener shares seen, admit and the run worker with GitHub deliveries
+Because: "HMAC-SHA256 against a per-routine `secret:` reference, body at most 2 MiB, deduped by a delivery header or a body hash, answered before the run starts"
+Decided: the body follows the prompt as one JSON string capped at 8,000 characters and marked untrusted, never templated into it
+Because: "The payload reaches the run as data, marked untrusted and capped, never as instructions."
+Decided: Settings is the persona screen's row url plus a test action; no Swift button
+Because: apple/Sources/CooeeUI/ChatPanel.swift:22
+Rejected: a Swift Test button now — the app renders no live routine rows, so it would be dead code Periphery fails
+Rejected: a separate base URL key in [hooks] — the inbound URL is [hooks] url with /github as /in/<id>, and doctor's funnel now publishes /hooks
+Check: tests/routines.rs a_signed_post_to_a_webhook_routine_starts_one_thread_per_delivery_under_the_rate covers 401, 202, the repeat and the rate
+Owner: webhooks from anything can now start a routine; the app's visible test button waits for live routine rows
