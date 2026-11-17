@@ -1,0 +1,5 @@
+Decided: the config_git fixture's fake key file holds a placeholder, not a PEM header
+Because: scripts/hygiene.sh:6
+Rejected: excluding the test from the hygiene scan — the denylist applies to every tracked file
+Check: scripts/hygiene.sh exits 0 and the test still asserts apns.p8 is left out of the commit
+Owner: a test fixture no longer looks like a real secret, so the public-hygiene check passes
