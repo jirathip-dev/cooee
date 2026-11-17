@@ -118,6 +118,10 @@ extension Client {
         _ = try await send(request("PUT", "/api/v1/themes/\(name)", json: draft))
     }
 
+    public func themeArt(_ theme: String, _ file: String) async throws -> String {
+        String(bytes: try await send(request("GET", "/look/\(theme)/\(file)")).0, encoding: .utf8) ?? ""
+    }
+
     public func messages(_ id: String, before: Int = 50) async throws -> Slice {
         try await call("GET", "/threads/\(id)/messages?before=\(before)")
     }

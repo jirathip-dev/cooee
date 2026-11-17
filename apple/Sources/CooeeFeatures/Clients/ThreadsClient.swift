@@ -9,6 +9,7 @@ public struct ThreadsClient: Sendable {
     public var looks: @Sendable (_ server: Server) async throws -> Looks
     public var checkTheme: @Sendable (_ server: Server, _ draft: ThemeDraft) async throws -> [String: GateReport]
     public var saveTheme: @Sendable (_ server: Server, _ name: String, _ draft: ThemeDraft) async throws -> Void
+    public var themeArt: @Sendable (_ server: Server, _ theme: String, _ file: String) async throws -> String
     public var messages: @Sendable (_ server: Server, _ thread: String) async throws -> Slice
     public var frame: @Sendable (_ server: Server, _ thread: String, _ name: String) async throws -> Data
     public var events:

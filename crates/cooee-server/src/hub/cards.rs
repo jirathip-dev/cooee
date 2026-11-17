@@ -7,7 +7,7 @@ use super::{CHANGE, CardSpec, Hub, HubError, Live, lock, now};
 impl Hub {
     /// `by`'s answer to approval `item`: sent once (stored first) to shed, or to the plugin whose card it is (then
     /// chosen, with the plugin's line; a 409 leaves it closed with the plugin's why). A secret card's `value` goes
-    /// to its plugin only and is never kept; a run card's `approve` sends its sha as the `value`. A second tap
+    /// to its plugin (or, cooee's own, into its terminal) only and is never kept unless asked; a run card's `approve` sends its sha as the `value`. A second tap
     /// returns the item.
     ///
     /// # Errors
@@ -50,10 +50,10 @@ impl Hub {
             Body::Approval { card, .. }
                 if matches!(
                     card.form.as_deref(),
-                    Some("mcp" | "skill" | "memory" | "routine")
+                    Some("mcp" | "skill" | "memory" | "routine" | "secret")
                 ) =>
             {
-                Ok(self.proposal_answer(id, item, option))
+                Ok(self.proposal_answer(id, item, option, value))
             }
             Body::Approval { card, .. } if card.form.as_deref() == Some("persona") => {
                 Ok(self.persona_answer(id, item, option))

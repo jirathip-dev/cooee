@@ -11,7 +11,9 @@
 # pull request `scope` (scripts/e2e-scope.sh) picks the e2e tests apple/e2e/map.toml pairs with the changed paths; a
 # change that reaches no Apple surface gets an `apple` that passes on ubuntu-latest, "no screens touched".
 # #440: the e2e runs nightly on staging's head (and on a manual run) whatever `vars.E2E` says; PRs and staging pushes
-# follow `vars.E2E` (#436: `off` skips the e2e steps). #475: a pull request push takes a Mac only on the merge-ready
+# follow `vars.E2E` (#436: `off` skips the e2e steps). #487: the schedule and manual runs add apple-check's tidy-code
+# gates (`--nightly`: Features coverage, swiftlint analyze, Periphery); a red nightly opens or updates the one
+# `nightly red:` issue (scripts/ci-nightly.sh), naming the failed gate. #475: a pull request push takes a Mac only on the merge-ready
 # run (or while the PR carries merge-ready); any other push runs `apple` on ubuntu-latest, "waits for merge-ready".
 name: apple
 on:
@@ -66,6 +68,8 @@ jobs:
     needs: scope
     runs-on: ${{ needs.scope.outputs.mac == 'true' && fromJSON('["self-hosted","macOS","ARM64","cooee-mac"]') || 'ubuntu-latest' }}
     timeout-minutes: 120
+    outputs:
+      gate: ${{ steps.check.outputs.gate }}
     env:
       MAC: ${{ needs.scope.outputs.mac }}
       FULL: ${{ needs.scope.outputs.full }}
@@ -105,11 +109,15 @@ jobs:
               -derivedDataPath "$RUNNER_TEMP/derived" CODE_SIGNING_ALLOWED=NO build
           done
       - name: just apple-check
+        id: check
         if: env.FULL == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
           COOEE_RENDERED: ${{ runner.temp }}/rendered
-        run: mkdir -p "$COOEE_RENDERED" && just apple-check
+          NIGHTLY: ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
+        run: |
+          mkdir -p "$COOEE_RENDERED"
+          if [ "$NIGHTLY" = true ]; then just apple-check --nightly; else just apple-check; fi
       - uses: actions/upload-artifact@v4
         if: always() && env.FULL == 'true'
         with:
@@ -130,3 +138,26 @@ jobs:
         with:
           name: simulator-shots
           path: simulator-shots
+
+  nightly-red:
+    needs: apple
+    if: always() && github.event_name == 'schedule' && needs.apple.result == 'failure'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    concurrency: nightly-red
+    permissions:
+      actions: read
+      contents: read
+      issues: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: staging
+          fetch-depth: 0
+      - name: open or update the issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_ID: ${{ github.run_id }}
+          WORKFLOW: apple.yml
+          CHECK: ${{ needs.apple.outputs.gate && format('apple-check {0}', needs.apple.outputs.gate) || '' }}
+        run: scripts/ci-nightly.sh

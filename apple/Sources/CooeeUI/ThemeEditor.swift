@@ -34,6 +34,9 @@ internal struct ThemeEditor: View {
         .navigationDestination(
             isPresented: Binding(get: { store.colours != nil }, set: { if !$0 { store.send(.colours(nil)) } })
         ) { ThemeColours(store: store) }
+        .navigationDestination(
+            isPresented: Binding(get: { store.drawing.open != nil }, set: { if !$0 { store.send(.draw(.open(nil))) } })
+        ) { ThemeDraw(store: store) }
     }
 
     private var chips: some View {
@@ -72,11 +75,16 @@ internal struct ThemeEditor: View {
         return Group2(header: "Figures · \(states.count) of \(states.count)") {
             LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 5), spacing: 10) {
                 ForEach(states, id: \.self) { state in
-                    VStack(spacing: 4) {
-                        Sprite(name: Self.drawn[state] ?? "horse-bay-\(state)", pack: "sprites.svg#s-\(state)").frame(
-                            width: 40, height: 30)
-                        Text("s-\(state)").ui(11, .regular, look).lineLimit(1).minimumScaleFactor(0.7)
+                    Button {
+                        store.send(.draw(.open("s-\(state)")))
+                    } label: {
+                        VStack(spacing: 4) {
+                            Sprite(name: Self.drawn[state] ?? "horse-bay-\(state)", pack: "sprites.svg#s-\(state)")
+                                .frame(width: 40, height: 30)
+                            Text("s-\(state)").ui(11, .regular, look).lineLimit(1).minimumScaleFactor(0.7)
+                        }
                     }
+                    .buttonStyle(.plain)
                 }
             }
             .environment(\.look, shown).padding(12)
@@ -84,13 +92,22 @@ internal struct ThemeEditor: View {
     }
 
     private var backdrop: some View {
+        Button {
+            store.send(.draw(.open(PixelFigure.layers[0])))
+        } label: {
+            backdropRow
+        }
+        .buttonStyle(.plain)
+    }
+
+    private var backdropRow: some View {
         HStack(spacing: 12) {
             Sprite(name: "scene-strip", pack: "scene.svg").scaledToFill().frame(width: 64, height: 32)
                 .clipShape(.rect(cornerRadius: 6)).environment(\.look, ThemePreview.look(store.state, look, dark: true))
             Text(store.layers == 0 ? "Backdrop" : "Backdrop · \(store.layers) layers").ui(16, .regular, look)
             Spacer()
         }
-        .padding(.horizontal, 14).frame(height: 52).overlay(alignment: .bottom) { line }
+        .padding(.horizontal, 14).frame(height: 52).overlay(alignment: .bottom) { line }.contentShape(.rect)
     }
 
     private var words: some View {
@@ -155,14 +172,20 @@ internal struct ThemePreview: View {
     internal let state: ThemeEditorFeature.State
     internal let chat: Bool
     internal let dark: Bool
+    internal var pose: String?
 
-    internal static func look(_ state: ThemeEditorFeature.State, _ look: Look, dark: Bool) -> Look {
+    internal static func look(
+        _ state: ThemeEditorFeature.State, _ look: Look, dark: Bool, style: LookStyle? = nil
+    ) -> Look {
         let palette = Palette(tokens: state.tokens(dark: dark), dark: dark) ?? look.palette
-        return Look(palette: palette, style: state.draft.style, still: look.still, art: state.art)
+        var shown = Look(palette: palette, style: style ?? state.draft.style, still: look.still, art: state.art)
+        (shown.drawn, shown.vectors) = (state.drawing.figures, state.drawing.vectors)
+        shown.tokens = state.tokens(dark: dark)
+        return shown
     }
 
     internal var body: some View {
-        let shown = Self.look(state, look, dark: dark)
+        let shown = Self.look(state, look, dark: dark, style: pose == nil ? nil : .scene)
         Group {
             if chat {
                 VStack(alignment: .leading, spacing: 14) {
@@ -170,10 +193,14 @@ internal struct ThemePreview: View {
                 }
                 .padding(16).environment(\.asker, Fixtures.persona("res"))
             } else {
-                let chats = Array(Fixtures.chats.filter { $0.asker == nil }.prefix(3))
+                let all = Fixtures.chats.filter { $0.asker == nil }
+                let chats =
+                    pose.map { pose in [all.first { $0.row.state.pose == pose } ?? all.first].compactMap(\.self) }
+                    ?? Array(all.prefix(3))
                 VStack(spacing: 0) {
-                    if shown.style == .scene { scene(chats, shown) }
-                    ChatList(chats: chats).padding(.top, 14)
+                    if shown.style == .scene, pose == nil { scene(chats, shown) }
+                    ChatList(chats: chats, title: pose == nil ? "Chats" : nil).padding(.vertical, pose == nil ? 0 : 4)
+                        .padding(.top, 14)
                 }
             }
         }

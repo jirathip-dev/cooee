@@ -30,6 +30,7 @@ mod models;
 mod plugins;
 mod relaunch;
 mod rooms;
+mod secret;
 mod send;
 mod setup;
 mod start;
