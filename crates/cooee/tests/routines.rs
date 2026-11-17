@@ -32,13 +32,15 @@ use support::{Authenticator, Cooee, FakeShed, scratch, version};
 
 fn call(shed: &FakeShed, id: &str, name: &str, args: &Value) -> Value {
     let file = shed.dir.join(format!("mcp-cooee-{id}.json"));
+    let mut servers = Value::Null;
     for _ in 0..100 {
-        if file.exists() {
+        let text = fs::read_to_string(&file).unwrap_or_default();
+        if let Ok(v) = serde_json::from_str(&text) {
+            servers = v;
             break;
         }
         thread::sleep(Duration::from_millis(100));
     }
-    let servers: Value = serde_json::from_str(&fs::read_to_string(file).unwrap()).unwrap();
     let cooee = &servers[0];
     let args_of = cooee["args"].as_array().unwrap().iter();
     let mut child = Command::new(cooee["command"].as_str().unwrap())

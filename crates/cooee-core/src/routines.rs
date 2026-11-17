@@ -174,10 +174,8 @@ pub struct Ask {
     /// The name.
     pub name: String,
     /// The cron.
-    #[serde(default)]
     pub when: Option<String>,
     /// The GitHub events.
-    #[serde(default)]
     pub github: Option<Github>,
     /// The signed POST.
     pub webhook: Option<Webhook>,
