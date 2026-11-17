@@ -48,9 +48,11 @@ that swag commit and put each changed file's `shasum -a 256` beside it. A new pa
 - `cooee theme add <name | git-url | path> [--rev R] [--yes]` copies a pack into `<config dir>/themes/<name>/` once it
   passes the gate, and pins it in `<data>/themes.lock` (name, source, commit). A name is a first-party pack, from the
   build's own copy at swag's pin; a git URL or a folder (or a first-party name at another `--rev`) shows "not
-  reviewed" and asks once first. `cooee theme remove <name>` and `cooee theme list` do the rest. `cooee serve` reads
-  them at its next start.
-- `cooee setup` asks which first-party themes to install; the default is all of them.
+  reviewed" and asks once first. A git source is fetched into `<data>/themes/<name>/` as a shallow clone (`--depth 1`)
+  with only its folder checked out (#363). On start, an old full clone `<data>/themes/<name>.git` is deleted once its
+  new form is in place, and the space freed is logged. `cooee theme remove <name>` and `cooee theme list` do the rest.
+  `cooee serve` reads them at its next start.
+- `cooee setup` installs farm, then offers the other first-party themes as a pick list; the default is all of them.
 - **To share a pack**, push its folder to any git repo; anyone adds it by that URL (`cooee theme add <git-url>`).
 
 An own folder in `themes/` (not added by `cooee theme add`) loads too; one with a built-in's name replaces it. `plain` was `terminal` before #35: a

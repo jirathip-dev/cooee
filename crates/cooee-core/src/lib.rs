@@ -12,6 +12,7 @@ mod devices;
 pub mod group;
 pub mod history;
 mod login;
+pub mod logs;
 pub mod mcp;
 pub mod memory;
 pub mod migrate;
