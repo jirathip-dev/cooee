@@ -40,6 +40,7 @@ internal struct HomeFeatureTests {
             $0.screen = homeScreen
             $0.rows = [rows[0]]
             $0.personas = [coder]
+            $0.loading = false
             $0.plugins = [drover]
         }
         await clock.advance(by: .seconds(5))
@@ -58,6 +59,7 @@ internal struct HomeFeatureTests {
         store.dependencies.plugins.installed = { _ in [] }
         await store.send(.refresh)
         await store.receive(\.loaded) {
+            $0.loading = false
             $0.screen = homeScreen
             $0.rows = rows
             $0.personas = [coder, conductor]
@@ -73,7 +75,10 @@ internal struct HomeFeatureTests {
 
     @Test internal func aRefreshLoadsOnceAndClearsTheError() async {
         let store = store([.rows([row("t1")])])
-        await store.send(.failed("Locked.")) { $0.error = "Locked." }
+        await store.send(.failed("Locked.")) {
+            $0.error = "Locked."
+            $0.loading = false
+        }
         await store.send(.refresh)
         await store.receive(\.loaded) {
             $0.screen = homeScreen
@@ -92,7 +97,10 @@ internal struct HomeFeatureTests {
     @Test internal func offlineHomeHoldsNoScreenSoTheBundledOneDraws() async {
         let store = store([.failure(APIError(status: 502, text: "Offline."))])
         await store.send(.refresh)
-        await store.receive(\.failed) { $0.error = "Offline." }
+        await store.receive(\.failed) {
+            $0.error = "Offline."
+            $0.loading = false
+        }
         #expect(store.state.screen == nil && store.state.rows.isEmpty)
     }
 }

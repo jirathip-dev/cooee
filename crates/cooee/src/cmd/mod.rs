@@ -1,4 +1,5 @@
 mod accounts;
+mod agent;
 mod config;
 mod devices;
 mod doctor;
@@ -25,6 +26,12 @@ pub(crate) const ALL: &[Command] = &[
         usage: accounts::USAGE,
         flags: accounts::FLAGS,
         run: accounts::run,
+    },
+    Command {
+        name: "agent",
+        usage: agent::USAGE,
+        flags: agent::FLAGS,
+        run: agent::run,
     },
     Command {
         name: "config",

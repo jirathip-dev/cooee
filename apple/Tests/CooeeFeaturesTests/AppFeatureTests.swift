@@ -78,6 +78,7 @@ internal struct AppFeatureTests {
         await store.receive(\.home.loaded) {
             $0.home?.screen = homeScreen
             $0.home?.rows = [row("n1")]
+            $0.home?.loading = false
         }
         await store.send(.start("nobody")) {
             $0.path = ["new:nobody"]
@@ -125,6 +126,7 @@ internal struct AppFeatureTests {
         await store.receive(\.home.loaded) {
             $0.home?.screen = homeScreen
             $0.home?.rows = [row("n1")]
+            $0.home?.loading = false
         }
     }
 
@@ -152,7 +154,9 @@ internal struct AppFeatureTests {
         }
         #expect(store.state.menu.server == mini)
     }
+}
 
+extension AppFeatureTests {
     @Test internal func aChatAskingToOpenAThreadOpensIt() async {
         let store = store(paired())
         await store.send(.open("t1")) {
@@ -167,9 +171,7 @@ internal struct AppFeatureTests {
             )
         }
     }
-}
 
-extension AppFeatureTests {
     @Test internal func refineByChatOpensASetupChat() async {
         let store = store(paired())
         store.dependencies.plugins.act = { _, _, _, action in .object(action.values) }
@@ -182,6 +184,7 @@ extension AppFeatureTests {
         }
         await store.receive(\.home.refresh)
         await store.receive(\.home.loaded) {
+            $0.home?.loading = false
             $0.home?.screen = homeScreen
             $0.home?.rows = [row("n1")]
         }

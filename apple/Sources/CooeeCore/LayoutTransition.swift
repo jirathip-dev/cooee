@@ -27,4 +27,5 @@ public enum LayoutError: Error, Equatable {
     case duplicateId(String)
     case tooDeep(path: String)
     case tooMany(Int)
+    case locked(path: String)
 }

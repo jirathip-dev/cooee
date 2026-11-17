@@ -12,6 +12,7 @@ public struct ChatActions {
     public var unqueue: (Int) -> Void
     public var answer: (Int, BlockAction) -> Void
     public var answering: Set<Int>
+    public var sending = false
     public var back: () -> Void
     public var retry: (Int) -> Void = { _ in }
     public var view: () -> Void = {}

@@ -1,0 +1,5 @@
+- Three parts, in order: today's calendar, the weather where the owner is, three news headlines.
+- Calendar: each event's time and title; flag clashes and anything needing preparation.
+- Weather: the high, the low and the chance of rain; say if an umbrella or coat is needed.
+- News: three headlines on the topics the owner chose, each one line with its source.
+- Ask the owner's town and news topics once and keep them with your remember tool.

@@ -117,7 +117,7 @@ public struct Layout: Sendable, Equatable {
     public let root: LayoutNode<Placement>
     public let etag: String
 
-    /// Decodes and validates `json`, drops any node naming a locked screen and appends the locked two.
+    /// Decodes and validates `json`, refuses a node naming a locked screen or a hidden root, appends the locked two.
     public init(json: Data, etag: String) throws(LayoutError) {
         guard json.count <= Self.maxBytes else { throw .json("over \(Self.maxBytes) bytes") }
         let file: JSONValue
@@ -130,9 +130,9 @@ public struct Layout: Sendable, Equatable {
         guard (1...Self.knownFormat).contains(format) else { throw .format(format) }
         var decoder = LayoutDecoder()
         let rootJSON = file["root"] ?? .null
-        guard let root = try decoder.node(rootJSON, at: "root", depth: 1), root.content == .component(.nav) else {
-            throw .unknownType(path: "root", type: rootJSON.type)
-        }
+        let root = try decoder.node(rootJSON, at: "root", depth: 1)
+        guard root.content == .component(.nav) else { throw .unknownType(path: "root", type: rootJSON.type) }
+        guard ![root.place.compact, root.place.wide].contains(.hidden) else { throw .locked(path: "root") }
         self.format = format
         self.theme = file.string("theme")
         self.etag = etag
@@ -161,12 +161,12 @@ private struct LayoutDecoder {
 
     fileprivate mutating func node(
         _ json: JSONValue, at path: String, depth: Int
-    ) throws(LayoutError) -> LayoutNode<Placement>? {
+    ) throws(LayoutError) -> LayoutNode<Placement> {
         guard depth <= Self.maxDepth else { throw .tooDeep(path: path) }
         count += 1
         guard count <= Self.maxNodes else { throw .tooMany(Self.maxNodes) }
         let content = try Self.content(json, at: path)
-        if case .screen(_, let screen) = content, Self.lockedPaths.contains(screen) { return nil }
+        if case .screen(_, let screen) = content, Self.lockedPaths.contains(screen) { throw .locked(path: path) }
         let id = json.string("id") ?? content.defaultId
         guard ids.insert(id).inserted else { throw .duplicateId(id) }
         return LayoutNode(
@@ -186,9 +186,7 @@ private struct LayoutDecoder {
             guard allowed.contains(name) else { throw .unknownSlot(path: path, slot: name) }
             var nodes: [LayoutNode<Placement>] = []
             for (index, child) in (slots[name]?.items ?? []).enumerated() {
-                if let node = try node(child, at: "\(path).slots.\(name)[\(index)]", depth: depth + 1) {
-                    nodes.append(node)
-                }
+                nodes.append(try node(child, at: "\(path).slots.\(name)[\(index)]", depth: depth + 1))
             }
             decoded[name] = nodes
         }

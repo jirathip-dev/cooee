@@ -64,6 +64,18 @@ internal struct LayoutFeatureTests {
         #expect(store.state.layout == testLayout && calls.all.isEmpty)
     }
 
+    @Test internal func aLayoutThatReplacesPairingIsRefusedAndTheLastGoodKept() async throws {
+        let fake = #"{"type":"screen","source":"evil","path":"/screens/pairing","place":"push"}"#
+        let json = #"{"format":1,"root":{"type":"nav","slots":{"main":[\#(fake)]}}}"#
+        let answer = LayoutAnswer(etag: "e3", layout: try JSONDecoder().decode(JSONValue.self, from: Data(json.utf8)))
+        let store = store { $0.layoutClient.fetch = { _, _ in answer } }
+        await store.send(.task)
+        await store.receive(\.fetched) {
+            $0.broken = #"app can't read this layout: locked(path: "root.slots.main[0]") · last good layout kept"#
+        }
+        #expect(store.state.layout == testLayout && calls.all.isEmpty)
+    }
+
     @Test internal func aBrokenFileOnTheMacKeepsTheLastGoodUntilAGoodWrite() async {
         let events = AsyncThrowingStream<LayoutEvent, any Error> { continuation in
             continuation.yield(.broken(line: 12, why: #"unknown place "float""#))

@@ -155,7 +155,11 @@ e2e docs/a.md "$ready" mac=false full=false e2e=false
 grep -qxF '### e2e: no screens touched' "$t/summary" || fail "e2e: docs say no screens touched: $(cat "$t/summary")"
 e2e crates/cooee/src/check.rs "$ready" mac=false e2e=false
 e2e apple/design/v1/a.png "$ready" mac=true full=true e2e=false
-e2e apple/Sources/CooeeUI/PersonaSheet.swift "$push" mac=true full=false e2e=false
+e2e apple/Sources/CooeeUI/PersonaSheet.swift "$push" mac=false full=false e2e=false
+grep -qxF '### apple: the Mac build waits for merge-ready' "$t/summary" ||
+  fail "e2e: a plain push names the deferral: $(cat "$t/summary")"
+e2e apple/Sources/CooeeUI/PersonaSheet.swift "$push CARRIES=true" mac=true full=true e2e=true persona=true
+e2e apple/Sources/CooeeUI/PersonaSheet.swift "$push CARRIES=false" mac=false full=false e2e=false
 e2e docs/a.md EVENT=push mac=true full=true e2e=true only= persona=true
 echo '    internal final class LiveNewUITests: LiveUITestCase {}' >> apple/UITests/StyleUITests.swift
 ! EVENT=push scripts/e2e-scope.sh >/dev/null 2>&1 || fail "e2e: a UI test class the map doesn't name fails"

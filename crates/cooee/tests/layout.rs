@@ -143,8 +143,7 @@ fn a_bad_write_keeps_the_last_good_layout_and_reset_restores_the_default() {
         .join("../../apple/Tests/CooeeCoreTests/Fixtures/layouts");
     for f in fs::read_dir(fixtures).unwrap() {
         let f = f.unwrap().path();
-        let ok = f.ends_with("locked-replaced.json");
-        assert_eq!(check(&c, &f).0, ok, "{}", f.display());
+        assert!(!check(&c, &f).0, "{}", f.display());
     }
     let (ok, out) = check(&c, &file);
     assert!(
@@ -222,4 +221,49 @@ fn a_plugins_places_are_merged_and_a_place_its_manifest_lacks_is_skipped() {
         ])
     );
     assert_ne!(answer["etag"], first["etag"]);
+}
+
+const PAIRING: &str = include_str!("../../../apple/Sources/CooeeUI/Default/screens/pairing.json");
+
+#[test]
+fn a_layout_that_replaces_a_locked_screen_is_refused_and_reset_still_restores_the_default() {
+    let dir = scratch("layout-locked");
+    let shed = FakeShed::start(&dir.join("shed"), version());
+    let c = Cooee::start(&dir, &shed.dir);
+    let file = dir.join("layout.json");
+
+    let pairing = c.json("/screens/pairing");
+    let mut bundled: Value = serde_json::from_str(PAIRING).unwrap();
+    bundled["source"] = "core".into();
+    assert_eq!(pairing, bundled);
+    let reset = c.json("/screens/reset-layout");
+    assert_eq!(
+        (&reset["source"], &reset["id"]),
+        (&"core".into(), &"reset-layout".into())
+    );
+    assert_eq!(reset["blocks"][1]["action"], "/layout/reset", "{reset}");
+
+    let (_, tag, _) = layout(&c, "");
+    let mut events = Events::open(&c);
+    let fake = DEFAULT.replace(
+        r#""path": "/screens/menu""#,
+        r#""path": "/screens/reset-layout""#,
+    );
+    let hidden = DEFAULT.replace(r#""type": "nav","#, r#""type": "nav", "place": "hidden","#);
+    for bad in [&fake, &hidden] {
+        assert_ne!(bad, DEFAULT);
+        fs::write(&file, bad).unwrap();
+        let (name, data) = events.next();
+        assert_eq!(name, "broken", "{data}");
+        assert_eq!(layout(&c, &tag).0, 304, "the last good layout is kept");
+    }
+    fs::write(dir.join("fake.json"), &fake).unwrap();
+    let (ok, out) = check(&c, &dir.join("fake.json"));
+    assert!(!ok && out.contains("a locked screen"), "{out}");
+
+    let (code, body) = c.post("/layout/reset", &Value::Null);
+    assert_eq!(code, 200, "{body}");
+    assert_eq!(fs::read_to_string(&file).unwrap(), DEFAULT);
+    assert_eq!(events.next().0, "changed");
+    assert_eq!(layout(&c, &tag).0, 304);
 }

@@ -34,16 +34,20 @@ internal struct ChatOutboxTests {
             $0.draft = ""
             $0.outbox = [Outgoing(id: -1, text: "hi")]
         }
+        #expect(store.state.sending)
         await store.receive(\.outbox.undelivered) {
             $0.outbox[0].failure = "The agent stopped."
             $0.draft = "hi"
         }
+        #expect(!store.state.sending)
         #expect(store.state.drawn == [.outgoing(Outgoing(id: -1, text: "hi", failure: "The agent stopped."))])
         await store.send(.outbox(.retry(-1))) {
             $0.outbox[0].failure = nil
             $0.draft = ""
         }
+        #expect(store.state.sending)
         await store.receive(\.outbox.delivered) { $0.outbox = [] }
+        #expect(!store.state.sending)
         #expect(calls.all == ["send hi"])
     }
 
@@ -94,6 +98,7 @@ internal struct ChatOutboxTests {
             items: [], turn: Turn(state: "unconnected", note: "Shed is down."), cursor: "c1", queue: [],
             pending: Queued(text: "hi", randomID: "r1"))
         await store.send(.loaded(slice)) {
+            $0.loading = false
             $0.turn = slice.turn
             $0.since = epoch
             $0.pending = "hi"
@@ -116,6 +121,7 @@ internal struct ChatOutboxTests {
             items: [], turn: Turn(state: "unconnected"), cursor: "c1", queue: [],
             pending: Queued(text: "hi", randomID: "r1"))
         await store.send(.loaded(slice)) {
+            $0.loading = false
             $0.turn = slice.turn
             $0.since = epoch
             $0.pending = "hi"

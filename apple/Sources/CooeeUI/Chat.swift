@@ -7,6 +7,7 @@ public struct ChatView: View {
     private let items: [Item]
     private var working = false
     private var since: Date?
+    private var loading = false
     private var queued: [String] = []
     private var draft = ""
     private var back = true
@@ -18,9 +19,13 @@ public struct ChatView: View {
         ZStack {
             Backdrop()
             VStack(spacing: 0) {
-                if headed { ChatHeader(persona: persona, chips: chips, back: back, actions: actions) }
+                if headed {
+                    ChatHeader(persona: persona, chips: chips, back: back, actions: actions)
+                        .overlay(alignment: .bottom) { if loading { LoadingBar().offset(y: 2) } }
+                }
                 Scroller(end: true) {
                     VStack(alignment: .leading, spacing: 14) {
+                        if items.isEmpty { BigSprite(loading: loading) }
                         ForEach(items) { item in
                             ItemView(item: item, retry: { actions.retry(item.id) }, view: actions.view)
                                 .environment(\.act) { actions.answer(item.id, $0) }
@@ -32,7 +37,7 @@ public struct ChatView: View {
                 .frame(maxHeight: .infinity, alignment: .top)
                 .environment(\.asker, persona)
                 VStack(spacing: 8) {
-                    if working { WorkingPill(since: since, step: actions.step, stop: actions.stop) }
+                    if working { WorkingPill(persona: persona, since: since, step: actions.step, stop: actions.stop) }
                     Composer(
                         hint: "Message \(persona.name)",
                         queued: queued,
@@ -69,6 +74,7 @@ public struct ChatView: View {
         items: [Item],
         working: Bool,
         since: Date,
+        loading: Bool = false,
         queued: [String],
         back: Bool,
         headed: Bool = true,
@@ -78,6 +84,7 @@ public struct ChatView: View {
         self.items = items
         self.working = working
         self.since = since
+        self.loading = loading
         self.queued = queued
         self.back = back
         self.headed = headed

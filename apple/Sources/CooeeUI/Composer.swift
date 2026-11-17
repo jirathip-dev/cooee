@@ -59,10 +59,16 @@ internal struct Composer: View {
     private var sendButton: some View {
         let palette = look.palette
         return Button(action: send) {
-            Image(systemName: "arrow.up").font(.system(size: 17, weight: .bold))
-                .foregroundStyle(palette.dark ? Color.black : .white)
-                .frame(width: 42, height: 42)
-                .background(palette.link, in: look.mono ? AnyShape(Rectangle()) : AnyShape(Circle()))
+            Group {
+                if actions.sending {
+                    Spinner()
+                } else {
+                    Image(systemName: "arrow.up").font(.system(size: 17, weight: .bold))
+                }
+            }
+            .foregroundStyle(palette.dark ? Color.black : .white)
+            .frame(width: 42, height: 42)
+            .background(palette.link, in: look.mono ? AnyShape(Rectangle()) : AnyShape(Circle()))
         }
         .buttonStyle(.plain).accessibilityLabel("Send")
     }

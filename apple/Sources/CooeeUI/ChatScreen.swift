@@ -25,6 +25,7 @@ internal struct ChatScreen: View {
             back: onBack
         )
         actions.retry = { store.send(.outbox(.retry($0))) }
+        actions.sending = store.sending
         actions.view = { store.send(.delegate(.persona(store.persona.id))) }
         let places = store.places
         actions.places = places.map(\.label)
@@ -64,6 +65,7 @@ internal struct ChatScreen: View {
                 items: store.drawn,
                 working: store.working,
                 since: store.since,
+                loading: store.loading,
                 queued: store.queue.map(\.text),
                 back: back,
                 headed: headed,

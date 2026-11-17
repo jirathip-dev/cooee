@@ -32,10 +32,17 @@ for the owner to run. `cooee doctor` checks the service, port, shed, APNs, push 
 | `plugin_index` | the built-in `plugins/index.toml` | The plugin index `cooee plugin add <name>` and Settings › Plugins list ([plugins.md](plugins.md)). |
 | `[apns]` | none | Apple push for the native app: `key_id`, `team_id`, `topic` (the app's bundle id), `env` (`sandbox` for Xcode and TestFlight builds, `production`) and `url` (default Apple's server for each token's env). The key is `<data>/apns.p8`. |
 | `[perf] slow_ms` | `250` | A request taking this many ms or more is a `warn` line in `<data>/perf.log` and on stderr (#53). |
+| `[logs] max_mb`, `keep` | `16`, `3` | `cooee.log`, `terminal.log` and `perf.log` in the data folder rotate past `max_mb` MB, at start and every 10 minutes, keeping `keep` old files (`<log>.1` the newest) (#363). |
 
 `cooee serve` times every request (method, route pattern, status), every shed call (method, socket or CLI) and each
 prompt's first reply chunk (thread, agent) into `<data>/perf.log`, one JSON line each, never a prompt or a token;
 `cooee perf [--minutes 60]` prints p50/p95/max of each as a table.
+
+**Version your config (#361).** The config folder may be kept in git. Cooee writes a `.gitignore` there (secrets,
+keys, tokens, caches and build folders) when it creates the folder, or on `cooee serve` when the folder has none; it
+never touches one that is already there. `cooee config init --git` runs `git init` and makes one first commit of the
+folder as it stands, and refuses when the folder is a git repo already. After that cooee never runs git on the folder:
+the owner commits, sets a remote and pushes. `config.toml` holds plugins' `token`s, so keep a remote private.
 
 ## API
 

@@ -39,6 +39,8 @@ public struct MenuFeature: Sendable {
         case style(LookStyle)
         case theme(String)
         case icon(AppIcon?)
+        case motion(Bool)
+        case sprite(String, String?)
         case pinRoom(String)
         case push(Bool)
         case pushed(String?)
@@ -66,6 +68,10 @@ public struct MenuFeature: Sendable {
                 return look(&state) { $0.style = style }
             case .icon(let icon):
                 return look(&state) { $0.icon = icon }
+            case .motion(let motion):
+                return look(&state) { $0.motion = motion }
+            case .sprite(let seed, let coat):
+                return look(&state) { [theme = state.settings.theme] in $0.sprite(seed, coat, in: theme) }
             case .push(let enabled):
                 return toggle(&state, enabled)
             default:
@@ -138,7 +144,9 @@ public struct MenuFeature: Sendable {
             break
         }
     }
+}
 
+extension MenuFeature {
     private func look(_ state: inout State, _ change: (inout Settings) -> Void) -> Effect<Action> {
         let shown = state.settings.appIcon
         change(&state.settings)
