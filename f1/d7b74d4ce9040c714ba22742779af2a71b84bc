@@ -1,0 +1,6 @@
+Decided: line_cap 28390 and apple_cap 16300, the figures the issue names
+Because: "`ci/cap.toml`: `line_cap = 28390`, `apple_cap = 16300`."
+Because: q1931
+Rejected: waiting for more trims — the lanes already trimmed and more would drop spec items
+Check: sh scripts/line-cap.sh at the head prints 27357 / 28390 and 15075 / 16300, exit 0
+Owner: Both line limits are raised once for the whole queue, with the reason recorded in the cap history.
