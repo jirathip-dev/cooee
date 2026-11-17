@@ -1,0 +1,56 @@
+Decided: the setup UI test terminates the Mac app; the update step fails by name if that app is still up and prints Sparkle's log when nothing is staged
+Because: "The local appcast is served (items for versions 1 and 2"
+Because: apple/UITests/MacSetupUITests.swift:31
+Rejected: a retry or a longer wait — the running app's next Sparkle check is 24h out, so waiting never helps
+Rejected: the self-hosted Mac runner — the cause is the test, not the GitHub runner
+Check: feed.log was empty in job 133000875645, so no request reached the feed; a fresh version 1 with SULastCheckTime 2000 checks at once
+Owner: the Mac update test left the setup run's app open; the test now closes it so the update check runs on a fresh launch
+
+Decided: merge origin/staging into issue-459; it merged clean, no conflicts to resolve
+Because: .github/workflows/apple.yml:289
+Rejected: none
+Owner: the branch is brought up to date with staging; the fix itself is unchanged
+
+Decided: move the phone approval steps into approvePhone so the setup test body is under 25 lines
+Because: apple/UITests/MacSetupUITests.swift:26
+Rejected: a swiftlint disable — the repo rule caps functions at 25 lines and allows no such comments
+Check: the apple job is green at this head; mac-setup still needs the workflow_dispatch run from q1729
+Owner: the setup test was one line too long for the lint check; it is split so the checks pass again
+
+Decided: the post-update readiness probe counts any HTTP reply on 4747 as up (curl without -f), in the app's restart script and the workflow
+Because: crates/cooee-server/src/pairing.rs:110
+Because: apple/Sources/CooeeApp/MacLive.swift:26
+Rejected: probing another route — any reply proves cooee listens, and apple.yml:200 already probes /pair this way
+Rejected: a retry — the 405 is the same on every try, the run 43822353374 shows 120 of them
+Check: dispatch run 43822353374 at de18c12 staged version 2 (round-1 fix works), then logged 405s and "cooee does not answer on 4747"
+Check: mac-setup needs one more workflow_dispatch run at this head (q1729)
+Owner: the update now installs; the check after the restart misread a live server as down, and now accepts any answer
+
+Decided: the update step writes a Coder persona on the Mac before updating, so the phone's after-update check has a persona to find
+Because: apple/e2e/serve.sh:83
+Because: crates/cooee-core/src/personas.rs:133
+Because: "the phone stays paired"
+Rejected: dropping the Coder assertion from the phone test — then nothing shows the updated server answers with the Mac's kept config
+Rejected: a retry or longer wait — no persona exists to appear, so waiting never helps
+Check: dispatch run 43866709032 at a6554c6 staged and installed version 2 and cooee answered 405; only the Coder check failed
+Check: mac-setup needs one more workflow_dispatch run at this head (q1729)
+Owner: the update works; the phone's last check looked for a sample persona only the test server has, so CI now creates it on the Mac
+
+Decided: the update step waits up to 30 s for the local appcast to answer on 8787 before it opens version 1
+Because: .github/workflows/apple.yml:219
+Because: "the Mac app at version 1 finds version 2 on the local appcast"
+Rejected: a retry of the step or of Sparkle's check — Sparkle checks once at launch, then waits 24h, so the feed must be up first
+Rejected: the self-hosted Mac runner — the cause is the step's start order, not the runner
+Check: dispatch run 43936975933 at 471cccb shows Sparkle's 19:48:03 check refused on 127.0.0.1:8787 (errno 61), 4 s after the feed started
+Check: mac-setup needs one more workflow_dispatch run at this head (q1729)
+Owner: the app sometimes looked for the update before CI's local update server was up; CI now waits for that server first
+
+Decided: after the update, the step reads the Mac's /screens/home as a freshly paired client and fails by name if it lists no Coder
+Because: .github/workflows/apple.yml:265
+Because: "the Mac app at version 1 finds version 2 on the local appcast, stages it, restarts into it, and the phone stays paired"
+Rejected: a retry or a longer wait in the phone test — the phone already waited 30 s on a loaded home
+Rejected: dropping the Coder check — then nothing shows the updated server keeps the Mac's config
+Check: run 43971450883 at ff34827 updated and restarted both login items; only the phone's Coder check failed
+Check: a local cooee serve with the Mac's config and coder.toml lists Coder in /personas and /screens/home
+Check: mac-setup needs one more workflow_dispatch run at this head (q1729)
+Owner: the update itself now works; CI now checks the Mac's server directly so a last failure shows whether the Mac or the phone loses the persona
