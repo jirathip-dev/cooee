@@ -71,8 +71,6 @@ async fn next(hub: Arc<Hub>, id: String) -> Option<(Result<Event>, (Arc<Hub>, St
     Some((Ok(event), (hub, id)))
 }
 
-/// SSE: a `frame {url, title, jpeg}` of the persona's current tab every half second, or `gone {why}` while its
-/// browser isn't there.
 #[route(GET "/personas/{id}/screen/live")]
 async fn live(cx: &Cx) -> Result<Sse<impl Stream<Item = Result<Event>> + use<>>> {
     let s = stream::unfold((hub(cx), thread_id(cx)), |(h, i)| next(h, i));
