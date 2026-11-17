@@ -1,0 +1,11 @@
+Decided: the live panel always draws Routines with + Add, between Workflow and Places, as the design's frames do.
+Because: "its workflows and routines (#86), each opening its screen, and a way to add one"
+Decided: + Add closes the panel and puts "Make a routine: " in the chat's compose, since #75 makes routines only from chat (the agent's create_routine).
+Because: crates/cooee-server/src/routines.rs:89
+Rejected: routine rows with their on/off switch — the app has no routine screen or editor for a row to open, so each row would be a dead control.
+Decided: merged origin/staging (#246, #424, #316 and the rest); ChatScreen keeps the panel's column and sheet with #246's loading.
+Because: apple/Sources/CooeeUI/ChatScreen.swift:62
+Decided: merged origin/staging with #489's apple_cap raise instead of trimming the panel.
+Because: q1854
+Check: ChatPanelTests sees + Add's pick put the routine ask in compose once the panel has gone; LiveDroverUITests finds Add routine in Conductor's panel.
+Owner: The … panel now has a Routines section whose + Add starts a routine in the chat; the app line cap now holds after the owner's raise.
