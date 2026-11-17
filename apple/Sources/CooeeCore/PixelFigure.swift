@@ -89,10 +89,12 @@ extension PixelFigure {
         return "<symbol id=\"\(id)\" viewBox=\"0 0 \(width) \(height)\" shape-rendering=\"crispEdges\">\(body)</symbol>"
     }
 
-    /// `scene.svg` of the backdrop's layers, each a `<g id>` of rect runs; `#night` shows only as the night look.
-    public static func scene(_ layers: [String: PixelFigure], _ tokens: [String: String]) -> String {
+    /// `scene.svg`: each backdrop layer a `<g id>` of rect runs or an imported SVG; `#night` only as the night look.
+    public static func scene(
+        _ layers: [String: PixelFigure], _ tokens: [String: String], vectors: [String: String] = [:]
+    ) -> String {
         let groups = Self.layers.map {
-            "<g id=\"\($0)\">\((layers[$0] ?? PixelFigure(blank: $0)).rects(0, tokens))</g>"
+            "<g id=\"\($0)\">\(vectors[$0] ?? (layers[$0] ?? PixelFigure(blank: $0)).rects(0, tokens))</g>"
         }
         return
             "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 132 100\" preserveAspectRatio=\"xMidYMax slice\""
@@ -126,9 +128,7 @@ extension PixelFigure {
     }
 
     private mutating func paint(_ tag: Substring) -> Bool {
-        let value = { (name: String) in
-            tag.range(of: " \(name)=\"").flatMap { found in tag[found.upperBound...].split(separator: "\"").first }
-        }
+        let value = { (name: String) in Self.attribute(name, tag) }
         let number = { (name: String) in value(name).flatMap { Int($0) } }
         let key = value("style").flatMap { $0.split(separator: "(").last?.split(separator: ",").first } ?? value("fill")
         guard tag.hasPrefix("rect "), let col = number("x"), let row = number("y"), let run = number("width"),
@@ -136,5 +136,41 @@ extension PixelFigure {
         else { return false }
         for cell in stride(from: col, to: min(col + run, width), by: 1) { self[frames.count - 1, cell, row] = colour }
         return true
+    }
+
+    private static func attribute(_ name: String, _ tag: Substring) -> Substring? {
+        tag.range(of: " \(name)=\"").flatMap { found in tag[found.upperBound...].split(separator: "\"").first }
+    }
+
+    /// An imported SVG kept as vector: its drawing in an `<svg>` that scales into the box it lands in, nil without a size.
+    public static func vector(_ svg: String) -> String? {
+        guard let open = svg.range(of: "<svg"), let end = svg[open.upperBound...].range(of: ">"),
+            let close = svg.range(of: "</svg>", options: .backwards), end.upperBound <= close.lowerBound
+        else { return nil }
+        let tag = svg[open.upperBound..<end.lowerBound]
+        let sized = attribute("width", tag).flatMap { width in attribute("height", tag).map { "0 0 \(width) \($0)" } }
+        guard let box = attribute("viewBox", tag).map(String.init) ?? sized?.replacing("px", with: "") else {
+            return nil
+        }
+        let spaces = tag.split(whereSeparator: \.isWhitespace).filter { $0.hasPrefix("xmlns:") }.map { " \($0)" }
+        return "<svg viewBox=\"\(box)\" width=\"100%\" height=\"100%\"\(spaces.joined())>"
+            + "\(svg[end.upperBound..<close.lowerBound])</svg>"
+    }
+
+    /// Each pixel of `rgba` (premultiplied, 4 bytes a cell) as its nearest palette colour in `tokens`, clear under half
+    /// alpha.
+    public static func nearest(_ rgba: [UInt8], _ tokens: [String: String]) -> [Int?] {
+        let inks = palette.indices.compactMap { index in
+            hex(index, tokens).flatMap { Int($0.dropFirst(), radix: 16) }.map {
+                (index, [$0 >> 16, $0 >> 8 & 255, $0 & 255])
+            }
+        }
+        return stride(from: 0, to: rgba.count - rgba.count % 4, by: 4).map { start in
+            let alpha = Int(rgba[start + 3])
+            guard alpha >= 128 else { return nil }
+            let pixel = (0..<3).map { Int(rgba[start + $0]) * 255 / alpha }
+            let far = { (ink: [Int]) in zip(ink, pixel).reduce(0) { $0 + ($1.0 - $1.1) * ($1.0 - $1.1) } }
+            return inks.min { far($0.1) < far($1.1) }?.0
+        }
     }
 }

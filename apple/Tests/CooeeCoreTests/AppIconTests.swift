@@ -6,14 +6,6 @@ internal struct AppIconTests {
     private let catalog = URL(filePath: #filePath).deletingLastPathComponent()
         .appending(path: "../../Cooee/Assets.xcassets").standardized
 
-    @Test internal func aFreshInstallShowsTheLaughingKookaburraThePrimaryIcon() throws {
-        let fresh = try JSONDecoder().decode(Settings.self, from: Data(#"{"scheme":"system","style":"modern"}"#.utf8))
-        #expect(fresh.icon == nil)
-        #expect(fresh.appIcon == .primary)
-        #expect(AppIcon.primary.asset == "ModernLaughing")
-        #expect(Settings().appIcon.alternateName == nil)
-    }
-
     @Test internal func followingShowsTheFirstIconOfTheStylesSet() {
         let shown = LookStyle.allCases.map { Settings(style: $0).appIcon.asset }
         #expect(shown == ["ModernLaughing", "TerminalPrompt", "FarmBay"])

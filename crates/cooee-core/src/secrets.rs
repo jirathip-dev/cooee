@@ -87,12 +87,13 @@ pub fn persona(persona: &str, name: &str) -> String {
 /// Persona `persona`'s saved secrets, each as its variable and value (#163).
 ///
 /// # Errors
-/// When the keychain or the folder can't be listed, or as [`get`].
+/// As [`names`] and [`get`].
 pub fn of_persona(data: &Path, persona: &str) -> io::Result<Vec<(String, String)>> {
     let mine = format!("{persona}.");
     let mut vars = Vec::new();
     for name in saved(data)? {
-        if let (Some(var), Some(v)) = (name.strip_prefix(&mine), get(data, &name)?) {
+        let var = name.strip_prefix(&mine).filter(|v| !v.contains('.'));
+        if let (Some(var), Some(v)) = (var, get(data, &name)?) {
             vars.push((var.to_owned(), v));
         }
     }
