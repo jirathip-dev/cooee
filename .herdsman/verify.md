@@ -16,7 +16,7 @@ mkdir -p "$OUT"
 
 The native app (`apple/`) in the lane's own iPhone simulator, driven exactly as `apple.yml`'s `e2e` job does: the same
 server (`apple/e2e/serve.sh`: fake agent, personas Coder and Conductor, the `cards` plugin on P+1, the `drover`
-fixture), the same build and the same UI tests (`apple/UITests/Live*UITests.swift`, one per screen, each from a fresh launch), once per look. Every command below is that job's, with
+fixture), the same build and the same UI tests (`apple/UITests/Live*UITests.swift`, one per screen, each from a fresh launch), once per look. It runs that job's `apple/e2e/run.sh`, with
 `$OUT` for `$RUNNER_TEMP` and the lane's port for 4100. It takes P and P+1: run it in the same shell, with bash or
 zsh (it uses arrays).
 
@@ -39,61 +39,23 @@ gh run download "${run:?no apple run at this head}" -n simulator-shots -D "$OUT/
 echo "verify-no-xcode: apple run $run exit=$?"; ls "$OUT/shots/ios"
 ```
 
-### Launch
+### Launch, drive, teardown
 
-The server in its own process group; ready once the pairing link is written (a cold build takes minutes):
-
-```bash
-PORT="$P" PAIR_LINK="$OUT/pair" nohup perl -e 'setpgrp(0, 0); exec @ARGV' apple/e2e/serve.sh >"$OUT/serve.log" 2>&1 &
-echo $! >"$OUT/serve.pid"
-for i in $(seq 900); do test -s "$OUT/pair" && break; sleep 1; done
-test -s "$OUT/pair"; echo "ios serve ready after ${i}s exit=$?"
-```
-
-The lane's own simulator, its UDID kept in `$OUT/sim` for teardown, then the app and its UI tests built for it. The app
-builds before any code is minted: a code lives 10 min.
+`apple/e2e/run.sh`, as the job runs it, with the lane's port and `$OUT`: the server (ready once the pairing link is
+written; a cold build takes minutes), the lane's own simulator, the app and its UI tests built for it (the app builds
+before any code is minted: a code lives 10 min), then every step of `apple/e2e/steps/` in name order; per look it sets
+the look with `simctl`, empties the keychain, pairs with a fresh link and runs the UI tests. Always, it exports each
+look's screenshots into `$OUT/shots/ios/<look>/`, stops the server and deletes only the simulator it created (never
+`simctl delete all`: other lanes' simulators share the host):
 
 ```bash
-sim=$(xcrun simctl create "verify-$(echo "${HERDSMAN_LANE:?}" | cut -d: -f2)" "iPhone 17"); echo "$sim" >"$OUT/sim"
-xcrun simctl bootstatus "$sim" -b >"$OUT/boot.log" 2>&1; echo "ios boot exit=$?"
-build=(xcodebuild -skipMacroValidation -project Cooee.xcodeproj -scheme Cooee -destination "id=$sim")
-(cd apple && "${build[@]}" build-for-testing) >"$OUT/ios-build.log" 2>&1; echo "ios build exit=$?"
-```
-
-### Drive
-
-Per look, like the job: set it with `simctl`, empty the keychain, pair with a fresh link, run the UI test; then export
-its screenshots into `$OUT/shots/ios/<look>/`:
-
-```bash
-for look in dark light; do
-  xcrun simctl ui "$sim" appearance "$look"
-  xcrun simctl keychain "$sim" reset
-  link=$(sh -c "$(cat "$OUT/pair.again")" | sed -n 's/^link  //p')
-  rm -rf "${OUT:?}/e2e-$look.xcresult" "${OUT:?}/shots/ios/$look"
-  (cd apple && TEST_RUNNER_COOEE_LOOK="$look" TEST_RUNNER_COOEE_PAIR_LINK="$link" "${build[@]}" \
-    -resultBundlePath "$OUT/e2e-$look.xcresult" test-without-building) >"$OUT/ios-$look.log" 2>&1
-  echo "ios drive $look exit=$?"
-  xcrun xcresulttool export attachments --path "$OUT/e2e-$look.xcresult" --output-path "$OUT/shots/ios/$look"
-  echo "ios export $look exit=$?"
-done
+PORT="$P" E2E_DIR="$OUT" SHOTS="$OUT/shots/ios" apple/e2e/run.sh >"$OUT/e2e.log" 2>&1; echo "ios e2e exit=$?"
 ls "$OUT/shots/ios/dark" "$OUT/shots/ios/light"
+curl -s -o /dev/null "http://127.0.0.1:$P/"; echo "ios curl exit=$? (7: nothing listens)"
 ```
 
 Each look's `manifest.json` maps an exported file to its screen: `suggestedHumanReadableName` starts with the screen
 name below and the look (`home-dark_0_…png`).
-
-### Teardown
-
-The server's process group, then only the simulator this run created (never `simctl delete all`: other lanes'
-simulators share the host):
-
-```bash
-kill -TERM -- "-$(cat "$OUT/serve.pid")"; echo "ios kill exit=$?"
-xcrun simctl shutdown "$(cat "$OUT/sim")"; xcrun simctl delete "$(cat "$OUT/sim")"; echo "ios sim delete exit=$?"
-curl -s -o /dev/null "http://127.0.0.1:$P/"; echo "ios curl exit=$? (7: nothing listens)"
-xcrun simctl list devices | grep -q "$(cat "$OUT/sim")"; echo "ios sim listed exit=$? (1: gone)"
-```
 
 ### The Mac
 
@@ -106,12 +68,16 @@ run=$(gh run list --workflow apple.yml --commit "$(git rev-parse HEAD)" --json d
 gh run download "${run:?no apple run at this head}" -n mac-setup-shots -D "$OUT/shots/mac"; echo "mac shots run $run exit=$?"
 ```
 
+## Known noise
+
+- iOS: one `GET /p/{name}/screens/{*rest}` 503 per run, after the test taps `Pause`: the fixture drover
+  (`apple/e2e/screens.py`) answers 503 for 20 s on purpose, the offline case `queue-offline-*` shows.
+
 ## Evidence
 
 - iOS: `$OUT/shots/ios/{dark,light}/` (the simulator, 390-class iPhone 17), one file per screen of the feature map's
   native rows; list each with its look in `verdict.md`, plus the 1440 Mac ones from `$OUT/shots/mac/` when the issue is
-  about the Mac. Without Xcode, `verify-no-xcode` and the CI run id. Logs: `$OUT/serve.log`, `$OUT/ios-build.log`,
-  `$OUT/ios-<look>.log`. Record every `ios … exit=` line.
+  about the Mac. Without Xcode, `verify-no-xcode` and the CI run id. Logs: `$OUT/serve.log`, `$OUT/e2e.log`. Record every `ios … exit=` line.
 
 ## Feature map
 
@@ -123,6 +89,7 @@ gh run download "${run:?no apple run at this head}" -n mac-setup-shots -D "$OUT/
 | iOS: persona editor | `persona` (New chat → New persona…, then Edit a persona) |
 | iOS: settings (avatar menu) | `avatar-menu` (Account; Look → Terminal / Modern) |
 | iOS: Conductor and drover | `attach` (first look only), `conductor`, `events`, `queue`, `queue-live`, `queue-offline` |
+| iOS: Workflow and Others | `conductor-workflow`, `workflow` (one issue unfolded), `workflow-round`, `home-no-lanes`, `others` (`LiveWorkflowUITests`) |
 | iOS: the issue's own screen | add a `keep("<name>")` step to the `apple/UITests/Live*UITests.swift` test for that screen in the PR, after the screen it touches |
 | Mac: first run, pairing approve | CI `mac-setup-shots`: `mac-setup/` (`welcome`, `folders`, `qr`, `approve`, `approved`), `phone-ask/` (`pair-waiting`, `pair-approved`) |
 

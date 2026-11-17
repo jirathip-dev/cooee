@@ -5,7 +5,7 @@ One multiplatform SwiftUI app (iOS 26, macOS 26, q948) against a paired cooee se
 The Swift package (`Package.swift`) is layered (#147); each target imports only the layers before it:
 
 - `CooeeCore`: the models and the pure logic that draws them (Foundation only).
-- `CooeeAPI`: the client for `docs/api.md`, the SSE stream, the Keychain and Bonjour.
+- `CooeeAPI`: the client for the API (`docs/README.md` and each area's doc), the SSE stream, the Keychain and Bonjour.
 - `CooeeFeatures`: one TCA reducer per screen and the `@Dependency` clients they call.
 - `CooeeUI`: the SwiftUI views, the three styles (Modern, Terminal, Scene), the farm palette and the design fixtures.
 - `CooeeApp`: the composition root: the clients' live values, built from `CooeeAPI`.
@@ -33,6 +33,14 @@ and the job names the missing ones:
   (base64) and its password (Apple Developer membership → Certificates).
 - `NOTARY_KEY_P8`, `NOTARY_KEY_ID`, `NOTARY_ISSUER_ID`: an App Store Connect API key (Developer role) for
   `notarytool`: the .p8 (base64), its key id and the issuer id.
+- `SPARKLE_ED_KEY`: Sparkle's private EdDSA key (`generate_keys -x <file>`, from Sparkle's release, the file's text).
+
+Updates (#333): the Mac app updates itself with Sparkle 2: a background check once a day, installed on quit; "Check
+for Updates…" in the app menu and "Automatically update" in Settings. Each signed main build is a GitHub Release
+`mac-<run>` with an EdDSA-signed `appcast.xml` and deltas from the previous three. Before Sparkle swaps the bundle the
+app arms a restart: once the new version is in place it restarts the `cooee` and `shed` login items and checks the
+server answers (`~/Library/Logs/cooee-update.log`). An unsigned build, or one without `SPARKLE_ED_KEY`, has no update
+key: Settings says "updates off: unsigned build" and it never checks.
 
 TestFlight: CI uploads each `staging` change to `apple/` (`.github/workflows/apple-testflight.yml`); see `docs/testflight.md`.
 

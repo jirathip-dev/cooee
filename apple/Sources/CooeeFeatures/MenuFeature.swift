@@ -4,16 +4,20 @@ import Foundation
 
 @Reducer
 public struct MenuFeature: Sendable {
-    public enum Page: CaseIterable, Hashable, Sendable {
-        case look, notifications, signIns, devices, machines, plugins, appIcon
+    /// The device-local pages the app draws, never the server: the `settings` component's and the terminal.
+    public enum Page: String, CaseIterable, Hashable, Sendable {
+        case look, notifications, appIcon, terminal
     }
 
     @ObservableState
     public struct State: Equatable {
         public var server: Server?
         public var settings: Settings
+        public var looks = Looks()
         public var open = false
         public var path: [Page] = []
+        public var screen: JSONValue?
+        @Presents public var page: ScreenFeature.State?
         public var busy = false
         public var error: String?
 
@@ -25,12 +29,19 @@ public struct MenuFeature: Sendable {
 
     public enum Action: Sendable {
         case open(Bool)
+        case loaded(JSONValue)
+        case show(String, label: String, source: LayoutSource = .core)
+        case page(PresentationAction<ScreenFeature.Action>)
         case path([Page])
+        case load
+        case looks(Looks)
         case scheme(LookScheme)
         case style(LookStyle)
+        case theme(String)
         case icon(AppIcon?)
         case motion(Bool)
         case sprite(String, String?)
+        case pinRoom(String)
         case push(Bool)
         case pushed(String?)
         case failed(String)
@@ -38,21 +49,21 @@ public struct MenuFeature: Sendable {
 
     @Dependency(\.settingsStore) private var settingsStore
     @Dependency(\.push) private var push
+    @Dependency(\.threads) private var threads
     @Dependency(\.appIcon) private var appIcon
+    @Dependency(\.plugins) private var plugins
 
     public init() {}
 
     public var body: some ReducerOf<Self> {
         Reduce { state, action in
             switch action {
-            case .open(let open):
-                state.open = open
-                state.path = []
+            case .open, .loaded, .show, .page:
+                return navigate(&state, action)
             case .path(let path):
                 state.path = path
-            case .scheme(let scheme):
-                state.settings.scheme = scheme
-                settingsStore.save(state.settings)
+            case .load:
+                return load(state)
             case .style(let style):
                 return look(&state) { $0.style = style }
             case .icon(let icon):
@@ -60,14 +71,64 @@ public struct MenuFeature: Sendable {
             case .motion(let motion):
                 return look(&state) { $0.motion = motion }
             case .sprite(let seed, let coat):
-                return look(&state) { $0.sprite(seed, coat, in: Cast.farm.theme) }
+                return look(&state) { [theme = state.settings.theme] in $0.sprite(seed, coat, in: theme) }
             case .push(let enabled):
                 return toggle(&state, enabled)
             default:
-                pushed(&state, action)
+                pick(&state, action)
             }
             return .none
         }
+        .ifLet(\.$page, action: \.page) { ScreenFeature() }
+    }
+
+    private func navigate(_ state: inout State, _ action: Action) -> Effect<Action> {
+        switch action {
+        case .open(let open):
+            state.open = open
+            state.path = []
+            state.page = nil
+            guard open, let server = state.server else { return .none }
+            let plugins = plugins
+            return .concatenate(
+                load(state),
+                .run { send in
+                    await send(.loaded(try await plugins.screen(server, .core, "/screens/menu")))
+                } catch: { _, _ in
+                })
+        case .loaded(let screen):
+            state.screen = screen
+        case .show(let path, let label, let source):
+            guard let server = state.server else { return .none }
+            state.page = ScreenFeature.State(server: server, source: source, path: path, label: label)
+        default:
+            break
+        }
+        return .none
+    }
+
+    private func load(_ state: State) -> Effect<Action> {
+        guard let server = state.server else { return .none }
+        return .run { [threads] send in
+            if let looks = try? await threads.looks(server) { await send(.looks(looks)) }
+        }
+    }
+
+    private func pick(_ state: inout State, _ action: Action) {
+        switch action {
+        case .looks(let looks):
+            state.looks = looks
+            return
+        case .scheme(let scheme):
+            state.settings.scheme = scheme
+        case .theme(let theme):
+            state.settings.theme = theme
+        case .pinRoom(let room):
+            state.settings.pin(room: room)
+        default:
+            return pushed(&state, action)
+        }
+        settingsStore.save(state.settings)
     }
 
     private func pushed(_ state: inout State, _ action: Action) {
@@ -83,7 +144,9 @@ public struct MenuFeature: Sendable {
             break
         }
     }
+}
 
+extension MenuFeature {
     private func look(_ state: inout State, _ change: (inout Settings) -> Void) -> Effect<Action> {
         let shown = state.settings.appIcon
         change(&state.settings)

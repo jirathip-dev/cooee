@@ -93,12 +93,6 @@ public enum Fixtures {
 
     public static let queued = ["Then open the PR against staging"]
 
-    public static let chiefMemory = [
-        Field("Dana Okafor runs Kestrel's finance team, since September", "from Chief · 2h"),
-        Field("Renewals are tracked in renewals.md, one line each", "from you · 1d"),
-        Field("Account Manager knows the CRM; ask it for dates and owners", "from Chief · 3d"),
-    ]
-
     internal static let nearby = [
         NearbyRow(server: NearbyServer(name: "mini", address: "Guy's Mac mini · 192.0.2.20"), icon: "macmini"),
         NearbyRow(server: NearbyServer(name: "studio", address: "studio.local · 192.0.2.31"), icon: "macstudio"),

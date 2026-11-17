@@ -1,32 +1,19 @@
-//! The keychain commands. Before #99 cooee kept the VAPID key there (service `cooee`); now it lives only in
-//! `<data>/vapid.key`, and while there is no key file a start copies the old key over, once. `cooee secrets` moves
-//! the secret files into the keychain (#167) and checks each saved secret can be read.
-
-use std::{
-    io::Read,
-    path::Path,
-    process::{Command, Stdio},
-    thread,
-    time::{Duration, Instant},
-};
+use std::{io::Read, path::Path, process::Stdio, time::Duration};
 
 use cooee_core::{Config, secrets};
 use cooee_server::Push;
 
-/// Past this a keychain read gives up: a locked keychain can hang behind a prompt no one sees.
 const WAIT: Duration = Duration::from_secs(5);
 
-/// The keychain account of data folder `data`'s old key.
 fn account(data: &Path) -> String {
     let hash = cooee_core::sha256(data.as_os_str().as_encoded_bytes());
     format!("vapid-{}", &hash[..16])
 }
 
-/// The old key, if the keychain has one; `Err` when the read took over [`WAIT`].
 fn read(data: &Path) -> Result<Option<String>, ()> {
     let a = account(data);
     let find = ["find-generic-password", "-s", "cooee", "-a", &a, "-w"];
-    let Ok(mut child) = Command::new("security")
+    let Ok(mut child) = cooee_core::runner::command("security")
         .args(find)
         .stdin(Stdio::null())
         .stdout(Stdio::piped())
@@ -35,7 +22,7 @@ fn read(data: &Path) -> Result<Option<String>, ()> {
     else {
         return Ok(None);
     };
-    let deadline = Instant::now() + WAIT;
+    let deadline = cooee_core::clock::instant() + WAIT;
     loop {
         match child.try_wait() {
             Ok(Some(status)) => {
@@ -44,10 +31,12 @@ fn read(data: &Path) -> Result<Option<String>, ()> {
                 let found = status.success() && matches!(out, Some(Ok(_)));
                 return Ok(found.then(|| key.trim().to_owned()));
             }
-            Ok(None) if Instant::now() < deadline => thread::sleep(Duration::from_millis(20)),
+            Ok(None) if cooee_core::clock::instant() < deadline => {
+                cooee_core::clock::sleep(Duration::from_millis(20));
+            }
             _ => {
-                let _ = child.kill();
-                let _ = child.wait();
+                child.kill().ok();
+                child.wait().ok();
                 return Err(());
             }
         }
@@ -69,7 +58,6 @@ pub fn migrate(data: &Path) -> Result<Option<String>, String> {
         Ok(Some(key)) if push.adopt(&key).map_err(|e| e.to_string())? => Ok(Some(
             "push key copied from the keychain to vapid.key".to_owned(),
         )),
-        // A phone asked for the key while the keychain was read: the new key stays, the old subscriptions go.
         Ok(Some(_)) => renew(
             &push,
             "cooee made a new push key before the old one was copied: turn alerts on again",
@@ -95,16 +83,16 @@ pub fn command(config: &Config) -> Result<(), String> {
         .data_dir()
         .ok_or("no data folder: set `data` or HOME")?;
     if let Some(done) = migrate(data)? {
-        println!("{done}");
+        cooee_core::say!("{done}");
     }
     let file = data.join("vapid.key");
     if Push::new(data).has_key().map_err(|e| e.to_string())? {
-        println!("push key: {}", file.display());
+        cooee_core::say!("push key: {}", file.display());
     } else {
-        println!("push key: none yet (made when a phone turns on notifications)");
+        cooee_core::say!("push key: none yet (made when a phone turns on notifications)");
     }
     if cfg!(target_os = "macos") {
-        println!(
+        cooee_core::say!(
             "the old keychain item, if any, can go:\n  security delete-generic-password -s cooee -a {}",
             account(data)
         );
@@ -121,19 +109,19 @@ pub fn check(config: &Config) -> Result<(), String> {
         .data_dir()
         .ok_or("no data folder: set `data` or HOME")?;
     for name in secrets::migrate(&data).map_err(|e| format!("secrets: {e}"))? {
-        println!("moved {name} into the keychain");
+        cooee_core::say!("moved {name} into the keychain");
     }
     let mut failed = 0;
     for name in secrets::names(&data).map_err(|e| format!("secrets: {e}"))? {
         let why = match secrets::get(&data, &name) {
             Ok(Some(_)) => {
-                println!("ok   {name}");
+                cooee_core::say!("ok   {name}");
                 continue;
             }
             Ok(None) => "gone".to_owned(),
             Err(e) => e.to_string(),
         };
-        println!("FAIL {name}: {why}");
+        cooee_core::say!("FAIL {name}: {why}");
         failed += 1;
     }
     if failed == 0 {

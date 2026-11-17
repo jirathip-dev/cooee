@@ -2,27 +2,57 @@ import CooeeCore
 import SwiftUI
 
 public struct BlocksView: View {
+    /// The padding a host puts around the blocks; a full-bleed block cancels it.
+    public static let inset: CGFloat = 16
+
     private let block: JSONValue
+    private let source: LayoutSource?
     private let act: @MainActor (BlockAction) -> Void
     private let open: @MainActor (String) -> Void
+    private let openThread: @MainActor (String) -> Void
+    private let focus: String?
+    private let picked: String?
+    private let beside: JSONValue?
 
     public var body: some View {
-        BlockNode(block: block).environment(\.act, act).environment(\.open, open)
+        Group {
+            if let beside {
+                HStack(alignment: .top, spacing: 24) {
+                    BlockNode(block: block).fixedSize(horizontal: true, vertical: false)
+                    BlockNode(block: beside).frame(maxWidth: .infinity, alignment: .leading)
+                }
+            } else {
+                BlockNode(block: block)
+            }
+        }
+        .environment(\.act, act).environment(\.open, open)
+        .environment(\.openThread, openThread).environment(\.focus, focus).environment(\.picked, picked)
+        .environment(\.card, CardContext(poster: source))
     }
 
     public init(
         _ block: JSONValue,
+        source: LayoutSource?,
+        focus: String? = nil,
+        picked: String? = nil,
+        beside: JSONValue? = nil,
         act: @escaping @MainActor (BlockAction) -> Void = { _ in },
-        open: @escaping @MainActor (String) -> Void = { _ in }
+        open: @escaping @MainActor (String) -> Void = { _ in },
+        openThread: @escaping @MainActor (String) -> Void = { _ in }
     ) {
         self.block = block
+        self.source = source
         self.act = act
         self.open = open
+        self.openThread = openThread
+        self.focus = focus
+        self.picked = picked
+        self.beside = beside
     }
 }
 
 internal struct CardContext {
-    internal var poster: String?
+    internal var poster: LayoutSource?
     internal var tint: Color?
 }
 
@@ -34,15 +64,20 @@ private struct OpenKey: EnvironmentKey {
     fileprivate static var defaultValue: @MainActor (String) -> Void { { _ in } }
 }
 
-private struct CardKey: EnvironmentKey {
-    fileprivate static var defaultValue: CardContext { CardContext() }
+private struct OpenThreadKey: EnvironmentKey {
+    fileprivate static var defaultValue: @MainActor (String) -> Void { { _ in } }
 }
 
-private struct FormKey: EnvironmentKey {
-    fileprivate static var defaultValue: Binding<[String: JSONValue]>? { nil }
+private struct OpenBesideKey: EnvironmentKey {
+    fileprivate static var defaultValue: (@MainActor (String) -> Void)? { nil }
 }
 
 extension EnvironmentValues {
+    @Entry internal var focus: String?
+    @Entry internal var picked: String?
+    @Entry internal var card = CardContext()
+    @Entry internal var form: Binding<[String: JSONValue]>?
+
     internal var act: @MainActor (BlockAction) -> Void {
         get { self[ActKey.self] }
         set { self[ActKey.self] = newValue }
@@ -53,14 +88,14 @@ extension EnvironmentValues {
         set { self[OpenKey.self] = newValue }
     }
 
-    internal var card: CardContext {
-        get { self[CardKey.self] }
-        set { self[CardKey.self] = newValue }
+    internal var openThread: @MainActor (String) -> Void {
+        get { self[OpenThreadKey.self] }
+        set { self[OpenThreadKey.self] = newValue }
     }
 
-    internal var form: Binding<[String: JSONValue]>? {
-        get { self[FormKey.self] }
-        set { self[FormKey.self] = newValue }
+    internal var openBeside: (@MainActor (String) -> Void)? {
+        get { self[OpenBesideKey.self] }
+        set { self[OpenBesideKey.self] = newValue }
     }
 }
 
@@ -90,8 +125,10 @@ internal struct BlockNode: View {
         case "choice", "secret", "run": AnswerBlock(block: block)
         case "form", "config": FieldsBlock(block: block)
         case "images": ImagesBlock(block: block)
+        case "scene": SceneBlock(block: block)
         case "diff": DiffBlock(block: block)
         case "editor": EditorBlock(block: block)
+        case "diagram": DiagramBlock(block: block)
         default: EmptyView()
         }
     }
@@ -121,6 +158,7 @@ internal struct RelativeText: View {
 
 internal struct GroupBlock: View {
     @Environment(\.look) private var look
+    @Environment(\.refresh) private var refresh
     internal let block: JSONValue
 
     internal var body: some View {
@@ -139,6 +177,10 @@ internal struct GroupBlock: View {
                 Spacer(minLength: 4)
                 ForEach(Array(block.list("actions").enumerated()), id: \.offset) { _, item in
                     ToolbarItemView(item: item)
+                }
+                if block["refresh"]?.bool == true, let refresh {
+                    Button(action: refresh) { RoundButton(symbol: "arrow.clockwise", ascii: "r", size: 36) }
+                        .buttonStyle(.plain).accessibilityLabel("Refresh")
                 }
                 if let done = block["done"] { DoneButton(done: done) }
             }

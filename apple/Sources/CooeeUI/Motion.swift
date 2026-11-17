@@ -36,7 +36,7 @@ internal struct StateSprite: View {
             Text(persona.state.figure(frame: frame)).ui(size * 0.55, .bold, look)
                 .foregroundStyle(look.palette.tint(persona.look.tint)).fixedSize()
         } else {
-            Sprite(name: name).frame(width: size * 1.32, height: size)
+            Sprite(name: name, pack: "sprites.svg#s-\(persona.pose)").frame(width: size * 1.32, height: size)
         }
     }
 
@@ -87,5 +87,29 @@ internal struct Spinner: View {
                 .frame(width: 18, height: 18).acting(pose)
         }
         .accessibilityLabel("Sending")
+    }
+}
+
+internal struct SpriteRow: View {
+    @Environment(\.look) private var look
+    internal let persona: Persona
+    internal let pick: (String?) -> Void
+
+    internal var body: some View {
+        let cast = look.cast
+        let picked = look.sprites[persona.seed]
+        let name = { (coat: String) in cast.names[cast.coats.firstIndex(of: coat) ?? 0] }
+        return HStack {
+            Text("Sprite").ui(16, .regular, look)
+            Spacer()
+            Menu {
+                Button("Auto") { pick(nil) }
+                ForEach(cast.coats, id: \.self) { coat in Button(name(coat)) { pick(coat) } }
+            } label: {
+                Text(picked.map(name) ?? "Auto · \(name(look.coat(persona)))").ui(16, .regular, look)
+                    .foregroundStyle(look.palette.mute)
+            }
+        }
+        .padding(.horizontal, 14).frame(height: 48)
     }
 }

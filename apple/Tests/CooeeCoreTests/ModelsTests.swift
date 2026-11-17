@@ -35,6 +35,14 @@ internal struct ModelsTests {
         #expect(persona.with(state: .done).state == .done && persona.with(state: .done).look == persona.look)
     }
 
+    @Test internal func anInitialsAvatarDrawsItsInitialsInThePickedTint() {
+        var picked = manager
+        picked.avatar = Tint.green.avatar
+        #expect(Persona(picked).look == PersonaLook(initials: "AM", symbol: "", tint: .green))
+        picked.avatar = "data:image/png;base64,AA=="
+        #expect(Persona(picked).look == Persona(manager).look)
+    }
+
     @Test internal func aTurnIsWorkingWhileItRunsOrConnects() {
         #expect(Turn(state: "working").working && Turn(state: "connecting").working)
         #expect(!Turn(state: "done").working && !Turn().working)

@@ -1,9 +1,3 @@
-//! Themes and colour schemes on herdsman's data-only theme contract (docs/themes.md): a theme is a pack, a folder of
-//! data (`theme.json`, optional `sprites.svg`, `scene.svg`, `icon.png` and `schemes/`), a scheme one JSON file of
-//! tokens. Only the plain theme and the schemes ship in the binary; packs come from `<config dir>/themes/<name>/`
-//! (installed or kept), and own schemes from
-//! `<config dir>/schemes/<name>.json`. Every pack passes the theme gate ([`read_pack`]), or it is refused.
-
 use std::{collections::BTreeMap, fs, path::Path};
 
 use serde::{Deserialize, Serialize};
@@ -144,7 +138,6 @@ macro_rules! builtin_scheme {
     };
 }
 
-/// A built-in theme: its name, `theme.json`, `sprites.svg`, `icon.png` and `scene.svg`.
 type Builtin = (
     &'static str,
     &'static str,
@@ -153,7 +146,6 @@ type Builtin = (
     Option<&'static [u8]>,
 );
 
-/// The plain theme, the only built-in one.
 const THEMES: [Builtin; 1] = [builtin_theme!("plain", None, None)];
 
 /// The ASCII figures (herdsman#335), the same in every theme: per state (`edit read run` while working), and the
@@ -187,7 +179,6 @@ pub(crate) const SCHEMES: [(&str, &str); 12] = builtin_scheme!(
     "garden-light"
 );
 
-/// A name for a theme or scheme: lowercase letters, digits and `-`, so it is safe in a URL and a selector.
 fn valid_name(name: &str) -> bool {
     !name.is_empty()
         && name
@@ -209,23 +200,20 @@ impl Looks {
     /// The built-in theme and schemes, then the owner's own from `config_dir`: schemes, the packs in `themes/` (an own
     /// one of the same name replaces a built-in; a pack's own schemes join the rest).
     /// `default` is the server's default theme (else farm, when it is installed, else plain). Returns why each own
-    /// file was refused (unreadable, invalid, failing the gate).
-    ///
-    /// # Panics
-    ///
-    /// If a built-in theme or scheme doesn't parse (a build bug the tests catch).
+    /// file was refused (unreadable, invalid, failing the gate); a built-in that doesn't parse (a build bug the tests
+    /// catch) is left out.
     #[must_use]
     pub fn load(config_dir: Option<&Path>, default: Option<&str>) -> (Self, Vec<String>) {
         let mut refused = Vec::new();
         let mut schemes = builtin_schemes();
         let mut themes: BTreeMap<String, Theme> = THEMES
             .iter()
-            .map(|(n, json, sprites, icon, scene)| {
-                let mut t: Theme = serde_json::from_str(json).expect(n);
+            .filter_map(|(n, json, sprites, icon, scene)| {
+                let mut t: Theme = serde_json::from_str(json).ok()?;
                 t.sprite_sheet = sprites.map(<[u8]>::to_vec);
                 t.icon = Some(icon.to_vec());
                 t.scene_art = scene.map(<[u8]>::to_vec);
-                ((*n).to_owned(), t)
+                Some(((*n).to_owned(), t))
             })
             .collect();
         if let Some(dir) = config_dir {
@@ -280,7 +268,7 @@ impl Looks {
 fn builtin_schemes() -> BTreeMap<String, Scheme> {
     SCHEMES
         .iter()
-        .map(|(n, json)| ((*n).to_owned(), serde_json::from_str(json).expect(n)))
+        .filter_map(|(n, json)| Some(((*n).to_owned(), serde_json::from_str(json).ok()?)))
         .collect()
 }
 
@@ -305,7 +293,6 @@ pub const SPRITES: [&str; 10] = [
 /// The largest Scene art, width × height of its `viewBox` (herdsman's scenes are 390 × 320 and 392 × 188).
 pub const SCENE: (f64, f64) = (400.0, 320.0);
 
-/// Pack file `name`, if it is there; one over its size limit fails the gate.
 fn file(dir: &Path, name: &str, fails: &mut Vec<String>) -> Option<Vec<u8>> {
     let bytes = fs::read(dir.join(name)).ok()?;
     let max = match name {
@@ -319,7 +306,75 @@ fn file(dir: &Path, name: &str, fails: &mut Vec<String>) -> Option<Vec<u8>> {
             bytes.len().div_ceil(1024)
         ));
     }
+    if matches!(name, "sprites.svg" | "scene.svg") {
+        for why in active(&String::from_utf8_lossy(&bytes)) {
+            if !fails.contains(&format!("{name}: {why}")) {
+                fails.push(format!("{name}: {why}"));
+            }
+        }
+    }
     Some(bytes)
+}
+
+fn active(svg: &str) -> Vec<String> {
+    let mut found = Vec::new();
+    let mut rest = svg;
+    let mut text = String::new();
+    let inert = [("<!--", "-->"), ("<![CDATA[", "]]>"), ("<?", "?>")];
+    while let Some((at, open, close)) = inert
+        .iter()
+        .filter_map(|&(o, c)| rest.find(o).map(|i| (i, o, c)))
+        .min()
+    {
+        text.push_str(&rest[..at]);
+        rest = rest[at + open.len()..]
+            .split_once(close)
+            .map_or("", |(_, a)| a);
+    }
+    text.push_str(rest);
+    for tag in text.split('<').skip(1) {
+        if tag.starts_with("!ENTITY") {
+            found.push("an entity declaration (active content)".to_owned());
+        }
+        let end = tag
+            .find(|c: char| c.is_whitespace() || c == '>' || c == '/')
+            .unwrap_or(tag.len());
+        let (el, mut rest) = tag.split_at(end);
+        match el.rsplit(':').next().unwrap_or(el) {
+            "script" => found.push("<script> (active content)".to_owned()),
+            "foreignObject" => found.push("<foreignObject> (active content)".to_owned()),
+            _ => {}
+        }
+        loop {
+            rest = rest.trim_start_matches(|c: char| c.is_whitespace() || c == '/');
+            if rest.is_empty() || rest.starts_with('>') {
+                break;
+            }
+            let end = rest
+                .find(|c: char| c.is_whitespace() || c == '=' || c == '>' || c == '/')
+                .unwrap_or(rest.len());
+            let attr = rest[..end].to_ascii_lowercase();
+            rest = rest[end..].trim_start();
+            let mut value = "";
+            if let Some(r) = rest.strip_prefix('=') {
+                let r = r.trim_start();
+                (value, rest) = match r.chars().next() {
+                    Some(q @ ('"' | '\'')) => r[1..].split_once(q).unwrap_or((&r[1..], "")),
+                    _ => r.split_at(
+                        r.find(|c: char| c.is_whitespace() || c == '>')
+                            .unwrap_or(r.len()),
+                    ),
+                };
+            }
+            if attr.starts_with("on") {
+                found.push(format!("an on* attribute ({attr})"));
+            } else if (attr == "href" || attr.ends_with(":href")) && !value.trim().starts_with('#')
+            {
+                found.push(format!("a non-local href {value:?} (only #id)"));
+            }
+        }
+    }
+    found
 }
 
 /// The theme gate (`cooee theme check`, CI, and every load): the pack in `dir` as a theme with its own schemes, or
@@ -382,7 +437,6 @@ pub fn read_pack(
         }
         t.sprite_sheet = svg;
     }
-    // Scene's art (#34): herdsman's scenes are 390 × 320 or 392 × 188, drawn at the page's width.
     let svg = file(dir, "scene.svg", &mut fails);
     let text = String::from_utf8_lossy(svg.as_deref().unwrap_or_default());
     let view = text
@@ -394,7 +448,6 @@ pub fn read_pack(
         .split_whitespace()
         .filter_map(|n| n.parse().ok())
         .collect();
-    // Sprites offer Scene (Figures), so a pack with sprites needs its art too.
     if svg.is_none() {
         if t.sprites || !t.scene.is_empty() {
             let why = if t.sprites { "sprites" } else { "scene" };
@@ -433,7 +486,6 @@ pub fn check(dir: &Path) -> Result<(), Vec<String>> {
     read_pack(dir, &builtin_schemes()).map(drop)
 }
 
-/// Every symlink in the pack fails the gate: a pack's files are its own, never ones it points at.
 fn links(dir: &Path, at: &str, fails: &mut Vec<String>) {
     for e in fs::read_dir(dir)
         .into_iter()
@@ -451,7 +503,6 @@ fn links(dir: &Path, at: &str, fails: &mut Vec<String>) {
     }
 }
 
-/// A folder's entries by name, sorted; a missing folder has none.
 fn entries(dir: &Path, refused: &mut Vec<String>) -> Vec<(String, std::path::PathBuf)> {
     let list = match fs::read_dir(dir) {
         Ok(list) => list,
@@ -504,15 +555,19 @@ fn lum(c: Rgb) -> f64 {
     0.2126 * lin(c[0]) + 0.7152 * lin(c[1]) + 0.0722 * lin(c[2])
 }
 
-/// WCAG contrast ratio.
 fn ratio(a: Rgb, b: Rgb) -> f64 {
     let (x, y) = (lum(a), lum(b));
     (x.max(y) + 0.05) / (x.min(y) + 0.05)
 }
 
-/// `color-mix(in srgb, c p%, transparent)` painted over `bg`.
 fn over(c: Rgb, bg: Rgb, p: f64) -> Rgb {
-    [0, 1, 2].map(|i| c[i] * p + bg[i] * (1.0 - p))
+    let mix = |x: f64, y: f64| x * p + y * (1.0 - p);
+    let ([red, green, blue], [back_red, back_green, back_blue]) = (c, bg);
+    [
+        mix(red, back_red),
+        mix(green, back_green),
+        mix(blue, back_blue),
+    ]
 }
 
 fn lab(rgb: Rgb) -> Rgb {
@@ -534,7 +589,6 @@ fn lab(rgb: Rgb) -> Rgb {
     [116.0 * fy - 16.0, 500.0 * (fx - fy), 200.0 * (fy - fz)]
 }
 
-/// CIEDE2000 (Sharma et al. 2005), as herdsman's gate.
 #[allow(clippy::many_single_char_names, reason = "the formula's own names")]
 fn de(c1: Rgb, c2: Rgb) -> f64 {
     let ([l1, a1, b1], [l2, a2, b2]) = (lab(c1), lab(c2));
@@ -599,7 +653,8 @@ pub fn gate(s: &Scheme) -> Result<(), String> {
             fails.push(format!("{what} {v:.2} (min {min})"));
         }
     };
-    let (bg, r, a) = (c["--bg"], c["--r"], c["--a"]);
+    let c = |k: &str| c.get(k).copied().unwrap_or_default();
+    let (bg, r, a) = (c("--bg"), c("--r"), c("--a"));
     let tints = [
         ("the needs-you card", over(r, bg, 0.15)),
         ("a red group header", over(r, bg, 0.12)),
@@ -609,17 +664,17 @@ pub fn gate(s: &Scheme) -> Result<(), String> {
         for k in [
             "--fg", "--mute", "--l", "--link", "--fk-l", "--fk-p", "--fk-c", "--fk-g", "--fk-a",
         ] {
-            check(format!("{k} on {b}"), ratio(c[k], c[b]), 4.5);
+            check(format!("{k} on {b}"), ratio(c(k), c(b)), 4.5);
         }
         for k in ["--g", "--a", "--r"] {
-            check(format!("{k} on {b}"), ratio(c[k], c[b]), 3.0);
+            check(format!("{k} on {b}"), ratio(c(k), c(b)), 3.0);
         }
     }
-    check("--bg on --l".to_owned(), ratio(bg, c["--l"]), 4.5);
+    check("--bg on --l".to_owned(), ratio(bg, c("--l")), 4.5);
     for k in ["--fg", "--mute", "--l"] {
         check(
             format!("{k} on {}", tints[0].0),
-            ratio(c[k], tints[0].1),
+            ratio(c(k), tints[0].1),
             4.5,
         );
     }
@@ -631,7 +686,7 @@ pub fn gate(s: &Scheme) -> Result<(), String> {
         pairs.extend(["--g", "--a", "--r"].map(|y| (x, y)));
     }
     for (x, y) in pairs {
-        check(format!("ΔE2000 {x} ↔ {y}"), de(c[x], c[y]), 20.0);
+        check(format!("ΔE2000 {x} ↔ {y}"), de(c(x), c(y)), 20.0);
     }
     if fails.is_empty() {
         Ok(())
@@ -645,8 +700,10 @@ mod tests {
     use super::*;
 
     fn tmp(name: &str) -> std::path::PathBuf {
-        let dir = std::env::temp_dir().join(format!("cooee-look-{name}-{}", std::process::id()));
-        let _ = fs::remove_dir_all(&dir);
+        let dir = cooee_core::scratch::owned(
+            std::env::temp_dir().join(format!("cooee-look-{name}-{}", std::process::id())),
+        );
+        fs::remove_dir_all(&dir).ok();
         fs::create_dir_all(&dir).unwrap();
         dir
     }
@@ -665,7 +722,6 @@ mod tests {
         for (name, s) in &looks.schemes {
             assert_eq!(gate(s), Ok(()), "{name}");
         }
-        // packs/ as a config folder: its themes/ are the first-party packs, installed.
         let (looks, refused) = Looks::load(Some(&packs()), None);
         assert_eq!(refused, Vec::<String>::new());
         assert_eq!(looks.default, "farm");
@@ -684,7 +740,6 @@ mod tests {
         }
         assert_eq!(looks.themes["farm"].word("needs"), "at the gate");
         assert_eq!(looks.themes["plain"].word("needs"), "needs you");
-        // #35: a config's old `theme = "terminal"` is plain.
         assert_eq!(Looks::load(None, Some("terminal")).0.default, "plain");
     }
 
@@ -701,7 +756,6 @@ mod tests {
         }
     }
 
-    /// farm's pack, copied to a fresh folder and changed by `edit`.
     fn farm_with(name: &str, edit: impl FnOnce(&Path)) -> std::path::PathBuf {
         let dir = tmp(name);
         for f in ["theme.json", "sprites.svg", "scene.svg", "icon.png"] {
@@ -730,7 +784,6 @@ mod tests {
             .unwrap();
         });
         assert_eq!(fails(&gone), "sprites.svg: no s-needs");
-        // Sprites offer Scene, so their pack needs its scene art.
         let bare = farm_with("gate-bare", |d| {
             fs::remove_file(d.join("scene.svg")).unwrap();
         });
@@ -772,7 +825,6 @@ mod tests {
             fails(&big),
             "scene.svg: viewBox \"0 0 800 600\", over 400 × 320\nscene.svg: no layer \"ground\""
         );
-        // The right size with every layer passes, and serves.
         fs::write(
             big.join("scene.svg"),
             scene("0 0 390 320").replace("/>", "/><g id=\"ground\"/>"),
@@ -805,7 +857,6 @@ mod tests {
             serde_json::to_string(&sea).unwrap(),
         )
         .unwrap();
-        // Grey text on a grey background: fails 4.5:1.
         let mut murky = sea.clone();
         murky.tokens.insert("--fg".to_owned(), "#30363d".to_owned());
         fs::write(
@@ -842,7 +893,6 @@ mod tests {
 
     #[test]
     fn gate_numbers_match_herdsmans() {
-        // docs/design/look/README.md's tightest checks, from gate.mjs.
         let (looks, _) = Looks::load(None, None);
         let t = |s: &str, k: &str| hex(&looks.schemes[s].tokens[k]).unwrap();
         let d = de(t("farm-light", "--l"), t("farm-light", "--a"));

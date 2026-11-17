@@ -4,7 +4,7 @@ import Testing
 
 internal struct MotionTests {
     private let kitchen = Cast(
-        theme: "kitchen", coats: ["head", "pastry", "line", "sous"],
+        coats: ["head", "pastry", "line", "sous"],
         names: ["Head chef", "Pastry chef", "Line cook", "Sous chef"]
     )
     private let ids = ["chief", "coder", "res", "am", "cond", "t1", "t2", "t3"]

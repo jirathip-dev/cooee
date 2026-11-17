@@ -1,17 +1,13 @@
-import Foundation
-
 /// A theme's cast: the coats a persona's sprite can wear, and their names.
 public struct Cast: Sendable, Equatable {
     public static let farm = Cast(
-        theme: "farm", coats: ["bay", "ch", "blk", "gry", "wht"], names: ["Bay", "Palomino", "Black", "Grey", "White"]
+        coats: ["bay", "ch", "blk", "gry", "wht"], names: ["Bay", "Palomino", "Black", "Grey", "White"]
     )
 
-    public let theme: String
     public let coats: [String]
     public let names: [String]
 
-    public init(theme: String, coats: [String], names: [String]) {
-        self.theme = theme
+    public init(coats: [String], names: [String]) {
         self.coats = coats
         self.names = names
     }
@@ -78,17 +74,24 @@ public enum Motion: Sendable, Equatable {
         switch self {
         case .still, .walk: return Pose(frame: frame)
         case .spin: return Pose(angle: 360 * time.truncatingRemainder(dividingBy: 1), frame: frame)
-        case .loading: return Pose(tint: (1 - cos(2 * .pi * time / 1.2)) / 2, frame: frame)
+        case .loading: return Pose(tint: Self.bump(time, every: 1.2), frame: frame)
         case .hop, .pulse, .shake: return time < Self.moment ? moment(time, frame) : Pose(frame: frame)
         }
     }
 
     private func moment(_ time: Double, _ frame: Int) -> Pose {
-        let wave = sin(.pi * time.truncatingRemainder(dividingBy: 0.8) / 0.8)
+        let wave = Self.bump(time, every: 0.8)
         switch self {
         case .hop: return Pose(yOffset: -4 * wave, frame: frame)
         case .pulse: return Pose(scale: 1 + 0.25 * wave, tint: 0.18 * (1 - time / Self.moment), frame: frame)
-        default: return Pose(xOffset: -2 * sin(2 * .pi * time.truncatingRemainder(dividingBy: 0.4) / 0.4), frame: frame)
+        default:
+            return Pose(
+                xOffset: -2 * (Self.bump(time, every: 0.4, part: 2) - Self.bump(time + 0.2, every: 0.4, part: 2)),
+                frame: frame)
         }
+    }
+    private static func bump(_ time: Double, every: Double, part: Double = 1) -> Double {
+        let unit = time.truncatingRemainder(dividingBy: every) / every * part
+        return unit < 1 ? 4 * unit * (1 - unit) : 0
     }
 }
