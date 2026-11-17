@@ -1,0 +1,5 @@
+Decided: merge origin/staging 95c3cb2 rather than touch secrets here; its of_persona fix is what the red mcp.rs test needed
+Because: crates/cooee-core/src/secrets.rs:94
+Rejected: a fix in this branch — the same test was red on staging e624714 without this PR's changes
+Check: the ubuntu msrv and stable jobs pass a_saved_secret_is_typed_again_without_asking_and_reaches_the_personas_environment_only at the head
+Owner: Brings the branch up to date with staging, which fixes a secret test that was failing for everyone; no behaviour change here.
