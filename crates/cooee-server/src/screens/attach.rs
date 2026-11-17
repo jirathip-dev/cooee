@@ -15,7 +15,10 @@ use topcoat::{
     },
 };
 
-use crate::{Data, Name, manage::Row, manager, plain};
+use crate::{
+    http::{Data, Name, manager, plain},
+    manage::Row,
+};
 
 #[derive(Deserialize)]
 struct Query {
