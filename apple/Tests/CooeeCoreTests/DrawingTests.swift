@@ -98,11 +98,49 @@ internal struct DrawingTests {
 
     @Test internal func aDraftTakesTheDrawnStatesAsSymbolsAndTheLayersAsItsScene() {
         var draft = ThemeDraft(from: "farm", label: "T", style: .modern, dark: Self.tokens, light: [:])
-        let figure = drawing(.touch(col: 0, row: 0, began: true)).figure ?? PixelFigure(blank: "s-needs")
-        draft.draw(["s-needs": figure])
+        let drawn = drawing(.touch(col: 0, row: 0, began: true))
+        let figure = drawn.figure ?? PixelFigure(blank: "s-needs")
+        draft.draw(drawn)
         #expect(draft.sprites == ["s-needs": figure.symbol("s-needs", Self.tokens)] && draft.scene == nil)
-        draft.draw(["sky": PixelFigure(blank: "sky")])
+        var sky = Drawing()
+        sky.figures["sky"] = PixelFigure(blank: "sky")
+        draft.draw(sky)
         #expect(
             draft.sprites.isEmpty && draft.scene == PixelFigure.scene(["sky": PixelFigure(blank: "sky")], Self.tokens))
+    }
+
+    private static let svg =
+        ##"<?xml version="1.0"?><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink""##
+        + ##" width="48px" height="32px"><circle id="dot" cx="24" cy="16" r="10" fill="#f80"/><use xlink:href="#dot"/>"##
+        + "</svg>\n"
+    private static let symbol =
+        ##"<symbol id="s-needs" viewBox="0 0 24 24"><svg viewBox="0 0 48 32" width="100%" height="100%""##
+        + ##" xmlns:xlink="http://www.w3.org/1999/xlink"><circle id="dot" cx="24" cy="16" r="10" fill="#f80"/>"##
+        + ##"<use xlink:href="#dot"/></svg></symbol>"##
+
+    @Test internal func anImportedSvgStaysVectorScaledIntoTheSymbolsBoxAndLayer() throws {
+        let vector = try #require(PixelFigure.vector(Self.svg))
+        #expect(
+            PixelFigure.vector(#"<svg viewBox="0 0 9 9"><g/></svg>"#)?.hasPrefix(#"<svg viewBox="0 0 9 9" "#) == true)
+        #expect(PixelFigure.vector("<svg><g/></svg>") == nil && PixelFigure.vector("a png") == nil)
+        var drawn = drawing(.touch(col: 0, row: 0, began: true), .vector(vector))
+        drawn.apply(.open("sky"))
+        drawn.apply(.vector(vector))
+        var draft = ThemeDraft(from: "farm", label: "T", style: .modern, dark: Self.tokens, light: [:])
+        draft.draw(drawn)
+        #expect(draft.sprites == ["s-needs": Self.symbol] && drawn.figures.isEmpty)
+        #expect(draft.scene?.contains("<g id=\"sky\">\(vector)</g><g id=\"sea\"></g>") == true)
+        drawn.apply(.touch(col: 1, row: 1, began: true))
+        #expect(drawn.vectors.keys.sorted() == ["s-needs"] && drawn.figures["sky"] != nil)
+    }
+
+    @Test internal func anImportedPictureSnapsToTheGridInTheNearestPaletteColours() {
+        let rgba: [UInt8] = [250, 160, 120, 255, 250, 250, 250, 255, 9, 9, 9, 40, 40, 104, 98, 128, 1]
+        #expect(PixelFigure.nearest(rgba, Self.tokens) == [0, 8, nil, 1])
+        var cells = [Int?](repeating: nil, count: 24 * 24)
+        cells[25] = 4
+        let pasted = drawing(.vector("<svg/>"), .cells(cells), .cells([1]))
+        #expect(pasted.figure?.frames == [cells] && pasted.vectors.isEmpty)
+        #expect(drawing(.cells(cells), .undo).figure == PixelFigure(blank: "s-needs"))
     }
 }
