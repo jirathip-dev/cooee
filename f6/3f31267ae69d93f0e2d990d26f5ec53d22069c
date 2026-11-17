@@ -1,0 +1,27 @@
+Decided: every animation is a pure Motion.pose(at:) of time since it started, drawn through one Acting view that draws the rest pose when Look.moving is false
+Because: "off when iOS Reduce Motion is on, and a Motion switch in Look"
+Decided: the sprite is Cast.pick(seed): an FNV-1a hash of the persona id (the thread id for a chat with no persona) into the theme's cast; a hand pick per theme lives in Settings.sprites, keyed by staging's Settings.theme
+Because: "a stable random pick from the active theme's cast, seeded by the persona id"
+Decided: PersonaLook.coat is nil for an auto pick and "" for a loose chat's initials; Workflow lanes no longer all wear "bay", and SceneLane.coat uses Cast.pick, so there is one pick
+Because: "a chat with no persona seeds by its thread id, so lanes differ too"
+Decided: the walk's two gait frames are rasterised from the farm pack by apple/design/sprites.mjs, legs swung ±16deg in diagonal pairs as herdsman's gt
+Because: "sprites walk with a gait (herdsman `assets/serve.css` `ldg`/`gt`)"
+Decided: hop, pulse+tint and shake play once for 2.4 s when a row appears or its state changes; staging's Workflow IssueRow and drover Figure rows act them as Home's ChatRow does
+Because: "done hops, needs-you pulses and tints, failed shakes"
+Rejected: Kitchen and Garden flutter and glow — native draws a non-farm pack's sprites.svg as static pack art; no native cast for those packs ships in apple/
+Check: MotionTests, ListingTests and WorkflowTests cover the pick, the per-lane seed, the override, Reduce Motion and each state's motion; snapshots compare unchanged
+Owner: Sprites now move in the app: the working pill's horse walks, rows hop, pulse or shake, a bar pulses while loading, and each chat keeps its own horse.
+
+Decided: every animation is a pure Motion.pose(at:) of time since it started, drawn through one Acting view that draws the rest pose when Look.moving is false
+Because: "off when iOS Reduce Motion is on, and a Motion switch in Look"
+Decided: the sprite is Cast.pick(seed): an FNV-1a hash of the persona id (the thread id for a chat with no persona) into the theme's cast; a hand pick per theme lives in Settings.sprites, keyed by staging's Settings.theme
+Because: "a stable random pick from the active theme's cast, seeded by the persona id"
+Decided: PersonaLook.coat is nil for an auto pick and "" for a loose chat's initials; Workflow lanes no longer all wear "bay", and SceneLane.coat uses Cast.pick, so there is one pick
+Because: "a chat with no persona seeds by its thread id, so lanes differ too"
+Decided: the walk's two gait frames are rasterised from the farm pack by apple/design/sprites.mjs, legs swung ±16deg in diagonal pairs as herdsman's gt
+Because: "sprites walk with a gait (herdsman `assets/serve.css` `ldg`/`gt`)"
+Decided: hop, pulse+tint and shake play once for 2.4 s when a row appears or its state changes; staging's Workflow IssueRow and drover Figure rows act them as Home's ChatRow does
+Because: "done hops, needs-you pulses and tints, failed shakes"
+Rejected: Kitchen and Garden flutter and glow — native draws a non-farm pack's sprites.svg as static pack art; no native cast for those packs ships in apple/
+Check: MotionTests, ListingTests and WorkflowTests cover the pick, the per-lane seed, the override, Reduce Motion and each state's motion; snapshots compare unchanged
+Owner: Sprites now move in the app: the working pill's horse walks, rows hop, pulse or shake, a bar pulses while loading, and each chat keeps its own horse.
