@@ -32,7 +32,7 @@ fn dir(home: &Home) -> std::path::PathBuf {
     home.path().join("skills")
 }
 
-fn checked(name: &str) -> io::Result<&str> {
+pub(crate) fn checked(name: &str) -> io::Result<&str> {
     let ok = !name.is_empty()
         && !name.starts_with('-')
         && name
@@ -57,7 +57,7 @@ impl Skill {
         )
     }
 
-    fn parse(name: &str, text: &str) -> Self {
+    pub(crate) fn parse(name: &str, text: &str) -> Self {
         let (head, body) = text
             .strip_prefix("---\n")
             .and_then(|t| t.split_once("\n---\n"))

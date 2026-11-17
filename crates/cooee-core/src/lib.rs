@@ -13,6 +13,7 @@ pub mod disk;
 pub mod gitignore;
 pub mod group;
 pub mod history;
+pub mod library;
 mod login;
 pub mod logs;
 pub mod mcp;

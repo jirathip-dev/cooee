@@ -45,6 +45,7 @@ public struct PersonaFeature: Sendable {
         case save
         case chat
         case clearMemory
+        case addSkill(String)
         case showAll
         case delete
         case alert(PresentationAction<Alert>)
@@ -124,7 +125,9 @@ public struct PersonaFeature: Sendable {
         case .chat:
             return save(&state, chat: true)
         case .clearMemory:
-            return forget(state)
+            return perform(state, BlockAction(action: "clear", values: [:]))
+        case .addSkill(let name):
+            return perform(state, BlockAction(action: "add_skill", values: ["name": .string(name)]))
         case .showAll:
             state.showingAll = true
             return .none
@@ -211,10 +214,8 @@ extension PersonaFeature {
         }
     }
 
-    private func forget(_ state: State) -> Effect<Action> {
+    private func perform(_ state: State, _ action: BlockAction) -> Effect<Action> {
         let (plugins, server, path) = (plugins, state.server, state.path)
-        return run { send in
-            await send(.loaded(try await plugins.act(server, .core, path, BlockAction(action: "clear", values: [:]))))
-        }
+        return run { await $0(.loaded(try await plugins.act(server, .core, path, action))) }
     }
 }
