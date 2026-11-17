@@ -2,7 +2,7 @@
 
 Decision: a persona's chat gets a Telegram-style topics strip under its header: a list button, **New**, then one chip per open topic (a topic is one thread, with its own session and folder); Home keeps one row per persona, with a topic count.
 Screens: the persona chat with its strip, New topic (with "Use a folder…"), the topic list (search, rename, archive), Home in both variants, and the Mac window. Each is drawn in Modern (dark and light), Terminal and Scene.
-Open questions: (1) Home: one row per persona (recommended) or one row per topic? (2) Up to 6 chips before the rest fold into the list button: is 6 right?
+Approved (q1891, 2026-11-18) with its recommendations: Home keeps one row per persona; at most 6 chips before the rest fold into the list button.
 
 ![The owner's reference: Telegram topics in a bot chat](reference.jpeg)
 
