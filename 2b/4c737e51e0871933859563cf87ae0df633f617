@@ -1,0 +1,15 @@
+Decided: merged staging after #359 and #428; a GitHub routine is `[routine.github]` in routines.toml in place of `when`, its rate and the deliveries seen go in routine-runs.json
+Because: crates/cooee-core/src/routines.rs:2
+Decided: Hooks moves to the public routines module so the frozen root.rs gains no line
+Because: .drover/arch.toml:3
+Decided: the API docs move from the deleted docs/api.md and architecture.md into docs/routines.md, mcp.md and configuration.md
+Because: .drover/arch.toml:3
+Decided: the GitHub trigger, Fields and Skip move to routines/github.rs so routines.rs stays under 800 lines
+Because: .drover/arch.toml:9
+Decided: staging fixed the dated accounts_env test that made msrv red; this merge takes that fix
+Because: crates/cooee/tests/accounts_env.rs:17
+Decided: an event routine from create_routine raises a Face ID card (form routine); approving saves it, declining saves nothing
+Because: q1351
+Rejected: keeping the old single routines.json for the seen guids — staging split the files; a third file would be a second home for run state
+Check: core routines round-trip test saves and loads a GitHub routine with its match, recent and seen; tests/routines.rs github and catch-up tests pass
+Owner: Agents can now set up routines that fire on GitHub events, saved only after you approve them with Face ID.
