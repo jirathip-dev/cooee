@@ -70,6 +70,8 @@ pub struct Config {
     pub auto_update: bool,
     /// How many minutes an approval a routine's run raised waits before it counts as Deny (default 30, #505).
     pub approval_expiry_minutes: u64,
+    /// How long thread items stay in the hot store in full (`[history]`, #364).
+    pub history: History,
 }
 
 /// `[apns]`: the owner's APNs key's ids and the app it pushes to; none of it is secret.
@@ -109,6 +111,28 @@ pub struct Perf {
 impl Default for Perf {
     fn default() -> Self {
         Self { slow_ms: 250 }
+    }
+}
+
+/// `[history]`: thread retention (#364): which items stay in full in `cooee.db` and which move to `<data>/archive/`.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize)]
+#[serde(default, deny_unknown_fields)]
+pub struct History {
+    /// An ended thread quiet for this many days moves to its month's archive (default 30).
+    pub hot_days: u64,
+    /// A tool item this many days old is trimmed when over `trim_over_kb` (default 7).
+    pub trim_after_days: u64,
+    /// A tool item's text over this many KB keeps its head and tail; the archive keeps it whole (default 4).
+    pub trim_over_kb: u64,
+}
+
+impl Default for History {
+    fn default() -> Self {
+        Self {
+            hot_days: 30,
+            trim_after_days: 7,
+            trim_over_kb: 4,
+        }
     }
 }
 
@@ -155,6 +179,7 @@ impl Default for Config {
             hooks: None,
             auto_update: true,
             approval_expiry_minutes: 30,
+            history: History::default(),
         }
     }
 }

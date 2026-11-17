@@ -1,3 +1,4 @@
+| `[history] hot_days`, `trim_after_days`, `trim_over_kb` | `30`, `7`, `4` | Thread retention (#364), hourly off the request path: a closed or ended thread quiet for `hot_days` moves to `<data>/archive/threads-YYYY-MM.jsonl.zst`; a tool item older than `trim_after_days` over `trim_over_kb` KB keeps its head and tail, its whole text archived. |
 # Configuration
 
 ## Today

@@ -121,7 +121,7 @@ pub(crate) fn said(i: &Item) -> Option<(&str, String)> {
     ))
 }
 
-fn date(ms: u64) -> String {
+pub(crate) fn date(ms: u64) -> String {
     let days = i64::try_from(ms / 86_400_000).unwrap_or(0) + 719_468;
     let (era, doe) = (days.div_euclid(146_097), days.rem_euclid(146_097));
     let yoe = (doe - doe / 1460 + doe / 36_524 - doe / 146_096) / 365;
