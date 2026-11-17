@@ -109,6 +109,8 @@ public struct PersonaFeature: Sendable {
             state.lists = lists
         case .machines(let machines):
             state.machines = machines
+        case .addSkill(let name):
+            return perform(state, BlockAction(action: "add_skill", values: ["name": .string(name)]))
         case .failed(let error):
             state.busy = false
             state.error = error
@@ -126,8 +128,6 @@ public struct PersonaFeature: Sendable {
             return save(&state, chat: true)
         case .clearMemory:
             return perform(state, BlockAction(action: "clear", values: [:]))
-        case .addSkill(let name):
-            return perform(state, BlockAction(action: "add_skill", values: ["name": .string(name)]))
         case .showAll:
             state.showingAll = true
             return .none
