@@ -1,0 +1,23 @@
+Decided: reload is check on each read: every persona read goes to disk and hands out its version; no watcher, no polling loop
+Because: "There is no loop that reads the disk every second (see #345): use OS file events, or check on each read."
+Decided: agent.toml and routines.toml go through disk::patch, which compares the old and new render and edits only the keys that differ with toml_edit
+Because: crates/cooee-core/src/disk.rs:53
+Decided: a save naming no version is not checked, so old clients and fresh-read callers keep working; a stale one is HubError::Stale, a 409
+Because: crates/cooee-server/src/http.rs:78
+Decided: style is compared with the new role's default, so an unset style stays unset unless the save changes it
+Because: crates/cooee-core/src/agents.rs:393
+Rejected: a file watcher (notify crate) — a new dependency, and check on each read meets the spec
+Check: cargo test -p cooee --test config_edits covers AC1-4; memory.md keeps non-note lines; personas tests take the version saved
+Owner: Saves change only what was edited, a save over a hand edit is refused with "changed on disk, reload", and hand edits apply without a restart.
+
+Decided: merge origin/staging after #489 raised apple_cap; no conflicts, no code change in this round
+Because: q1853
+Rejected: a cap edit in this PR — the cap is raised once for the queue by #489
+Check: scripts/line-cap.sh on a clean git archive of the head gives apple lines 14403 / 15250, exit 0
+Owner: The branch is up to date with staging and fits the raised line cap; nothing about the feature changed.
+
+Decided: trim the PR under the premerge src cap instead of asking for a raise: unit tests moved from src/ to crates/cooee-core/tests/disk.rs, stale check inlined, disk/memory/agents code compacted
+Because: ci/cap.toml:6
+Rejected: a cap raise ask — trimming 77 lines fit without dropping behaviour or tests
+Check: drover cap-check --config ci/cap.toml on a clean git archive of the head gives 27497 / 27500, exit 0; cargo test -p cooee-core --test disk passes
+Owner: The change now fits the code size limit; saves still keep comments, refuse stale edits and pick up hand edits.
