@@ -58,6 +58,13 @@ impl FakeShed {
         }
     }
 
+    fn said(&self, name: &str, prompt: &str) -> Option<String> {
+        let says = prompt
+            .split_once("fake says: ")
+            .map(|(_, s)| s.lines().next().unwrap_or_default().replace(" / ", "\n"));
+        self.cued(name).or(says)
+    }
+
     fn script(
         &self,
         name: &str,
@@ -78,10 +85,7 @@ impl FakeShed {
         if let Some(turn) = self.conformance(name, prompt, rx) {
             return Some(turn);
         }
-        let says = prompt
-            .split_once("fake says: ")
-            .map(|(_, s)| s.lines().next().unwrap_or_default().replace(" / ", "\n"));
-        Some(if let Some(said) = self.cued(name).or(says) {
+        Some(if let Some(said) = self.said(name, prompt) {
             (vec![reply(&said, "end_turn")], "end_turn")
         } else if prompt.contains("approve") {
             self.approval(name, rx)
