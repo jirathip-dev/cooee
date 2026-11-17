@@ -3,7 +3,8 @@
 mod agent;
 mod cooee;
 mod events;
+mod passkey;
 mod shed;
 
 #[allow(unused_imports, reason = "a test file may use none of an area's items")]
-pub use {agent::*, cooee::*, events::*, shed::*};
+pub use {agent::*, cooee::*, events::*, passkey::*, shed::*};

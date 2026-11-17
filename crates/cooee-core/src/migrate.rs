@@ -454,7 +454,7 @@ impl Plan {
                 "{shown}: it doesn't parse; its routines stay in the backup"
             ));
         };
-        let (toml, runs) = routines::files(&old.routines);
+        let (toml, runs) = routines::files(&old.routines, &[]);
         self.routines = old.routines.len();
         let note = format!(" ({} routines)", self.routines);
         let from = [file];

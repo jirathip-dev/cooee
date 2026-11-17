@@ -5,7 +5,7 @@
 use cooee_core::{
     agents::{self, Agent},
     memory,
-    routines::{Place, Routine, Trigger},
+    routines::{Place, Routine},
 };
 use serde::Deserialize;
 use serde_json::{Map, Value, json};
@@ -90,7 +90,7 @@ fn data(cx: &Cx) -> (std::path::PathBuf, Option<std::path::PathBuf>) {
 }
 
 async fn fill(cx: &Cx, id: String) -> Result<Value, HubError> {
-    let all = routines::on(cx, routines::Runner::list).await?;
+    let all = routines::on(cx, |r| r.list()).await?;
     let (data, config) = data(cx);
     blocking(cx, move |hub| {
         let p = agents::find(config.as_deref(), &data, &id).map_err(refused)?;
@@ -128,6 +128,5 @@ async fn fill(cx: &Cx, id: String) -> Result<Value, HubError> {
 }
 
 fn routine(r: &Routine) -> Value {
-    let Trigger::Schedule(s) = &r.trigger;
-    json!({ "id": r.id, "name": r.name, "when": s.describe(), "on": r.paused.is_none() })
+    json!({ "id": r.id, "name": r.name, "when": r.when(), "on": r.paused.is_none() })
 }
