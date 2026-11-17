@@ -1,0 +1,16 @@
+Decided: cooee_server::net::fetch is the one curl helper the ADR names, made here because slice B has not started
+Because: docs/architecture/connectors/adr.md:202
+Decided: plan, the typed-URL add and /read are left to B and E: a typed URL's transport is detected at plan time
+Because: docs/architecture/connectors/adr.md:88
+Decided: credentials go through a three-function Vault so unit tests on macOS use files
+Because: crates/cooee-core/src/secrets.rs:212
+Rejected: tests gated to Linux only — the reviewer's Mac would run none of them
+Decided: Account keeps its client id so refresh and revoke use the client that signed in
+Check: the callback route is the only new open path, and a used or 10-minute-old state answers 400 without an exchange
+Check: Secret has no Debug, Display or Serialize; tokens never reach connectors.json, the config or the log
+Owner: sign-in, refresh and sign-out work from the phone; nothing calls the services until the next slice.
+
+Decided: merged origin/staging and kept both sides of the module lists in lib.rs, serve.rs and gen.sh
+Because: crates/cooee-server/src/lib.rs:5
+Rejected: none
+Owner: the connectors branch now sits on top of the latest staging with nothing lost from either side.
