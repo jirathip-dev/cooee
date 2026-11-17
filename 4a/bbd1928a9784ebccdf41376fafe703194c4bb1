@@ -1,0 +1,9 @@
+Decided: Style carries type a slice early so Look.mono reads a token, not a style name
+Because: docs/architecture/styles-as-packs/migration.md:40
+Decided: Avatar is renamed FigureView and every caller moved, so there is one figure view
+Because: docs/architecture/styles-as-packs/callers.md:41
+Decided: the scene block keeps drawing nothing without a stage (LaneStage guards it)
+Because: apple/Tests/CooeeUITests/BlockRenderTests.swift:67
+Rejected: one Stage that also pads and sizes each strip — the three layouts differ, and sharing them would change pixels
+Check: every frame in base vs head renders identical except for clock text (same frames differ base vs base)
+Owner: Nothing on screen changes; the three looks now come from style files, ready to become packs.
