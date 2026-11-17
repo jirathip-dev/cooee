@@ -22,6 +22,12 @@
             XCTAssert(labelled(app, "Waiting for a phone").waitForExistence(timeout: 30))
             XCTAssert(labelled(app, "or enter ").exists)
             keep(app, "qr")
+            approvePhone(app)
+            app.terminate()
+        }
+
+        @MainActor
+        private func approvePhone(_ app: XCUIApplication) {
             let approve = app.buttons["Approve · Touch ID"]
             XCTAssert(approve.waitForExistence(timeout: 900), "a phone asks to pair")
             XCTAssert(labelled(app, "wants to pair").exists)

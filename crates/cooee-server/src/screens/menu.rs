@@ -5,7 +5,10 @@ use serde_json::{Value, json};
 use topcoat::{Result, context::Cx, router::route};
 
 use super::settings;
-use crate::{Answer, HubError, refused};
+use crate::{
+    HubError,
+    http::{Answer, refused},
+};
 
 const BUNDLED: &str = include_str!("../../../../apple/Sources/CooeeUI/Default/screens/menu.json");
 
