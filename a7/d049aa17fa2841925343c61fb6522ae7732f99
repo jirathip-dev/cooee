@@ -1,0 +1,13 @@
+Decided: chat.rs, store.rs and shed.rs are generated lists of their folders' files, by a new `module` kind in scripts/gen.sh
+Because: "This slice adds the `module` kind that slices 11, 12 and 13 use."
+Decided: store/tests.rs is gone; its tests end files.rs and items.rs, and the shared helpers sit in files.rs's `pub(super) mod tests`
+Because: "unit tests end their file; no tests-only file in `src`"
+Decided: the three crash tests name their child by its new path (store::files::tests::crash_child, …): the move renames the test, and `--exact` with the old path runs nothing
+Because: crates/cooee-core/src/store/files.rs:415
+Decided: no `//!` lines in the lists or the entry files: the three modules had none, and comments.py allows `//!` only on a crate root or a `pub mod`
+Because: scripts/comments.py:6
+Decided: launch.rs links `Shed::run_acp` through `super::` so the rendered doc is the same and no unused import is added
+Because: crates/cooee-core/src/shed/launch.rs:22
+Rejected: a hand-written kernel per module — the addendum picked option D, the path as the generated list
+Check: the test lists at base and head are identical; `sh scripts/gen.sh` then `git status --short` is empty
+Owner: three of the busiest core files are now folders of small files, so parallel changes stop colliding in them; nothing behaves differently
