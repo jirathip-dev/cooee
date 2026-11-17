@@ -1,0 +1,40 @@
+arch-check / arch-check	UNKNOWN STEP	
+arch-check / arch-check	UNKNOWN STEP	## Why (round 1)
+arch-check / arch-check	UNKNOWN STEP	
+arch-check / arch-check	UNKNOWN STEP	Decided: apple-check.sh --nightly adds CooeeFeatures coverage, swiftlint analyze and Periphery; the plain run is the blocking set
+arch-check / arch-check	UNKNOWN STEP	Because: "Nightly on staging's head (the `schedule` run #440 added) and on `workflow_dispatch`, not on a PR"
+arch-check / arch-check	UNKNOWN STEP	Decided: the red nightly reuses scripts/ci-nightly.sh with WORKFLOW and CHECK instead of a second copy for apple.yml
+arch-check / arch-check	UNKNOWN STEP	Because: "opens or updates the one `nightly red:` issue the way `scripts/ci-nightly.sh` does"
+arch-check / arch-check	UNKNOWN STEP	Decided: the failed step is written as gate= to GITHUB_OUTPUT from the EXIT trap, so the issue names the gate
+arch-check / arch-check	UNKNOWN STEP	Because: scripts/apple-check.sh:40
+arch-check / arch-check	UNKNOWN STEP	Decided: the moved gates are kept moved: swiftlint analyze alone took 620s of a 1284s local nightly run
+arch-check / arch-check	UNKNOWN STEP	Because: "If the timings show the moved gates cost under a minute together"
+arch-check / arch-check	UNKNOWN STEP	Rejected: a separate nightly workflow file — the schedule run already exists in apple.yml
+arch-check / arch-check	UNKNOWN STEP	Check: the after time comes from this PR's merge-ready run summary table; ci/ci-scripts-test.sh covers WORKFLOW and CHECK
+arch-check / arch-check	UNKNOWN STEP	Owner: Merges no longer wait on the slow tidy-code gates; they run nightly and a red night files the one nightly-red issue.
+arch-check / arch-check	UNKNOWN STEP	
+arch-check / arch-check	UNKNOWN STEP	<sub>note on 7f92235 · git log --notes=why</sub>
+arch-check / arch-check	UNKNOWN STEP	
+arch-check / arch-check	UNKNOWN STEP	2026-11-17T16:00:15.0060457Z ##[endgroup]
+arch-check / arch-check	UNKNOWN STEP	2026-11-17T16:00:16.3693877Z justfile:12: `` added to a frozen list: add one file per entry in `crates/cooee-server/src/routes/*.rs` or `crates/cooee-server/src/hub/*.rs` or `apple/Sources/CooeeCore/Models/*.swift` or `apple/UITests/Live/*.swift` or `apple/Sources/CooeeFeatures/Clients/*.swift` or `apple/Sources/CooeeApp/Live/*.swift` or `crates/cooee/src/cmd/*.rs` or `crates/cooee/tests/support/*.rs` or `ci/gates/*.sh` or `scripts/*.sh` or `apple/e2e/steps/*.sh` or `connectors/*.toml` instead
+arch-check / arch-check	UNKNOWN STEP	2026-11-17T16:00:16.3701320Z justfile:13: `# Every Swift gate, as the nightly runs them: apple-check plus Features coverage, unused imports and Periphery.` added to a frozen list: add one file per entry in `crates/cooee-server/src/routes/*.rs` or `crates/cooee-server/src/hub/*.rs` or `apple/Sources/CooeeCore/Models/*.swift` or `apple/UITests/Live/*.swift` or `apple/Sources/CooeeFeatures/Clients/*.swift` or `apple/Sources/CooeeApp/Live/*.swift` or `crates/cooee/src/cmd/*.rs` or `crates/cooee/tests/support/*.rs` or `ci/gates/*.sh` or `scripts/*.sh` or `apple/e2e/steps/*.sh` or `connectors/*.toml` instead
+arch-check / arch-check	UNKNOWN STEP	2026-11-17T16:00:16.3707006Z justfile:14: `apple-check-nightly:` added to a frozen list: add one file per entry in `crates/cooee-server/src/routes/*.rs` or `crates/cooee-server/src/hub/*.rs` or `apple/Sources/CooeeCore/Models/*.swift` or `apple/UITests/Live/*.swift` or `apple/Sources/CooeeFeatures/Clients/*.swift` or `apple/Sources/CooeeApp/Live/*.swift` or `crates/cooee/src/cmd/*.rs` or `crates/cooee/tests/support/*.rs` or `ci/gates/*.sh` or `scripts/*.sh` or `apple/e2e/steps/*.sh` or `connectors/*.toml` instead
+arch-check / arch-check	UNKNOWN STEP	2026-11-17T16:00:16.3710170Z justfile:15: `scripts/apple-check.sh --nightly` added to a frozen list: add one file per entry in `crates/cooee-server/src/routes/*.rs` or `crates/cooee-server/src/hub/*.rs` or `apple/Sources/CooeeCore/Models/*.swift` or `apple/UITests/Live/*.swift` or `apple/Sources/CooeeFeatures/Clients/*.swift` or `apple/Sources/CooeeApp/Live/*.swift` or `crates/cooee/src/cmd/*.rs` or `crates/cooee/tests/support/*.rs` or `ci/gates/*.sh` or `scripts/*.sh` or `apple/e2e/steps/*.sh` or `connectors/*.toml` instead
+arch-check / arch-check	UNKNOWN STEP	2026-11-17T16:00:16.3713139Z arch-check: 1978 files, 4 violations
+arch-check / arch-check	UNKNOWN STEP	2026-11-17T16:00:16.3726830Z ##[error]Process completed with exit code 1.
+arch-check / arch-check	UNKNOWN STEP	2026-11-17T16:00:16.3865834Z Post job cleanup.
+arch-check / arch-check	UNKNOWN STEP	2026-11-17T16:00:16.4796712Z [command]/usr/bin/git version
+arch-check / arch-check	UNKNOWN STEP	2026-11-17T16:00:16.4854363Z git version 2.56.1
+arch-check / arch-check	UNKNOWN STEP	2026-11-17T16:00:16.4897607Z Temporarily overriding HOME='/home/runner/work/_temp/2de71179-dc63-471b-9ad2-c485ac82fc36' before making global git config changes
+arch-check / arch-check	UNKNOWN STEP	2026-11-17T16:00:16.4898929Z Adding repository directory to the temporary git global config as a safe directory
+arch-check / arch-check	UNKNOWN STEP	2026-11-17T16:00:16.4903960Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/cooee/cooee
+arch-check / arch-check	UNKNOWN STEP	2026-11-17T16:00:16.4960976Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+arch-check / arch-check	UNKNOWN STEP	2026-11-17T16:00:16.5020412Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+arch-check / arch-check	UNKNOWN STEP	2026-11-17T16:00:16.5379442Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+arch-check / arch-check	UNKNOWN STEP	2026-11-17T16:00:16.5417070Z http.https://github.com/.extraheader
+arch-check / arch-check	UNKNOWN STEP	2026-11-17T16:00:16.5431456Z [command]/usr/bin/git config --local --unset-all http.https://github.com/.extraheader
+arch-check / arch-check	UNKNOWN STEP	2026-11-17T16:00:16.5487837Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+arch-check / arch-check	UNKNOWN STEP	2026-11-17T16:00:16.5874532Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+arch-check / arch-check	UNKNOWN STEP	2026-11-17T16:00:16.5924506Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+arch-check / arch-check	UNKNOWN STEP	2026-11-17T16:00:16.6435344Z Cleaning up orphan processes
+arch-check / arch-check	UNKNOWN STEP	2026-11-17T16:00:16.6865744Z ##[warning]Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/checkout@v4. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
