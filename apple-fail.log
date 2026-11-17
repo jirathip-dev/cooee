@@ -1,0 +1,1201 @@
+apple	just apple-check	﻿2026-11-17T17:02:59.9810580Z ##[group]Run mkdir -p "$COOEE_RENDERED" && just apple-check
+apple	just apple-check	2026-11-17T17:02:59.9811070Z ^[[36;1mmkdir -p "$COOEE_RENDERED" && just apple-check^[[0m
+apple	just apple-check	2026-11-17T17:02:59.9984550Z shell: /bin/bash -e {0}
+apple	just apple-check	2026-11-17T17:02:59.9984770Z env:
+apple	just apple-check	2026-11-17T17:02:59.9984930Z   MAC: true
+apple	just apple-check	2026-11-17T17:02:59.9985270Z   FULL: true
+apple	just apple-check	2026-11-17T17:02:59.9985430Z   E2E: false
+apple	just apple-check	2026-11-17T17:02:59.9985580Z   ONLY: 
+apple	just apple-check	2026-11-17T17:02:59.9985740Z   TMPDIR: /tmp/air-cooee/
+apple	just apple-check	2026-11-17T17:02:59.9986080Z   CARGO_HOME: /Users/jirathip/services/actions-runner-cooee/_work/_tool/cooee/cargo
+apple	just apple-check	2026-11-17T17:02:59.9986700Z   RUSTUP_HOME: /Users/jirathip/services/actions-runner-cooee/_work/_tool/cooee/rustup
+apple	just apple-check	2026-11-17T17:02:59.9987210Z   GIT_CONFIG_GLOBAL: /Users/jirathip/services/actions-runner-cooee/_work/_temp/gitconfig
+apple	just apple-check	2026-11-17T17:02:59.9987570Z   GIT_CONFIG_NOSYSTEM: 1
+apple	just apple-check	2026-11-17T17:02:59.9987770Z   CARGO_NET_GIT_FETCH_WITH_CLI: true
+apple	just apple-check	2026-11-17T17:02:59.9988060Z   DEVELOPER_DIR: /Applications/Xcode.app/Contents/Developer
+apple	just apple-check	2026-11-17T17:02:59.9988380Z   CARGO_INCREMENTAL: 0
+apple	just apple-check	2026-11-17T17:02:59.9988550Z   CARGO_TERM_COLOR: always
+apple	just apple-check	2026-11-17T17:02:59.9988750Z   CACHE_ON_FAILURE: false
+apple	just apple-check	2026-11-17T17:02:59.9990990Z   GH_TOKEN: ***
+apple	just apple-check	2026-11-17T17:02:59.9991290Z   COOEE_RENDERED: /Users/jirathip/services/actions-runner-cooee/_work/_temp/rendered
+apple	just apple-check	2026-11-17T17:02:59.9991650Z ##[endgroup]
+apple	just apple-check	2026-11-17T17:03:00.0809260Z scripts/apple-check.sh
+apple	just apple-check	2026-11-17T17:03:00.2106550Z 
+apple	just apple-check	2026-11-17T17:03:00.2107120Z == swift format
+apple	just apple-check	2026-11-17T17:03:03.2661520Z 
+apple	just apple-check	2026-11-17T17:03:03.2661840Z == anti-slop
+apple	just apple-check	2026-11-17T17:03:04.5460820Z Fetching https://github.com/swiftlang/swift-syntax.git from cache
+apple	just apple-check	2026-11-17T17:03:05.6495140Z Fetched https://github.com/swiftlang/swift-syntax.git from cache (1.10s)
+apple	just apple-check	2026-11-17T17:03:05.6498090Z Computing version for https://github.com/swiftlang/swift-syntax.git
+apple	just apple-check	2026-11-17T17:03:06.4392410Z Computed https://github.com/swiftlang/swift-syntax.git at 603.0.2 (1.90s)
+apple	just apple-check	2026-11-17T17:03:06.4395430Z Computed https://github.com/swiftlang/swift-syntax.git at 603.0.2 (0.00s)
+apple	just apple-check	2026-11-17T17:03:06.4971950Z Creating working copy for https://github.com/swiftlang/swift-syntax.git
+apple	just apple-check	2026-11-17T17:03:06.7282890Z Working copy of https://github.com/swiftlang/swift-syntax.git resolved at 603.0.2
+apple	just apple-check	2026-11-17T17:05:42.1089190Z no violations
+apple	just apple-check	2026-11-17T17:05:42.1089550Z 
+apple	just apple-check	2026-11-17T17:05:42.1089620Z == TODO(#N) names an open issue
+apple	just apple-check	2026-11-17T17:05:42.1848630Z every TODO names an open issue
+apple	just apple-check	2026-11-17T17:05:42.1848750Z 
+apple	just apple-check	2026-11-17T17:05:42.1848820Z == SwiftLint 0.65.1
+apple	just apple-check	2026-11-17T17:05:44.5769500Z swift bans test ok
+apple	just apple-check	2026-11-17T17:05:44.5796990Z no violations
+apple	just apple-check	2026-11-17T17:05:44.5813450Z 
+apple	just apple-check	2026-11-17T17:05:44.5813710Z == build (Swift 6, complete concurrency, warnings as errors)
+apple	just apple-check	2026-11-17T17:07:33.4444350Z 
+apple	just apple-check	2026-11-17T17:07:33.4444600Z == tests with coverage
+apple	just apple-check	2026-11-17T17:07:37.9366770Z [0/1] Planning build
+apple	just apple-check	2026-11-17T17:07:39.4189600Z Test Suite 'All tests' started at 2569-11-18 12:07:39.370 AM.
+apple	just apple-check	2026-11-17T17:07:39.4189980Z Test Suite 'All tests' passed at 2569-11-18 12:07:39.371 AM.
+apple	just apple-check	2026-11-17T17:07:39.4190390Z 	 Executed 0 tests, with 0 failures (0 unexpected) in 0.000 (0.001) seconds
+apple	just apple-check	2026-11-17T17:07:39.4190640Z ◇ Test run started.
+apple	just apple-check	2026-11-17T17:07:39.4190870Z ↳ Testing Library Version: 1902
+apple	just apple-check	2026-11-17T17:07:39.4191080Z ↳ Target Platform: arm64e-apple-macos14.0
+apple	just apple-check	2026-11-17T17:07:39.4191300Z ◇ Suite ClientTests started.
+apple	just apple-check	2026-11-17T17:07:39.4191480Z ◇ Suite ScreensTests started.
+apple	just apple-check	2026-11-17T17:07:39.4191710Z ◇ Suite TrustRenderTests started.
+apple	just apple-check	2026-11-17T17:07:39.4191880Z ➜ Suite LiveTests skipped.
+apple	just apple-check	2026-11-17T17:07:39.4192050Z ◇ Suite DeviceTests started.
+apple	just apple-check	2026-11-17T17:07:39.4192220Z ◇ Suite MachinesTests started.
+apple	just apple-check	2026-11-17T17:07:39.4192400Z ◇ Suite TerminalClientTests started.
+apple	just apple-check	2026-11-17T17:07:39.4192600Z ◇ Suite SnapshotTests started.
+apple	just apple-check	2026-11-17T17:07:39.4192760Z ◇ Suite SidebarRenderTests started.
+apple	just apple-check	2026-11-17T17:07:39.4192940Z ◇ Suite PaletteTests started.
+apple	just apple-check	2026-11-17T17:07:39.4193090Z ◇ Suite ExchangeTests started.
+apple	just apple-check	2026-11-17T17:07:39.4193270Z ◇ Suite LocalTests started.
+apple	just apple-check	2026-11-17T17:07:39.4193940Z ◇ Suite PersonaRenderTests started.
+apple	just apple-check	2026-11-17T17:07:39.4194120Z ➜ Suite LivePersonaTests skipped.
+apple	just apple-check	2026-11-17T17:07:39.4194300Z ◇ Suite BlockRenderTests started.
+apple	just apple-check	2026-11-17T17:07:39.4194470Z ◇ Suite MentionTests started.
+apple	just apple-check	2026-11-17T17:07:39.4194630Z ◇ Suite HeaderRenderTests started.
+apple	just apple-check	2026-11-17T17:07:39.4196270Z ◇ Suite MenuRenderTests started.
+apple	just apple-check	2026-11-17T17:07:39.4196430Z ◇ Suite LooksClientTests started.
+apple	just apple-check	2026-11-17T17:07:39.4196610Z ◇ Suite ScreenTests started.
+apple	just apple-check	2026-11-17T17:07:39.4196800Z ◇ Suite DefaultLayoutTests started.
+apple	just apple-check	2026-11-17T17:07:39.4198010Z ◇ Suite EventsTests started.
+apple	just apple-check	2026-11-17T17:07:39.4198220Z ◇ Suite AppIconTests started.
+apple	just apple-check	2026-11-17T17:07:39.4198410Z ◇ Suite LayoutsTests started.
+apple	just apple-check	2026-11-17T17:07:39.4198600Z ◇ Suite RoomClientTests started.
+apple	just apple-check	2026-11-17T17:07:39.4198810Z ◇ Suite CardClientTests started.
+apple	just apple-check	2026-11-17T17:07:39.4198980Z ◇ Suite ChatPanelTests started.
+apple	just apple-check	2026-11-17T17:07:39.4199170Z ◇ Suite PersonasTests started.
+apple	just apple-check	2026-11-17T17:07:39.4199350Z ◇ Suite CardTrustTests started.
+apple	just apple-check	2026-11-17T17:07:39.4199540Z ◇ Suite ItemsTests started.
+apple	just apple-check	2026-11-17T17:07:39.4199720Z ◇ Suite ThemeDraftTests started.
+apple	just apple-check	2026-11-17T17:07:39.4199930Z ◇ Suite ActionTests started.
+apple	just apple-check	2026-11-17T17:07:39.4200120Z ◇ Suite ChatPluginsTests started.
+apple	just apple-check	2026-11-17T17:07:39.4200290Z ◇ Suite PinnedTests started.
+apple	just apple-check	2026-11-17T17:07:39.4200470Z ◇ Suite SceneTests started.
+apple	just apple-check	2026-11-17T17:07:39.4200620Z ◇ Suite ChatAgentTests started.
+apple	just apple-check	2026-11-17T17:07:39.4200820Z ◇ Suite WorkflowTests started.
+apple	just apple-check	2026-11-17T17:07:39.4201000Z ◇ Suite LayoutTests started.
+apple	just apple-check	2026-11-17T17:07:39.4201150Z ◇ Suite MachineRowTests started.
+apple	just apple-check	2026-11-17T17:07:39.4201400Z ◇ Suite CardAnswerTests started.
+apple	just apple-check	2026-11-17T17:07:39.4201560Z ◇ Suite RoomAskTests started.
+apple	just apple-check	2026-11-17T17:07:39.4201740Z ◇ Suite ThemeEditorFeatureTests started.
+apple	just apple-check	2026-11-17T17:07:39.4201950Z ◇ Suite LayoutFeatureTests started.
+apple	just apple-check	2026-11-17T17:07:39.4202130Z ◇ Suite MotionTests started.
+apple	just apple-check	2026-11-17T17:07:39.4202300Z ◇ Suite SidebarTests started.
+apple	just apple-check	2026-11-17T17:07:39.4202500Z ◇ Suite FolderListingTests started.
+apple	just apple-check	2026-11-17T17:07:39.4202670Z ◇ Suite RoomTests started.
+apple	just apple-check	2026-11-17T17:07:39.4202850Z ◇ Suite LinkedFeatureTests started.
+apple	just apple-check	2026-11-17T17:07:39.4203040Z ◇ Suite TerminalTests started.
+apple	just apple-check	2026-11-17T17:07:39.4203230Z ◇ Suite SidebarLayoutTests started.
+apple	just apple-check	2026-11-17T17:07:39.4203570Z ◇ Suite PersonaControlsTests started.
+apple	just apple-check	2026-11-17T17:07:39.4203770Z ◇ Suite PersonaFeatureTests started.
+apple	just apple-check	2026-11-17T17:07:39.4204000Z ◇ Suite AppFeatureTests started.
+apple	just apple-check	2026-11-17T17:07:39.4204170Z ◇ Suite ListingTests started.
+apple	just apple-check	2026-11-17T17:07:39.4204370Z ◇ Suite PluginsTests started.
+apple	just apple-check	2026-11-17T17:07:39.4204550Z ◇ Suite MenuFeatureTests started.
+apple	just apple-check	2026-11-17T17:07:39.4204710Z ◇ Suite DiagramTests started.
+apple	just apple-check	2026-11-17T17:07:39.4204900Z ◇ Suite ModelsTests started.
+apple	just apple-check	2026-11-17T17:07:39.4205080Z ◇ Suite ThemeEditorMenuTests started.
+apple	just apple-check	2026-11-17T17:07:39.4205240Z ◇ Suite HomeFeatureTests started.
+apple	just apple-check	2026-11-17T17:07:39.4205440Z ◇ Suite ChatFeatureTests started.
+apple	just apple-check	2026-11-17T17:07:39.4205630Z ◇ Suite RoomFeatureTests started.
+apple	just apple-check	2026-11-17T17:07:39.4205800Z ◇ Suite WorkflowNavigationTests started.
+apple	just apple-check	2026-11-17T17:07:39.4218180Z ◇ Suite PairingFeatureTests started.
+apple	just apple-check	2026-11-17T17:07:39.4218410Z ◇ Suite ChatMachineTests started.
+apple	just apple-check	2026-11-17T17:07:39.4218570Z ◇ Suite ChatOutboxTests started.
+apple	just apple-check	2026-11-17T17:07:39.4218720Z ◇ Suite ScreenFeatureTests started.
+apple	just apple-check	2026-11-17T17:07:39.4218900Z ◇ Suite TerminalFeatureTests started.
+apple	just apple-check	2026-11-17T17:07:39.4219070Z ◇ Suite PluginNavigationTests started.
+apple	just apple-check	2026-11-17T17:07:39.4219280Z ◇ Suite RoomPinTests started.
+apple	just apple-check	2026-11-17T17:07:39.4219490Z ◇ Test aScreenStreamYieldsEachEventsOps() started.
+apple	just apple-check	2026-11-17T17:07:39.4219690Z ➜ Test pairsListsAndStreamsAReply() skipped.
+apple	just apple-check	2026-11-17T17:07:39.4220030Z ◇ Test theBundledMenuOpensCoresSettingsScreensAndKeepsLookAndNotificationsLocal() started.
+apple	just apple-check	2026-11-17T17:07:39.4220370Z ◇ Test attachingAddsThePluginToThePersonaOnce() started.
+apple	just apple-check	2026-11-17T17:07:39.4220630Z ◇ Test anActionPostsTheScreenTheActionAndItsValuesAndGetsOps() started.
+apple	just apple-check	2026-11-17T17:07:39.4220920Z ◇ Test aPluginsPermissionsCardIsRefused() started.
+apple	just apple-check	2026-11-17T17:07:39.4221340Z ◇ Test placesPluginsAndAScreenComeThroughCooee() started.
+apple	just apple-check	2026-11-17T17:07:39.4221580Z ◇ Test aRefusedActionThrowsItsStatus() started.
+apple	just apple-check	2026-11-17T17:07:39.4221820Z ◇ Test theJSONCanNeitherSetNorFakeTheSourceLine(_:) started.
+apple	just apple-check	2026-11-17T17:07:39.4222110Z ◇ Test theKeychainKeepsOneServer() started.
+apple	just apple-check	2026-11-17T17:07:39.4222310Z ◇ Test aKeptScreenIsReadBackByItsKey() started.
+apple	just apple-check	2026-11-17T17:07:39.4222560Z ◇ Test watchingYieldsScreenUpdatesUntilTheShellCloses() started.
+apple	just apple-check	2026-11-17T17:07:39.4222850Z ◇ Test aResolvedServerIsAnHTTPAddress() started.
+apple	just apple-check	2026-11-17T17:07:39.4223100Z ◇ Test aCooeeAnsweringOnThisMacIsFoundFirstAsThisMac() started.
+apple	just apple-check	2026-11-17T17:07:39.4223360Z ◇ Test aCodePairsAndAClaimWaitsThenPairs() started.
+apple	just apple-check	2026-11-17T17:07:39.4223590Z ◇ Test cooeesOwnSentenceIsTheError() started.
+apple	just apple-check	2026-11-17T17:07:39.4223810Z ◇ Test aNewThreadStartsForAPersonaOnTheMachinePicked() started.
+apple	just apple-check	2026-11-17T17:07:39.4224040Z ◇ Test aSetupChatSaysSo() started.
+apple	just apple-check	2026-11-17T17:07:39.4224280Z ◇ Test aServerAdvertisedOnTheLANIsFoundAtItsAddress() started.
+apple	just apple-check	2026-11-17T17:07:39.4224540Z ◇ Test aRowAndAnAskDecodeFromTheServersJSON() started.
+apple	just apple-check	2026-11-17T17:07:39.4224790Z ◇ Test homePersonasAndASliceDecodeAsDocumented() started.
+apple	just apple-check	2026-11-17T17:07:39.4225010Z ◇ Test aRefusedCodeSaysWhy(_:_:) started.
+apple	just apple-check	2026-11-17T17:07:39.4225260Z ◇ Test sendQueueAndTheTurnsCallsPostTheirBodies() started.
+apple	just apple-check	2026-11-17T17:07:39.4225530Z ◇ Test listsStartsAndTypesThroughTheTerminalPlugin() started.
+apple	just apple-check	2026-11-17T17:07:39.4225760Z ◇ Test aDeclinedOrGoneClaimSaysWhy() started.
+apple	just apple-check	2026-11-17T17:07:39.4225980Z ◇ Test frameMatchesTheDesign(_:) started.
+apple	just apple-check	2026-11-17T17:07:39.4226280Z ◇ Test aPluginScreenMovedToTheSidebarIsDrawnInItsColumnAndNowhereElse() started.
+apple	just apple-check	2026-11-17T17:07:39.4226630Z ◇ Test anExchangeKnowsItsAskerItsDepthAndTheAnswerersOwnChat() started.
+apple	just apple-check	2026-11-17T17:07:39.4226940Z ◇ Test aClientForAServerCarriesItsCookie() started.
+apple	just apple-check	2026-11-17T17:07:39.4227170Z ◇ Test machinesDecodeAndAMovePostsTheMachine() started.
+apple	just apple-check	2026-11-17T17:07:39.4227390Z ◇ Test anAskIsACardThatSaysItsOutcome() started.
+apple	just apple-check	2026-11-17T17:07:39.4227650Z ◇ Test aPacksSchemeIsItsPalette() started.
+apple	just apple-check	2026-11-17T17:07:39.4227920Z ◇ Test aLinkedThreadAttributesTheQuestionTheToolsTheNoteAndTheReply() started.
+apple	just apple-check	2026-11-17T17:07:39.4228210Z ◇ Test anotherDayIsNamedByItsDate() started.
+apple	just apple-check	2026-11-17T17:07:39.4228420Z ◇ Test thePortIsTheConfigsTopLevelOne() started.
+apple	just apple-check	2026-11-17T17:07:39.4228670Z ◇ Test initialsAndAColourDrawInsteadOfTheSymbol() started.
+apple	just apple-check	2026-11-17T17:07:39.4228880Z ◇ Test everyCardDraws(_:) started.
+apple	just apple-check	2026-11-17T17:07:39.4229120Z ◇ Test aPickedPhotoIsShrunkToAJpegAndDrawnAsTheAvatar() started.
+apple	just apple-check	2026-11-17T17:07:39.4229420Z ◇ Test aCommandReturnsItsOutputOrFailsWithItsError() started.
+apple	just apple-check	2026-11-17T17:07:39.4229730Z ◇ Test aRowWhoseCurrentRoundNeedsYouOpensItsRoundsOthersStayFolded() started.
+apple	just apple-check	2026-11-17T17:07:39.4230040Z ◇ Test theWordBeingTypedPicksTheFirstMemberNotYetNamed() started.
+apple	just apple-check	2026-11-17T17:07:39.4230360Z ➜ Test aPersonaRoundTripsAndTheSimulatorsPersonasAreOnTheServer() skipped.
+apple	just apple-check	2026-11-17T17:07:39.4230670Z ◇ Test everyCatalogueBlockDrawsAndAnUnknownOneIsSkipped() started.
+apple	just apple-check	2026-11-17T17:07:39.4230940Z ◇ Test farmsSchemesAreTheDefaultPalettes() started.
+apple	just apple-check	2026-11-17T17:07:39.4231150Z ◇ Test aReplyKeepsEachLineOnItsOwnLine(_:) started.
+apple	just apple-check	2026-11-17T17:07:39.4231360Z ◇ Test aSchemeMissingATokenIsNoPalette() started.
+apple	just apple-check	2026-11-17T17:07:39.4231570Z ◇ Test aCommandThatHangsIsStopped() started.
+apple	just apple-check	2026-11-17T17:07:39.4231780Z ◇ Test memoryDrawsOnlyTheNewestThreeNotes() started.
+apple	just apple-check	2026-11-17T17:07:39.4232030Z ◇ Test membersReplyInMentionOrderOnceEachByNameOrId() started.
+apple	just apple-check	2026-11-17T17:07:39.4232340Z ◇ Test aDraftNamingMembersQueuesThemUpNextAndWaitsTheOthers() started.
+apple	just apple-check	2026-11-17T17:07:39.4232600Z ◇ Test aDiffDrawsEveryLineOfEveryHunk() started.
+apple	just apple-check	2026-11-17T17:07:39.4232810Z ◇ Test anEditorShowsEachErrorUnderItsLine() started.
+apple	just apple-check	2026-11-17T17:07:39.4233070Z ◇ Test pickingAMemberReplacesTheWordBeingTypedWithItsToken() started.
+apple	just apple-check	2026-11-17T17:07:39.4233330Z ◇ Test everyScreenDraws(_:) started.
+apple	just apple-check	2026-11-17T17:07:39.4233640Z ◇ Test theQueueInSceneDrawsInEveryLook(_:) started.
+apple	just apple-check	2026-11-17T17:07:39.4233830Z ◇ Test aPlacesCountDrawsOnItsChip() started.
+apple	just apple-check	2026-11-17T17:07:39.4234040Z ◇ Test aPageFillsTheSheetWithItsBackground(_:) started.
+apple	just apple-check	2026-11-17T17:07:39.4234240Z ◇ Test theLineSaysWhoRepliesInOrder() started.
+apple	just apple-check	2026-11-17T17:07:39.4234450Z ◇ Test theQueueDrawsItsStreamsOps() started.
+apple	just apple-check	2026-11-17T17:07:39.4234680Z ◇ Test theDefaultResolvesTodaysPlacesOnEachSize() started.
+apple	just apple-check	2026-11-17T17:07:39.4234980Z ◇ Test aDroppedStreamReconnectsWithLastEventIDAndGetsWhatItMissed() started.
+apple	just apple-check	2026-11-17T17:07:39.4235410Z ◇ Test anActionAnswersWithItsChoiceOrOtherTextAndItsOneValue() started.
+apple	just apple-check	2026-11-17T17:07:39.4235680Z ◇ Test sseFramesFollowTheSpec() started.
+apple	just apple-check	2026-11-17T17:07:39.4235900Z ◇ Test aCancelledStreamStops() started.
+apple	just apple-check	2026-11-17T17:07:39.4236110Z ◇ Test theLooksReadEachPacksSchemesAndSprites() started.
+apple	just apple-check	2026-11-17T17:07:39.4236380Z ◇ Test theBundledHomeDrawsItsPinnedRowThenItsChats() started.
+apple	just apple-check	2026-11-17T17:07:39.4236630Z ◇ Test jsonTextParsesAndAStampReadsBackAsItsDate() started.
+apple	just apple-check	2026-11-17T17:07:39.4236890Z ◇ Test theDefaultHoldsBothLockedScreensLast() started.
+apple	just apple-check	2026-11-17T17:07:39.4237110Z ◇ Test aRefusedStreamEnds() started.
+apple	just apple-check	2026-11-17T17:07:39.4237320Z ◇ Test theSceneStripDrawsOnlyInTheSceneLook() started.
+apple	just apple-check	2026-11-17T17:07:39.4237530Z ◇ Test aServerErrorOrABadEventIsRetried() started.
+apple	just apple-check	2026-11-17T17:07:39.4237810Z ◇ Test insertGoesBeforeAfterOrAtTheEndAndScreenAndDotReplaceTheWhole() started.
+apple	just apple-check	2026-11-17T17:07:39.4238100Z ◇ Test everyFixtureDecodesAndEncodesBackTheSame() started.
+apple	just apple-check	2026-11-17T17:07:39.4238380Z ◇ Test aFreshInstallShowsTheLaughingKookaburraThePrimaryIcon() started.
+apple	just apple-check	2026-11-17T17:07:39.4238650Z ◇ Test followingShowsTheFirstIconOfTheStylesSet() started.
+apple	just apple-check	2026-11-17T17:07:39.4238890Z ◇ Test everyFleetsConfigScreenDraws(_:) started.
+apple	just apple-check	2026-11-17T17:07:39.4239110Z ◇ Test theEditorChecksColoursAndSavesAPackByName() started.
+apple	just apple-check	2026-11-17T17:07:39.4239330Z ◇ Test queueStreamOpsPatchTheQueueByID() started.
+apple	just apple-check	2026-11-17T17:07:39.4239580Z ◇ Test aPickedIconSurvivesAStyleChangeUntilFollowingAgain() started.
+apple	just apple-check	2026-11-17T17:07:39.4239840Z ◇ Test timesAreRelativeToNow() started.
+apple	just apple-check	2026-11-17T17:07:39.4240080Z ◇ Test everyIconIsInTheAssetCatalogAsAnAppIconAndAPreview() started.
+apple	just apple-check	2026-11-17T17:07:39.4240400Z ◇ Test editOpensThePersonaSheetAndNewChatStartsOneWithThePersona() started.
+apple	just apple-check	2026-11-17T17:07:39.4240680Z ◇ Test aNewThreadCarriesThePickedModelAndEffort() started.
+apple	just apple-check	2026-11-17T17:07:39.4240910Z ◇ Test everyProposalCardDraws() started.
+apple	just apple-check	2026-11-17T17:07:39.4241130Z ◇ Test theHeaderDrawsPlusOnlyWhenItCanStartAChat() started.
+apple	just apple-check	2026-11-17T17:07:39.4241410Z ◇ Test theColumnOpensAPlaceOrAttachesAPluginAtOnce() started.
+apple	just apple-check	2026-11-17T17:07:39.4241670Z ◇ Test aDraggedAccountTakesThePlaceOfTheRowItIsDroppedOn() started.
+apple	just apple-check	2026-11-17T17:07:39.4241990Z ◇ Test allIssuesOpensTheWorkflowSheetOnceThePanelHasGone() started.
+apple	just apple-check	2026-11-17T17:07:39.4242760Z ◇ Test aCardComesAsItsBlockAndItsAnswerPostsTheItemsChoice() started.
+apple	just apple-check	2026-11-17T17:07:39.4243050Z ◇ Test theAgentChipsListsAndTheFoldersDecodeFromTheServer() started.
+apple	just apple-check	2026-11-17T17:07:39.4243300Z ◇ Test aRefusedSaveCarriesTheServersReason() started.
+apple	just apple-check	2026-11-17T17:07:39.4243520Z ◇ Test resetPostsAndAnswersTheNewLayout() started.
+apple	just apple-check	2026-11-17T17:07:39.4243740Z ◇ Test theReplySoFarIsDrawnLastWithItsCaret() started.
+apple	just apple-check	2026-11-17T17:07:39.4244060Z ◇ Test anEditSavesEveryFieldThroughItsScreenSoNothingTheAppDoesNotDrawIsLost() started.
+apple	just apple-check	2026-11-17T17:07:39.4244400Z ◇ Test aMembersAskIsARoomEvent() started.
+apple	just apple-check	2026-11-17T17:07:39.4244590Z ◇ Test anUnguardedCardDrawsFromAnyone() started.
+apple	just apple-check	2026-11-17T17:07:39.4244800Z ◇ Test refusedLayoutEventsThrowTheirStatus() started.
+apple	just apple-check	2026-11-17T17:07:39.4245020Z ◇ Test pushOnPostsTheDeviceTokenAndOffDeletesIt() started.
+apple	just apple-check	2026-11-17T17:07:39.4245260Z ◇ Test toolsFoldCardsAreBlocksAndNotesShow() started.
+apple	just apple-check	2026-11-17T17:07:39.4245540Z ◇ Test aPickInTheSheetRunsOnceTheSheetHasGone() started.
+apple	just apple-check	2026-11-17T17:07:39.4245790Z ◇ Test aLayoutIsAskedForByItsEtagAndUnchangedIsNil() started.
+apple	just apple-check	2026-11-17T17:07:39.4246200Z ◇ Test aDeleteRemovesThePersonaAndAModelPickGoesToItsThread() started.
+apple	just apple-check	2026-11-17T17:07:39.4246590Z ◇ Test theLastGoodLayoutIsKeptOnDiskUntilForgotten() started.
+apple	just apple-check	2026-11-17T17:07:39.4246840Z ◇ Test aMemberMovesInRoomOrder() started.
+apple	just apple-check	2026-11-17T17:07:39.4247090Z ◇ Test aGuardedCardWithNoPosterIsNotDrawn(_:) started.
+apple	just apple-check	2026-11-17T17:07:39.4247370Z ◇ Test aRoomsTurnsAndItsEndAreEvents() started.
+apple	just apple-check	2026-11-17T17:07:39.4247700Z ◇ Test aPinWithNoThreadStartsANewChat() started.
+apple	just apple-check	2026-11-17T17:07:39.4248010Z ◇ Test markdownKeepsAnOpenFenceAndSplitsParagraphsFromBullets() started.
+apple	just apple-check	2026-11-17T17:07:39.4248410Z ◇ Test aChatStyleTurnIsItsReplyAndOneFoldedRowWithApprovalsAndErrorsInline() started.
+apple	just apple-check	2026-11-17T17:07:39.4248770Z ◇ Test layoutEventsAreChangedAndBrokenWithItsLine() started.
+apple	just apple-check	2026-11-17T17:07:39.4249030Z ◇ Test anotherAgentInAThreadStartsANewChatOnIt() started.
+apple	just apple-check	2026-11-17T17:07:39.4249250Z ◇ Test aRoomIsMadeOfItsMembersInRoomOrder() started.
+apple	just apple-check	2026-11-17T17:07:39.4249580Z ◇ Test theAttachSheetIsCoresPermissionsScreenForThatPluginAndPersona() started.
+apple	just apple-check	2026-11-17T17:07:39.4249930Z ◇ Test attachingAPluginShowsItsSheetThenReloadsTheStrip() started.
+apple	just apple-check	2026-11-17T17:07:39.4250190Z ◇ Test theSameNoteTwiceInARowIsOneRow() started.
+apple	just apple-check	2026-11-17T17:07:39.4250450Z ◇ Test aPinOpensThePersonasNewestThreadAndReadsIt() started.
+apple	just apple-check	2026-11-17T17:07:39.4250750Z ◇ Test theHeaderStripLoadsItsChipsAndAChipOpensItsScreen() started.
+apple	just apple-check	2026-11-17T17:07:39.4251070Z ◇ Test aLanesHeadIsItsHorseItsLiveRoundsLaneAndItsPR() started.
+apple	just apple-check	2026-11-17T17:07:39.4251400Z ◇ Test aMergeOrANewRoundUpdatesTheStripAndTheRowInPlace() started.
+apple	just apple-check	2026-11-17T17:07:39.4251640Z ◇ Test aMessageCopiesAsPlainText() started.
+apple	just apple-check	2026-11-17T17:07:39.4251910Z ◇ Test lanesStandInTheirPlacesGateFirstAndKeepTheirOrderWithinOne() started.
+apple	just apple-check	2026-11-17T17:07:39.4252240Z ◇ Test aDestructiveTapIsAlwaysConfirmedTitledWithItsLabel() started.
+apple	just apple-check	2026-11-17T17:07:39.4252580Z ◇ Test aThreadActionAsksThisThreadsPersonaAndARefusalSaysWhy() started.
+apple	just apple-check	2026-11-17T17:07:39.4252810Z ◇ Test aLabelNamesItsFolder() started.
+apple	just apple-check	2026-11-17T17:07:39.4253050Z ◇ Test aWorkingChatStyleTurnHidesItsStepsAndNamesTheCurrentOne() started.
+apple	just apple-check	2026-11-17T17:07:39.4253310Z ◇ Test onlyCorePostsPermissions() started.
+apple	just apple-check	2026-11-17T17:07:39.4253590Z ◇ Test addRoutineAsksForOneInTheComposeOnceThePanelHasGone() started.
+apple	just apple-check	2026-11-17T17:07:39.4253880Z ◇ Test aFailedAttachSaysWhyAndCanBeTriedAgain() started.
+apple	just apple-check	2026-11-17T17:07:39.4254630Z ◇ Test theWorkflowSheetOpensAndUnfoldsOneIssueAtATime() started.
+apple	just apple-check	2026-11-17T17:07:39.4255560Z ◇ Test aNewChatsFirstMessageRunsOnThePickedAgentModelAndEffort() started.
+apple	just apple-check	2026-11-17T17:07:39.4256360Z ◇ Test aThreadTappedOnAScreenClosesItAndOpensThatChat() started.
+apple	just apple-check	2026-11-17T17:07:39.4257080Z ◇ Test theChipListsTheLiveAgentsAndAModelPickGoesToTheThreadsNextTurn() started.
+apple	just apple-check	2026-11-17T17:07:39.4257720Z ◇ Test aMarkPassesAtItsMinimum() started.
+apple	just apple-check	2026-11-17T17:07:39.4258310Z ◇ Test theDotAndProblemsSayWhetherAMachineIsReady() started.
+apple	just apple-check	2026-11-17T17:07:39.4258850Z ◇ Test aShadeKeepsItsColour(_:) started.
+apple	just apple-check	2026-11-17T17:07:39.4259470Z ◇ Test aTapSendsItsActionWithTheTapsTheSourcesAndTheGivenValues() started.
+apple	just apple-check	2026-11-17T17:07:39.4260260Z ◇ Test aSheetSendsEveryFormsFieldsAndAFieldsOwnValueWins() started.
+apple	just apple-check	2026-11-17T17:07:39.4260840Z ◇ Test aFileThatIsNotJSONIsRefused() started.
+apple	just apple-check	2026-11-17T17:07:39.4261460Z ◇ Test othersNotesSayWhereEachSourcesSessionsWent() started.
+apple	just apple-check	2026-11-17T17:07:39.4262240Z ◇ Test theSheetHasOneRowPerIssueNeedsYouFirstWithItsRoundsOldestFirst() started.
+apple	just apple-check	2026-11-17T17:07:39.4263050Z ◇ Test thePersonaWithAClaimingPluginHasAnEmptySheetBeforeAnyLane() started.
+apple	just apple-check	2026-11-17T17:07:39.4263830Z ◇ Test aMembersAskIsItsCardAndIsAnsweredInItsSession() started.
+apple	just apple-check	2026-11-17T17:07:39.4264410Z ◇ Test aShadeMovesByHueAndLight() started.
+apple	just apple-check	2026-11-17T17:07:39.4265230Z ◇ Test othersSplitsChatsWithNoPersonaFromEachUnclaimedSourceAndNamesNeitherByItsAgent() started.
+apple	just apple-check	2026-11-17T17:07:39.4266160Z ◇ Test aRoomHasNoChipToLoadAndTheHeaderTapAsksForTheSheet() started.
+apple	just apple-check	2026-11-17T17:07:39.4266790Z ◇ Test aLaneNoPluginClaimsFallsIntoOthers() started.
+apple	just apple-check	2026-11-17T17:07:39.4268030Z ◇ Test thisHostIsNamedByItsHostAndThePickerGroupsComputersAndDesks() started.
+apple	just apple-check	2026-11-17T17:07:39.4268810Z ◇ Test aHorseKeepsItsIssuesCoatInTheStripAndItsRow() started.
+apple	just apple-check	2026-11-17T17:07:39.4269660Z ◇ Test homeListsOnlyPersonasChatsAndALaneGoesToThePersonaItsClaimingPluginIsAttachedTo() started.
+apple	just apple-check	2026-11-17T17:07:39.4270650Z ◇ Test moreThanTwoHundredNodesIsRefused() started.
+apple	just apple-check	2026-11-17T17:07:39.4271320Z ◇ Test theClockPausesWhileTheAskIsOpenAndResumesOnItsAnswer() started.
+apple	just apple-check	2026-11-17T17:07:39.4272140Z ◇ Test aChatWithNoPersonaLoadsNoStripAndAFailedLoadSaysWhy() started.
+apple	just apple-check	2026-11-17T17:07:39.4272860Z ◇ Test aNodesTransitionIsDecodedAndKeptOnceResolved() started.
+apple	just apple-check	2026-11-17T17:07:39.4273470Z ◇ Test aRoundsURLLinksItsPullRequestOrIssue() started.
+apple	just apple-check	2026-11-17T17:07:39.4274090Z ◇ Test aRefusedAnswerSaysWhyAndTheCardCanBeTappedAgain() started.
+apple	just apple-check	2026-11-17T17:07:39.4274780Z ◇ Test aSecretIsSentOnlyOnceTheOwnerIsConfirmed(_:) started.
+apple	just apple-check	2026-11-17T17:07:39.4275290Z ◇ Test aRoomOpensWithItsMembersOpenAsks() started.
+apple	just apple-check	2026-11-17T17:07:39.4275930Z ◇ Test aCardsAnswerGoesBackAsItsItemsChoiceWhileTheCardWaits() started.
+apple	just apple-check	2026-11-17T17:07:39.4276590Z ◇ Test anOverrideWinsInItsOwnThemeOnly() started.
+apple	just apple-check	2026-11-17T17:07:39.4277120Z ◇ Test theWalkSwapsGaitFramesAndTheLoopsRun() started.
+apple	just apple-check	2026-11-17T17:07:39.4277750Z ◇ Test motionIsOnByDefaultAndOffWithReduceMotionOrTheSwitch() started.
+apple	just apple-check	2026-11-17T17:07:39.4278390Z ◇ Test aPersonaKeepsItsSpriteAndPersonasDiffer() started.
+apple	just apple-check	2026-11-17T17:07:39.4278950Z ◇ Test aMissingSizeInheritsTheOtherAndResolvesPerSize() started.
+apple	just apple-check	2026-11-17T17:07:39.4279550Z ◇ Test aBadLayoutIsRefusedWithWhereAndWhy(_:_:) started.
+apple	just apple-check	2026-11-17T17:07:39.4280030Z ◇ Test terminalFiguresHaveTwoFrames() started.
+apple	just apple-check	2026-11-17T17:07:39.4280640Z ◇ Test aSubFolderGoesUpToItsParentAndItsSearchMatchesNamesOnly() started.
+apple	just apple-check	2026-11-17T17:07:39.4281380Z ◇ Test resetOfflineDrawsTheBundledDefaultAndForgetsTheLastGood() started.
+apple	just apple-check	2026-11-17T17:07:39.4281930Z ◇ Test aRefusedSaveShowsWhy() started.
+apple	just apple-check	2026-11-17T17:07:39.4282360Z ◇ Test eachRowStateMapsToItsMotion() started.
+apple	just apple-check	2026-11-17T17:07:39.4282920Z ◇ Test aThemeSwitchRepicksFromTheNewCastWithTheSameSeed() started.
+apple	just apple-check	2026-11-17T17:07:39.4283520Z ◇ Test saveWaitsForTheGateAndTheOneTapFixFreesIt() started.
+apple	just apple-check	2026-11-17T17:07:39.4284080Z ◇ Test aMemberMovesInRoomOrderAndItsPlaceReads() started.
+apple	just apple-check	2026-11-17T17:07:39.4284690Z ◇ Test aLayoutThatReplacesPairingIsRefusedAndTheLastGoodKept() started.
+apple	just apple-check	2026-11-17T17:07:39.4285370Z ◇ Test everyLayoutHoldsBothLockedScreensFromTheDecoder() started.
+apple	just apple-check	2026-11-17T17:07:39.4286010Z ◇ Test doneHopsNeedsPulsesAndTintsFailShakesThenTheyRest() started.
+apple	just apple-check	2026-11-17T17:07:39.4286620Z ◇ Test anOwnPackIsEditedInPlaceAndABuiltInIsCopied() started.
+apple	just apple-check	2026-11-17T17:07:39.4287250Z ◇ Test aLayoutThatReplacesOrHidesALockedScreenIsRefused() started.
+apple	just apple-check	2026-11-17T17:07:39.4287830Z ◇ Test aRoomRowCarriesItsMembersInRoomOrder() started.
+apple	just apple-check	2026-11-17T17:07:39.4288360Z ◇ Test aChangeToTheLayoutAlreadyDrawnFetchesNothing() started.
+apple	just apple-check	2026-11-17T17:07:39.4288990Z ◇ Test roomItemsAreAttributedWithADividerAfterEachRound() started.
+apple	just apple-check	2026-11-17T17:07:39.4289520Z ◇ Test aFetchedLayoutIsDrawnAndKept() started.
+apple	just apple-check	2026-11-17T17:07:39.4290000Z ◇ Test aRoundShowsWhoRepliedPassedAndReplies() started.
+apple	just apple-check	2026-11-17T17:07:39.4290620Z ◇ Test aPickedAvatarSavesWithThePersonaAndShowAllOpensEveryNote() started.
+apple	just apple-check	2026-11-17T17:07:39.4291380Z ◇ Test theOwnersNoteGoesStraightToTheAnswererMidTurnNotIntoTheQueue() started.
+apple	just apple-check	2026-11-17T17:07:39.4292090Z ◇ Test aStartingSchemeLabelStyleAndPreviewChangeTheDraft() started.
+apple	just apple-check	2026-11-17T17:07:39.4292630Z ◇ Test refineByChatOpensASetupChat() started.
+apple	just apple-check	2026-11-17T17:07:39.4293050Z ◇ Test resetAppliesTheMacsAnswer() started.
+apple	just apple-check	2026-11-17T17:07:39.4293620Z ◇ Test theClockReadsHoursAndMinutesAndTheRoundsMinutesAndSeconds() started.
+apple	just apple-check	2026-11-17T17:07:39.4294340Z ◇ Test aLayoutTheAppCantReadKeepsTheLastGoodAndSaysWhy() started.
+apple	just apple-check	2026-11-17T17:07:39.4295070Z ◇ Test aScreenMovedToTheSidebarIsFollowedThereAndASkippedNodeIsReported() started.
+apple	just apple-check	2026-11-17T17:07:39.4296110Z ◇ Test theLookOutlivesPairingAgain() started.
+apple	just apple-check	2026-11-17T17:07:39.4296590Z ◇ Test deleteAsksFirstThenRemovesOnlyThePersona() started.
+apple	just apple-check	2026-11-17T17:07:39.4297120Z ◇ Test anotherAgentRestartsTheChatAsANewOneOnIt() started.
+apple	just apple-check	2026-11-17T17:07:39.4297710Z ◇ Test aMacThatRanTheServerRetiresItsLoginItemsAndSaysSo() started.
+apple	just apple-check	2026-11-17T17:07:39.4298480Z ◇ Test aBrokenFileOnTheMacKeepsTheLastGoodUntilAGoodWrite() started.
+apple	just apple-check	2026-11-17T17:07:39.4299220Z ◇ Test theChatHeaderOpensItsPersonasSheet() started.
+apple	just apple-check	2026-11-17T17:07:39.4299740Z ◇ Test theSidebarIsAColumnOnWideAndItsNodesAreMenuRowsOnCompact() started.
+apple	just apple-check	2026-11-17T17:07:39.4300040Z ◇ Test aSidebarNotPlacedForTheSizeLendsNoRows() started.
+apple	just apple-check	2026-11-17T17:07:39.4300350Z ◇ Test aLinkedThreadOpensAsTheExchangeAndItsLinksOpenTheChatsAndThePersona() started.
+apple	just apple-check	2026-11-17T17:07:39.4300700Z ◇ Test aDeletedPersonaClosesItsSheetAndHomeReloadsWithItsChats() started.
+apple	just apple-check	2026-11-17T17:07:39.4301020Z ◇ Test anEditReadsItsScreenAndSavesTheChangedPersonaThroughIt() started.
+apple	just apple-check	2026-11-17T17:07:39.4301310Z ◇ Test aNewPersonaStartsBlankOnTheFirstPersonasAgent() started.
+apple	just apple-check	2026-11-17T17:07:39.4301570Z ◇ Test aMentionWaitsTheOthersAndStopKeepsTheReplies() started.
+apple	just apple-check	2026-11-17T17:07:39.4301800Z ◇ Test withoutHomeNoChatOrPersonaOpens() started.
+apple	just apple-check	2026-11-17T17:07:39.4302010Z ◇ Test aNewPersonaIsPostedAndReadsNoMemory() started.
+apple	just apple-check	2026-11-17T17:07:39.4302220Z ◇ Test anUnpairedAppPairsThenShowsHome() started.
+apple	just apple-check	2026-11-17T17:07:39.4302440Z ◇ Test aSavedPersonaClosesItsSheetAndHomeReloads() started.
+apple	just apple-check	2026-11-17T17:07:39.4302660Z ◇ Test aChatOpensFromTheListWithItsPersona() started.
+apple	just apple-check	2026-11-17T17:07:39.4302900Z ◇ Test setUpByChatSavesThePersonaThenAsksForItsChat() started.
+apple	just apple-check	2026-11-17T17:07:39.4303130Z ◇ Test aFullUpdateDrawsEveryRowAndTheCursor() started.
+apple	just apple-check	2026-11-17T17:07:39.4303430Z ◇ Test backEdgesGoRightLeavingEdgesGoLeftAndAnOrphanGoesUnderItsPredecessors() started.
+apple	just apple-check	2026-11-17T17:07:39.4303750Z ◇ Test aStaleSaveSaysReloadAndKeepsTheUnsavedText() started.
+apple	just apple-check	2026-11-17T17:07:39.4304000Z ◇ Test theChatHeadersPlusStartsANewChatWithItsPersona() started.
+apple	just apple-check	2026-11-17T17:07:39.4304280Z ◇ Test aForgottenDevicePairsAgain() started.
+apple	just apple-check	2026-11-17T17:07:39.4304480Z ◇ Test aNewChatBecomesItsThreadOnceStarted() started.
+apple	just apple-check	2026-11-17T17:07:39.4304710Z ◇ Test aPairBothWaysIsOneLineAndASpineJumpIsNotDrawn() started.
+apple	just apple-check	2026-11-17T17:07:39.4304930Z ◇ Test aPlaceKeepsItsIdAsItsKey() started.
+apple	just apple-check	2026-11-17T17:07:39.4305110Z ◇ Test aRefusalShowsTheServersReason() started.
+apple	just apple-check	2026-11-17T17:07:39.4305370Z ◇ Test theAgentChipsListsComeFromTheServerAndAnotherAgentReloadsThem() started.
+apple	just apple-check	2026-11-17T17:07:39.4305890Z ◇ Test theOfflineLineSaysWhoAndHowOld() started.
+apple	just apple-check	2026-11-17T17:07:39.4524500Z ◇ Test commentsLabelsAndUnknownLinesAreSkipped() started.
+apple	just apple-check	2026-11-17T17:07:39.4526170Z ◇ Test aChatAskingToOpenAThreadOpensIt() started.
+apple	just apple-check	2026-11-17T17:07:39.4528580Z ◇ Test aPluginRowDecodesItsPermissions() started.
+apple	just apple-check	2026-11-17T17:07:39.4537800Z ◇ Test othersOpensAsAListAndItsChatsOpenAboveIt() started.
+apple	just apple-check	2026-11-17T17:07:39.4542550Z ◇ Test aRefreshLoadsOnceAndClearsTheError() started.
+apple	just apple-check	2026-11-17T17:07:39.4544050Z ◇ Test aTurnIsWorkingWhileItRunsOrConnects() started.
+apple	just apple-check	2026-11-17T17:07:39.4544620Z ◇ Test aMergeOpUpdatesTheMapsCountsInPlace() started.
+apple	just apple-check	2026-11-17T17:07:39.4545040Z ◇ Test agoIsShort(_:_:) started.
+apple	just apple-check	2026-11-17T17:07:39.4545440Z ◇ Test theFolderBrowserNeverLeavesTheRoots() started.
+apple	just apple-check	2026-11-17T17:07:39.4546000Z ◇ Test memoryListsTheNewestNoteFirstWithWhoAddedIt() started.
+apple	just apple-check	2026-11-17T17:07:39.4546630Z ◇ Test drovesMapIsOneSpineWithItsSkippedStatesOptional() started.
+apple	just apple-check	2026-11-17T17:07:39.4547420Z ◇ Test homeListsPersonasChatsOnlyAndALaneFallsIntoOthersUntilAPluginClaimsIt() started.
+apple	just apple-check	2026-11-17T17:07:39.4548170Z ◇ Test offlineHomeHoldsNoScreenSoTheBundledOneDraws() started.
+apple	just apple-check	2026-11-17T17:07:39.4548730Z ◇ Test keystrokesNeverShowInADescriptionOrADump() started.
+apple	just apple-check	2026-11-17T17:07:39.4549360Z ◇ Test homesRowIsThePinnedPersonasOrEveryoneWhileNoneIsPinned() started.
+apple	just apple-check	2026-11-17T17:07:39.4550100Z ◇ Test theMenuOpensTheEditorAndASavedPackIsAppliedWithNoRestart() started.
+apple	just apple-check	2026-11-17T17:07:39.4551420Z ◇ Test aRoundOpensAsANamedChatAndBackReturnsToTheOpenWorkflowSheet() started.
+apple	just apple-check	2026-11-17T17:07:39.4552040Z ◇ Test aPartialUpdateChangesOnlyItsRows() started.
+apple	just apple-check	2026-11-17T17:07:39.4552590Z ◇ Test anOwnerMessageNamingAMemberQueuesOnlyThatMember() started.
+apple	just apple-check	2026-11-17T17:07:39.4553290Z ◇ Test aNewRoomPicksUpToFiveInOrderAndIsMade() started.
+apple	just apple-check	2026-11-17T17:07:39.4553810Z ◇ Test aMemberIsInspectedMovedAddedAndTakenOut() started.
+apple	just apple-check	2026-11-17T17:07:39.4554360Z ◇ Test aChatWithNoPersonaSeedsItsSpriteByItsThread() started.
+apple	just apple-check	2026-11-17T17:07:39.4555030Z ◇ Test eachPinnedPersonaIsInItsNewestChatsState() started.
+apple	just apple-check	2026-11-17T17:07:39.4555560Z ◇ Test aRoomIsMadeFromHomeAndOpensFromTheList() started.
+apple	just apple-check	2026-11-17T17:07:39.4556000Z ◇ Test aRefusedRoomSaysWhy() started.
+apple	just apple-check	2026-11-17T17:07:39.4556540Z ◇ Test theLooksLoadOnlyWithAServerAndKeepFarmWhenTheReadFails() started.
+apple	just apple-check	2026-11-17T17:07:39.4557120Z ◇ Test stepsTheAddressAndNearbyServers() started.
+apple	just apple-check	2026-11-17T17:07:39.4557560Z ◇ Test aSetupChatStartsInSetupMode() started.
+apple	just apple-check	2026-11-17T17:07:39.4558180Z ◇ Test offlineTheMenuKeepsTheBundledOneAndWithoutAServerOpensNothing() started.
+apple	just apple-check	2026-11-17T17:07:39.4558980Z ◇ Test homeReadsItsChatsEveryFewSecondsUntilTheServerForgetsThisDevice() started.
+apple	just apple-check	2026-11-17T17:07:39.4559980Z ◇ Test aNewChatsPickIsItsMachineOverrideAndNothingMoves() started.
+apple	just apple-check	2026-11-17T17:07:39.4560710Z ◇ Test theChipShowsTheThreadsMachineAndAMoveWaitsUntilItIsReady() started.
+apple	just apple-check	2026-11-17T17:07:39.4561400Z ◇ Test aMachineGoneFromTheListShowsOfflineAndARoomHasNoChip() started.
+apple	just apple-check	2026-11-17T17:07:39.4561690Z ◇ Test withoutAServerPushDoesNothing() started.
+apple	just apple-check	2026-11-17T17:07:39.4561960Z ◇ Test theChatListDrawsEachRowWithItsPersonaOrItsTitleAndAgent() started.
+apple	just apple-check	2026-11-17T17:07:39.4562310Z ◇ Test aPickedIconStaysThroughStyleChangesUntilTheLookIsFollowedAgain() started.
+apple	just apple-check	2026-11-17T17:07:39.4562620Z ◇ Test anInitialsAvatarDrawsItsInitialsInThePickedTint() started.
+apple	just apple-check	2026-11-17T17:07:39.4562860Z ◇ Test aTypedAddressOrALinkIsAServer() started.
+apple	just apple-check	2026-11-17T17:07:39.4563120Z ◇ Test aChatStyleTurnFoldsItsStepsAndThePillNamesTheCurrentOne() started.
+apple	just apple-check	2026-11-17T17:07:39.4563410Z ◇ Test aRoomsStreamRunsItsRoundAndItsItemsAreAttributed() started.
+apple	just apple-check	2026-11-17T17:07:39.4563700Z ◇ Test aServerPersonaGetsInitialsATintAndItsIDAsItsSpriteSeed() started.
+apple	just apple-check	2026-11-17T17:07:39.4564000Z ◇ Test aServerRowOpensCoresScreenAndClosingTheMenuDropsIt() started.
+apple	just apple-check	2026-11-17T17:07:39.4564270Z ◇ Test pushOnRegistersTheDeviceTokenAndOffRemovesIt() started.
+apple	just apple-check	2026-11-17T17:07:39.4564520Z ◇ Test settingsKeepTheirLookAndTokenThroughJSON() started.
+apple	just apple-check	2026-11-17T17:07:39.4564730Z ◇ Test aLinkWithACodePairsAndGoesHome() started.
+apple	just apple-check	2026-11-17T17:07:39.4564920Z ◇ Test aBadAddressOrAFailedAskSaysWhy() started.
+apple	just apple-check	2026-11-17T17:07:39.4565140Z ◇ Test anActionAppliesItsAnswersOpsAndSaysItsToast() started.
+apple	just apple-check	2026-11-17T17:07:39.4565360Z ◇ Test modelsKeepWhatTheyAreGiven() started.
+apple	just apple-check	2026-11-17T17:07:39.4565590Z ◇ Test anUnreachableMacShowsTheKeptAnswerWithItsAgeThenRetries() started.
+apple	just apple-check	2026-11-17T17:07:39.4565870Z ◇ Test cancelTakesBackTheAskAndGoesToTheWelcome() started.
+apple	just apple-check	2026-11-17T17:07:39.4566080Z ◇ Test theLookIsPickedAndKept() started.
+apple	just apple-check	2026-11-17T17:07:39.4566330Z ◇ Test aChatRunsOnItsThreadsMachineAndANewOneKeepsItsPickOnceStarted() started.
+apple	just apple-check	2026-11-17T17:07:39.4566640Z ◇ Test conductorsChatCarriesItsWorkflowAndARoundOpensAsAChat() started.
+apple	just apple-check	2026-11-17T17:07:39.4566900Z ◇ Test aRefusedPushStaysOffWithTheReason() started.
+apple	just apple-check	2026-11-17T17:07:39.4567090Z ◇ Test aSendQueuesWhileATurnRuns() started.
+apple	just apple-check	2026-11-17T17:07:39.4567280Z ◇ Test theFirstMessageStartsANewChat() started.
+apple	just apple-check	2026-11-17T17:07:39.4567480Z ◇ Test eachStateHasItsFigureWordAndPose() started.
+apple	just apple-check	2026-11-17T17:07:39.4567690Z ◇ Test queuedMessagesAreSteeredOrTakenBack() started.
+apple	just apple-check	2026-11-17T17:07:39.4567900Z ◇ Test aDeclineGoesBackToTheAddressWithWhy() started.
+apple	just apple-check	2026-11-17T17:07:39.4568120Z ◇ Test aCoreScreenIsFetchedFromCoreAndKeptUnderCore() started.
+apple	just apple-check	2026-11-17T17:07:39.4568330Z ◇ Test aRefusedActionSaysWhy() started.
+apple	just apple-check	2026-11-17T17:07:39.4568530Z ◇ Test aScreenWithNoStreamStopsAfterItsAnswer() started.
+apple	just apple-check	2026-11-17T17:07:39.4568980Z ◇ Test aChatLoadsItsSliceThenFollowsItsStream() started.
+apple	just apple-check	2026-11-17T17:07:39.4569180Z ◇ Test aRetryTheServerRefusesSaysWhy() started.
+apple	just apple-check	2026-11-17T17:07:39.4569370Z ◇ Test aThreadsStateIsALanesState(_:_:) started.
+apple	just apple-check	2026-11-17T17:07:39.4569640Z ◇ Test theMotionSwitchAndAPickedSpriteAreKept() started.
+apple	just apple-check	2026-11-17T17:07:39.4569860Z ◇ Test aScreenLoadsFollowsItsStreamAndIsKept() started.
+apple	just apple-check	2026-11-17T17:07:39.4570100Z ◇ Test anAddressAsksThenWaitsForApproval() started.
+apple	just apple-check	2026-11-17T17:07:39.4570370Z ◇ Test aFailedLoadSaysWhyAndTriesAgain() started.
+apple	just apple-check	2026-11-17T17:07:39.4570640Z ◇ Test aFirstMessageWhoseAgentCannotStartKeepsItsBubbleWithWhy() started.
+apple	just apple-check	2026-11-17T17:07:39.4570930Z ◇ Test aLaneTapAsksTheChatToOpenItsThread() started.
+apple	just apple-check	2026-11-17T17:07:39.4571170Z ◇ Test aRefusedIconChangeSaysWhichTileToTapAgain() started.
+apple	just apple-check	2026-11-17T17:07:39.4571520Z ◇ Test case passing 1 argument kind → "confirm" to theJSONCanNeitherSetNorFakeTheSourceLine(_:) started.
+apple	just apple-check	2026-11-17T17:07:39.4571880Z ◇ Test retryStartsTheAgentAgainAndItsMessageTakesTheBubble() started.
+apple	just apple-check	2026-11-17T17:07:39.4572210Z ◇ Test typingGoesInTheOrderTypedAndCtrlMakesTheNextLetterAControlKey() started.
+apple	just apple-check	2026-11-17T17:07:39.4572540Z ◇ Test aMessageTheAgentNeverGotKeepsItsBubbleAndComesBack() started.
+apple	just apple-check	2026-11-17T17:07:39.4572770Z ◇ Test aFailedCallSaysWhy() started.
+apple	just apple-check	2026-11-17T17:07:39.4573050Z ◇ Test case passing 1 argument kind → "run" to theJSONCanNeitherSetNorFakeTheSourceLine(_:) started.
+apple	just apple-check	2026-11-17T17:07:39.4573460Z ◇ Test case passing 1 argument kind → "permissions" to theJSONCanNeitherSetNorFakeTheSourceLine(_:) started.
+apple	just apple-check	2026-11-17T17:07:39.4573870Z ◇ Test case passing 1 argument kind → "secret" to theJSONCanNeitherSetNorFakeTheSourceLine(_:) started.
+apple	just apple-check	2026-11-17T17:07:39.4574190Z ◇ Test aFailedFirstMessageStaysOnItsBubble() started.
+apple	just apple-check	2026-11-17T17:07:39.4574410Z ◇ Test aLockedDeviceIsToldWhyAndHowToGoOn() started.
+apple	just apple-check	2026-11-17T17:07:39.4574650Z ◇ Test whatIsTypedNeverShowsInAnActionOrStateDump() started.
+apple	just apple-check	2026-11-17T17:07:39.4578810Z ◇ Test aNewShellOpensOnceStarted() started.
+apple	just apple-check	2026-11-17T17:07:39.4579060Z ◇ Test opensTheShellSizesItDrawsItsScreenAndLetsGoWhenItCloses() started.
+apple	just apple-check	2026-11-17T17:07:39.4579320Z ◇ Test anAgentsTerminalIsWatchedButTakesNoKeys() started.
+apple	just apple-check	2026-11-17T17:07:39.4579610Z ◇ Test aStateTappedOnTheMacLoadsItsIssuesBesideTheMapAndAPushClearsThem() started.
+apple	just apple-check	2026-11-17T17:07:39.4580120Z ◇ Test case passing 2 arguments location → "/pair?bad=wrong&left=4", why → "That code is wrong." to aRefusedCodeSaysWhy(_:_:) started.
+apple	just apple-check	2026-11-17T17:07:39.4580610Z ◇ Test case passing 2 arguments location → "/pair?bad=expired", why → "That code ran out: get a new one." to aRefusedCodeSaysWhy(_:_:) started.
+apple	just apple-check	2026-11-17T17:07:39.4581190Z ◇ Test case passing 2 arguments location → "/pair?bad=limit&wait=30", why → "Too many wrong codes: wait a minute." to aRefusedCodeSaysWhy(_:_:) started.
+apple	just apple-check	2026-11-17T17:07:39.4581680Z ◇ Test aStateThatFailsToLoadBesideTheMapSaysWhoIsUnreachable() started.
+apple	just apple-check	2026-11-17T17:07:39.4582020Z ◇ Test case passing 1 argument frame → home-dark to frameMatchesTheDesign(_:) started.
+apple	just apple-check	2026-11-17T17:07:39.4582360Z ◇ Test aTappedSheetPushesItsScreenAndBackReturnsToTheOneUnder() started.
+apple	just apple-check	2026-11-17T17:07:39.4582680Z ◇ Test aPinnedRoomIsKeptAcrossLaunchesAndAChatIsNeverPinnedAsARoom() started.
+apple	just apple-check	2026-11-17T17:07:39.4583030Z ◇ Test pinningARoomPutsItAfterThePinnedPersonasAndUnpinningTakesItOut() started.
+apple	just apple-check	2026-11-17T17:07:39.4583350Z ◇ Test aRoomIsAChatWithItsMembersAndLastSpeakerNeverInOthers() started.
+apple	just apple-check	2026-11-17T17:07:39.4583600Z ◇ Test anAnswersOpenPushesThatScreen() started.
+apple	just apple-check	2026-11-17T17:07:39.4583900Z ◇ Test aTimerTapPushesItsSettingsScreenFocusedOnItsFieldAndBackClearsTheFocus() started.
+apple	just apple-check	2026-11-17T17:07:39.4584270Z ◇ Test aLaneTappedOnTheStripPushesItsChatAndQueueReturnsToTheSameStrip() started.
+apple	just apple-check	2026-11-17T17:07:39.4584600Z ◇ Test case passing 1 argument name → "own-cards.json" to everyCardDraws(_:) started.
+apple	just apple-check	2026-11-17T17:07:39.4584890Z ◇ Test case passing 1 argument name → "cards.json" to everyCardDraws(_:) started.
+apple	just apple-check	2026-11-17T17:07:39.4585360Z ◇ Test case passing 1 argument markdown → "Questions for you:
+apple	just apple-check	2026-11-17T17:07:39.4585590Z **HTML or SwiftUI?**" to aReplyKeepsEachLineOnItsOwnLine(_:) started.
+apple	just apple-check	2026-11-17T17:07:39.4585830Z ◇ Test case passing 1 argument markdown → "Questions for you:
+apple	just apple-check	2026-11-17T17:07:39.4586100Z 1. **HTML or SwiftUI?**" to aReplyKeepsEachLineOnItsOwnLine(_:) started.
+apple	just apple-check	2026-11-17T17:07:39.4586360Z ◇ Test case passing 1 argument markdown → "the iOS target building.
+apple	just apple-check	2026-11-17T17:07:39.4586590Z ## Answering an ask" to aReplyKeepsEachLineOnItsOwnLine(_:) started.
+apple	just apple-check	2026-11-17T17:07:39.4586870Z ◇ Test case passing 1 argument markdown → "fill with them.
+apple	just apple-check	2026-11-17T17:07:39.4587080Z > **Call voice:**" to aReplyKeepsEachLineOnItsOwnLine(_:) started.
+apple	just apple-check	2026-11-17T17:07:39.4587360Z ◇ Test case passing 1 argument name → "queue.json" to everyScreenDraws(_:) started.
+apple	just apple-check	2026-11-17T17:07:39.4587660Z ◇ Test case passing 1 argument name → "events.json" to everyScreenDraws(_:) started.
+apple	just apple-check	2026-11-17T17:07:39.4587950Z ◇ Test case passing 1 argument name → "fleets.json" to everyScreenDraws(_:) started.
+apple	just apple-check	2026-11-17T17:07:39.4588260Z ◇ Test case passing 1 argument name → "hello.json" to everyScreenDraws(_:) started.
+apple	just apple-check	2026-11-17T17:07:39.4588590Z ◇ Test case passing 1 argument style → .terminal to theQueueInSceneDrawsInEveryLook(_:) started.
+apple	just apple-check	2026-11-17T17:07:39.4588950Z ◇ Test case passing 1 argument style → .modern to theQueueInSceneDrawsInEveryLook(_:) started.
+apple	just apple-check	2026-11-17T17:07:39.4589290Z ◇ Test case passing 1 argument style → .scene to theQueueInSceneDrawsInEveryLook(_:) started.
+apple	just apple-check	2026-11-17T17:07:39.4589670Z ◇ Test case passing 1 argument page → .notifications to aPageFillsTheSheetWithItsBackground(_:) started.
+apple	just apple-check	2026-11-17T17:07:39.4590060Z ◇ Test case passing 1 argument page → .appIcon to aPageFillsTheSheetWithItsBackground(_:) started.
+apple	just apple-check	2026-11-17T17:07:39.4590410Z ◇ Test case passing 1 argument page → .look to aPageFillsTheSheetWithItsBackground(_:) started.
+apple	just apple-check	2026-11-17T17:07:39.4590770Z ◇ Test case passing 1 argument page → .terminal to aPageFillsTheSheetWithItsBackground(_:) started.
+apple	just apple-check	2026-11-17T17:07:39.4591160Z ◇ Test case passing 1 argument page → .themeEditor to aPageFillsTheSheetWithItsBackground(_:) started.
+apple	just apple-check	2026-11-17T17:07:39.4591520Z ◇ Test case passing 1 argument name → "fleets.json" to everyFleetsConfigScreenDraws(_:) started.
+apple	just apple-check	2026-11-17T17:07:39.4591870Z ◇ Test case passing 1 argument name → "fleet.json" to everyFleetsConfigScreenDraws(_:) started.
+apple	just apple-check	2026-11-17T17:07:39.4592200Z ◇ Test case passing 1 argument name → "role.json" to everyFleetsConfigScreenDraws(_:) started.
+apple	just apple-check	2026-11-17T17:07:39.4592550Z ◇ Test case passing 1 argument name → "global.json" to everyFleetsConfigScreenDraws(_:) started.
+apple	just apple-check	2026-11-17T17:07:39.4592890Z ◇ Test case passing 1 argument name → "text.json" to everyFleetsConfigScreenDraws(_:) started.
+apple	just apple-check	2026-11-17T17:07:39.4593640Z ◇ Test case passing 1 argument name → "review.json" to everyFleetsConfigScreenDraws(_:) started.
+apple	just apple-check	2026-11-17T17:07:39.4593990Z ◇ Test case passing 1 argument name → "stale.json" to everyFleetsConfigScreenDraws(_:) started.
+apple	just apple-check	2026-11-17T17:07:39.4594340Z ◇ Test case passing 1 argument name → "add.json" to everyFleetsConfigScreenDraws(_:) started.
+apple	just apple-check	2026-11-17T17:07:39.4594670Z ◇ Test case passing 1 argument kind → "run" to aGuardedCardWithNoPosterIsNotDrawn(_:) started.
+apple	just apple-check	2026-11-17T17:07:39.4595020Z ◇ Test case passing 1 argument kind → "secret" to aGuardedCardWithNoPosterIsNotDrawn(_:) started.
+apple	just apple-check	2026-11-17T17:07:39.4595380Z ◇ Test case passing 1 argument kind → "confirm" to aGuardedCardWithNoPosterIsNotDrawn(_:) started.
+apple	just apple-check	2026-11-17T17:07:39.4595750Z ◇ Test case passing 1 argument kind → "permissions" to aGuardedCardWithNoPosterIsNotDrawn(_:) started.
+apple	just apple-check	2026-11-17T17:07:39.4596090Z ◇ Test case passing 1 argument hex → "#a88a2a" to aShadeKeepsItsColour(_:) started.
+apple	just apple-check	2026-11-17T17:07:39.4596390Z ◇ Test case passing 1 argument hex → "#c0203f" to aShadeKeepsItsColour(_:) started.
+apple	just apple-check	2026-11-17T17:07:39.4596680Z ◇ Test case passing 1 argument hex → "#1f7a45" to aShadeKeepsItsColour(_:) started.
+apple	just apple-check	2026-11-17T17:07:39.4597090Z ◇ Test case passing 1 argument hex → "#13262d" to aShadeKeepsItsColour(_:) started.
+apple	just apple-check	2026-11-17T17:07:39.4597380Z ◇ Test case passing 1 argument hex → "#ffffff" to aShadeKeepsItsColour(_:) started.
+apple	just apple-check	2026-11-17T17:07:39.4597670Z ◇ Test case passing 1 argument hex → "#000000" to aShadeKeepsItsColour(_:) started.
+apple	just apple-check	2026-11-17T17:07:39.4597990Z ◇ Test case passing 1 argument hex → "#7a4aa8" to aShadeKeepsItsColour(_:) started.
+apple	just apple-check	2026-11-17T17:07:39.4598270Z ◇ Test case passing 1 argument hex → "#1c6e70" to aShadeKeepsItsColour(_:) started.
+apple	just apple-check	2026-11-17T17:07:39.4598650Z ◇ Test case passing 1 argument confirmed → false to aSecretIsSentOnlyOnceTheOwnerIsConfirmed(_:) started.
+apple	just apple-check	2026-11-17T17:07:39.4599050Z ◇ Test case passing 1 argument confirmed → true to aSecretIsSentOnlyOnceTheOwnerIsConfirmed(_:) started.
+apple	just apple-check	2026-11-17T17:07:39.4599490Z ◇ Test case passing 2 arguments name → "newer-format", expected → .format(2) to aBadLayoutIsRefusedWithWhereAndWhy(_:_:) started.
+apple	just apple-check	2026-11-17T17:07:39.4600100Z ◇ Test case passing 2 arguments name → "unknown-type", expected → .unknownType(path: "root.slots.main[0]", type: "carousel") to aBadLayoutIsRefusedWithWhereAndWhy(_:_:) started.
+apple	just apple-check	2026-11-17T17:07:39.4600800Z ◇ Test case passing 2 arguments name → "root-not-nav", expected → .unknownType(path: "root", type: "screen") to aBadLayoutIsRefusedWithWhereAndWhy(_:_:) started.
+apple	just apple-check	2026-11-17T17:07:39.4601480Z ◇ Test case passing 2 arguments name → "bad-screen", expected → .badScreen(path: "root.slots.main[0]") to aBadLayoutIsRefusedWithWhereAndWhy(_:_:) started.
+apple	just apple-check	2026-11-17T17:07:39.4602100Z ◇ Test case passing 2 arguments name → "unknown-place", expected → .badPlace(path: "root.slots.side[0]", place: "colum") to aBadLayoutIsRefusedWithWhereAndWhy(_:_:) started.
+apple	just apple-check	2026-11-17T17:07:39.4602750Z ◇ Test case passing 2 arguments name → "unknown-transition", expected → .badTransition(path: "root.slots.menu[0]", transition: "spin") to aBadLayoutIsRefusedWithWhereAndWhy(_:_:) started.
+apple	just apple-check	2026-11-17T17:07:39.4603410Z ◇ Test case passing 2 arguments name → "unknown-slot", expected → .unknownSlot(path: "root.slots.main[0]", slot: "header") to aBadLayoutIsRefusedWithWhereAndWhy(_:_:) started.
+apple	just apple-check	2026-11-17T17:07:39.4604060Z ◇ Test case passing 2 arguments name → "unknown-config", expected → .unknownConfig(path: "root.slots.main[0]", key: "colour") to aBadLayoutIsRefusedWithWhereAndWhy(_:_:) started.
+apple	just apple-check	2026-11-17T17:07:39.4604630Z ◇ Test case passing 2 arguments name → "duplicate-id", expected → .duplicateId("x") to aBadLayoutIsRefusedWithWhereAndWhy(_:_:) started.
+apple	just apple-check	2026-11-17T17:07:39.4605360Z ◇ Test case passing 2 arguments name → "cycle", expected → .tooDeep(path: "root.slots.main[0].slots.main[0].slots.main[0].slots.main[0].slots.main[0].slots.main[0]") to aBadLayoutIsRefusedWithWhereAndWhy(_:_:) started.
+apple	just apple-check	2026-11-17T17:07:39.4605900Z ◇ Test case passing 2 arguments seconds → 999970, text → "now" to agoIsShort(_:_:) started.
+apple	just apple-check	2026-11-17T17:07:39.4606230Z ◇ Test case passing 2 arguments seconds → 999000, text → "16m" to agoIsShort(_:_:) started.
+apple	just apple-check	2026-11-17T17:07:39.4606750Z ◇ Test case passing 2 arguments seconds → 990000, text → "2h" to agoIsShort(_:_:) started.
+apple	just apple-check	2026-11-17T17:07:39.4607070Z ◇ Test case passing 2 arguments seconds → 800000, text → "2d" to agoIsShort(_:_:) started.
+apple	just apple-check	2026-11-17T17:07:39.4607400Z ◇ Test case passing 2 arguments seconds → 1000500, text → "now" to agoIsShort(_:_:) started.
+apple	just apple-check	2026-11-17T17:07:39.4607850Z ◇ Test case passing 2 arguments api → "connecting", state → .working to aThreadsStateIsALanesState(_:_:) started.
+apple	just apple-check	2026-11-17T17:07:39.4608250Z ◇ Test case passing 2 arguments api → "working", state → .working to aThreadsStateIsALanesState(_:_:) started.
+apple	just apple-check	2026-11-17T17:07:39.4608670Z ◇ Test case passing 2 arguments api → "blocked", state → .needs to aThreadsStateIsALanesState(_:_:) started.
+apple	just apple-check	2026-11-17T17:07:39.4609050Z ◇ Test case passing 2 arguments api → "done", state → .done to aThreadsStateIsALanesState(_:_:) started.
+apple	just apple-check	2026-11-17T17:07:39.4609420Z ◇ Test case passing 2 arguments api → "error", state → .fail to aThreadsStateIsALanesState(_:_:) started.
+apple	just apple-check	2026-11-17T17:07:39.4609820Z ◇ Test case passing 2 arguments api → "unconnected", state → .fail to aThreadsStateIsALanesState(_:_:) started.
+apple	just apple-check	2026-11-17T17:07:39.4610190Z ◇ Test case passing 2 arguments api → "", state → .idle to aThreadsStateIsALanesState(_:_:) started.
+apple	just apple-check	2026-11-17T17:07:39.4610560Z ◇ Test case passing 2 arguments api → "ended", state → .idle to aThreadsStateIsALanesState(_:_:) started.
+apple	just apple-check	2026-11-17T17:07:39.4610880Z ✔ Test aResolvedServerIsAnHTTPAddress() passed after 0.031 seconds.
+apple	just apple-check	2026-11-17T17:07:39.4611150Z ✔ Test aKeptScreenIsReadBackByItsKey() passed after 0.031 seconds.
+apple	just apple-check	2026-11-17T17:07:39.4611420Z ✔ Test aRowAndAnAskDecodeFromTheServersJSON() passed after 0.032 seconds.
+apple	just apple-check	2026-11-17T17:07:39.4611690Z ✔ Test anAskIsACardThatSaysItsOutcome() passed after 0.032 seconds.
+apple	just apple-check	2026-11-17T17:07:39.4611960Z ✔ Test aClientForAServerCarriesItsCookie() passed after 0.033 seconds.
+apple	just apple-check	2026-11-17T17:07:39.4612270Z ✔ Test theWordBeingTypedPicksTheFirstMemberNotYetNamed() passed after 0.032 seconds.
+apple	just apple-check	2026-11-17T17:07:39.4612620Z ✔ Test membersReplyInMentionOrderOnceEachByNameOrId() passed after 0.032 seconds.
+apple	just apple-check	2026-11-17T17:07:39.4612970Z ✔ Test aDraftNamingMembersQueuesThemUpNextAndWaitsTheOthers() passed after 0.032 seconds.
+apple	just apple-check	2026-11-17T17:07:39.4613330Z ✔ Test pickingAMemberReplacesTheWordBeingTypedWithItsToken() passed after 0.032 seconds.
+apple	just apple-check	2026-11-17T17:07:39.4613640Z ✔ Test aSchemeMissingATokenIsNoPalette() passed after 0.032 seconds.
+apple	just apple-check	2026-11-17T17:07:39.4613960Z ✔ Test anExchangeKnowsItsAskerItsDepthAndTheAnswerersOwnChat() passed after 0.033 seconds.
+apple	just apple-check	2026-11-17T17:07:39.4614260Z ✔ Test sseFramesFollowTheSpec() passed after 0.032 seconds.
+apple	just apple-check	2026-11-17T17:07:39.4614560Z ✔ Test anActionAnswersWithItsChoiceOrOtherTextAndItsOneValue() passed after 0.032 seconds.
+apple	just apple-check	2026-11-17T17:07:39.4614850Z ✔ Test aPacksSchemeIsItsPalette() passed after 0.033 seconds.
+apple	just apple-check	2026-11-17T17:07:39.4615130Z ✔ Test theBundledHomeDrawsItsPinnedRowThenItsChats() passed after 0.032 seconds.
+apple	just apple-check	2026-11-17T17:07:39.4615430Z ✔ Test farmsSchemesAreTheDefaultPalettes() passed after 0.033 seconds.
+apple	just apple-check	2026-11-17T17:07:39.4615690Z ✔ Test anotherDayIsNamedByItsDate() passed after 0.033 seconds.
+apple	just apple-check	2026-11-17T17:07:39.4616000Z ✔ Test aFreshInstallShowsTheLaughingKookaburraThePrimaryIcon() passed after 0.033 seconds.
+apple	just apple-check	2026-11-17T17:07:39.4616320Z ✔ Test thePortIsTheConfigsTopLevelOne() passed after 0.033 seconds.
+apple	just apple-check	2026-11-17T17:07:39.4616600Z ✔ Test followingShowsTheFirstIconOfTheStylesSet() passed after 0.033 seconds.
+apple	just apple-check	2026-11-17T17:07:39.4616900Z ✔ Test jsonTextParsesAndAStampReadsBackAsItsDate() passed after 0.033 seconds.
+apple	just apple-check	2026-11-17T17:07:39.4617240Z ✔ Test aPickedIconSurvivesAStyleChangeUntilFollowingAgain() passed after 0.033 seconds.
+apple	just apple-check	2026-11-17T17:07:39.4617630Z ✔ Test insertGoesBeforeAfterOrAtTheEndAndScreenAndDotReplaceTheWhole() passed after 0.033 seconds.
+apple	just apple-check	2026-11-17T17:07:39.4618050Z ✔ Test aLinkedThreadAttributesTheQuestionTheToolsTheNoteAndTheReply() passed after 0.034 seconds.
+apple	just apple-check	2026-11-17T17:07:39.4618390Z ✔ Test theDefaultHoldsBothLockedScreensLast() passed after 0.034 seconds.
+apple	just apple-check	2026-11-17T17:07:39.4618790Z ✔ Test theDefaultResolvesTodaysPlacesOnEachSize() passed after 0.034 seconds.
+apple	just apple-check	2026-11-17T17:07:39.4619080Z ✔ Test theReplySoFarIsDrawnLastWithItsCaret() passed after 0.034 seconds.
+apple	just apple-check	2026-11-17T17:07:39.4619350Z ✔ Test anUnguardedCardDrawsFromAnyone() passed after 0.034 seconds.
+apple	just apple-check	2026-11-17T17:07:39.4619660Z ✔ Test toolsFoldCardsAreBlocksAndNotesShow() passed after 0.034 seconds.
+apple	just apple-check	2026-11-17T17:07:39.4619910Z ✔ Test timesAreRelativeToNow() passed after 0.034 seconds.
+apple	just apple-check	2026-11-17T17:07:39.4620230Z ✔ Test aGuardedCardWithNoPosterIsNotDrawn(_:) with 4 test cases passed after 0.034 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1287110Z ✔ Test markdownKeepsAnOpenFenceAndSplitsParagraphsFromBullets() passed after 0.034 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1287630Z ✔ Test aChatStyleTurnIsItsReplyAndOneFoldedRowWithApprovalsAndErrorsInline() passed after 0.034 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1288030Z ✔ Test theSameNoteTwiceInARowIsOneRow() passed after 0.034 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1288370Z ✔ Test theLastGoodLayoutIsKeptOnDiskUntilForgotten() passed after 0.034 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1288730Z ✔ Test aDraggedAccountTakesThePlaceOfTheRowItIsDroppedOn() passed after 0.034 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1289030Z ✔ Test aLabelNamesItsFolder() passed after 0.034 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1289330Z ✔ Test aDestructiveTapIsAlwaysConfirmedTitledWithItsLabel() passed after 0.034 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1289720Z ✔ Test aWorkingChatStyleTurnHidesItsStepsAndNamesTheCurrentOne() passed after 0.034 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1290050Z ✔ Test onlyCorePostsPermissions() passed after 0.034 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1290300Z ✔ Test aMarkPassesAtItsMinimum() passed after 0.034 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1290580Z ✔ Test theDotAndProblemsSayWhetherAMachineIsReady() passed after 0.034 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1290900Z ✔ Test aShadeKeepsItsColour(_:) with 8 test cases passed after 0.034 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1291260Z ✔ Test aTapSendsItsActionWithTheTapsTheSourcesAndTheGivenValues() passed after 0.034 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1291650Z ✔ Test aSheetSendsEveryFormsFieldsAndAFieldsOwnValueWins() passed after 0.034 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1291970Z ✔ Test theLineSaysWhoRepliesInOrder() passed after 0.035 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1292260Z ✔ Test othersNotesSayWhereEachSourcesSessionsWent() passed after 0.034 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1292640Z ✔ Test lanesStandInTheirPlacesGateFirstAndKeepTheirOrderWithinOne() passed after 0.035 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1293050Z ✔ Test thePersonaWithAClaimingPluginHasAnEmptySheetBeforeAnyLane() passed after 0.034 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1293380Z ✔ Test aShadeMovesByHueAndLight() passed after 0.034 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1293770Z ✔ Test othersSplitsChatsWithNoPersonaFromEachUnclaimedSourceAndNamesNeitherByItsAgent() passed after 0.034 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1294210Z ✔ Test aHorseKeepsItsIssuesCoatInTheStripAndItsRow() passed after 0.034 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1294530Z ✔ Test aLaneNoPluginClaimsFallsIntoOthers() passed after 0.034 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1294950Z ✔ Test homeListsOnlyPersonasChatsAndALaneGoesToThePersonaItsClaimingPluginIsAttachedTo() passed after 0.034 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1295450Z ✔ Test thisHostIsNamedByItsHostAndThePickerGroupsComputersAndDesks() passed after 0.034 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1295840Z ✔ Test aNodesTransitionIsDecodedAndKeptOnceResolved() passed after 0.034 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1296160Z ✔ Test aRoundsURLLinksItsPullRequestOrIssue() passed after 0.034 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1296450Z ✔ Test anOverrideWinsInItsOwnThemeOnly() passed after 0.034 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1296740Z ✔ Test theWalkSwapsGaitFramesAndTheLoopsRun() passed after 0.034 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1297080Z ✔ Test motionIsOnByDefaultAndOffWithReduceMotionOrTheSwitch() passed after 0.034 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1297430Z ✔ Test aPersonaKeepsItsSpriteAndPersonasDiffer() passed after 0.034 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1297760Z ✔ Test aMissingSizeInheritsTheOtherAndResolvesPerSize() passed after 0.034 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1298490Z ✔ Test terminalFiguresHaveTwoFrames() passed after 0.034 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1298810Z ✔ Test everyIconIsInTheAssetCatalogAsAnAppIconAndAPreview() passed after 0.035 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1299200Z ✔ Test aSubFolderGoesUpToItsParentAndItsSearchMatchesNamesOnly() passed after 0.034 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1299600Z ✔ Test eachRowStateMapsToItsMotion() passed after 0.034 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1299900Z ✔ Test aThemeSwitchRepicksFromTheNewCastWithTheSameSeed() passed after 0.034 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1300290Z ✔ Test aMemberMovesInRoomOrderAndItsPlaceReads() passed after 0.034 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1300630Z ✔ Test everyLayoutHoldsBothLockedScreensFromTheDecoder() passed after 0.034 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1300940Z ✔ Test queueStreamOpsPatchTheQueueByID() passed after 0.035 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1301270Z ✔ Test aBadLayoutIsRefusedWithWhereAndWhy(_:_:) with 10 test cases passed after 0.034 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1301650Z ✔ Test doneHopsNeedsPulsesAndTintsFailShakesThenTheyRest() passed after 0.034 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1301980Z ✔ Test aRoomRowCarriesItsMembersInRoomOrder() passed after 0.034 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1302280Z ✔ Test aRoundShowsWhoRepliedPassedAndReplies() passed after 0.034 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1302650Z ✔ Test theClockReadsHoursAndMinutesAndTheRoundsMinutesAndSeconds() passed after 0.034 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1303030Z ✔ Test aLayoutThatReplacesOrHidesALockedScreenIsRefused() passed after 0.035 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1303380Z ✔ Test aMentionWaitsTheOthersAndStopKeepsTheReplies() passed after 0.034 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1303730Z ✔ Test roomItemsAreAttributedWithADividerAfterEachRound() passed after 0.034 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1304060Z ✔ Test aFullUpdateDrawsEveryRowAndTheCursor() passed after 0.034 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1304390Z ✔ Test aLanesHeadIsItsHorseItsLiveRoundsLaneAndItsPR() passed after 0.035 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1304770Z ✔ Test theSidebarIsAColumnOnWideAndItsNodesAreMenuRowsOnCompact() passed after 0.034 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1305090Z ✔ Test aPlaceKeepsItsIdAsItsKey() passed after 0.034 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1305350Z ✔ Test theOfflineLineSaysWhoAndHowOld() passed after 0.034 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1305640Z ✔ Test aSidebarNotPlacedForTheSizeLendsNoRows() passed after 0.034 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1305940Z ✔ Test aPluginRowDecodesItsPermissions() passed after 0.034 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1306220Z ✔ Test aTurnIsWorkingWhileItRunsOrConnects() passed after 0.034 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1306530Z ✔ Test commentsLabelsAndUnknownLinesAreSkipped() passed after 0.034 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1306860Z ✔ Test memoryListsTheNewestNoteFirstWithWhoAddedIt() passed after 0.034 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1307150Z ✔ Test agoIsShort(_:_:) with 5 test cases passed after 0.034 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1307450Z ✔ Test aMergeOrANewRoundUpdatesTheStripAndTheRowInPlace() passed after 0.035 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1307810Z ✔ Test keystrokesNeverShowInADescriptionOrADump() passed after 0.034 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1308170Z ✔ Test homesRowIsThePinnedPersonasOrEveryoneWhileNoneIsPinned() passed after 0.034 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1308520Z ✔ Test aFileThatIsNotJSONIsRefused() passed after 0.035 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1308790Z ✔ Test aPartialUpdateChangesOnlyItsRows() passed after 0.034 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1309100Z ✔ Test eachPinnedPersonaIsInItsNewestChatsState() passed after 0.034 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1309430Z ✔ Test aChatWithNoPersonaSeedsItsSpriteByItsThread() passed after 0.034 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1309770Z ✔ Test anInitialsAvatarDrawsItsInitialsInThePickedTint() passed after 0.034 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1310090Z ✔ Test aTypedAddressOrALinkIsAServer() passed after 0.034 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1310430Z ✔ Test theChatListDrawsEachRowWithItsPersonaOrItsTitleAndAgent() passed after 0.034 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1310820Z ✔ Test aServerPersonaGetsInitialsATintAndItsIDAsItsSpriteSeed() passed after 0.034 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1311290Z ✔ Test settingsKeepTheirLookAndTokenThroughJSON() passed after 0.034 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1311580Z ✔ Test modelsKeepWhatTheyAreGiven() passed after 0.034 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1311840Z ✔ Test eachStateHasItsFigureWordAndPose() passed after 0.034 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1312180Z ✔ Test aThreadsStateIsALanesState(_:_:) with 8 test cases passed after 0.033 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1312480Z ✔ Test moreThanTwoHundredNodesIsRefused() passed after 0.035 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1312800Z ✔ Test aMergeOpUpdatesTheMapsCountsInPlace() passed after 0.034 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1313170Z ✔ Test theSheetHasOneRowPerIssueNeedsYouFirstWithItsRoundsOldestFirst() passed after 0.034 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1313560Z ✔ Test aNewThreadStartsForAPersonaOnTheMachinePicked() passed after 0.036 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1313870Z ✔ Test aRefusedActionThrowsItsStatus() passed after 0.036 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1314160Z ✔ Test aRefusedCodeSaysWhy(_:_:) with 3 test cases passed after 0.036 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1314550Z ✔ Test backEdgesGoRightLeavingEdgesGoLeftAndAnOrphanGoesUnderItsPredecessors() passed after 0.035 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1314900Z ✔ Test aSetupChatSaysSo() passed after 0.036 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1315200Z ✔ Test anActionPostsTheScreenTheActionAndItsValuesAndGetsOps() passed after 0.036 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1315560Z ✔ Test theLooksReadEachPacksSchemesAndSprites() passed after 0.036 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1315890Z ✔ Test aPairBothWaysIsOneLineAndASpineJumpIsNotDrawn() passed after 0.035 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1316220Z ✔ Test aNewThreadCarriesThePickedModelAndEffort() passed after 0.036 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1316520Z ✔ Test resetPostsAndAnswersTheNewLayout() passed after 0.036 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1316810Z ✔ Test aRefusedSaveCarriesTheServersReason() passed after 0.036 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1317070Z ✔ Test aMemberMovesInRoomOrder() passed after 0.036 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1317380Z ✔ Test drovesMapIsOneSpineWithItsSkippedStatesOptional() passed after 0.037 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1317670Z ✔ Suite FolderListingTests passed after 5.121 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1317870Z ✔ Suite MachineRowTests passed after 5.126 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1318070Z ✔ Suite PaletteTests passed after 5.129 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1318270Z ✔ Suite DefaultLayoutTests passed after 5.129 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1318470Z ✔ Suite CardTrustTests passed after 5.129 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1318760Z ◇ Test case passing 1 argument frame → chat-streaming-dark to frameMatchesTheDesign(_:) started.
+apple	just apple-check	2026-11-17T17:07:49.1319040Z ✔ Suite AppIconTests passed after 5.131 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1319230Z ✔ Suite ThemeDraftTests passed after 5.131 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1319430Z ✔ Suite SceneTests passed after 5.131 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1319610Z ✔ Suite SidebarTests passed after 5.131 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1319790Z ✔ Suite PluginsTests passed after 5.131 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1319990Z ✔ Suite ActionTests passed after 5.131 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1320180Z ✔ Suite ExchangeTests passed after 5.132 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1320370Z ✔ Suite MentionTests passed after 5.132 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1320560Z ✔ Suite TerminalTests passed after 5.132 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1320790Z ✔ Test cooeesOwnSentenceIsTheError() passed after 5.133 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1321080Z ✔ Test machinesDecodeAndAMovePostsTheMachine() passed after 5.132 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1321330Z ✔ Suite RoomTests passed after 5.133 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1321610Z ✔ Test aDeleteRemovesThePersonaAndAModelPickGoesToItsThread() passed after 5.132 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1321920Z ✔ Test theKeychainKeepsOneServer() passed after 5.133 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1322210Z ✔ Test aLayoutIsAskedForByItsEtagAndUnchangedIsNil() passed after 5.132 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1322540Z ✔ Test everyFixtureDecodesAndEncodesBackTheSame() passed after 5.132 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1322960Z ✔ Test pushOnPostsTheDeviceTokenAndOffDeletesIt() passed after 5.132 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1323250Z ✔ Test aMessageCopiesAsPlainText() passed after 5.132 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1323480Z ✔ Suite WorkflowTests passed after 5.134 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1323700Z ✔ Suite LayoutTests passed after 5.134 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1323890Z ✔ Suite MotionTests passed after 5.134 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1324070Z ✔ Suite DiagramTests passed after 5.135 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1324290Z ✔ Suite ModelsTests passed after 5.138 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1324600Z ✔ Test aPinnedRoomIsKeptAcrossLaunchesAndAChatIsNeverPinnedAsARoom() passed after 6.078 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1324900Z ✔ Suite ListingTests passed after 6.086 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1325140Z ✔ Test aPluginsPermissionsCardIsRefused() passed after 6.086 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1325530Z ✔ Test theBundledMenuOpensCoresSettingsScreensAndKeepsLookAndNotificationsLocal() passed after 6.086 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1326010Z ✔ Test aPluginScreenMovedToTheSidebarIsDrawnInItsColumnAndNowhereElse() passed after 6.086 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1326440Z ✔ Test aRowWhoseCurrentRoundNeedsYouOpensItsRoundsOthersStayFolded() passed after 6.086 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1326830Z ✔ Test aPickedPhotoIsShrunkToAJpegAndDrawnAsTheAvatar() passed after 6.086 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1327190Z ✔ Test everyCatalogueBlockDrawsAndAnUnknownOneIsSkipped() passed after 6.086 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1327530Z ✔ Test initialsAndAColourDrawInsteadOfTheSymbol() passed after 6.086 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1327830Z ✔ Test memoryDrawsOnlyTheNewestThreeNotes() passed after 6.086 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1328110Z ✔ Test aDiffDrawsEveryLineOfEveryHunk() passed after 6.086 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1328390Z ✔ Test anEditorShowsEachErrorUnderItsLine() passed after 6.086 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1328660Z ✔ Test aPlacesCountDrawsOnItsChip() passed after 6.086 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1328920Z ✔ Test theQueueDrawsItsStreamsOps() passed after 6.086 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1329220Z ✔ Test theSceneStripDrawsOnlyInTheSceneLook() passed after 6.086 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1329510Z ✔ Test everyCardDraws(_:) with 2 test cases passed after 6.086 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1329760Z ✔ Test everyProposalCardDraws() passed after 6.086 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1330040Z ✔ Test theHeaderDrawsPlusOnlyWhenItCanStartAChat() passed after 6.086 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1330370Z ✔ Test anOwnPackIsEditedInPlaceAndABuiltInIsCopied() passed after 6.086 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1330750Z ✔ Test aChatStyleTurnFoldsItsStepsAndThePillNamesTheCurrentOne() passed after 6.085 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1331110Z ✔ Test whatIsTypedNeverShowsInAnActionOrStateDump() passed after 6.084 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1331470Z ✔ Test aRoomIsAChatWithItsMembersAndLastSpeakerNeverInOthers() passed after 6.079 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1331870Z ✔ Test theQueueInSceneDrawsInEveryLook(_:) with 3 test cases passed after 6.087 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1332170Z ✔ Test aCancelledStreamStops() passed after 6.087 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1332470Z ✔ Test aCardComesAsItsBlockAndItsAnswerPostsTheItemsChoice() passed after 6.087 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1332860Z ✔ Test theJSONCanNeitherSetNorFakeTheSourceLine(_:) with 4 test cases passed after 6.089 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1333240Z ✔ Test aReplyKeepsEachLineOnItsOwnLine(_:) with 4 test cases passed after 6.089 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1333550Z ✔ Test everyScreenDraws(_:) with 4 test cases passed after 6.089 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1333840Z ✔ Test aRoomIsMadeOfItsMembersInRoomOrder() passed after 6.088 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1334140Z ✔ Test placesPluginsAndAScreenComeThroughCooee() passed after 6.091 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1334450Z ✔ Test homePersonasAndASliceDecodeAsDocumented() passed after 6.091 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1334760Z ✔ Test attachingAddsThePluginToThePersonaOnce() passed after 6.091 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1335270Z ✔ Test anEditSavesEveryFieldThroughItsScreenSoNothingTheAppDoesNotDrawIsLost() passed after 6.090 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1335700Z ✔ Test aPageFillsTheSheetWithItsBackground(_:) with 5 test cases passed after 6.091 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1335980Z ✔ Suite MachinesTests passed after 6.093 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1336230Z ✔ Suite ScreenTests passed after 6.093 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1336410Z ✔ Suite ItemsTests passed after 6.093 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1336630Z ✔ Test aCommandThatHangsIsStopped() passed after 6.092 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1336900Z ✔ Test aRefusedStreamEnds() passed after 6.092 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1337150Z ✔ Test refusedLayoutEventsThrowTheirStatus() passed after 6.092 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1337420Z ✔ Test aDeclinedOrGoneClaimSaysWhy() passed after 6.094 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1337710Z ✔ Test theEditorChecksColoursAndSavesAPackByName() passed after 6.093 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1338040Z ✔ Test everyFleetsConfigScreenDraws(_:) with 8 test cases passed after 6.093 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1338380Z ✔ Test aServerAdvertisedOnTheLANIsFoundAtItsAddress() passed after 6.094 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1338730Z ◇ Test case passing 1 argument frame → chat-card-dark to frameMatchesTheDesign(_:) started.
+apple	just apple-check	2026-11-17T17:07:49.1339110Z ✔ Suite SidebarRenderTests passed after 6.096 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1339410Z ✔ Test theAgentChipsListsAndTheFoldersDecodeFromTheServer() passed after 6.095 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1339700Z ✔ Suite HeaderRenderTests passed after 6.097 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1339910Z ✔ Suite PersonaRenderTests passed after 6.098 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1340110Z ✔ Suite CardClientTests passed after 6.098 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1340310Z ✔ Suite TrustRenderTests passed after 6.098 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1340500Z ✔ Suite MenuRenderTests passed after 6.994 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1340770Z ✔ Test listsStartsAndTypesThroughTheTerminalPlugin() passed after 6.995 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1341110Z ✔ Test aCooeeAnsweringOnThisMacIsFoundFirstAsThisMac() passed after 6.996 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1341400Z ✔ Suite LooksClientTests passed after 6.997 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1341740Z ✔ Test aCommandReturnsItsOutputOrFailsWithItsError() passed after 6.997 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1342010Z ✔ Suite BlockRenderTests passed after 6.999 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1342210Z ✔ Suite PersonasTests passed after 6.999 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1342450Z ✔ Test aCodePairsAndAClaimWaitsThenPairs() passed after 6.998 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1342790Z ◇ Test case passing 1 argument frame → chat-cards-more-dark to frameMatchesTheDesign(_:) started.
+apple	just apple-check	2026-11-17T17:07:49.1343070Z ✔ Suite DeviceTests passed after 7.000 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1343350Z ✔ Test sendQueueAndTheTurnsCallsPostTheirBodies() passed after 6.999 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1343620Z ✔ Suite LocalTests passed after 7.890 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1348020Z ◇ Test case passing 1 argument frame → chat-conductor-dark to frameMatchesTheDesign(_:) started.
+apple	just apple-check	2026-11-17T17:07:49.1348340Z ✔ Suite ClientTests passed after 7.892 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1348610Z ◇ Test case passing 1 argument frame → persona-dark to frameMatchesTheDesign(_:) started.
+apple	just apple-check	2026-11-17T17:07:49.1348920Z ✔ Test aPinWithNoThreadStartsANewChat() passed after 8.826 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1349200Z ✔ Test aRoomOpensWithItsMembersOpenAsks() passed after 8.826 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1349510Z ✔ Test aChangeToTheLayoutAlreadyDrawnFetchesNothing() passed after 8.826 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1349820Z ✔ Test anUnpairedAppPairsThenShowsHome() passed after 8.826 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1350090Z ✔ Test aForgottenDevicePairsAgain() passed after 8.826 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1350390Z ✔ Test anOwnerMessageNamingAMemberQueuesOnlyThatMember() passed after 8.825 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1350700Z ✔ Test withoutAServerPushDoesNothing() passed after 8.825 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1350960Z ✔ Test aScreenStreamYieldsEachEventsOps() passed after 8.827 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1351450Z ✔ Test anotherAgentInAThreadStartsANewChatOnIt() passed after 9.703 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1351830Z ✔ Test theAttachSheetIsCoresPermissionsScreenForThatPluginAndPersona() passed after 9.703 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1352200Z ✔ Test aFailedAttachSaysWhyAndCanBeTriedAgain() passed after 9.703 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1352620Z ✔ Test aRefusedAnswerSaysWhyAndTheCardCanBeTappedAgain() passed after 9.703 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1353000Z ✔ Test resetOfflineDrawsTheBundledDefaultAndForgetsTheLastGood() passed after 9.702 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1353440Z ✔ Test aLayoutThatReplacesPairingIsRefusedAndTheLastGoodKept() passed after 9.702 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1353790Z ✔ Test aFetchedLayoutIsDrawnAndKept() passed after 9.702 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1354040Z ✔ Test resetAppliesTheMacsAnswer() passed after 9.702 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1354340Z ✔ Test aLayoutTheAppCantReadKeepsTheLastGoodAndSaysWhy() passed after 9.702 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1354700Z ✔ Test offlineHomeHoldsNoScreenSoTheBundledOneDraws() passed after 9.705 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1354980Z ✔ Test aRefusedRoomSaysWhy() passed after 9.705 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1355250Z ✔ Test anActionAppliesItsAnswersOpsAndSaysItsToast() passed after 9.705 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1355570Z ✔ Test aRefusedPushStaysOffWithTheReason() passed after 9.705 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1355880Z ✔ Test aCoreScreenIsFetchedFromCoreAndKeptUnderCore() passed after 9.705 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1356160Z ✔ Test aRefusedActionSaysWhy() passed after 9.704 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1356430Z ✔ Test aScreenWithNoStreamStopsAfterItsAnswer() passed after 9.705 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1356730Z ✔ Test aLaneTapAsksTheChatToOpenItsThread() passed after 9.704 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1357040Z ✔ Test aRefusedIconChangeSaysWhichTileToTapAgain() passed after 9.704 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1357300Z ✔ Test aFailedCallSaysWhy() passed after 9.705 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1357550Z ✔ Test aLockedDeviceIsToldWhyAndHowToGoOn() passed after 9.704 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1357900Z ✔ Test aStateThatFailsToLoadBesideTheMapSaysWhoIsUnreachable() passed after 9.699 seconds.
+apple	just apple-check	2026-11-17T17:07:49.1358240Z ✔ Test aDeclineGoesBackToTheAddressWithWhy() passed after 9.709 seconds.
+apple	just apple-check	2026-11-17T17:08:51.9014530Z ✔ Test aNewShellOpensOnceStarted() passed after 9.708 seconds.
+apple	just apple-check	2026-11-17T17:08:51.9014940Z ✔ Test anAnswersOpenPushesThatScreen() passed after 9.703 seconds.
+apple	just apple-check	2026-11-17T17:08:51.9015290Z ✔ Test aBrokenFileOnTheMacKeepsTheLastGoodUntilAGoodWrite() passed after 9.710 seconds.
+apple	just apple-check	2026-11-17T17:08:51.9015760Z ✔ Test opensTheShellSizesItDrawsItsScreenAndLetsGoWhenItCloses() passed after 9.708 seconds.
+apple	just apple-check	2026-11-17T17:08:51.9016170Z ◇ Test case passing 1 argument frame → avatar-menu-dark to frameMatchesTheDesign(_:) started.
+apple	just apple-check	2026-11-17T17:08:51.9016460Z ✔ Suite ScreensTests passed after 9.715 seconds.
+apple	just apple-check	2026-11-17T17:08:51.9016690Z ✔ Suite LayoutFeatureTests passed after 10.637 seconds.
+apple	just apple-check	2026-11-17T17:08:51.9016970Z ✔ Test layoutEventsAreChangedAndBrokenWithItsLine() passed after 10.637 seconds.
+apple	just apple-check	2026-11-17T17:08:51.9017370Z ◇ Test case passing 1 argument frame → persona-panel-dark to frameMatchesTheDesign(_:) started.
+apple	just apple-check	2026-11-17T17:08:51.9017720Z ✔ Test watchingYieldsScreenUpdatesUntilTheShellCloses() passed after 10.639 seconds.
+apple	just apple-check	2026-11-17T17:08:51.9018020Z ✔ Suite LayoutsTests passed after 10.640 seconds.
+apple	just apple-check	2026-11-17T17:08:51.9018260Z ✔ Test aServerErrorOrABadEventIsRetried() passed after 11.557 seconds.
+apple	just apple-check	2026-11-17T17:08:51.9018510Z ✔ Suite TerminalClientTests passed after 11.560 seconds.
+apple	just apple-check	2026-11-17T17:08:51.9018820Z ◇ Test case passing 1 argument frame → pair-welcome-dark to frameMatchesTheDesign(_:) started.
+apple	just apple-check	2026-11-17T17:08:51.9019170Z ◇ Test case passing 1 argument frame → pair-scan-dark to frameMatchesTheDesign(_:) started.
+apple	just apple-check	2026-11-17T17:08:51.9019550Z ✔ Test theClockPausesWhileTheAskIsOpenAndResumesOnItsAnswer() passed after 12.506 seconds.
+apple	just apple-check	2026-11-17T17:08:51.9019870Z ✔ Test theLookOutlivesPairingAgain() passed after 12.506 seconds.
+apple	just apple-check	2026-11-17T17:08:51.9020620Z ✔ Test anotherAgentRestartsTheChatAsANewOneOnIt() passed after 12.506 seconds.
+apple	just apple-check	2026-11-17T17:08:51.9020930Z ✔ Test withoutHomeNoChatOrPersonaOpens() passed after 12.506 seconds.
+apple	just apple-check	2026-11-17T17:08:51.9021270Z ✔ Test theLooksLoadOnlyWithAServerAndKeepFarmWhenTheReadFails() passed after 12.505 seconds.
+apple	just apple-check	2026-11-17T17:08:51.9021750Z ✔ Test anAgentsTerminalIsWatchedButTakesNoKeys() passed after 12.503 seconds.
+apple	just apple-check	2026-11-17T17:08:51.9022150Z ✔ Test pinningARoomPutsItAfterThePinnedPersonasAndUnpinningTakesItOut() passed after 12.499 seconds.
+apple	just apple-check	2026-11-17T17:08:51.9022650Z ✔ Test aThreadTappedOnAScreenClosesItAndOpensThatChat() passed after 12.507 seconds.
+apple	just apple-check	2026-11-17T17:08:51.9023010Z ✔ Test aMembersAskIsItsCardAndIsAnsweredInItsSession() passed after 12.507 seconds.
+apple	just apple-check	2026-11-17T17:08:51.9023370Z ✔ Test aRoomHasNoChipToLoadAndTheHeaderTapAsksForTheSheet() passed after 12.507 seconds.
+apple	just apple-check	2026-11-17T17:08:51.9023760Z ✔ Test aChatWithNoPersonaLoadsNoStripAndAFailedLoadSaysWhy() passed after 12.507 seconds.
+apple	just apple-check	2026-11-17T17:08:51.9024190Z ✔ Test aScreenMovedToTheSidebarIsFollowedThereAndASkippedNodeIsReported() passed after 12.506 seconds.
+apple	just apple-check	2026-11-17T17:08:51.9024600Z ✔ Test aMacThatRanTheServerRetiresItsLoginItemsAndSaysSo() passed after 12.506 seconds.
+apple	just apple-check	2026-11-17T17:08:51.9024970Z ✔ Test setUpByChatSavesThePersonaThenAsksForItsChat() passed after 12.506 seconds.
+apple	just apple-check	2026-11-17T17:08:51.9025320Z ✔ Test aStaleSaveSaysReloadAndKeepsTheUnsavedText() passed after 12.506 seconds.
+apple	just apple-check	2026-11-17T17:08:51.9025640Z ✔ Test aChatAskingToOpenAThreadOpensIt() passed after 12.506 seconds.
+apple	just apple-check	2026-11-17T17:08:51.9026030Z ✔ Test homeListsPersonasChatsOnlyAndALaneFallsIntoOthersUntilAPluginClaimsIt() passed after 12.506 seconds.
+apple	just apple-check	2026-11-17T17:08:51.9026410Z ✔ Test aBadAddressOrAFailedAskSaysWhy() passed after 12.506 seconds.
+apple	just apple-check	2026-11-17T17:08:51.9026690Z ✔ Test aRetryTheServerRefusesSaysWhy() passed after 12.505 seconds.
+apple	just apple-check	2026-11-17T17:08:51.9027010Z ✔ Test theChatHeadersPlusStartsANewChatWithItsPersona() passed after 13.419 seconds.
+apple	just apple-check	2026-11-17T17:08:51.9027320Z ✔ Test aSetupChatStartsInSetupMode() passed after 13.418 seconds.
+apple	just apple-check	2026-11-17T17:08:51.9027690Z ✔ Test aStateTappedOnTheMacLoadsItsIssuesBesideTheMapAndAPushClearsThem() passed after 13.413 seconds.
+apple	just apple-check	2026-11-17T17:08:51.9028170Z ✔ Test aTimerTapPushesItsSettingsScreenFocusedOnItsFieldAndBackClearsTheFocus() passed after 13.412 seconds.
+apple	just apple-check	2026-11-17T17:08:51.9028600Z ✔ Test attachingAPluginShowsItsSheetThenReloadsTheStrip() passed after 13.420 seconds.
+apple	just apple-check	2026-11-17T17:08:51.9028920Z ✔ Test aLinkWithACodePairsAndGoesHome() passed after 13.419 seconds.
+apple	just apple-check	2026-11-17T17:08:51.9029170Z ✔ Suite RoomPinTests passed after 13.422 seconds.
+apple	just apple-check	2026-11-17T17:08:51.9029440Z ◇ Test case passing 1 argument frame → pair-nearby-dark to frameMatchesTheDesign(_:) started.
+apple	just apple-check	2026-11-17T17:08:51.9029710Z ✔ Suite RoomAskTests passed after 13.422 seconds.
+apple	just apple-check	2026-11-17T17:08:51.9029920Z ✔ Suite SidebarLayoutTests passed after 13.422 seconds.
+apple	just apple-check	2026-11-17T17:08:51.9030220Z ◇ Test case passing 1 argument frame → pair-address-dark to frameMatchesTheDesign(_:) started.
+apple	just apple-check	2026-11-17T17:08:51.9030590Z ◇ Test case passing 1 argument frame → pair-waiting-dark to frameMatchesTheDesign(_:) started.
+apple	just apple-check	2026-11-17T17:08:51.9030930Z ◇ Test case passing 1 argument frame → pair-paired-dark to frameMatchesTheDesign(_:) started.
+apple	just apple-check	2026-11-17T17:08:51.9031290Z ✔ Test othersOpensAsAListAndItsChatsOpenAboveIt() passed after 16.109 seconds.
+apple	just apple-check	2026-11-17T17:08:51.9031670Z ✔ Test aRoundOpensAsANamedChatAndBackReturnsToTheOpenWorkflowSheet() passed after 16.109 seconds.
+apple	just apple-check	2026-11-17T17:08:51.9032070Z ✔ Test aServerRowOpensCoresScreenAndClosingTheMenuDropsIt() passed after 16.108 seconds.
+apple	just apple-check	2026-11-17T17:08:51.9032420Z ✔ Test theMotionSwitchAndAPickedSpriteAreKept() passed after 16.108 seconds.
+apple	just apple-check	2026-11-17T17:08:51.9032780Z ✔ Test allIssuesOpensTheWorkflowSheetOnceThePanelHasGone() passed after 16.110 seconds.
+apple	just apple-check	2026-11-17T17:08:51.9033160Z ✔ Test addRoutineAsksForOneInTheComposeOnceThePanelHasGone() passed after 16.110 seconds.
+apple	just apple-check	2026-11-17T17:08:51.9033680Z ✔ Test theChipListsTheLiveAgentsAndAModelPickGoesToTheThreadsNextTurn() passed after 16.110 seconds.
+apple	just apple-check	2026-11-17T17:08:51.9034090Z ✔ Test aCardsAnswerGoesBackAsItsItemsChoiceWhileTheCardWaits() passed after 16.110 seconds.
+apple	just apple-check	2026-11-17T17:08:51.9034520Z ✔ Test theOwnersNoteGoesStraightToTheAnswererMidTurnNotIntoTheQueue() passed after 16.110 seconds.
+apple	just apple-check	2026-11-17T17:08:51.9034970Z ✔ Test aNewPersonaStartsBlankOnTheFirstPersonasAgent() passed after 16.109 seconds.
+apple	just apple-check	2026-11-17T17:08:51.9035280Z ✔ Test aRefreshLoadsOnceAndClearsTheError() passed after 16.109 seconds.
+apple	just apple-check	2026-11-17T17:08:51.9035710Z ✔ Test offlineTheMenuKeepsTheBundledOneAndWithoutAServerOpensNothing() passed after 16.109 seconds.
+apple	just apple-check	2026-11-17T17:08:51.9036080Z ✔ Test aFailedFirstMessageStaysOnItsBubble() passed after 16.108 seconds.
+apple	just apple-check	2026-11-17T17:08:51.9036410Z ✔ Test theHeaderStripLoadsItsChipsAndAChipOpensItsScreen() passed after 16.110 seconds.
+apple	just apple-check	2026-11-17T17:08:51.9036740Z ✔ Test aRefusedSaveShowsWhy() passed after 16.110 seconds.
+apple	just apple-check	2026-11-17T17:08:51.9037010Z ✔ Test aNewChatBecomesItsThreadOnceStarted() passed after 16.109 seconds.
+apple	just apple-check	2026-11-17T17:08:51.9037360Z ✔ Test aMachineGoneFromTheListShowsOfflineAndARoomHasNoChip() passed after 16.109 seconds.
+apple	just apple-check	2026-11-17T17:08:51.9037720Z ✔ Test pushOnRegistersTheDeviceTokenAndOffRemovesIt() passed after 16.109 seconds.
+apple	just apple-check	2026-11-17T17:08:51.9038110Z ✔ Test aTappedSheetPushesItsScreenAndBackReturnsToTheOneUnder() passed after 16.984 seconds.
+apple	just apple-check	2026-11-17T17:08:51.9038500Z ✔ Test aSecretIsSentOnlyOnceTheOwnerIsConfirmed(_:) with 2 test cases passed after 16.991 seconds.
+apple	just apple-check	2026-11-17T17:08:51.9038910Z ✔ Test aDeletedPersonaClosesItsSheetAndHomeReloadsWithItsChats() passed after 16.991 seconds.
+apple	just apple-check	2026-11-17T17:08:51.9039270Z ✔ Test aSavedPersonaClosesItsSheetAndHomeReloads() passed after 16.991 seconds.
+apple	just apple-check	2026-11-17T17:08:51.9039660Z ✔ Test theMenuOpensTheEditorAndASavedPackIsAppliedWithNoRestart() passed after 16.991 seconds.
+apple	just apple-check	2026-11-17T17:08:51.9040040Z ◇ Test case passing 1 argument frame → home-light to frameMatchesTheDesign(_:) started.
+apple	just apple-check	2026-11-17T17:08:51.9040350Z ✔ Test aRefusalShowsTheServersReason() passed after 16.993 seconds.
+apple	just apple-check	2026-11-17T17:08:51.9040600Z ✔ Suite CardAnswerTests passed after 16.996 seconds.
+apple	just apple-check	2026-11-17T17:08:51.9040860Z ✔ Suite ThemeEditorMenuTests passed after 16.996 seconds.
+apple	just apple-check	2026-11-17T17:08:51.9041090Z ✔ Test aMembersAskIsARoomEvent() passed after 16.995 seconds.
+apple	just apple-check	2026-11-17T17:08:51.9041420Z ◇ Test case passing 1 argument frame → chat-streaming-light to frameMatchesTheDesign(_:) started.
+apple	just apple-check	2026-11-17T17:08:51.9041790Z ◇ Test case passing 1 argument frame → chat-card-light to frameMatchesTheDesign(_:) started.
+apple	just apple-check	2026-11-17T17:08:51.9042130Z ✔ Test aRoomsTurnsAndItsEndAreEvents() passed after 18.833 seconds.
+apple	just apple-check	2026-11-17T17:08:51.9042450Z ✔ Test aThreadActionAsksThisThreadsPersonaAndARefusalSaysWhy() passed after 19.744 seconds.
+apple	just apple-check	2026-11-17T17:08:51.9042820Z ✔ Test aNewPersonaIsPostedAndReadsNoMemory() passed after 19.743 seconds.
+apple	just apple-check	2026-11-17T17:08:51.9043090Z ✔ Suite RoomClientTests passed after 19.746 seconds.
+apple	just apple-check	2026-11-17T17:08:51.9043530Z ✔ Test aPickedIconStaysThroughStyleChangesUntilTheLookIsFollowedAgain() passed after 19.743 seconds.
+apple	just apple-check	2026-11-17T17:08:51.9043940Z ✔ Test retryStartsTheAgentAgainAndItsMessageTakesTheBubble() passed after 19.742 seconds.
+apple	just apple-check	2026-11-17T17:08:51.9044340Z ◇ Test case passing 1 argument frame → chat-cards-more-light to frameMatchesTheDesign(_:) started.
+apple	just apple-check	2026-11-17T17:08:51.9044700Z ✔ Test aPickInTheSheetRunsOnceTheSheetHasGone() passed after 19.745 seconds.
+apple	just apple-check	2026-11-17T17:08:51.9045070Z ✔ Test aPickedAvatarSavesWithThePersonaAndShowAllOpensEveryNote() passed after 19.744 seconds.
+apple	just apple-check	2026-11-17T17:08:51.9045480Z ✔ Test deleteAsksFirstThenRemovesOnlyThePersona() passed after 19.744 seconds.
+apple	just apple-check	2026-11-17T17:08:51.9045850Z ✔ Test aNewChatsFirstMessageRunsOnThePickedAgentModelAndEffort() passed after 19.745 seconds.
+apple	just apple-check	2026-11-17T17:08:51.9046240Z ✔ Test aNewChatsPickIsItsMachineOverrideAndNothingMoves() passed after 19.744 seconds.
+apple	just apple-check	2026-11-17T17:08:51.9046620Z ✔ Test aMessageTheAgentNeverGotKeepsItsBubbleAndComesBack() passed after 19.743 seconds.
+apple	just apple-check	2026-11-17T17:08:51.9047000Z ✔ Suite ChatAgentTests passed after 20.652 seconds.
+apple	just apple-check	2026-11-17T17:08:51.9047300Z ◇ Test case passing 1 argument frame → chat-conductor-light to frameMatchesTheDesign(_:) started.
+apple	just apple-check	2026-11-17T17:08:51.9047670Z ◇ Test case passing 1 argument frame → persona-light to frameMatchesTheDesign(_:) started.
+apple	just apple-check	2026-11-17T17:08:51.9048110Z ◇ Test case passing 1 argument frame → avatar-menu-light to frameMatchesTheDesign(_:) started.
+apple	just apple-check	2026-11-17T17:08:51.9048590Z ✔ Test aChatRunsOnItsThreadsMachineAndANewOneKeepsItsPickOnceStarted() passed after 23.353 seconds.
+apple	just apple-check	2026-11-17T17:08:51.9049020Z ✔ Test aFirstMessageWhoseAgentCannotStartKeepsItsBubbleWithWhy() passed after 23.353 seconds.
+apple	just apple-check	2026-11-17T17:08:51.9049410Z ✔ Test theWorkflowSheetOpensAndUnfoldsOneIssueAtATime() passed after 23.354 seconds.
+apple	just apple-check	2026-11-17T17:08:51.9049740Z ✔ Test aChatOpensFromTheListWithItsPersona() passed after 23.354 seconds.
+apple	just apple-check	2026-11-17T17:08:51.9050080Z ✔ Test aRoomsStreamRunsItsRoundAndItsItemsAreAttributed() passed after 23.353 seconds.
+apple	just apple-check	2026-11-17T17:08:51.9050510Z ✔ Test aLaneTappedOnTheStripPushesItsChatAndQueueReturnsToTheSameStrip() passed after 23.347 seconds.
+apple	just apple-check	2026-11-17T17:08:51.9050930Z ◇ Test case passing 1 argument frame → persona-panel-light to frameMatchesTheDesign(_:) started.
+apple	just apple-check	2026-11-17T17:08:51.9051330Z ✔ Test conductorsChatCarriesItsWorkflowAndARoundOpensAsAChat() passed after 23.354 seconds.
+apple	just apple-check	2026-11-17T17:08:51.9051670Z ✔ Test refineByChatOpensASetupChat() passed after 23.354 seconds.
+apple	just apple-check	2026-11-17T17:08:51.9052030Z ✔ Test theChipShowsTheThreadsMachineAndAMoveWaitsUntilItIsReady() passed after 23.354 seconds.
+apple	just apple-check	2026-11-17T17:08:51.9052480Z ✔ Test typingGoesInTheOrderTypedAndCtrlMakesTheNextLetterAControlKey() passed after 23.354 seconds.
+apple	just apple-check	2026-11-17T17:08:51.9052810Z ✔ Suite ChatOutboxTests passed after 24.238 seconds.
+apple	just apple-check	2026-11-17T17:08:51.9053090Z ✔ Test aMemberIsInspectedMovedAddedAndTakenOut() passed after 24.236 seconds.
+apple	just apple-check	2026-11-17T17:08:51.9053380Z ✔ Suite ChatPluginsTests passed after 24.239 seconds.
+apple	just apple-check	2026-11-17T17:08:51.9053610Z ✔ Suite PluginNavigationTests passed after 24.239 seconds.
+apple	just apple-check	2026-11-17T17:08:51.9053860Z ✔ Suite WorkflowNavigationTests passed after 24.239 seconds.
+apple	just apple-check	2026-11-17T17:08:51.9054090Z ✔ Suite AppFeatureTests passed after 24.239 seconds.
+apple	just apple-check	2026-11-17T17:08:51.9054310Z ✔ Suite ChatMachineTests passed after 24.239 seconds.
+apple	just apple-check	2026-11-17T17:08:51.9054530Z ✔ Suite TerminalFeatureTests passed after 24.239 seconds.
+apple	just apple-check	2026-11-17T17:08:51.9054850Z ◇ Test case passing 1 argument frame → pair-welcome-light to frameMatchesTheDesign(_:) started.
+apple	just apple-check	2026-11-17T17:08:51.9055270Z ✔ Test aDroppedStreamReconnectsWithLastEventIDAndGetsWhatItMissed() passed after 25.113 seconds.
+apple	just apple-check	2026-11-17T17:08:51.9055660Z ◇ Test case passing 1 argument frame → pair-scan-light to frameMatchesTheDesign(_:) started.
+apple	just apple-check	2026-11-17T17:08:51.9055950Z ✔ Suite EventsTests passed after 25.116 seconds.
+apple	just apple-check	2026-11-17T17:08:51.9056240Z ◇ Test case passing 1 argument frame → pair-nearby-light to frameMatchesTheDesign(_:) started.
+apple	just apple-check	2026-11-17T17:08:51.9056590Z ✔ Test anAddressAsksThenWaitsForApproval() passed after 25.989 seconds.
+apple	just apple-check	2026-11-17T17:08:51.9056920Z ✔ Test cancelTakesBackTheAskAndGoesToTheWelcome() passed after 25.989 seconds.
+apple	just apple-check	2026-11-17T17:08:51.9057240Z ✔ Test theChatHeaderOpensItsPersonasSheet() passed after 26.877 seconds.
+apple	just apple-check	2026-11-17T17:08:51.9057560Z ✔ Test queuedMessagesAreSteeredOrTakenBack() passed after 26.877 seconds.
+apple	just apple-check	2026-11-17T17:08:51.9057910Z ✔ Test aPinOpensThePersonasNewestThreadAndReadsIt() passed after 26.879 seconds.
+apple	just apple-check	2026-11-17T17:08:51.9058280Z ✔ Test aStartingSchemeLabelStyleAndPreviewChangeTheDraft() passed after 26.879 seconds.
+apple	just apple-check	2026-11-17T17:08:51.9058690Z ◇ Test case passing 1 argument frame → pair-address-light to frameMatchesTheDesign(_:) started.
+apple	just apple-check	2026-11-17T17:08:51.9059020Z ✔ Test theFirstMessageStartsANewChat() passed after 26.878 seconds.
+apple	just apple-check	2026-11-17T17:08:51.9059280Z ✔ Suite PersonaControlsTests passed after 26.881 seconds.
+apple	just apple-check	2026-11-17T17:08:51.9059490Z ✔ Suite PinnedTests passed after 26.881 seconds.
+apple	just apple-check	2026-11-17T17:08:51.9059920Z ✔ Test theAgentChipsListsComeFromTheServerAndAnotherAgentReloadsThem() passed after 27.758 seconds.
+apple	just apple-check	2026-11-17T17:08:51.9060360Z ✔ Test anEditReadsItsScreenAndSavesTheChangedPersonaThroughIt() passed after 27.758 seconds.
+apple	just apple-check	2026-11-17T17:08:51.9060780Z ◇ Test case passing 1 argument frame → pair-waiting-light to frameMatchesTheDesign(_:) started.
+apple	just apple-check	2026-11-17T17:08:51.9061160Z ◇ Test case passing 1 argument frame → pair-paired-light to frameMatchesTheDesign(_:) started.
+apple	just apple-check	2026-11-17T17:08:51.9061550Z ◇ Test case passing 1 argument frame → mac-connect to frameMatchesTheDesign(_:) started.
+apple	just apple-check	2026-11-17T17:08:51.9061940Z ✔ Test anUnreachableMacShowsTheKeptAnswerWithItsAgeThenRetries() passed after 29.515 seconds.
+apple	just apple-check	2026-11-17T17:08:51.9062320Z ✔ Test theColumnOpensAPlaceOrAttachesAPluginAtOnce() passed after 29.516 seconds.
+apple	just apple-check	2026-11-17T17:08:51.9062740Z ✔ Test aLinkedThreadOpensAsTheExchangeAndItsLinksOpenTheChatsAndThePersona() passed after 29.515 seconds.
+apple	just apple-check	2026-11-17T17:08:51.9063170Z ✔ Test aScreenLoadsFollowsItsStreamAndIsKept() passed after 29.515 seconds.
+apple	just apple-check	2026-11-17T17:08:51.9063490Z ✔ Test aRoomIsMadeFromHomeAndOpensFromTheList() passed after 31.063 seconds.
+apple	just apple-check	2026-11-17T17:08:51.9063770Z ✔ Suite LinkedFeatureTests passed after 31.066 seconds.
+apple	just apple-check	2026-11-17T17:08:51.9064070Z ◇ Test case passing 1 argument frame → mac-window-dark to frameMatchesTheDesign(_:) started.
+apple	just apple-check	2026-11-17T17:08:51.9064360Z ✔ Suite ScreenFeatureTests passed after 31.066 seconds.
+apple	just apple-check	2026-11-17T17:08:51.9064640Z ✔ Test saveWaitsForTheGateAndTheOneTapFixFreesIt() passed after 31.064 seconds.
+apple	just apple-check	2026-11-17T17:08:51.9064940Z ✔ Test theLookIsPickedAndKept() passed after 31.063 seconds.
+apple	just apple-check	2026-11-17T17:08:51.9065190Z ✔ Suite ThemeEditorFeatureTests passed after 33.678 seconds.
+apple	just apple-check	2026-11-17T17:08:51.9065420Z ✔ Suite MenuFeatureTests passed after 33.678 seconds.
+apple	just apple-check	2026-11-17T17:08:51.9065710Z ◇ Test case passing 1 argument frame → mac-window-light to frameMatchesTheDesign(_:) started.
+apple	just apple-check	2026-11-17T17:08:51.9066100Z ◇ Test case passing 1 argument frame → mac-persona-panel-dark to frameMatchesTheDesign(_:) started.
+apple	just apple-check	2026-11-17T17:08:51.9066450Z ✔ Test aFailedLoadSaysWhyAndTriesAgain() passed after 37.051 seconds.
+apple	just apple-check	2026-11-17T17:08:51.9066760Z ◇ Test case passing 1 argument frame → room-dark to frameMatchesTheDesign(_:) started.
+apple	just apple-check	2026-11-17T17:08:51.9067090Z ✔ Test theFolderBrowserNeverLeavesTheRoots() passed after 38.058 seconds.
+apple	just apple-check	2026-11-17T17:08:51.9067410Z ◇ Test case passing 1 argument frame → room-light to frameMatchesTheDesign(_:) started.
+apple	just apple-check	2026-11-17T17:08:51.9067710Z ✔ Suite PersonaFeatureTests passed after 39.068 seconds.
+apple	just apple-check	2026-11-17T17:08:51.9068000Z ◇ Test case passing 1 argument frame → room-create-dark to frameMatchesTheDesign(_:) started.
+apple	just apple-check	2026-11-17T17:08:51.9068370Z ◇ Test case passing 1 argument frame → room-create-light to frameMatchesTheDesign(_:) started.
+apple	just apple-check	2026-11-17T17:08:51.9068770Z ✔ Test editOpensThePersonaSheetAndNewChatStartsOneWithThePersona() passed after 40.017 seconds.
+apple	just apple-check	2026-11-17T17:08:51.9069090Z ✔ Suite ChatPanelTests passed after 40.018 seconds.
+apple	just apple-check	2026-11-17T17:08:51.9069380Z ◇ Test case passing 1 argument frame → room-member-dark to frameMatchesTheDesign(_:) started.
+apple	just apple-check	2026-11-17T17:08:51.9069740Z ◇ Test case passing 1 argument frame → room-home-dark to frameMatchesTheDesign(_:) started.
+apple	just apple-check	2026-11-17T17:08:51.9070060Z ✔ Test aSendQueuesWhileATurnRuns() passed after 42.703 seconds.
+apple	just apple-check	2026-11-17T17:08:51.9070370Z ◇ Test case passing 1 argument frame → room-pinned-dark to frameMatchesTheDesign(_:) started.
+apple	just apple-check	2026-11-17T17:08:51.9070770Z ◇ Test case passing 1 argument frame → room-pinned-terminal-dark to frameMatchesTheDesign(_:) started.
+apple	just apple-check	2026-11-17T17:08:51.9071180Z ◇ Test case passing 1 argument frame → room-pinned-scene-light to frameMatchesTheDesign(_:) started.
+apple	just apple-check	2026-11-17T17:08:51.9071570Z ◇ Test case passing 1 argument frame → room-terminal-dark to frameMatchesTheDesign(_:) started.
+apple	just apple-check	2026-11-17T17:08:51.9071900Z ✔ Test stepsTheAddressAndNearbyServers() passed after 45.331 seconds.
+apple	just apple-check	2026-11-17T17:08:51.9072160Z ✔ Suite PairingFeatureTests passed after 46.205 seconds.
+apple	just apple-check	2026-11-17T17:08:51.9072550Z ◇ Test case passing 1 argument frame → room-mention-dark to frameMatchesTheDesign(_:) started.
+apple	just apple-check	2026-11-17T17:08:51.9072980Z ◇ Test case passing 1 argument frame → room-mention-terminal-dark to frameMatchesTheDesign(_:) started.
+apple	just apple-check	2026-11-17T17:08:51.9073400Z ◇ Test case passing 1 argument frame → room-scene-light to frameMatchesTheDesign(_:) started.
+apple	just apple-check	2026-11-17T17:08:51.9073760Z ◇ Test case passing 1 argument frame → room-ask-dark to frameMatchesTheDesign(_:) started.
+apple	just apple-check	2026-11-17T17:08:51.9074180Z ◇ Test case passing 1 argument frame → room-ask-terminal-dark to frameMatchesTheDesign(_:) started.
+apple	just apple-check	2026-11-17T17:08:51.9074610Z ✔ Test homeReadsItsChatsEveryFewSecondsUntilTheServerForgetsThisDevice() passed after 50.697 seconds.
+apple	just apple-check	2026-11-17T17:08:51.9075030Z ◇ Test case passing 1 argument frame → room-ask-scene-light to frameMatchesTheDesign(_:) started.
+apple	just apple-check	2026-11-17T17:08:51.9075330Z ✔ Suite HomeFeatureTests passed after 50.699 seconds.
+apple	just apple-check	2026-11-17T17:08:51.9075650Z ◇ Test case passing 1 argument frame → room-wide-dark to frameMatchesTheDesign(_:) started.
+apple	just apple-check	2026-11-17T17:08:51.9075990Z ◇ Test case passing 1 argument frame → asked-dark to frameMatchesTheDesign(_:) started.
+apple	just apple-check	2026-11-17T17:08:51.9076340Z ◇ Test case passing 1 argument frame → asked-light to frameMatchesTheDesign(_:) started.
+apple	just apple-check	2026-11-17T17:08:51.9076680Z ◇ Test case passing 1 argument frame → linked-dark to frameMatchesTheDesign(_:) started.
+apple	just apple-check	2026-11-17T17:08:51.9077050Z ◇ Test case passing 1 argument frame → linked-terminal-dark to frameMatchesTheDesign(_:) started.
+apple	just apple-check	2026-11-17T17:08:51.9077430Z ◇ Test case passing 1 argument frame → linked-wide-light to frameMatchesTheDesign(_:) started.
+apple	just apple-check	2026-11-17T17:08:51.9077800Z ◇ Test case passing 1 argument frame → room-terminal-wide to frameMatchesTheDesign(_:) started.
+apple	just apple-check	2026-11-17T17:08:51.9078200Z ◇ Test case passing 1 argument frame → style-terminal-home-dark to frameMatchesTheDesign(_:) started.
+apple	just apple-check	2026-11-17T17:08:51.9078610Z ◇ Test case passing 1 argument frame → style-terminal-chat-dark to frameMatchesTheDesign(_:) started.
+apple	just apple-check	2026-11-17T17:08:51.9078980Z ✔ Test aNewRoomPicksUpToFiveInOrderAndIsMade() passed after 65.527 seconds.
+apple	just apple-check	2026-11-17T17:08:51.9079350Z ◇ Test case passing 1 argument frame → style-terminal-card-dark to frameMatchesTheDesign(_:) started.
+apple	just apple-check	2026-11-17T17:08:51.9079670Z ✔ Suite RoomFeatureTests passed after 66.399 seconds.
+apple	just apple-check	2026-11-17T17:08:51.9079990Z ◇ Test case passing 1 argument frame → style-terminal-persona-dark to frameMatchesTheDesign(_:) started.
+apple	just apple-check	2026-11-17T17:08:51.9080400Z ◇ Test case passing 1 argument frame → style-scene-home-light to frameMatchesTheDesign(_:) started.
+apple	just apple-check	2026-11-17T17:08:51.9080810Z ◇ Test case passing 1 argument frame → style-scene-chat-light to frameMatchesTheDesign(_:) started.
+apple	just apple-check	2026-11-17T17:08:51.9081200Z ◇ Test case passing 1 argument frame → style-scene-card-light to frameMatchesTheDesign(_:) started.
+apple	just apple-check	2026-11-17T17:08:51.9081590Z ◇ Test case passing 1 argument frame → persona-panel-end-dark to frameMatchesTheDesign(_:) started.
+apple	just apple-check	2026-11-17T17:08:51.9082060Z ◇ Test case passing 1 argument frame → persona-panel-empty-dark to frameMatchesTheDesign(_:) started.
+apple	just apple-check	2026-11-17T17:10:38.2805840Z ◇ Test case passing 1 argument frame → persona-panel-terminal-dark to frameMatchesTheDesign(_:) started.
+apple	just apple-check	2026-11-17T17:10:38.2806710Z ◇ Test case passing 1 argument frame → persona-panel-scene-light to frameMatchesTheDesign(_:) started.
+apple	just apple-check	2026-11-17T17:10:38.2807180Z ◇ Test case passing 1 argument frame → sign-ins-dark to frameMatchesTheDesign(_:) started.
+apple	just apple-check	2026-11-17T17:10:38.2807760Z ◇ Test case passing 1 argument frame → sign-ins-light to frameMatchesTheDesign(_:) started.
+apple	just apple-check	2026-11-17T17:10:38.2808190Z ◇ Test case passing 1 argument frame → devices-dark to frameMatchesTheDesign(_:) started.
+apple	just apple-check	2026-11-17T17:10:38.2808610Z ◇ Test case passing 1 argument frame → devices-light to frameMatchesTheDesign(_:) started.
+apple	just apple-check	2026-11-17T17:10:38.2809030Z ◇ Test case passing 1 argument frame → machines-dark to frameMatchesTheDesign(_:) started.
+apple	just apple-check	2026-11-17T17:10:38.2809460Z ◇ Test case passing 1 argument frame → machines-light to frameMatchesTheDesign(_:) started.
+apple	just apple-check	2026-11-17T17:10:38.2809880Z ◇ Test case passing 1 argument frame → plugins-dark to frameMatchesTheDesign(_:) started.
+apple	just apple-check	2026-11-17T17:10:38.2810310Z ◇ Test case passing 1 argument frame → plugins-light to frameMatchesTheDesign(_:) started.
+apple	just apple-check	2026-11-17T17:10:38.2810740Z ◇ Test case passing 1 argument frame → mac-sign-ins to frameMatchesTheDesign(_:) started.
+apple	just apple-check	2026-11-17T17:10:38.2811170Z ✔ Test aChatLoadsItsSliceThenFollowsItsStream() passed after 83.601 seconds.
+apple	just apple-check	2026-11-17T17:10:38.2811600Z ◇ Test case passing 1 argument frame → mac-devices to frameMatchesTheDesign(_:) started.
+apple	just apple-check	2026-11-17T17:10:38.2811960Z ✔ Suite ChatFeatureTests passed after 83.604 seconds.
+apple	just apple-check	2026-11-17T17:10:38.2812300Z ◇ Test case passing 1 argument frame → mac-machines to frameMatchesTheDesign(_:) started.
+apple	just apple-check	2026-11-17T17:10:38.2812720Z ◇ Test case passing 1 argument frame → mac-plugins to frameMatchesTheDesign(_:) started.
+apple	just apple-check	2026-11-17T17:10:38.2813160Z ◇ Test case passing 1 argument frame → terminal-dark to frameMatchesTheDesign(_:) started.
+apple	just apple-check	2026-11-17T17:10:38.2813590Z ◇ Test case passing 1 argument frame → you-terminal-dark to frameMatchesTheDesign(_:) started.
+apple	just apple-check	2026-11-17T17:10:38.2814070Z ◇ Test case passing 1 argument frame → you-terminal-terminal-dark to frameMatchesTheDesign(_:) started.
+apple	just apple-check	2026-11-17T17:10:38.2814590Z ◇ Test case passing 1 argument frame → you-terminal-scene-light to frameMatchesTheDesign(_:) started.
+apple	just apple-check	2026-11-17T17:10:38.2815070Z ◇ Test case passing 1 argument frame → sign-ins-terminal-dark to frameMatchesTheDesign(_:) started.
+apple	just apple-check	2026-11-17T17:10:38.2815550Z ◇ Test case passing 1 argument frame → machines-scene-light to frameMatchesTheDesign(_:) started.
+apple	just apple-check	2026-11-17T17:10:38.2816000Z ◇ Test case passing 1 argument frame → mac-plugins-light to frameMatchesTheDesign(_:) started.
+apple	just apple-check	2026-11-17T17:10:38.2816520Z ◇ Test case passing 1 argument frame → missing-poster-confirm@modern to frameMatchesTheDesign(_:) started.
+apple	just apple-check	2026-11-17T17:10:38.2817050Z ◇ Test case passing 1 argument frame → missing-poster-confirm@terminal to frameMatchesTheDesign(_:) started.
+apple	just apple-check	2026-11-17T17:10:38.2817560Z ◇ Test case passing 1 argument frame → missing-poster-confirm@scene to frameMatchesTheDesign(_:) started.
+apple	just apple-check	2026-11-17T17:10:38.2818110Z ◇ Test case passing 1 argument frame → missing-poster-permissions@modern to frameMatchesTheDesign(_:) started.
+apple	just apple-check	2026-11-17T17:10:38.2826220Z ◇ Test case passing 1 argument frame → missing-poster-permissions@terminal to frameMatchesTheDesign(_:) started.
+apple	just apple-check	2026-11-17T17:10:38.2826780Z ◇ Test case passing 1 argument frame → missing-poster-permissions@scene to frameMatchesTheDesign(_:) started.
+apple	just apple-check	2026-11-17T17:10:38.2827380Z ◇ Test case passing 1 argument frame → missing-poster-run@modern to frameMatchesTheDesign(_:) started.
+apple	just apple-check	2026-11-17T17:10:38.2827870Z ◇ Test case passing 1 argument frame → missing-poster-run@terminal to frameMatchesTheDesign(_:) started.
+apple	just apple-check	2026-11-17T17:10:38.2828390Z ◇ Test case passing 1 argument frame → missing-poster-run@scene to frameMatchesTheDesign(_:) started.
+apple	just apple-check	2026-11-17T17:10:38.2829180Z ◇ Test case passing 1 argument frame → missing-poster-secret@modern to frameMatchesTheDesign(_:) started.
+apple	just apple-check	2026-11-17T17:10:38.2829790Z ◇ Test case passing 1 argument frame → missing-poster-secret@terminal to frameMatchesTheDesign(_:) started.
+apple	just apple-check	2026-11-17T17:10:38.2830440Z ◇ Test case passing 1 argument frame → missing-poster-secret@scene to frameMatchesTheDesign(_:) started.
+apple	just apple-check	2026-11-17T17:10:38.2830900Z ◇ Test case passing 1 argument frame → additions-swipe to frameMatchesTheDesign(_:) started.
+apple	just apple-check	2026-11-17T17:10:38.2831430Z ◇ Test case passing 1 argument frame → additions-swipe@terminal to frameMatchesTheDesign(_:) started.
+apple	just apple-check	2026-11-17T17:10:38.2831900Z ◇ Test case passing 1 argument frame → additions-swipe@scene to frameMatchesTheDesign(_:) started.
+apple	just apple-check	2026-11-17T17:10:38.2832340Z ◇ Test case passing 1 argument frame → additions-menu to frameMatchesTheDesign(_:) started.
+apple	just apple-check	2026-11-17T17:10:38.2832790Z ◇ Test case passing 1 argument frame → additions-menu@terminal to frameMatchesTheDesign(_:) started.
+apple	just apple-check	2026-11-17T17:10:38.2833270Z ◇ Test case passing 1 argument frame → additions-menu@scene to frameMatchesTheDesign(_:) started.
+apple	just apple-check	2026-11-17T17:10:38.2833730Z ◇ Test case passing 1 argument frame → additions-refresh to frameMatchesTheDesign(_:) started.
+apple	just apple-check	2026-11-17T17:10:38.2834190Z ◇ Test case passing 1 argument frame → additions-refresh@terminal to frameMatchesTheDesign(_:) started.
+apple	just apple-check	2026-11-17T17:10:38.2834720Z ◇ Test case passing 1 argument frame → additions-refresh@scene to frameMatchesTheDesign(_:) started.
+apple	just apple-check	2026-11-17T17:10:38.2835240Z ◇ Test case passing 1 argument frame → additions-transition to frameMatchesTheDesign(_:) started.
+apple	just apple-check	2026-11-17T17:10:38.2835760Z ◇ Test case passing 1 argument frame → additions-transition@terminal to frameMatchesTheDesign(_:) started.
+apple	just apple-check	2026-11-17T17:10:38.2836260Z ◇ Test case passing 1 argument frame → additions-transition@scene to frameMatchesTheDesign(_:) started.
+apple	just apple-check	2026-11-17T17:10:38.2836760Z ◇ Test case passing 1 argument frame → queue-scene-dark to frameMatchesTheDesign(_:) started.
+apple	just apple-check	2026-11-17T17:10:38.2837340Z ◇ Test case passing 1 argument frame → queue-modern-dark to frameMatchesTheDesign(_:) started.
+apple	just apple-check	2026-11-17T17:10:38.2837820Z ◇ Test case passing 1 argument frame → queue-terminal-dark to frameMatchesTheDesign(_:) started.
+apple	just apple-check	2026-11-17T17:10:38.2838320Z ◇ Test case passing 1 argument frame → queue-scene-light to frameMatchesTheDesign(_:) started.
+apple	just apple-check	2026-11-17T17:10:38.2838840Z ◇ Test case passing 1 argument frame → queue-modern-light to frameMatchesTheDesign(_:) started.
+apple	just apple-check	2026-11-17T17:10:38.2839310Z ◇ Test case passing 1 argument frame → queue-terminal-light to frameMatchesTheDesign(_:) started.
+apple	just apple-check	2026-11-17T17:10:38.2839800Z ◇ Test case passing 1 argument frame → queue-mac-scene-dark to frameMatchesTheDesign(_:) started.
+apple	just apple-check	2026-11-17T17:10:38.2840300Z ◇ Test case passing 1 argument frame → queue-mac-modern-dark to frameMatchesTheDesign(_:) started.
+apple	just apple-check	2026-11-17T17:10:38.2840790Z ◇ Test case passing 1 argument frame → queue-mac-terminal-dark to frameMatchesTheDesign(_:) started.
+apple	just apple-check	2026-11-17T17:10:38.2841290Z ◇ Test case passing 1 argument frame → queue-figures-modern-dark to frameMatchesTheDesign(_:) started.
+apple	just apple-check	2026-11-17T17:10:38.2841750Z ◇ Test case passing 1 argument frame → workflow-map-dark to frameMatchesTheDesign(_:) started.
+apple	just apple-check	2026-11-17T17:10:38.2842220Z ◇ Test case passing 1 argument frame → workflow-map-light to frameMatchesTheDesign(_:) started.
+apple	just apple-check	2026-11-17T17:10:38.2842680Z ◇ Test case passing 1 argument frame → workflow-map-terminal-dark to frameMatchesTheDesign(_:) started.
+apple	just apple-check	2026-11-17T17:10:38.2843160Z ◇ Test case passing 1 argument frame → workflow-map-scene-light to frameMatchesTheDesign(_:) started.
+apple	just apple-check	2026-11-17T17:10:38.2843620Z ◇ Test case passing 1 argument frame → workflow-map-mac-dark to frameMatchesTheDesign(_:) started.
+apple	just apple-check	2026-11-17T17:10:38.2844100Z ◇ Test case passing 1 argument frame → workflow-map-mac-split-dark to frameMatchesTheDesign(_:) started.
+apple	just apple-check	2026-11-17T17:10:38.2844600Z ◇ Test case passing 1 argument frame → workflow-map-mac-terminal-dark to frameMatchesTheDesign(_:) started.
+apple	just apple-check	2026-11-17T17:10:38.2845180Z ◇ Test case passing 1 argument frame → workflow-live-dark to frameMatchesTheDesign(_:) started.
+apple	just apple-check	2026-11-17T17:10:38.2845620Z ◇ Test case passing 1 argument frame → workflow-state-dark to frameMatchesTheDesign(_:) started.
+apple	just apple-check	2026-11-17T17:10:38.2846110Z ◇ Test case passing 1 argument frame → workflow-timer-dark to frameMatchesTheDesign(_:) started.
+apple	just apple-check	2026-11-17T17:10:38.2846550Z ◇ Test case passing 1 argument frame → theme-look-modern to frameMatchesTheDesign(_:) started.
+apple	just apple-check	2026-11-17T17:10:38.2847020Z ◇ Test case passing 1 argument frame → theme-pack-modern to frameMatchesTheDesign(_:) started.
+apple	just apple-check	2026-11-17T17:10:38.2847460Z ◇ Test case passing 1 argument frame → theme-colours-modern to frameMatchesTheDesign(_:) started.
+apple	just apple-check	2026-11-17T17:10:38.2848190Z ✘ Test frameMatchesTheDesign(_:) recorded an issue with 1 argument frame → theme-colours-modern at SnapshotTests.swift:76:9: Expectation failed: (off → 0.02692700684221911) <= (Self.pixelTolerance → 0.025)
+apple	just apple-check	2026-11-17T17:10:38.2848810Z ↳ theme-colours-modern: 2.692700684221911% of pixels differ
+apple	just apple-check	2026-11-17T17:10:38.2849170Z ◇ Test case passing 1 argument frame → theme-look-terminal to frameMatchesTheDesign(_:) started.
+apple	just apple-check	2026-11-17T17:10:38.2849620Z ◇ Test case passing 1 argument frame → theme-pack-terminal to frameMatchesTheDesign(_:) started.
+apple	just apple-check	2026-11-17T17:10:38.2850070Z ◇ Test case passing 1 argument frame → theme-colours-terminal to frameMatchesTheDesign(_:) started.
+apple	just apple-check	2026-11-17T17:10:38.2850810Z ✘ Test frameMatchesTheDesign(_:) recorded an issue with 1 argument frame → theme-colours-terminal at SnapshotTests.swift:76:9: Expectation failed: (off → 0.026853006136366223) <= (Self.pixelTolerance → 0.025)
+apple	just apple-check	2026-11-17T17:10:38.2851420Z ↳ theme-colours-terminal: 2.685300613636622% of pixels differ
+apple	just apple-check	2026-11-17T17:10:38.2851780Z ◇ Test case passing 1 argument frame → theme-look-scene to frameMatchesTheDesign(_:) started.
+apple	just apple-check	2026-11-17T17:10:38.2852200Z ◇ Test case passing 1 argument frame → theme-pack-scene to frameMatchesTheDesign(_:) started.
+apple	just apple-check	2026-11-17T17:10:38.2852650Z ◇ Test case passing 1 argument frame → theme-colours-scene to frameMatchesTheDesign(_:) started.
+apple	just apple-check	2026-11-17T17:10:38.2853360Z ✘ Test frameMatchesTheDesign(_:) recorded an issue with 1 argument frame → theme-colours-scene at SnapshotTests.swift:76:9: Expectation failed: (off → 0.027025200086523902) <= (Self.pixelTolerance → 0.025)
+apple	just apple-check	2026-11-17T17:10:38.2853950Z ↳ theme-colours-scene: 2.70252000865239% of pixels differ
+apple	just apple-check	2026-11-17T17:10:38.2854320Z ◇ Test case passing 1 argument frame → theme-look-broken-modern to frameMatchesTheDesign(_:) started.
+apple	just apple-check	2026-11-17T17:10:38.2854780Z ✘ Test frameMatchesTheDesign(_:) with 139 test cases failed after 163.491 seconds with 3 issues.
+apple	just apple-check	2026-11-17T17:10:38.2855180Z ◇ Test frameFitsInEveryStyle(_:) started.
+apple	just apple-check	2026-11-17T17:10:38.2855530Z ◇ Test case passing 1 argument frame → home-dark@modern to frameFitsInEveryStyle(_:) started.
+apple	just apple-check	2026-11-17T17:10:38.2855960Z ◇ Test case passing 1 argument frame → home-dark@terminal to frameFitsInEveryStyle(_:) started.
+apple	just apple-check	2026-11-17T17:10:38.2856470Z ◇ Test case passing 1 argument frame → home-dark@scene to frameFitsInEveryStyle(_:) started.
+apple	just apple-check	2026-11-17T17:10:38.2856910Z ◇ Test case passing 1 argument frame → chat-streaming-dark@modern to frameFitsInEveryStyle(_:) started.
+apple	just apple-check	2026-11-17T17:10:38.2857410Z ◇ Test case passing 1 argument frame → chat-streaming-dark@terminal to frameFitsInEveryStyle(_:) started.
+apple	just apple-check	2026-11-17T17:10:38.2857890Z ◇ Test case passing 1 argument frame → chat-streaming-dark@scene to frameFitsInEveryStyle(_:) started.
+apple	just apple-check	2026-11-17T17:10:38.2858350Z ◇ Test case passing 1 argument frame → chat-card-dark@modern to frameFitsInEveryStyle(_:) started.
+apple	just apple-check	2026-11-17T17:10:38.2858800Z ◇ Test case passing 1 argument frame → chat-card-dark@terminal to frameFitsInEveryStyle(_:) started.
+apple	just apple-check	2026-11-17T17:10:38.2859250Z ◇ Test case passing 1 argument frame → chat-card-dark@scene to frameFitsInEveryStyle(_:) started.
+apple	just apple-check	2026-11-17T17:10:38.2859710Z ◇ Test case passing 1 argument frame → chat-cards-more-dark@modern to frameFitsInEveryStyle(_:) started.
+apple	just apple-check	2026-11-17T17:10:38.2860300Z ◇ Test case passing 1 argument frame → chat-cards-more-dark@terminal to frameFitsInEveryStyle(_:) started.
+apple	just apple-check	2026-11-17T17:10:38.2860820Z ◇ Test case passing 1 argument frame → chat-cards-more-dark@scene to frameFitsInEveryStyle(_:) started.
+apple	just apple-check	2026-11-17T17:10:38.2861340Z ◇ Test case passing 1 argument frame → chat-conductor-dark@modern to frameFitsInEveryStyle(_:) started.
+apple	just apple-check	2026-11-17T17:10:38.2861820Z ◇ Test case passing 1 argument frame → chat-conductor-dark@terminal to frameFitsInEveryStyle(_:) started.
+apple	just apple-check	2026-11-17T17:10:38.2862340Z ◇ Test case passing 1 argument frame → chat-conductor-dark@scene to frameFitsInEveryStyle(_:) started.
+apple	just apple-check	2026-11-17T17:10:38.2862850Z ◇ Test case passing 1 argument frame → persona-dark@modern to frameFitsInEveryStyle(_:) started.
+apple	just apple-check	2026-11-17T17:10:38.2863430Z ◇ Test case passing 1 argument frame → persona-dark@terminal to frameFitsInEveryStyle(_:) started.
+apple	just apple-check	2026-11-17T17:10:38.2863890Z ◇ Test case passing 1 argument frame → persona-dark@scene to frameFitsInEveryStyle(_:) started.
+apple	just apple-check	2026-11-17T17:10:38.2864340Z ◇ Test case passing 1 argument frame → avatar-menu-dark@modern to frameFitsInEveryStyle(_:) started.
+apple	just apple-check	2026-11-17T17:10:38.2864800Z ◇ Test case passing 1 argument frame → avatar-menu-dark@terminal to frameFitsInEveryStyle(_:) started.
+apple	just apple-check	2026-11-17T17:10:38.2865260Z ◇ Test case passing 1 argument frame → avatar-menu-dark@scene to frameFitsInEveryStyle(_:) started.
+apple	just apple-check	2026-11-17T17:10:38.2865740Z ◇ Test case passing 1 argument frame → persona-panel-dark@modern to frameFitsInEveryStyle(_:) started.
+apple	just apple-check	2026-11-17T17:10:38.2866210Z ◇ Test case passing 1 argument frame → persona-panel-dark@terminal to frameFitsInEveryStyle(_:) started.
+apple	just apple-check	2026-11-17T17:10:38.2866680Z ◇ Test case passing 1 argument frame → persona-panel-dark@scene to frameFitsInEveryStyle(_:) started.
+apple	just apple-check	2026-11-17T17:10:38.2867150Z ◇ Test case passing 1 argument frame → pair-welcome-dark@modern to frameFitsInEveryStyle(_:) started.
+apple	just apple-check	2026-11-17T17:10:38.2867630Z ◇ Test case passing 1 argument frame → pair-welcome-dark@terminal to frameFitsInEveryStyle(_:) started.
+apple	just apple-check	2026-11-17T17:10:38.2868090Z ◇ Test case passing 1 argument frame → pair-welcome-dark@scene to frameFitsInEveryStyle(_:) started.
+apple	just apple-check	2026-11-17T17:10:38.2868560Z ◇ Test case passing 1 argument frame → pair-scan-dark@modern to frameFitsInEveryStyle(_:) started.
+apple	just apple-check	2026-11-17T17:10:38.2869010Z ◇ Test case passing 1 argument frame → pair-scan-dark@terminal to frameFitsInEveryStyle(_:) started.
+apple	just apple-check	2026-11-17T17:10:38.2869460Z ◇ Test case passing 1 argument frame → pair-scan-dark@scene to frameFitsInEveryStyle(_:) started.
+apple	just apple-check	2026-11-17T17:10:38.2869910Z ◇ Test case passing 1 argument frame → pair-nearby-dark@modern to frameFitsInEveryStyle(_:) started.
+apple	just apple-check	2026-11-17T17:10:38.2870370Z ◇ Test case passing 1 argument frame → pair-nearby-dark@terminal to frameFitsInEveryStyle(_:) started.
+apple	just apple-check	2026-11-17T17:10:38.2870830Z ◇ Test case passing 1 argument frame → pair-nearby-dark@scene to frameFitsInEveryStyle(_:) started.
+apple	just apple-check	2026-11-17T17:10:38.2871300Z ◇ Test case passing 1 argument frame → pair-address-dark@modern to frameFitsInEveryStyle(_:) started.
+apple	just apple-check	2026-11-17T17:10:38.2871770Z ◇ Test case passing 1 argument frame → pair-address-dark@terminal to frameFitsInEveryStyle(_:) started.
+apple	just apple-check	2026-11-17T17:10:38.2872240Z ◇ Test case passing 1 argument frame → pair-address-dark@scene to frameFitsInEveryStyle(_:) started.
+apple	just apple-check	2026-11-17T17:10:38.2872700Z ◇ Test case passing 1 argument frame → pair-waiting-dark@modern to frameFitsInEveryStyle(_:) started.
+apple	just apple-check	2026-11-17T17:10:38.2873180Z ◇ Test case passing 1 argument frame → pair-waiting-dark@terminal to frameFitsInEveryStyle(_:) started.
+apple	just apple-check	2026-11-17T17:10:38.2873640Z ◇ Test case passing 1 argument frame → pair-waiting-dark@scene to frameFitsInEveryStyle(_:) started.
+apple	just apple-check	2026-11-17T17:10:38.2874100Z ◇ Test case passing 1 argument frame → pair-paired-dark@modern to frameFitsInEveryStyle(_:) started.
+apple	just apple-check	2026-11-17T17:10:38.2874560Z ◇ Test case passing 1 argument frame → pair-paired-dark@terminal to frameFitsInEveryStyle(_:) started.
+apple	just apple-check	2026-11-17T17:10:38.2875130Z ◇ Test case passing 1 argument frame → pair-paired-dark@scene to frameFitsInEveryStyle(_:) started.
+apple	just apple-check	2026-11-17T17:10:38.2875570Z ◇ Test case passing 1 argument frame → home-light@modern to frameFitsInEveryStyle(_:) started.
+apple	just apple-check	2026-11-17T17:10:38.2876050Z ◇ Test case passing 1 argument frame → home-light@terminal to frameFitsInEveryStyle(_:) started.
+apple	just apple-check	2026-11-17T17:10:38.2876480Z ◇ Test case passing 1 argument frame → home-light@scene to frameFitsInEveryStyle(_:) started.
+apple	just apple-check	2026-11-17T17:10:38.2876970Z ◇ Test case passing 1 argument frame → chat-streaming-light@modern to frameFitsInEveryStyle(_:) started.
+apple	just apple-check	2026-11-17T17:10:38.2877470Z ◇ Test case passing 1 argument frame → chat-streaming-light@terminal to frameFitsInEveryStyle(_:) started.
+apple	just apple-check	2026-11-17T17:10:38.2877960Z ◇ Test case passing 1 argument frame → chat-streaming-light@scene to frameFitsInEveryStyle(_:) started.
+apple	just apple-check	2026-11-17T17:10:38.2878420Z ◇ Test case passing 1 argument frame → chat-card-light@modern to frameFitsInEveryStyle(_:) started.
+apple	just apple-check	2026-11-17T17:10:38.2878920Z ◇ Test case passing 1 argument frame → chat-card-light@terminal to frameFitsInEveryStyle(_:) started.
+apple	just apple-check	2026-11-17T17:10:38.2879370Z ◇ Test case passing 1 argument frame → chat-card-light@scene to frameFitsInEveryStyle(_:) started.
+apple	just apple-check	2026-11-17T17:10:38.2879840Z ◇ Test case passing 1 argument frame → chat-cards-more-light@modern to frameFitsInEveryStyle(_:) started.
+apple	just apple-check	2026-11-17T17:10:38.2880340Z ◇ Test case passing 1 argument frame → chat-cards-more-light@terminal to frameFitsInEveryStyle(_:) started.
+apple	just apple-check	2026-11-17T17:10:38.2880830Z ◇ Test case passing 1 argument frame → chat-cards-more-light@scene to frameFitsInEveryStyle(_:) started.
+apple	just apple-check	2026-11-17T17:10:38.2881310Z ◇ Test case passing 1 argument frame → chat-conductor-light@modern to frameFitsInEveryStyle(_:) started.
+apple	just apple-check	2026-11-17T17:10:38.2881800Z ◇ Test case passing 1 argument frame → chat-conductor-light@terminal to frameFitsInEveryStyle(_:) started.
+apple	just apple-check	2026-11-17T17:10:38.2882360Z ◇ Test case passing 1 argument frame → chat-conductor-light@scene to frameFitsInEveryStyle(_:) started.
+apple	just apple-check	2026-11-17T17:10:38.2882820Z ◇ Test case passing 1 argument frame → persona-light@modern to frameFitsInEveryStyle(_:) started.
+apple	just apple-check	2026-11-17T17:10:38.2883270Z ◇ Test case passing 1 argument frame → persona-light@terminal to frameFitsInEveryStyle(_:) started.
+apple	just apple-check	2026-11-17T17:10:38.2883720Z ◇ Test case passing 1 argument frame → persona-light@scene to frameFitsInEveryStyle(_:) started.
+apple	just apple-check	2026-11-17T17:10:38.2884180Z ◇ Test case passing 1 argument frame → avatar-menu-light@modern to frameFitsInEveryStyle(_:) started.
+apple	just apple-check	2026-11-17T17:10:38.2884660Z ◇ Test case passing 1 argument frame → avatar-menu-light@terminal to frameFitsInEveryStyle(_:) started.
+apple	just apple-check	2026-11-17T17:10:38.2885120Z ◇ Test case passing 1 argument frame → avatar-menu-light@scene to frameFitsInEveryStyle(_:) started.
+apple	just apple-check	2026-11-17T17:10:38.2885590Z ◇ Test case passing 1 argument frame → persona-panel-light@modern to frameFitsInEveryStyle(_:) started.
+apple	just apple-check	2026-11-17T17:10:38.2886080Z ◇ Test case passing 1 argument frame → persona-panel-light@terminal to frameFitsInEveryStyle(_:) started.
+apple	just apple-check	2026-11-17T17:10:38.2886560Z ◇ Test case passing 1 argument frame → persona-panel-light@scene to frameFitsInEveryStyle(_:) started.
+apple	just apple-check	2026-11-17T17:10:38.2887030Z ◇ Test case passing 1 argument frame → pair-welcome-light@modern to frameFitsInEveryStyle(_:) started.
+apple	just apple-check	2026-11-17T17:10:38.2887510Z ◇ Test case passing 1 argument frame → pair-welcome-light@terminal to frameFitsInEveryStyle(_:) started.
+apple	just apple-check	2026-11-17T17:10:38.2887990Z ◇ Test case passing 1 argument frame → pair-welcome-light@scene to frameFitsInEveryStyle(_:) started.
+apple	just apple-check	2026-11-17T17:10:38.2888450Z ◇ Test case passing 1 argument frame → pair-scan-light@modern to frameFitsInEveryStyle(_:) started.
+apple	just apple-check	2026-11-17T17:10:38.2888900Z ◇ Test case passing 1 argument frame → pair-scan-light@terminal to frameFitsInEveryStyle(_:) started.
+apple	just apple-check	2026-11-17T17:10:38.2889350Z ◇ Test case passing 1 argument frame → pair-scan-light@scene to frameFitsInEveryStyle(_:) started.
+apple	just apple-check	2026-11-17T17:11:05.3498480Z ◇ Test case passing 1 argument frame → pair-nearby-light@modern to frameFitsInEveryStyle(_:) started.
+apple	just apple-check	2026-11-17T17:11:05.3498980Z ◇ Test case passing 1 argument frame → pair-nearby-light@terminal to frameFitsInEveryStyle(_:) started.
+apple	just apple-check	2026-11-17T17:11:05.3499710Z ◇ Test case passing 1 argument frame → pair-nearby-light@scene to frameFitsInEveryStyle(_:) started.
+apple	just apple-check	2026-11-17T17:11:05.3500140Z ◇ Test case passing 1 argument frame → pair-address-light@modern to frameFitsInEveryStyle(_:) started.
+apple	just apple-check	2026-11-17T17:11:05.3500640Z ◇ Test case passing 1 argument frame → pair-address-light@terminal to frameFitsInEveryStyle(_:) started.
+apple	just apple-check	2026-11-17T17:11:05.3501050Z ◇ Test case passing 1 argument frame → pair-address-light@scene to frameFitsInEveryStyle(_:) started.
+apple	just apple-check	2026-11-17T17:11:05.3501460Z ◇ Test case passing 1 argument frame → pair-waiting-light@modern to frameFitsInEveryStyle(_:) started.
+apple	just apple-check	2026-11-17T17:11:05.3501870Z ◇ Test case passing 1 argument frame → pair-waiting-light@terminal to frameFitsInEveryStyle(_:) started.
+apple	just apple-check	2026-11-17T17:11:05.3502290Z ◇ Test case passing 1 argument frame → pair-waiting-light@scene to frameFitsInEveryStyle(_:) started.
+apple	just apple-check	2026-11-17T17:11:05.3502690Z ◇ Test case passing 1 argument frame → pair-paired-light@modern to frameFitsInEveryStyle(_:) started.
+apple	just apple-check	2026-11-17T17:11:05.3503100Z ◇ Test case passing 1 argument frame → pair-paired-light@terminal to frameFitsInEveryStyle(_:) started.
+apple	just apple-check	2026-11-17T17:11:05.3503520Z ◇ Test case passing 1 argument frame → pair-paired-light@scene to frameFitsInEveryStyle(_:) started.
+apple	just apple-check	2026-11-17T17:11:05.3503920Z ◇ Test case passing 1 argument frame → mac-connect@modern to frameFitsInEveryStyle(_:) started.
+apple	just apple-check	2026-11-17T17:11:05.3504300Z ◇ Test case passing 1 argument frame → mac-connect@terminal to frameFitsInEveryStyle(_:) started.
+apple	just apple-check	2026-11-17T17:11:05.3504670Z ◇ Test case passing 1 argument frame → mac-connect@scene to frameFitsInEveryStyle(_:) started.
+apple	just apple-check	2026-11-17T17:11:05.3505050Z ◇ Test case passing 1 argument frame → mac-window-dark@modern to frameFitsInEveryStyle(_:) started.
+apple	just apple-check	2026-11-17T17:11:05.3505460Z ◇ Test case passing 1 argument frame → mac-window-dark@terminal to frameFitsInEveryStyle(_:) started.
+apple	just apple-check	2026-11-17T17:11:05.3505850Z ◇ Test case passing 1 argument frame → mac-window-dark@scene to frameFitsInEveryStyle(_:) started.
+apple	just apple-check	2026-11-17T17:11:05.3506240Z ◇ Test case passing 1 argument frame → mac-window-light@modern to frameFitsInEveryStyle(_:) started.
+apple	just apple-check	2026-11-17T17:11:05.3506640Z ◇ Test case passing 1 argument frame → mac-window-light@terminal to frameFitsInEveryStyle(_:) started.
+apple	just apple-check	2026-11-17T17:11:05.3507040Z ◇ Test case passing 1 argument frame → mac-window-light@scene to frameFitsInEveryStyle(_:) started.
+apple	just apple-check	2026-11-17T17:11:05.3507460Z ◇ Test case passing 1 argument frame → mac-persona-panel-dark@modern to frameFitsInEveryStyle(_:) started.
+apple	just apple-check	2026-11-17T17:11:05.3507890Z ◇ Test case passing 1 argument frame → mac-persona-panel-dark@terminal to frameFitsInEveryStyle(_:) started.
+apple	just apple-check	2026-11-17T17:11:05.3508320Z ◇ Test case passing 1 argument frame → mac-persona-panel-dark@scene to frameFitsInEveryStyle(_:) started.
+apple	just apple-check	2026-11-17T17:11:05.3508720Z ◇ Test case passing 1 argument frame → room-dark@modern to frameFitsInEveryStyle(_:) started.
+apple	just apple-check	2026-11-17T17:11:05.3509090Z ◇ Test case passing 1 argument frame → room-dark@terminal to frameFitsInEveryStyle(_:) started.
+apple	just apple-check	2026-11-17T17:11:05.3509460Z ◇ Test case passing 1 argument frame → room-dark@scene to frameFitsInEveryStyle(_:) started.
+apple	just apple-check	2026-11-17T17:11:05.3509830Z ◇ Test case passing 1 argument frame → room-light@modern to frameFitsInEveryStyle(_:) started.
+apple	just apple-check	2026-11-17T17:11:05.3510210Z ◇ Test case passing 1 argument frame → room-light@terminal to frameFitsInEveryStyle(_:) started.
+apple	just apple-check	2026-11-17T17:11:05.3510570Z ◇ Test case passing 1 argument frame → room-light@scene to frameFitsInEveryStyle(_:) started.
+apple	just apple-check	2026-11-17T17:11:05.3510950Z ◇ Test case passing 1 argument frame → room-create-dark@modern to frameFitsInEveryStyle(_:) started.
+apple	just apple-check	2026-11-17T17:11:05.3511350Z ◇ Test case passing 1 argument frame → room-create-dark@terminal to frameFitsInEveryStyle(_:) started.
+apple	just apple-check	2026-11-17T17:11:05.3512020Z ◇ Test case passing 1 argument frame → room-create-dark@scene to frameFitsInEveryStyle(_:) started.
+apple	just apple-check	2026-11-17T17:11:05.3512420Z ◇ Test case passing 1 argument frame → room-create-light@modern to frameFitsInEveryStyle(_:) started.
+apple	just apple-check	2026-11-17T17:11:05.3512880Z ◇ Test case passing 1 argument frame → room-create-light@terminal to frameFitsInEveryStyle(_:) started.
+apple	just apple-check	2026-11-17T17:11:05.3513290Z ◇ Test case passing 1 argument frame → room-create-light@scene to frameFitsInEveryStyle(_:) started.
+apple	just apple-check	2026-11-17T17:11:05.3513720Z ◇ Test case passing 1 argument frame → room-member-dark@modern to frameFitsInEveryStyle(_:) started.
+apple	just apple-check	2026-11-17T17:11:05.3514120Z ◇ Test case passing 1 argument frame → room-member-dark@terminal to frameFitsInEveryStyle(_:) started.
+apple	just apple-check	2026-11-17T17:11:05.3514520Z ◇ Test case passing 1 argument frame → room-member-dark@scene to frameFitsInEveryStyle(_:) started.
+apple	just apple-check	2026-11-17T17:11:05.3514900Z ◇ Test case passing 1 argument frame → room-home-dark@modern to frameFitsInEveryStyle(_:) started.
+apple	just apple-check	2026-11-17T17:11:05.3515300Z ◇ Test case passing 1 argument frame → room-home-dark@terminal to frameFitsInEveryStyle(_:) started.
+apple	just apple-check	2026-11-17T17:11:05.3515680Z ◇ Test case passing 1 argument frame → room-home-dark@scene to frameFitsInEveryStyle(_:) started.
+apple	just apple-check	2026-11-17T17:11:05.3516070Z ◇ Test case passing 1 argument frame → room-pinned-dark@modern to frameFitsInEveryStyle(_:) started.
+apple	just apple-check	2026-11-17T17:11:05.3516470Z ◇ Test case passing 1 argument frame → room-pinned-dark@terminal to frameFitsInEveryStyle(_:) started.
+apple	just apple-check	2026-11-17T17:11:05.3516860Z ◇ Test case passing 1 argument frame → room-pinned-dark@scene to frameFitsInEveryStyle(_:) started.
+apple	just apple-check	2026-11-17T17:11:05.3517290Z ◇ Test case passing 1 argument frame → room-pinned-terminal-dark@modern to frameFitsInEveryStyle(_:) started.
+apple	just apple-check	2026-11-17T17:11:05.3517740Z ◇ Test case passing 1 argument frame → room-pinned-terminal-dark@terminal to frameFitsInEveryStyle(_:) started.
+apple	just apple-check	2026-11-17T17:11:05.3518190Z ◇ Test case passing 1 argument frame → room-pinned-terminal-dark@scene to frameFitsInEveryStyle(_:) started.
+apple	just apple-check	2026-11-17T17:11:05.3518630Z ◇ Test case passing 1 argument frame → room-pinned-scene-light@modern to frameFitsInEveryStyle(_:) started.
+apple	just apple-check	2026-11-17T17:11:05.3519070Z ◇ Test case passing 1 argument frame → room-pinned-scene-light@terminal to frameFitsInEveryStyle(_:) started.
+apple	just apple-check	2026-11-17T17:11:05.3519490Z ◇ Test case passing 1 argument frame → room-pinned-scene-light@scene to frameFitsInEveryStyle(_:) started.
+apple	just apple-check	2026-11-17T17:11:05.3519910Z ◇ Test case passing 1 argument frame → room-terminal-dark@modern to frameFitsInEveryStyle(_:) started.
+apple	just apple-check	2026-11-17T17:11:05.3520330Z ◇ Test case passing 1 argument frame → room-terminal-dark@terminal to frameFitsInEveryStyle(_:) started.
+apple	just apple-check	2026-11-17T17:11:05.3520730Z ◇ Test case passing 1 argument frame → room-terminal-dark@scene to frameFitsInEveryStyle(_:) started.
+apple	just apple-check	2026-11-17T17:11:05.3521130Z ◇ Test case passing 1 argument frame → room-mention-dark@modern to frameFitsInEveryStyle(_:) started.
+apple	just apple-check	2026-11-17T17:11:05.3521540Z ◇ Test case passing 1 argument frame → room-mention-dark@terminal to frameFitsInEveryStyle(_:) started.
+apple	just apple-check	2026-11-17T17:11:05.3521940Z ◇ Test case passing 1 argument frame → room-mention-dark@scene to frameFitsInEveryStyle(_:) started.
+apple	just apple-check	2026-11-17T17:11:05.3522360Z ◇ Test case passing 1 argument frame → room-mention-terminal-dark@modern to frameFitsInEveryStyle(_:) started.
+apple	just apple-check	2026-11-17T17:11:05.3522810Z ◇ Test case passing 1 argument frame → room-mention-terminal-dark@terminal to frameFitsInEveryStyle(_:) started.
+apple	just apple-check	2026-11-17T17:11:05.3523260Z ◇ Test case passing 1 argument frame → room-mention-terminal-dark@scene to frameFitsInEveryStyle(_:) started.
+apple	just apple-check	2026-11-17T17:11:05.3523670Z ◇ Test case passing 1 argument frame → room-scene-light@modern to frameFitsInEveryStyle(_:) started.
+apple	just apple-check	2026-11-17T17:11:05.3524070Z ◇ Test case passing 1 argument frame → room-scene-light@terminal to frameFitsInEveryStyle(_:) started.
+apple	just apple-check	2026-11-17T17:11:05.3524540Z ◇ Test case passing 1 argument frame → room-scene-light@scene to frameFitsInEveryStyle(_:) started.
+apple	just apple-check	2026-11-17T17:11:05.3524940Z ◇ Test case passing 1 argument frame → room-ask-dark@modern to frameFitsInEveryStyle(_:) started.
+apple	just apple-check	2026-11-17T17:11:05.3525320Z ◇ Test case passing 1 argument frame → room-ask-dark@terminal to frameFitsInEveryStyle(_:) started.
+apple	just apple-check	2026-11-17T17:11:05.3525740Z ◇ Test case passing 1 argument frame → room-ask-dark@scene to frameFitsInEveryStyle(_:) started.
+apple	just apple-check	2026-11-17T17:11:05.3526150Z ◇ Test case passing 1 argument frame → room-ask-terminal-dark@modern to frameFitsInEveryStyle(_:) started.
+apple	just apple-check	2026-11-17T17:11:05.3526610Z ◇ Test case passing 1 argument frame → room-ask-terminal-dark@terminal to frameFitsInEveryStyle(_:) started.
+apple	just apple-check	2026-11-17T17:11:05.3527040Z ◇ Test case passing 1 argument frame → room-ask-terminal-dark@scene to frameFitsInEveryStyle(_:) started.
+apple	just apple-check	2026-11-17T17:11:05.3527450Z ◇ Test case passing 1 argument frame → room-ask-scene-light@modern to frameFitsInEveryStyle(_:) started.
+apple	just apple-check	2026-11-17T17:11:05.3527880Z ◇ Test case passing 1 argument frame → room-ask-scene-light@terminal to frameFitsInEveryStyle(_:) started.
+apple	just apple-check	2026-11-17T17:11:05.3528290Z ◇ Test case passing 1 argument frame → room-ask-scene-light@scene to frameFitsInEveryStyle(_:) started.
+apple	just apple-check	2026-11-17T17:11:05.3528690Z ◇ Test case passing 1 argument frame → room-wide-dark@modern to frameFitsInEveryStyle(_:) started.
+apple	just apple-check	2026-11-17T17:11:05.3529080Z ◇ Test case passing 1 argument frame → room-wide-dark@terminal to frameFitsInEveryStyle(_:) started.
+apple	just apple-check	2026-11-17T17:11:05.3529480Z ◇ Test case passing 1 argument frame → room-wide-dark@scene to frameFitsInEveryStyle(_:) started.
+apple	just apple-check	2026-11-17T17:11:05.3529850Z ◇ Test case passing 1 argument frame → asked-dark@modern to frameFitsInEveryStyle(_:) started.
+apple	just apple-check	2026-11-17T17:11:05.3530220Z ◇ Test case passing 1 argument frame → asked-dark@terminal to frameFitsInEveryStyle(_:) started.
+apple	just apple-check	2026-11-17T17:11:05.3530590Z ◇ Test case passing 1 argument frame → asked-dark@scene to frameFitsInEveryStyle(_:) started.
+apple	just apple-check	2026-11-17T17:11:05.3530960Z ◇ Test case passing 1 argument frame → asked-light@modern to frameFitsInEveryStyle(_:) started.
+apple	just apple-check	2026-11-17T17:11:05.3531330Z ◇ Test case passing 1 argument frame → asked-light@terminal to frameFitsInEveryStyle(_:) started.
+apple	just apple-check	2026-11-17T17:11:05.3531710Z ◇ Test case passing 1 argument frame → asked-light@scene to frameFitsInEveryStyle(_:) started.
+apple	just apple-check	2026-11-17T17:11:05.3532080Z ◇ Test case passing 1 argument frame → linked-dark@modern to frameFitsInEveryStyle(_:) started.
+apple	just apple-check	2026-11-17T17:11:05.3532450Z ◇ Test case passing 1 argument frame → linked-dark@terminal to frameFitsInEveryStyle(_:) started.
+apple	just apple-check	2026-11-17T17:11:05.3532820Z ◇ Test case passing 1 argument frame → linked-dark@scene to frameFitsInEveryStyle(_:) started.
+apple	just apple-check	2026-11-17T17:11:05.3533240Z ◇ Test case passing 1 argument frame → linked-terminal-dark@modern to frameFitsInEveryStyle(_:) started.
+apple	just apple-check	2026-11-17T17:11:05.3533670Z ◇ Test case passing 1 argument frame → linked-terminal-dark@terminal to frameFitsInEveryStyle(_:) started.
+apple	just apple-check	2026-11-17T17:11:05.3534190Z ◇ Test case passing 1 argument frame → linked-terminal-dark@scene to frameFitsInEveryStyle(_:) started.
+apple	just apple-check	2026-11-17T17:11:05.3534610Z ◇ Test case passing 1 argument frame → linked-wide-light@modern to frameFitsInEveryStyle(_:) started.
+apple	just apple-check	2026-11-17T17:11:05.3535070Z ◇ Test case passing 1 argument frame → linked-wide-light@terminal to frameFitsInEveryStyle(_:) started.
+apple	just apple-check	2026-11-17T17:11:05.3535480Z ◇ Test case passing 1 argument frame → linked-wide-light@scene to frameFitsInEveryStyle(_:) started.
+apple	just apple-check	2026-11-17T17:11:05.3535940Z ◇ Test case passing 1 argument frame → room-terminal-wide@modern to frameFitsInEveryStyle(_:) started.
+apple	just apple-check	2026-11-17T17:11:05.3536350Z ◇ Test case passing 1 argument frame → room-terminal-wide@terminal to frameFitsInEveryStyle(_:) started.
+apple	just apple-check	2026-11-17T17:11:05.3536760Z ◇ Test case passing 1 argument frame → room-terminal-wide@scene to frameFitsInEveryStyle(_:) started.
+apple	just apple-check	2026-11-17T17:11:05.3537140Z ✔ Test frameFitsInEveryStyle(_:) with 165 test cases passed after 42.414 seconds.
+apple	just apple-check	2026-11-17T17:11:05.3537420Z ◇ Test aViewWiderThanItsFrameIsCaught() started.
+apple	just apple-check	2026-11-17T17:11:05.3537670Z ✔ Test aViewWiderThanItsFrameIsCaught() passed after 0.010 seconds.
+apple	just apple-check	2026-11-17T17:11:05.3537950Z ✘ Suite SnapshotTests failed after 205.918 seconds with 3 issues.
+apple	just apple-check	2026-11-17T17:11:05.3538240Z ✘ Test run with 313 tests in 70 suites failed after 205.918 seconds with 3 issues.
+apple	just apple-check	2026-11-17T17:11:05.3538510Z error: recipe `apple-check` failed on line 11 with exit code 1
+apple	just apple-check	2026-11-17T17:11:05.3547310Z ##[error]Process completed with exit code 1.
