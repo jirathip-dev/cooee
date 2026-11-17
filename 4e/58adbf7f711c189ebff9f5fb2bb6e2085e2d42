@@ -1,0 +1,23 @@
+Decided: apple-check.sh --nightly adds CooeeFeatures coverage, swiftlint analyze and Periphery; the plain run is the blocking set
+Because: "Nightly on staging's head (the `schedule` run #440 added) and on `workflow_dispatch`, not on a PR"
+Decided: the red nightly reuses scripts/ci-nightly.sh with WORKFLOW and CHECK instead of a second copy for apple.yml
+Because: "opens or updates the one `nightly red:` issue the way `scripts/ci-nightly.sh` does"
+Decided: the failed step is written as gate= to GITHUB_OUTPUT from the EXIT trap, so the issue names the gate
+Because: scripts/apple-check.sh:40
+Decided: the moved gates are kept moved: swiftlint analyze alone took 620s of a 1284s local nightly run
+Because: "If the timings show the moved gates cost under a minute together"
+Rejected: a separate nightly workflow file — the schedule run already exists in apple.yml
+Check: the after time comes from this PR's merge-ready run summary table; ci/ci-scripts-test.sh covers WORKFLOW and CHECK
+Owner: Merges no longer wait on the slow tidy-code gates; they run nightly and a red night files the one nightly-red issue.
+
+Decided: apple-check.sh --nightly adds CooeeFeatures coverage, swiftlint analyze and Periphery; the plain run is the blocking set
+Because: "Nightly on staging's head (the `schedule` run #440 added) and on `workflow_dispatch`, not on a PR"
+Decided: the nightly is `just apple-check --nightly`, a flag on the existing recipe, since the justfile is frozen in .drover/arch.toml
+Because: "`just apple-check-nightly` (or a flag) runs all of it"
+Decided: the red nightly reuses scripts/ci-nightly.sh with WORKFLOW and CHECK instead of a second copy for apple.yml
+Because: "opens or updates the one `nightly red:` issue the way `scripts/ci-nightly.sh` does"
+Decided: the moved gates are kept moved: swiftlint analyze alone took 620s of a 1284s local nightly run
+Because: "If the timings show the moved gates cost under a minute together"
+Rejected: a separate nightly workflow file — the schedule run already exists in apple.yml
+Check: the after time comes from this PR's merge-ready apple run summary table; apple was pending (queued for the merge-ready run), not failed
+Owner: Merges no longer wait on the slow tidy-code gates; they run nightly and a red night files the one nightly-red issue.
