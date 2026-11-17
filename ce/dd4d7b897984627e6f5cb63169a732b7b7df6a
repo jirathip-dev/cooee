@@ -1,0 +1,6 @@
+Decided: merge origin/staging and keep both hub modules (screen from this PR, secret from staging) in crates/cooee-server/src/hub.rs.
+Because: crates/cooee-server/src/hub.rs:32
+Decided: no code change for the round 2 finding; it was only the apple check still pending, which reruns at the new head.
+Rejected: rebasing onto staging — a history rewrite and force-push are not allowed on a lane.
+Check: CI is green at the merge head, apple included; scripts/gen.sh leaves no diff.
+Owner: You can watch a persona's browser live, take it over for 10 minutes, and hand it back with a note it reads.
