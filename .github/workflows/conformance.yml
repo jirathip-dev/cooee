@@ -37,7 +37,6 @@ jobs:
             model: haiku
     env:
       PROVIDER: ${{ matrix.provider }}
-      REPORT: ${{ runner.temp }}/conformance-${{ matrix.provider }}.md
     steps:
       - uses: actions/checkout@v4
         with:
@@ -77,15 +76,17 @@ jobs:
           CONFORMANCE_PROVIDER: ${{ matrix.provider }}
           CONFORMANCE_AGENT: ${{ matrix.agent }}
           CONFORMANCE_MODEL: ${{ matrix.model }}
-          CONFORMANCE_REPORT: ${{ env.REPORT }}
+          CONFORMANCE_REPORT: ${{ runner.temp }}/conformance-${{ matrix.provider }}.md
         run: |
-          export CONFORMANCE_SHED="$RUNNER_TEMP/shed" CONFORMANCE_SHED_PID="$(cat "$RUNNER_TEMP/shed.pid")"
+          CONFORMANCE_SHED_PID=$(cat "$RUNNER_TEMP/shed.pid")
+          export CONFORMANCE_SHED="$RUNNER_TEMP/shed" CONFORMANCE_SHED_PID
           cargo test --locked -p cooee --test conformance -- --ignored --nocapture
       - name: report
         if: always() && steps.ready.outputs.run == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
           RUN_ID: ${{ github.run_id }}
+          REPORT: ${{ runner.temp }}/conformance-${{ matrix.provider }}.md
         run: |
           [ -s "$REPORT" ] || printf '### conformance: %s\n\nfail: no report (the run stopped: over ceiling or broken)\n' "$PROVIDER" > "$REPORT"
           cat "$REPORT" >> "$GITHUB_STEP_SUMMARY"
