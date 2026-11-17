@@ -91,3 +91,110 @@ internal struct AddressField: View {
         }
     }
 }
+
+internal struct PairingPart: View {
+    @Environment(\.look) private var look
+    internal let block: JSONValue
+    internal let store: StoreOf<PairingFeature>?
+
+    internal var body: some View {
+        switch block.type {
+        case "scanner": Viewfinder(store: store).frame(height: block["height"]?.number.map { CGFloat($0) })
+        case "ways": WaysIn(show: show, nearby: store.map { $0.nearby.count })
+        case "nearby": NearbyList(store: store) { store?.send(.connect($0)) }
+        case "address": AddressField(store: store) { store?.send(.connect($0)) }
+        case "countdown": Countdown(text: block.string("text") ?? "", until: store?.until)
+        case "avatars": Avatars(personas: store.map { $0.personas.map { Persona($0) } } ?? Fixtures.personas)
+        case "buttons": buttons
+        default: StepHeader(title: block.string("title") ?? "", subtitle: block.string("subtitle") ?? "")
+        }
+    }
+
+    private var buttons: some View {
+        HStack(spacing: 10) {
+            ForEach(block.list("rows"), id: \.self) { row in
+                Button {
+                    tap(row)
+                } label: {
+                    CardButton(
+                        title: row.string("title") ?? "", primary: row["primary"]?.bool == true,
+                        tint: look.palette.tone(row.string("tone")))
+                }
+                .buttonStyle(.plain)
+            }
+        }
+    }
+
+    private func show(_ step: PhoneStep) { store?.send(.show(step)) }
+
+    private func tap(_ row: JSONValue) {
+        if let step = row.string("step").flatMap(PhoneStep.init(rawValue:)) {
+            show(step)
+        } else if row.string("action") == "cancel" {
+            store?.send(.cancel)
+        } else if row.string("action") == "home" {
+            store?.send(.home)
+        }
+    }
+}
+
+private struct Viewfinder: View {
+    @Environment(\.look) private var look
+    fileprivate let store: StoreOf<PairingFeature>?
+
+    fileprivate var body: some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: 28).fill(Color.hex(0x1c1f1d))
+            #if os(iOS)
+                if let store { QRScanner { store.send(.connect($0)) }.clipShape(.rect(cornerRadius: 28)) }
+            #endif
+            if store == nil {
+                QRCode(text: "https://server.example.com/pair?c=K7Q2MX", size: 150)
+                    .padding(16).background(Color.white, in: .rect(cornerRadius: 10))
+                    .rotationEffect(.degrees(-6)).shadow(radius: 12)
+            }
+            ViewfinderCorners().stroke(look.palette.lead, style: StrokeStyle(lineWidth: 5, lineCap: .round))
+                .frame(width: 240, height: 240)
+        }
+    }
+}
+
+private struct Countdown: View {
+    @Environment(\.look) private var look
+    fileprivate let text: String
+    fileprivate let until: Date?
+
+    fileprivate var body: some View {
+        HStack(spacing: 8) {
+            Circle().fill(look.palette.cyan).frame(width: 8, height: 8)
+            if let until {
+                TimelineView(.periodic(from: .now, by: 1)) { context in
+                    let left = max(0, Int(until.timeIntervalSince(context.date)))
+                    line(
+                        text.replacingOccurrences(
+                            of: "{left}", with: "\(left / 60):\(String(format: "%02d", left % 60))"))
+                }
+            } else {
+                line(text)
+            }
+        }
+    }
+
+    private func line(_ text: String) -> some View {
+        Text(text).ui(14, .regular, look).foregroundStyle(look.palette.mute)
+    }
+}
+
+private struct Avatars: View {
+    @Environment(\.look) private var look
+    fileprivate let personas: [Persona]
+
+    fileprivate var body: some View {
+        HStack(spacing: -10) {
+            ForEach(personas) { persona in
+                Avatar(persona: persona, size: 48)
+                    .overlay(Circle().strokeBorder(look.palette.background, lineWidth: look.style == .modern ? 3 : 0))
+            }
+        }
+    }
+}

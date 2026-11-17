@@ -32,7 +32,7 @@ public struct AppRoot: View {
                 if store.mac && [.welcome, .nearby, .address].contains(pairing.step) {
                     MacConnect(store: pairing) { store.send(.setUpHere) }
                 } else {
-                    PhoneOnboarding(store: pairing)
+                    PairingBlocks(store: pairing)
                 }
             }
         }

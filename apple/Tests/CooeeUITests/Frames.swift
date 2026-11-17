@@ -91,7 +91,7 @@ extension Frame {
             phone("persona-panel-\(mode)", palette) { PersonaPanelBlocks() },
         ]
             + PhoneStep.allCases.map { step in
-                phone("pair-\(step.rawValue)-\(mode)", palette) { PhoneOnboarding(step: step) }
+                phone("pair-\(step.rawValue)-\(mode)", palette) { PairingBlocks(step: step) }
             }
     }
 

@@ -83,6 +83,14 @@ pub fn check(text: &str) -> Result<Value, Broken> {
     if root.get("type").is_none_or(|t| t != "nav") {
         return Err(at("\"root\"", 0, "root: not a nav".into()));
     }
+    let place = &root["place"];
+    if [place, &place["compact"], &place["wide"]].contains(&&json!("hidden")) {
+        return Err(at(
+            "\"root\"",
+            0,
+            "root: hidden hides the locked screens".into(),
+        ));
+    }
     let mut ids: HashSet<String> = ["pairing", "reset-layout"].map(str::to_owned).into();
     node(root, "root", 1, &mut ids).map_err(|(why, bad, nth)| at(&format!("{bad:?}"), nth, why))?;
     Ok(file)
@@ -109,7 +117,7 @@ fn node(
             );
         }
         if LOCKED.contains(&screen) {
-            return Ok(());
+            return fail("a locked screen can't be placed:", screen);
         }
         (&[][..], &[][..])
     } else {
