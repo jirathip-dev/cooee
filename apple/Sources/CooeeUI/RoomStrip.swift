@@ -10,7 +10,7 @@ internal struct MemberStrip: View {
 
     internal var body: some View {
         HStack(alignment: .bottom, spacing: 4) {
-            ForEach(Array(scene.acting.enumerated()), id: \.element.id) { index, member in
+            ForEach(Array(scene.acting(scene.shown).enumerated()), id: \.element.id) { index, member in
                 Button {
                     inspect(member.id)
                 } label: {
@@ -34,7 +34,7 @@ internal struct MemberStrip: View {
 
     private func cell(_ place: Int, _ member: Persona) -> some View {
         let palette = look.palette
-        let state = scene.round.state(member.id)
+        let state = scene.shown.state(member.id)
         return VStack(spacing: 3) {
             Avatar(persona: member, size: farm ? 48 : 40)
                 .overlay(alignment: .bottomTrailing) {

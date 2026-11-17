@@ -92,7 +92,7 @@
       "blocks": [
         { "type": "spacer" },
         { "type": "symbol", "symbol": "checkmark.circle.fill", "size": 84, "tone": "ok" },
-        { "type": "text", "text": "Paired with {host}", "size": 28, "weight": "bold" },
+        { "type": "text", "id": "paired", "text": "Paired with {host}", "size": 28, "weight": "bold" },
         { "type": "text", "text": "{by} approved this iPhone from the Mac.", "size": 16, "tone": "mute" },
         { "type": "avatars", "top": 10 },
         { "type": "text", "text": "{count} personas are waiting on Home", "size": 14, "tone": "mute" },

@@ -59,7 +59,7 @@ internal struct MembersPane: View {
 
     private func row(_ index: Int, _ member: Persona) -> some View {
         let palette = look.palette
-        let state = scene.round.state(member.id)
+        let state = scene.shown.state(member.id)
         return HStack(spacing: 10) {
             Avatar(persona: member.with(state: state.lane), size: 38)
                 .overlay(alignment: .bottomTrailing) { StateDot(state: state).offset(x: 3, y: 3) }

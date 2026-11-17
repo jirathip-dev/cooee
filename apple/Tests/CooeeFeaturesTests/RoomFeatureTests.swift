@@ -76,7 +76,7 @@ internal struct RoomFeatureTests {
         let reply = APIItem(id: 2, time: 2_000, kind: "agent", text: "Hello", speaker: "a")
         await store.send(.event(.item(asked))) {
             $0.items = [asked]
-            $0.room?.round.asked(["a", "b"], text: "hi all", when: Date(timeIntervalSince1970: 1))
+            $0.room?.round.asked(["a", "b"], named: [], when: Date(timeIntervalSince1970: 1))
         }
         await store.send(.event(.roomTurn("a"))) { $0.room?.round.began("a") }
         await store.send(.event(.item(reply))) {
@@ -88,6 +88,19 @@ internal struct RoomFeatureTests {
         #expect(store.state.room?.round.state("b") == .passed)
         #expect(store.state.drawn.last == .divider(id: Int.min, text: "round ended · 2 turns · B passed"))
         #expect(store.state.room?.names["a"] == "A")
+    }
+
+    @Test internal func anOwnerMessageNamingAMemberQueuesOnlyThatMember() async {
+        let store = TestStore(initialState: room(["a", "b"])) {
+            ChatFeature()
+        } withDependencies: {
+            dependencies(&$0)
+        }
+        store.exhaustivity = .off
+        let asked = APIItem(id: 1, time: 1_000, kind: "you", text: "@B, check Q3", speaker: "owner")
+        await store.send(.event(.item(asked)))
+        #expect(store.state.room?.round.state("a") == .waiting)
+        #expect(store.state.room?.round.state("b") == .upNext)
     }
 
     @Test internal func aMemberIsInspectedMovedAddedAndTakenOut() async {

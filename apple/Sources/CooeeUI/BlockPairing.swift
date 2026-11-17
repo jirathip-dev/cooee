@@ -116,6 +116,7 @@ private struct PairingBlock: View {
             }
         }
         .foregroundStyle(tone).multilineTextAlignment(block["center"]?.bool == true ? .center : .leading)
+        .accessibilityIdentifier(block.string("id") ?? "")
     }
 
     private var word: some View {
