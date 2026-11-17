@@ -1,0 +1,13 @@
+Decided: items are rows keyed (thread, id) in <data>/cooee.db; a later version upserts the row, matching Chat::from_versions
+Because: "with `body` the same JSON as today's line, primary key `(thread, id)`"
+Decided: the index holds history's said() text lowercased; search rechecks each hit, so LIKE wildcards in a word are harmless
+Because: crates/cooee-core/src/history.rs:17
+Decided: an import re-run after a crash upserts the same rows; the rename is fsynced before any append can follow
+Because: "a kill mid-import leaves the old files and imports again cleanly"
+Decided: routine-runs.json keeps its own format 1; only the thread store's FORMAT goes up
+Because: crates/cooee-core/src/routines.rs:26
+Decided: the rooms cap test failed once on macOS CI only; it passes 6/6 here and in the full gate, so no code change
+Because: crates/cooee/tests/rooms.rs:368
+Rejected: changing the room or the test — the cap note and the sixth reply are pushed under one lock, and no other run shows the failure
+Check: CI at 89bcb62 is green, rooms included; last page 10k 7131→34 µs and search 30781→454 µs (cooee perf --store, at 10fe9dc)
+Owner: Chats move into one database on first start; the latest page and history search are about 18–200× faster.
