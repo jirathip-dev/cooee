@@ -50,6 +50,9 @@ pub struct Config {
     /// The plugin index Settings › Plugins and `cooee plugin add <name>` list; default the built-in one
     /// (`plugins/index.toml` in cooee's repo).
     pub plugin_index: Option<PathBuf>,
+    /// The skill index `cooee skill add` and the persona panel list (#496); default the built-in one
+    /// (`plugins/skills.toml` in cooee's repo).
+    pub skill_index: Option<PathBuf>,
     /// The instance's name (`cooee serve --instance`, default `cooee`): its own config, data folder and pairing.
     #[serde(skip)]
     pub instance: String,
@@ -138,6 +141,7 @@ impl Default for Config {
             providers: provider::defaults(),
             plugins: Vec::new(),
             plugin_index: None,
+            skill_index: None,
             theme: None,
             dir: None,
             path: None,
