@@ -138,9 +138,12 @@ mod tests {
         assert!(text.ends_with("x…\""), "{text}");
         let hooks = Hooks {
             bind: "127.0.0.1:1".parse().unwrap(),
-            url: "https://mac.ts.net:8443/hooks/github".to_owned(),
+            url: "https://mac.example:8443/hooks/github".to_owned(),
             api: String::new(),
         };
-        assert_eq!(hooks.inbound("r-1"), "https://mac.ts.net:8443/hooks/in/r-1");
+        assert_eq!(
+            hooks.inbound("r-1"),
+            "https://mac.example:8443/hooks/in/r-1"
+        );
     }
 }
