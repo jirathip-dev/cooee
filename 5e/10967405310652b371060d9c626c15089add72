@@ -1,0 +1,13 @@
+Decided: the catalogue is connectors/<name>.toml, embedded by core's build.rs as $OUT_DIR/connectors.rs and parsed into Entry
+Because: crates/cooee-core/build.rs:76
+Decided: an entry's checks are serde errors (HttpsUrl and Tools via try_from), so every refusal names its TOML line
+Because: "an entry parses and a bad one is refused with its line"
+Decided: Server::source is the one reading of a [[mcp]] row; check calls it, so each refusal of shapes.md's table holds at load
+Because: crates/cooee-core/src/mcp.rs:182
+Decided: Linear and Notion ship with empty tool lists: their tools need a browser sign-in to list, and a tool in no list asks
+Because: crates/cooee-core/src/connectors.rs:222
+Decided: GitHub's 28 readOnlyHint tools are read; create_repository, delete_file and merge_pull_request are never
+Because: q1898
+Rejected: listing Linear and Notion tools from their docs — not proved against the live server
+Check: the PR's probe steps (401 metadata, dynamic registration 201 with a tailnet redirect, GitHub tools/list) match the entry files
+Owner: cooee now carries a reviewed list of Linear, Notion and GitHub; connecting to them comes in the next slices.
