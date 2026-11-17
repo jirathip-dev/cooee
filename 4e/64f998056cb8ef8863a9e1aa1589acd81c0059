@@ -1,0 +1,11 @@
+Decided: the drop target is a shed terminal the agent names, typed with enter; no browser page exists yet
+Because: "Works for terminal sessions too (into the persona's environment)."
+Decided: saved secrets live as <persona>.<NAME> via secrets::set and join the persona's env at start
+Because: "it is saved in the keychain for that persona (D4) and typed by a tool that never returns the value"
+Decided: answering a cooee secret card needs the passkey assertion, as MCP proposals do
+Because: crates/cooee-server/src/routes/threads.rs:333
+Decided: the saved test proves isolation against a second persona's adapter run; a persona-less thread runs no adapter
+Because: crates/cooee/tests/profiles.rs:127
+Rejected: typing into ACP sessions or owner shells — a value there would reach a model or shell history
+Check: crates/cooee/tests/mcp.rs leak test scans messages, events, agent input and every file but secrets/
+Owner: agents get passwords typed for them at a prompt and only ever see "secret NAME entered"
