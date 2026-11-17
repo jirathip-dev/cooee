@@ -1,0 +1,13 @@
+Decided: retention lives in store/archive.rs as Store::retain, run hourly by cooee serve on its own thread with its own Store
+Because: "The step runs off the request path."
+Decided: the trim applies to a tool item's title, the only text a tool item stores
+Because: crates/cooee-core/src/chat.rs:51
+Decided: ended means closed, or the thread's newest item is the session's Ended line
+Because: q1612
+Decided: the archive is ruzstd's fastest level, each month file rewritten whole (temp, fsync, rename)
+Because: q1921
+Rejected: appending zstd frames to the month file — a torn append would corrupt the month; a rewrite is atomic
+Decided: VACUUM after a pass that moved or trimmed, so the freed rows shrink cooee.db
+Rejected: keeping archived rows in the said index — the rows they join to are gone; search scans the archive instead
+Check: page/items/said/whole merge the archive; a second retain at the same now returns 0
+Owner: Finished chats quiet for a month move to a compressed monthly archive and still open, search and export in full.
