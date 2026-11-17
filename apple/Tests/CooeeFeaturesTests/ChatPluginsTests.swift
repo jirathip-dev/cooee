@@ -21,6 +21,8 @@ internal struct ChatPluginsTests {
         permissions: .init()
     )
 
+    nonisolated private static let teach = [JSONValue(json: #"{"label": "Save as skill", "action": "skill"}"#)]
+
     private let calls = Calls()
 
     private func store(_ persona: APIPersona = conductor) -> TestStoreOf<ChatFeature> {
@@ -35,6 +37,13 @@ internal struct ChatPluginsTests {
             }
             $0.plugins.installed = { _ in [Self.drover, Self.hello, Self.menuOnly] }
             $0.plugins.attach = { _, plugin, persona in calls.record("attach \(plugin) \(persona)") }
+            $0.plugins.screen = { _, _, _ in
+                .object(["blocks": .array([.object(["type": .string("actions"), "rows": .array(Self.teach)])])])
+            }
+            $0.plugins.act = { _, _, screen, act in
+                calls.record("\(screen) \(act.action) \(act.values["thread"]?.string ?? "")")
+                return .array([])
+            }
         }
     }
 
@@ -45,6 +54,7 @@ internal struct ChatPluginsTests {
             $0.places = [Self.queue]
             $0.attachable = [Self.hello]
         }
+        await store.receive(\.plugins.teach) { $0.teach = Self.teach }
         await store.send(.plugins(.open(Self.queue))) {
             $0.screen = ScreenFeature.State(server: mini, place: Self.queue)
         }
@@ -62,6 +72,19 @@ internal struct ChatPluginsTests {
         await store.receive(\.plugins.load)
         await store.receive(\.plugins.loaded) { $0.places = [Self.queue, Self.queue] }
         #expect(calls.all == ["attach hello cond", "places cond"])
+    }
+
+    @Test internal func aThreadActionAsksThisThreadsPersonaAndARefusalSaysWhy() async {
+        let store = store()
+        await store.send(.panel(.run(.teach("skill"))))
+        await store.finish()
+        #expect(calls.all == ["/screens/persona/cond skill a1"])
+        store.dependencies.plugins.act = { _, _, _, _ in throw APIError(status: 400, text: "a room has no one persona")
+        }
+        await store.send(.panel(.run(.teach("routine"))))
+        await store.receive(\.failed) { $0.error = "a room has no one persona" }
+        let new = ChatFeature.State(server: mini, target: .new(Self.conductor), persona: Persona(Self.conductor))
+        await TestStore(initialState: new) { ChatFeature() }.send(.panel(.run(.teach("skill"))))
     }
 
     @Test internal func theWorkflowSheetOpensAndUnfoldsOneIssueAtATime() async {
