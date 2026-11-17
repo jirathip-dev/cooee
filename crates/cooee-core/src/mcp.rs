@@ -57,7 +57,9 @@ pub struct Pick {
     pub tools: Option<Vec<String>>,
 }
 
-pub(crate) fn var(name: &str) -> bool {
+/// Whether `name` is a variable's name: letters, digits and `_`, not starting with a digit.
+#[must_use]
+pub fn var(name: &str) -> bool {
     name.bytes().next().is_some_and(|b| !b.is_ascii_digit())
         && name.bytes().all(|b| b.is_ascii_alphanumeric() || b == b'_')
 }

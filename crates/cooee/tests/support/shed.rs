@@ -270,6 +270,12 @@ impl FakeShed {
         }
     }
 
+    /// Plain terminal `name` waits at a prompt, its program not an agent's (a password prompt, #163).
+    pub fn plain(&self, name: &str) {
+        let mut procs = self.procs.by_name.lock().unwrap();
+        procs.insert(name.to_owned(), Proc::default());
+    }
+
     /// Terminal `name` is gone, as after a shed restart.
     pub fn vanish(&self, name: &str) {
         self.shared.lock().unwrap().gone.insert(name.to_owned());
@@ -476,6 +482,10 @@ impl FakeShed {
         let mut t = Self::info(name, running, s.reported.get(name).cloned());
         if let Some(labels) = s.lanes.get(name) {
             t["labels"] = json!(labels);
+        }
+        drop(s);
+        if self.procs.by_name.lock().unwrap().contains_key(name) {
+            t["acp"] = Value::Null;
         }
         Ok(t)
     }
