@@ -1,0 +1,5 @@
+Decided: the app target's previews build a Style with .bundled, as the package's callers do
+Because: apple/Tests/CooeeUITests/Frames.swift:28
+Rejected: a Look init that still takes the old style name — two ways to pick a style, against the ADR
+Check: xcodebuild of the Cooee scheme for macOS and iOS Simulator succeeds at the head
+Owner: The app build that CI makes the installer from works again; nothing on screen changes.
