@@ -63,7 +63,7 @@ async fn mcp_grant(cx: &Cx, Json(a): Json<AgentAsk>) -> Result<Answer<mcp::Grant
 }
 
 #[route(POST "/mcp/agent/call")]
-async fn mcp_call(cx: &Cx, Json(a): Json<AgentAsk>) -> Result<Answer<bool>> {
+async fn mcp_call(cx: &Cx, Json(a): Json<AgentAsk>) -> Result<Answer<Option<String>>> {
     let token = bearer(cx);
     let text = |k: &str| {
         a.server
@@ -77,7 +77,6 @@ async fn mcp_call(cx: &Cx, Json(a): Json<AgentAsk>) -> Result<Answer<bool>> {
     Ok(Answer(
         blocking(cx, move |hub| {
             hub.call((&a.thread, &token), (&server, &tool), &args)
-                .map(|()| true)
         })
         .await,
     ))

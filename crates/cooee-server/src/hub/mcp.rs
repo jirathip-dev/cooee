@@ -121,7 +121,7 @@ impl Hub {
         self.config.as_deref().and_then(Path::parent)
     }
 
-    fn persona(&self, id: &str) -> Agent {
+    pub(super) fn persona(&self, id: &str) -> Agent {
         let list = agents::all(self.config_dir(), &self.data, |_| None);
         list.into_iter().find(|a| a.id == id).unwrap_or_default()
     }
@@ -274,7 +274,8 @@ impl Hub {
     }
 
     /// Thread `id`'s proxy's `tools/call` of `tool` on `server` with `args`, checked again: the grant still holds, the
-    /// tool is allowed and, on the browser, a `url` is on the persona's site allowlist; each browser call is logged.
+    /// tool is allowed and, on the browser, a `url` is on the persona's site allowlist; each browser call waits while
+    /// the owner holds control, is logged, and answers the owner's hand-back note.
     ///
     /// # Errors
     /// [`HubError::Refused`] as [`Hub::grant`], for a tool not allowed, or a site not on the allowlist.
@@ -283,7 +284,7 @@ impl Hub {
         (id, token): (&str, &str),
         (server, tool): (&str, &str),
         args: &Value,
-    ) -> Result<(), HubError> {
+    ) -> Result<Option<String>, HubError> {
         let (persona, pick, _) = self.granted(id, token, server)?;
         if !pick.allows(tool) {
             return Err(HubError::Refused(format!(
@@ -291,8 +292,9 @@ impl Hub {
             )));
         }
         if server != browser::SERVER {
-            return Ok(());
+            return Ok(None);
         }
+        let note = self.wait_turn(&persona.id);
         let url = args.get("url").and_then(Value::as_str);
         let off = url.filter(|u| !browser::allows(&persona.sites, u));
         let line = json!({ "at": now(), "thread": id, "tool": tool, "arguments": args, "refused": off.is_some() });
@@ -303,7 +305,7 @@ impl Hub {
                 "{u} isn't on {}'s site allowlist",
                 persona.id
             ))),
-            None => Ok(()),
+            None => Ok(note),
         }
     }
 
