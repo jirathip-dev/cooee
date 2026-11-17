@@ -1,0 +1,12 @@
+Decided: an imported SVG is kept as a nested svg sized 100% inside the symbol or scene layer, so it scales into the box
+Because: "an SVG stays vector, scaled into the symbol's box"
+Decided: a picture is drawn aspect-fit and bottom-aligned onto the grid, each pixel mapped to the nearest palette colour
+Because: "A PNG, JPEG or photo is snapped onto the grid and mapped to the nearest palette colours"
+Decided: files are read and decoded in CooeeUI like attachments and persona photos; the mapping lives in CooeeCore
+Because: apple/Sources/CooeeUI/AvatarPicture.swift:12
+Rejected: iPhone/Mac device chips in the Mac preview — the preview has no device switch yet, so they would be dead buttons
+Decided: the 3-pane editor shows whenever the menu is not compact, which is the Mac window
+Because: apple/Sources/CooeeUI/Menu.swift:33
+Check: theme-mac-*.png frames against docs/design/theme-editor/mac-*-1440.png
+Check: crates/cooee/tests/themes.rs an_imported test pins the same vector markup DrawingTests asserts
+Owner: The editor imports SVG, PNG and photos, and on the Mac shows parts, canvas and preview in one window.
