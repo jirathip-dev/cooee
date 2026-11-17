@@ -646,16 +646,16 @@ fn a_saved_secret_is_typed_again_without_asking_and_reaches_the_personas_environ
     assert_eq!(d.s.shed.sent("login"), [DROPPED, DROPPED]);
     assert_eq!(d.card()["id"], card["id"], "no second card");
 
-    d.s.thread("coder");
+    let (coder, _) = d.s.thread("coder");
     assert!(
         d.s.shed
-            .adapter_env()
+            .adapter_env_of(&format!("cooee-{coder}"))
             .contains(&format!("SITE_KEY={DROPPED}"))
     );
     let writer = "name = \"Writer\"\nagent = \"fake-acp\"\nenv = { MODE = \"write\" }\n";
     agent(&d.s.dir, "writer", writer, "");
-    d.s.thread("writer");
-    let env = d.s.shed.adapter_env();
+    let (writer, _) = d.s.thread("writer");
+    let env = d.s.shed.adapter_env_of(&format!("cooee-{writer}"));
     assert!(env.lines().any(|l| l == "MODE=write"), "{env}");
     assert!(!env.contains(DROPPED), "only coder's");
 }

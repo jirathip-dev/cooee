@@ -72,7 +72,7 @@ const CLI: &str = r#"#!/bin/sh
 # comes up while `fails-in-<f>` is); `machine ls` prints
 # machines.json; `[--on <m>] machine stats` prints stats-<m>.json (stats-local.json), exit 1 when offline; its
 # `history` only the first time, as `--since` the last sample leaves nothing new. A `run` with an adapter command
-# after `--` runs it, as the terminal would: the fake adapter `fake-acp` notes its variables in adapter.env. A `--mcp`
+# after `--` runs it, as the terminal would: the fake adapter `fake-acp` notes its variables in adapter.env and adapter-<name>.env. A `--mcp`
 # file is kept as mcp-<name>.json. `--on <m> run` starts on machine <m> (#149): the terminal is `<m>/<name>`.
 gates=$(dirname "$0")
 printf '%s\n' "$*" >>"$gates/cli.log"
@@ -99,7 +99,7 @@ case "$*" in
   while [ -e "$gates/hold-run" ] || [ -e "$gates/hold-in-${f:-/}" ]; do sleep 0.02; done
   [ -e "$gates/run-fails" ] && { echo 'fake shed: timed out' >&2; exit 1; }
   [ -e "$gates/fails-in-${f:-/}" ] && touch "$gates/ready-timeout-$name"
-  [ $# -gt 0 ] && PATH="$gates:$PATH" "$@" >/dev/null 2>&1
+  [ $# -gt 0 ] && PATH="$gates:$PATH" SHED_NAME="$on$name" "$@" >/dev/null 2>&1
   printf '{"name":"%s%s","labels":{},"cwd":"/","cmd":[],"keep":false,"state":"running","exit":null,"pid":1,"acp":"fake-acp"}\n' "$on" "$name" ;;
 *) echo "fake shed: $*" >&2; exit 2 ;;
 esac
@@ -115,7 +115,7 @@ impl FakeShed {
         let adapter = dir.join("fake-acp");
         fs::write(
             &adapter,
-            "#!/bin/sh\nenv >\"$(dirname \"$0\")/adapter.env\"\n",
+            "#!/bin/sh\nd=$(dirname \"$0\")\nenv >\"$d/adapter.env\"\nenv >\"$d/adapter-${SHED_NAME##*/}.env\"\n",
         )
         .unwrap();
         fs::set_permissions(&adapter, fs::Permissions::from_mode(0o755)).unwrap();
@@ -284,6 +284,11 @@ impl FakeShed {
     /// The variables the fake adapter last ran with, as `env` printed them.
     pub fn adapter_env(&self) -> String {
         fs::read_to_string(self.dir.join("adapter.env")).unwrap_or_default()
+    }
+
+    /// The variables the fake adapter of terminal `name` ran with.
+    pub fn adapter_env_of(&self, name: &str) -> String {
+        fs::read_to_string(self.dir.join(format!("adapter-{name}.env"))).unwrap_or_default()
     }
 
     /// The fake CLI's argument lines.
