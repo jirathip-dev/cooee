@@ -208,7 +208,7 @@ jobs:
           tail -40 "$RUNNER_TEMP/mac-test.log"
           exit "$status"
       # #333: version 1 finds version 2 on a local appcast (EdDSA-signed, with a delta), installs it on quit and restarts
-      # cooee and shed; port 4747 answers and the phone is still paired.
+      # cooee and shed; port 4747 answers, the phone is still paired and lists the Coder persona written before the update.
       - name: the Mac updates itself through a local appcast; the phone stays paired
         working-directory: apple
         run: |
@@ -226,16 +226,26 @@ jobs:
           cat "$feed/appcast.xml"
           python3 -m http.server 8787 --bind 127.0.0.1 -d "$feed" >"$RUNNER_TEMP/feed.log" 2>&1 &
           echo "FEED=$!" >> "$GITHUB_ENV"
+          for _ in $(seq 30); do curl -sfo /dev/null http://127.0.0.1:8787/appcast.xml && break; sleep 1; done
+          curl -sSfo /dev/null http://127.0.0.1:8787/appcast.xml || { echo "the feed does not answer on 8787"; exit 1; }
           pid() { launchctl print "gui/$(id -u)/com.jirathip.cooee.$1" | awk '$1 == "pid" { print $3 }'; }
           serve=$(pid serve)
           shed=$(pid shed)
+          mkdir -p "$HOME/.config/cooee/cooee/personas"
+          printf 'name = "Coder"\nagent = "fake-acp"\n' >"$HOME/.config/cooee/cooee/personas/coder.toml"
           defaults write com.jirathip.cooee SUHasLaunchedBefore -bool YES
           defaults write com.jirathip.cooee SULastCheckTime -date "2000-01-01 00:00:00 +0000"
           log="$HOME/Library/Logs/cooee-update.log"
+          pgrep -lf "$app/Contents/MacOS/Cooee" && { echo "the setup run's Cooee is still running"; exit 1; }
           open "$app"
           waited=0
           until grep -q waiting "$log" 2>/dev/null; do
-            [ "$waited" -lt 300 ] || { echo "no update staged"; cat "$RUNNER_TEMP/feed.log"; exit 1; }
+            [ "$waited" -lt 300 ] || {
+              echo "no update staged"
+              cat "$RUNNER_TEMP/feed.log"
+              log show --last 6m --style compact --predicate 'subsystem == "org.sparkle-project.Sparkle"'
+              exit 1
+            }
             sleep 5
             waited=$((waited + 5))
           done
@@ -252,7 +262,10 @@ jobs:
           [ "$version" = 2 ] || { echo "the app is version $version, not 2"; exit 1; }
           [ -n "$(pid serve)" ] && [ "$(pid serve)" != "$serve" ] || { echo "cooee did not restart"; exit 1; }
           [ -n "$(pid shed)" ] && [ "$(pid shed)" != "$shed" ] || { echo "shed did not restart"; exit 1; }
-          curl -sSf -o /dev/null -w 'cooee answers %{http_code}\n' http://127.0.0.1:4747/pair
+          code=$("$app/Contents/Helpers/cooee" pair </dev/null | sed -n 's/^code  \([0-9]*\) \([0-9]*\).*/\1\2/p')
+          cookie=$(curl -sS -D - -o /dev/null --data "code=${code:?}" http://127.0.0.1:4747/pair | sed -n 's/^[Ss]et-[Cc]ookie: cooee=\([^;]*\).*/\1/p')
+          curl -sS -b "cooee=${cookie:?}" http://127.0.0.1:4747/screens/home | tee "$RUNNER_TEMP/home.json"
+          grep -q '"name":"Coder"' "$RUNNER_TEMP/home.json" || { echo "the updated cooee lists no Coder persona"; exit 1; }
           TEST_RUNNER_COOEE_AFTER_UPDATE=1 xcodebuild -project Cooee.xcodeproj -scheme Cooee -destination "id=$SIM" \
             -clonedSourcePackagesDirPath "$RUNNER_TEMP/packages" -derivedDataPath "$RUNNER_TEMP/ios" -only-testing:CooeeAppUITests/LiveUITests/testStaysPairedAfterTheMacUpdates \
             -resultBundlePath "$RUNNER_TEMP/after-update.xcresult" test-without-building
@@ -260,7 +273,7 @@ jobs:
         if: failure()
         run: |
           pgrep -lf 'cooee|shed|zsh|security' || true
-          for f in "$HOME/.config/cooee/cooee/config.toml" "$HOME/.local/share/cooee/cooee/devices.json"; do
+          for f in "$HOME/.config/cooee/cooee/config.toml" "$HOME/.local/share/cooee/cooee/devices.json" "$HOME/.local/share/cooee/cooee/perf.log"; do
             echo "== $f"; cat "$f" || true
           done
           ls -la "$HOME/.local/share/cooee/cooee" || true
