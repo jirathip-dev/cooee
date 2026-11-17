@@ -114,9 +114,9 @@
         internal func avatarMenu(_ app: XCUIApplication) {
             app.buttons["Account"].firstMatch.tap()
             XCTAssert(labelled(app, "Notifications").waitForExistence(timeout: 10))
-            for missing in ["Sign-ins", "Devices", "Machines", "Plugins"] {
-                XCTAssertFalse(
-                    app.buttons.matching(NSPredicate(format: "label CONTAINS %@", missing)).firstMatch.exists)
+            for row in ["Sign-ins", "Devices", "Machines", "Plugins"] {
+                let button = app.buttons.matching(NSPredicate(format: "label CONTAINS %@", row)).firstMatch
+                XCTAssert(button.waitForExistence(timeout: 10), "the menu lists \(row)")
             }
             keep("avatar-menu")
             labelled(app, "Look").tap()
