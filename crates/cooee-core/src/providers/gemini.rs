@@ -18,16 +18,7 @@ pub const ENTRY: Entry = Entry {
     build: |s| Arc::new(Gemini(s)),
 };
 
-const KEPT: [&str; 8] = [
-    "read_file",
-    "write_file",
-    "replace",
-    "glob",
-    "search_file_content",
-    "list_directory",
-    "run_shell_command",
-    "write_todos",
-];
+const KEPT: &str = "read_file write_file replace glob search_file_content list_directory run_shell_command write_todos";
 
 const OFFABLE: [(Builtin, &[&str]); 2] = [
     (Builtin::Web, &["google_web_search", "web_fetch"]),
@@ -42,7 +33,7 @@ impl Provider for Gemini {
     }
 
     fn session(&self, want: &Want) -> Setup {
-        let mut core = KEPT.to_vec();
+        let mut core = KEPT.split(' ').collect::<Vec<_>>();
         for (b, names) in OFFABLE {
             if !want.off.contains(&b) {
                 core.extend(names);

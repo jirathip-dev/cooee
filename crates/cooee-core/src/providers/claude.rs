@@ -22,21 +22,7 @@ pub const ENTRY: Entry = Entry {
 
 const TOKEN: &str = "CLAUDE_CODE_OAUTH_TOKEN";
 
-const KEPT: [&str; 13] = [
-    "Read",
-    "Write",
-    "Edit",
-    "NotebookEdit",
-    "Glob",
-    "Grep",
-    "Bash",
-    "TaskStop",
-    "TodoWrite",
-    "TaskCreate",
-    "TaskGet",
-    "TaskUpdate",
-    "TaskList",
-];
+const KEPT: &str = "Read Write Edit NotebookEdit Glob Grep Bash TaskStop TodoWrite TaskCreate TaskGet TaskUpdate TaskList";
 
 const OFFABLE: [(Builtin, &[&str]); 3] = [
     (Builtin::Web, &["WebSearch", "WebFetch"]),
@@ -108,7 +94,7 @@ impl Provider for Claude {
     }
 
     fn session(&self, want: &Want) -> Setup {
-        let mut tools = KEPT.to_vec();
+        let mut tools = KEPT.split(' ').collect::<Vec<_>>();
         for (b, names) in OFFABLE {
             if !want.off.contains(&b) {
                 tools.extend(names);
