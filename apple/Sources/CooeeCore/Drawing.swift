@@ -12,11 +12,15 @@ public enum DrawEdit: Equatable, Sendable {
     case mirror
     case frame(Int)
     case undo
+    case cells([Int?])
+    case vector(String)
 }
 
 /// The Draw screen: the figures drawn so far, the one open, its frame and the pen.
 public struct Drawing: Equatable, Sendable {
     public var figures: [String: PixelFigure] = [:]
+    /// Imported SVGs kept as vector, by id, each in place of its drawn figure.
+    public var vectors: [String: String] = [:]
     public private(set) var open: String?
     public private(set) var frame = 0
     public private(set) var tool = DrawTool.pen
@@ -39,6 +43,7 @@ public struct Drawing: Equatable, Sendable {
         case .mirror: mirror.toggle()
         case .frame(let index): pick(index)
         case .undo: back()
+        case .cells, .vector: paste(edit)
         }
     }
 
@@ -58,6 +63,15 @@ public struct Drawing: Equatable, Sendable {
         frame = index
     }
 
+    private mutating func paste(_ edit: DrawEdit) {
+        guard let open, var figure else { return }
+        if case .vector(let svg) = edit { (vectors[open], figures[open]) = (svg, nil) }
+        guard case .cells(let cells) = edit, cells.count == figure.width * figure.height else { return }
+        undo.append(figures[open])
+        figure.frames[frame] = cells
+        (figures[open], vectors[open]) = (figure, nil)
+    }
+
     private mutating func touch(_ col: Int, _ row: Int, _ began: Bool) {
         guard let open, var figure else { return }
         let paint = tool == .erase ? nil : colour
@@ -72,7 +86,7 @@ public struct Drawing: Equatable, Sendable {
         } else {
             stroke(&figure, open, [col, row], paint)
         }
-        figures[open] = figure
+        (figures[open], vectors[open]) = (figure, nil)
     }
 
     private mutating func stroke(_ figure: inout PixelFigure, _ open: String, _ cell: [Int], _ paint: Int?) {
@@ -86,12 +100,16 @@ public struct Drawing: Equatable, Sendable {
 }
 
 extension ThemeDraft {
-    /// Puts `figures` in the draft: the states as `sprites.svg` symbols, the layers as `scene.svg`.
-    public mutating func draw(_ figures: [String: PixelFigure]) {
-        sprites = figures.filter { $0.key.hasPrefix("s-") }.reduce(into: [:]) {
-            $0[$1.key] = $1.value.symbol($1.key, dark)
+    /// Puts `drawing` in the draft: the states as `sprites.svg` symbols, the layers as `scene.svg`.
+    public mutating func draw(_ drawing: Drawing) {
+        let ids = Set(drawing.figures.keys).union(drawing.vectors.keys)
+        sprites = ids.filter { $0.hasPrefix("s-") }.reduce(into: [:]) { sprites, id in
+            let box = PixelFigure(blank: id)
+            sprites[id] =
+                drawing.figures[id]?.symbol(id, dark)
+                ?? "<symbol id=\"\(id)\" viewBox=\"0 0 \(box.width) \(box.height)\">\(drawing.vectors[id] ?? "")</symbol>"
         }
-        let layers = figures.filter { PixelFigure.layers.contains($0.key) }
-        scene = layers.isEmpty ? nil : PixelFigure.scene(layers, dark)
+        let layered = ids.contains(where: PixelFigure.layers.contains)
+        scene = layered ? PixelFigure.scene(drawing.figures, dark, vectors: drawing.vectors) : nil
     }
 }

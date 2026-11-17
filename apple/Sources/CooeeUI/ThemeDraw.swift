@@ -2,25 +2,33 @@ import ComposableArchitecture
 import CooeeCore
 import CooeeFeatures
 import SwiftUI
+import UniformTypeIdentifiers
 
 internal struct ThemeDraw: View {
     private static let edits = DrawTool.allCases.map(DrawEdit.tool) + [.mirror, .undo]
     private static let icons = [
         "pen": "pencil", "fill": "drop", "erase": "eraser", "line": "line.diagonal",
         "mirror": "arrow.left.and.right.righttriangle.left.righttriangle.right", "undo": "arrow.uturn.backward",
+        "import": "square.and.arrow.down",
     ]
 
     @Environment(\.look) private var look
     @State private var stroke = false
+    @State private var importing = false
     internal let store: StoreOf<ThemeEditorFeature>
+    internal var wide = false
 
     private var drawing: Drawing { store.drawing }
     private var tokens: [String: String] { store.state.tokens(dark: look.palette.dark) }
 
     internal var body: some View {
+        if wide { canvas } else { phone }
+    }
+
+    private var phone: some View {
         let figure = drawing.figure ?? PixelFigure(blank: "s-edit")
         let shown = ThemePreview.look(store.state, look, dark: look.palette.dark)
-        VStack(spacing: 12) {
+        return VStack(spacing: 12) {
             strip.environment(\.look, shown)
             grid(figure, shown)
             Text("\(figure.width) × \(figure.height) · frame \(drawing.frame + 1) of \(figure.frames.count)")
@@ -29,6 +37,7 @@ internal struct ThemeDraw: View {
             frames(figure).environment(\.look, shown)
             tools
             swatches
+            failure
             ForEach([true, false], id: \.self) { dark in
                 ThemePreview(state: store.state, chat: false, dark: dark, pose: pose)
             }
@@ -87,25 +96,22 @@ internal struct ThemeDraw: View {
     }
 
     private var tools: some View {
-        HStack(spacing: 0) {
+        let stack = wide ? AnyLayout(VStackLayout(spacing: 0)) : AnyLayout(HStackLayout(spacing: 0))
+        return stack {
             ForEach(Self.edits.indices, id: \.self) { index in
-                let (edit, label) = (Self.edits[index], Self.label(Self.edits[index]))
+                let edit = Self.edits[index]
                 let picked = edit == .tool(drawing.tool) || (edit == .mirror && drawing.mirror)
-                Button {
-                    store.send(.draw(edit))
-                } label: {
-                    VStack(spacing: 4) {
-                        if !look.mono { Image(systemName: Self.icons[label] ?? "").font(.system(size: 18)) }
-                        Text(label).ui(look.mono ? 14 : 12, .regular, look)
-                    }
-                    .frame(maxWidth: .infinity, minHeight: 48)
-                    .background(picked ? look.palette.lead : .clear, in: .rect(cornerRadius: 12))
-                    .foregroundStyle(picked ? look.palette.background : look.palette.foreground)
-                }
-                .buttonStyle(.plain).accessibilityAddTraits(picked ? .isSelected : [])
+                tool(Self.label(edit), picked: picked) { store.send(.draw(edit)) }
             }
+            tool("import", picked: false) { importing = true }
         }
         .padding(6).background(look.palette.card, in: .rect(cornerRadius: 16))
+        .fileImporter(isPresented: $importing, allowedContentTypes: [.svg, .image]) { result in
+            guard let url = try? result.get() else { return }
+            let figure = drawing.figure ?? PixelFigure(blank: "s-edit")
+            let edit = DrawEdit.imported(url, figure, tokens)
+            store.send(edit.map { .draw($0) } ?? .failed("\(url.lastPathComponent): not a picture or a sized SVG"))
+        }
     }
 
     private var swatches: some View {
@@ -134,6 +140,7 @@ internal struct ThemeDraw: View {
                 ForEach(under.indices, id: \.self) { FigureArt(figure: under[$0], frame: 0).opacity(0.35) }
                 if drawing.frame == 1 { FigureArt(figure: figure, frame: 0).opacity(0.22) }
                 FigureArt(figure: figure, frame: drawing.frame, lines: figure.width <= 24)
+                if let open = drawing.open, drawing.vectors[open] != nil { Sprite(name: "", pack: "#\(open)") }
             }
             .environment(\.look, shown).contentShape(.rect)
             .gesture(
@@ -151,12 +158,50 @@ internal struct ThemeDraw: View {
 }
 
 extension ThemeDraw {
+    private var canvas: some View {
+        let figure = drawing.figure ?? PixelFigure(blank: "s-edit")
+        let shown = ThemePreview.look(store.state, look, dark: look.palette.dark)
+        return VStack(alignment: .leading, spacing: 14) {
+            HStack(alignment: .firstTextBaseline, spacing: 12) {
+                Text(title).ui(17, .bold, look)
+                Text("frame \(drawing.frame + 1) of \(figure.frames.count)").ui(14, .regular, look)
+                Spacer()
+                Text("\(drawing.tool.rawValue) · mirror \(drawing.mirror ? "on" : "off")").ui(13, .regular, look)
+            }
+            HStack(alignment: .top, spacing: 18) {
+                tools.frame(width: 64)
+                grid(figure, shown)
+            }
+            frames(figure).environment(\.look, shown).padding(.leading, 70)
+            swatches.padding(.leading, 70)
+            failure.padding(.leading, 70)
+        }
+        .padding(.horizontal, 28).padding(.vertical, 20).frame(maxWidth: 640)
+    }
+
+    @ViewBuilder private var failure: some View {
+        if let error = store.error { Text(error).ui(13, .regular, look).foregroundStyle(look.palette.red) }
+    }
+
     private static func label(_ edit: DrawEdit) -> String {
         switch edit {
         case .tool(let tool): tool.rawValue
         case .mirror: "mirror"
         default: "undo"
         }
+    }
+
+    private func tool(_ label: String, picked: Bool, tap: @escaping () -> Void) -> some View {
+        Button(action: tap) {
+            VStack(spacing: 4) {
+                if !look.mono { Image(systemName: Self.icons[label] ?? "").font(.system(size: 18)) }
+                Text(label).ui(look.mono ? 14 : 12, .regular, look).lineLimit(1).minimumScaleFactor(0.7)
+            }
+            .frame(maxWidth: .infinity, minHeight: 48)
+            .background(picked ? look.palette.lead : .clear, in: .rect(cornerRadius: 12))
+            .foregroundStyle(picked ? look.palette.background : look.palette.foreground)
+        }
+        .buttonStyle(.plain).accessibilityAddTraits(picked ? .isSelected : [])
     }
 
     private func tile(
