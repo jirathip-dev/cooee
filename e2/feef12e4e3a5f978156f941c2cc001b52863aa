@@ -1,0 +1,53 @@
+Decided: this PR builds Pack, Colours and Save only; Draw, import and the Mac 3-pane are follow-up issues
+Because: q1858
+Decided: the server owns the gate math; the app asks POST /api/v1/themes/check on each change and shows each token's worst check and the nearest passing shade
+Because: crates/cooee-server/src/contrast.rs:1
+Rejected: a Swift port of the gate — two gates to keep equal, and apple_cap has no room for it
+Decided: save writes a staging folder, runs the theme gate, then renames it into themes/<name>/ and keeps a last good copy that every load falls back to
+Because: crates/cooee-server/src/themes.rs:404
+Because: crates/cooee-server/src/look.rs:268
+Decided: the gate math moved from look.rs to contrast.rs, since look.rs was over its arch-check size baseline
+Because: scripts/gen.sh:76
+Check: the_editor_checks_colours_saves_a_pack_once_and_keeps_its_last_good_copy drives cooee serve through check, a refused save, save, the unchanged re-save, built-in names, a hand-broken pack and remove
+Check: apple/design/v4-theme-editor holds the Pack and Colours frames in Modern, Terminal and Scene
+Owner: Look can now make or edit a theme: pick a style and colours that the theme gate checks live, then save it to the Mac with no restart.
+
+Decided: this PR builds Pack, Colours and Save only; Draw, import and the Mac 3-pane are follow-up issues
+Because: q1858
+Decided: the server owns the gate math and now also returns the ratio its one-tap fix reaches, so the button reads "Darken to #8a6a00 · 4.0:1 ✓"
+Because: crates/cooee-server/src/editor.rs:84
+Decided: Look shows one amber line per broken pack with Open in the editor, hides the green saved line while any pack is broken, and marks your packs yours or last good with their figure
+Because: apple/Sources/CooeeUI/LookPage.swift:30
+Decided: Look reloads the theme list each time it opens, so a pack broken by hand shows without closing the menu
+Because: apple/Sources/CooeeFeatures/MenuFeature.swift:68
+Decided: the pack's name is edited from its title (Rename in the title menu), as the design has no Name row; Backdrop and Words rows show the copied pack's art and words without a screen, since Draw and words editing have no design yet
+Because: apple/Sources/CooeeUI/ThemeEditor.swift:31
+Rejected: a Swift port of the gate — two gates to keep equal, and apple_cap has no room for it
+Check: apple/design/v4-theme-editor holds Look (each style), Look broken, Pack and Colours frames; the figure in Look draws as a web view, which snapshots show as a placeholder
+Check: the_editor_checks_colours_saves_a_pack_once_and_keeps_its_last_good_copy asserts the fix's ratio passes
+Owner: Look now matches the approved design: one amber line with Open in the editor for a broken pack, your packs marked, and a compact preview with the fix's ratio on the Colours screen.
+
+Decided: this PR builds Pack, Colours and Save only; Draw, import and the Mac 3-pane are follow-up issues
+Because: q1858
+Decided: with no server art (Farm, a new pack) the Pack grid draws read, run, loading and empty from the bundled row-read, row-run and working and grazing horse PNGs, which match the Farm sheet's s-read, s-run, s-loading and s-empty
+Because: apple/Sources/CooeeUI/ThemeEditor.swift:65
+Because: apple/Sources/CooeeCore/Looks.swift:46
+Decided: the one-tap fix button draws the background colour on lead, as the chips do, so its label is dark on cream in the dark look
+Because: apple/Sources/CooeeUI/ThemeColours.swift:110
+Rejected: serving Farm's sprites.svg to the editor — Looks.art keeps Farm on the app's own art everywhere, and snapshots have no server
+Check: apple/design/v4-theme-editor/theme-pack-modern.png shows all ten figures; theme-colours-modern.png shows "Darken to #8a6a00 · 4.0:1 ✓" dark on cream
+Owner: the editor's Pack screen now shows all ten figures of a copied Farm, and the fix button's label is readable.
+
+Decided: this PR builds Pack, Colours and Save only; Draw, import and the Mac 3-pane are follow-up issues
+Because: q1858
+Decided: in Scene style the Pack preview always draws the backdrop with three figures and name chips, from the bundled Farm art when the pack has no server art
+Because: apple/Sources/CooeeUI/ThemeEditor.swift:188
+Because: apple/Sources/CooeeUI/Layout.swift:29
+Decided: on merging #509, this branch's built-in style enum is LookStyle, as staging's Style is the style.json pack
+Because: crates/cooee-server/src/look.rs:69
+Decided: broken lists a pack whose style.json fails (its theme still served) and any other failing pack served from its last good copy
+Because: crates/cooee-server/src/look.rs:271
+Rejected: dropping either meaning of broken — staging's kitchen test and the editor's tidepool test each assert one
+Check: apple/design/v4-theme-editor/theme-pack-scene.png shows the farm backdrop with Coder, Researcher and Conductor above Chats
+Check: cargo test -p cooee --test themes passes both broken cases
+Owner: the Scene preview in the theme editor now shows the scene with its figures, and the branch is merged with the latest staging.
