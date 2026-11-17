@@ -2,6 +2,8 @@ use std::{collections::BTreeMap, fs, path::Path};
 
 use serde::{Deserialize, Serialize};
 
+use crate::contrast::gate;
+
 /// A colour scheme: its label, `dark` or `light`, and the tokens the style sheets read.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Scheme {
@@ -10,7 +12,7 @@ pub struct Scheme {
     /// `dark` or `light`: the Appearance mode it serves.
     #[serde(rename = "color-scheme")]
     pub mode: String,
-    /// `--bg`, `--fg`, … as `#rrggbb` (the gate's [`TOKENS`], and any others the scheme adds).
+    /// `--bg`, `--fg`, … as `#rrggbb` (the gate's [`crate::contrast::TOKENS`], and any others the scheme adds).
     pub tokens: BTreeMap<String, String>,
 }
 
@@ -30,6 +32,9 @@ pub struct Theme {
     pub label: String,
     /// The default scheme per mode.
     pub scheme: Pair,
+    /// The style a device takes once when it picks this theme (none: it keeps its own).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub style: Option<Style>,
     /// Has `sprites.svg` (symbols `s-edit s-read s-run s-idle s-done s-needs s-merged s-fail s-loading s-empty`).
     #[serde(default)]
     pub sprites: bool,
@@ -52,6 +57,18 @@ pub struct Theme {
     /// `scene.svg`, when it has a scene.
     #[serde(skip)]
     pub scene_art: Option<Vec<u8>>,
+}
+
+/// A built-in style: the shape, radius, type and buttons every scheme is drawn with.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum Style {
+    /// Cards and rounded rows.
+    Modern,
+    /// Monospaced, the terminal's look.
+    Terminal,
+    /// Home as the theme's scene.
+    Scene,
 }
 
 /// The plain word for a state key: what every theme says beside its own word, and all the plain theme says.
@@ -109,6 +126,15 @@ pub struct Looks {
     pub schemes: BTreeMap<String, Scheme>,
     /// The ASCII figures, for `look.ts`.
     pub ascii: &'static [(&'static str, [&'static str; 2])],
+    /// The own packs that fail the gate now and show their last good copy: name, and the first reason.
+    #[serde(skip_serializing_if = "BTreeMap::is_empty")]
+    pub broken: BTreeMap<String, String>,
+}
+
+/// Where the last copy of own pack `name` that passed the gate is kept, under `config_dir`.
+#[must_use]
+pub fn last_good(config_dir: &Path, name: &str) -> std::path::PathBuf {
+    config_dir.join(".themes-stage").join(".good").join(name)
 }
 
 macro_rules! builtin_theme {
@@ -205,6 +231,7 @@ impl Looks {
     #[must_use]
     pub fn load(config_dir: Option<&Path>, default: Option<&str>) -> (Self, Vec<String>) {
         let mut refused = Vec::new();
+        let mut broken = BTreeMap::new();
         let mut schemes = builtin_schemes();
         let mut themes: BTreeMap<String, Theme> = THEMES
             .iter()
@@ -236,7 +263,14 @@ impl Looks {
                         schemes.extend(own);
                         themes.insert(name, t);
                     }
-                    Err(e) => refused.push(format!("{}: {}", path.display(), e.join("; "))),
+                    Err(e) => {
+                        refused.push(format!("{}: {}", path.display(), e.join("; ")));
+                        if let Ok((t, own)) = read_pack(&last_good(dir, &name), &schemes) {
+                            schemes.extend(own);
+                            themes.insert(name.clone(), t);
+                            broken.insert(name, e.into_iter().next().unwrap_or_default());
+                        }
+                    }
                 }
             }
         }
@@ -259,6 +293,7 @@ impl Looks {
                 themes,
                 schemes,
                 ascii: &ASCII,
+                broken,
             },
             refused,
         )
@@ -529,175 +564,10 @@ fn read_scheme(path: &Path) -> Result<Scheme, String> {
     Ok(s)
 }
 
-/// The tokens every scheme sets: the ones the gate checks.
-pub const TOKENS: [&str; 19] = [
-    "--bg", "--card", "--edge", "--line", "--scrim", "--fg", "--mute", "--l", "--link", "--g",
-    "--a", "--r", "--p", "--c", "--fk-l", "--fk-p", "--fk-c", "--fk-g", "--fk-a",
-];
-
-type Rgb = [f64; 3];
-
-fn hex(s: &str) -> Option<Rgb> {
-    let n = u32::from_str_radix(s.strip_prefix('#')?.get(..6)?, 16).ok()?;
-    Some([n >> 16, (n >> 8) & 255, n & 255].map(f64::from))
-}
-
-fn lin(c: f64) -> f64 {
-    let c = c / 255.0;
-    if c <= 0.040_45 {
-        c / 12.92
-    } else {
-        ((c + 0.055) / 1.055).powf(2.4)
-    }
-}
-
-fn lum(c: Rgb) -> f64 {
-    0.2126 * lin(c[0]) + 0.7152 * lin(c[1]) + 0.0722 * lin(c[2])
-}
-
-fn ratio(a: Rgb, b: Rgb) -> f64 {
-    let (x, y) = (lum(a), lum(b));
-    (x.max(y) + 0.05) / (x.min(y) + 0.05)
-}
-
-fn over(c: Rgb, bg: Rgb, p: f64) -> Rgb {
-    let mix = |x: f64, y: f64| x * p + y * (1.0 - p);
-    let ([red, green, blue], [back_red, back_green, back_blue]) = (c, bg);
-    [
-        mix(red, back_red),
-        mix(green, back_green),
-        mix(blue, back_blue),
-    ]
-}
-
-fn lab(rgb: Rgb) -> Rgb {
-    let lc = rgb.map(lin);
-    let [cx, cy, cz] = [
-        [0.4124, 0.3576, 0.1805],
-        [0.2126, 0.7152, 0.0722],
-        [0.0193, 0.1192, 0.9505],
-    ]
-    .map(|r| r[0] * lc[0] + r[1] * lc[1] + r[2] * lc[2]);
-    let curve = |t: f64| {
-        if t > 216.0 / 24389.0 {
-            t.cbrt()
-        } else {
-            (24389.0 / 27.0 * t + 16.0) / 116.0
-        }
-    };
-    let (fx, fy, fz) = (curve(cx / 0.950_47), curve(cy), curve(cz / 1.088_83));
-    [116.0 * fy - 16.0, 500.0 * (fx - fy), 200.0 * (fy - fz)]
-}
-
-#[allow(clippy::many_single_char_names, reason = "the formula's own names")]
-fn de(c1: Rgb, c2: Rgb) -> f64 {
-    let ([l1, a1, b1], [l2, a2, b2]) = (lab(c1), lab(c2));
-    let rad = std::f64::consts::PI / 180.0;
-    let c = f64::midpoint(a1.hypot(b1), a2.hypot(b2));
-    let g = 0.5 * (1.0 - (c.powi(7) / (c.powi(7) + 25f64.powi(7))).sqrt());
-    let (ap1, ap2) = (a1 * (1.0 + g), a2 * (1.0 + g));
-    let (cp1, cp2) = (ap1.hypot(b1), ap2.hypot(b2));
-    let h = |b: f64, a: f64| {
-        let v = b.atan2(a) / rad;
-        if v < 0.0 { v + 360.0 } else { v }
-    };
-    let (h1, h2, dl, dc) = (h(b1, ap1), h(b2, ap2), l2 - l1, cp2 - cp1);
-    let dh = if cp1 * cp2 == 0.0 {
-        0.0
-    } else if h2 - h1 > 180.0 {
-        h2 - h1 - 360.0
-    } else if h2 - h1 < -180.0 {
-        h2 - h1 + 360.0
-    } else {
-        h2 - h1
-    };
-    let d_h = 2.0 * (cp1 * cp2).sqrt() * (dh * rad / 2.0).sin();
-    let (lm, cm) = (f64::midpoint(l1, l2), f64::midpoint(cp1, cp2));
-    let hm = if cp1 * cp2 == 0.0 {
-        h1 + h2
-    } else if (h1 - h2).abs() > 180.0 {
-        (h1 + h2 + 360.0) / 2.0
-    } else {
-        f64::midpoint(h1, h2)
-    };
-    let t = 1.0 - 0.17 * ((hm - 30.0) * rad).cos()
-        + 0.24 * (2.0 * hm * rad).cos()
-        + 0.32 * ((3.0 * hm + 6.0) * rad).cos()
-        - 0.2 * ((4.0 * hm - 63.0) * rad).cos();
-    let sl = 1.0 + 0.015 * (lm - 50.0).powi(2) / (20.0 + (lm - 50.0).powi(2)).sqrt();
-    let (sc, sh) = (1.0 + 0.045 * cm, 1.0 + 0.015 * cm * t);
-    let rt = -2.0
-        * (cm.powi(7) / (cm.powi(7) + 25f64.powi(7))).sqrt()
-        * (60.0 * (-((hm - 275.0) / 25.0).powi(2)).exp() * rad).sin();
-    ((dl / sl).powi(2) + (dc / sc).powi(2) + (d_h / sh).powi(2) + rt * (dc / sc) * (d_h / sh))
-        .sqrt()
-}
-
-/// herdsman's scheme gate (serve.js `gate`, via docs/design/look/gate.mjs): text tokens at 4.5:1 and state colours
-/// at 3:1 on the background and cards, the needs-you and group tints, and the state colours ΔE2000 ≥ 20 apart.
-///
-/// # Errors
-///
-/// The checks that fail, each with its value and minimum, or the tokens missing or not `#rrggbb`.
-pub fn gate(s: &Scheme) -> Result<(), String> {
-    let mut c = BTreeMap::new();
-    for k in TOKENS {
-        match s.tokens.get(k).and_then(|v| hex(v)) {
-            Some(v) => drop(c.insert(k, v)),
-            None => return Err(format!("{k}: missing or not #rrggbb")),
-        }
-    }
-    let mut fails = Vec::new();
-    let mut check = |what: String, v: f64, min: f64| {
-        if v < min {
-            fails.push(format!("{what} {v:.2} (min {min})"));
-        }
-    };
-    let c = |k: &str| c.get(k).copied().unwrap_or_default();
-    let (bg, r, a) = (c("--bg"), c("--r"), c("--a"));
-    let tints = [
-        ("the needs-you card", over(r, bg, 0.15)),
-        ("a red group header", over(r, bg, 0.12)),
-        ("an amber group header", over(a, bg, 0.12)),
-    ];
-    for b in ["--bg", "--card"] {
-        for k in [
-            "--fg", "--mute", "--l", "--link", "--fk-l", "--fk-p", "--fk-c", "--fk-g", "--fk-a",
-        ] {
-            check(format!("{k} on {b}"), ratio(c(k), c(b)), 4.5);
-        }
-        for k in ["--g", "--a", "--r"] {
-            check(format!("{k} on {b}"), ratio(c(k), c(b)), 3.0);
-        }
-    }
-    check("--bg on --l".to_owned(), ratio(bg, c("--l")), 4.5);
-    for k in ["--fg", "--mute", "--l"] {
-        check(
-            format!("{k} on {}", tints[0].0),
-            ratio(c(k), tints[0].1),
-            4.5,
-        );
-    }
-    check(format!("--r on {}", tints[0].0), ratio(r, tints[0].1), 3.0);
-    check(format!("--r on {}", tints[1].0), ratio(r, tints[1].1), 3.0);
-    check(format!("--a on {}", tints[2].0), ratio(a, tints[2].1), 3.0);
-    let mut pairs = vec![("--g", "--a"), ("--a", "--r"), ("--g", "--r")];
-    for x in ["--l", "--link"] {
-        pairs.extend(["--g", "--a", "--r"].map(|y| (x, y)));
-    }
-    for (x, y) in pairs {
-        check(format!("ΔE2000 {x} ↔ {y}"), de(c(x), c(y)), 20.0);
-    }
-    if fails.is_empty() {
-        Ok(())
-    } else {
-        Err(format!("fails the contrast gate: {}", fails.join("; ")))
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::contrast::{de, hex, ratio};
 
     fn tmp(name: &str) -> std::path::PathBuf {
         let dir = cooee_core::scratch::owned(

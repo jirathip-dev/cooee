@@ -111,7 +111,7 @@ A contract is a Swift constant per `ComponentKind`; the layout file never extend
 | `terminal` | — | `rows`, `cols`, `machine` (a name from `/machines`) | `opened`, `closed` |
 | `scanner` | — | — | `found link` |
 | `menu-host` | `rows` (screens placed `menu`) | — | `opened`, `picked id` |
-| `settings` | — | `pages: [look, notifications, appIcon]` (device-local pages the layout may show or hide) | — |
+| `settings` | — | `pages: [look, notifications, appIcon, themeEditor]` (device-local pages the layout may show or hide) | — |
 
 Rules: a component's state lives in its existing reducer (`ChatFeature`, `PairingFeature`, `MacSetupFeature`,
 `MenuFeature`); the layout sets only `config`; an event is a `LayoutFeature.Action.component(id, Event)` the

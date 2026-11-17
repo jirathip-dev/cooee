@@ -27,6 +27,10 @@ internal struct MenuHost: View {
                         store: store.scope(state: \.terminal, action: \.terminal), config: node.config
                     ) { menu.send(.path(menu.path.dropLast())) }
                     .toolbar(.hidden)
+                } else if page == .themeEditor, pages.contains(.string(page.rawValue)),
+                    let editor = menu.scope(state: \.editor, action: \.editor)
+                {
+                    ThemeEditor(store: editor)
                 } else if pages.contains(.string(page.rawValue)) {
                     MenuPage(store: menu, page: page)
                 }
@@ -87,7 +91,7 @@ internal struct MenuPage: View {
                 case .look: lookPage
                 case .notifications: pushPage
                 case .appIcon: AppIconPicker(store: store)
-                case .terminal: EmptyView()
+                case .terminal, .themeEditor: EmptyView()
                 }
             }
             .padding(16)
@@ -104,16 +108,31 @@ internal struct MenuPage: View {
         case .notifications: "Notifications"
         case .terminal: "Terminal"
         case .appIcon: "App icon"
+        case .themeEditor: "Theme"
         }
     }
 
     @ViewBuilder private var lookPage: some View {
+        let palette = look.palette
+        if let saved = store.saved {
+            note("\(saved) saved on \(host) · passed the theme gate · applied here, no restart", palette.green)
+        }
+        ForEach((store.looks.broken ?? [:]).sorted { $0.key < $1.key }, id: \.key) { name, why in
+            note("\(name): \(why). Its last good copy stays applied.", palette.amber)
+        }
         if !store.looks.themes.isEmpty {
             Group2(header: "Theme") {
                 ForEach(store.looks.themes.sorted { $0.key < $1.key }, id: \.key) { name, pack in
                     pick(pack.label.capitalized, selected: store.settings.theme == name) { store.send(.theme(name)) }
                 }
             }
+            let label = store.looks.themes[store.settings.theme]?.label.capitalized ?? store.settings.theme
+            Group2 {
+                editRow("Edit \(label)…", new: false)
+                editRow("New theme…", new: true)
+            }
+            Text("A theme you make is a folder on \(host): themes/<name>/. You or an agent can edit its files by hand.")
+                .ui(13, .regular, look).foregroundStyle(palette.mute)
         }
         Group2(header: "Scheme") {
             ForEach(LookScheme.allCases, id: \.self) { scheme in
@@ -143,6 +162,23 @@ internal struct MenuPage: View {
             }
             .buttonStyle(.plain)
         }
+    }
+
+    private var host: String { store.server?.url.host() ?? "the Mac" }
+
+    private func note(_ text: String, _ tint: Color) -> some View {
+        Text(text).ui(14, .regular, look).padding(14).frame(maxWidth: .infinity, alignment: .leading)
+            .background(tint.opacity(0.15), in: .rect(cornerRadius: 14))
+            .overlay { RoundedRectangle(cornerRadius: 14).stroke(tint.opacity(0.6)) }
+    }
+
+    private func editRow(_ title: String, new: Bool) -> some View {
+        Button {
+            store.send(.edit(new: new))
+        } label: {
+            SettingRow(symbol: new ? "plus" : "paintbrush", title: title, divider: !new).contentShape(.rect)
+        }
+        .buttonStyle(.plain)
     }
 
     @ViewBuilder private var pushPage: some View {

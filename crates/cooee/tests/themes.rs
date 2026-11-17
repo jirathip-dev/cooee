@@ -423,3 +423,109 @@ fn an_old_full_clone_is_replaced_on_start_once_the_new_one_is_in_place() {
     );
     assert!(themes.join("gone.git").is_dir());
 }
+
+#[test]
+fn the_editor_checks_colours_saves_a_pack_once_and_keeps_its_last_good_copy() {
+    let s = setup("th-editor");
+    let (ok, out) = s.run(&["theme", "add", "farm"]);
+    assert!(ok, "{out}");
+    let looks = s.cooee.json("/api/v1/looks");
+    let dark = looks["schemes"]["farm"]["tokens"].clone();
+    let mut light = looks["schemes"]["farm-light"]["tokens"].clone();
+    light["--a"] = json!("#a88a2a");
+    let (status, body) = s.cooee.post(
+        "/api/v1/themes/check",
+        &json!({"dark": dark, "light": light}),
+    );
+    assert_eq!(status, 200, "{body}");
+    let report: Value = serde_json::from_str(&body).unwrap();
+    assert_eq!(report["dark"]["fails"], json!([]));
+    let mark = &report["light"]["marks"]["--a"];
+    assert_eq!(mark["what"], "--a on --card", "{report}");
+    assert!(mark["value"].as_f64().unwrap() < 3.0, "{mark}");
+    let fix = mark["fix"].as_str().unwrap().to_owned();
+    assert!(
+        report["light"]["fails"][0]
+            .as_str()
+            .unwrap()
+            .contains("--a on an amber group header 2."),
+        "{report}"
+    );
+
+    let draft = |light: &Value| json!({"from": "farm", "label": "Tidepool", "style": "terminal", "dark": dark, "light": light});
+    let (status, body) = s
+        .cooee
+        .request("PUT", "/api/v1/themes/tidepool", Some(&draft(&light)));
+    assert_eq!(status, 400, "{body}");
+    assert!(body.contains("--a on an amber group header"), "{body}");
+    assert!(!s.dir.join("themes/tidepool").exists());
+
+    light["--a"] = json!(fix);
+    let (status, body) = s
+        .cooee
+        .request("PUT", "/api/v1/themes/tidepool", Some(&draft(&light)));
+    assert_eq!((status, body.as_str()), (200, r#"{"written":true}"#));
+    let pack = s.dir.join("themes/tidepool");
+    let (ok, out) = s.run(&["theme", "check", &pack.display().to_string()]);
+    assert!(ok, "{out}");
+    let looks = s.cooee.json("/api/v1/looks");
+    let theme = &looks["themes"]["tidepool"];
+    assert_eq!(theme["label"], "Tidepool");
+    assert_eq!(theme["style"], "terminal");
+    assert_eq!(
+        looks["schemes"]["tidepool-light"]["tokens"]["--a"],
+        json!(fix)
+    );
+    assert!(looks["themes"]["farm"].get("style").is_none());
+    assert_eq!(s.lock()[1]["source"], "made here");
+
+    let written = fs::metadata(pack.join("theme.json"))
+        .unwrap()
+        .modified()
+        .unwrap();
+    let (status, body) = s
+        .cooee
+        .request("PUT", "/api/v1/themes/tidepool", Some(&draft(&light)));
+    assert_eq!((status, body.as_str()), (200, r#"{"written":false}"#));
+    assert_eq!(
+        fs::metadata(pack.join("theme.json"))
+            .unwrap()
+            .modified()
+            .unwrap(),
+        written
+    );
+
+    for name in ["farm", "plain", "Bad/name"] {
+        let path = format!("/api/v1/themes/{name}");
+        let (status, body) = s.cooee.request("PUT", &path, Some(&draft(&light)));
+        assert_eq!(
+            status,
+            if name.contains('/') { 404 } else { 400 },
+            "{name}: {body}"
+        );
+    }
+
+    let svg = fs::read_to_string(pack.join("sprites.svg")).unwrap();
+    fs::write(
+        pack.join("sprites.svg"),
+        svg.replace("id=\"s-fail\"", "id=\"x\""),
+    )
+    .unwrap();
+    let looks = s.cooee.json("/api/v1/looks");
+    assert_eq!(looks["themes"]["tidepool"]["label"], "Tidepool");
+    assert_eq!(looks["broken"]["tidepool"], "sprites.svg: no s-fail");
+    let (_, art) = s.cooee.raw("GET", "/look/tidepool/sprites.svg", &[], "");
+    assert!(
+        art.contains("id=\"s-fail\""),
+        "the last good sheet is served"
+    );
+
+    let (ok, out) = s.run(&["theme", "remove", "tidepool"]);
+    assert!(ok, "{out}");
+    assert!(!s.dir.join(".themes-stage/.good/tidepool").exists());
+    assert!(
+        s.cooee.json("/api/v1/looks")["themes"]
+            .get("tidepool")
+            .is_none()
+    );
+}

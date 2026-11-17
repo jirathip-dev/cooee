@@ -11,7 +11,7 @@ use cooee_machines::Machines;
 use topcoat::router::{BodyLimit, Router};
 
 use crate::{
-    Hub, Layouts, Logins, Manager,
+    Hub, Layouts, Logins, Manager, editor,
     gate::{Gate, Timing, names},
     http::{Data, profiles, provider_name, recipe},
     hub, layout, look, pairing,
@@ -91,12 +91,12 @@ pub fn router(
         devices: Devices::new(data),
         hub: Arc::clone(&hub),
     };
-    screens::routes(themes::routes(routes::routes(
+    screens::routes(editor::routes(themes::routes(routes::routes(
         Router::builder()
             .layer(Timing)
             .layer(gate)
             .layer(BodyLimit::max(64 << 20).at("/threads")),
-    )))
+    ))))
     .route(layout::get)
     .route(layout::events)
     .route(layout::reset)
