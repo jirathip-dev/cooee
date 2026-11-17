@@ -17,6 +17,7 @@ fn hub_on(dir: &Path, bin: PathBuf) -> Arc<Hub> {
         theme,
         Vec::new(),
         None,
+        30 * 60_000,
     )
     .unwrap()
 }

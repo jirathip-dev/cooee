@@ -203,6 +203,7 @@ impl Hub {
     /// shows blocked with a note, and a push says so.
     pub fn watch(&self, now: u64) {
         self.deadlines(now);
+        self.expire(now);
         for live in self.all() {
             let mut live = lock(&live);
             if live.stuck || live.chat.turn.state != "working" || now < live.moved + STUCK {

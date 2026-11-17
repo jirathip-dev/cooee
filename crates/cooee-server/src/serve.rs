@@ -188,6 +188,7 @@ pub fn serve(config: &Config, ready: impl FnOnce(SocketAddr)) -> io::Result<()> 
         theme,
         manager.tabs(),
         config.apns.clone(),
+        config.approval_expiry_minutes.saturating_mul(60_000),
     )?;
     let (daily, signins) = (Arc::clone(&hub), Arc::clone(&logins));
     std::thread::spawn(move || {
