@@ -1,0 +1,9 @@
+Decided: merged staging after #360; Routines::save keeps this branch's Book (routines and seen guids) and staging's surgical routines.toml patch
+Because: crates/cooee-core/src/routines.rs:568
+Decided: staging's new comments-kept save test edits book.routines, since load returns a Book on this branch
+Because: crates/cooee-core/tests/disk.rs:31
+Decided: an event routine from create_routine raises a Face ID card (form routine); approving saves it, declining saves nothing
+Because: q1351
+Rejected: none
+Check: ci/gates/test.sh exits 0 at head, a_routine_save_keeps_the_comments included; drover arch-check exits 0
+Owner: Agents can now set up routines that fire on GitHub events, saved only after you approve them with Face ID.
