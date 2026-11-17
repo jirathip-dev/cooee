@@ -26,6 +26,7 @@ public struct ChatFeature: Sendable {
         public var outbox: [Outgoing] = []
         public var pending: String?
         public var answering: Set<Int> = []
+        public var loading: Bool
         public var room: Room?
         public var exchange: Exchange?
         public var places: [Place] = []
@@ -40,6 +41,7 @@ public struct ChatFeature: Sendable {
         @Presents public var attaching: AttachFeature.State?
 
         public var working: Bool { turn.working }
+        public var sending: Bool { outbox.contains { $0.failure == nil } }
         public var models: [String] { ModelList.picks(lists, agent: persona.api.agent) }
         public var efforts: [String] { agents.first { $0.id == persona.api.agent }?.efforts ?? [] }
         public var drawn: [Item] {
@@ -61,6 +63,7 @@ public struct ChatFeature: Sendable {
             self.target = target
             self.persona = persona
             self.room = room
+            if case .thread = target { loading = true } else { loading = false }
             self.exchange = exchange
         }
     }
@@ -165,6 +168,7 @@ extension ChatFeature {
     }
 
     private func load(_ state: inout State, _ slice: Slice) {
+        state.loading = false
         state.items = slice.items
         state.queue = slice.queue
         state.turn = slice.turn

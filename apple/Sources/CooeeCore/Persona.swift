@@ -26,6 +26,18 @@ public enum LaneState: String, Sendable, Equatable {
 
     public var pose: String { self == .working ? "edit" : rawValue }
 
+    /// The figure's two frames, as the sprites' (web `.rsa`).
+    public func figure(frame: Int) -> String {
+        guard frame % 2 == 1 else { return figure }
+        switch self {
+        case .working: return "=o~"
+        case .needs: return "( )"
+        case .done, .merged: return "|o|"
+        case .idle: return "-_-"
+        case .fail: return "x.x"
+        }
+    }
+
     public init(api state: String) {
         switch state {
         case "working", "connecting": self = .working
@@ -51,9 +63,9 @@ public struct PersonaLook: Sendable, Equatable {
     public let initials: String
     public let symbol: String
     public let tint: Tint
-    public let coat: String
+    public let coat: String?
 
-    public init(initials: String, symbol: String, tint: Tint, coat: String) {
+    public init(initials: String, symbol: String, tint: Tint, coat: String? = nil) {
         self.initials = initials
         self.symbol = symbol
         self.tint = tint
@@ -61,17 +73,13 @@ public struct PersonaLook: Sendable, Equatable {
     }
 
     public static func seed(_ key: String) -> Int { key.unicodeScalars.reduce(0) { $0 + Int($1.value) } }
-
-    public static func coat(_ key: String) -> String {
-        let coats = ["ch", "gry", "blk", "bay", "wht"]
-        return coats[seed(key) % coats.count]
-    }
 }
 
 public struct Persona: Identifiable, Sendable, Equatable {
     public let api: APIPersona
     public let look: PersonaLook
     public let state: LaneState
+    public let seed: String
 
     public var id: String { api.id }
     public var name: String { api.name }
@@ -79,13 +87,14 @@ public struct Persona: Identifiable, Sendable, Equatable {
     public var word: String { state.word }
     public var pose: String { state.pose }
 
-    public init(api: APIPersona, look: PersonaLook, state: LaneState) {
+    public init(api: APIPersona, look: PersonaLook, state: LaneState, seed: String? = nil) {
         self.api = api
         self.look = look
         self.state = state
+        self.seed = seed ?? api.id
     }
 
-    public init(_ api: APIPersona, state: LaneState = .idle) {
+    public init(_ api: APIPersona, state: LaneState = .idle, seed: String? = nil) {
         let words = api.name.split(separator: " ")
         let initials =
             words.count > 1 ? words.prefix(2).compactMap(\.first).map(String.init).joined() : String(api.name.prefix(2))
@@ -93,14 +102,13 @@ public struct Persona: Identifiable, Sendable, Equatable {
         let look = PersonaLook(
             initials: initials.uppercased(),
             symbol: picked == nil ? "person.fill" : "",
-            tint: picked ?? Tint.allCases[PersonaLook.seed(api.id) % Tint.allCases.count],
-            coat: PersonaLook.coat(api.id)
+            tint: picked ?? Tint.allCases[PersonaLook.seed(api.id) % Tint.allCases.count]
         )
-        self.init(api: api, look: look, state: state)
+        self.init(api: api, look: look, state: state, seed: seed)
     }
 
     public func with(state: LaneState) -> Persona {
-        Persona(api: api, look: look, state: state)
+        Persona(api: api, look: look, state: state, seed: seed)
     }
 }
 

@@ -143,7 +143,9 @@ private struct HomeSlot<Detail: View>: View {
                         detail
                     }
                 } else {
-                    HomeView(screen: screen, pins: pins, all: home.everyone, chats: chats, actions: actions)
+                    HomeView(
+                        screen: screen, pins: pins, all: home.everyone, chats: chats, loading: home.loading,
+                        actions: actions)
                 }
             }
             .overlay(alignment: .bottom) {

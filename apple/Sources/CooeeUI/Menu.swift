@@ -126,6 +126,10 @@ internal struct MenuPage: View {
                 pick(style.rawValue.capitalized, selected: store.settings.style == style) { store.send(.style(style)) }
             }
         }
+        Group2 {
+            Toggle("Motion", isOn: Binding(get: { store.settings.motion != false }, set: { store.send(.motion($0)) }))
+                .ui(16, .regular, look).padding(.horizontal, 14).frame(height: 48)
+        }
         Group2(header: "App icon") {
             Button {
                 store.send(.path(store.path + [.appIcon]))

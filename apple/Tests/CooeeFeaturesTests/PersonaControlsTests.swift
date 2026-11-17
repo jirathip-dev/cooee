@@ -90,6 +90,7 @@ internal struct PersonaControlsTests {
         await store.receive(\.persona.presented.delegate.deleted) { $0.persona = nil }
         await store.receive(\.home.refresh)
         await store.receive(\.home.loaded) {
+            $0.home?.loading = false
             $0.home?.screen = homeScreen
             $0.home?.rows = [row("n1")]
         }

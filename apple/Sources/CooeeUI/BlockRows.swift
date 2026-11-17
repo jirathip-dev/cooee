@@ -89,13 +89,18 @@ internal struct Figure: View {
     internal var title = ""
 
     internal var body: some View {
+        Acting(motion: Motion(tone: figure.string("state") ?? "")) { pose in drawn(pose.frame).acting(pose) }
+    }
+
+    @ViewBuilder private func drawn(_ frame: Int) -> some View {
         let palette = look.palette
         let lane = figure.string("state").flatMap(LaneState.init(rawValue:))
         if let lane, look.style == .terminal {
-            Text(lane.figure).ui(13, .bold, look).foregroundStyle(palette.round(lane)).frame(width: 40)
+            Text(lane.figure(frame: frame)).ui(13, .bold, look).foregroundStyle(palette.round(lane)).frame(width: 40)
         } else if look.style == .scene, let coat = figure.string("coat") ?? lane.map({ _ in SceneLane.coat(title) }) {
-            Sprite(name: "horse-\(coat)-\(lane?.pose ?? "idle")", pack: "sprites.svg#s-\(lane?.pose ?? "idle")").frame(
-                width: 40, height: 30)
+            let pose = lane?.pose ?? "idle"
+            let gait = lane == .working && look.moving ? "-gait\(frame)" : ""
+            Sprite(name: "horse-\(coat)-\(pose)\(gait)", pack: "sprites.svg#s-\(pose)").frame(width: 40, height: 30)
         } else if let lane {
             Sprite(name: "row-\(sprite(lane))").frame(width: 22, height: 22).frame(width: 28)
         } else if let icon = figure.string("icon") {

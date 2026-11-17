@@ -17,7 +17,7 @@ public struct SceneLane: Identifiable, Sendable, Equatable {
     }
 
     public static func coat(_ title: String) -> String {
-        PersonaLook.coat(String(title.split(separator: " ").first ?? ""))
+        Cast.farm.pick(String(title.split(separator: " ").first ?? ""))
     }
 
     public static func placed(_ lanes: [JSONValue]) -> [Self] {

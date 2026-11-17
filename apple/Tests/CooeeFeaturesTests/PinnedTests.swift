@@ -50,6 +50,7 @@ internal struct PinnedTests {
         }
         let task = await store.send(.chat(.task))
         await store.receive(\.chat.loaded) {
+            $0.chat?.loading = false
             $0.chat?.items = [APIItem(id: 7, time: 1, kind: "agent", text: "Hi")]
             $0.chat?.turn = Turn(state: "done")
             $0.chat?.since = epoch

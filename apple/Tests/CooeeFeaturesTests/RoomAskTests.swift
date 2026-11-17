@@ -64,6 +64,7 @@ internal struct RoomAskTests {
         let store = store()
         let slice = Slice(items: [], turn: Turn(), cursor: "b.1", queue: [], asks: [ask(open: true)])
         await store.send(.loaded(slice)) {
+            $0.loading = false
             $0.since = self.clock.value
             $0.room?.asks = [self.ask(open: true)]
             $0.room?.round.asks("a", when: self.clock.value)
