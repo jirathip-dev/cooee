@@ -29,6 +29,7 @@ mod models;
 mod plugins;
 mod relaunch;
 mod rooms;
+mod screen;
 mod send;
 mod setup;
 mod start;
@@ -37,6 +38,7 @@ mod tests;
 mod threads;
 use mcp::Proposed;
 pub use rooms::Starter;
+pub use screen::{Input, Screen};
 pub use setup::Update;
 
 const REPLAY: u64 = 5 * 60 * 1000;
@@ -319,6 +321,7 @@ pub struct Hub {
     asks: Mutex<HashMap<String, mpsc::Sender<String>>>,
     models: Mutex<Vec<cooee_core::models::Offered>>,
     expiry: u64,
+    desks: screen::Desks,
 }
 
 pub(crate) fn now() -> u64 {
@@ -532,6 +535,7 @@ impl Hub {
             asks: Mutex::default(),
             models: Mutex::new(cooee_core::models::load(&data.join("models.json"))),
             expiry,
+            desks: screen::Desks::default(),
         });
         let worker = Arc::clone(&hub);
         thread::spawn(move || {

@@ -10,6 +10,7 @@ mod relaunch;
 mod report;
 mod rooms;
 mod routines;
+mod screen;
 mod skills;
 mod threads;
 
@@ -28,6 +29,7 @@ pub(crate) fn routes(b: RouterBuilder) -> RouterBuilder {
     let b = report::routes(b);
     let b = rooms::routes(b);
     let b = routines::routes(b);
+    let b = screen::routes(b);
     let b = skills::routes(b);
     threads::routes(b)
 }

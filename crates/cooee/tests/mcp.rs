@@ -9,10 +9,14 @@ mod support;
 
 use std::{
     fs,
-    io::{BufRead, BufReader, Write},
+    io::{BufRead, BufReader, Read, Write},
+    net::{TcpListener, TcpStream},
     os::unix::fs::PermissionsExt,
     path::{Path, PathBuf},
     process::{Child, ChildStdin, ChildStdout, Command, Stdio},
+    sync::{Arc, Mutex},
+    thread,
+    time::Duration,
 };
 
 use serde_json::{Value, json};
@@ -483,7 +487,8 @@ for a in "$@"; do
   case "$a" in --user-data-dir=*) d=${a#--user-data-dir=} ;; esac
 done
 printf '%s\n' "$d" >>"$(dirname "$0")/chromium.log"
-printf '1\n/devtools/browser/x\n' >"$d/DevToolsActivePort"
+p=$(cat "$(dirname "$0")/port" 2>/dev/null || echo 1)
+printf '%s\n/devtools/browser/x\n' "$p" >"$d/DevToolsActivePort"
 "#;
 
 const PLAYWRIGHT: &str = r#"#!/bin/sh
@@ -585,4 +590,235 @@ fn each_persona_gets_its_own_browser_and_every_call_is_checked_and_logged() {
     off.2 = true;
     assert_eq!(logged("ann"), [nav("https://www.example.com/a"), off, snap]);
     assert_eq!(logged("bob"), [nav("https://github.com/")]);
+}
+
+fn cdp_client(mut s: TcpStream, port: u16, got: &Mutex<Vec<Value>>) {
+    let mut r = BufReader::new(s.try_clone().unwrap());
+    let mut first = String::new();
+    if r.read_line(&mut first).unwrap_or(0) == 0 {
+        return;
+    }
+    let mut line = String::new();
+    while r.read_line(&mut line).unwrap() > 2 {
+        line.clear();
+    }
+    if first.starts_with("GET /json/list") {
+        let tabs = json!([{ "type": "page", "url": "https://www.example.com/a", "title": "A",
+                            "webSocketDebuggerUrl": format!("ws://127.0.0.1:{port}/devtools/page/1") }])
+        .to_string();
+        let head = format!("HTTP/1.1 200 OK\r\nContent-Length: {}\r\n\r\n", tabs.len());
+        s.write_all((head + &tabs).as_bytes()).unwrap();
+        return;
+    }
+    s.write_all(
+        b"HTTP/1.1 101 Switching Protocols\r\nUpgrade: websocket\r\nConnection: Upgrade\r\n\r\n",
+    )
+    .unwrap();
+    let mut head = [0; 2];
+    while r.read_exact(&mut head).is_ok() {
+        let len = match head[1] & 0x7f {
+            126 => {
+                let mut b = [0; 2];
+                r.read_exact(&mut b).unwrap();
+                usize::from(u16::from_be_bytes(b))
+            }
+            n => usize::from(n),
+        };
+        let mut mask = [0; 4];
+        r.read_exact(&mut mask).unwrap();
+        let mut body = vec![0; len];
+        r.read_exact(&mut body).unwrap();
+        for (i, b) in body.iter_mut().enumerate() {
+            *b ^= mask[i % 4];
+        }
+        let call: Value = serde_json::from_slice(&body).unwrap();
+        let event = json!({ "method": "Page.loadEventFired" }).to_string();
+        let reply = json!({ "id": call["id"], "result": { "data": "anBlZw==" } }).to_string();
+        got.lock().unwrap().push(call);
+        for m in [event, reply] {
+            s.write_all(&[0x81, u8::try_from(m.len()).unwrap()])
+                .unwrap();
+            s.write_all(m.as_bytes()).unwrap();
+        }
+    }
+}
+
+fn fake_cdp() -> (u16, Arc<Mutex<Vec<Value>>>) {
+    let listener = TcpListener::bind("127.0.0.1:0").unwrap();
+    let port = listener.local_addr().unwrap().port();
+    let got: Arc<Mutex<Vec<Value>>> = Arc::default();
+    let g = Arc::clone(&got);
+    thread::spawn(move || {
+        for s in listener.incoming().map_while(Result::ok) {
+            let g = Arc::clone(&g);
+            thread::spawn(move || cdp_client(s, port, &g));
+        }
+    });
+    (port, got)
+}
+
+fn screen_setup() -> (Setup, PathBuf, Arc<Mutex<Vec<Value>>>) {
+    let dir = scratch("mcp-screen");
+    let bin = dir.join("bin");
+    fs::create_dir_all(&bin).unwrap();
+    for (name, text) in [("chromium", CHROMIUM), ("playwright", PLAYWRIGHT)] {
+        fs::write(bin.join(name), text).unwrap();
+        fs::set_permissions(bin.join(name), fs::Permissions::from_mode(0o755)).unwrap();
+    }
+    let (port, cdp) = fake_cdp();
+    fs::write(bin.join("port"), port.to_string()).unwrap();
+    let toml = "name = \"ann\"\nagent = \"fake-acp\"\n\n[[mcp]]\nserver = \"browser\"\n\n[[sites]]\nsite = \"example.com\"\n";
+    agent(&dir, "ann", toml, "");
+    let shed = FakeShed::start(&dir.join("shed"), version());
+    let extra = format!(
+        "chromium = {:?}\n\n[[mcp]]\nname = \"browser\"\ncommand = {:?}\n",
+        bin.join("chromium").to_string_lossy(),
+        bin.join("playwright").to_string_lossy()
+    );
+    let cooee = Cooee::start_env(&dir, &shed.dir, &extra, &[]);
+    let s = Setup {
+        dir: dir.clone(),
+        shed,
+        cooee,
+        token: String::new(),
+    };
+    (s, bin, cdp)
+}
+
+#[test]
+fn the_owner_watches_takes_control_and_hands_back_with_a_note_the_waiting_call_carries() {
+    let (s, bin, cdp) = screen_setup();
+    let (_, servers) = s.thread("ann");
+    let mut ann = Mcp::start(named(&servers, "browser"), Agent::Claude);
+    let nav = json!({ "name": "browser_navigate", "arguments": { "url": "https://example.com/" } });
+    let texts = |r: &Value| -> Vec<String> {
+        let content = r["content"].as_array().unwrap();
+        content
+            .iter()
+            .map(|c| c["text"].as_str().unwrap().to_owned())
+            .collect()
+    };
+    assert_eq!(texts(&ann.call("tools/call", &nav).unwrap()), ["done"]);
+    let calls = || {
+        fs::read_to_string(bin.join("calls.log"))
+            .unwrap()
+            .lines()
+            .count()
+    };
+    let screen = || s.cooee.json("/personas/ann/screen");
+    assert_eq!(
+        screen(),
+        json!({ "control": { "by": "agent" }, "waiting": 0 })
+    );
+
+    let mut live = s.cooee.sse("/personas/ann/screen/live", "");
+    let frame = live.next();
+    assert_eq!(frame.event, "frame");
+    assert_eq!(
+        frame.data,
+        json!({ "url": "https://www.example.com/a", "title": "A", "jpeg": "anBlZw==" })
+    );
+    drop(live);
+
+    let click = json!({ "click": { "x": 10.0, "y": 20.0 } });
+    let (status, body) = s.cooee.post("/personas/ann/screen/input", &click);
+    assert_eq!(
+        (status, body.as_str()),
+        (400, "take control of ann's browser first")
+    );
+    let (status, body) = s
+        .cooee
+        .post("/personas/ann/screen/back", &json!({ "note": "x" }));
+    assert_eq!(
+        (status, body.as_str()),
+        (400, "you don't hold ann's browser")
+    );
+
+    let (status, body) = s.cooee.post("/personas/ann/screen/control", &json!({}));
+    assert_eq!(status, 200, "{body}");
+    let until = serde_json::from_str::<Value>(&body).unwrap()["control"]["until"]
+        .as_u64()
+        .unwrap();
+    let now = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap()
+        .as_millis();
+    let left = u128::from(until) - now;
+    assert!((590_000..=600_000).contains(&left), "{left}");
+    for input in [click, json!({ "text": "hunter2" })] {
+        let (status, body) = s.cooee.post("/personas/ann/screen/input", &input);
+        assert_eq!(status, 200, "{body}");
+    }
+
+    let waiting = thread::spawn(move || {
+        let r = ann.call("tools/call", &nav).unwrap();
+        (ann, r)
+    });
+    let mut tries = 0;
+    while screen()["waiting"] != 1 {
+        tries += 1;
+        assert!(tries < 500, "the agent's call never waited: {}", screen());
+        thread::sleep(Duration::from_millis(20));
+    }
+    assert!(!waiting.is_finished());
+    assert_eq!(
+        calls(),
+        1,
+        "the agent's call ran while the owner held control"
+    );
+
+    let (status, body) = s
+        .cooee
+        .post("/personas/ann/screen/back", &json!({ "note": "signed in" }));
+    assert_eq!(status, 200, "{body}");
+    let (mut ann, r) = waiting.join().unwrap();
+    assert_eq!(
+        texts(&r),
+        [
+            "done",
+            "The owner had the browser and handed it back: signed in"
+        ]
+    );
+    assert_eq!(calls(), 2);
+    assert_eq!(
+        screen(),
+        json!({ "control": { "by": "agent" }, "waiting": 0 })
+    );
+    let nav =
+        json!({ "name": "browser_navigate", "arguments": { "url": "https://example.com/b" } });
+    assert_eq!(texts(&ann.call("tools/call", &nav).unwrap()), ["done"]);
+
+    assert_sent(&cdp);
+}
+
+fn assert_sent(cdp: &Mutex<Vec<Value>>) {
+    let sent: Vec<(String, Value)> = cdp
+        .lock()
+        .unwrap()
+        .iter()
+        .map(|c| {
+            (
+                c["method"].as_str().unwrap().to_owned(),
+                c["params"].clone(),
+            )
+        })
+        .collect();
+    let mouse = |kind: &str| {
+        (
+            "Input.dispatchMouseEvent".to_owned(),
+            json!({ "type": kind, "x": 10.0, "y": 20.0, "button": "left", "clickCount": 1 }),
+        )
+    };
+    assert_eq!(
+        sent,
+        [
+            (
+                "Page.captureScreenshot".to_owned(),
+                json!({ "format": "jpeg", "quality": 60 })
+            ),
+            mouse("mousePressed"),
+            mouse("mouseReleased"),
+            ("Input.insertText".to_owned(), json!({ "text": "hunter2" })),
+        ]
+    );
 }
