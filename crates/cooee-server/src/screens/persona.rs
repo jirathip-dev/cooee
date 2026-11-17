@@ -1,11 +1,14 @@
 //! `GET /screens/persona/{id}` (#314): the persona panel and its edit sheet as data, the #244 sections filled
 //! with what core holds for the persona (its routines, places and memory); `POST /screens/action` saves it or
-//! clears its memory.
+//! clears its memory, and its `actions` (#495) ask a thread's persona to keep how it did the thread as a skill or a
+//! routine.
 
 use cooee_core::{
+    Kind,
     agents::{self, Agent},
     memory,
-    routines::{Place, Routine},
+    routines::{Mark, Place, Routine},
+    skills,
 };
 use serde::Deserialize;
 use serde_json::{Map, Value, json};
@@ -28,6 +31,20 @@ use crate::{
 const BUNDLED: &str =
     include_str!("../../../../apple/Sources/CooeeUI/Default/screens/persona.json");
 
+const TEACH: [(&str, &str, &str); 2] = [
+    (
+        "skill",
+        "Save as skill",
+        "Draft a skill from the steps of this thread and propose it with your skill tool, so I can approve it. \
+         Say what you left out.",
+    ),
+    (
+        "routine",
+        "Make this a routine",
+        "Propose a routine that repeats what this thread did, with create_routine. Say what you left out.",
+    ),
+];
+
 /// The screen, or 404 for a persona that doesn't exist.
 #[route(GET "/screens/persona/{id}")]
 pub async fn persona(cx: &Cx) -> Result<Response> {
@@ -47,7 +64,8 @@ pub struct Act {
 }
 
 /// `POST /screens/action`: on `/screens/persona/<id>`, `save` puts `values` as the persona and answers it, `clear`
-/// forgets its memory and answers the screen again.
+/// forgets its memory and answers the screen again, `skill` and `routine` queue their marked message in `values.thread`
+/// and answer its queue.
 #[route(POST "/screens/action")]
 pub async fn action(cx: &Cx, Json(a): Json<Act>) -> Result<Answer<Value>> {
     let Some(id) = a
@@ -66,7 +84,14 @@ pub async fn action(cx: &Cx, Json(a): Json<Act>) -> Result<Answer<Value>> {
             Err(e) => Ok(Answer(Err(refused(e)))),
         },
         "clear" => Ok(Answer(clear(cx, id).await)),
-        other => Ok(Answer(Err(refused(format!("no action {other}"))))),
+        other => match TEACH.iter().find(|(t, ..)| *t == other) {
+            Some(&teaching) => {
+                let thread = a.values.get("thread").and_then(Value::as_str);
+                let thread = thread.unwrap_or_default().to_owned();
+                Ok(Answer(teach(cx, id, teaching, thread).await))
+            }
+            None => Ok(Answer(Err(refused(format!("no action {other}"))))),
+        },
     }
 }
 
@@ -82,6 +107,51 @@ async fn clear(cx: &Cx, id: String) -> Result<Value, HubError> {
     })
     .await?;
     fill(cx, id).await
+}
+
+async fn teach(
+    cx: &Cx,
+    id: String,
+    (act, name, text): (&'static str, &'static str, &'static str),
+    thread: String,
+) -> Result<Value, HubError> {
+    let (data, config) = data(cx);
+    blocking(cx, move |hub| {
+        let (meta, _) = hub.thread(&thread)?;
+        if meta.kind == Kind::Room || !meta.room.is_empty() {
+            return Err(refused("a room has no one persona to ask"));
+        }
+        if meta.workflow.is_some() {
+            return Err(refused("a Workflow thread is the Workflow's to keep"));
+        }
+        let p = agents::list(config.as_deref(), &data)
+            .into_iter()
+            .find(|p| p.id == meta.profile)
+            .ok_or_else(|| refused("the thread has no persona"))?;
+        if p.id != id {
+            return Err(refused(format!("the thread is {}'s", p.name)));
+        }
+        let home = config.as_deref().and_then(|c| agents::home(c, &p.id).ok());
+        if act == "skill" && home.is_some_and(|h| skills::list(&h).len() >= skills::MAX) {
+            return Err(refused(format!(
+                "{} keeps {} skills already",
+                p.name,
+                skills::MAX
+            )));
+        }
+        let key = format!("{act}-{}", hub.slice(&thread, None, 0, 0)?.skipped_before);
+        let mark = Mark {
+            id: act.to_owned(),
+            name: name.to_owned(),
+        };
+        Ok(json!(hub.queue_as(
+            &thread,
+            (text, &key),
+            &[],
+            Some(mark)
+        )?))
+    })
+    .await
 }
 
 fn data(cx: &Cx) -> (std::path::PathBuf, Option<std::path::PathBuf>) {
@@ -121,6 +191,13 @@ async fn fill(cx: &Cx, id: String) -> Result<Value, HubError> {
                 }
                 _ => {}
             }
+        }
+        let rows: Vec<Value> = TEACH
+            .iter()
+            .map(|(act, label, _)| json!({ "label": label, "action": act }))
+            .collect();
+        if let Some(blocks) = screen.get_mut("blocks").and_then(Value::as_array_mut) {
+            blocks.push(json!({ "type": "actions", "id": "actions", "rows": rows }));
         }
         Ok(super::core(screen))
     })
