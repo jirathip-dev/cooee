@@ -280,7 +280,7 @@ pub fn save(path: &Path, servers: &[Server]) -> io::Result<()> {
 /// When the file can't be read or written.
 pub fn save_picks(path: &Path, picks: &[Pick]) -> io::Result<()> {
     let tables: Vec<String> = picks.iter().map(Pick::toml).collect();
-    fs::write(path, with_tables(&read(path)?, &tables))
+    crate::write_private(path, with_tables(&read(path)?, &tables).as_bytes())
 }
 
 /// Saves secret `name` (see [`crate::secrets::set`]).

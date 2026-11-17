@@ -17,6 +17,7 @@ extension APIPersona {
         coder.canMessage = ["chief"]
         coder.pinned = true
         coder.profile = "coder"
+        coder.version = "v1"
         return coder
     }
 }
@@ -39,7 +40,7 @@ internal struct PersonasTests {
             body.contains(#""can_message":["chief"]"#) && body.contains(#""machine":"air""#)
                 && body.contains(#""pinned":true"#)
                 && body.contains(#""role":"orchestrator""#) && body.contains(#""fleets":["cooee"]"#)
-                && body.contains(#""style":"detailed""#))
+                && body.contains(#""style":"detailed""#) && body.contains(#""version":"v1""#))
         _ = try await server.client().create(APIPersona(id: "", name: "Coder", agent: "fake-acp"))
         #expect(server.requests("/personas").first?.httpMethod == "POST")
     }

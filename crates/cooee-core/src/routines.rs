@@ -435,12 +435,18 @@ impl Routines {
         Ok(joined.collect())
     }
 
-    /// Writes `routines`: each file whole (write-temp, fsync, rename), and only when its part changed.
+    /// Writes `routines` (write-temp, fsync, rename), each file only when its part changed; `routines.toml` changes
+    /// only in the keys that differ (#360), its comments and layout kept.
     ///
     /// # Errors
-    /// When it can't be written.
+    /// When it can't be read or written.
     pub fn save(&self, routines: &[Routine]) -> io::Result<()> {
         let (toml, runs) = files(routines);
+        let text = String::from_utf8(read(&self.settings)?.unwrap_or_default())
+            .map_err(io::Error::other)?;
+        let was: Settings = toml::from_str(&text).map_err(io::Error::other)?;
+        let was = crate::toml_text(&serde_json::to_value(&was).unwrap_or_default());
+        let toml = crate::disk::patch(&text, &was, &toml)?;
         for (path, bytes) in [(&self.settings, toml.as_bytes()), (&self.runs, &runs[..])] {
             if read(path)?.as_deref() != Some(bytes) {
                 crate::write_private(path, bytes)?;

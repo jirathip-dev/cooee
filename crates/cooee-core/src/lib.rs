@@ -9,6 +9,7 @@ mod chat;
 pub mod clock;
 mod config;
 mod devices;
+pub mod disk;
 pub mod gitignore;
 pub mod group;
 pub mod history;
