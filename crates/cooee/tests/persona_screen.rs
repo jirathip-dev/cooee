@@ -1,6 +1,6 @@
 //! The persona panel as a core screen (#314): `GET /screens/persona/<id>` is the app's bundled panel with
 //! `source: "core"`, its routines, places and memory filled from the persona's own; `POST /screens/action` saves the
-//! persona and clears its memory.
+//! persona and clears its memory. Core adds the thread actions (#495).
 
 mod support;
 
@@ -59,7 +59,9 @@ fn the_panel_is_the_bundled_screen_filled_with_the_personas_own() {
             .map(|b| b["type"].clone())
             .collect::<Vec<_>>()
     };
-    assert_eq!(kinds(&screen), kinds(&bundled));
+    let mut served = kinds(&bundled);
+    served.push(json!("actions"));
+    assert_eq!(kinds(&screen), served);
     assert_eq!(
         block(&screen, "routines")["rows"],
         json!([{ "id": "r-1", "name": "Board r-1", "when": "Mondays 08:30", "on": false }])
