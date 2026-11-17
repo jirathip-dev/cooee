@@ -1,0 +1,5 @@
+Decided: no code change this round; merged staging so CI runs again at a new head
+Because: apple/Tests/CooeeUITests/SnapshotTests.swift:60
+Rejected: raising the pixel tolerance or re-recording theme-colours — staging's e624714 fails the same three frames identically on the air-cooee runner, so it is not this branch's
+Check: theme-colours frames render byte-identical at staging 95c3cb2 and this branch; apple-check exits 0 on Xcode 27.2
+Owner: The red check comes from one CI machine that already fails on staging; this branch changes nothing there.
