@@ -7,6 +7,7 @@ public enum PanelPick: Sendable, Equatable {
     case open(Place)
     case attach(PluginRow)
     case workflow
+    case routine
     case stop
 }
 
@@ -47,6 +48,7 @@ extension ChatFeature {
         case .attach(let plugin): return .send(.plugins(.attach(plugin)))
         case .workflow: return .send(.workflow(.show(true)))
         case .stop: return .send(.compose(.stop))
+        case .routine: return .send(.compose(.draftChanged("Make a routine: ")))
         }
     }
 }

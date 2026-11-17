@@ -9,6 +9,7 @@ internal struct PanelActions {
     internal var stop: (() -> Void)?
     internal var open: (Int) -> Void = { _ in }
     internal var workflow: () -> Void = {}
+    internal var routine: (() -> Void)?
 }
 
 public struct PersonaPanelBlocks: View {
@@ -27,7 +28,9 @@ public struct PersonaPanelBlocks: View {
             }
             header
             Scroller(end: end) {
-                PersonaBlocks(screen: screen, open: actions.open, workflow: actions.workflow).padding(.horizontal, 16)
+                PersonaBlocks(
+                    screen: screen, open: actions.open, workflow: actions.workflow, routine: actions.routine
+                ).padding(.horizontal, 16)
                     .padding(.top, 4).padding(
                         .bottom, 16)
             }
@@ -44,7 +47,7 @@ public struct PersonaPanelBlocks: View {
         self.column = column
         self.end = end
         let edit = screen.list("blocks").contains { $0.type == "edit" }
-        actions = PanelActions(edit: edit ? {} : nil, newChat: {}, memory: {})
+        actions = PanelActions(edit: edit ? {} : nil, newChat: {}, memory: {}, routine: {})
     }
 
     internal init(persona: Persona, screen: JSONValue, column: Bool, actions: PanelActions) {

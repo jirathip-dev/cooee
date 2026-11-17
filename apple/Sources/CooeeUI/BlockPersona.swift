@@ -6,6 +6,7 @@ internal struct PersonaBlocks: View {
     internal let screen: JSONValue
     internal var open: (Int) -> Void = { _ in }
     internal var workflow: () -> Void = {}
+    internal var routine: (() -> Void)?
 
     internal var body: some View {
         VStack(spacing: 18) {
@@ -14,7 +15,7 @@ internal struct PersonaBlocks: View {
                 case "screen" where !(block.string("url") ?? "").isEmpty: live(block)
                 case "terminal" where !block.list("lines").isEmpty: terminal(block)
                 case "workflow" where !block.list("issues").isEmpty: workflow(block)
-                case "routines": routines(block.list("rows"))
+                case "routines" where routine != nil: routines(block.list("rows"))
                 case "places" where !block.list("rows").isEmpty: places(block.list("rows"))
                 default: EmptyView()
                 }
@@ -70,7 +71,12 @@ extension PersonaBlocks {
     private func routines(_ rows: [JSONValue]) -> some View {
         VStack(alignment: .leading, spacing: 6) {
             heading("Routines") {
-                Text(look.mono ? "[+ add]" : "+ Add").ui(14, .semibold, look).foregroundStyle(look.palette.link)
+                Button {
+                    routine?()
+                } label: {
+                    Text(look.mono ? "[+ add]" : "+ Add").ui(14, .semibold, look).foregroundStyle(look.palette.link)
+                }
+                .buttonStyle(.plain).accessibilityLabel("Add routine")
             }
             if !rows.isEmpty {
                 Group2 {

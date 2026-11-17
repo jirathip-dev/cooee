@@ -53,6 +53,17 @@ internal struct ChatPanelTests {
         await store.receive(\.chat.workflow.show) { $0.chat?.workflowOpen = true }
     }
 
+    @Test internal func addRoutineAsksForOneInTheComposeOnceThePanelHasGone() async {
+        let store = app()
+        await store.send(.chat(.panel(.show(true)))) { $0.chat?.panel = true }
+        await store.send(.chat(.panel(.pick(.routine)))) {
+            $0.chat?.panel = false
+            $0.chat?.picked = .routine
+        }
+        await store.send(.chat(.panel(.dismissed))) { $0.chat?.picked = nil }
+        await store.receive(\.chat.compose.draftChanged) { $0.chat?.draft = "Make a routine: " }
+    }
+
     @Test internal func editOpensThePersonaSheetAndNewChatStartsOneWithThePersona() async {
         let store = app()
         await store.send(.chat(.panel(.show(true)))) { $0.chat?.panel = true }
