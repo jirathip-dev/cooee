@@ -2,7 +2,8 @@ use std::{collections::BTreeMap, fs, path::Path};
 
 use serde::{Deserialize, Serialize};
 
-use super::{Own, Scheme, Theme, builtin_schemes, file, hex, ratio, read_theme};
+use super::{Own, Scheme, Theme, builtin_schemes, file, read_theme};
+use crate::contrast::{hex, ratio};
 
 /// A style: the tokens the native app's renderer reads (docs/styles.md). Data only.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
