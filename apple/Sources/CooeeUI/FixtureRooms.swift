@@ -75,7 +75,7 @@ extension RoomView {
 
     public static func asking() -> RoomView {
         var round = RoomRound()
-        round.asked(Fixtures.kestrel, text: "Where is Kestrel's revenue heading?", when: .distantPast)
+        round.asked(Fixtures.kestrel, named: [], when: .distantPast)
         round.began("chief")
         round.replied("chief")
         round.began("coder")
