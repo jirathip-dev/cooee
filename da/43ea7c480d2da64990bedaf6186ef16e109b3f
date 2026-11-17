@@ -1,0 +1,5 @@
+Decided: merged origin/staging; persona.rs keeps #496's add_skill arm and this PR's TEACH arm in one dispatcher, add_skill first, TEACH as the fallback before "no action"
+Because: crates/cooee-server/src/screens/persona.rs:97
+Rejected: rerunning the routines test job by hand — it is untouched by this PR and passed 3 of 3 locally; the new push reruns CI anyway
+Check: the review's pending lessons check passed at cf27cf1; the merged head's CI is the evidence now
+Owner: Brought the branch up to date with staging; the panel keeps both the new library skills and Save as skill / Make this a routine.
