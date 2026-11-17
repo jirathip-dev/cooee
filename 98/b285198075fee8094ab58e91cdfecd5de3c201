@@ -1,0 +1,7 @@
+Decided: this PR carries the approved ADR only; the orchestrator files the five impl slices as issues
+Because: q1896
+Decided: no .drover/arch.toml lines in this PR; the look.style ban lands with slice 3, the Frames freeze and collect with slice 4
+Because: docs/architecture/styles-as-packs/adr.md:178
+Rejected: adding the ban now — the 24 look.style reads still exist, so arch-check would fail
+Check: the diff is docs/architecture/styles-as-packs/ only, and migration.md lists the five slices with their order
+Owner: The approved plan for style packs is in the docs; the build follows as five separate issues.
