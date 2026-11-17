@@ -1,0 +1,5 @@
+Decided: merged origin/staging with #559's cap raise; moved the /hooks/in route and Runner::inbound and test into a child module routines/webhook.rs
+Because: crates/cooee-server/src/routines/webhook.rs:19
+Rejected: trimming lines inside routines.rs — 15 lines out of compact code would mean dropping the test action or the URL row
+Check: drover arch-check reports 0 violations; cap is 27595 / 28390; the routines tests pass unchanged
+Owner: no behaviour change; the branch is current with staging and fits the raised line cap and the file size limit
