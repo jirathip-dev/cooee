@@ -1,0 +1,8 @@
+Decided: the README lead stays one paragraph and keeps the shed, Tailscale and cooee-name lines after the new framing
+Because: "README lead: one paragraph naming personas, skills, routines, connectors and approvals from the phone"
+Decided: the roadmap is a numbered list of the nine steps, issues in each in the spec's order, each with a short label
+Because: "`docs/roadmap.md` is ordered: unblock (#486, #487, #261)"
+Decided: closed issues (#261, #497, #72, #488, shed#148) stay listed because the spec names them
+Rejected: keeping the old unordered areas below the steps — two roadmaps to keep in step
+Check: scripts/gen.sh exits 0 and leaves no diff at the head
+Owner: The README says cooee is a personal agent app, and the roadmap lists the build order.
