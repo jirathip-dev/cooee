@@ -1,7 +1,9 @@
 # cooee
 
-cooee is a phone and Mac app for chatting with any coding agent you run yourself. One owner, one machine (Mac or
-Linux): agents (Claude Code, Codex, Gemini, Pi, any ACP agent) run there as ACP sessions on
+cooee is a phone and Mac app for your own personal agents. Each agent is a persona with a role, memory and skills;
+it runs routines on a schedule or on events, reaches your accounts through connectors, and asks before anything it
+should not do alone, so you approve from your phone. Coding agents are the first use, not the only one: agents
+(Claude Code, Codex, Gemini, Pi, any ACP agent) run on one machine you own (Mac or Linux) as ACP sessions on
 [shed](https://github.com/jirathip-dev/shed), keep working while you are away, and cooee pings your phone when they
 need you. Self-hosted, reached over Tailscale. A cooee is the bush call you use to reach someone far off.
 
@@ -54,7 +56,7 @@ same Mac first, as This Mac.
 ## Docs
 
 - [docs/README.md](docs/README.md): how it fits together and the API's conventions; each area's doc beside it.
-- [docs/roadmap.md](docs/roadmap.md): in progress and next.
+- [docs/roadmap.md](docs/roadmap.md): the roadmap, in build order.
 - [docs/plugins.md](docs/plugins.md), [docs/themes.md](docs/themes.md), [docs/accounts.md](docs/accounts.md), [docs/logins.md](docs/logins.md).
 - Designs: [docs/design/](docs/design/). Architecture records: [docs/architecture/](docs/architecture/), [docs/decisions/](docs/decisions/).
 

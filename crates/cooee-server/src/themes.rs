@@ -23,7 +23,7 @@ use topcoat::{
 use crate::{
     http::{Data, plain},
     hub::lock,
-    look::Looks,
+    look::{Looks, STYLES},
 };
 
 fn other(why: impl Into<String>) -> io::Error {
@@ -125,7 +125,7 @@ fn valid(name: &str) -> io::Result<()> {
 }
 
 fn gate(dir: &Path) -> io::Result<()> {
-    crate::look::check(dir).map_err(|fails| {
+    crate::look::check(dir).map(drop).map_err(|fails| {
         other(format!(
             "it fails the theme gate:\n  {}",
             fails.join("\n  ")
@@ -154,10 +154,13 @@ impl Themes {
         })
     }
 
-    /// The first-party packs' names.
+    /// The first-party packs' names: swag's and the built-in styles, in name order.
     #[must_use]
     pub fn first_party(&self) -> Vec<&str> {
-        self.swag.names()
+        let mut names = self.swag.names();
+        names.extend(STYLES.map(|(n, _)| n));
+        names.sort_unstable();
+        names
     }
 
     fn installed_dir(&self, name: &str) -> PathBuf {
@@ -198,8 +201,17 @@ impl Themes {
         if rev.is_some_and(|r| r.starts_with('-')) || source.starts_with('-') {
             return Err(other("a source or --rev can't start with -"));
         }
-        let first = self.swag.names();
-        let pack = if first.contains(&source) {
+        let first = self.first_party();
+        let pack = if STYLES.iter().any(|(n, _)| *n == source) {
+            Pack {
+                name: source.to_owned(),
+                source: "built in".to_owned(),
+                path: String::new(),
+                rev: format!("cooee {}", env!("CARGO_PKG_VERSION")),
+                listed: true,
+                text: String::new(),
+            }
+        } else if first.contains(&source) {
             Pack {
                 name: source.to_owned(),
                 source: self.swag.url.clone(),
@@ -292,6 +304,10 @@ impl Themes {
 
     fn vendored(&self, name: &str, stage: &Path) -> io::Result<String> {
         fs::create_dir_all(stage)?;
+        if let Some((_, json)) = STYLES.iter().find(|(n, _)| *n == name) {
+            fs::write(stage.join("style.json"), json)?;
+            return Ok(String::new());
+        }
         for (file, bytes) in self.swag.files(name)? {
             fs::write(stage.join(file), bytes)?;
         }

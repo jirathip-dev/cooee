@@ -16,7 +16,7 @@ use topcoat::{
 use crate::{
     contrast,
     http::{Answer, Data, Name, blocking, refused},
-    look::{Looks, Pair, Scheme, Style, Theme},
+    look::{LookStyle, Looks, Pair, Scheme, Theme},
     themes::Themes,
 };
 
@@ -29,7 +29,7 @@ pub struct Draft {
     /// The name shown in the theme list.
     pub label: String,
     /// The style a device takes when it picks the theme.
-    pub style: Style,
+    pub style: LookStyle,
     /// `--bg`, `--fg`, … in dark mode.
     pub dark: BTreeMap<String, String>,
     /// The same in light mode.

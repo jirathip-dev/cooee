@@ -2,6 +2,10 @@ use std::{collections::BTreeMap, fs, path::Path};
 
 use serde::{Deserialize, Serialize};
 
+mod pack;
+
+pub use pack::{STYLES, Style, check, read_pack};
+
 use crate::contrast::gate;
 
 /// A colour scheme: its label, `dark` or `light`, and the tokens the style sheets read.
@@ -34,7 +38,7 @@ pub struct Theme {
     pub scheme: Pair,
     /// The style a device takes once when it picks this theme (none: it keeps its own).
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub style: Option<Style>,
+    pub style: Option<LookStyle>,
     /// Has `sprites.svg` (symbols `s-edit s-read s-run s-idle s-done s-needs s-merged s-fail s-loading s-empty`).
     #[serde(default)]
     pub sprites: bool,
@@ -62,7 +66,7 @@ pub struct Theme {
 /// A built-in style: the shape, radius, type and buttons every scheme is drawn with.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
-pub enum Style {
+pub enum LookStyle {
     /// Cards and rounded rows.
     Modern,
     /// Monospaced, the terminal's look.
@@ -126,8 +130,9 @@ pub struct Looks {
     pub schemes: BTreeMap<String, Scheme>,
     /// The ASCII figures, for `look.ts`.
     pub ascii: &'static [(&'static str, [&'static str; 2])],
-    /// The own packs that fail the gate now and show their last good copy: name, and the first reason.
-    #[serde(skip_serializing_if = "BTreeMap::is_empty")]
+    /// The style packs that pass the gate, by folder name.
+    pub styles: BTreeMap<String, Style>,
+    /// Why each own pack fails the gate now, by folder name: its theme, else its last good copy, is still served.
     pub broken: BTreeMap<String, String>,
 }
 
@@ -230,8 +235,7 @@ impl Looks {
     /// catch) is left out.
     #[must_use]
     pub fn load(config_dir: Option<&Path>, default: Option<&str>) -> (Self, Vec<String>) {
-        let mut refused = Vec::new();
-        let mut broken = BTreeMap::new();
+        let (mut refused, mut styles, mut broken) = (Vec::new(), BTreeMap::new(), BTreeMap::new());
         let mut schemes = builtin_schemes();
         let mut themes: BTreeMap<String, Theme> = THEMES
             .iter()
@@ -259,16 +263,33 @@ impl Looks {
                     _ if !valid_name(&name) => {
                         refused.push(format!("{}: not a-z, 0-9 and -", path.display()));
                     }
-                    Ok((t, own)) => {
-                        schemes.extend(own);
-                        themes.insert(name, t);
+                    Ok(p) => {
+                        schemes.extend(p.schemes);
+                        themes.extend(p.theme.map(|t| (name.clone(), t)));
+                        styles.extend(p.style.map(|s| (name, s)));
                     }
                     Err(e) => {
                         refused.push(format!("{}: {}", path.display(), e.join("; ")));
-                        if let Ok((t, own)) = read_pack(&last_good(dir, &name), &schemes) {
+                        let style = |w: &String| w.starts_with("style.json");
+                        let why = e
+                            .iter()
+                            .find(|w| style(w))
+                            .or(e.first())
+                            .cloned()
+                            .unwrap_or_default();
+                        if let (true, Ok(Some((t, own)))) =
+                            (e.iter().all(style), read_theme(&path, &schemes))
+                        {
                             schemes.extend(own);
                             themes.insert(name.clone(), t);
-                            broken.insert(name, e.into_iter().next().unwrap_or_default());
+                            broken.insert(name, why);
+                        } else if let Ok(p) = read_pack(&last_good(dir, &name), &schemes) {
+                            schemes.extend(p.schemes);
+                            themes.extend(p.theme.map(|t| (name.clone(), t)));
+                            styles.extend(p.style.map(|s| (name.clone(), s)));
+                            broken.insert(name, why);
+                        } else if e.iter().any(style) {
+                            broken.insert(name, why);
                         }
                     }
                 }
@@ -293,6 +314,7 @@ impl Looks {
                 themes,
                 schemes,
                 ascii: &ASCII,
+                styles,
                 broken,
             },
             refused,
@@ -412,21 +434,13 @@ fn active(svg: &str) -> Vec<String> {
     found
 }
 
-/// The theme gate (`cooee theme check`, CI, and every load): the pack in `dir` as a theme with its own schemes, or
-/// every way it fails: `theme.json`, the word keys, each scheme's mode and contrast (WCAG AA, as herdsman's gate), the
-/// sprites' required states, the scene's size and layers, and the files' sizes. Its theme may name its own schemes
-/// or one of `schemes`.
-///
-/// # Errors
-///
-/// Every check that fails, one line each.
-pub fn read_pack(
-    dir: &Path,
-    schemes: &BTreeMap<String, Scheme>,
-) -> Result<(Theme, BTreeMap<String, Scheme>), Vec<String>> {
+type Own = (Theme, BTreeMap<String, Scheme>);
+
+fn read_theme(dir: &Path, schemes: &BTreeMap<String, Scheme>) -> Result<Option<Own>, Vec<String>> {
     let mut fails = Vec::new();
-    links(dir, "", &mut fails);
-    let json = file(dir, "theme.json", &mut fails).ok_or(vec!["theme.json: missing".to_owned()])?;
+    let Some(json) = file(dir, "theme.json", &mut fails) else {
+        return Ok(None);
+    };
     let mut t: Theme =
         serde_json::from_slice(&json).map_err(|e| vec![format!("theme.json: {e}")])?;
     for k in t.words.keys().filter(|k| !WORDS.contains(&k.as_str())) {
@@ -506,35 +520,9 @@ pub fn read_pack(
     t.scene_art = svg;
     t.icon = file(dir, "icon.png", &mut fails);
     if fails.is_empty() {
-        Ok((t, own))
+        Ok(Some((t, own)))
     } else {
         Err(fails)
-    }
-}
-
-/// The theme gate on the pack in `dir`, with the built-in schemes: what `cooee theme check` and CI run.
-///
-/// # Errors
-///
-/// Every check that fails.
-pub fn check(dir: &Path) -> Result<(), Vec<String>> {
-    read_pack(dir, &builtin_schemes()).map(drop)
-}
-
-fn links(dir: &Path, at: &str, fails: &mut Vec<String>) {
-    for e in fs::read_dir(dir)
-        .into_iter()
-        .flatten()
-        .filter_map(Result::ok)
-    {
-        let name = format!("{at}{}", e.file_name().to_string_lossy());
-        match e.file_type() {
-            Ok(t) if t.is_symlink() => {
-                fails.push(format!("{name}: a symlink (a pack holds files only)"));
-            }
-            Ok(t) if t.is_dir() && name != ".git" => links(&e.path(), &format!("{name}/"), fails),
-            _ => {}
-        }
     }
 }
 
@@ -569,7 +557,7 @@ mod tests {
     use super::*;
     use crate::contrast::{de, hex, ratio};
 
-    fn tmp(name: &str) -> std::path::PathBuf {
+    pub(super) fn tmp(name: &str) -> std::path::PathBuf {
         let dir = cooee_core::scratch::owned(
             std::env::temp_dir().join(format!("cooee-look-{name}-{}", std::process::id())),
         );
@@ -578,7 +566,7 @@ mod tests {
         dir
     }
 
-    fn packs() -> std::path::PathBuf {
+    pub(super) fn packs() -> std::path::PathBuf {
         Path::new(env!("CARGO_MANIFEST_DIR")).join("../../packs")
     }
 
@@ -622,11 +610,11 @@ mod tests {
         dirs.push(packs().join("starter"));
         assert_eq!(dirs.len(), 4, "{dirs:?}");
         for dir in dirs {
-            assert_eq!(check(&dir), Ok(()), "{}", dir.display());
+            assert_eq!(check(&dir), Ok("theme"), "{}", dir.display());
         }
     }
 
-    fn farm_with(name: &str, edit: impl FnOnce(&Path)) -> std::path::PathBuf {
+    pub(super) fn farm_with(name: &str, edit: impl FnOnce(&Path)) -> std::path::PathBuf {
         let dir = tmp(name);
         for f in ["theme.json", "sprites.svg", "scene.svg", "icon.png"] {
             fs::copy(packs().join("themes/farm").join(f), dir.join(f)).unwrap();
@@ -635,7 +623,7 @@ mod tests {
         dir
     }
 
-    fn set(dir: &Path, key: &str, value: serde_json::Value) {
+    pub(super) fn set(dir: &Path, key: &str, value: serde_json::Value) {
         let path = dir.join("theme.json");
         let mut t: serde_json::Value = serde_json::from_slice(&fs::read(&path).unwrap()).unwrap();
         t[key] = value;
@@ -700,7 +688,7 @@ mod tests {
             scene("0 0 390 320").replace("/>", "/><g id=\"ground\"/>"),
         )
         .unwrap();
-        assert_eq!(check(&big), Ok(()));
+        assert_eq!(check(&big), Ok("theme"));
         let odd = farm_with("gate-words", |d| {
             set(d, "words", serde_json::json!({"needs": "x", "horses": "y"}));
             fs::write(d.join("icon.png"), vec![0; 300 << 10]).unwrap();
