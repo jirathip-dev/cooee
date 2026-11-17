@@ -1,0 +1,8 @@
+Decided: apple_cap raised to 15250 in one step; line_cap stays 27500
+Because: q1853
+Because: q1854
+Decided: cap-history note follows the #465 note's layout
+Because: "a short note in the style of the earlier ones"
+Rejected: waiting for #484 to delete apple lines — the apple serial group is full with PRs blocked by the cap
+Check: sh scripts/line-cap.sh exits 0 at head: apple lines 14402 / 15250
+Owner: The app's line limit is now 15,250, so the stuck app PRs can merge.
