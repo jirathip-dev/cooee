@@ -65,6 +65,8 @@ pub struct Config {
     pub hooks: Option<crate::routines::Hooks>,
     /// Whether `cooee update` (its timer, every 15 minutes) installs main's newest green build (default on, #332).
     pub auto_update: bool,
+    /// How many minutes an approval a routine's run raised waits before it counts as Deny (default 30, #505).
+    pub approval_expiry_minutes: u64,
 }
 
 /// `[apns]`: the owner's APNs key's ids and the app it pushes to; none of it is secret.
@@ -148,6 +150,7 @@ impl Default for Config {
             apns: None,
             hooks: None,
             auto_update: true,
+            approval_expiry_minutes: 30,
         }
     }
 }
