@@ -15,7 +15,7 @@ exact command or URL and needs Face ID; it is added off), saves a secret to the 
 profiles' servers and tools. A command or URL changes on the Mac only: the server refuses it from the phone.
 
 Every thread's agent gets, through shed's `--mcp` file (0600, removed once shed read it): `cooee` (`cooee mcp serve
---thread <id>`), whose tools are `propose_server {name, type, command|url, args, why}`, `remember`, `ask_persona` and `history` ([API](#api)); and for each server its
+--thread <id>`), whose tools are `propose_server {name, type, command|url, args, why}`, `remember`, `ask_persona`, `handoff` and `history` ([API](#api)); and for each server its
 profile picks (on, its references resolving), `cooee mcp proxy <server> --thread <id>`. Each carries `COOEE_MCP`
 (cooee's URL and the thread's token, `sha256(<data>/mcp.key:<thread>)`), good while the thread is open. The proxy asks
 `POST /mcp/agent/grant` for its server, its references resolved in memory then and never written, starts it (stdio) or
@@ -51,6 +51,11 @@ can't start). Each ask is an `ask` item in the asker's thread (#177), `asking` u
 question is a `you` item whose `speaker` is the asker's persona. The owner's message there reaches the asked persona
 marked as the owner's note, and the reply goes back with it (the card's `note`; the exchange ends with the `note`
 item `returned to <asker> [with your note] · <secs>s`).
+`POST /mcp/agent/handoff` `{thread, server: {what}}` (#164, W5) → `handoff`'s answer: the agent hands a log-in, a 2FA
+code or a CLI login to the owner and ends its turn. Its thread gets a `handoff` item (`waiting`); until the owner's
+`POST /threads/<id>/handback` `{text, random_id}` (once per `random_id`; none open: a 400 `NO_HANDOFF`) a send,
+queue or steer there is a 400 `HANDOFF`, and messages queued before wait. Hand back sets the item `handed_back` with
+its `note` and sends the agent `[The owner handed back: <what>; their note]:` and the note (`Done.` when empty).
 `POST /mcp/agent/history` `{thread, server: {query?, thread?, before?, limit?}}` (#217) → `history`'s text: with
 `query`, at most 5 (and `limit`) of the persona's threads, newest first, `<thread> <date>: <snippet>` (200 characters
 at most); with `thread`, its owner messages and final replies (no tool rows), at most 4,000 characters, ending

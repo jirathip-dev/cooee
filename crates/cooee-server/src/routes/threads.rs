@@ -239,6 +239,14 @@ async fn send(cx: &Cx, Json(m): Json<Message>) -> Result<Answer<cooee_core::Item
     ))
 }
 
+#[route(POST "/threads/{id}/handback")]
+async fn hand_back(cx: &Cx, Json(m): Json<Message>) -> Result<Answer<cooee_core::Item>> {
+    let id = thread_id(cx);
+    Ok(Answer(
+        blocking(cx, move |hub| hub.hand_back(&id, &m.text, &m.random_id)).await,
+    ))
+}
+
 #[route(POST "/threads/{id}/queue")]
 async fn queue(cx: &Cx, Json(m): Json<Message>) -> Result<Answer<Vec<cooee_core::Queued>>> {
     let id = thread_id(cx);
@@ -413,6 +421,7 @@ pub(super) fn routes(b: RouterBuilder) -> RouterBuilder {
         .route(create)
         .route(retry)
         .route(send)
+        .route(hand_back)
         .route(queue)
         .route(unqueue)
         .route(steer)

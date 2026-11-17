@@ -103,6 +103,16 @@ async fn mcp_ask(cx: &Cx, Json(a): Json<AgentAsk>) -> Result<Answer<String>> {
     ))
 }
 
+#[route(POST "/mcp/agent/handoff")]
+async fn mcp_handoff(cx: &Cx, Json(a): Json<AgentAsk>) -> Result<Answer<String>> {
+    let token = bearer(cx);
+    let what = a.server.get("what").and_then(serde_json::Value::as_str);
+    let what = what.unwrap_or_default().to_owned();
+    Ok(Answer(
+        blocking(cx, move |hub| hub.handoff((&a.thread, &token), &what)).await,
+    ))
+}
+
 #[route(POST "/mcp/agent/history")]
 async fn mcp_history(cx: &Cx, Json(a): Json<AgentAsk>) -> Result<Answer<String>> {
     let (token, s) = (bearer(cx), a.server);
@@ -141,6 +151,7 @@ pub(super) fn routes(b: RouterBuilder) -> RouterBuilder {
         .route(mcp_call)
         .route(mcp_propose)
         .route(mcp_ask)
+        .route(mcp_handoff)
         .route(mcp_remember)
         .route(mcp_persona)
         .route(mcp_history)

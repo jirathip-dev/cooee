@@ -387,6 +387,13 @@ fn own_tools() -> Value {
             "timeout": { "type": "integer", "description": "seconds to wait, at most 600 (default 300)" }
         } }
     });
+    let handoff = json!({
+        "name": "handoff",
+        "description": "Hand a log-in, a 2FA code or a CLI login to the owner: they do it themselves, in your browser or their terminal, and you never see what they type. Then end your turn; when they hand back, their note is your next message.",
+        "inputSchema": { "type": "object", "required": ["what"], "properties": {
+            "what": { "type": "string", "description": "what the owner is to do, like Sign in to linkedin.com or Run gh auth login" }
+        } }
+    });
     let history = json!({
         "name": "history",
         "description": "Search your persona's past threads (query: words; at most 5 hits, each a thread ref, date and snippet), or read one (thread: its ref; paged with before); in a consolidation run, neither gives what is new since the last run.",
@@ -433,11 +440,20 @@ fn own_tools() -> Value {
             } }
         } }
     });
-    json!([tool, remember, ask_persona, history, update, routine, skill])
+    json!([
+        tool,
+        remember,
+        ask_persona,
+        handoff,
+        history,
+        update,
+        routine,
+        skill
+    ])
 }
 
 /// `cooee mcp serve --thread <id>`: cooee's own MCP server: `propose_server`, and `remember` (#126),
-/// `ask_persona` (#156), `history` (#217), `update_persona` (#270) and `skill` (#218) for a persona's.
+/// `ask_persona` (#156), `handoff` (#164), `history` (#217), `update_persona` (#270) and `skill` (#218) for a persona's.
 ///
 /// # Errors
 /// Never past a broken stdin; each refused proposal is the tool's error.
@@ -478,6 +494,7 @@ pub fn serve(thread: &str) -> Result<(), String> {
                     )),
                     Some("remember") => Some(("/mcp/agent/remember", "")),
                     Some("ask_persona") => Some(("/mcp/agent/ask", "")),
+                    Some("handoff") => Some(("/mcp/agent/handoff", "")),
                     Some("history") => Some(("/mcp/agent/history", "")),
                     Some("update_persona") => Some(("/mcp/agent/persona", "")),
                     Some("create_routine") => Some(("/mcp/agent/routine", "")),

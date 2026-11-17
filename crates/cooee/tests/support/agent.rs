@@ -185,6 +185,8 @@ impl FakeShed {
         } else if prompt.contains("with your remember tool") {
             let note = json!({ "text": "The conformance check ran." });
             self.cooee_tool(name, "remember", &note)
+        } else if let Some(what) = prompt.split("hand off: ").nth(1) {
+            self.cooee_tool(name, "handoff", &json!({ "what": what }))
         } else if prompt.contains("Use your conformance skill") {
             self.cooee_tool(name, "skill", &json!({ "read": "conformance" }))
         } else if prompt.contains("Run `sleep 120`") {

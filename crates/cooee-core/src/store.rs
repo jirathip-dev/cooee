@@ -92,6 +92,10 @@ pub struct Thread {
     /// A linked exchange (#156): the thread whose persona asked this one's (`ask_persona`).
     #[serde(default, skip_serializing_if = "String::is_empty")]
     pub asked_by: String,
+    /// The agent's open handoff (#164): its card's item id, 0 for none; until the owner hands back, nothing they
+    /// send reaches the agent.
+    #[serde(default, skip_serializing_if = "is_zero")]
+    pub handoff: u64,
     /// A setup chat (#270): its persona's brief asks it to interview the owner and write its Character and
     /// Instructions, and its `update_persona` saves at once.
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
