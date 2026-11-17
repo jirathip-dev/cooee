@@ -13,7 +13,8 @@ extension ChatScreen {
             stop: store.working ? { pick(.stop) } : nil,
             open: { $0 < places.count ? pick(.open(places[$0])) : pick(.attach(attachable[$0 - places.count])) },
             workflow: { pick(.workflow) },
-            routine: { pick(.routine) }
+            routine: { pick(.routine) },
+            teach: { pick(.teach($0)) }
         )
         let rows =
             places.map { Self.row("square.grid.2x2", $0.label, $0.count.map(String.init) ?? "") }
@@ -21,6 +22,7 @@ extension ChatScreen {
         let blocks = [
             Self.workflow(store.workflow ?? []), .object(["type": .string("routines"), "rows": .array([])]),
             .object(["type": .string("places"), "rows": .array(rows)]),
+            .object(["type": .string("actions"), "rows": .array(store.teach)]),
         ]
         let screen = JSONValue.object(["blocks": .array(blocks)])
         return PersonaPanelBlocks(persona: persona, screen: screen, column: column, actions: actions)
