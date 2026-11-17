@@ -222,12 +222,9 @@ pub(crate) async fn on_personas<T: Send + 'static>(
     let (data, config) = (d.0.clone(), d.1.clone());
     let done = blocking(cx, move |_| {
         let config = config.ok_or_else(|| refused("there is no config folder for agents"))?;
-        f(&data, &config).map_err(|e| {
-            if cooee_core::disk::stale(&e) {
-                HubError::Stale(e.to_string())
-            } else {
-                refused(e)
-            }
+        f(&data, &config).map_err(|e| match e.get_ref() {
+            Some(s) if s.is::<cooee_core::disk::Stale>() => HubError::Stale(e.to_string()),
+            _ => refused(e),
         })
     });
     Ok(Answer(done.await))

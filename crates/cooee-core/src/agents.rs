@@ -55,8 +55,7 @@ make it with create_routine when they agree.";
 pub const PLAIN: &str =
     "Answer short, plain and conversational: summarise, and give the details only when asked.";
 
-/// One agent: JSON on the wire (`/personas`); `agent.toml` is this without `id`, `character`, `instructions` and
-/// `version`.
+/// One agent: JSON on `/personas`; `agent.toml` is this without `id`, `character`, `instructions` and `version`.
 #[derive(Debug, Clone, Default, PartialEq, Eq, Deserialize, Serialize)]
 #[serde(default, deny_unknown_fields)]
 pub struct Agent {
@@ -248,11 +247,6 @@ pub(crate) fn style(role: Role, set: Option<Style>) -> Style {
 
 const FILES: [&str; 3] = ["agent.toml", "INSTRUCTIONS.md", "CHARACTER.md"];
 
-fn version(d: &Path) -> String {
-    let files = FILES.map(|f| d.join(f));
-    disk::version(&files.each_ref().map(PathBuf::as_path))
-}
-
 fn load(d: &Path, id: &str) -> Result<Agent, String> {
     let a = parse(&d.join("agent.toml"))?;
     let md = |n: &str| fs::read_to_string(d.join(n)).unwrap_or_default();
@@ -266,7 +260,7 @@ fn load(d: &Path, id: &str) -> Result<Agent, String> {
         instructions: md("INSTRUCTIONS.md"),
         settings: a.settings.as_deref().map(|s| whole(s, d)),
         folder,
-        version: version(d),
+        version: disk::version(&FILES.map(|f| d.join(f))),
         ..a
     })
 }
@@ -357,21 +351,18 @@ fn card(a: &Agent) -> String {
 }
 
 pub(crate) fn files(a: &Agent) -> [(&'static str, Vec<u8>); 3] {
-    let toml = card(a);
     [
-        ("agent.toml", toml.into_bytes()),
+        ("agent.toml", card(a).into_bytes()),
         ("INSTRUCTIONS.md", a.instructions.clone().into_bytes()),
         ("CHARACTER.md", a.character.clone().into_bytes()),
     ]
 }
 
 /// Saves `a`'s folder: a new one (`id` empty) gets an id made from its name, not taken, and no launch keys; an edit
-/// keeps the launch keys as its `agent.toml` has them, changes only the keys and files that differ, and is refused
-/// with [`disk::Stale`] when its folder changed since `a.version`. Returns it.
+/// keeps the launch keys, changes only the keys and files that differ, refused [`disk::Stale`] past `a.version`.
 ///
 /// # Errors
-/// No name or agent, an avatar that isn't an image, a name taken, an unknown id, a stale version, or a file that
-/// can't be written.
+/// No name or agent, a non-image avatar, a name taken, an unknown id, a stale version, or a file not written.
 pub fn save(config: &Path, data: &Path, mut a: Agent) -> io::Result<Agent> {
     let (old, text) = if a.id.is_empty() {
         a.id = slug(&a.name);
@@ -383,7 +374,9 @@ pub fn save(config: &Path, data: &Path, mut a: Agent) -> io::Result<Agent> {
         let d = home(config, &a.id)?.0;
         let files = FILES.map(|f| d.join(f));
         let [what, ..] = &files;
-        disk::check(&files.each_ref().map(PathBuf::as_path), &a.version, what)?;
+        if !a.version.is_empty() && a.version != disk::version(&files) {
+            return Err(io::Error::other(disk::Stale(what.display().to_string())));
+        }
         let old = parse(what).map_err(refused)?;
         let whole_folder = !matches!(old.folder.as_str(), "" | "scratch")
             && whole(Path::new(&old.folder), &d) == Path::new(&a.folder);
@@ -411,15 +404,10 @@ pub fn save(config: &Path, data: &Path, mut a: Agent) -> io::Result<Agent> {
     })?;
     let d = dir(config, &a.id);
     let toml = disk::patch(&text, &card(&was), &card(&a))?;
-    let [file, instructions, character] = FILES.map(|f| d.join(f));
-    let new = [
-        (file, toml.as_bytes()),
-        (instructions, a.instructions.as_bytes()),
-        (character, a.character.as_bytes()),
-    ];
-    for (file, bytes) in new {
-        if fs::read(&file).ok().as_deref() != Some(bytes) {
-            crate::write_private(&file, bytes)?;
+    let new = [&toml, &a.instructions, &a.character];
+    for (file, text) in FILES.map(|f| d.join(f)).into_iter().zip(new) {
+        if fs::read_to_string(&file).ok().as_ref() != Some(text) {
+            crate::write_private(&file, text.as_bytes())?;
         }
     }
     find(Some(config), data, &a.id)

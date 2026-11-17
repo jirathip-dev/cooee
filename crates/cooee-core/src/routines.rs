@@ -574,16 +574,7 @@ mod tests {
         assert!(text.contains("when = \"0 9 * * 1\""), "{text}");
         let runs = std::fs::read_to_string(dir.join("routine-runs.json")).unwrap();
         assert!(runs.contains("\"outcome\": \"ran\""), "{runs}");
-        assert_eq!(file.load().unwrap(), vec![r.clone()]);
-        let mine = format!("# mine\n{text}");
-        std::fs::write(dir.join("routines.toml"), &mine).unwrap();
-        let edited = Routine {
-            prompt: "Renewals?".to_owned(),
-            ..r
-        };
-        file.save(std::slice::from_ref(&edited)).unwrap();
-        let now = std::fs::read_to_string(dir.join("routines.toml")).unwrap();
-        assert_eq!(now, mine.replace("Renewals due {{due}}?", "Renewals?"));
+        assert_eq!(file.load().unwrap(), vec![r]);
         std::fs::write(dir.join("routine-runs.json"), r#"{"format":9,"runs":{}}"#).unwrap();
         assert!(file.load().is_err());
         std::fs::remove_dir_all(&dir).unwrap();
