@@ -1,7 +1,7 @@
 use super::*;
 use std::{env, process::Stdio, thread};
 
-fn scratch(name: &str) -> PathBuf {
+pub(super) fn scratch(name: &str) -> PathBuf {
     let dir = crate::scratch::owned(
         env::temp_dir().join(format!("cooee-store-{name}-{}", std::process::id())),
     );
@@ -9,7 +9,7 @@ fn scratch(name: &str) -> PathBuf {
     dir
 }
 
-fn sample(id: &str, title: &str) -> Thread {
+pub(super) fn sample(id: &str, title: &str) -> Thread {
     let text = "สวัสดีครับ ".repeat(200);
     Thread {
         id: id.into(),
@@ -33,7 +33,7 @@ fn save_then_load_round_trips_and_leaves_no_temp() {
     assert!(!dir.join("threads/a.json.tmp").exists());
 }
 
-fn item(id: u64, kind: &str, text: &str) -> Item {
+pub(super) fn item(id: u64, kind: &str, text: &str) -> Item {
     let body = match kind {
         "you" => serde_json::json!({ "text": text, "random_id": "r" }),
         "agent" => serde_json::json!({ "text": text, "stop_reason": "end_turn" }),
@@ -46,7 +46,7 @@ fn item(id: u64, kind: &str, text: &str) -> Item {
     serde_json::from_value(v).unwrap()
 }
 
-fn ids(items: &[Item]) -> Vec<u64> {
+pub(super) fn ids(items: &[Item]) -> Vec<u64> {
     items.iter().map(|i| i.id).collect()
 }
 
@@ -275,143 +275,4 @@ fn crash_child() {
     let store = Store::open(&dir).unwrap();
     store.stage(&sample("a", "new")).unwrap();
     std::process::abort();
-}
-
-const DAY: u64 = 86_400_000;
-
-fn at(mut item: Item, at: u64) -> Item {
-    item.at = at;
-    item
-}
-
-fn history(toml: &str) -> crate::config::History {
-    toml::from_str::<crate::Config>(toml).unwrap().history
-}
-
-fn hot_rows(store: &Store, id: &str) -> i64 {
-    store
-        .db()
-        .query_row("SELECT COUNT(*) FROM items WHERE thread = ?1", [id], |r| {
-            r.get(0)
-        })
-        .unwrap()
-}
-
-fn seed_ended(store: &Store, id: &str, closed: bool, last: u64) -> Vec<Item> {
-    store
-        .save(&Thread {
-            closed,
-            ..sample(id, id)
-        })
-        .unwrap();
-    let items = vec![
-        at(item(1, "you", &format!("archived question {id}")), last - 2),
-        at(item(2, "tool", "ls"), last - 1),
-        at(item(3, "agent", "the archived answer"), last),
-    ];
-    for i in &items {
-        store.append(id, i).unwrap();
-    }
-    items
-}
-
-#[test]
-fn a_thread_past_hot_days_is_archived_and_reopens_with_every_item() {
-    let dir = scratch("retain-move");
-    let store = Store::open(&dir).unwrap();
-    let old = seed_ended(&store, "old", true, 40 * DAY);
-    let open = seed_ended(&store, "open", false, 40 * DAY);
-    let recent = seed_ended(&store, "recent", true, 60 * DAY);
-    let now = 75 * DAY;
-    assert_eq!(store.retain(now, &history("")).unwrap(), 3);
-    assert_eq!(store.retain(now, &history("")).unwrap(), 0);
-    let zst = fs::read(dir.join("archive/threads-1970-02.jsonl.zst")).unwrap();
-    assert_eq!(zst.get(..4), Some(&[0x28, 0xb5, 0x2f, 0xfd][..]));
-    assert_eq!(
-        (
-            hot_rows(&store, "old"),
-            hot_rows(&store, "open"),
-            hot_rows(&store, "recent")
-        ),
-        (0, 3, 3)
-    );
-    drop(store);
-    let store = Store::open(&dir).unwrap();
-    assert_eq!(store.items("old").unwrap(), old);
-    assert_eq!(store.items("open").unwrap(), open);
-    assert_eq!(store.items("recent").unwrap(), recent);
-    assert_eq!(ids(&store.page("old", Page::Last, 2).unwrap()), [2, 3]);
-    assert_eq!(ids(&store.page("old", Page::Before(3), 1).unwrap()), [2]);
-    assert_eq!(ids(&store.page("old", Page::After(1), 5).unwrap()), [2, 3]);
-    let read = history::read(&store, "old", None).unwrap();
-    assert!(read.contains("owner: archived question old"), "{read}");
-    let found = history::search(&store, &["old".to_owned()], "archived question", 5).unwrap();
-    assert!(found.starts_with("old 1970-02-"), "{found}");
-    let more = at(item(4, "you", "back again"), now);
-    store.append("old", &more).unwrap();
-    let mut all = old;
-    all.push(more);
-    assert_eq!(store.items("old").unwrap(), all);
-}
-
-#[test]
-fn a_trimmed_tool_item_shows_its_head_and_tail_and_its_whole_text_comes_back() {
-    let dir = scratch("retain-trim");
-    let store = Store::open(&dir).unwrap();
-    let long = format!("HEAD{}TAIL", "ก".repeat(5000));
-    let tool = at(item(1, "tool", &long), DAY);
-    let short = at(item(2, "tool", "ls"), DAY);
-    let said = at(item(3, "agent", &long), DAY);
-    for i in [&tool, &short, &said] {
-        store.append("t", i).unwrap();
-    }
-    assert_eq!(store.retain(9 * DAY, &history("")).unwrap(), 1);
-    assert_eq!(store.retain(9 * DAY, &history("")).unwrap(), 0);
-    let items = store.items("t").unwrap();
-    let Some(Item {
-        body: crate::Body::Tool { title, .. },
-        ..
-    }) = items.first()
-    else {
-        panic!("{items:?}");
-    };
-    assert!(
-        title.starts_with("HEADก") && title.ends_with("กTAIL"),
-        "{title}"
-    );
-    assert!(
-        title.contains("trimmed") && title.len() < 4096,
-        "{}",
-        title.len()
-    );
-    assert_eq!(items.get(1..), Some(&[short.clone(), said.clone()][..]));
-    assert_eq!(store.whole("t").unwrap(), [tool, short, said]);
-    assert!(dir.join("archive/threads-1970-01.jsonl.zst").is_file());
-}
-
-#[test]
-fn changing_a_key_changes_the_behaviour() {
-    let dir = scratch("retain-keys");
-    let store = Store::open(&dir).unwrap();
-    seed_ended(&store, "a", true, 40 * DAY);
-    let long = at(item(1, "tool", &"x".repeat(3000)), 40 * DAY);
-    store.append("b", &long).unwrap();
-    let now = 75 * DAY;
-    let keep = "[history]\nhot_days = 40\ntrim_after_days = 40\ntrim_over_kb = 3\n";
-    assert_eq!(store.retain(now, &history(keep)).unwrap(), 0);
-    assert_eq!(
-        store
-            .retain(now, &history("[history]\nhot_days = 30"))
-            .unwrap(),
-        3
-    );
-    assert_eq!(
-        store
-            .retain(now, &history("[history]\ntrim_over_kb = 2"))
-            .unwrap(),
-        1
-    );
-    assert_eq!(hot_rows(&store, "a"), 0);
-    assert_eq!(store.whole("b").unwrap(), [long]);
-    assert!(toml::from_str::<crate::Config>("[history]\nhot_dayz = 1").is_err());
 }
