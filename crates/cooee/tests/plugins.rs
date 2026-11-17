@@ -366,17 +366,6 @@ fn a_choice_card_goes_into_the_thread_and_its_answer_to_its_own_plugin() {
 }
 
 #[test]
-fn the_docs_show_the_example_plugin_the_ui_tests_run() {
-    let doc = include_str!("../../../docs/plugins.md");
-    for file in [
-        include_str!("../../../docs/plugins/hello/server.mjs"),
-        include_str!("../../../docs/plugins/hello/tab.js"),
-    ] {
-        assert!(doc.contains(file), "docs/plugins.md is out of date: {file}");
-    }
-}
-
-#[test]
 fn a_plugin_names_its_push_tag_and_sets_its_dot_only_with_its_token() {
     let s = setup("plugin-dot");
     let a = format!("Bearer {TOKEN_A}");

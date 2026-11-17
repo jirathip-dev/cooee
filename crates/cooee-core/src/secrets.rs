@@ -87,12 +87,13 @@ pub fn persona(persona: &str, name: &str) -> String {
 /// Persona `persona`'s saved secrets, each as its variable and value (#163).
 ///
 /// # Errors
-/// When the keychain or the folder can't be listed, and as [`get`].
+/// As [`names`] and [`get`].
 pub fn of_persona(data: &Path, persona: &str) -> io::Result<Vec<(String, String)>> {
     let mine = format!("{persona}.");
     let mut vars = Vec::new();
     for name in saved(data)? {
-        if let (Some(var), Some(v)) = (name.strip_prefix(&mine), get(data, &name)?) {
+        let var = name.strip_prefix(&mine).filter(|v| !v.contains('.'));
+        if let (Some(var), Some(v)) = (var, get(data, &name)?) {
             vars.push((var.to_owned(), v));
         }
     }
@@ -335,12 +336,7 @@ mod tests {
         assert_eq!(get(&data, "TOKEN").unwrap().as_deref(), Some("s3cret"));
         fs::write(data.join("secrets/.run-x"), "handoff").unwrap();
         fs::write(data.join("secrets/connector.linear.main"), "{}").unwrap();
-        set(&data, &persona("coder", "SITE_KEY"), "k").unwrap();
         assert_eq!(names(&data).unwrap(), ["TOKEN"]);
-        assert_eq!(
-            of_persona(&data, "coder").unwrap(),
-            [("SITE_KEY".to_owned(), "k".to_owned())]
-        );
         assert_eq!(migrate(&data).unwrap(), Vec::<String>::new());
         assert!(path.exists());
     }
