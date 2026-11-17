@@ -1,0 +1,11 @@
+Decided: hub/session.rs is the only caller of Provider::session; it passes ask_all false until slice 4's starter rules exist
+Because: crates/cooee-server/src/hub/session.rs:28
+Rejected: ask-for-everything switches now — with no starter rules every file read on Claude would become a card
+Decided: the brief goes in the system channel on Claude and Codex, the first prompt on Gemini and Plain
+Because: crates/cooee-core/src/providers/claude.rs:131
+Decided: the personal-setup line shows only on a provider's default login; an added account or a providerless agent drops the gap
+Because: q1906
+Decided: run files live in <data>/run/<persona>, as the recipe is built before the thread id exists
+Rejected: <data>/run/<thread> — the id is minted later, in Hub::admit
+Check: conformance step 8 on the fake runs Claude's real session() through a [[providers]] row based on claude
+Owner: Persona chats now get their brief and tool switches from each harness's own module, and Codex or Gemini on your own login says it reads your personal setup.
