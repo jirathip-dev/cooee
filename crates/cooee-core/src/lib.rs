@@ -7,6 +7,7 @@ pub mod action;
 pub mod agents;
 mod blocks;
 pub mod browser;
+pub mod cdp;
 mod chat;
 pub mod clock;
 mod config;

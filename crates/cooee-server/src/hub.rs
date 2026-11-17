@@ -25,11 +25,13 @@ mod cards;
 mod events;
 mod expire;
 mod folders;
+mod heartbeat;
 mod mcp;
 mod models;
 mod plugins;
 mod relaunch;
 mod rooms;
+mod screen;
 mod secret;
 mod send;
 pub(crate) mod session;
@@ -40,6 +42,7 @@ mod tests;
 mod threads;
 use mcp::Proposed;
 pub use rooms::Starter;
+pub use screen::{Input, Screen};
 pub use setup::Update;
 
 const REPLAY: u64 = 5 * 60 * 1000;
@@ -324,6 +327,7 @@ pub struct Hub {
     asks: Mutex<HashMap<String, mpsc::Sender<String>>>,
     models: Mutex<Vec<cooee_core::models::Offered>>,
     expiry: u64,
+    desks: screen::Desks,
 }
 
 pub(crate) fn now() -> u64 {
@@ -447,7 +451,15 @@ impl Live {
                 hub.room_ask(&self.meta, i.clone());
             }
             let watched = self.tx.as_ref().is_some_and(|t| t.receiver_count() > 0);
-            if let Some(n) = note(
+            let beat = self.meta.routine.as_ref();
+            if beat.is_some_and(|r| r.id == cooee_core::agents::HEARTBEAT) {
+                if let Change::State(t) = &change
+                    && t.state != self.was
+                    && matches!(t.state.as_str(), "done" | "error")
+                {
+                    hub.beat_end(&self.meta, &self.chat, t);
+                }
+            } else if let Some(n) = note(
                 &self.meta, &self.chat, &change, &self.was, watched, &hub.theme,
             ) {
                 hub.push.send(&hub.routed(&self.meta, n));
@@ -537,6 +549,7 @@ impl Hub {
             asks: Mutex::default(),
             models: Mutex::new(cooee_core::models::load(&data.join("models.json"))),
             expiry,
+            desks: screen::Desks::default(),
         });
         let worker = Arc::clone(&hub);
         thread::spawn(move || {

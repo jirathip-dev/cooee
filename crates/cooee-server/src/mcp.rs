@@ -7,7 +7,7 @@
 //! open.
 
 use std::{
-    collections::HashSet,
+    collections::{HashMap, HashSet},
     env,
     fmt::Write as _,
     io::{self, BufRead, BufReader, Read, Write},
@@ -243,7 +243,7 @@ fn only(mut msg: Value, tools: Option<&[String]>) -> Value {
 
 /// `cooee mcp proxy <server> --thread <id>`: forwards the agent's stdio to the server and back, with only the
 /// thread's allowed tools; cooee checks each `tools/call` again (a closed thread's token stops working) and logs a
-/// browser's.
+/// browser's, which waits while the owner holds control and then carries their hand-back note in its result.
 ///
 /// # Errors
 /// When the grant is refused or the server can't start.
@@ -253,13 +253,24 @@ pub fn proxy(server: &str, thread: &str) -> Result<(), String> {
     let mut up = open(&g, tx)?;
     let out = Arc::new(Mutex::new(io::stdout()));
     let lists: Arc<Mutex<HashSet<String>>> = Arc::default();
-    let (o, l) = (Arc::clone(&out), Arc::clone(&lists));
+    let notes: Arc<Mutex<HashMap<String, String>>> = Arc::default();
+    let (o, l, n) = (Arc::clone(&out), Arc::clone(&lists), Arc::clone(&notes));
     let tools = g.tools.clone();
     std::thread::spawn(move || {
-        for msg in rx {
+        for mut msg in rx {
             let id = msg.get("id").map(Value::to_string).unwrap_or_default();
-            let listed = msg.get("method").is_none()
-                && l.lock().unwrap_or_else(PoisonError::into_inner).remove(&id);
+            let answer = msg.get("method").is_none();
+            let listed = answer && l.lock().unwrap_or_else(PoisonError::into_inner).remove(&id);
+            let note = n.lock().unwrap_or_else(PoisonError::into_inner).remove(&id);
+            if let (true, Some(note), Some(content)) = (
+                answer,
+                note,
+                msg.pointer_mut("/result/content")
+                    .and_then(Value::as_array_mut),
+            ) {
+                let text = format!("The owner had the browser and handed it back: {note}");
+                content.push(json!({ "type": "text", "text": text }));
+            }
             put(
                 &o,
                 &if listed {
@@ -289,12 +300,21 @@ pub fn proxy(server: &str, thread: &str) -> Result<(), String> {
                     .unwrap_or_default();
                 let args = msg.pointer("/params/arguments").cloned();
                 let checked = json!({ "server": server, "tool": name, "arguments": args });
-                if let Err(why) = ask(
+                match ask(
                     "/mcp/agent/call",
                     &json!({ "thread": thread, "server": checked }),
                 ) {
-                    put(&out, &error(&id, -32602, &why));
-                    continue;
+                    Err(why) => {
+                        put(&out, &error(&id, -32602, &why));
+                        continue;
+                    }
+                    Ok(Value::String(note)) => {
+                        notes
+                            .lock()
+                            .unwrap_or_else(PoisonError::into_inner)
+                            .insert(id.to_string(), note);
+                    }
+                    Ok(_) => {}
                 }
             }
             _ => {}

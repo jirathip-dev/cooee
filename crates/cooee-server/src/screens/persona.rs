@@ -185,6 +185,8 @@ fn data(cx: &Cx) -> (std::path::PathBuf, Option<std::path::PathBuf>) {
 
 async fn fill(cx: &Cx, id: String) -> Result<Value, HubError> {
     let all = routines::on(cx, |r| r.list()).await?;
+    let who = id.clone();
+    let beat = routines::on(cx, move |r| Ok(r.beat(&who, crate::hub::now()))).await?;
     let index = app_context::<Arc<Config>>(cx).skill_index.clone();
     let (data, config) = data(cx);
     blocking(cx, move |hub| {
@@ -194,7 +196,8 @@ async fn fill(cx: &Cx, id: String) -> Result<Value, HubError> {
             Place::Chat { thread } => chats.contains(thread),
             Place::NewThread { who } => who.profile == p.id,
         };
-        let routines: Vec<Value> = all.iter().filter(mine).map(routine).collect();
+        let mut routines: Vec<Value> = all.iter().filter(mine).map(routine).collect();
+        routines.extend(beat);
         let places = agents::places(config.as_deref(), &data, &p.id).map_err(refused)?;
         let places: Vec<Value> = places
             .iter()
