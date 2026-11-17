@@ -1,0 +1,30 @@
+   Compiling cooee-core v0.1.0 (/Users/jkmacmini/.local/share/drover/work/cooee/issue-163/crates/cooee-core)
+   Compiling cooee-machines v0.1.0 (/Users/jkmacmini/.local/share/drover/work/cooee/issue-163/crates/cooee-machines)
+   Compiling cooee-terminal v0.1.0 (/Users/jkmacmini/.local/share/drover/work/cooee/issue-163/crates/cooee-terminal)
+   Compiling cooee-server v0.1.0 (/Users/jkmacmini/.local/share/drover/work/cooee/issue-163/crates/cooee-server)
+   Compiling cooee v0.1.0 (/Users/jkmacmini/.local/share/drover/work/cooee/issue-163/crates/cooee)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 15.00s
+     Running tests/mcp.rs (/Users/jkmacmini/.local/share/herdsman/work/.build/cooee-impl-163/debug/deps/mcp-7850e4582bfad9dc)
+
+running 5 tests
+test a_literal_token_in_the_registry_is_refused_at_load_naming_the_key_only ... ok
+test the_mac_adds_toggles_and_removes_servers_with_references_only ... ok
+test propose_server_shows_the_exact_command_runs_nothing_and_needs_face_id_to_add_it_off ... ok
+test a_secret_dropped_once_is_typed_into_its_terminal_and_reaches_no_transcript_event_file_log_or_model ... ok
+test the_agent_sees_and_calls_only_the_allowed_tools_under_claude_and_codex_and_no_value_is_written ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.38s
+
+     Running tests/profiles.rs (/Users/jkmacmini/.local/share/herdsman/work/.build/cooee-impl-163/debug/deps/profiles-5983f7c1453e8fcc)
+
+running 6 tests
+test a_claude_profiles_settings_folder_is_its_config_folder_and_its_hook_refuses_a_command ... ok
+test a_persona_with_no_profile_and_a_room_member_start_without_personal_setup_plain_keeps_it ... ok
+test plain_adds_nothing_a_file_profile_is_applied_at_spawn_a_guard_that_cant_run_is_refused ... ok
+test a_plugins_profile_starts_while_it_is_installed_and_its_add_confirm_names_it ... ok
+test a_backend_serves_its_plugins_agents_a_hidden_one_is_refused_and_thread_is_the_threads_id ... ok
+test a_hanging_backend_never_slows_a_start_which_takes_its_last_answered_profiles ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 30.27s
+
+test=0

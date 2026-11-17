@@ -1,0 +1,1463 @@
+msrv (ubuntu-latest)	UNKNOWN STEP	﻿2026-11-17T11:13:21.8033138Z Current runner version: '2.338.2'
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:21.8052725Z ##[group]Runner Image Provisioner
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:21.8053351Z Hosted Compute Agent
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:21.8053798Z Version: 20261103.629
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:21.8054257Z Commit: 15dbd9ccb5dbf34fae002b6ed1a2670f52df37bc
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:21.8054790Z Build Date: 2026-11-03T17:26:59Z
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:21.8055332Z Worker ID: {30b4a6b7-1ba4-4ef1-98aa-008dcc0afc76}
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:21.8055835Z Region: us-east-1
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:21.8056220Z Cloud: AWS
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:21.8056598Z ##[endgroup]
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:21.8057561Z ##[group]Operating System
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:21.8058015Z Ubuntu
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:21.8058376Z 26.04.1
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:21.8058715Z LTS
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:21.8059105Z ##[endgroup]
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:21.8059512Z ##[group]Runner Image
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:21.8059945Z Image: ubuntu-26.04
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:21.8060334Z Version: 20261111.82.6
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:21.8061256Z Included Software: https://github.com/actions/runner-images/blob/ubuntu26/20261111.82/images/ubuntu/Ubuntu2604-Readme.md
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:21.8062577Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu26%2F20261111.82
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:21.8063283Z ##[endgroup]
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:21.8064109Z ##[group]GITHUB_TOKEN Permissions
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:21.8065971Z Contents: read
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:21.8066371Z Metadata: read
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:21.8066759Z Packages: read
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:21.8067192Z ##[endgroup]
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:21.8068726Z Secret source: Actions
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:21.8069371Z Cache mode: write
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:21.8069968Z Prepare workflow directory
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:21.8430030Z Prepare all required actions
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:21.8468079Z Getting action download info
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:22.0009781Z Download action repository 'actions/checkout@v4' (SHA:11d5960a326750d5838078e36cf38b85af677262)
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:24.1874812Z Download action repository 'dtolnay/rust-toolchain@1.99.1' (SHA:263313d2989f864a2b8613f97277288638e7d8f8)
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:24.2792305Z Download action repository 'Swatinem/rust-cache@v2' (SHA:d1527c8f67ef9af357290475d4af4b0fab8f12e0)
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:24.4103061Z Download action repository 'taiki-e/install-action@v2' (SHA:ab49d3c64680143e184118bed66a46419fc15519)
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:24.7380239Z Complete job name: msrv (ubuntu-latest)
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:24.8198613Z ##[group]Run actions/checkout@v4
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:24.8199896Z with:
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:24.8200717Z   repository: jirathip-dev/cooee
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:24.8207087Z   token: ***
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:24.8207862Z   ssh-strict: true
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:24.8208642Z   ssh-user: git
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:24.8209467Z   persist-credentials: true
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:24.8210343Z   clean: true
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:24.8211178Z   sparse-checkout-cone-mode: true
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:24.8212293Z   fetch-depth: 1
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:24.8213068Z   fetch-tags: false
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:24.8213892Z   show-progress: true
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:24.8214668Z   lfs: false
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:24.8215389Z   submodules: false
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:24.8216194Z   set-safe-directory: true
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:24.8217118Z   allow-unsafe-pr-checkout: false
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:24.8218223Z env:
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:24.8218932Z   CARGO_TERM_COLOR: always
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:24.8219746Z   REF: 
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:24.8220417Z ##[endgroup]
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:27.9728779Z Syncing repository: jirathip-dev/cooee
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:27.9730210Z ##[group]Getting Git version info
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:27.9732378Z Working directory is '/home/runner/work/cooee/cooee'
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:27.9733114Z [command]/usr/bin/git version
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:27.9733440Z git version 2.56.1
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:27.9739141Z ##[endgroup]
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:27.9749455Z Temporarily overriding HOME='/home/runner/work/_temp/20b43263-5a58-4b2b-8f51-3fd6c34fe7d4' before making global git config changes
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:27.9753835Z Adding repository directory to the temporary git global config as a safe directory
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:27.9754770Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/cooee/cooee
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:27.9844169Z Deleting the contents of '/home/runner/work/cooee/cooee'
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:27.9848045Z ##[group]Initializing the repository
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:27.9851394Z [command]/usr/bin/git init /home/runner/work/cooee/cooee
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:28.0597947Z hint: Using 'master' as the name for the initial branch. This default branch name
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:28.0598644Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:28.0599326Z hint: to use in all of your new repositories, which will suppress this warning,
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:28.0599726Z hint: call:
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:28.0600011Z hint:
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:28.0600330Z hint: 	git config --global init.defaultBranch <name>
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:28.0600640Z hint:
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:28.0601000Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:28.0601484Z hint: 'development'. The just-created branch can be renamed via this command:
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:28.0602020Z hint:
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:28.0602304Z hint: 	git branch -m <name>
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:28.0602592Z hint:
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:28.0602964Z hint: Disable this message with "git config set advice.defaultBranchName false"
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:28.0623438Z Initialized empty Git repository in /home/runner/work/cooee/cooee/.git/
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:28.0632870Z [command]/usr/bin/git remote add origin https://github.com/jirathip-dev/cooee
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:28.0696265Z ##[endgroup]
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:28.0696928Z ##[group]Disabling automatic garbage collection
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:28.0699151Z [command]/usr/bin/git config --local gc.auto 0
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:28.0720202Z ##[endgroup]
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:28.0720873Z ##[group]Setting up auth
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:28.0725706Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:28.0747368Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:28.4113645Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:28.4140173Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:28.4319275Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:28.4341948Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:28.4514887Z [command]/usr/bin/git config --local http.https://github.com/.extraheader AUTHORIZATION: basic ***
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:28.4539174Z ##[endgroup]
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:28.4539817Z ##[group]Fetching the repository
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:28.4545303Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin +b9bc3d96c95c7eb51b8d8138aace6f2168591c50:refs/remotes/pull/540/merge
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:31.9449557Z From https://github.com/jirathip-dev/cooee
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:31.9450468Z  * [new ref]         b9bc3d96c95c7eb51b8d8138aace6f2168591c50 -> pull/540/merge
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:31.9454120Z ##[endgroup]
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:31.9454836Z ##[group]Determining the checkout info
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:31.9460583Z ##[endgroup]
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:31.9461053Z [command]/usr/bin/git sparse-checkout disable
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:31.9542649Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:31.9553306Z ##[group]Checking out the ref
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:31.9553850Z [command]/usr/bin/git checkout --progress --force refs/remotes/pull/540/merge
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:32.5932276Z Note: switching to 'refs/remotes/pull/540/merge'.
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:32.5932595Z 
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:32.5933074Z You are in 'detached HEAD' state. You can look around, make experimental
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:32.5933509Z changes and commit them, and you can discard any commits you make in this
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:32.5933891Z state without impacting any branches by switching back to a branch.
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:32.5934600Z 
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:32.5934811Z If you want to create a new branch to retain commits you create, you may
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:32.5935275Z do so (now or later) by using -c with the switch command. Example:
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:32.5935516Z 
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:32.5935659Z   git switch -c <new-branch-name>
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:32.5935893Z 
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:32.5936016Z Or undo this operation with:
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:32.5936260Z 
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:32.5936414Z   git switch -
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:32.5936595Z 
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:32.5936850Z Turn off this advice by setting config variable advice.detachedHead to false
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:32.5937161Z 
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:32.5937535Z HEAD is now at b9bc3d9 Merge 22dbe7749187bf3c35c2dc7497a06861736c2f1b into 98b285198075fee8094ab58e91cdfecd5de3c201
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:32.5959149Z ##[endgroup]
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:32.6007876Z [command]/usr/bin/git log -1 --format=%H
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:32.6025497Z b9bc3d96c95c7eb51b8d8138aace6f2168591c50
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:32.6282699Z ##[group]Run dtolnay/rust-toolchain@1.99.1
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:32.6283034Z with:
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:32.6283263Z   components: clippy, rustfmt
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:32.6283514Z env:
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:32.6283732Z   CARGO_TERM_COLOR: always
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:32.6283990Z   REF: 
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:32.6284203Z ##[endgroup]
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:32.6336590Z ##[start-action display=Parse toolchain version;id=__dtolnay_rust-toolchain.parse]
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:32.6384261Z ##[group]Run if [[ -z $toolchain ]]; then
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:32.6384609Z ^[[36;1mif [[ -z $toolchain ]]; then^[[0m
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:32.6385104Z ^[[36;1m  # GitHub does not enforce `required: true` inputs itself. https://github.com/actions/runner/issues/1070^[[0m
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:32.6385580Z ^[[36;1m  echo "'toolchain' is a required input" >&2^[[0m
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:32.6385891Z ^[[36;1m  exit 1^[[0m
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:32.6386198Z ^[[36;1melif [[ $toolchain =~ ^stable' '[0-9]+' '(year|month|week|day)s?' 'ago$ ]]; then^[[0m
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:32.6386672Z ^[[36;1m  if [[ Linux == macOS ]]; then^[[0m
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:32.6387113Z ^[[36;1m    echo "toolchain=1.$((($(date -v-$(sed 's/stable \([0-9]*\) \(.\).*/\1\2/' <<< $toolchain) +%s)/60/60/24-16569)/7/6))" >> $GITHUB_OUTPUT^[[0m
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:32.6387538Z ^[[36;1m  else^[[0m
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:32.6387912Z ^[[36;1m    echo "toolchain=1.$((($(date --date "${toolchain#stable }" +%s)/60/60/24-16569)/7/6))" >> $GITHUB_OUTPUT^[[0m
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:32.6388281Z ^[[36;1m  fi^[[0m
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:32.6388688Z ^[[36;1melif [[ $toolchain =~ ^stable' 'minus' '[0-9]+' 'releases?$ ]]; then^[[0m
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:32.6389156Z ^[[36;1m  echo "toolchain=1.$((($(date +%s)/60/60/24-16569)/7/6-${toolchain//[^0-9]/}))" >> $GITHUB_OUTPUT^[[0m
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:32.6389602Z ^[[36;1melif [[ $toolchain =~ ^1\.[0-9]+$ ]]; then^[[0m
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:32.6390050Z ^[[36;1m  echo "toolchain=1.$((i=${toolchain#1.}, c=($(date +%s)/60/60/24-16569)/7/6, i+9*i*(10*i<=c)+90*i*(100*i<=c)))" >> $GITHUB_OUTPUT^[[0m
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:32.6390458Z ^[[36;1melse^[[0m
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:32.6390716Z ^[[36;1m  delimiter=EOF^[[0m
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:32.6391005Z ^[[36;1m  while [[ $toolchain == *$delimiter* ]]; do delimiter+=_; done^[[0m
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:32.6391539Z ^[[36;1m  printf 'toolchain<<%s\n%s\n%s\n' "$delimiter" "$toolchain" "$delimiter" >> $GITHUB_OUTPUT^[[0m
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:32.6392156Z ^[[36;1mfi^[[0m
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:32.6414313Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:32.6414666Z env:
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:32.6414876Z   CARGO_TERM_COLOR: always
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:32.6415131Z   REF: 
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:32.6415333Z   toolchain: 1.99.1
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:32.6415551Z ##[endgroup]
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:32.6495855Z ##[end-action id=__dtolnay_rust-toolchain.parse;outcome=success;conclusion=success;duration_ms=15]
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:32.6499393Z ##[start-action display=Set $CARGO_HOME;id=__dtolnay_rust-toolchain.__run]
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:32.6519331Z ##[group]Run echo CARGO_HOME=${CARGO_HOME:-"$HOME/.cargo"} >> $GITHUB_ENV
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:32.6519753Z ^[[36;1mecho CARGO_HOME=${CARGO_HOME:-"$HOME/.cargo"} >> $GITHUB_ENV^[[0m
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:32.6536657Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:32.6537022Z env:
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:32.6537245Z   CARGO_TERM_COLOR: always
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:32.6537534Z   REF: 
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:32.6537751Z ##[endgroup]
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:32.6575918Z ##[end-action id=__dtolnay_rust-toolchain.__run;outcome=success;conclusion=success;duration_ms=7]
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:32.6578069Z ##[start-action display=Install rustup if needed;id=__dtolnay_rust-toolchain.__run_2]
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:32.6600929Z ##[group]Run if ! command -v rustup &>/dev/null; then
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:32.6601278Z ^[[36;1mif ! command -v rustup &>/dev/null; then^[[0m
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:32.6602054Z ^[[36;1m  curl --proto '=https' --tlsv1.2 --retry 10 --retry-connrefused --location --silent --show-error --fail https://sh.rustup.rs | sh -s -- --default-toolchain none -y^[[0m
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:32.6602652Z ^[[36;1m  echo "$CARGO_HOME/bin" >> $GITHUB_PATH^[[0m
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:32.6603013Z ^[[36;1mfi^[[0m
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:32.6616585Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:32.6616915Z env:
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:32.6617201Z   CARGO_TERM_COLOR: always
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:32.6617429Z   REF: 
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:32.6617645Z   CARGO_HOME: /home/runner/.cargo
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:32.6617894Z ##[endgroup]
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:32.6651593Z ##[end-action id=__dtolnay_rust-toolchain.__run_2;outcome=success;conclusion=success;duration_ms=7]
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:32.6653822Z ##[start-action display=Install rustup if needed on windows;id=__dtolnay_rust-toolchain.__run_3]
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:32.6658826Z ##[end-action id=__dtolnay_rust-toolchain.__run_3;outcome=skipped;conclusion=skipped;duration_ms=0]
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:32.6668060Z ##[start-action display=rustup toolchain install 1.99.1;id=__dtolnay_rust-toolchain.__run_4]
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:32.6686390Z ##[group]Run set -f  # split targets and components on commas and whitespace, without glob expansion
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:32.6686978Z ^[[36;1mset -f  # split targets and components on commas and whitespace, without glob expansion^[[0m
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:32.6687356Z ^[[36;1mflags=()^[[0m
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:32.6687646Z ^[[36;1mfor t in ${targets//,/ }; do flags+=(--target "$t"); done^[[0m
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:32.6687995Z ^[[36;1mfor c in ${components//,/ }; do flags+=(--component "$c"); done^[[0m
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:32.6688440Z ^[[36;1mif [[ $toolchain == nightly && -n $components ]]; then flags+=(--allow-downgrade); fi^[[0m
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:32.6688852Z ^[[36;1mlog=$(mktemp)^[[0m
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:32.6689089Z ^[[36;1mtrap 'rm -f "$log"' EXIT^[[0m
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:32.6689365Z ^[[36;1mfor attempt in 1 2 3 4 5; do^[[0m
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:32.6689821Z ^[[36;1m  if rustup toolchain install "$toolchain" "${flags[@]}" --profile minimal --no-self-update --force-non-host 2>&1 | tee "$log"; then^[[0m
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:32.6690256Z ^[[36;1m    break^[[0m
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:32.6690489Z ^[[36;1m  else^[[0m
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:32.6690703Z ^[[36;1m    status=$?^[[0m
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:32.6690941Z ^[[36;1m  fi^[[0m
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:32.6691262Z ^[[36;1m  if [[ $attempt == 5 ]] || ! grep -Fq 'checksum failed for ' "$log" \^[[0m
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:32.6691695Z ^[[36;1m      || ! grep -Fq 'this is likely due to an ongoing update of the official release server' "$log"; then^[[0m
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:32.6692288Z ^[[36;1m    exit "$status"^[[0m
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:32.6692527Z ^[[36;1m  fi^[[0m
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:32.6692868Z ^[[36;1m  echo "Retrying rustup toolchain install in 30 seconds (retry $attempt of 4)" >&2^[[0m
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:32.6693236Z ^[[36;1m  sleep 30^[[0m
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:32.6693452Z ^[[36;1mdone^[[0m
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:32.6707372Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:32.6707703Z env:
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:32.6707976Z   CARGO_TERM_COLOR: always
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:32.6708197Z   REF: 
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:32.6708437Z   CARGO_HOME: /home/runner/.cargo
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:32.6708702Z   toolchain: 1.99.1
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:32.6708920Z   targets: 
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:32.6709144Z   components: clippy, rustfmt
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:32.6709403Z   RUSTUP_PERMIT_COPY_RENAME: 1
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:32.6709759Z ##[endgroup]
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:33.8364636Z info: syncing channel updates for 1.99.1-x86_64-unknown-linux-gnu
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:34.0923605Z info: latest update on 2026-10-15 for version 1.99.1 (58cf8f9c3 2026-10-13)
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:34.0924017Z info: downloading 5 components
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:41.5302476Z 
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:41.5355983Z   1.99.1-x86_64-unknown-linux-gnu installed - rustc 1.99.1 (58cf8f9c3 2026-10-13)
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:41.5356391Z 
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:41.5435828Z ##[end-action id=__dtolnay_rust-toolchain.__run_4;outcome=success;conclusion=success;duration_ms=8876]
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:41.5441676Z ##[start-action display=rustup default 1.99.1;id=__dtolnay_rust-toolchain.__run_5]
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:41.5458546Z ##[group]Run rustup default "$toolchain" --force-non-host
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:41.5458927Z ^[[36;1mrustup default "$toolchain" --force-non-host^[[0m
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:41.5477671Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:41.5478131Z env:
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:41.5478354Z   CARGO_TERM_COLOR: always
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:41.5478602Z   REF: 
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:41.5478836Z   CARGO_HOME: /home/runner/.cargo
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:41.5479074Z   toolchain: 1.99.1
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:41.5479317Z ##[endgroup]
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:41.5549991Z info: using existing install for 1.99.1-x86_64-unknown-linux-gnu
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:41.5553820Z info: default toolchain set to 1.99.1-x86_64-unknown-linux-gnu
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:41.5554161Z 
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:41.5602691Z   1.99.1-x86_64-unknown-linux-gnu unchanged - rustc 1.99.1 (58cf8f9c3 2026-10-13)
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:41.5603125Z 
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:41.5604819Z info: note that the toolchain '1.99.1-x86_64-unknown-linux-gnu' is currently in use (overridden by '/home/runner/work/cooee/cooee/rust-toolchain.toml')
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:41.5614236Z ##[end-action id=__dtolnay_rust-toolchain.__run_5;outcome=success;conclusion=success;duration_ms=17]
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:41.5617371Z ##[start-action display=Create cachekey;id=__dtolnay_rust-toolchain.rustc-version]
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:41.5632820Z ##[group]Run DATE=$(rustc +"$toolchain" --version --verbose | sed -ne 's/^commit-date: \(20[0-9][0-9]\)-\([01][0-9]\)-\([0-3][0-9]\)$/\1\2\3/p')
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:41.5633510Z ^[[36;1mDATE=$(rustc +"$toolchain" --version --verbose | sed -ne 's/^commit-date: \(20[0-9][0-9]\)-\([01][0-9]\)-\([0-3][0-9]\)$/\1\2\3/p')^[[0m
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:41.5634053Z ^[[36;1mHASH=$(rustc +"$toolchain" --version --verbose | sed -ne 's/^commit-hash: //p')^[[0m
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:41.5634518Z ^[[36;1mecho "cachekey=$(echo $DATE$HASH | head -c12)" >> $GITHUB_OUTPUT^[[0m
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:41.5648744Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:41.5649069Z env:
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:41.5649349Z   CARGO_TERM_COLOR: always
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:41.5649661Z   REF: 
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:41.5649891Z   CARGO_HOME: /home/runner/.cargo
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:41.5650137Z   toolchain: 1.99.1
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:41.5650342Z ##[endgroup]
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:41.5877858Z ##[end-action id=__dtolnay_rust-toolchain.rustc-version;outcome=success;conclusion=success;duration_ms=25]
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:41.5880085Z ##[start-action display=Disable incremental compilation;id=__dtolnay_rust-toolchain.__run_6]
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:41.5895779Z ##[group]Run if [ -z "${CARGO_INCREMENTAL+set}" ]; then
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:41.5896140Z ^[[36;1mif [ -z "${CARGO_INCREMENTAL+set}" ]; then^[[0m
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:41.5896438Z ^[[36;1m  echo CARGO_INCREMENTAL=0 >> $GITHUB_ENV^[[0m
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:41.5896739Z ^[[36;1mfi^[[0m
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:41.5912250Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:41.5912580Z env:
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:41.5912848Z   CARGO_TERM_COLOR: always
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:41.5913108Z   REF: 
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:41.5913362Z   CARGO_HOME: /home/runner/.cargo
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:41.5913621Z ##[endgroup]
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:41.5947727Z ##[end-action id=__dtolnay_rust-toolchain.__run_6;outcome=success;conclusion=success;duration_ms=6]
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:41.5949760Z ##[start-action display=Enable colors in Cargo output;id=__dtolnay_rust-toolchain.__run_7]
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:41.5965111Z ##[group]Run if [ -z "${CARGO_TERM_COLOR+set}" ]; then
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:41.5965460Z ^[[36;1mif [ -z "${CARGO_TERM_COLOR+set}" ]; then^[[0m
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:41.5965770Z ^[[36;1m  echo CARGO_TERM_COLOR=always >> $GITHUB_ENV^[[0m
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:41.5966097Z ^[[36;1mfi^[[0m
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:41.5978864Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:41.5979169Z env:
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:41.5979391Z   CARGO_TERM_COLOR: always
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:41.5979665Z   REF: 
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:41.5979882Z   CARGO_HOME: /home/runner/.cargo
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:41.5980142Z   CARGO_INCREMENTAL: 0
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:41.5980374Z ##[endgroup]
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:41.6012478Z ##[end-action id=__dtolnay_rust-toolchain.__run_7;outcome=success;conclusion=success;duration_ms=6]
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:41.6015116Z ##[start-action display=Enable Cargo sparse registry;id=__dtolnay_rust-toolchain.__run_8]
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:41.6030799Z ##[group]Run # implemented in 1.66, stabilized in 1.68, made default in 1.70
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:41.6031391Z ^[[36;1m# implemented in 1.66, stabilized in 1.68, made default in 1.70^[[0m
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:41.6032528Z ^[[36;1mif [ -z "${CARGO_REGISTRIES_CRATES_IO_PROTOCOL+set}" -o -f "/home/runner/work/_temp"/.implicit_cargo_registries_crates_io_protocol ]; then^[[0m
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:41.6033146Z ^[[36;1m  if rustc +"$toolchain" --version --verbose | grep -q '^release: 1\.6[89]\.'; then^[[0m
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:41.6033621Z ^[[36;1m    touch "/home/runner/work/_temp"/.implicit_cargo_registries_crates_io_protocol || true^[[0m
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:41.6034134Z ^[[36;1m    echo CARGO_REGISTRIES_CRATES_IO_PROTOCOL=sparse >> $GITHUB_ENV^[[0m
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:41.6034563Z ^[[36;1m  elif rustc +"$toolchain" --version --verbose | grep -q '^release: 1\.6[67]\.'; then^[[0m
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:41.6035028Z ^[[36;1m    touch "/home/runner/work/_temp"/.implicit_cargo_registries_crates_io_protocol || true^[[0m
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:41.6035462Z ^[[36;1m    echo CARGO_REGISTRIES_CRATES_IO_PROTOCOL=git >> $GITHUB_ENV^[[0m
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:41.6035793Z ^[[36;1m  fi^[[0m
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:41.6036048Z ^[[36;1mfi^[[0m
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:41.6048644Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:41.6048974Z env:
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:41.6049197Z   CARGO_TERM_COLOR: always
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:41.6049465Z   REF: 
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:41.6049677Z   CARGO_HOME: /home/runner/.cargo
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:41.6049924Z   CARGO_INCREMENTAL: 0
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:41.6050173Z   toolchain: 1.99.1
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:41.6050386Z ##[endgroup]
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:41.6241516Z ##[end-action id=__dtolnay_rust-toolchain.__run_8;outcome=success;conclusion=success;duration_ms=22]
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:41.6244878Z ##[start-action display=Work around spurious network errors in curl 8.0;id=__dtolnay_rust-toolchain.__run_9]
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:41.6259389Z ##[group]Run # https://rust-lang.zulipchat.com/#narrow/stream/246057-t-cargo/topic/timeout.20investigation
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:41.6259993Z ^[[36;1m# https://rust-lang.zulipchat.com/#narrow/stream/246057-t-cargo/topic/timeout.20investigation^[[0m
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:41.6260521Z ^[[36;1mif rustc +"$toolchain" --version --verbose | grep -q '^release: 1\.7[01]\.'; then^[[0m
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:41.6260949Z ^[[36;1m  echo CARGO_HTTP_MULTIPLEXING=false >> $GITHUB_ENV^[[0m
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:41.6261232Z ^[[36;1mfi^[[0m
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:41.6275624Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:41.6275933Z env:
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:41.6276252Z   CARGO_TERM_COLOR: always
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:41.6276483Z   REF: 
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:41.6276753Z   CARGO_HOME: /home/runner/.cargo
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:41.6277009Z   CARGO_INCREMENTAL: 0
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:41.6277237Z   toolchain: 1.99.1
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:41.6277502Z ##[endgroup]
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:41.6388152Z ##[end-action id=__dtolnay_rust-toolchain.__run_9;outcome=success;conclusion=success;duration_ms=14]
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:41.6392234Z ##[start-action display=rustc +1.99.1 --version --verbose;id=__dtolnay_rust-toolchain.__run_10]
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:41.6406607Z ##[group]Run rustc +"$toolchain" --version --verbose
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:41.6407036Z ^[[36;1mrustc +"$toolchain" --version --verbose^[[0m
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:41.6420599Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:41.6420904Z env:
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:41.6421115Z   CARGO_TERM_COLOR: always
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:41.6421398Z   REF: 
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:41.6421680Z   CARGO_HOME: /home/runner/.cargo
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:41.6422230Z   CARGO_INCREMENTAL: 0
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:41.6422458Z   toolchain: 1.99.1
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:41.6422655Z ##[endgroup]
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:41.6525465Z rustc 1.99.1 (58cf8f9c3 2026-10-13)
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:41.6525867Z binary: rustc
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:41.6526153Z commit-hash: 58cf8f9c35b355199727627d07ae34a4e2846d67
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:41.6526500Z commit-date: 2026-10-13
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:41.6526776Z host: x86_64-unknown-linux-gnu
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:41.6527013Z release: 1.99.1
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:41.6527318Z LLVM version: 23.1.1
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:41.6537359Z ##[end-action id=__dtolnay_rust-toolchain.__run_10;outcome=success;conclusion=success;duration_ms=14]
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:41.6629829Z ##[group]Run Swatinem/rust-cache@v2
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:41.6630094Z with:
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:41.6630305Z   prefix-key: v0-rust
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:41.6630558Z   add-job-id-key: true
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:41.6630800Z   add-rust-environment-hash-key: true
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:41.6631131Z   cache-targets: true
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:41.6631484Z   cache-all-crates: false
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:41.6631746Z   cache-workspace-crates: false
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:41.6632221Z   save-if: true
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:41.6632446Z   cache-provider: github
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:41.6632700Z   cache-bin: true
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:41.6632930Z   lookup-only: false
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:41.6633154Z   cmd-format: {0}
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:41.6633378Z env:
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:41.6633588Z   CARGO_TERM_COLOR: always
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:41.6633826Z   REF: 
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:41.6634079Z   CARGO_HOME: /home/runner/.cargo
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:41.6634328Z   CARGO_INCREMENTAL: 0
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:41.6634585Z ##[endgroup]
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:45.8010119Z ##[group]Cache Configuration
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:45.8010697Z Cache Provider:
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:45.8010939Z     github
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:45.8011148Z Workspaces:
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:45.8011371Z     /home/runner/work/cooee/cooee
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:45.8011615Z Cache Paths:
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:45.8011986Z     /home/runner/.cargo/bin
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:45.8012267Z     /home/runner/.cargo/.crates.toml
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:45.8012549Z     /home/runner/.cargo/.crates2.json
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:45.8012806Z     /home/runner/.cargo/registry
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:45.8013044Z     /home/runner/.cargo/git
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:45.8013293Z     /home/runner/work/cooee/cooee/target
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:45.8013562Z Restore Key:
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:45.8013776Z     v0-rust-msrv-Linux-x64-01b81e85
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:45.8014034Z Cache Key:
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:45.8014271Z     v0-rust-msrv-Linux-x64-01b81e85-8d84dffd
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:45.8014577Z .. Prefix:
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:45.8014815Z   - v0-rust-msrv-Linux-x64
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:45.8015066Z .. Environment considered:
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:45.8015318Z   - Rust Versions:
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:45.8015611Z     - 1.99.1 x86_64-unknown-linux-gnu 58cf8f9c35b355199727627d07ae34a4e2846d67
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:45.8015936Z   - CARGO_HOME
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:45.8016167Z   - CARGO_INCREMENTAL
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:45.8016379Z   - CARGO_TERM_COLOR
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:45.8016601Z .. Lockfiles considered:
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:45.8016837Z   - /home/runner/work/cooee/cooee/Cargo.lock
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:45.8017137Z   - /home/runner/work/cooee/cooee/crates/cooee-core/Cargo.toml
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:45.8017553Z   - /home/runner/work/cooee/cooee/crates/cooee-machines/Cargo.toml
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:45.8017902Z   - /home/runner/work/cooee/cooee/crates/cooee-server/Cargo.toml
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:45.8018258Z   - /home/runner/work/cooee/cooee/crates/cooee-terminal/Cargo.toml
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:45.8018588Z   - /home/runner/work/cooee/cooee/crates/cooee/Cargo.toml
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:45.8018884Z   - /home/runner/work/cooee/cooee/rust-toolchain.toml
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:45.8019401Z ##[endgroup]
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:45.8019771Z 
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:45.8019897Z ... Restoring cache ...
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:45.8682034Z Cache hit for: v0-rust-msrv-Linux-x64-01b81e85-8d84dffd
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:46.9534652Z Received 188743680 of 466462481 (40.5%), 179.5 MBs/sec
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:47.9551248Z Received 411041792 of 466462481 (88.1%), 195.6 MBs/sec
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:48.1723200Z Received 466462481 of 466462481 (100.0%), 200.3 MBs/sec
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:48.1723625Z Cache Size: ~445 MB (466462481 B)
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:48.1819451Z [command]/usr/bin/tar -xf /home/runner/work/_temp/97b7f9da-86a7-473b-80e1-4101f8e9bd35/cache.tzst -P -C /home/runner/work/cooee/cooee --use-compress-program unzstd
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:50.3460400Z Cache restored successfully
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:50.3607976Z Restored from cache key "v0-rust-msrv-Linux-x64-01b81e85-8d84dffd" full match: true.
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:50.3770473Z ##[group]Run taiki-e/install-action@v2
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:50.3770808Z with:
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:50.3771049Z   tool: cargo-deny,topcoat-cli@0.11.0
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:50.3771348Z   checksum: true
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:50.3771602Z   fallback: cargo-binstall
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:50.3772049Z env:
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:50.3772314Z   CARGO_TERM_COLOR: always
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:50.3772547Z   REF: 
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:50.3772778Z   CARGO_HOME: /home/runner/.cargo
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:50.3773050Z   CARGO_INCREMENTAL: 0
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:50.3773293Z   CACHE_ON_FAILURE: false
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:50.3773544Z ##[endgroup]
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:50.3779386Z ##[start-action display=Run bail() {;id=__taiki-e_install-action.__run]
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:50.3855397Z ##[group]Run bail() {
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:50.3855703Z ^[[36;1mbail() {^[[0m
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:50.3856001Z ^[[36;1m  printf '::error::install-action: %s\n' "$*"^[[0m
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:50.3856315Z ^[[36;1m  exit 1^[[0m
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:50.3856525Z ^[[36;1m}^[[0m
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:50.3856953Z ^[[36;1m# If /bin/sh is dash, environment variable containing % is not imported, but is fine^[[0m
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:50.3857432Z ^[[36;1m# because it also means that it will not be exposed to subprocess.^[[0m
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:50.3857815Z ^[[36;1mif /usr/bin/env | grep -Eq '^BASH_FUNC_'; then^[[0m
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:50.3858247Z ^[[36;1m  bail 'bash function injection via BASH_FUNC_ environment variable is not allowed for security reasons'^[[0m
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:50.3858808Z ^[[36;1mfi^[[0m
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:50.3859080Z ^[[36;1mif ! command -v bash >/dev/null; then^[[0m
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:50.3859432Z ^[[36;1m  if grep -Eq '^ID=alpine' /etc/os-release; then^[[0m
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:50.3859800Z ^[[36;1m    printf '::group::Install packages required for install-action (bash)\n'^[[0m
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:50.3860194Z ^[[36;1m    # NB: sync with apk_install in main.sh^[[0m
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:50.3860494Z ^[[36;1m    if command -v sudo >/dev/null; then^[[0m
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:50.3860837Z ^[[36;1m      sudo apk --no-cache add bash^[[0m
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:50.3861155Z ^[[36;1m    elif command -v doas >/dev/null; then^[[0m
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:50.3861474Z ^[[36;1m      doas apk --no-cache add bash^[[0m
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:50.3861732Z ^[[36;1m    else^[[0m
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:50.3862118Z ^[[36;1m      apk --no-cache add bash^[[0m
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:50.3862373Z ^[[36;1m    fi^[[0m
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:50.3862725Z ^[[36;1m    printf '::endgroup::\n'^[[0m
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:50.3862980Z ^[[36;1m  else^[[0m
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:50.3863224Z ^[[36;1m    bail 'this action requires bash'^[[0m
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:50.3863524Z ^[[36;1m  fi^[[0m
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:50.3863720Z ^[[36;1mfi^[[0m
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:50.3864031Z ^[[36;1mbash --noprofile --norc "${GITHUB_ACTION_PATH:?}/main.sh"^[[0m
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:50.3865050Z shell: /usr/bin/env -u ENV -u BASH_ENV -u CDPATH -u SHELLOPTS -u BASHOPTS /bin/sh -eu {0}
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:50.3865404Z env:
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:50.3865623Z   CARGO_TERM_COLOR: always
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:50.3865881Z   REF: 
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:50.3866127Z   CARGO_HOME: /home/runner/.cargo
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:50.3866395Z   CARGO_INCREMENTAL: 0
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:50.3866626Z   CACHE_ON_FAILURE: false
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:50.3866890Z   INPUT_TOOL: cargo-deny,topcoat-cli@0.11.0
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:50.3867218Z   INPUT_CHECKSUM: true
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:50.3867560Z   INPUT_FALLBACK: cargo-binstall
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:50.3869727Z   DEFAULT_GITHUB_TOKEN: ***
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:50.3870054Z   ACTION_USER_AGENT: taiki-e/install-action (v2)
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:50.3870338Z   RUNNER_OS: Linux
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:50.3870566Z   RUNNER_ARCH: X64
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:50.3870789Z ##[endgroup]
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:50.4052316Z info: host platform: x86_64_linux
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:50.4180702Z info: installing cargo-deny@latest
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:50.4337057Z info: downloading https://github.com/EmbarkStudios/cargo-deny/releases/download/0.20.2/cargo-deny-0.20.2-x86_64-unknown-linux-musl.tar.gz
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:50.4913370Z info: verifying sha256 checksum for cargo-deny-0.20.2-x86_64-unknown-linux-musl.tar.gz
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:50.6128041Z info: cargo-deny installed at /home/runner/.cargo/bin/cargo-deny
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:50.6129150Z + cargo-deny deny --version
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:50.6137496Z cargo-deny 0.20.2
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:50.6137810Z 
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:50.6142980Z info: install-action does not support topcoat-cli@0.11.0 (updating install-action might resolve this); fallback to cargo-binstall
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:50.6180913Z info: cargo-binstall already installed at /home/runner/.cargo/bin/cargo-binstall
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:50.6228977Z cargo-binstall:  INFO resolve: Resolving package: 'topcoat-cli@=0.11.0'
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:52.5436964Z cargo-binstall:  INFO resolve: Verified signature for package 'topcoat-cli-0.11.0-x86_64-unknown-linux-musl': timestamp:1792865058	file:topcoat-cli-0.11.0-x86_64-unknown-linux-musl.tar.gz	hashed
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:52.5437970Z cargo-binstall:  WARN The package topcoat-cli v0.11.0 (x86_64-unknown-linux-musl, released 2026-10-24) has been downloaded from third-party source QuickInstall
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:52.5438686Z cargo-binstall:  INFO This will install the following binaries:
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:52.5439156Z cargo-binstall:  INFO   - cargo-topcoat => /home/runner/.cargo/bin/cargo-topcoat
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:52.5439686Z cargo-binstall:  INFO   - topcoat => /home/runner/.cargo/bin/topcoat
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:52.5440088Z cargo-binstall:  INFO Installing binaries...
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:52.7816205Z cargo-binstall:  INFO Done in 2.162539641s
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:52.7834606Z ##[end-action id=__taiki-e_install-action.__run;outcome=success;conclusion=success;duration_ms=2405]
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:52.7841507Z ##[start-action display=Run Set-StrictMode -Version Latest;id=__taiki-e_install-action.__run_2]
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:52.7847174Z ##[end-action id=__taiki-e_install-action.__run_2;outcome=skipped;conclusion=skipped;duration_ms=0]
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:52.7880840Z ##[group]Run setsid --wait ci/gates.sh
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:52.7881294Z ^[[36;1msetsid --wait ci/gates.sh^[[0m
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:52.7903495Z shell: /usr/bin/bash -e {0}
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:52.7903922Z env:
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:52.7904217Z   CARGO_TERM_COLOR: always
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:52.7904461Z   REF: 
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:52.7904758Z   CARGO_HOME: /home/runner/.cargo
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:52.7905038Z   CARGO_INCREMENTAL: 0
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:52.7905287Z   CACHE_ON_FAILURE: false
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:52.7907178Z   GH_TOKEN: ***
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:52.7907422Z ##[endgroup]
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:52.7993677Z == bans: The banned APIs (#203): TypeScript's (scripts/ts-bans.py), and every Rust and TypeScript ban failing on its fixture.
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:53.9385623Z bans test ok
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:53.9410290Z == cap: The line cap holds (crates/*/src ≤ line_cap; apple/ Swift ≤ apple_cap), and its script's own tests pass.
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:54.2727668Z non-test lines: 22979 / 27500
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:54.2728212Z apple lines: 13590 / 15250
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:54.2899109Z non-test lines: 1 / 100
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:54.2899583Z apple lines: 5 / 5
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:54.2979391Z non-test lines: 1 / 100
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:54.2979838Z apple lines: 6 / 5
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:54.3056569Z line-cap test ok
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:54.3075728Z == ci-scripts: The CI's own scripts (#329): which legs a run needs, the staging reuse, the nightly's issue.
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:54.4870335Z /home/runner/work/cooee/cooee/scripts/ci-scope.sh: 35: echo: echo: I/O error
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:55.1867267Z ci scripts test ok
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:55.2105160Z test gate test ok
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:55.2124306Z == clippy: clippy pedantic and the banned APIs (#203) pass, warnings denied; tests may unwrap, expect, panic and index. At most 10 allows, each with a reason.
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:55.2666449Z ^[[1m^[[92m    Updating^[[0m crates.io index
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:55.6290771Z ^[[1m^[[92m   Compiling^[[0m cooee-core v0.1.0 (/home/runner/work/cooee/cooee/crates/cooee-core)
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:58.1118678Z ^[[1m^[[92m    Checking^[[0m cooee-machines v0.1.0 (/home/runner/work/cooee/cooee/crates/cooee-machines)
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:58.1119584Z ^[[1m^[[92m    Checking^[[0m cooee-terminal v0.1.0 (/home/runner/work/cooee/cooee/crates/cooee-terminal)
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:58.1933377Z ^[[1m^[[92m    Checking^[[0m cooee-server v0.1.0 (/home/runner/work/cooee/cooee/crates/cooee-server)
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:01.2915104Z ^[[1m^[[92m    Checking^[[0m cooee v0.1.0 (/home/runner/work/cooee/cooee/crates/cooee)
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:01.5722899Z ^[[1m^[[92m    Finished^[[0m `dev` profile [unoptimized + debuginfo] target(s) in 6.32s
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:01.7148530Z ^[[1m^[[92m   Compiling^[[0m cooee-core v0.1.0 (/home/runner/work/cooee/cooee/crates/cooee-core)
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:03.5295074Z ^[[1m^[[92m    Checking^[[0m cooee-machines v0.1.0 (/home/runner/work/cooee/cooee/crates/cooee-machines)
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:03.5297655Z ^[[1m^[[92m    Checking^[[0m cooee-terminal v0.1.0 (/home/runner/work/cooee/cooee/crates/cooee-terminal)
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:03.6462338Z ^[[1m^[[92m    Checking^[[0m cooee-server v0.1.0 (/home/runner/work/cooee/cooee/crates/cooee-server)
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:06.7124806Z ^[[1m^[[92m    Checking^[[0m cooee v0.1.0 (/home/runner/work/cooee/cooee/crates/cooee)
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:09.6443748Z ^[[1m^[[92m    Finished^[[0m `dev` profile [unoptimized + debuginfo] target(s) in 8.01s
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:09.6733269Z == comments: One comment rule (#201): no // or /* */; /// only on public API; // SAFETY: and // TODO(#N) on an open issue allowed.
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:10.0932006Z no comments break the rule
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:10.2745512Z comments test ok
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:10.6797724Z == deny: Licences, advisories and duplicate versions pass cargo deny.
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:11.0388174Z ^[[0m^[[1m^[[38;5;11mwarning[license-not-encountered]^[[0m^[[1m: license was not encountered^[[0m
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:11.0389362Z    ^[[0m^[[36m┌─^[[0m /home/runner/work/cooee/cooee/deny.toml:12:64
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:11.0390112Z    ^[[0m^[[36m│^[[0m
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:11.0391555Z ^[[0m^[[36m12^[[0m ^[[0m^[[36m│^[[0m allow = ["MIT", "Apache-2.0", "BSD-2-Clause", "BSD-3-Clause", "^[[0m^[[33mISC^[[0m", "Unicode-3.0", "Unicode-DFS-2016", "Zlib"]
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:11.0392863Z    ^[[0m^[[36m│^[[0m                                                                ^[[0m^[[33m━━━^[[0m ^[[0m^[[33munmatched license allowance^[[0m
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:11.0393318Z 
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:11.0393747Z ^[[0m^[[1m^[[38;5;11mwarning[license-not-encountered]^[[0m^[[1m: license was not encountered^[[0m
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:11.0394473Z    ^[[0m^[[36m┌─^[[0m /home/runner/work/cooee/cooee/deny.toml:12:86
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:11.0394980Z    ^[[0m^[[36m│^[[0m
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:11.0395766Z ^[[0m^[[36m12^[[0m ^[[0m^[[36m│^[[0m allow = ["MIT", "Apache-2.0", "BSD-2-Clause", "BSD-3-Clause", "ISC", "Unicode-3.0", "^[[0m^[[33mUnicode-DFS-2016^[[0m", "Zlib"]
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:11.0396943Z    ^[[0m^[[36m│^[[0m                                                                                      ^[[0m^[[33m━━━━━━━━━━━━━━━━^[[0m ^[[0m^[[33munmatched license allowance^[[0m
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:11.0397426Z 
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:11.0398001Z ^[[0m^[[1m^[[38;5;11mwarning[unnecessary-skip]^[[0m^[[1m: skip 'syn = =3.0.9' applied to a crate with only one version^[[0m
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:11.0398790Z    ^[[0m^[[36m┌─^[[0m /home/runner/work/cooee/cooee/deny.toml:31:16
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:11.0399317Z    ^[[0m^[[36m│^[[0m
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:11.0400032Z ^[[0m^[[36m31^[[0m ^[[0m^[[36m│^[[0m     { crate = "^[[0m^[[33msyn@3.0.9^[[0m", reason = "serde_derive, thiserror and futures macros; Topcoat's macros use 2" },
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:11.0401195Z    ^[[0m^[[36m│^[[0m                ^[[0m^[[33m━━━━━━━━━^[[0m             ^[[0m^[[36m──────────────────────────────────────────────────────────────────^[[0m ^[[0m^[[36mreason^[[0m
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:11.0402386Z    ^[[0m^[[36m│^[[0m                ^[[0m^[[33m│^[[0m                      
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:11.0402999Z    ^[[0m^[[36m│^[[0m                ^[[0m^[[33munnecessary skip configuration^[[0m
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:11.0403348Z 
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:11.1242632Z advisories ^[[32mok^[[0m, bans ^[[32mok^[[0m, licenses ^[[32mok^[[0m, sources ^[[32mok^[[0m
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:11.1262035Z == deps: Dependency direction: cooee-core has no workspace deps.
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:11.1563067Z dependency direction ok
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:11.1577677Z == doc: The docs build with warnings denied.
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:11.2554276Z ^[[1m^[[92m   Compiling^[[0m cooee-core v0.1.0 (/home/runner/work/cooee/cooee/crates/cooee-core)
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:11.3542056Z ^[[1m^[[92m Documenting^[[0m cooee-core v0.1.0 (/home/runner/work/cooee/cooee/crates/cooee-core)
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:12.8795157Z ^[[1m^[[92m    Checking^[[0m cooee-machines v0.1.0 (/home/runner/work/cooee/cooee/crates/cooee-machines)
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:12.8795931Z ^[[1m^[[92m    Checking^[[0m cooee-terminal v0.1.0 (/home/runner/work/cooee/cooee/crates/cooee-terminal)
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:12.8796568Z ^[[1m^[[92m Documenting^[[0m cooee-machines v0.1.0 (/home/runner/work/cooee/cooee/crates/cooee-machines)
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:12.8797157Z ^[[1m^[[92m Documenting^[[0m cooee-terminal v0.1.0 (/home/runner/work/cooee/cooee/crates/cooee-terminal)
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:12.9760155Z ^[[1m^[[92m    Checking^[[0m cooee-server v0.1.0 (/home/runner/work/cooee/cooee/crates/cooee-server)
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:12.9762092Z ^[[1m^[[92m Documenting^[[0m cooee-server v0.1.0 (/home/runner/work/cooee/cooee/crates/cooee-server)
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:15.8082303Z ^[[1m^[[92m Documenting^[[0m cooee v0.1.0 (/home/runner/work/cooee/cooee/crates/cooee)
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:16.0536465Z ^[[1m^[[92m    Finished^[[0m `dev` profile [unoptimized + debuginfo] target(s) in 4.87s
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:16.0649200Z ^[[1m^[[92m   Generated^[[0m /home/runner/work/cooee/cooee/target/doc/cooee/index.html and 4 other files
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:16.0702215Z == fmt: Rust and topcoat sources are formatted (cargo fmt, topcoat fmt).
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:17.0238777Z checked 181 inputs (0 need formatting), 0 failed in 169ms
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:17.0262720Z == hygiene: Public hygiene: nothing from ci/denylist.txt is in the tree.
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:17.0627521Z no setup-specific names or secrets
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:17.0640075Z == lessons: The lesson checks' own tests (#323); the checks themselves run on a PR in .github/workflows/lessons.yml.
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:17.0894463Z pr-body test ok
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:17.0913641Z == neutral: Core names no provider (#200): only crates/cooee-core/src/providers/ and tests may.
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:17.2353005Z core names no provider
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:17.2498733Z core names no provider
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:17.2581547Z crates/x/src/lib.rs:1: /// Asks Hermes.
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:17.2582273Z a provider is named outside crates/cooee-core/src/providers/: move it into its module
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:17.2582651Z neutral-core test ok
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:17.2604819Z == test: The workspace tests pass (incl. upgrade compatibility and crash injection) and leave no temp folder (#202).
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:17.3651445Z ^[[1m^[[92m   Compiling^[[0m cooee-core v0.1.0 (/home/runner/work/cooee/cooee/crates/cooee-core)
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:19.6834135Z ^[[1m^[[92m   Compiling^[[0m cooee-machines v0.1.0 (/home/runner/work/cooee/cooee/crates/cooee-machines)
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:19.6835245Z ^[[1m^[[92m   Compiling^[[0m cooee-terminal v0.1.0 (/home/runner/work/cooee/cooee/crates/cooee-terminal)
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:20.1294523Z ^[[1m^[[92m   Compiling^[[0m cooee-server v0.1.0 (/home/runner/work/cooee/cooee/crates/cooee-server)
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:31.3340886Z ^[[1m^[[92m   Compiling^[[0m cooee v0.1.0 (/home/runner/work/cooee/cooee/crates/cooee)
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:49.7365253Z ^[[1m^[[92m    Finished^[[0m `test` profile [unoptimized + debuginfo] target(s) in 32.45s
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:49.7604660Z ^[[1m^[[92m     Running^[[0m unittests src/main.rs (target/debug/deps/cooee-15817f96afe2bed2)
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:49.7617368Z 
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:49.7618141Z running 1 test
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:49.7623811Z test update::tests::only_a_new_green_head_is_installed ... ok
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:49.7624054Z 
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:49.7624275Z test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:49.7624564Z 
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:49.7624950Z ^[[1m^[[92m     Running^[[0m tests/accounts.rs (target/debug/deps/accounts-40fb7fb7219095e8)
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:49.7627936Z 
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:49.7628186Z running 2 tests
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:49.9202819Z test signed_in_only_while_the_status_says_so_not_from_the_last_sign_in_noted ... ok
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:50.0401300Z test add_account_listed_only_on_success_thread_pick_spawns_with_its_folder_sign_out_removes_it ... ok
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:50.0401996Z 
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:50.0402244Z test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.28s
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:50.0402791Z 
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:50.0406251Z ^[[1m^[[92m     Running^[[0m tests/accounts_env.rs (target/debug/deps/accounts_env-95bfaeb54189a6ac)
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:50.0414851Z 
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:50.0415013Z running 7 tests
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:50.0487007Z test a_token_file_goes_in_the_token_variable_only_at_0600_or_tighter ... ok
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:50.0662645Z test an_inherited_token_never_signs_a_folder_in ... ok
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:50.1559937Z test env_prints_a_folder_accounts_variable_and_reports_signed_out ... ok
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:50.1633495Z test unknown_provider_or_account_refuses_on_one_line ... ok
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:50.1706499Z test ls_json_lists_every_account_without_its_token ... ok
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:50.2267242Z test an_adopted_folder_is_an_account_until_dropped_and_the_folder_stays ... ok
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:50.2380983Z test ls_json_carries_usage_and_a_reading_past_its_reset_reads_zero_with_its_age ... ok
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:50.2381342Z 
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:50.2381698Z test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.20s
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:50.2382196Z 
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:50.2383188Z ^[[1m^[[92m     Running^[[0m tests/agents.rs (target/debug/deps/agents-e06c05f7326cf2d1)
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:50.2391390Z 
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:50.2391955Z running 3 tests
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:50.2449353Z test a_dry_run_prints_the_plan_and_changes_nothing ... ok
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:50.3135374Z test a_malformed_agent_toml_hides_only_that_agent_and_the_log_never_quotes_it ... ok
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:50.3205401Z test a_folder_written_by_hand_is_listed_and_starts_a_chat ... ok
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:50.3205641Z 
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:50.3206120Z test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.08s
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:50.3206408Z 
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:50.3211167Z ^[[1m^[[92m     Running^[[0m tests/ask.rs (target/debug/deps/ask-a8b65ec19d6a20cd)
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:50.3220729Z 
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:50.3221062Z running 5 tests
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:50.4472339Z test a_persona_its_can_message_doesnt_name_is_not_allowed ... ok
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:50.4485133Z test an_allowed_ask_returns_the_reply_in_a_linked_thread_the_owner_reads_and_steers ... ok
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:50.4557570Z test an_asked_persona_may_ask_one_more_and_no_further ... ok
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:50.5829407Z test the_owners_note_mid_exchange_reaches_the_asked_persona_and_returns_to_the_asker_with_the_reply ... ok
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:51.4561585Z test no_reply_in_time_is_a_timeout_and_a_session_that_cant_start_is_offline ... ok
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:51.4562116Z 
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:51.4562368Z test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.13s
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:51.4562624Z 
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:51.4569712Z ^[[1m^[[92m     Running^[[0m tests/chat.rs (target/debug/deps/chat-dd1d21bb8eff1f9a)
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:51.4580110Z 
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:51.4580639Z running 12 tests
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:51.5561553Z test a_message_to_a_stopped_agent_is_refused_never_stored_as_sent ... ok
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:51.5595423Z test a_reconnect_with_last_event_id_replays_without_gaps_or_duplicates ... ok
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:51.5847906Z test a_hanging_shed_approve_never_holds_another_thread ... ok
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:51.6354554Z test a_restarted_cooee_reattaches_to_its_terminals_and_catches_up ... ok
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:51.6496371Z test a_send_to_a_shed_on_another_protocol_says_why_in_the_chat_then_goes_through_once_fixed ... ok
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:51.6632279Z test a_tool_call_is_one_row_updated_in_place_and_a_retried_send_is_stored_once ... ok
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:51.7096727Z test a_shed_of_another_protocol_is_refused_naming_both_sides ... ok
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:51.7097452Z test fake_shed_server ... ignored, a server for apple/e2e, not a test
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:51.7240672Z test an_approval_is_sent_to_shed_once_however_often_it_is_tapped ... ok
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:51.7345142Z test cancel_ends_the_turn_and_writes_back_the_tool_call_in_progress ... ok
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:51.7454085Z test closing_a_thread_kills_and_removes_its_terminal ... ok
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:51.7881559Z test new_thread_runs_the_agent_in_an_allowed_folder_and_streams_the_reply ... ok
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:51.7882195Z 
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:51.7882750Z test result: ok. 11 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out; finished in 0.33s
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:51.7883116Z 
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:51.7894441Z ^[[1m^[[92m     Running^[[0m tests/chat_first.rs (target/debug/deps/chat_first-c78ccb4e04870591)
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:51.7903649Z 
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:51.7904133Z running 1 test
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:51.8862005Z test a_new_chat_runs_in_its_own_scratch_folder_and_a_folder_attached_takes_later_turns ... ok
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:51.8862450Z 
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:51.8862750Z test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.10s
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:51.8863132Z 
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:51.8867012Z ^[[1m^[[92m     Running^[[0m tests/cli.rs (target/debug/deps/cli-d1bcdf6ff197559f)
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:51.8875271Z 
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:51.8875420Z running 4 tests
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:51.8904354Z test version ... ok
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:51.8905760Z test listening_beyond_localhost_needs_allowed_hosts ... ok
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:51.8919519Z test unknown_args_and_config_keys_fail ... ok
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:51.8921087Z cooee: shed at /run/user/1001/shed.sock: No such file or directory (os error 2)
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:51.8960333Z test serve_listens_on_localhost_at_the_configured_port ... ok
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:51.8960724Z 
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:51.8961112Z test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:51.8961450Z 
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:51.8962795Z ^[[1m^[[92m     Running^[[0m tests/config_edits.rs (target/debug/deps/config_edits-9240d406013fb36c)
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:51.8972079Z 
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:51.8972523Z running 4 tests
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:51.9804695Z test saving_the_model_changes_only_its_line_and_keeps_the_comments ... ok
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:51.9836217Z test a_new_note_adds_exactly_one_line_to_memory ... ok
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:51.9836610Z test a_save_after_a_hand_edit_is_refused_and_the_edit_stays ... ok
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:52.0090699Z test a_hand_edited_instructions_file_reaches_the_next_chat ... ok
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:52.0091158Z 
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:52.0091544Z test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.11s
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:52.0092168Z 
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:52.0095601Z ^[[1m^[[92m     Running^[[0m tests/config_git.rs (target/debug/deps/config_git-4e96a85adaf1ac63)
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:52.0105435Z 
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:52.0105601Z running 3 tests
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:52.0230387Z test init_git_keeps_the_owners_gitignore ... ok
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:52.0315415Z test init_git_commits_the_config_without_its_secrets_once ... ok
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:52.2145786Z test serve_adds_a_gitignore_to_its_own_config_folder_only ... ok
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:52.2146167Z 
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:52.2146382Z test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.20s
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:52.2146671Z 
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:52.2151081Z ^[[1m^[[92m     Running^[[0m tests/first_run.rs (target/debug/deps/first_run-fe6fe75c7430cd33)
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:52.2161432Z 
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:52.2161560Z running 3 tests
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:52.3023536Z test with_one_root_and_nothing_in_it_a_thread_starts_in_the_root ... ok
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:52.3031275Z test with_no_roots_a_chat_still_starts_in_scratch_and_use_a_folder_is_refused ... ok
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:52.5809046Z test no_agents_and_no_roots_show_the_fix_lines_and_doctor_warns ... ok
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:52.5809692Z 
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:52.5812529Z test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.36s
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:52.5812899Z 
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:52.5816418Z ^[[1m^[[92m     Running^[[0m tests/folders.rs (target/debug/deps/folders-9bc85f28158d1a98)
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:52.5826124Z 
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:52.5826411Z running 5 tests
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:52.6644767Z test browse_lists_a_root_outside_home_spelled_as_listed ... ok
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:52.6688947Z test browse_lists_only_folders_inside_home ... ok
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:52.6726063Z test dot_dot_symlink_and_absolute_escapes_are_refused ... ok
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:52.6726944Z test add_and_remove_root_persists_in_the_config ... ok
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:52.7423726Z test new_folder_is_made_inside_a_root_and_a_thread_starts_there ... ok
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:52.7424029Z 
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:52.7424271Z test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.16s
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:52.7424544Z 
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:52.7428649Z ^[[1m^[[92m     Running^[[0m tests/history.rs (target/debug/deps/history-094871df9c4e9a2a)
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:52.7438452Z 
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:52.7438887Z running 1 test
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:52.8988235Z test a_persona_finds_and_reads_its_own_threads_and_not_another_personas ... ok
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:52.8988772Z 
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:52.8989028Z test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.15s
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:52.8989333Z 
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:52.8992038Z ^[[1m^[[92m     Running^[[0m tests/home_screen.rs (target/debug/deps/home_screen-c515005f502af238)
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:52.9002965Z 
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:52.9003530Z running 1 test
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:52.9805245Z test home_is_the_bundled_screen_filled_with_todays_threads_and_personas ... ok
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:52.9807772Z 
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:52.9808093Z test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.08s
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:52.9808539Z 
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:52.9811729Z ^[[1m^[[92m     Running^[[0m tests/instances.rs (target/debug/deps/instances-27d59a2871851df5)
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:52.9818670Z 
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:52.9818831Z running 3 tests
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:52.9871010Z test install_writes_a_plist_and_prints_the_commands ... ok
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:53.0599242Z test doctor_reports_a_missing_shed ... ok
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:53.1299134Z test two_instances_never_see_each_others_threads_or_devices ... ok
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:53.1300864Z 
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:53.1301435Z test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.15s
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:53.1301951Z 
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:53.1302739Z ^[[1m^[[92m     Running^[[0m tests/layout.rs (target/debug/deps/layout-be3885d660475506)
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:53.1313303Z 
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:53.1313910Z running 3 tests
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:54.1961373Z test a_plugins_places_are_merged_and_a_place_its_manifest_lacks_is_skipped ... ok
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:55.1993682Z test a_layout_that_replaces_a_locked_screen_is_refused_and_reset_still_restores_the_default ... ok
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:55.2343158Z test a_bad_write_keeps_the_last_good_layout_and_reset_restores_the_default ... ok
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:55.2343645Z 
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:55.2344287Z test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.10s
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:55.2344703Z 
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:55.2348885Z ^[[1m^[[92m     Running^[[0m tests/login.rs (target/debug/deps/login-9e3ac2ebceaa46ca)
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:55.2357967Z 
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:55.2358231Z running 5 tests
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:55.3214329Z test a_failed_sign_out_keeps_the_last_known_status ... ok
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:55.3415386Z test a_sign_in_started_for_a_remote_machine_runs_there ... ok
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:55.3632630Z test a_login_left_for_10_minutes_is_killed_and_removed ... ok
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:55.4570611Z test login_shows_the_link_sends_the_code_and_detects_success_never_storing_the_screen ... ok
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:15:07.0240522Z test a_hanging_status_check_never_holds_a_request_and_runs_once ... ok
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:15:07.0240849Z 
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:15:07.0241252Z test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 11.79s
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:15:07.0241562Z 
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:15:07.0246060Z ^[[1m^[[92m     Running^[[0m tests/machine_check.rs (target/debug/deps/machine_check-9a9cca87c1b2f7ea)
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:15:07.0255720Z 
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:15:07.0255864Z running 5 tests
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:15:07.0540207Z test a_machine_shed_cant_reach_or_doesnt_have_fails_its_first_check_and_runs_nothing_there ... ok
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:15:07.0747656Z test a_ready_machine_passes_every_check_each_run_there ... ok
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:15:07.0968105Z test each_check_fails_with_its_part_missing_there_and_says_the_fix ... ok
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:15:07.1269840Z test yes_clones_the_folder_and_copies_the_settings_there_once ... ok
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:15:07.1467691Z test doctor_has_a_row_per_machine ... ok
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:15:07.1468189Z 
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:15:07.1468965Z test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.12s
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:15:07.1469435Z 
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:15:07.1473467Z ^[[1m^[[92m     Running^[[0m tests/machines.rs (target/debug/deps/machines-08aa319d853dcbdd)
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:15:07.1480663Z 
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:15:07.1480856Z running 1 test
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:15:07.5332984Z test the_machines_plugin_serves_each_machine_card_and_marks_one_offline ... ok
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:15:07.5333435Z 
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:15:07.5333733Z test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.38s
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:15:07.5334088Z 
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:15:07.5337768Z ^[[1m^[[92m     Running^[[0m tests/mcp.rs (target/debug/deps/mcp-f39f70de8cef678b)
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:15:07.5347743Z 
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:15:07.5347991Z running 6 tests
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:15:07.5429962Z test a_literal_token_in_the_registry_is_refused_at_load_naming_the_key_only ... ok
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:15:07.6615823Z test a_secret_dropped_once_is_typed_into_its_terminal_and_reaches_no_transcript_event_file_log_or_model ... ok
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:15:07.6645975Z test propose_server_shows_the_exact_command_runs_nothing_and_needs_face_id_to_add_it_off ... ok
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:15:07.6721436Z test the_mac_adds_toggles_and_removes_servers_with_references_only ... ok
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:15:07.6876854Z test a_saved_secret_is_typed_again_without_asking_and_reaches_the_personas_environment_only ... FAILED
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:15:07.6990578Z test the_agent_sees_and_calls_only_the_allowed_tools_under_claude_and_codex_and_no_value_is_written ... ok
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:15:07.6991001Z 
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:15:07.6991137Z failures:
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:15:07.6991269Z 
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:15:07.6991646Z ---- a_saved_secret_is_typed_again_without_asking_and_reaches_the_personas_environment_only stdout ----
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:15:07.6992290Z 
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:15:07.6992707Z thread 'a_saved_secret_is_typed_again_without_asking_and_reaches_the_personas_environment_only' (9490) panicked at crates/cooee/tests/mcp.rs:656:5:
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:15:07.6993360Z only coder's
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:15:07.6993691Z note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:15:07.6993924Z 
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:15:07.6993957Z 
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:15:07.6994041Z failures:
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:15:07.6994368Z     a_saved_secret_is_typed_again_without_asking_and_reaches_the_personas_environment_only
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:15:07.6994695Z 
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:15:07.6994929Z test result: FAILED. 5 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.16s
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:15:07.6995191Z 
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:15:07.6997039Z ^[[1m^[[91merror^[[0m: test failed, to rerun pass `-p cooee --test mcp`
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:15:07.7063928Z == themes: The theme gate (docs/themes.md) on the first-party packs (the build vendors them at swag's pin) and the starter.
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:15:17.3350697Z ok   packs/themes/farm
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:15:17.3495417Z ok   packs/themes/garden
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:15:17.3587547Z ok   packs/themes/kitchen
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:15:17.3590638Z ok   packs/starter
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:15:17.3597778Z failed gates: test
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:15:17.3613078Z ##[error]Process completed with exit code 1.
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:15:17.3710458Z Post job cleanup.
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:15:17.4389852Z [command]/usr/bin/git version
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:15:17.4422067Z git version 2.56.1
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:15:17.4446786Z Temporarily overriding HOME='/home/runner/work/_temp/b39ff1d0-e501-4167-8dbb-1e23e1a1fecb' before making global git config changes
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:15:17.4447760Z Adding repository directory to the temporary git global config as a safe directory
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:15:17.4450437Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/cooee/cooee
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:15:17.4482154Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:15:17.4506968Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:15:17.4696668Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:15:17.4713643Z http.https://github.com/.extraheader
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:15:17.4720423Z [command]/usr/bin/git config --local --unset-all http.https://github.com/.extraheader
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:15:17.4752175Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:15:17.4949274Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:15:17.4972513Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:15:17.5274871Z Cleaning up orphan processes
+msrv (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:15:17.5512236Z ##[warning]Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/checkout@v4. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+stable (ubuntu-latest)	UNKNOWN STEP	﻿2026-11-17T11:13:21.4973448Z Current runner version: '2.338.2'
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:21.5004769Z ##[group]Runner Image Provisioner
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:21.5005851Z Hosted Compute Agent
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:21.5006586Z Version: 20261103.629
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:21.5007347Z Commit: 15dbd9ccb5dbf34fae002b6ed1a2670f52df37bc
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:21.5008273Z Build Date: 2026-11-03T17:26:59Z
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:21.5009154Z Worker ID: {3a8a8700-bc1d-4b11-af0a-4e2239843ccf}
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:21.5010191Z Region: eastus2
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:21.5010962Z Cloud: Azure
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:21.5011643Z ##[endgroup]
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:21.5013289Z ##[group]Operating System
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:21.5014047Z Ubuntu
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:21.5014688Z 26.04.1
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:21.5015323Z LTS
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:21.5015947Z ##[endgroup]
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:21.5016745Z ##[group]Runner Image
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:21.5017421Z Image: ubuntu-26.04
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:21.5018135Z Version: 20261111.196.1
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:21.5019692Z Included Software: https://github.com/actions/runner-images/blob/ubuntu26/20261111.196/images/ubuntu/Ubuntu2604-Readme.md
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:21.5021998Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu26%2F20261111.196
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:21.5023283Z ##[endgroup]
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:21.5024885Z ##[group]GITHUB_TOKEN Permissions
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:21.5027176Z Contents: read
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:21.5027982Z Metadata: read
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:21.5028690Z Packages: read
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:21.5029421Z ##[endgroup]
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:21.5032181Z Secret source: Actions
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:21.5033375Z Cache mode: write
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:21.5034426Z Prepare workflow directory
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:21.5574592Z Prepare all required actions
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:21.5616803Z Getting action download info
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:21.7320977Z Download action repository 'actions/checkout@v4' (SHA:11d5960a326750d5838078e36cf38b85af677262)
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:21.8267974Z Download action repository 'dtolnay/rust-toolchain@stable' (SHA:39008827e6b4319a349e9a42dfc90579dd25f1ca)
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:21.9496404Z Download action repository 'Swatinem/rust-cache@v2' (SHA:d1527c8f67ef9af357290475d4af4b0fab8f12e0)
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:22.2374308Z Complete job name: stable (ubuntu-latest)
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:22.3038112Z ##[group]Run actions/checkout@v4
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:22.3038840Z with:
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:22.3039215Z   repository: jirathip-dev/cooee
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:22.3042813Z   token: ***
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:22.3043180Z   ssh-strict: true
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:22.3043542Z   ssh-user: git
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:22.3043898Z   persist-credentials: true
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:22.3044285Z   clean: true
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:22.3044649Z   sparse-checkout-cone-mode: true
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:22.3045066Z   fetch-depth: 1
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:22.3045405Z   fetch-tags: false
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:22.3045766Z   show-progress: true
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:22.3046124Z   lfs: false
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:22.3046465Z   submodules: false
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:22.3046824Z   set-safe-directory: true
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:22.3047225Z   allow-unsafe-pr-checkout: false
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:22.3047818Z env:
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:22.3048157Z   CARGO_TERM_COLOR: always
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:22.3048559Z   REF: 
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:22.3048886Z   RUSTUP_TOOLCHAIN: stable
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:22.3049293Z ##[endgroup]
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:22.5458586Z Syncing repository: jirathip-dev/cooee
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:22.5460660Z ##[group]Getting Git version info
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:22.5461273Z Working directory is '/home/runner/work/cooee/cooee'
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:22.5462480Z [command]/usr/bin/git version
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:22.5470097Z git version 2.56.1
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:22.5491386Z ##[endgroup]
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:22.5498118Z Temporarily overriding HOME='/home/runner/work/_temp/3cabf9a9-81fc-46fd-810d-8ddb6b296105' before making global git config changes
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:22.5500538Z Adding repository directory to the temporary git global config as a safe directory
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:22.5502848Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/cooee/cooee
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:22.5624054Z Deleting the contents of '/home/runner/work/cooee/cooee'
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:22.5625754Z ##[group]Initializing the repository
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:22.5627258Z [command]/usr/bin/git init /home/runner/work/cooee/cooee
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:22.5723650Z hint: Using 'master' as the name for the initial branch. This default branch name
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:22.5726683Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:22.5728427Z hint: to use in all of your new repositories, which will suppress this warning,
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:22.5730089Z hint: call:
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:22.5731043Z hint:
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:22.5732030Z hint: 	git config --global init.defaultBranch <name>
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:22.5733223Z hint:
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:22.5734309Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:22.5735950Z hint: 'development'. The just-created branch can be renamed via this command:
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:22.5737407Z hint:
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:22.5738345Z hint: 	git branch -m <name>
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:22.5739404Z hint:
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:22.5740789Z hint: Disable this message with "git config set advice.defaultBranchName false"
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:22.5742748Z Initialized empty Git repository in /home/runner/work/cooee/cooee/.git/
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:22.5746539Z [command]/usr/bin/git remote add origin https://github.com/jirathip-dev/cooee
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:22.5804710Z ##[endgroup]
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:22.5806138Z ##[group]Disabling automatic garbage collection
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:22.5808345Z [command]/usr/bin/git config --local gc.auto 0
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:22.5842557Z ##[endgroup]
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:22.5843377Z ##[group]Setting up auth
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:22.5848906Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:22.5879110Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:22.6285766Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:22.6315408Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:22.6547167Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:22.6576785Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:22.6816737Z [command]/usr/bin/git config --local http.https://github.com/.extraheader AUTHORIZATION: basic ***
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:22.6853553Z ##[endgroup]
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:22.6854362Z ##[group]Fetching the repository
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:22.6862207Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin +b9bc3d96c95c7eb51b8d8138aace6f2168591c50:refs/remotes/pull/540/merge
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:26.8305595Z From https://github.com/jirathip-dev/cooee
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:26.8307645Z  * [new ref]         b9bc3d96c95c7eb51b8d8138aace6f2168591c50 -> pull/540/merge
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:26.8311201Z ##[endgroup]
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:26.8312597Z ##[group]Determining the checkout info
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:26.8314123Z ##[endgroup]
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:26.8318322Z [command]/usr/bin/git sparse-checkout disable
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:26.8365952Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:26.8397767Z ##[group]Checking out the ref
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:26.8400307Z [command]/usr/bin/git checkout --progress --force refs/remotes/pull/540/merge
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:27.4159384Z Note: switching to 'refs/remotes/pull/540/merge'.
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:27.4159992Z 
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:27.4160341Z You are in 'detached HEAD' state. You can look around, make experimental
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:27.4161007Z changes and commit them, and you can discard any commits you make in this
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:27.4161685Z state without impacting any branches by switching back to a branch.
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:27.4162994Z 
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:27.4163329Z If you want to create a new branch to retain commits you create, you may
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:27.4163949Z do so (now or later) by using -c with the switch command. Example:
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:27.4164295Z 
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:27.4164449Z   git switch -c <new-branch-name>
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:27.4164692Z 
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:27.4164825Z Or undo this operation with:
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:27.4164990Z 
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:27.4165087Z   git switch -
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:27.4165244Z 
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:27.4165488Z Turn off this advice by setting config variable advice.detachedHead to false
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:27.4165779Z 
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:27.4166074Z HEAD is now at b9bc3d9 Merge 22dbe7749187bf3c35c2dc7497a06861736c2f1b into 98b285198075fee8094ab58e91cdfecd5de3c201
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:27.4229308Z ##[endgroup]
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:27.4232082Z [command]/usr/bin/git log -1 --format=%H
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:27.4253187Z b9bc3d96c95c7eb51b8d8138aace6f2168591c50
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:27.4565026Z ##[group]Run dtolnay/rust-toolchain@stable
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:27.4565345Z with:
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:27.4565552Z   toolchain: stable
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:27.4565766Z env:
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:27.4565965Z   CARGO_TERM_COLOR: always
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:27.4566187Z   REF: 
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:27.4566385Z   RUSTUP_TOOLCHAIN: stable
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:27.4566635Z ##[endgroup]
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:27.4616864Z ##[start-action display=Parse toolchain version;id=__dtolnay_rust-toolchain.parse]
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:27.4666925Z ##[group]Run if [[ -z $toolchain ]]; then
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:27.4667333Z ^[[36;1mif [[ -z $toolchain ]]; then^[[0m
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:27.4667815Z ^[[36;1m  # GitHub does not enforce `required: true` inputs itself. https://github.com/actions/runner/issues/1070^[[0m
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:27.4668302Z ^[[36;1m  echo "'toolchain' is a required input" >&2^[[0m
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:27.4668589Z ^[[36;1m  exit 1^[[0m
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:27.4668941Z ^[[36;1melif [[ $toolchain =~ ^stable' '[0-9]+' '(year|month|week|day)s?' 'ago$ ]]; then^[[0m
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:27.4669317Z ^[[36;1m  if [[ Linux == macOS ]]; then^[[0m
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:27.4669784Z ^[[36;1m    echo "toolchain=1.$((($(date -v-$(sed 's/stable \([0-9]*\) \(.\).*/\1\2/' <<< $toolchain) +%s)/60/60/24-16569)/7/6))" >> $GITHUB_OUTPUT^[[0m
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:27.4670456Z ^[[36;1m  else^[[0m
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:27.4670815Z ^[[36;1m    echo "toolchain=1.$((($(date --date "${toolchain#stable }" +%s)/60/60/24-16569)/7/6))" >> $GITHUB_OUTPUT^[[0m
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:27.4671198Z ^[[36;1m  fi^[[0m
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:27.4671480Z ^[[36;1melif [[ $toolchain =~ ^stable' 'minus' '[0-9]+' 'releases?$ ]]; then^[[0m
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:27.4671923Z ^[[36;1m  echo "toolchain=1.$((($(date +%s)/60/60/24-16569)/7/6-${toolchain//[^0-9]/}))" >> $GITHUB_OUTPUT^[[0m
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:27.4672320Z ^[[36;1melif [[ $toolchain =~ ^1\.[0-9]+$ ]]; then^[[0m
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:27.4672769Z ^[[36;1m  echo "toolchain=1.$((i=${toolchain#1.}, c=($(date +%s)/60/60/24-16569)/7/6, i+9*i*(10*i<=c)+90*i*(100*i<=c)))" >> $GITHUB_OUTPUT^[[0m
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:27.4673184Z ^[[36;1melse^[[0m
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:27.4673395Z ^[[36;1m  delimiter=EOF^[[0m
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:27.4673689Z ^[[36;1m  while [[ $toolchain == *$delimiter* ]]; do delimiter+=_; done^[[0m
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:27.4674119Z ^[[36;1m  printf 'toolchain<<%s\n%s\n%s\n' "$delimiter" "$toolchain" "$delimiter" >> $GITHUB_OUTPUT^[[0m
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:27.4674482Z ^[[36;1mfi^[[0m
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:27.4722819Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:27.4723161Z env:
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:27.4723376Z   CARGO_TERM_COLOR: always
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:27.4723605Z   REF: 
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:27.4723805Z   RUSTUP_TOOLCHAIN: stable
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:27.4724029Z   toolchain: stable
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:27.4724238Z ##[endgroup]
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:27.4834887Z ##[end-action id=__dtolnay_rust-toolchain.parse;outcome=success;conclusion=success;duration_ms=21]
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:27.4838601Z ##[start-action display=Set $CARGO_HOME;id=__dtolnay_rust-toolchain.__run]
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:27.4861783Z ##[group]Run echo CARGO_HOME=${CARGO_HOME:-"$HOME/.cargo"} >> $GITHUB_ENV
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:27.4862345Z ^[[36;1mecho CARGO_HOME=${CARGO_HOME:-"$HOME/.cargo"} >> $GITHUB_ENV^[[0m
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:27.4903784Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:27.4904099Z env:
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:27.4904309Z   CARGO_TERM_COLOR: always
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:27.4904538Z   REF: 
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:27.4904738Z   RUSTUP_TOOLCHAIN: stable
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:27.4904963Z ##[endgroup]
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:27.4971210Z ##[end-action id=__dtolnay_rust-toolchain.__run;outcome=success;conclusion=success;duration_ms=13]
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:27.4973207Z ##[start-action display=Install rustup if needed;id=__dtolnay_rust-toolchain.__run_2]
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:27.5036475Z ##[group]Run if ! command -v rustup &>/dev/null; then
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:27.5036833Z ^[[36;1mif ! command -v rustup &>/dev/null; then^[[0m
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:27.5037658Z ^[[36;1m  curl --proto '=https' --tlsv1.2 --retry 10 --retry-connrefused --location --silent --show-error --fail https://sh.rustup.rs | sh -s -- --default-toolchain none -y^[[0m
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:27.5038289Z ^[[36;1m  echo "$CARGO_HOME/bin" >> $GITHUB_PATH^[[0m
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:27.5038560Z ^[[36;1mfi^[[0m
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:27.5079193Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:27.5079506Z env:
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:27.5079720Z   CARGO_TERM_COLOR: always
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:27.5080149Z   REF: 
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:27.5080353Z   RUSTUP_TOOLCHAIN: stable
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:27.5080595Z   CARGO_HOME: /home/runner/.cargo
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:27.5080875Z ##[endgroup]
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:27.5145257Z ##[end-action id=__dtolnay_rust-toolchain.__run_2;outcome=success;conclusion=success;duration_ms=17]
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:27.5147295Z ##[start-action display=Install rustup if needed on windows;id=__dtolnay_rust-toolchain.__run_3]
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:27.5152024Z ##[end-action id=__dtolnay_rust-toolchain.__run_3;outcome=skipped;conclusion=skipped;duration_ms=0]
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:27.5161361Z ##[start-action display=rustup toolchain install stable;id=__dtolnay_rust-toolchain.__run_4]
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:27.5182558Z ##[group]Run set -f  # split targets and components on commas and whitespace, without glob expansion
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:27.5183125Z ^[[36;1mset -f  # split targets and components on commas and whitespace, without glob expansion^[[0m
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:27.5183507Z ^[[36;1mflags=()^[[0m
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:27.5183777Z ^[[36;1mfor t in ${targets//,/ }; do flags+=(--target "$t"); done^[[0m
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:27.5184129Z ^[[36;1mfor c in ${components//,/ }; do flags+=(--component "$c"); done^[[0m
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:27.5184554Z ^[[36;1mif [[ $toolchain == nightly && -n $components ]]; then flags+=(--allow-downgrade); fi^[[0m
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:27.5184922Z ^[[36;1mlog=$(mktemp)^[[0m
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:27.5185156Z ^[[36;1mtrap 'rm -f "$log"' EXIT^[[0m
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:27.5185404Z ^[[36;1mfor attempt in 1 2 3 4 5; do^[[0m
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:27.5185880Z ^[[36;1m  if rustup toolchain install "$toolchain" "${flags[@]}" --profile minimal --no-self-update --force-non-host 2>&1 | tee "$log"; then^[[0m
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:27.5186346Z ^[[36;1m    break^[[0m
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:27.5186562Z ^[[36;1m  else^[[0m
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:27.5186767Z ^[[36;1m    status=$?^[[0m
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:27.5186981Z ^[[36;1m  fi^[[0m
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:27.5187253Z ^[[36;1m  if [[ $attempt == 5 ]] || ! grep -Fq 'checksum failed for ' "$log" \^[[0m
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:27.5187716Z ^[[36;1m      || ! grep -Fq 'this is likely due to an ongoing update of the official release server' "$log"; then^[[0m
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:27.5188107Z ^[[36;1m    exit "$status"^[[0m
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:27.5188333Z ^[[36;1m  fi^[[0m
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:27.5188651Z ^[[36;1m  echo "Retrying rustup toolchain install in 30 seconds (retry $attempt of 4)" >&2^[[0m
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:27.5189005Z ^[[36;1m  sleep 30^[[0m
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:27.5189208Z ^[[36;1mdone^[[0m
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:27.5229106Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:27.5229417Z env:
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:27.5229626Z   CARGO_TERM_COLOR: always
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:27.5229997Z   REF: 
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:27.5230239Z   RUSTUP_TOOLCHAIN: stable
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:27.5230486Z   CARGO_HOME: /home/runner/.cargo
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:27.5230877Z   toolchain: stable
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:27.5231092Z   targets: 
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:27.5231290Z   components: 
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:27.5231505Z   RUSTUP_PERMIT_COPY_RENAME: 1
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:27.5231743Z ##[endgroup]
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:27.8620419Z info: syncing channel updates for stable-x86_64-unknown-linux-gnu
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:28.2161795Z info: latest update on 2026-11-12 for version 1.100.0 (0ef1bc386 2026-11-09)
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:28.2324826Z info: removing previous version of component rustfmt
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:28.2394992Z info: removing previous version of component clippy
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:28.2405073Z info: removing previous version of component cargo
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:28.2485887Z info: removing previous version of component rust-std
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:28.2585699Z info: removing previous version of component rustc
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:28.2633575Z info: downloading 5 components
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:35.5602513Z 
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:35.5666152Z   stable-x86_64-unknown-linux-gnu updated - rustc 1.100.0 (0ef1bc386 2026-11-09) (from rustc 1.99.1 (58cf8f9c3 2026-10-13))
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:35.5666925Z 
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:35.5917770Z ##[end-action id=__dtolnay_rust-toolchain.__run_4;outcome=success;conclusion=success;duration_ms=8075]
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:35.5925390Z ##[start-action display=rustup default stable;id=__dtolnay_rust-toolchain.__run_5]
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:35.5968934Z ##[group]Run rustup default "$toolchain" --force-non-host
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:35.5969275Z ^[[36;1mrustup default "$toolchain" --force-non-host^[[0m
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:35.6014734Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:35.6015012Z env:
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:35.6015201Z   CARGO_TERM_COLOR: always
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:35.6015396Z   REF: 
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:35.6015558Z   RUSTUP_TOOLCHAIN: stable
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:35.6015757Z   CARGO_HOME: /home/runner/.cargo
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:35.6015961Z   toolchain: stable
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:35.6016133Z ##[endgroup]
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:35.6114262Z info: using existing install for stable-x86_64-unknown-linux-gnu
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:35.6120997Z info: default toolchain set to stable-x86_64-unknown-linux-gnu
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:35.6121229Z 
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:35.6181029Z info: note that the toolchain 'stable-x86_64-unknown-linux-gnu' is currently in use (overridden by environment variable RUSTUP_TOOLCHAIN)
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:35.6181651Z   stable-x86_64-unknown-linux-gnu unchanged - rustc 1.100.0 (0ef1bc386 2026-11-09)
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:35.6181904Z 
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:35.6197975Z ##[end-action id=__dtolnay_rust-toolchain.__run_5;outcome=success;conclusion=success;duration_ms=27]
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:35.6202500Z ##[start-action display=Create cachekey;id=__dtolnay_rust-toolchain.rustc-version]
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:35.6222807Z ##[group]Run DATE=$(rustc +"$toolchain" --version --verbose | sed -ne 's/^commit-date: \(20[0-9][0-9]\)-\([01][0-9]\)-\([0-3][0-9]\)$/\1\2\3/p')
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:35.6223473Z ^[[36;1mDATE=$(rustc +"$toolchain" --version --verbose | sed -ne 's/^commit-date: \(20[0-9][0-9]\)-\([01][0-9]\)-\([0-3][0-9]\)$/\1\2\3/p')^[[0m
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:35.6224000Z ^[[36;1mHASH=$(rustc +"$toolchain" --version --verbose | sed -ne 's/^commit-hash: //p')^[[0m
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:35.6224396Z ^[[36;1mecho "cachekey=$(echo $DATE$HASH | head -c12)" >> $GITHUB_OUTPUT^[[0m
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:35.6269752Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:35.6270304Z env:
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:35.6270476Z   CARGO_TERM_COLOR: always
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:35.6270663Z   REF: 
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:35.6270823Z   RUSTUP_TOOLCHAIN: stable
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:35.6271020Z   CARGO_HOME: /home/runner/.cargo
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:35.6271220Z   toolchain: stable
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:35.6271389Z ##[endgroup]
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:35.6575500Z ##[end-action id=__dtolnay_rust-toolchain.rustc-version;outcome=success;conclusion=success;duration_ms=37]
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:35.6577942Z ##[start-action display=Disable incremental compilation;id=__dtolnay_rust-toolchain.__run_6]
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:35.6599150Z ##[group]Run if [ -z "${CARGO_INCREMENTAL+set}" ]; then
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:35.6599598Z ^[[36;1mif [ -z "${CARGO_INCREMENTAL+set}" ]; then^[[0m
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:35.6600237Z ^[[36;1m  echo CARGO_INCREMENTAL=0 >> $GITHUB_ENV^[[0m
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:35.6600482Z ^[[36;1mfi^[[0m
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:35.6647151Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:35.6647440Z env:
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:35.6647614Z   CARGO_TERM_COLOR: always
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:35.6647804Z   REF: 
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:35.6647970Z   RUSTUP_TOOLCHAIN: stable
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:35.6648164Z   CARGO_HOME: /home/runner/.cargo
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:35.6648368Z ##[endgroup]
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:35.6714418Z ##[end-action id=__dtolnay_rust-toolchain.__run_6;outcome=success;conclusion=success;duration_ms=13]
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:35.6716326Z ##[start-action display=Enable colors in Cargo output;id=__dtolnay_rust-toolchain.__run_7]
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:35.6735741Z ##[group]Run if [ -z "${CARGO_TERM_COLOR+set}" ]; then
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:35.6736212Z ^[[36;1mif [ -z "${CARGO_TERM_COLOR+set}" ]; then^[[0m
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:35.6736483Z ^[[36;1m  echo CARGO_TERM_COLOR=always >> $GITHUB_ENV^[[0m
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:35.6736733Z ^[[36;1mfi^[[0m
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:35.6777222Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:35.6777505Z env:
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:35.6777677Z   CARGO_TERM_COLOR: always
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:35.6777865Z   REF: 
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:35.6778026Z   RUSTUP_TOOLCHAIN: stable
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:35.6778222Z   CARGO_HOME: /home/runner/.cargo
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:35.6778427Z   CARGO_INCREMENTAL: 0
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:35.6778602Z ##[endgroup]
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:35.6840594Z ##[end-action id=__dtolnay_rust-toolchain.__run_7;outcome=success;conclusion=success;duration_ms=12]
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:35.6843414Z ##[start-action display=Enable Cargo sparse registry;id=__dtolnay_rust-toolchain.__run_8]
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:35.6863460Z ##[group]Run # implemented in 1.66, stabilized in 1.68, made default in 1.70
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:35.6863875Z ^[[36;1m# implemented in 1.66, stabilized in 1.68, made default in 1.70^[[0m
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:35.6864437Z ^[[36;1mif [ -z "${CARGO_REGISTRIES_CRATES_IO_PROTOCOL+set}" -o -f "/home/runner/work/_temp"/.implicit_cargo_registries_crates_io_protocol ]; then^[[0m
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:35.6865022Z ^[[36;1m  if rustc +"$toolchain" --version --verbose | grep -q '^release: 1\.6[89]\.'; then^[[0m
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:35.6865478Z ^[[36;1m    touch "/home/runner/work/_temp"/.implicit_cargo_registries_crates_io_protocol || true^[[0m
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:35.6865909Z ^[[36;1m    echo CARGO_REGISTRIES_CRATES_IO_PROTOCOL=sparse >> $GITHUB_ENV^[[0m
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:35.6866394Z ^[[36;1m  elif rustc +"$toolchain" --version --verbose | grep -q '^release: 1\.6[67]\.'; then^[[0m
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:35.6866830Z ^[[36;1m    touch "/home/runner/work/_temp"/.implicit_cargo_registries_crates_io_protocol || true^[[0m
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:35.6867222Z ^[[36;1m    echo CARGO_REGISTRIES_CRATES_IO_PROTOCOL=git >> $GITHUB_ENV^[[0m
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:35.6867504Z ^[[36;1m  fi^[[0m
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:35.6867669Z ^[[36;1mfi^[[0m
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:35.6907365Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:35.6907643Z env:
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:35.6907815Z   CARGO_TERM_COLOR: always
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:35.6908008Z   REF: 
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:35.6908184Z   RUSTUP_TOOLCHAIN: stable
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:35.6908380Z   CARGO_HOME: /home/runner/.cargo
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:35.6908586Z   CARGO_INCREMENTAL: 0
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:35.6908761Z   toolchain: stable
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:35.6908929Z ##[endgroup]
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:35.7168291Z ##[end-action id=__dtolnay_rust-toolchain.__run_8;outcome=success;conclusion=success;duration_ms=32]
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:35.7172322Z ##[start-action display=Work around spurious network errors in curl 8.0;id=__dtolnay_rust-toolchain.__run_9]
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:35.7192821Z ##[group]Run # https://rust-lang.zulipchat.com/#narrow/stream/246057-t-cargo/topic/timeout.20investigation
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:35.7193408Z ^[[36;1m# https://rust-lang.zulipchat.com/#narrow/stream/246057-t-cargo/topic/timeout.20investigation^[[0m
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:35.7193901Z ^[[36;1mif rustc +"$toolchain" --version --verbose | grep -q '^release: 1\.7[01]\.'; then^[[0m
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:35.7194436Z ^[[36;1m  echo CARGO_HTTP_MULTIPLEXING=false >> $GITHUB_ENV^[[0m
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:35.7194692Z ^[[36;1mfi^[[0m
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:35.7241784Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:35.7242064Z env:
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:35.7242238Z   CARGO_TERM_COLOR: always
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:35.7242430Z   REF: 
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:35.7242592Z   RUSTUP_TOOLCHAIN: stable
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:35.7242786Z   CARGO_HOME: /home/runner/.cargo
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:35.7242986Z   CARGO_INCREMENTAL: 0
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:35.7243159Z   toolchain: stable
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:35.7243330Z ##[endgroup]
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:35.7404815Z ##[end-action id=__dtolnay_rust-toolchain.__run_9;outcome=success;conclusion=success;duration_ms=23]
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:35.7408901Z ##[start-action display=rustc +stable --version --verbose;id=__dtolnay_rust-toolchain.__run_10]
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:35.7429125Z ##[group]Run rustc +"$toolchain" --version --verbose
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:35.7429422Z ^[[36;1mrustc +"$toolchain" --version --verbose^[[0m
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:35.7473523Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:35.7473792Z env:
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:35.7473966Z   CARGO_TERM_COLOR: always
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:35.7474161Z   REF: 
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:35.7474329Z   RUSTUP_TOOLCHAIN: stable
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:35.7474522Z   CARGO_HOME: /home/runner/.cargo
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:35.7474723Z   CARGO_INCREMENTAL: 0
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:35.7474897Z   toolchain: stable
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:35.7475063Z ##[endgroup]
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:35.7626685Z rustc 1.100.0 (0ef1bc386 2026-11-09)
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:35.7627054Z binary: rustc
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:35.7627370Z commit-hash: 0ef1bc386059596dada8fb65b50425aab2ea637a
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:35.7627750Z commit-date: 2026-11-09
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:35.7628033Z host: x86_64-unknown-linux-gnu
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:35.7628328Z release: 1.100.0
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:35.7628511Z LLVM version: 23.1.5
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:35.7641919Z ##[end-action id=__dtolnay_rust-toolchain.__run_10;outcome=success;conclusion=success;duration_ms=23]
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:35.7763892Z ##[group]Run Swatinem/rust-cache@v2
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:35.7764235Z with:
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:35.7764481Z   prefix-key: v0-rust
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:35.7764766Z   add-job-id-key: true
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:35.7765074Z   add-rust-environment-hash-key: true
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:35.7765413Z   cache-targets: true
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:35.7765693Z   cache-all-crates: false
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:35.7765995Z   cache-workspace-crates: false
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:35.7766312Z   save-if: true
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:35.7766578Z   cache-provider: github
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:35.7766861Z   cache-bin: true
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:35.7767117Z   lookup-only: false
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:35.7767384Z   cmd-format: {0}
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:35.7767642Z env:
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:35.7767880Z   CARGO_TERM_COLOR: always
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:35.7768171Z   REF: 
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:35.7768415Z   RUSTUP_TOOLCHAIN: stable
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:35.7768714Z   CARGO_HOME: /home/runner/.cargo
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:35.7769037Z   CARGO_INCREMENTAL: 0
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:35.7769330Z ##[endgroup]
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:36.1360283Z ##[group]Cache Configuration
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:36.1360555Z Cache Provider:
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:36.1360728Z     github
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:36.1361086Z Workspaces:
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:36.1361347Z     /home/runner/work/cooee/cooee
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:36.1361704Z Cache Paths:
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:36.1361958Z     /home/runner/.cargo/bin
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:36.1362219Z     /home/runner/.cargo/.crates.toml
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:36.1362558Z     /home/runner/.cargo/.crates2.json
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:36.1362945Z     /home/runner/.cargo/registry
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:36.1363309Z     /home/runner/.cargo/git
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:36.1363673Z     /home/runner/work/cooee/cooee/target
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:36.1364040Z Restore Key:
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:36.1364391Z     v0-rust-stable-Linux-x64-a5064d8f
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:36.1364757Z Cache Key:
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:36.1365034Z     v0-rust-stable-Linux-x64-a5064d8f-8d84dffd
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:36.1365427Z .. Prefix:
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:36.1365686Z   - v0-rust-stable-Linux-x64
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:36.1366314Z .. Environment considered:
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:36.1366662Z   - Rust Versions:
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:36.1367131Z     - 1.100.0 x86_64-unknown-linux-gnu 0ef1bc386059596dada8fb65b50425aab2ea637a
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:36.1367547Z   - CARGO_HOME
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:36.1367850Z   - CARGO_INCREMENTAL
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:36.1368166Z   - CARGO_TERM_COLOR
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:36.1368488Z   - RUSTUP_TOOLCHAIN
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:36.1368795Z .. Lockfiles considered:
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:36.1369163Z   - /home/runner/work/cooee/cooee/Cargo.lock
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:36.1369634Z   - /home/runner/work/cooee/cooee/crates/cooee-core/Cargo.toml
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:36.1370350Z   - /home/runner/work/cooee/cooee/crates/cooee-machines/Cargo.toml
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:36.1370857Z   - /home/runner/work/cooee/cooee/crates/cooee-server/Cargo.toml
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:36.1371356Z   - /home/runner/work/cooee/cooee/crates/cooee-terminal/Cargo.toml
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:36.1371834Z   - /home/runner/work/cooee/cooee/crates/cooee/Cargo.toml
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:36.1372289Z   - /home/runner/work/cooee/cooee/rust-toolchain.toml
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:36.1372882Z ##[endgroup]
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:36.1373038Z 
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:36.1373296Z ... Restoring cache ...
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:36.2169782Z Cache hit for: v0-rust-stable-Linux-x64-a5064d8f-8d84dffd
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:37.2618419Z Received 247463936 of 285588489 (86.7%), 234.4 MBs/sec
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:37.3951657Z Received 285588489 of 285588489 (100.0%), 238.9 MBs/sec
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:37.3984834Z Cache Size: ~272 MB (285588489 B)
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:37.4026306Z [command]/usr/bin/tar -xf /home/runner/work/_temp/575bfb33-b9ea-4f7f-b64a-ca637482d68b/cache.tzst -P -C /home/runner/work/cooee/cooee --use-compress-program unzstd
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:38.9110463Z Cache restored successfully
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:38.9222415Z Restored from cache key "v0-rust-stable-Linux-x64-a5064d8f-8d84dffd" full match: true.
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:39.0543740Z ##[group]Run setsid --wait cargo test --workspace --locked
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:39.0544108Z ^[[36;1msetsid --wait cargo test --workspace --locked^[[0m
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:39.0588887Z shell: /usr/bin/bash -e {0}
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:39.0589103Z env:
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:39.0589269Z   CARGO_TERM_COLOR: always
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:39.0589460Z   REF: 
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:39.0589620Z   RUSTUP_TOOLCHAIN: stable
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:39.0589968Z   CARGO_HOME: /home/runner/.cargo
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:39.0590218Z   CARGO_INCREMENTAL: 0
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:39.0590407Z   CACHE_ON_FAILURE: false
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:39.0590596Z ##[endgroup]
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:39.1546394Z ^[[1m^[[92m    Updating^[[0m crates.io index
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:40.7751920Z ^[[1m^[[92m   Compiling^[[0m cooee-core v0.1.0 (/home/runner/work/cooee/cooee/crates/cooee-core)
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:43.6885529Z ^[[1m^[[92m   Compiling^[[0m cooee-machines v0.1.0 (/home/runner/work/cooee/cooee/crates/cooee-machines)
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:43.6923291Z ^[[1m^[[92m   Compiling^[[0m cooee-terminal v0.1.0 (/home/runner/work/cooee/cooee/crates/cooee-terminal)
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:44.1612104Z ^[[1m^[[92m   Compiling^[[0m cooee-server v0.1.0 (/home/runner/work/cooee/cooee/crates/cooee-server)
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:13:55.5606130Z ^[[1m^[[92m   Compiling^[[0m cooee v0.1.0 (/home/runner/work/cooee/cooee/crates/cooee)
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:14.6559753Z ^[[1m^[[92m    Finished^[[0m `test` profile [unoptimized + debuginfo] target(s) in 35.52s
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:14.7170343Z ^[[1m^[[92m     Running^[[0m unittests src/main.rs (target/debug/build/cooee/ef8f820a342d04ee/out/cooee-ef8f820a342d04ee)
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:14.7183304Z 
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:14.7183446Z running 1 test
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:14.7190236Z test update::tests::only_a_new_green_head_is_installed ... ok
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:14.7190860Z ^[[1m^[[92m     Running^[[0m tests/accounts.rs (target/debug/build/cooee/5c4a77b4a829305a/out/accounts-5c4a77b4a829305a)
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:14.7191196Z 
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:14.7191431Z test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:14.7191701Z 
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:14.7196595Z 
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:14.7196716Z running 2 tests
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:16.3934909Z test signed_in_only_while_the_status_says_so_not_from_the_last_sign_in_noted ... ok
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:17.5474998Z test add_account_listed_only_on_success_thread_pick_spawns_with_its_folder_sign_out_removes_it ... ok
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:17.5475349Z 
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:17.5475558Z test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.83s
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:17.5475828Z 
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:17.5482015Z ^[[1m^[[92m     Running^[[0m tests/accounts_env.rs (target/debug/build/cooee/066c50bfcc73066d/out/accounts_env-066c50bfcc73066d)
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:17.5492737Z 
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:17.5492952Z running 7 tests
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:17.5569578Z test a_token_file_goes_in_the_token_variable_only_at_0600_or_tighter ... ok
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:17.5744747Z test an_inherited_token_never_signs_a_folder_in ... ok
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:17.6649523Z test env_prints_a_folder_accounts_variable_and_reports_signed_out ... ok
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:17.6733499Z test unknown_provider_or_account_refuses_on_one_line ... ok
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:17.6796655Z test ls_json_lists_every_account_without_its_token ... ok
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:17.7366216Z test an_adopted_folder_is_an_account_until_dropped_and_the_folder_stays ... ok
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:17.7482810Z test ls_json_carries_usage_and_a_reading_past_its_reset_reads_zero_with_its_age ... ok
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:17.7483241Z 
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:17.7483540Z test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.20s
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:17.7483979Z 
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:17.7486269Z ^[[1m^[[92m     Running^[[0m tests/agents.rs (target/debug/build/cooee/9b2958c5682221cf/out/agents-9b2958c5682221cf)
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:17.7496352Z 
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:17.7496473Z running 3 tests
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:17.7579129Z test a_dry_run_prints_the_plan_and_changes_nothing ... ok
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:17.8277950Z test a_malformed_agent_toml_hides_only_that_agent_and_the_log_never_quotes_it ... ok
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:17.8476664Z test a_folder_written_by_hand_is_listed_and_starts_a_chat ... ok
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:17.8477001Z 
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:17.8477383Z test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.10s
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:17.8477826Z 
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:17.8482820Z ^[[1m^[[92m     Running^[[0m tests/ask.rs (target/debug/build/cooee/f0ad2ca126f8cb20/out/ask-f0ad2ca126f8cb20)
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:17.8492955Z 
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:17.8493068Z running 5 tests
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:17.9845672Z test a_persona_its_can_message_doesnt_name_is_not_allowed ... ok
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:17.9928830Z test an_allowed_ask_returns_the_reply_in_a_linked_thread_the_owner_reads_and_steers ... ok
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:18.0012427Z test an_asked_persona_may_ask_one_more_and_no_further ... ok
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:18.1271744Z test the_owners_note_mid_exchange_reaches_the_asked_persona_and_returns_to_the_asker_with_the_reply ... ok
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:19.0121084Z test no_reply_in_time_is_a_timeout_and_a_session_that_cant_start_is_offline ... ok
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:19.0121481Z 
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:19.0121701Z test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.16s
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:19.0122007Z 
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:19.0131112Z ^[[1m^[[92m     Running^[[0m tests/chat.rs (target/debug/build/cooee/733a44da7e65d70a/out/chat-733a44da7e65d70a)
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:19.0141459Z 
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:19.0141599Z running 12 tests
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:19.1467126Z test a_reconnect_with_last_event_id_replays_without_gaps_or_duplicates ... ok
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:19.1473336Z test a_message_to_a_stopped_agent_is_refused_never_stored_as_sent ... ok
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:19.1756057Z test a_hanging_shed_approve_never_holds_another_thread ... ok
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:19.2269642Z test a_restarted_cooee_reattaches_to_its_terminals_and_catches_up ... ok
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:19.2526603Z test a_send_to_a_shed_on_another_protocol_says_why_in_the_chat_then_goes_through_once_fixed ... ok
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:19.2662309Z test a_tool_call_is_one_row_updated_in_place_and_a_retried_send_is_stored_once ... ok
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:19.3053033Z test a_shed_of_another_protocol_is_refused_naming_both_sides ... ok
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:19.3053651Z test fake_shed_server ... ignored, a server for apple/e2e, not a test
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:19.3226851Z test an_approval_is_sent_to_shed_once_however_often_it_is_tapped ... ok
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:19.3420188Z test cancel_ends_the_turn_and_writes_back_the_tool_call_in_progress ... ok
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:19.3606574Z test closing_a_thread_kills_and_removes_its_terminal ... ok
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:19.3921792Z test new_thread_runs_the_agent_in_an_allowed_folder_and_streams_the_reply ... ok
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:19.3930206Z 
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:19.3930657Z test result: ok. 11 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out; finished in 0.38s
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:19.3931095Z 
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:19.3935557Z ^[[1m^[[92m     Running^[[0m tests/chat_first.rs (target/debug/build/cooee/10ec502fc36c2e1f/out/chat_first-10ec502fc36c2e1f)
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:19.3945460Z 
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:19.3945611Z running 1 test
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:19.5012859Z test a_new_chat_runs_in_its_own_scratch_folder_and_a_folder_attached_takes_later_turns ... ok
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:19.5013286Z 
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:19.5013496Z test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.11s
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:19.5013765Z 
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:19.5018721Z ^[[1m^[[92m     Running^[[0m tests/cli.rs (target/debug/build/cooee/dc6d571e1359082f/out/cli-dc6d571e1359082f)
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:19.5028176Z 
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:19.5028295Z running 4 tests
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:19.5058688Z test version ... ok
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:19.5068289Z test listening_beyond_localhost_needs_allowed_hosts ... ok
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:19.5080341Z test unknown_args_and_config_keys_fail ... ok
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:19.5083592Z cooee: shed at /run/user/1001/shed.sock: No such file or directory (os error 2)
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:19.5126102Z test serve_listens_on_localhost_at_the_configured_port ... ok
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:19.5126699Z 
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:19.5127445Z test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:19.5128497Z ^[[1m^[[92m     Running^[[0m tests/config_edits.rs (target/debug/build/cooee/c71c2a971dd46d8f/out/config_edits-c71c2a971dd46d8f)
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:19.5129160Z 
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:19.5138609Z 
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:19.5138754Z running 4 tests
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:19.6214733Z test saving_the_model_changes_only_its_line_and_keeps_the_comments ... ok
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:19.6220003Z test a_new_note_adds_exactly_one_line_to_memory ... ok
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:19.6256616Z test a_save_after_a_hand_edit_is_refused_and_the_edit_stays ... ok
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:19.6663501Z test a_hand_edited_instructions_file_reaches_the_next_chat ... ok
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:19.6663865Z 
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:19.6664176Z test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.15s
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:19.6664604Z 
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:19.6670116Z ^[[1m^[[92m     Running^[[0m tests/config_git.rs (target/debug/build/cooee/8d40491db1a5229c/out/config_git-8d40491db1a5229c)
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:19.6680123Z 
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:19.6680206Z running 3 tests
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:19.6842708Z test init_git_keeps_the_owners_gitignore ... ok
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:19.6971417Z test init_git_commits_the_config_without_its_secrets_once ... ok
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:19.8867140Z test serve_adds_a_gitignore_to_its_own_config_folder_only ... ok
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:19.8867529Z 
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:19.8867846Z test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.22s
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:19.8868236Z 
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:19.8871814Z ^[[1m^[[92m     Running^[[0m tests/first_run.rs (target/debug/build/cooee/df1951e3e8b56360/out/first_run-df1951e3e8b56360)
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:19.8882030Z 
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:19.8882147Z running 3 tests
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:19.9808498Z test with_one_root_and_nothing_in_it_a_thread_starts_in_the_root ... ok
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:19.9815021Z test with_no_roots_a_chat_still_starts_in_scratch_and_use_a_folder_is_refused ... ok
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:20.1981935Z test no_agents_and_no_roots_show_the_fix_lines_and_doctor_warns ... ok
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:20.1982412Z 
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:20.1987377Z test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.31s
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:20.1988744Z ^[[1m^[[92m     Running^[[0m tests/folders.rs (target/debug/build/cooee/4ee1c177577a65a6/out/folders-4ee1c177577a65a6)
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:20.1989227Z 
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:20.1999017Z 
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:20.1999130Z running 5 tests
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:20.2893618Z test browse_lists_a_root_outside_home_spelled_as_listed ... ok
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:20.2950902Z test browse_lists_only_folders_inside_home ... ok
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:20.2968814Z test add_and_remove_root_persists_in_the_config ... ok
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:20.2993191Z test dot_dot_symlink_and_absolute_escapes_are_refused ... ok
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:20.3749590Z test new_folder_is_made_inside_a_root_and_a_thread_starts_there ... ok
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:20.3750201Z 
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:20.3750623Z test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.17s
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:20.3750897Z 
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:20.3756211Z ^[[1m^[[92m     Running^[[0m tests/history.rs (target/debug/build/cooee/3d53095b9b4ef36f/out/history-3d53095b9b4ef36f)
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:20.3766032Z 
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:20.3766233Z running 1 test
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:20.5576772Z test a_persona_finds_and_reads_its_own_threads_and_not_another_personas ... ok
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:20.5577244Z 
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:20.5580729Z test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.18s
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:20.5581837Z ^[[1m^[[92m     Running^[[0m tests/home_screen.rs (target/debug/build/cooee/162f6e1acea7bdd1/out/home_screen-162f6e1acea7bdd1)
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:20.5582186Z 
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:20.5592578Z 
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:20.5592744Z running 1 test
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:20.7012949Z test home_is_the_bundled_screen_filled_with_todays_threads_and_personas ... ok
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:20.7013619Z 
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:20.7014503Z test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.14s
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:20.7014905Z 
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:20.7017248Z ^[[1m^[[92m     Running^[[0m tests/instances.rs (target/debug/build/cooee/376052034ce228c7/out/instances-376052034ce228c7)
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:20.7028540Z 
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:20.7028683Z running 3 tests
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:20.7099083Z test install_writes_a_plist_and_prints_the_commands ... ok
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:20.8480051Z test doctor_reports_a_missing_shed ... ok
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:20.9984129Z test two_instances_never_see_each_others_threads_or_devices ... ok
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:20.9984399Z 
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:20.9984614Z test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.30s
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:20.9984875Z 
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:20.9990135Z ^[[1m^[[92m     Running^[[0m tests/layout.rs (target/debug/build/cooee/9201a3c193130935/out/layout-9201a3c193130935)
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:20.9999926Z 
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:21.0000120Z running 3 tests
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:22.0672821Z test a_plugins_places_are_merged_and_a_place_its_manifest_lacks_is_skipped ... ok
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:23.0725673Z test a_layout_that_replaces_a_locked_screen_is_refused_and_reset_still_restores_the_default ... ok
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:23.1390616Z test a_bad_write_keeps_the_last_good_layout_and_reset_restores_the_default ... ok
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:23.1391039Z 
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:23.1391337Z test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.14s
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:23.1391767Z 
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:23.1396519Z ^[[1m^[[92m     Running^[[0m tests/login.rs (target/debug/build/cooee/3f09b1ccf09fa916/out/login-3f09b1ccf09fa916)
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:23.1406900Z 
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:23.1407030Z running 5 tests
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:23.2334572Z test a_failed_sign_out_keeps_the_last_known_status ... ok
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:23.2549796Z test a_sign_in_started_for_a_remote_machine_runs_there ... ok
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:23.2575874Z test a_login_left_for_10_minutes_is_killed_and_removed ... ok
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:23.3745893Z test login_shows_the_link_sends_the_code_and_detects_success_never_storing_the_screen ... ok
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:34.9413448Z test a_hanging_status_check_never_holds_a_request_and_runs_once ... ok
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:34.9414216Z 
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:34.9414706Z test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 11.80s
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:34.9415164Z 
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:34.9420676Z ^[[1m^[[92m     Running^[[0m tests/machine_check.rs (target/debug/build/cooee/a799804310f30e77/out/machine_check-a799804310f30e77)
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:34.9430894Z 
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:34.9431003Z running 5 tests
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:34.9876512Z test a_machine_shed_cant_reach_or_doesnt_have_fails_its_first_check_and_runs_nothing_there ... ok
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:35.0972325Z test a_ready_machine_passes_every_check_each_run_there ... ok
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:35.0972946Z test each_check_fails_with_its_part_missing_there_and_says_the_fix ... ok
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:35.1288896Z test doctor_has_a_row_per_machine ... ok
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:35.1490493Z test yes_clones_the_folder_and_copies_the_settings_there_once ... ok
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:35.1490774Z 
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:35.1490979Z test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.21s
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:35.1491271Z 
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:35.1499129Z ^[[1m^[[92m     Running^[[0m tests/machines.rs (target/debug/build/cooee/62de6b6dfb415e4e/out/machines-62de6b6dfb415e4e)
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:35.1508500Z 
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:35.1508715Z running 1 test
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:35.5370155Z test the_machines_plugin_serves_each_machine_card_and_marks_one_offline ... ok
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:35.5370597Z 
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:35.5370894Z test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.39s
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:35.5371308Z 
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:35.5373887Z ^[[1m^[[92m     Running^[[0m tests/mcp.rs (target/debug/build/cooee/f03bc16cdfd24ba5/out/mcp-f03bc16cdfd24ba5)
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:35.5384680Z 
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:35.5384848Z running 6 tests
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:35.5476865Z test a_literal_token_in_the_registry_is_refused_at_load_naming_the_key_only ... ok
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:35.6962468Z test propose_server_shows_the_exact_command_runs_nothing_and_needs_face_id_to_add_it_off ... ok
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:35.7021452Z test a_secret_dropped_once_is_typed_into_its_terminal_and_reaches_no_transcript_event_file_log_or_model ... ok
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:35.7117011Z test the_mac_adds_toggles_and_removes_servers_with_references_only ... ok
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:35.7306726Z test a_saved_secret_is_typed_again_without_asking_and_reaches_the_personas_environment_only ... FAILED
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:35.7356172Z test the_agent_sees_and_calls_only_the_allowed_tools_under_claude_and_codex_and_no_value_is_written ... ok
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:35.7356649Z 
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:35.7356757Z failures:
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:35.7356897Z 
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:35.7357274Z ---- a_saved_secret_is_typed_again_without_asking_and_reaches_the_personas_environment_only stdout ----
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:35.7357753Z 
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:35.7358203Z thread 'a_saved_secret_is_typed_again_without_asking_and_reaches_the_personas_environment_only' (6359) panicked at crates/cooee/tests/mcp.rs:656:5:
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:35.7358684Z only coder's
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:35.7358957Z note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:35.7359213Z 
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:35.7359216Z 
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:35.7359283Z failures:
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:35.7359594Z     a_saved_secret_is_typed_again_without_asking_and_reaches_the_personas_environment_only
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:35.7366504Z 
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:35.7366751Z test result: FAILED. 5 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.20s
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:35.7367044Z 
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:35.7367752Z ^[[1m^[[91merror^[[0m: test failed, to rerun pass `-p cooee --test mcp`
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:35.7429463Z ##[error]Process completed with exit code 101.
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:35.7523619Z Post job cleanup.
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:35.8224145Z [command]/usr/bin/git version
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:35.8264075Z git version 2.56.1
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:35.8294841Z Temporarily overriding HOME='/home/runner/work/_temp/681c5efd-a5f1-4c34-9495-49c1459949d9' before making global git config changes
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:35.8296354Z Adding repository directory to the temporary git global config as a safe directory
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:35.8299399Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/cooee/cooee
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:35.8335358Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:35.8367560Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:35.8627282Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:35.8651895Z http.https://github.com/.extraheader
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:35.8666828Z [command]/usr/bin/git config --local --unset-all http.https://github.com/.extraheader
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:35.8701421Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:35.9013155Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:35.9046418Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:35.9432062Z Cleaning up orphan processes
+stable (ubuntu-latest)	UNKNOWN STEP	2026-11-17T11:14:35.9776009Z ##[warning]Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/checkout@v4. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
