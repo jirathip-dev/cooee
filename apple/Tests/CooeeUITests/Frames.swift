@@ -195,6 +195,8 @@ extension Frame {
                 HomeView(pins: Fixtures.roomPins, chats: Fixtures.roomChats)
             },
             phone("room-terminal-dark", .farmDark, style: .terminal) { RoomView.kestrel() },
+            phone("room-mention-dark", .farmDark) { RoomView.mentioning() },
+            phone("room-mention-terminal-dark", .farmDark, style: .terminal) { RoomView.mentioning() },
             phone("room-scene-light", .farmLight, style: .scene) { RoomView.kestrel() },
             phone("room-ask-dark", .farmDark) { RoomView.asking() },
             phone("room-ask-terminal-dark", .farmDark, style: .terminal) { RoomView.asking() },

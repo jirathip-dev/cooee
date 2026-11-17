@@ -163,19 +163,9 @@ internal struct ChatHeader: View {
         }
     }
 
-    @ViewBuilder private var more: some View {
-        if actions.attachable.isEmpty {
-            RoundButton(symbol: "ellipsis", ascii: "…", size: 40)
-        } else {
-            Menu {
-                ForEach(Array(actions.attachable.enumerated()), id: \.offset) { index, name in
-                    Button("Attach \(name)…") { actions.attachPlugin(index) }
-                }
-            } label: {
-                RoundButton(symbol: "ellipsis", ascii: "…", size: 40)
-            }
+    private var more: some View {
+        Button(action: actions.more) { RoundButton(symbol: "ellipsis", ascii: "…", size: 40) }
             .buttonStyle(.plain).accessibilityLabel("More")
-        }
     }
 
     private var plugins: some View {

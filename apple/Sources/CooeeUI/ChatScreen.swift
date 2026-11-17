@@ -27,13 +27,12 @@ internal struct ChatScreen: View {
         actions.retry = { store.send(.outbox(.retry($0))) }
         actions.sending = store.sending
         actions.view = { store.send(.delegate(.persona(store.persona.id))) }
-        let (places, attachable) = (store.places, store.attachable)
+        let places = store.places
         actions.places = places.map(\.label)
         actions.counts = places.map(\.count)
         actions.new = store.persona.api.id.isEmpty ? nil : { store.send(.new) }
         actions.open = { store.send(.plugins(.open(places[$0]))) }
-        actions.attachable = attachable.map(\.name)
-        actions.attachPlugin = { store.send(.plugins(.attach(attachable[$0]))) }
+        actions.more = { store.send(.panel(.show(!store.panel))) }
         return extras(store, actions)
     }
 
@@ -60,16 +59,24 @@ internal struct ChatScreen: View {
     }
 
     internal var body: some View {
-        ChatView(
-            persona: store.persona,
-            items: store.drawn,
-            working: store.working,
-            since: store.since,
-            loading: store.loading,
-            queued: store.queue.map(\.text),
-            back: back,
-            headed: headed,
-            actions: actions
+        HStack(spacing: 0) {
+            ChatView(
+                persona: store.persona,
+                items: store.drawn,
+                working: store.working,
+                since: store.since,
+                loading: store.loading,
+                queued: store.queue.map(\.text),
+                back: back,
+                headed: headed,
+                actions: actions
+            )
+            if !back && store.panel { panel(column: true).frame(width: 360) }
+        }
+        .sheet(
+            isPresented: Binding(get: { back && store.panel }, set: { store.send(.panel(.show($0))) }),
+            onDismiss: { store.send(.panel(.dismissed)) },
+            content: { panel(column: false).presentationBackground(.clear) }
         )
         .environment(\.openThread) { store.send(.delegate(.open($0))) }
         .environment(\.editPersona) { store.send(.delegate(.persona($0))) }

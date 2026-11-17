@@ -35,7 +35,7 @@
             app.buttons["Connect"].firstMatch.tap()
             XCTAssert(labelled(app, "Waiting").waitForExistence(timeout: 30))
             keep("pair-waiting")
-            XCTAssert(app.staticTexts["Paired with 127.0.0.1"].waitForExistence(timeout: 60))
+            XCTAssertEqual(paired(app, timeout: 60), "Paired with 127.0.0.1")
             keep("pair-approved")
         }
     }

@@ -31,6 +31,8 @@ public struct ChatFeature: Sendable {
         public var exchange: Exchange?
         public var places: [Place] = []
         public var attachable: [PluginRow] = []
+        public var panel = false
+        public var picked: PanelPick?
         public var agents: [AgentOption] = []
         public var lists: [ModelList] = []
         public var workflow: [ListedChat]?
@@ -81,6 +83,7 @@ public struct ChatFeature: Sendable {
         case profile
         case pick(Pick)
         case plugins(PluginAction)
+        case panel(PanelAction)
         case delegate(Delegate)
         case screen(PresentationAction<ScreenFeature.Action>)
         case attaching(PresentationAction<AttachFeature.Action>)
@@ -118,6 +121,8 @@ public struct ChatFeature: Sendable {
                 return cards(&state, action)
             case .room(let action):
                 return seat(&state, action)
+            case .panel(let action):
+                return panel(&state, action)
             case .machine(let action):
                 return machine(&state, action)
             default:

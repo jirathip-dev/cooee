@@ -40,9 +40,15 @@
             address.tap()
             address.typeText(link)
             app.buttons["Connect"].firstMatch.tap()
-            XCTAssert(app.staticTexts["Paired with 127.0.0.1"].waitForExistence(timeout: 60))
+            XCTAssertEqual(paired(app, timeout: 60), "Paired with 127.0.0.1")
             keep("pair-paired")
             app.buttons["Go to Home"].firstMatch.tap()
+        }
+
+        @MainActor
+        internal func paired(_ app: XCUIApplication, timeout: TimeInterval) -> String? {
+            let title = app.staticTexts.matching(identifier: "paired").firstMatch
+            return title.waitForExistence(timeout: timeout) ? title.label : nil
         }
 
         @MainActor
