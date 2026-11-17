@@ -19,6 +19,7 @@ fn defaults() -> Spec {
         install: "npm install -g @google/gemini-cli".into(),
         home: "GEMINI_CLI_HOME".into(),
         logout: sh(format!("rm -f {creds}")),
+        cheapest: "flash".into(),
         ..Spec::default()
     }
 }

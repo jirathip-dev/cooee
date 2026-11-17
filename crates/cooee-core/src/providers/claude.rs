@@ -34,6 +34,7 @@ fn defaults() -> Spec {
         logout: v("claude auth logout"),
         settings: "CLAUDE_CONFIG_DIR".into(),
         usage: v("env -u CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC TZ=UTC claude -p /usage"),
+        cheapest: "haiku".into(),
         ..Spec::default()
     }
 }

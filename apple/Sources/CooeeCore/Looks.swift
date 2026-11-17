@@ -9,10 +9,19 @@ public struct ThemePack: Codable, Sendable, Equatable {
     public let label: String
     public let scheme: Pair
     public let sprites: Bool
+    public var style: LookStyle?
+    public var words: [String: String]?
+    public var scene: [String]?
 }
 
 public struct ThemeScheme: Codable, Sendable, Equatable {
+    private enum CodingKeys: String, CodingKey {
+        case label, tokens
+        case mode = "color-scheme"
+    }
+
     public let label: String
+    public var mode: String?
     public let tokens: [String: String]
 }
 
@@ -20,6 +29,7 @@ public struct ThemeScheme: Codable, Sendable, Equatable {
 public struct Looks: Codable, Sendable, Equatable {
     public var themes: [String: ThemePack]
     public var schemes: [String: ThemeScheme]
+    public var broken: [String: String]?
 
     public init(themes: [String: ThemePack] = [:], schemes: [String: ThemeScheme] = [:]) {
         self.themes = themes

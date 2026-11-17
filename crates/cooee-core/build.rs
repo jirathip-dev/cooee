@@ -1,6 +1,7 @@
 //! Vendors the first-party theme packs (#318): each file `packs/swag.toml` pins, from jirathip-dev/swag's `packs/` at
 //! the pinned commit, into `packs/themes/` (git-ignored; fetched again when `packs/themes.commit` names another), and writes
 //! `$OUT_DIR/swag.rs`, the files embedded for `cooee_core::swag`. Their sha256 is checked there, at install and by test.
+//! It also embeds `connectors/*.toml` (#497) as `$OUT_DIR/connectors.rs`, for `cooee_core::connectors`.
 
 use std::{
     env, fs,
@@ -72,5 +73,27 @@ fn main() -> Res<()> {
         })
         .collect::<Res<Vec<String>>>()?;
     fs::write(out.join("swag.rs"), format!("&[{}]\n", entries.join(",\n")))?;
+    let dir = root.join("connectors");
+    println!("cargo::rerun-if-changed={}", dir.display());
+    let mut found = Vec::new();
+    for f in fs::read_dir(&dir)? {
+        let at = fs::canonicalize(f?.path())?;
+        if let Some(name) = at
+            .file_stem()
+            .filter(|_| at.extension() == Some("toml".as_ref()))
+        {
+            println!("cargo::rerun-if-changed={}", at.display());
+            let name = name.to_string_lossy().into_owned();
+            found.push(format!(
+                "({name:?}, include_str!({:?}))",
+                at.display().to_string()
+            ));
+        }
+    }
+    found.sort();
+    fs::write(
+        out.join("connectors.rs"),
+        format!("&[{}]\n", found.join(",\n")),
+    )?;
     Ok(())
 }

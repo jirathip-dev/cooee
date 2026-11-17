@@ -47,6 +47,7 @@ fn defaults() -> Spec {
         logout: v("codex logout"),
         efforts: v("low medium high"),
         effort: v("-c model_reasoning_effort={}"),
+        cheapest: "mini".into(),
         ..Spec::default()
     }
 }

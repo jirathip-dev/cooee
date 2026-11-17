@@ -39,12 +39,8 @@ fn mcp(config: &Config, args: &[&str], usage: &str) -> Result<(), String> {
             let mut s = Server {
                 name: (*name).to_owned(),
                 kind: "stdio".to_owned(),
-                command: String::new(),
-                args: Vec::new(),
-                url: String::new(),
-                env: std::collections::BTreeMap::new(),
-                headers: std::collections::BTreeMap::new(),
                 enabled: true,
+                ..Server::default()
             };
             let mut words = rest.iter();
             let pair = |v: Option<&&str>| {

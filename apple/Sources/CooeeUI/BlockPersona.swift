@@ -7,6 +7,7 @@ internal struct PersonaBlocks: View {
     internal var open: (Int) -> Void = { _ in }
     internal var workflow: () -> Void = {}
     internal var routine: (() -> Void)?
+    internal var teach: ((String) -> Void)?
 
     internal var body: some View {
         VStack(spacing: 18) {
@@ -17,6 +18,7 @@ internal struct PersonaBlocks: View {
                 case "workflow" where !block.list("issues").isEmpty: workflow(block)
                 case "routines" where routine != nil: routines(block.list("rows"))
                 case "places" where !block.list("rows").isEmpty: places(block.list("rows"))
+                case "actions" where teach != nil && !block.list("rows").isEmpty: actions(block.list("rows"))
                 default: EmptyView()
                 }
             }
@@ -122,6 +124,20 @@ extension PersonaBlocks {
                         title: place.string("title") ?? "", tint: look.palette.green,
                         value: place.string("value") ?? "", divider: index < rows.count - 1
                     )
+                }
+                .buttonStyle(.plain)
+            }
+        }
+    }
+
+    private func actions(_ rows: [JSONValue]) -> some View {
+        Group2 {
+            ForEach(Array(rows.enumerated()), id: \.offset) { index, row in
+                Button {
+                    teach?(row.string("action") ?? "")
+                } label: {
+                    SettingRow(
+                        symbol: "sparkles", title: row.string("label") ?? "", divider: index < rows.count - 1)
                 }
                 .buttonStyle(.plain)
             }
