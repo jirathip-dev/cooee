@@ -1,0 +1,9 @@
+Decided: drop the doc comment on the private live route, since the comments gate allows /// only on public API.
+Because: scripts/comments.py:216
+Decided: the lease is a pure state machine (Control::gate) on an injected time, so the 10-minute expiry is tested without a real clock.
+Because: "the lease expires at 10 min"
+Decided: the agent's browser calls block in Hub::call on a Condvar until hand back or lease end.
+Because: "the agent's browser tools wait until you hand back with a note"
+Rejected: making the live route pub to keep its doc line — widens the API only to satisfy a comment.
+Check: CI comments gate is green at the new head; docs/mcp.md:35 still describes the live stream.
+Owner: You can watch a persona's browser live, take it over for 10 minutes, and hand it back with a note it reads.
