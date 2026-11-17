@@ -61,7 +61,12 @@ impl Setup {
         let terminal = on.map_or(format!("cooee-{id}"), |m| format!("{m}/cooee-{id}"));
         let sent = self.shed.sent(&terminal);
         let prompt: Value = serde_json::from_str(sent[0].trim_start_matches('\x1e')).unwrap();
-        (id, line, prompt["prompt"].as_str().unwrap().to_owned())
+        let prompt = prompt["prompt"].as_str().unwrap();
+        let topic = prompt.strip_prefix("This topic: hi (folder ");
+        let brief = topic.and_then(|t| t.split_once(").\n\n"));
+        let brief = brief.map_or(prompt, |b| b.1);
+        assert_eq!(persona.is_empty(), brief == prompt, "{prompt}");
+        (id, line, brief.to_owned())
     }
 
     fn row(&self, id: &str) -> Value {

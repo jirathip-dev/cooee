@@ -50,7 +50,10 @@ impl Setup {
         let id = body["id"].as_str().unwrap().to_owned();
         let sent = self.shed.sent(&format!("cooee-{id}"));
         let prompt: Value = serde_json::from_str(sent[0].trim_start_matches('\x1e')).unwrap();
-        (id, prompt["prompt"].as_str().unwrap().to_owned())
+        let prompt = prompt["prompt"].as_str().unwrap();
+        let topic = prompt.strip_prefix("This topic: hi (folder ");
+        let brief = topic.and_then(|t| t.split_once(").\n\n"));
+        (id, brief.unwrap_or_else(|| panic!("{prompt}")).1.to_owned())
     }
 
     fn skill(&self, id: &str, args: &Value) -> (String, bool) {
