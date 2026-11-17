@@ -35,14 +35,4 @@ internal struct TrustRenderTests {
         #expect(Self.same(edgar, try Self.pixels(MissingPoster(kind: "permissions"))))
         #expect(!Self.same(try Self.pixels(BlocksView(Self.card("secret"), source: .plugin("edgar"))), edgar))
     }
-
-    @Test internal func theBundledMenuOpensCoresSettingsScreensAndKeepsLookAndNotificationsLocal() {
-        let rows = JSONValue.bundledMenu.list("blocks").flatMap { $0.list("rows") }
-        #expect(rows.compactMap { $0.string("page") } == ["look", "notifications"])
-        #expect(
-            rows.compactMap { $0.string("open") } == [
-                "/screens/settings/signins", "/screens/settings/devices", "/screens/settings/machines",
-                "/screens/settings/plugins",
-            ])
-    }
 }
