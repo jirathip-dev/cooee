@@ -1,0 +1,10 @@
+Decided: testAvatarMenu waits for the Sign-ins, Devices, Machines and Plugins rows to exist instead of asserting they are absent
+Because: crates/cooee-server/src/screens/menu.rs:13
+Because: crates/cooee-server/src/screens/settings.rs:87
+Rejected: waitForNonExistence on the same rows — #312 made the menu list them on purpose, so it fails every run (3/3 dispatch runs)
+Decided: the Paired title carries the accessibility identifier "paired"; both pairing waits query it by identifier and check its label
+Because: "query a narrow element (an accessibility identifier) and poll it, rather than evaluating the whole tree"
+Because: apple/Sources/CooeeUI/Onboarding.swift:188
+Rejected: a retry around the test or the wait — the issue rules out retry wrappers
+Check: dispatch runs listed in the PR body show both tests passing on the Mac runners
+Owner: Two phone app tests that kept turning CI red now check what the app really shows today.
