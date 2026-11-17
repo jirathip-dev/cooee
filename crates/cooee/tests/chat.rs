@@ -28,9 +28,7 @@ impl Setup {
         self.dir.join("root/project")
     }
 
-    /// Starts a thread with `text`; returns its id.
     fn create(&self, text: &str) -> String {
-        // Each start its own id, as the page makes one: a repeated id adopts the thread it started.
         static STARTS: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
         let n = STARTS.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
         let new = json!({ "agent": "fake-acp", "folder": self.folder(), "text": text, "random_id": format!("start-{n}") });
@@ -42,7 +40,6 @@ impl Setup {
             .to_owned()
     }
 
-    /// The thread's events from the first one this run.
     fn events(&self, id: &str) -> Events {
         let cursor = self.cooee.json(&format!("/threads/{id}/messages"))["cursor"]
             .as_str()
@@ -112,7 +109,6 @@ fn new_thread_runs_the_agent_in_an_allowed_folder_and_streams_the_reply() {
 
     let kinds: Vec<Value> = s.items(&id).iter().map(|i| i["kind"].clone()).collect();
     assert_eq!(kinds, ["you", "agent"]);
-    // #221: `cooee export` writes the same items out as JSON lines, while the server runs.
     let out = std::process::Command::new(env!("CARGO_BIN_EXE_cooee"))
         .arg("--config")
         .arg(&s.cooee.config)
@@ -126,7 +122,6 @@ fn new_thread_runs_the_agent_in_an_allowed_folder_and_streams_the_reply() {
         .map(|l| serde_json::from_str(l).unwrap())
         .collect();
     assert_eq!(lines, s.items(&id));
-    // Listed, with the last line.
     let list = s.cooee.json("/threads");
     let row = list
         .as_array()
@@ -237,13 +232,11 @@ fn a_reconnect_with_last_event_id_replays_without_gaps_or_duplicates() {
         .to_owned();
     let boot = cursor.split('.').next().unwrap();
     for cut in 1..all.len() {
-        // A page that saw the first `cut` events and reconnects gets exactly the rest.
         let mut events = s.cooee.events(&id, &all[cut - 1].id, true);
         let rest = events.until(|e| e.id == all.last().unwrap().id);
         let ids = |v: &[Sse]| v.iter().map(|e| e.id.clone()).collect::<Vec<_>>();
         assert_eq!(ids(&rest), ids(&all[cut..]), "after {}", all[cut - 1].id);
     }
-    // A cursor from another run gets a reset: the page reloads its slice.
     for stale in ["0.0".to_owned(), format!("{boot}.99999")] {
         assert_eq!(s.cooee.events(&id, &stale, true).next().event, "reset");
     }
@@ -255,7 +248,6 @@ fn a_restarted_cooee_reattaches_to_its_terminals_and_catches_up() {
     let id = s.create("hang on");
     s.events(&id).until(|e| e.event == "text");
     drop(s.cooee);
-    // While cooee is down the turn is cancelled (as `shed cancel` would).
     s.shed.input(&terminal(&id), "\x1e\"cancel\"\n");
     s.cooee = Cooee::start(&s.dir, &s.shed.dir);
     let mut events = s.events(&id);
@@ -301,7 +293,6 @@ fn closing_a_thread_kills_and_removes_its_terminal() {
     assert!(stored.contains("\"closed\": true"), "{stored}");
 }
 
-/// A protocol-0 shed (before shed#100) takes cooee's hello and answers its own; a protocol-2 one refuses cooee's.
 #[test]
 fn a_shed_of_another_protocol_is_refused_naming_both_sides() {
     for protocol in [0, 2] {
@@ -318,7 +309,7 @@ fn a_shed_of_another_protocol_is_refused_naming_both_sides() {
         assert_eq!(status, 502, "{body}");
         let (v, b) = (&version().version, &version().build);
         let theirs = if protocol == 0 {
-            format!("the server runs {v} (fffffff) protocol 0")
+            format!("the server runs {v} (fffffff) protocol 0, an older shed; restart shed serve")
         } else {
             format!(
                 "the server refused it: client {b} / server fffffff: protocol 1 vs 2; restart shed serve"
@@ -334,7 +325,50 @@ fn a_shed_of_another_protocol_is_refused_naming_both_sides() {
     }
 }
 
-/// The fake shed for the UI tests (apple/e2e/serve.sh): serves in `$FAKE_SHED_DIR` until killed.
+#[test]
+fn a_send_to_a_shed_on_another_protocol_says_why_in_the_chat_then_goes_through_once_fixed() {
+    let s = setup("version-send");
+    let id = s.create("hi");
+    let old = Hello {
+        build: "fffffff".to_owned(),
+        protocol: 0,
+        ..version()
+    };
+    let shed = s.shed.restart(old);
+    for n in 0..2 {
+        let (status, body) = s.send(&id, "again", &format!("v-{n}"));
+        assert_eq!(status, 502, "{body}");
+    }
+    let (v, b) = (&version().version, &version().build);
+    let rev = "4ac443dbbcb51227dc9df2fb55e2f0834d6a91eb";
+    let needs = format!(
+        "SHED_VERSION: cooee speaks shed {v} ({b}) protocol 1; the server runs {v} (fffffff) protocol 0, an older shed; restart shed serve; \
+         fix: cargo install --locked --git https://github.com/jirathip-dev/shed --rev {rev} shed && "
+    );
+    let notes: Vec<String> = s
+        .items(&id)
+        .iter()
+        .filter(|i| i["kind"] == "note")
+        .map(|i| i["text"].as_str().unwrap().to_owned())
+        .collect();
+    assert_eq!(notes.len(), 2, "{notes:?}");
+    assert!(notes.iter().all(|n| n.starts_with(&needs)), "{notes:?}");
+    let _fixed = shed.restart(version());
+    let (status, body) = s.send(&id, "now", "v-2");
+    assert_eq!(status, 200, "{body}");
+    let log = || fs::read_to_string(s.dir.join("cooee.err")).unwrap();
+    let cleared = "cooee: shed speaks this build's protocol again";
+    for _ in 0..500 {
+        if log().contains(cleared) {
+            break;
+        }
+        thread::sleep(std::time::Duration::from_millis(20));
+    }
+    let log = log();
+    let lines = |what: &str| log.lines().filter(|l| l.contains(what)).count();
+    assert_eq!((lines("SHED_VERSION"), lines(cleared)), (1, 1), "{log}");
+}
+
 #[test]
 #[ignore = "a server for apple/e2e, not a test"]
 fn fake_shed_server() {
@@ -342,7 +376,6 @@ fn fake_shed_server() {
         return;
     };
     let shed = FakeShed::start(PathBuf::from(dir).as_path(), version());
-    // Workflow sessions another tool started (#33): an impl lane at work, a rev lane that asks, a finished one.
     if std::env::var_os("FAKE_SHED_LANES").is_some() {
         let lane = |name: &str, item: &str, role: &str, prompt: &str| {
             let url = format!("https://github.com/o/cooee/issues/{}", &item[1..]);
@@ -369,7 +402,6 @@ fn fake_shed_server() {
 
 #[test]
 fn a_message_to_a_stopped_agent_is_refused_never_stored_as_sent() {
-    // #253: shed takes a prompt for a stopped session and drops it; the send says so instead of returning 200.
     let s = setup("stopped");
     let id = s.create("exit now");
     s.events(&id)
@@ -384,8 +416,6 @@ fn a_message_to_a_stopped_agent_is_refused_never_stored_as_sent() {
     );
 }
 
-/// #288: an approval stuck in shed holds only its own thread: meanwhile another thread's send, the thread list and
-/// the home page each answer within 200 ms, and that thread's reply streams in.
 #[test]
 fn a_hanging_shed_approve_never_holds_another_thread() {
     let s = setup("approve-hang");

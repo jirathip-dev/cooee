@@ -1,0 +1,20 @@
+name = "kai"
+label = "Kai the Coder"
+agent = "claude-acp"
+account = "work"
+folder = "/srv/site"
+instructions = "kai.md"
+settings = "guard.json"
+policy = "ask"
+avatar = "s-kai"
+
+[env]
+REGION = "ap-southeast-1"
+GH_TOKEN = "secret:GH_TOKEN"
+
+[[mcp]]
+server = "github"
+tools = ["list_issues"]
+
+[[mcp]]
+server = "fs"

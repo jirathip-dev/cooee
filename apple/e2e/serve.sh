@@ -6,7 +6,10 @@
 # cards into a chat that starts "Show me the cards"; it reads the thread list as a device paired first. #140: a fixture
 # `drover` (screens.py with #181's queue, a scene block and rows with rounds, and #125's events JSON) is installed with
 # header-strip places for Conductor, a persona it isn't attached to yet: the app attaches it. #181: the lane chat a
-# strip horse opens, `herdsman-impl-641`, is seeded with lane-390-*.png's messages.
+# strip horse opens, `herdsman-impl-641`, is seeded with lane-390-*.png's messages. #229: it claims `source=drover`,
+# the fake shed runs three drover lanes (FAKE_SHED_LANES) for Conductor's Workflow sheet, and a chat with no persona,
+# "Bonjour probe", is in Others. #252: the first-party theme
+# packs are installed, for the look sheet.
 set -eu
 cd "$(dirname "$0")/../.."
 tmp=$(mktemp -d)
@@ -14,7 +17,7 @@ mkdir -p "$tmp/shed" "$tmp/root/project" "$tmp/personas"
 cargo build --quiet --locked -p cooee
 # cargo's JSON messages, not its human output: CI sets CARGO_TERM_COLOR=always, which wraps that in colour codes.
 chat=$(cargo test --locked -p cooee --test chat --no-run --message-format=json | sed -n '/"kind":\["test"\]/s/.*"executable":"\([^"]*\)".*/\1/p')
-FAKE_SHED_DIR="$tmp/shed" FAKE_SHED_DELAY_MS=400 "${chat:?}" --ignored --exact fake_shed_server --quiet >/dev/null &
+FAKE_SHED_DIR="$tmp/shed" FAKE_SHED_LANES=1 FAKE_SHED_DELAY_MS=400 "${chat:?}" --ignored --exact fake_shed_server --quiet >/dev/null &
 fake=$!
 trap 'kill "$fake" ${srv:-} ${cards:-} 2>/dev/null' EXIT INT TERM
 while [ ! -S "$tmp/shed/shed.sock" ]; do kill -0 "$fake" || { echo "fake shed exited" >&2; exit 1; }; sleep 0.1; done
@@ -42,6 +45,7 @@ version = "0.0.1"
 build = "python3 -m py_compile screens.py"
 run = "TOKEN=$COOEE_PLUGIN_TOKEN exec python3 screens.py"
 needs = ["python3"]
+claims = ["drover"]
 
 [[places]]
 type = "header-strip"
@@ -78,6 +82,8 @@ cat >"$lane.jsonl" <<'JSONL'
 JSONL
 printf 'name = "Conductor"\nagent = "fake-acp"\nfolder = "%s"\n' "$tmp/root/project" >"$tmp/personas/conductor.toml"
 printf 'name = "Coder"\nagent = "fake-acp"\nfolder = "%s"\nplugins = ["cards"]\n' "$tmp/root/project" >"$tmp/personas/coder.toml"
+mkdir -p "$tmp/themes"
+cp -R packs/themes/farm packs/themes/kitchen packs/themes/garden "$tmp/themes/"
 target=$(cargo metadata --format-version 1 --no-deps | sed -n 's/.*"target_directory":"\([^"]*\)".*/\1/p')
 "$target/debug/cooee" plugin add --config "$tmp/config.toml" "$drover" --yes
 "$target/debug/cooee" serve --config "$tmp/config.toml" &
@@ -87,6 +93,8 @@ code=$("$target/debug/cooee" pair --config "$tmp/config.toml" | sed -n 's/^code 
 cookie=$(curl -s -D - -o /dev/null --data "code=$code" "http://127.0.0.1:$PORT/pair" | sed -n 's/^[Ss]et-[Cc]ookie: cooee=\([^;]*\).*/\1/p')
 env PORT=$((PORT + 1)) COOEE="http://127.0.0.1:$PORT" TOKEN=e2e-cards-plugin-token COOKIE="${cookie:?}" node apple/e2e/cards.mjs &
 cards=$!
+curl -sf -o /dev/null -b "cooee=$cookie" -H 'content-type: application/json' \
+  --data '{"agent":"fake-acp","text":"Bonjour probe","random_id":"e2e-others"}' "http://127.0.0.1:$PORT/threads"
 "$target/debug/cooee" pair --config "$tmp/config.toml" | sed -n 's/^link  //p' >"$tmp/link"
 mv "$tmp/link" "${PAIR_LINK:?}"
 echo "$target/debug/cooee pair --config $tmp/config.toml" >"$PAIR_LINK.again"

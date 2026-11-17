@@ -37,6 +37,8 @@ security-framework = { version = "=3.7.0", default-features = false, features = 
 # The thread items and their search index (#221): SQLite built in, so no system library is needed.
 rusqlite = { version = "=0.41.1", features = ["bundled"] }
 toml = { version = "=1.2.0", default-features = false, features = ["parse", "serde"] }
+# Surgical config saves (#360): only the touched keys change, comments and layout stay.
+toml_edit = { version = "=0.25.18", default-features = false, features = ["parse", "display"] }
 
 [workspace.lints.rust]
 unsafe_code = "forbid"
@@ -44,4 +46,15 @@ missing_docs = "warn"
 
 [workspace.lints.clippy]
 pedantic = { level = "warn", priority = -1 }
-allow_attributes_without_reason = "warn"
+allow_attributes_without_reason = "deny"
+unwrap_used = "deny"
+expect_used = "deny"
+panic = "deny"
+todo = "deny"
+unimplemented = "deny"
+dbg_macro = "deny"
+indexing_slicing = "deny"
+as_conversions = "deny"
+print_stdout = "deny"
+print_stderr = "deny"
+let_underscore_must_use = "deny"

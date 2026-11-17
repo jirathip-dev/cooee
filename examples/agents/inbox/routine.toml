@@ -1,0 +1,3 @@
+name = "Inbox digest"
+when = "0 8 * * *"
+prompt = "Make this morning's inbox digest ({{due}})."

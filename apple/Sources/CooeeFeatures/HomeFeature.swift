@@ -8,9 +8,12 @@ public struct HomeFeature: Sendable {
     @ObservableState
     public struct State: Equatable {
         public let server: Server
+        public var screen: HomeScreen?
         public var rows: [ThreadRow] = []
         public var personas: [APIPersona] = []
+        public var plugins: [PluginRow] = []
         public var error: String?
+        public var loading = true
 
         public var pinned: [Persona] { Listing.pinned(personas: personas, rows: rows) }
         public var everyone: [Persona] { Listing.everyone(personas: personas, rows: rows) }
@@ -19,8 +22,8 @@ public struct HomeFeature: Sendable {
             self.server = server
         }
 
-        public func chats(now: Date) -> [ListedChat] {
-            Listing.chats(rows: rows, personas: personas, now: now)
+        public func lists(now: Date) -> HomeLists {
+            Listing.home(rows: rows, personas: personas, plugins: plugins, now: now)
         }
 
         public func persona(_ id: String) -> APIPersona? {
@@ -31,7 +34,7 @@ public struct HomeFeature: Sendable {
     public enum Action: Sendable {
         case task
         case refresh
-        case loaded([ThreadRow], [APIPersona])
+        case loaded(HomeScreen, [ThreadRow], [APIPersona], [PluginRow])
         case failed(String)
         case delegate(Delegate)
 
@@ -42,12 +45,13 @@ public struct HomeFeature: Sendable {
     }
 
     private enum Outcome {
-        case loaded([ThreadRow], [APIPersona])
+        case loaded(HomeScreen, [ThreadRow], [APIPersona], [PluginRow])
         case failed(String)
         case unauthorized
     }
 
     @Dependency(\.threads) private var threads
+    @Dependency(\.plugins) private var plugins
     @Dependency(\.continuousClock) private var clock
 
     public init() {}
@@ -59,13 +63,17 @@ public struct HomeFeature: Sendable {
                 return poll(state.server)
             case .refresh:
                 return refresh(state.server)
-            case .loaded(let rows, let personas):
+            case .loaded(let screen, let rows, let personas, let plugins):
+                state.screen = screen
                 state.rows = rows.filter { !$0.archived }
                 state.personas = personas
+                state.plugins = plugins
                 state.error = nil
+                state.loading = false
                 return .none
             case .failed(let error):
                 state.error = error
+                state.loading = false
                 return .none
             case .delegate:
                 return .none
@@ -74,10 +82,10 @@ public struct HomeFeature: Sendable {
     }
 
     private func poll(_ server: Server) -> Effect<Action> {
-        let (threads, clock) = (threads, clock)
+        let (threads, plugins, clock) = (threads, plugins, clock)
         return .run { send in
             while true {
-                let outcome = await Self.load(server, threads)
+                let outcome = await Self.load(server, threads, plugins)
                 await Self.report(outcome, send)
                 if case .unauthorized = outcome { return }
                 try await clock.sleep(for: .seconds(5))
@@ -86,15 +94,16 @@ public struct HomeFeature: Sendable {
     }
 
     private func refresh(_ server: Server) -> Effect<Action> {
-        let threads = threads
-        return .run { send in await Self.report(await Self.load(server, threads), send) }
+        let (threads, plugins) = (threads, plugins)
+        return .run { send in await Self.report(await Self.load(server, threads, plugins), send) }
     }
 
-    private static func load(_ server: Server, _ threads: ThreadsClient) async -> Outcome {
+    private static func load(_ server: Server, _ threads: ThreadsClient, _ plugins: PluginsClient) async -> Outcome {
         do {
-            async let rows = threads.threads(server)
-            async let personas = threads.personas(server)
-            return .loaded(try await rows, try await personas)
+            async let home = threads.home(server)
+            async let installed = plugins.installed(server)
+            let (answer, rows) = (try await home, try await installed)
+            return .loaded(answer.screen, answer.threads, answer.personas, rows)
         } catch let error as APIError where error.status == 401 {
             return .unauthorized
         } catch {
@@ -104,7 +113,8 @@ public struct HomeFeature: Sendable {
 
     private static func report(_ outcome: Outcome, _ send: Send<Action>) async {
         switch outcome {
-        case .loaded(let rows, let personas): await send(.loaded(rows, personas))
+        case .loaded(let screen, let rows, let personas, let plugins):
+            await send(.loaded(screen, rows, personas, plugins))
         case .failed(let error): await send(.failed(error))
         case .unauthorized: await send(.delegate(.unauthorized))
         }

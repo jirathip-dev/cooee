@@ -1,0 +1,5 @@
+name = "Travel"
+agent = "claude-acp"
+
+[[mcp]]
+server = "search"

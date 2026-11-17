@@ -1,3 +1,4 @@
+import ComposableArchitecture
 import CooeeCore
 import SwiftUI
 
@@ -89,6 +90,7 @@ internal struct EditorBlock: View {
     @Environment(\.look) private var look
     @Environment(\.act) private var act
     @State private var draft: String?
+    @Dependency(\.continuousClock) private var clock
     internal let block: JSONValue
 
     private var text: String { block.string("text") ?? "" }
@@ -129,7 +131,7 @@ internal struct EditorBlock: View {
 
     private func check() async {
         guard let draft, draft != text, let action = block.string("action") else { return }
-        try? await Task.sleep(for: .milliseconds(400))
+        try? await clock.sleep(for: .milliseconds(400))
         guard !Task.isCancelled else { return }
         act(BlockAction(action: action, values: [block.string("name") ?? "": .string(draft)]))
     }

@@ -42,12 +42,15 @@ internal struct Composer: View {
         let palette = look.palette
         return HStack {
             if let text = actions.draft {
-                TextField(shown, text: text, axis: .vertical).ui(16, .regular, look).lineLimit(1...5)
-                    .textFieldStyle(.plain).onSubmit(send).focused($typing)
+                TextField(members.isEmpty ? shown : "", text: text, axis: .vertical).ui(16, .regular, look)
+                    .lineLimit(1...5).textFieldStyle(.plain).onSubmit(send).focused($typing)
                     .onChange(of: typing) { _, now in if !now && sending.wrappedValue { post() } }
+                    .foregroundStyle(members.isEmpty ? palette.foreground : .clear).accessibilityLabel(shown)
+                    .overlay(alignment: .topLeading) {
+                        if !members.isEmpty { tokens(text.wrappedValue).allowsHitTesting(false) }
+                    }
             } else {
-                Text(draft.isEmpty ? shown : draft).ui(16, .regular, look)
-                    .foregroundStyle(draft.isEmpty ? palette.mute : palette.foreground)
+                tokens(draft)
             }
             Spacer()
             if members.isEmpty { Image(systemName: "mic").foregroundStyle(palette.mute) }
@@ -56,13 +59,28 @@ internal struct Composer: View {
         .surface(look, radius: 21)
     }
 
+    private func tokens(_ text: String) -> some View {
+        let palette = look.palette
+        let token = palette.link.opacity(0.2)
+        return Text(
+            BlockView.mentioned(AttributedString(text.isEmpty ? shown : text), members, palette.link, token: token)
+        )
+        .ui(16, .regular, look).foregroundStyle(text.isEmpty ? palette.mute : palette.foreground)
+    }
+
     private var sendButton: some View {
         let palette = look.palette
         return Button(action: send) {
-            Image(systemName: "arrow.up").font(.system(size: 17, weight: .bold))
-                .foregroundStyle(palette.dark ? Color.black : .white)
-                .frame(width: 42, height: 42)
-                .background(palette.link, in: look.mono ? AnyShape(Rectangle()) : AnyShape(Circle()))
+            Group {
+                if actions.sending {
+                    Spinner()
+                } else {
+                    Image(systemName: "arrow.up").font(.system(size: 17, weight: .bold))
+                }
+            }
+            .foregroundStyle(palette.dark ? Color.black : .white)
+            .frame(width: 42, height: 42)
+            .background(palette.link, in: look.mono ? AnyShape(Rectangle()) : AnyShape(Circle()))
         }
         .buttonStyle(.plain).accessibilityLabel("Send")
     }

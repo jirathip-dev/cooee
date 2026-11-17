@@ -5,6 +5,7 @@ internal struct ItemView: View {
     @Environment(\.look) private var look
     internal let item: Item
     internal var retry: () -> Void = {}
+    internal var view: () -> Void = {}
 
     internal var body: some View {
         switch item {
@@ -23,14 +24,24 @@ internal struct ItemView: View {
             .modifier(Copyable(text: item.plainText ?? ""))
         case .tools(_, let rows):
             ToolFold(rows: rows)
+        case .trace(_, let steps, let seconds):
+            TraceRow(steps: steps, seconds: seconds)
         case .note(_, let text):
-            Text(text).ui(13, .regular, look).foregroundStyle(look.palette.mute).frame(maxWidth: .infinity)
+            HStack(spacing: 6) {
+                Text(text).foregroundStyle(look.palette.mute)
+                if text.hasPrefix("Updated ") {
+                    Button("View", action: view).buttonStyle(.plain).foregroundStyle(look.palette.link)
+                }
+            }
+            .ui(13, .regular, look).frame(maxWidth: .infinity)
         case .card(_, let poster, let block):
-            BlockNode(block: block).environment(\.card, CardContext(poster: poster))
+            BlockNode(block: block).environment(\.card, CardContext(poster: poster.map(LayoutSource.plugin) ?? .core))
         case .said(_, let speaker, let time, let blocks):
             Said(speaker: speaker, time: time, blocks: blocks)
         case .divider(_, let text):
             RoundDivider(text: text)
+        case .asked(_, let ask):
+            AskCard(ask: ask)
         }
     }
 }
@@ -38,12 +49,16 @@ internal struct ItemView: View {
 internal struct YouBubble: View {
     @Environment(\.look) private var look
     @Environment(\.members) private var members
+    @Environment(\.noteTo) private var noteTo
     internal let text: String
     internal let files: [String]
 
     internal var body: some View {
         let palette = look.palette
         VStack(alignment: .trailing, spacing: 6) {
+            if let noteTo {
+                Text("Your note · to \(noteTo)").ui(13, .regular, look).foregroundStyle(palette.mute)
+            }
             ForEach(files, id: \.self) { file in
                 Label(file, systemImage: "doc.text").ui(13, .regular, look).foregroundStyle(palette.mute)
                     .padding(.horizontal, 10).padding(.vertical, 6)
@@ -63,8 +78,8 @@ internal struct YouBubble: View {
 
     private var roomBubble: some View {
         let palette = look.palette
-        return Text(text).ui(16, .regular, look).foregroundStyle(palette.foreground)
-            .padding(.horizontal, 14).padding(.vertical, 10)
+        return Text(BlockView.mentioned(AttributedString(text), members, palette.link)).ui(16, .regular, look)
+            .foregroundStyle(palette.foreground).padding(.horizontal, 14).padding(.vertical, 10)
             .frame(maxWidth: look.mono ? .infinity : nil, alignment: .leading)
             .background(
                 look.mono ? palette.card : palette.amber.opacity(0.2), in: .rect(cornerRadius: look.mono ? 6 : 20)
@@ -116,14 +131,24 @@ internal struct BlockView: View {
         }
     }
 
-    internal static func mentioned(_ text: AttributedString, _ members: [Persona], _ tint: Color) -> AttributedString {
+    internal static func mentioned(
+        _ text: AttributedString, _ members: [Persona], _ tint: Color, token: Color? = nil
+    ) -> AttributedString {
         var text = text
-        for member in members {
-            var start = text.startIndex
-            while let range = text[start...].range(of: "@\(member.name)") {
-                text[range].foregroundColor = tint
+        let plain = String(text.characters)
+        let cast = members.map(\.api)
+        let typed = token != nil && MentionDraft(plain, members: cast).match != nil
+        for mention in Mentions.all(plain)
+        where Mentions.member(mention.key, cast) != nil || typed && mention.range.upperBound == plain.endIndex {
+            let start = text.index(
+                text.startIndex,
+                offsetByCharacters: plain.distance(from: plain.startIndex, to: mention.range.lowerBound))
+            let range = start..<text.index(start, offsetByCharacters: plain[mention.range].count)
+            text[range].foregroundColor = tint
+            if let token {
+                text[range].backgroundColor = token
+            } else {
                 text[range].inlinePresentationIntent = .stronglyEmphasized
-                start = range.upperBound
             }
         }
         return text
@@ -210,7 +235,8 @@ internal struct ToolFold: View {
     @ViewBuilder private func mark(_ last: ToolRow) -> some View {
         let tint = last.running ? look.palette.cyan : look.palette.green
         if look.mono {
-            Text(last.running ? "o>_" : "[ok]").ui(13, .bold, look).foregroundStyle(tint).fixedSize()
+            Text(last.running ? "o>_" : members.isEmpty ? "[ok]" : "✓").ui(13, .bold, look).foregroundStyle(tint)
+                .fixedSize()
         } else {
             Image(systemName: last.running ? "gearshape.2.fill" : "checkmark.circle.fill")
                 .font(.system(size: 13)).foregroundStyle(tint)

@@ -2,7 +2,7 @@
 //! variables and headers hold. A value is never written down: only `secret:<NAME>` ([`crate::secrets`]) or
 //! `env:<NAME>` (the Mac's environment), resolved in memory when a thread's proxy starts.
 
-use std::{collections::BTreeMap, env, fs, io, path::Path};
+use std::{collections::BTreeMap, fs, io, path::Path};
 
 use serde::{Deserialize, Serialize};
 
@@ -57,18 +57,15 @@ pub struct Pick {
     pub tools: Option<Vec<String>>,
 }
 
-/// A variable's name: `A-Z a-z 0-9 _`, not starting with a digit.
 pub(crate) fn var(name: &str) -> bool {
     name.bytes().next().is_some_and(|b| !b.is_ascii_digit())
         && name.bytes().all(|b| b.is_ascii_alphanumeric() || b == b'_')
 }
 
-/// A TOML (and JSON) string.
 fn q(v: &str) -> String {
     serde_json::to_string(v).unwrap_or_default()
 }
 
-/// `{ "K" = "V", … }`.
 fn table(m: &BTreeMap<String, String>) -> String {
     let pairs: Vec<String> = m
         .iter()
@@ -112,7 +109,6 @@ impl Server {
             }
             k => return Err(format!("mcp {n}: type {k:?} isn't stdio, http or sse")),
         }
-        // A path's folder names (a temp folder's hash) aren't tokens.
         let words = self.args.iter().chain([&self.command, &self.url]);
         let words = words.filter(|w| !w.starts_with(['/', '~', '.']));
         if words.into_iter().any(|w| crate::redact(w) != *w) {
@@ -180,7 +176,6 @@ impl Server {
         Ok((all(&self.env)?, all(&self.headers)?))
     }
 
-    /// Its `[[mcp]]` table's lines.
     fn toml(&self) -> String {
         let mut lines = vec![
             format!("name = {}", q(&self.name)),
@@ -235,7 +230,7 @@ pub type Vars = Vec<(String, String)>;
 pub fn check(servers: &[Server]) -> Result<(), String> {
     for (i, s) in servers.iter().enumerate() {
         s.check()?;
-        if servers[..i].iter().any(|o| o.name == s.name) {
+        if servers.iter().take(i).any(|o| o.name == s.name) {
             return Err(format!(
                 "mcp {}: there are two servers of that name",
                 s.name
@@ -245,8 +240,6 @@ pub fn check(servers: &[Server]) -> Result<(), String> {
     Ok(())
 }
 
-/// `text` with its `[[mcp]]` tables (and their `[mcp.*]` sub-tables) replaced by `servers`' at its end; every other
-/// line and comment stays.
 fn with_tables(text: &str, tables: &[String]) -> String {
     let (mut kept, mut skip) = (String::new(), false);
     for line in text.split_inclusive('\n') {
@@ -287,7 +280,7 @@ pub fn save(path: &Path, servers: &[Server]) -> io::Result<()> {
 /// When the file can't be read or written.
 pub fn save_picks(path: &Path, picks: &[Pick]) -> io::Result<()> {
     let tables: Vec<String> = picks.iter().map(Pick::toml).collect();
-    fs::write(path, with_tables(&read(path)?, &tables))
+    crate::write_private(path, with_tables(&read(path)?, &tables).as_bytes())
 }
 
 /// Saves secret `name` (see [`crate::secrets::set`]).
@@ -310,7 +303,9 @@ pub fn set_secret(data: &Path, name: &str, value: &str) -> io::Result<()> {
 /// Names what is missing, never a value.
 pub fn resolve(r: &str, data: &Path) -> Result<String, String> {
     if let Some(n) = r.strip_prefix("env:") {
-        return env::var(n).map_err(|_| format!("env:{n} isn't set on the Mac"));
+        return crate::env_var(n)
+            .and_then(|v| v.into_string().ok())
+            .ok_or_else(|| format!("env:{n} isn't set on the Mac"));
     }
     let n = r.strip_prefix("secret:").ok_or("not a reference")?;
     crate::secrets::get(data, n)

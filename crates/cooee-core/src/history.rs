@@ -5,7 +5,7 @@
 
 use std::collections::HashSet;
 
-use crate::{Body, Item, Page, Store, StoreError, redact};
+use crate::{Body, Item, Store, StoreError, redact, store::Page};
 
 /// At most this many hits a search.
 pub const HITS: usize = 5;
@@ -14,7 +14,6 @@ pub const SNIPPET: usize = 200;
 /// A read is at most this many characters.
 pub const PAGE: usize = 4000;
 
-/// Item `i`'s text if it is the owner's message or a final reply, on one line, redacted, and who said it.
 pub(crate) fn said(i: &Item) -> Option<(&str, String)> {
     let (who, text) = match &i.body {
         Body::You { text, .. } => ("owner", text),
@@ -28,7 +27,6 @@ pub(crate) fn said(i: &Item) -> Option<(&str, String)> {
     ))
 }
 
-/// The UTC date of `ms` Unix milliseconds, `YYYY-MM-DD`.
 fn date(ms: u64) -> String {
     let days = i64::try_from(ms / 86_400_000).unwrap_or(0) + 719_468;
     let (era, doe) = (days.div_euclid(146_097), days.rem_euclid(146_097));
@@ -119,13 +117,15 @@ pub fn read(store: &Store, id: &str, before: Option<u64>) -> Result<String, Stor
 
 #[cfg(test)]
 mod tests {
-    use std::{fs, time::Instant};
+    use std::fs;
 
     use super::*;
 
     fn store(name: &str) -> Store {
-        let dir = std::env::temp_dir().join(format!("cooee-history-{name}-{}", std::process::id()));
-        let _ = fs::remove_dir_all(&dir);
+        let dir = crate::scratch::owned(
+            std::env::temp_dir().join(format!("cooee-history-{name}-{}", std::process::id())),
+        );
+        fs::remove_dir_all(&dir).ok();
         Store::open(&dir).unwrap()
     }
 
@@ -238,7 +238,9 @@ mod tests {
     fn a_search_over_1000_threads_stays_under_200_ms() {
         drop(store("perf"));
         let ids: Vec<String> = (0..1000).map(|n| format!("t{n:x}")).collect();
-        let dir = std::env::temp_dir().join(format!("cooee-history-perf-{}", std::process::id()));
+        let dir = crate::scratch::owned(
+            std::env::temp_dir().join(format!("cooee-history-perf-{}", std::process::id())),
+        );
         for (n, id) in (0u64..).zip(&ids) {
             let mut lines = String::new();
             for k in 0..10 {
@@ -250,7 +252,7 @@ mod tests {
             fs::write(dir.join(format!("threads/{id}.jsonl")), lines).unwrap();
         }
         let s = Store::open(&dir).unwrap();
-        let start = Instant::now();
+        let start = crate::clock::instant();
         let got = search(&s, &ids, "question 9 thread 999", 5).unwrap();
         let ms = start.elapsed().as_millis();
         assert!(got.starts_with("t3e7 "), "{got}");

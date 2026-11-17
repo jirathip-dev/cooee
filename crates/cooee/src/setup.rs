@@ -1,20 +1,19 @@
-//! `cooee setup`: shed at the pinned rev and its service, the config, agents, cooee's service, `tailscale serve`,
-//! doctor and a pairing code; each step is skipped when already done, and `--dry-run` only prints the commands.
-
 use std::{
-    env, fs, io,
+    fs, io,
     net::{Ipv4Addr, SocketAddr, TcpStream},
     path::Path,
-    process::{Command, Stdio},
-    thread,
+    process::Stdio,
     time::Duration,
 };
 
-use cooee_core::{Config, Shed, provider};
+use cooee_core::{Config, SHED_CARGO, SHED_LABEL, Shed, ShedError, provider};
 
-use super::{SHED_CARGO, doctor, label, load, pair, plist, tailnet_name, write_plist};
-
-const SHED_LABEL: &str = "dev.shed.serve";
+use crate::{
+    cli::load,
+    devices::pair,
+    doctor::doctor,
+    service::{job, plist, tailnet_name, write_plist},
+};
 
 /// `cooee setup`'s flags.
 pub struct Setup {
@@ -25,45 +24,46 @@ pub struct Setup {
     pub yes: bool,
 }
 
-/// Whether `argv` exits 0 (its output dropped).
-fn ok(argv: &[&str]) -> bool {
-    Command::new(argv[0])
-        .args(&argv[1..])
+pub(crate) fn ok(argv: &[&str]) -> bool {
+    let Some((prog, rest)) = argv.split_first() else {
+        return false;
+    };
+    cooee_core::runner::command(prog)
+        .args(rest)
         .stdout(Stdio::null())
         .stderr(Stdio::null())
         .status()
         .is_ok_and(|s| s.success())
 }
 
-/// `argv`'s stdout, if it exits 0.
-fn output(argv: &[&str]) -> Option<String> {
-    let out = Command::new(argv[0]).args(&argv[1..]).output().ok()?;
+pub(crate) fn output(argv: &[&str]) -> Option<String> {
+    let (prog, rest) = argv.split_first()?;
+    let out = cooee_core::runner::command(prog).args(rest).output().ok()?;
     out.status
         .success()
         .then(|| String::from_utf8_lossy(&out.stdout).into_owned())
 }
 
-/// Polls `f` for up to 10 seconds.
-fn wait(f: impl Fn() -> bool) -> bool {
+pub(crate) fn wait(f: impl Fn() -> bool) -> bool {
     (0..40).any(|_| {
         let done = f();
         if !done {
-            thread::sleep(Duration::from_millis(250));
+            cooee_core::clock::sleep(Duration::from_millis(250));
         }
         done
     })
 }
 
 impl Setup {
-    /// Runs `argv`, or with `--dry-run` only prints it.
     fn exec(&self, argv: &[&str]) -> Result<(), String> {
         let line = argv.join(" ");
         if self.dry_run {
-            println!("  would run: {line}");
+            cooee_core::say!("  would run: {line}");
             return Ok(());
         }
-        println!("  $ {line}");
-        let status = Command::new(argv[0]).args(&argv[1..]).status();
+        cooee_core::say!("  $ {line}");
+        let (prog, rest) = argv.split_first().ok_or("nothing to run")?;
+        let status = cooee_core::runner::command(prog).args(rest).status();
         match status {
             Ok(s) if s.success() => Ok(()),
             Ok(s) => Err(format!("`{line}` failed ({s})")),
@@ -71,7 +71,6 @@ impl Setup {
         }
     }
 
-    /// Writes `text` to `file`, or with `--dry-run` only prints it.
     fn write(
         &self,
         file: &Path,
@@ -79,22 +78,21 @@ impl Setup {
         f: impl FnOnce() -> Result<(), String>,
     ) -> Result<(), String> {
         if self.dry_run {
-            println!("  would write {}:\n{text}", file.display());
+            cooee_core::say!("  would write {}:\n{text}", file.display());
             return Ok(());
         }
         f()?;
-        println!("  wrote {}", file.display());
+        cooee_core::say!("  wrote {}", file.display());
         Ok(())
     }
 
-    /// Asks `question`; `--yes`, an empty answer or no input take `default`.
     fn ask(&self, question: &str, default: &str) -> String {
         if self.yes {
             return default.to_owned();
         }
-        println!("  {question}");
+        cooee_core::say!("  {question}");
         let mut line = String::new();
-        let _ = io::stdin().read_line(&mut line);
+        io::stdin().read_line(&mut line).ok();
         let line = line.trim();
         (if line.is_empty() { default } else { line }).to_owned()
     }
@@ -108,20 +106,20 @@ impl Setup {
         let (config, changed) = self.config(path)?;
         self.themes(&config)?;
         self.agents(&config)?;
-        self.service(&config, path, &gui, changed)?;
+        self.service(&config, path, &gui, changed, "serve")?;
+        self.service(&config, path, &gui, false, "update")?;
         self.tailnet(config.port)?;
         if self.dry_run {
-            println!("would run: cooee doctor, then cooee pair");
+            cooee_core::say!("would run: cooee doctor, then cooee pair");
             return Ok(());
         }
-        println!("doctor:");
+        cooee_core::say!("doctor:");
         doctor(&config)
             .map_err(|e| format!("doctor: {e}\nfix it, then run `cooee setup` again"))?;
-        println!("\npair your phone:");
+        cooee_core::say!("\npair your phone:");
         pair(&config)
     }
 
-    /// shed at the pinned rev; whether it was installed now.
     fn shed(&self) -> Result<bool, String> {
         let rev = SHED_CARGO[6];
         let done = output(&["cargo", "install", "--list"])
@@ -132,15 +130,36 @@ impl Setup {
         Ok(!done)
     }
 
-    /// shed's launchd job (`shed install`), started or restarted onto a new binary, answering `shed ls`.
     fn shed_service(&self, gui: &str, updated: bool) -> Result<(), String> {
         let loaded = ok(&["launchctl", "list", SHED_LABEL]);
         let answers = || ok(&["shed", "ls"]);
+        let serve = Shed::new("shed".into(), None);
+        let mismatch = || {
+            serve
+                .hello()
+                .err()
+                .filter(|e| matches!(e, ShedError::Version { .. }))
+        };
+        let held = |e: ShedError| format!("{e}\ncooee's service was left on its running build");
+        let other = mismatch();
         if step(
             &format!("shed service {SHED_LABEL}"),
-            !updated && loaded && answers(),
+            !updated && loaded && other.is_none() && answers(),
         ) {
             return Ok(());
+        }
+        match other {
+            Some(e) if !loaded => return Err(held(e)),
+            _ if loaded => {
+                cooee_core::say!("  warn: restarting shed serve ends every running shed session");
+                if self
+                    .ask("restart it now? [Y/n]", "y")
+                    .starts_with(['n', 'N'])
+                {
+                    return Err("shed serve was not restarted, so cooee wasn't either".to_owned());
+                }
+            }
+            _ => {}
         }
         self.exec(&["shed", "install"])?;
         if loaded {
@@ -151,22 +170,36 @@ impl Setup {
                 &format!("{gui}/{SHED_LABEL}"),
             ])?;
         } else {
-            let home = env::var_os("HOME").ok_or("no HOME")?;
+            let home = cooee_core::env_var("HOME").ok_or("no HOME")?;
             let file = Path::new(&home).join(format!("Library/LaunchAgents/{SHED_LABEL}.plist"));
             self.exec(&["launchctl", "bootstrap", gui, &file.display().to_string()])?;
         }
-        if !self.dry_run && !wait(answers) {
+        if self.dry_run {
+            return Ok(());
+        }
+        if !wait(answers) {
             return Err("shed doesn't answer `shed ls`; see ~/Library/Logs/shed.log".to_owned());
+        }
+        if !wait(|| mismatch().is_none()) {
+            return mismatch().map_or(Ok(()), |e| Err(held(e)));
         }
         Ok(())
     }
 
-    /// The config with `port`, `allowed_hosts` and `roots`: missing keys added, the others kept; whether it changed.
     fn config(&self, path: &Path) -> Result<(Config, bool), String> {
         let text = fs::read_to_string(path).unwrap_or_default();
         let keys: toml::Table = text
             .parse()
             .map_err(|e| format!("{}: {e}", path.display()))?;
+        let bundled = keys
+            .get("shed")
+            .and_then(toml::Value::as_str)
+            .is_some_and(|s| s.contains(".app/Contents/Helpers/"));
+        let text = if bundled {
+            without_top_key(&text, "shed")
+        } else {
+            text
+        };
         let port = match (
             keys.get("port").and_then(toml::Value::as_integer),
             self.port,
@@ -188,7 +221,9 @@ impl Setup {
             match tailnet_name() {
                 Some(name) => add.push(format!("allowed_hosts = [{name:?}]")),
                 None => {
-                    println!("  note: no tailnet name (is Tailscale up?): allowed_hosts left out");
+                    cooee_core::say!(
+                        "  note: no tailnet name (is Tailscale up?): allowed_hosts left out"
+                    );
                 }
             }
         }
@@ -196,7 +231,6 @@ impl Setup {
             let root = self.ask("folders for threads [~/Projects]:", "~/Projects");
             add.push(format!("roots = [{root:?}]"));
         }
-        // The owner's terminal plugin (#28), on the instance's port + 1000 with a token of its own.
         let plugins = keys.get("plugins").and_then(toml::Value::as_array);
         let has = plugins.is_some_and(|a| {
             a.iter()
@@ -214,21 +248,25 @@ impl Setup {
                  module = \"/tab.js\"\ntoken = \"{token}\"\n"
             )
         };
-        let changed = !add.is_empty() || !plugin.is_empty();
+        let changed = bundled || !add.is_empty() || !plugin.is_empty();
         if !step(&format!("config {}", path.display()), !changed) {
             if !text.is_empty() {
                 let what = add.iter().map(String::as_str);
                 let what: Vec<&str> = what
                     .chain((!has).then_some("the terminal plugin"))
+                    .chain(bundled.then_some("shed from PATH, not the old Mac app's"))
                     .collect();
-                println!("  note: kept its keys; adding {}", what.join(", "));
+                cooee_core::say!("  note: kept its keys; adding {}", what.join(", "));
             }
-            // Top-level keys go first: after a `[table]` they would belong to it. The plugin goes last.
             let head: String = add.iter().flat_map(|k| [k.as_str(), "\n"]).collect();
             let new = format!("{head}{text}{plugin}");
             self.write(path, &new, || {
-                fs::create_dir_all(path.parent().unwrap_or(path)).map_err(|e| e.to_string())?;
-                fs::write(path, &new).map_err(|e| e.to_string())
+                let dir = path.parent().unwrap_or(path);
+                if !dir.exists() {
+                    fs::create_dir_all(dir).map_err(|e| e.to_string())?;
+                    cooee_core::gitignore::write(dir).map_err(|e| e.to_string())?;
+                }
+                cooee_core::write_private(path, new.as_bytes()).map_err(|e| e.to_string())
             })?;
         }
         let config = if path.exists() {
@@ -243,49 +281,55 @@ impl Setup {
         Ok((config, changed))
     }
 
-    /// The first-party theme packs asked for (default: all of them) from the index, the installed ones skipped.
     fn themes(&self, config: &Config) -> Result<(), String> {
         let e = |e: io::Error| e.to_string();
         let t = match cooee_server::Themes::new(config) {
             Err(_) if self.dry_run => {
-                println!("themes:\n  would ask which first-party themes to install");
+                cooee_core::say!(
+                    "themes:\n  would install farm and ask which other themes to install"
+                );
                 return Ok(());
             }
             t => t.map_err(e)?,
         };
         let have: Vec<String> = t.list().map_err(e)?.into_iter().map(|p| p.name).collect();
         let first: Vec<&str> = t
-            .index()
-            .iter()
-            .filter(|l| l.first_party && !have.contains(&l.name))
-            .map(|l| l.name.as_str())
+            .first_party()
+            .into_iter()
+            .filter(|n| !have.iter().any(|h| h == n))
             .collect();
         if step("themes", first.is_empty()) {
             return Ok(());
         }
-        let all = first.join(" ");
-        let want = self.ask(&format!("themes to install, or none [{all}]:"), &all);
-        for name in want
+        let (farm, rest): (Vec<&str>, Vec<&str>) = first.into_iter().partition(|n| *n == "farm");
+        let all = rest.join(" ");
+        let want = if rest.is_empty() {
+            String::new()
+        } else {
+            self.ask(&format!("themes to install, or none [{all}]:"), &all)
+        };
+        let want: Vec<&str> = want
             .split([' ', ','])
             .filter(|n| !n.is_empty() && *n != "none")
-        {
-            if !first.contains(&name) {
-                return Err(format!("theme {name}: not one of {all}"));
-            }
+            .collect();
+        if let Some(name) = want.iter().find(|n| !rest.contains(n)) {
+            return Err(format!("theme {name}: not one of {all}"));
+        }
+        for name in farm.into_iter().chain(want) {
             if self.dry_run {
-                println!("  would install theme {name}");
+                cooee_core::say!("  would install theme {name}");
                 continue;
             }
-            // One that can't be fetched now (offline) is no reason to stop.
             match t.plan(name, None).and_then(|p| t.add(&p)) {
-                Ok(()) => println!("  installed theme {name}"),
-                Err(why) => println!("  theme {name}: {why}\n  later: cooee theme add {name}"),
+                Ok(()) => cooee_core::say!("  installed theme {name}"),
+                Err(why) => {
+                    cooee_core::say!("  theme {name}: {why}\n  later: cooee theme add {name}");
+                }
             }
         }
         Ok(())
     }
 
-    /// The first registered provider's ACP agent in shed, and each other one's if asked for.
     fn agents(&self, config: &Config) -> Result<(), String> {
         let have: Vec<String> = Shed::new(config.shed.clone(), config.shed_dir.clone())
             .agents()
@@ -316,16 +360,16 @@ impl Setup {
         Ok(())
     }
 
-    /// cooee's launchd job: its plist written and loaded, restarted onto a changed config.
     fn service(
         &self,
         config: &Config,
         path: &Path,
         gui: &str,
         changed: bool,
+        verb: &str,
     ) -> Result<(), String> {
-        let label = label(&self.instance);
-        let (file, text) = plist(config, path, self.explicit)?;
+        let label = job(&self.instance, verb);
+        let (file, text) = plist(config, path, self.explicit, verb)?;
         let same = fs::read_to_string(&file).is_ok_and(|t| t == text);
         let loaded = ok(&["launchctl", "list", &label]);
         if step(
@@ -353,11 +397,14 @@ impl Setup {
         Ok(())
     }
 
-    /// `tailscale serve` of the port over https, unless it is served already.
     fn tailnet(&self, port: u16) -> Result<(), String> {
         let served = output(&["tailscale", "serve", "status", "--json"])
             .and_then(|s| serde_json::from_str::<serde_json::Value>(&s).ok())
-            .is_some_and(|s| !s["TCP"][port.to_string()].is_null());
+            .is_some_and(|s| {
+                s.get("TCP")
+                    .and_then(|t| t.get(port.to_string()))
+                    .is_some_and(|p| !p.is_null())
+            });
         if !step(&format!("tailscale serve {port}"), served) {
             let (https, to) = (
                 format!("--https={port}"),
@@ -369,8 +416,17 @@ impl Setup {
     }
 }
 
-/// Prints step `name`, `done, skipped` if `done`; returns `done`.
 fn step(name: &str, done: bool) -> bool {
-    println!("{name}:{}", if done { " done, skipped" } else { "" });
+    cooee_core::say!("{name}:{}", if done { " done, skipped" } else { "" });
     done
+}
+
+fn without_top_key(text: &str, key: &str) -> String {
+    let mut top = true;
+    text.split_inclusive('\n')
+        .filter(|line| {
+            top &= !line.trim_start().starts_with('[');
+            !(top && line.split_once('=').is_some_and(|(k, _)| k.trim() == key))
+        })
+        .collect()
 }

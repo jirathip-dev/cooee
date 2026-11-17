@@ -26,6 +26,20 @@
 
     extension LiveUITestCase {
         @MainActor
+        internal func personaPanel(_ app: XCUIApplication) {
+            keep("conductor")
+            app.buttons["More"].firstMatch.tap()
+            XCTAssert(app.buttons["Edit Conductor"].waitForExistence(timeout: 10), "the … opened no Edit Conductor")
+            XCTAssert(app.buttons["New chat with Conductor"].exists, "the … opened no New chat with Conductor")
+            XCTAssertFalse(labelled(app, "Attach ").exists, "Conductor still has a plugin to attach")
+            XCTAssert(labelled(app, "WORKFLOW").exists, "the panel has no Workflow for Conductor")
+            XCTAssert(app.buttons["Add routine"].exists, "the panel has no Routines + Add for Conductor")
+            keep("persona-panel")
+            app.buttons["Close"].firstMatch.tap()
+            XCTAssert(app.buttons["Edit Conductor"].waitForNonExistence(timeout: 10))
+        }
+
+        @MainActor
         internal func opensDroversScreens(_ app: XCUIApplication, _ new: XCUIElement) {
             XCTAssert(new.waitForExistence(timeout: 10))
             new.tap()
@@ -39,7 +53,7 @@
                 app.buttons["Attach"].firstMatch.tap()
             }
             XCTAssert(queue.waitForExistence(timeout: 20))
-            keep("conductor")
+            personaPanel(app)
             app.buttons["Events"].firstMatch.tap()
             XCTAssert(labelled(app, "merged").waitForExistence(timeout: 20))
             keep("events")
@@ -114,9 +128,9 @@
         internal func avatarMenu(_ app: XCUIApplication) {
             app.buttons["Account"].firstMatch.tap()
             XCTAssert(labelled(app, "Notifications").waitForExistence(timeout: 10))
-            for missing in ["Sign-ins", "Devices", "Machines", "Plugins"] {
-                XCTAssertFalse(
-                    app.buttons.matching(NSPredicate(format: "label CONTAINS %@", missing)).firstMatch.exists)
+            for row in ["Sign-ins", "Devices", "Machines", "Plugins"] {
+                let button = app.buttons.matching(NSPredicate(format: "label CONTAINS %@", row)).firstMatch
+                XCTAssert(button.waitForExistence(timeout: 10), "the menu lists \(row)")
             }
             keep("avatar-menu")
             labelled(app, "Look").tap()
@@ -127,6 +141,10 @@
             labelled(app, "Notifications").tap()
             XCTAssert(app.switches["Push notifications"].waitForExistence(timeout: 5))
             keep("avatar-menu-notifications")
+            app.navigationBars.buttons.firstMatch.tap()
+            labelled(app, "Terminal").tap()
+            XCTAssert(labelled(app, "Terminal ·").waitForExistence(timeout: 5))
+            keep("avatar-menu-terminal")
         }
     }
 #endif

@@ -6,7 +6,7 @@ extension Fixtures {
 
     public static var round: RoomRound {
         var round = RoomRound()
-        round.asked(kestrel, text: "Kestrel signs on the 28th.", when: .distantPast)
+        round.asked(kestrel, named: [], when: .distantPast)
         round.began("chief")
         round.replied("chief")
         round.began("coder")
@@ -49,6 +49,10 @@ extension Fixtures {
         return scene
     }
 
+    public static var roomPins: [Pin] {
+        personas.prefix(2).map(Pin.persona) + roomChats.prefix(1).map(Pin.room)
+    }
+
     public static var roomChats: [ListedChat] {
         let room = Row(
             id: "r1", persona: "chief", title: "Kestrel launch", last: "Account Manager: Pricing: a 3-year term…",
@@ -58,16 +62,59 @@ extension Fixtures {
             id: "r2", persona: "chief", title: "Board deck", last: "Chief: Slides 4–9 are in deck/q3.key.", ago: "2d",
             unseen: 0, state: .done
         )
-        return [
-            ListedChat(row: room, persona: persona("chief"), members: kestrel.map(persona)),
-            ListedChat(row: deck, persona: persona("chief"), members: ["chief", "am"].map(persona)),
-        ] + chats.filter { ["t2", "t4"].contains($0.id) }
+        return [ListedChat(row: room, persona: persona("chief"), members: kestrel.map(persona))] + exchangeChats
+            + [ListedChat(row: deck, persona: persona("chief"), members: ["chief", "am"].map(persona))]
+            + chats.filter { ["t2", "t4"].contains($0.id) }
     }
 }
 
 extension RoomView {
     public static func kestrel(wide: Bool = false) -> RoomView {
         RoomView(scene: Fixtures.room, back: !wide, wide: wide)
+    }
+
+    public static func asking() -> RoomView {
+        var round = RoomRound()
+        round.asked(Fixtures.kestrel, named: [], when: .distantPast)
+        round.began("chief")
+        round.replied("chief")
+        round.began("coder")
+        round.began("res")
+        round.asks("res", when: .distantPast)
+        guard case .card(let id, _, let block) = Fixtures.cards[2] else { return kestrel() }
+        let items: [Item] = [
+            .you(id: 1, text: "Where is Kestrel's revenue heading? Use their last three 10-Qs."),
+            .said(
+                id: 2, speaker: "chief", time: "10:02",
+                markdown: [.text("@Researcher has the filings; I'll wait for the numbers.")]),
+            .card(id: id, poster: "res", block: block),
+        ]
+        return RoomView(
+            scene: RoomScene(
+                title: "Kestrel launch", members: Fixtures.kestrel.map(Fixtures.persona), others: [], round: round,
+                items: items, inspecting: nil))
+    }
+}
+
+extension RoomView {
+    public static func mentioning() -> RoomView {
+        var scene = Fixtures.room
+        scene.round.replied("am")
+        scene.round.ended("done")
+        scene.items = [
+            scene.items[3],
+            .said(
+                id: 5, speaker: "am", time: "09:42",
+                markdown: [
+                    .text(
+                        "Pricing: a 3-year term at the Birch & Co rate, 8% off list. The order form is in kestrel/order.pdf."
+                    )
+                ]
+            ),
+            .divider(id: 6, text: RoomItems.ended(scene.round.turn, passed: ["Coder"])),
+        ]
+        scene.draft = "@Coder check Q3 with @Re"
+        return RoomView(scene: scene)
     }
 }
 
@@ -92,10 +139,10 @@ extension NewRoomSheet {
     }
 }
 
-extension WideView where Detail == RoomView {
-    public static func kestrel() -> WideView<RoomView> {
-        WideView(
-            personas: Fixtures.personas, chats: Fixtures.roomChats, selected: "r1", actions: HomeActions(),
+extension Sidebar where Column == EmptyView, Detail == RoomView {
+    public static func kestrel() -> Sidebar<EmptyView, RoomView> {
+        Sidebar(
+            chats: Fixtures.roomChats, selected: "r1", actions: HomeActions(), column: { EmptyView() },
             detail: { RoomView.kestrel(wide: true) }
         )
     }

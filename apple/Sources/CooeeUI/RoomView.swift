@@ -9,6 +9,7 @@ public struct RoomScene {
     public var items: [Item]
     public var inspecting: String?
     public var elapsed = 0
+    public var draft = ""
 
     public init(
         title: String,
@@ -26,7 +27,16 @@ public struct RoomScene {
         self.inspecting = inspecting
     }
 
-    internal var acting: [Persona] {
+    internal var mention: MentionDraft { MentionDraft(draft, members: members.map(\.api)) }
+
+    internal var shown: RoomRound {
+        var shown = round
+        let order = mention.order
+        if !order.isEmpty { shown.queue(members.map(\.id), named: order) }
+        return shown
+    }
+
+    internal func acting(_ round: RoomRound) -> [Persona] {
         members.map { $0.with(state: round.state($0.id).lane) }
     }
 }
@@ -91,14 +101,15 @@ public struct RoomView: View {
             .frame(maxHeight: .infinity, alignment: .top)
             if scene.round.running {
                 RoundPill(
-                    turn: scene.round.turn, since: look.still ? nil : scene.round.since, elapsed: scene.elapsed,
-                    stop: actions.chat.stop
+                    turn: scene.round.turn, asking: scene.members.first { $0.id == scene.round.asking }?.name,
+                    since: look.still ? nil : scene.round.since, elapsed: scene.elapsed, stop: actions.chat.stop
                 )
             }
-            Composer(hint: "Message the room", actions: actions.chat)
+            if scene.draft.contains("@") { MentionBar(scene: scene, draft: actions.chat.draft) }
+            Composer(hint: "Message the room", draft: scene.draft, actions: actions.chat)
         }
         .padding(.horizontal, wide ? 24 : 12).padding(.bottom, wide ? 14 : 26)
-        .environment(\.members, scene.acting)
+        .environment(\.members, scene.acting(scene.round))
     }
 
     private static func indented(_ item: Item) -> Bool {
@@ -125,7 +136,7 @@ internal struct RoomHeader: View {
                 Button(action: onBack) { RoundButton(symbol: "chevron.left", ascii: "<", size: 40) }
                     .buttonStyle(.plain).accessibilityLabel("Back")
             }
-            RoomStack(members: scene.members, size: 30, grid: false, state: .done)
+            RoomStack(members: scene.members, size: look.mono ? 26 : 30, grid: false, state: .done)
             VStack(alignment: .leading, spacing: 2) {
                 Text(scene.title).ui(17, .semibold, look).lineLimit(1).minimumScaleFactor(0.8)
                 Text("\(scene.members.count) members · \(RoomRound.turns) turns max").ui(13, .regular, look)

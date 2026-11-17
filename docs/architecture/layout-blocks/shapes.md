@@ -113,7 +113,7 @@ A contract is a Swift constant per `ComponentKind`; the layout file never extend
 | `menu-host` | `rows` (screens placed `menu`) | — | `opened`, `picked id` |
 | `settings` | — | `pages: [look, notifications, appIcon]` (device-local pages the layout may show or hide) | — |
 
-Rules: a component's state lives in its existing reducer (`ChatFeature`, `PairingFeature`, `MacSetupFeature`,
+Rules: a component's state lives in its existing reducer (`ChatFeature`, `PairingFeature`,
 `MenuFeature`); the layout sets only `config`; an event is a `LayoutFeature.Action.component(id, Event)` the
 layout engine may route to another node (`chat.opened` → `nav` pushes `chat`). No event carries data a plugin
 sent.

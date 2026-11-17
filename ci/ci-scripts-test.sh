@@ -1,5 +1,5 @@
 #!/bin/sh
-# scripts/ci-scope.sh, ci-reuse.sh and ci-nightly.sh on a fixture repo; `gh` and `curl` are stubs that answer from
+# scripts/ci-scope.sh, ci-reuse.sh, ci-nightly.sh and e2e-scope.sh (with the real apple/e2e/map.toml) on a fixture repo; `gh` and `curl` are stubs that answer from
 # fixture JSON (through the real jq) and log each call.
 set -eu
 here=$(cd "$(dirname "$0")/.." && pwd)
@@ -116,4 +116,51 @@ RUN_ID=9 "$here/scripts/ci-nightly.sh"
 grep -qF "gh issue edit 6 -R o/r --title nightly red: stable (macos-latest) since #12" "$FIX/calls" ||
   fail "nightly: updates the open nightly red issue: $(cat "$FIX/calls")"
 ! grep -q "issue create" "$FIX/calls" || fail "nightly: no second issue"
+
+# e2e: FILE changed on top of the e2e base, on the merge-ready run unless ENV says otherwise; e2e-scope.sh's output
+# has every line in WANT (one per argument).
+mkdir -p "$t/e2e/apple/e2e" "$t/e2e/apple/UITests" "$t/e2e/scripts"
+cp "$here/apple/e2e/map.toml" "$t/e2e/apple/e2e/"
+cp -R "$here"/apple/UITests/* "$t/e2e/apple/UITests/"
+cp "$here/scripts/e2e-scope.sh" "$t/e2e/scripts/"
+cd "$t/e2e"
+git init -q -b staging
+git config user.email ci@example.com
+git config user.name ci
+git add -A
+git commit -qm base
+e2ebase=$(git rev-parse HEAD)
+e2e() {
+  file=$1 env=$2
+  shift 2
+  git checkout -q --detach "$e2ebase"
+  mkdir -p "$(dirname "$file")"
+  echo change >> "$file"
+  git add -A
+  git commit -qm change
+  got=$(env $env SUMMARY="$t/summary" scripts/e2e-scope.sh)
+  for w in "$@"; do printf '%s\n' "$got" | grep -qxF "$w" || fail "e2e $file $env: want $w, got: $got"; done
+}
+e2e apple/Sources/CooeeUI/PersonaSheet.swift "$ready" mac=true e2e=true persona=true \
+  "only=-only-testing:CooeeAppUITests/LivePersonaUITests"
+grep -qxF -e '- `apple/Sources/CooeeUI/PersonaSheet.swift`: LivePersonaUITests LivePersonaTests' "$t/summary" ||
+  fail "e2e: the summary names each path and its tests: $(cat "$t/summary")"
+e2e apple/Sources/CooeeUI/AppIconPicker.swift "$ready" persona=false "only=-only-testing:CooeeAppUITests/LiveIconUITests"
+e2e apple/Tests/CooeeAPITests/LiveTests.swift "$ready" persona=true \
+  "only=-only-testing:CooeeAppUITests/LivePersonaUITests"
+e2e apple/Sources/CooeeCore/Models.swift "$ready" e2e=true only= persona=true
+e2e apple/Sources/CooeeUI/RoomView.swift "$ready" e2e=true only=
+e2e crates/cooee-server/src/lib.rs "$ready" mac=true e2e=true only=
+e2e docs/a.md "$ready" mac=false full=false e2e=false
+grep -qxF '### e2e: no screens touched' "$t/summary" || fail "e2e: docs say no screens touched: $(cat "$t/summary")"
+e2e crates/cooee/src/check.rs "$ready" mac=false e2e=false
+e2e apple/design/v1/a.png "$ready" mac=true full=true e2e=false
+e2e apple/Sources/CooeeUI/PersonaSheet.swift "$push" mac=false full=false e2e=false
+grep -qxF '### apple: the Mac build waits for merge-ready' "$t/summary" ||
+  fail "e2e: a plain push names the deferral: $(cat "$t/summary")"
+e2e apple/Sources/CooeeUI/PersonaSheet.swift "$push CARRIES=true" mac=true full=true e2e=true persona=true
+e2e apple/Sources/CooeeUI/PersonaSheet.swift "$push CARRIES=false" mac=false full=false e2e=false
+e2e docs/a.md EVENT=push mac=true full=true e2e=true only= persona=true
+echo '    internal final class LiveNewUITests: LiveUITestCase {}' >> apple/UITests/StyleUITests.swift
+! EVENT=push scripts/e2e-scope.sh >/dev/null 2>&1 || fail "e2e: a UI test class the map doesn't name fails"
 echo "ci scripts test ok"

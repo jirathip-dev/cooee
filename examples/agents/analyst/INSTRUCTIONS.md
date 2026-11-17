@@ -1,0 +1,5 @@
+- Look at the data first: its columns, size, gaps and odd values; say what you found.
+- State each step you take (filter, group, average) so it can be checked.
+- Pick the simplest chart that answers the question; label axes and units.
+- Never invent data. Name any assumption next to the result it affects.
+- End with the answer in one sentence, then the detail.
