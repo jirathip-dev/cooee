@@ -1,0 +1,114 @@
+Decided: the … is always a Button that toggles ChatFeature's panel; on iPhone the panel is a sheet, on Mac and iPad a 360-pt column beside the chat.
+Because: "the … opens the persona panel, designed in #244 (iPhone full-height sheet, Mac/iPad right column)"
+Decided: in the sheet a pick closes the panel first and runs on the sheet's onDismiss, so Edit's persona sheet and the plugin and attach sheets never present over it.
+Because: apple/Sources/CooeeFeatures/ChatPanel.swift:30
+Decided: the panel lists the persona's plugin places and an Attach row per attachable plugin, and the header Menu of Attach items is gone.
+Because: "its attached plugins' places (#129: e.g. Conductor's Queue, Events, Workflow) and Attach <plugin>… for each attachable plugin"
+Decided: Edit and New chat hide for a chat whose persona is unknown; Stop shows only while a turn runs; Memory, Screen, Terminal and Routines are not drawn live.
+Because: "Never a control that does nothing: an item with no action is hidden, not drawn."
+Rejected: a native routines list — #75's routines belong to a chat, not a persona, and the app has no routine screen or editor yet, so every row would be a dead control.
+Check: LiveUITests opens Conductor's … and finds Edit Conductor and New chat with Conductor with no Attach row; the design frames' snapshots are unchanged.
+Owner: The … in a chat now opens the persona panel with Edit, New chat, the persona's plugins and Stop; routines are not in it yet.
+
+Decided: merged origin/staging, keeping the persona panel on top of staging's layout, pin and ScreenFeature changes.
+Because: apple/Sources/CooeeUI/Root.swift:87
+Decided: the chat's Edit delegate is handled in AppFeature's reducer, not navigate, to keep navigate under SwiftLint's limits.
+Because: apple/Sources/CooeeFeatures/AppFeature.swift:83
+Rejected: none
+Owner: The branch is up to date with staging again; the … panel works as before.
+
+Decided: staging build fix: the two shed-version tests expect the server's current SHED_VERSION wording, with "an older shed; restart shed serve".
+Because: crates/cooee-core/src/shed.rs:335
+Rejected: changing the server message back — a later staging merge chose that wording and its own test at crates/cooee/tests/chat.rs:307 asserts it.
+Check: cargo test --workspace --locked is green, and staging's chat.rs:353 failure is gone from the PR's CI.
+Owner: Fixed two Rust tests that staging broke so this PR's checks can go green; the app change is the same as before.
+
+Decided: merged origin/staging with #229, keeping the persona panel beside #229's Workflow chip and sheet; the panel's Attach rows stay the only attach path.
+Because: apple/Sources/CooeeUI/Root.swift:83
+Decided: ChatPanel.swift drops its SwiftUI import, which swiftlint analyze flags as unused after the merge.
+Because: apple/Sources/CooeeUI/ChatPanel.swift:1
+Rejected: a Workflow row in the panel in this round — an update round resolves conflicts, it does not add scope.
+Check: the … still opens the panel and the Workflow chip still opens its sheet; apple-check, line cap and arch-check are green.
+Owner: The branch has #229's Workflow sheet now; the … panel works as before.
+
+Decided: merged origin/staging with #425; Root.swift is staging's, and the panel's ChatScreen changes move with ChatScreen to its own file.
+Because: apple/Sources/CooeeUI/ChatScreen.swift:46
+Rejected: keeping ChatScreen in Root.swift — #425 split it out to shrink a hot file.
+Check: the … still toggles the panel (column on Mac and iPad, sheet on iPhone); apple-check, line cap and arch-check are green.
+Owner: The branch is up to date with staging again; the … panel works as before.
+
+Decided: merged origin/staging with #426; the panel's action joins ChatFeature's per-area switch and its Stop sends compose's stop.
+Because: apple/Sources/CooeeFeatures/ChatPanel.swift:47
+Rejected: keeping a top-level stop action — #426 moved it under compose, and two spellings would be two ways to do one thing.
+Check: ChatPanelTests still sees the pick's Stop reach threads.stop once; apple-check, line cap and arch-check are green.
+Owner: The branch is up to date with staging again; the … panel works as before.
+
+Decided: merged origin/staging with #242; ChatActions keeps the panel's more beside #242's step, and the header's old attach fields stay gone.
+Because: apple/Sources/CooeeUI/Chat.swift:19
+Rejected: restoring attachable and attachPlugin on ChatActions — the panel's Attach rows replaced them, and nothing reads them now.
+Check: the … still toggles the panel; apple-check, line cap and arch-check are green.
+Owner: The branch is up to date with staging again; the … panel works as before.
+
+Decided: merged origin/staging with #152; ChatFeature's switch keeps the panel's case beside #152's machine case.
+Because: apple/Sources/CooeeFeatures/ChatFeature.swift:109
+Rejected: none
+Check: the … still toggles the panel and the machine chip still works; apple-check, line cap and arch-check are green.
+Owner: The branch is up to date with staging again; the … panel works as before.
+
+Decided: merged origin/staging with #177; the panel's Edit and New chat send #177's persona and start delegates, and this PR's edit and newChat delegates are deleted.
+Because: apple/Sources/CooeeFeatures/ChatPanel.swift:43
+Rejected: keeping both pairs of delegates — two ways to open the persona sheet or start a chat for one meaning.
+Check: ChatPanelTests still sees Edit open the persona sheet and New chat start one with the persona; apple-check, line cap and arch-check are green.
+Owner: The branch is up to date with staging again; the … panel works as before, now through the same paths as the rest of the app.
+
+Decided: merged origin/staging with #314; the live panel is ported onto #314's PersonaPanelBlocks with a live init and actions, and the old PersonaPanel files stay deleted.
+Because: apple/Sources/CooeeUI/BlockPersonaPanel.swift:48
+Decided: the chat builds the panel's places block itself, its plugin places then Attach rows, and a row's index picks open or attach.
+Because: "its attached plugins' places (#129: e.g. Conductor's Queue, Events, Workflow) and Attach <plugin>… for each attachable plugin"
+Rejected: fetching #314's server persona screen for the live panel — its routine rows have no screen to open yet, and a new client is more than an update round.
+Check: the design frames' snapshots are unchanged, and ChatPanelTests and the live UI test still find Edit and New chat with the persona.
+Owner: The branch is up to date with staging; the … panel now draws through the new persona panel and works as before.
+
+Decided: merged origin/staging (#244, #318 and the rest) instead of rebasing, so no history is rewritten or force-pushed.
+Because: apple/Sources/CooeeUI/ChatPanel.swift:5
+Rejected: a rebase — the lane's rules forbid history rewrites and force-pushes on a PR branch.
+Check: the merge had no conflicts; apple-check, cargo test, line cap and arch-check are green.
+Owner: The branch has the latest staging; the … panel works as before.
+
+Decided: add .drover/verify.md so the verify stage launches the app through apple/e2e/run.sh, which makes its own simulator with xcrun simctl, with no sim-task needed.
+Because: apple/e2e/run.sh:2
+Decided: the recipe runs one class with PERSONA=false and a fresh mktemp E2E_DIR.
+Because: apple/e2e/steps/30-personas.sh:3
+Rejected: waiting for sim-task on the host — a host install is the owner's, and run.sh already drives the simulator.
+Check: run the Launch command with LiveDroverUITests; exit 0 and persona-panel-dark/light in the manifests show Edit and New chat for Conductor.
+Owner: Reviewers can now launch the app in a simulator themselves; the … panel is unchanged.
+
+Decided: the live panel draws a Workflow section from the chat's workflow chats, three issues needs-you first, and All N issues opens #229's Workflow sheet.
+Because: "its workflows and routines (#86), each opening its screen, and a way to add one"
+Decided: the live Workflow section hides the list/map toggle, which has no action in the app yet.
+Because: "Never a control that does nothing: an item with no action is hidden, not drawn."
+Decided: Places rows show the place's count from staging's Place.count as the row value.
+Because: apple/Sources/CooeeUI/ChatPanel.swift:19
+Rejected: a per-plugin icon on Places rows — neither Place nor the plugin manifest carries an icon; adding one is a plugin-format change in two repos.
+Decided: merged origin/staging; the … stays the panel's Button, since staging's #240 still drew it bare, and ChatActions keeps more in its new file.
+Because: apple/Sources/CooeeUI/ChatActions.swift:22
+Check: LiveDroverUITests finds WORKFLOW in Conductor's panel; ChatPanelTests sees All issues open the Workflow sheet after the panel closes.
+Owner: The … panel now shows the persona's workflow issues, and All issues opens the Workflow sheet; plugin places show their counts.
+
+Decided: merged origin/staging (#428, #459) and pushed, so CI re-runs on the current staging; no app code changed.
+Because: crates/cooee/tests/rooms.rs:368
+Rejected: changing the room test or the room server — this PR touches no Rust, and the test passed five runs in a row locally, so the red run is a timing flake in staging's own test.
+Check: stable (macos-latest) is green at this head; cargo test --workspace, line cap and arch-check are green.
+Owner: The branch is up to date with staging again; the … panel is unchanged, and the failed check was a flaky test outside this change.
+
+Decided: the live panel always draws Routines with + Add, between Workflow and Places, as the design's frames do.
+Because: "its workflows and routines (#86), each opening its screen, and a way to add one"
+Decided: + Add closes the panel and puts "Make a routine: " in the chat's compose, since #75 makes routines only from chat (the agent's create_routine).
+Because: crates/cooee-server/src/routines.rs:89
+Rejected: routine rows with their on/off switch — the app has no routine screen or editor for a row to open, so each row would be a dead control.
+Decided: merged origin/staging (#246, #424, #316 and the rest); ChatScreen keeps the panel's column and sheet with #246's loading.
+Because: apple/Sources/CooeeUI/ChatScreen.swift:62
+Decided: merged origin/staging with #489's apple_cap raise instead of trimming the panel.
+Because: q1854
+Check: ChatPanelTests sees + Add's pick put the routine ask in compose once the panel has gone; LiveDroverUITests finds Add routine in Conductor's panel.
+Owner: The … panel now has a Routines section whose + Add starts a routine in the chat; the app line cap now holds after the owner's raise.
