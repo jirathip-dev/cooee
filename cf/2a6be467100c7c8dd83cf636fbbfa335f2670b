@@ -1,0 +1,161 @@
+Decided: an event routine from create_routine raises a Face ID card (form routine) through a generic hub proposal; approving re-makes and saves it, declining saves nothing
+Because: q1351
+Decided: approve releases the thread's lock before a proposal's action runs; the runner's tick takes its lock then the thread's, so the reverse order could deadlock
+Because: crates/cooee-server/src/hub.rs:692
+Decided: the hooks listener is its own topcoat router with one route and topcoat's default 2 MiB body limit
+Because: crates/cooee-server/src/routines.rs:509
+Decided: a GitHub routine without [hooks] is refused NO_HOOKS, since neither the webhook nor the catch-up could reach it
+Because: crates/cooee-server/src/routines.rs:136
+Decided: the catch-up skips deliveries older than 24 h and older than the earliest routine naming the repo, compared as UTC text
+Rejected: a .rt line after approval — the hub holds the chat while the card resolves; the card's line says saved routine instead
+Rejected: a time crate to parse delivered_at — lexicographic UTC comparison is enough and adds no dependency
+Check: tests/routines.rs github and catch-up tests; mutating Book::see to always new makes the webhook test fail
+Owner: Agents can now set up routines that fire on GitHub events, saved only after you approve them with Face ID.
+
+Decided: merged staging after #189; its removal of the web client wins, so the Settings page edits and web card tweaks go with it
+Because: q1595
+Decided: an event routine from create_routine raises a Face ID card (form routine) through a generic hub proposal; approving re-makes and saves it, declining saves nothing
+Because: q1351
+Decided: approve releases the thread's lock before a proposal's action runs; the runner's tick takes its lock then the thread's
+Because: crates/cooee-server/src/hub.rs:1850
+Decided: the hooks listener is its own topcoat router with one route and topcoat's default 2 MiB body limit
+Because: crates/cooee-server/src/routines.rs:514
+Decided: a GitHub routine without [hooks] is refused NO_HOOKS, since neither the webhook nor the catch-up could reach it
+Because: crates/cooee-server/src/routines.rs:135
+Rejected: a time crate to parse delivered_at — lexicographic UTC comparison is enough and adds no dependency
+Check: tests/routines.rs github and catch-up tests pass after the merge; docs/api.md routines table keeps the 204 answers with the GitHub trigger
+Owner: Agents can now set up routines that fire on GitHub events, saved only after you approve them with Face ID.
+
+Decided: merged staging again; staging's head failed two shed-version tests, so this PR carries a staging build fix updating their expected text
+Because: crates/cooee-core/src/shed.rs:335
+Decided: the web client's routine edits went with #189's removal of that client
+Because: q1595
+Decided: an event routine from create_routine raises a Face ID card (form routine); approving saves it, declining saves nothing
+Because: q1351
+Decided: approve releases the thread's lock before a proposal's action runs, so the runner's tick cannot deadlock with it
+Because: crates/cooee-server/src/hub.rs:1901
+Decided: a GitHub routine without [hooks] is refused NO_HOOKS
+Because: crates/cooee-server/src/routines.rs:135
+Rejected: leaving staging red for its own owner to fix — the standing answer is to fix the minimal break here
+Check: cargo test -p cooee --test chat and --test setup pass at head; staging's own CI fails them
+Owner: Agents can now set up routines that fire on GitHub events, saved only after you approve them with Face ID.
+
+Decided: staging build fix, staging's arch-check fails on hub.rs, so the proposal cards move to hub/proposals.rs, the code unchanged
+Because: .drover/arch-baseline.txt:1
+Decided: this PR's growth moves out too: GitHub deliveries to core routines/github.rs, cooee doctor to crates/cooee/src/doctor.rs
+Because: .drover/arch.toml:7
+Decided: an event routine from create_routine raises a Face ID card (form routine); approving saves it, declining saves nothing
+Because: q1351
+Decided: approve releases the thread's lock before a proposal's action runs, so the runner's tick cannot deadlock with it
+Because: crates/cooee-server/src/hub.rs:1955
+Decided: a GitHub routine without [hooks] is refused NO_HOOKS
+Because: crates/cooee-server/src/routines.rs:135
+Rejected: trimming lines inside hub.rs — moving one cohesive block to a file is what the hot-files ADR asks
+Check: drover arch-check exits 0; the webhook test now waits for the run's first message, not just its thread
+Owner: Agents can now set up routines that fire on GitHub events, saved only after you approve them with Face ID.
+
+Decided: merged staging (#151 moved machine into cooee-server); doctor.rs reaches it through main.rs's import, its body unchanged
+Because: crates/cooee/src/main.rs:16
+Decided: staging build fix, staging's arch-check failed on hub.rs, so the proposal cards live in hub/proposals.rs, the code unchanged
+Because: .drover/arch-baseline.txt:1
+Decided: this PR's growth lives in its own files: GitHub deliveries in core routines/github.rs, cooee doctor in crates/cooee/src/doctor.rs
+Because: .drover/arch.toml:7
+Decided: an event routine from create_routine raises a Face ID card (form routine); approving saves it, declining saves nothing
+Because: q1351
+Decided: approve releases the thread's lock before a proposal's action runs, so the runner's tick cannot deadlock with it
+Because: crates/cooee-server/src/hub.rs:1870
+Rejected: trimming lines inside hub.rs — moving one cohesive block to a file is what the hot-files ADR asks
+Check: drover arch-check exits 0; NO_HOOKS at crates/cooee-server/src/routines.rs:135 refuses a GitHub routine without [hooks]
+Owner: Agents can now set up routines that fire on GitHub events, saved only after you approve them with Face ID.
+
+Decided: merged staging; #420's doctor.rs is kept as is and this PR adds only the hooks and Funnel line to it
+Because: crates/cooee/src/doctor.rs:94
+Decided: Runner::every binds the [hooks] listener, as it already starts the catch-up, so cooee-server's lib.rs stays at its size baseline
+Because: .drover/arch-baseline.txt:2
+Decided: staging build fix, the proposal cards live in hub/proposals.rs, the code unchanged, so hub.rs fits its baseline
+Because: .drover/arch-baseline.txt:1
+Decided: an event routine from create_routine raises a Face ID card (form routine); approving saves it, declining saves nothing
+Because: q1351
+Decided: approve releases the thread's lock before a proposal's action runs, so the runner's tick cannot deadlock with it
+Because: crates/cooee-server/src/hub.rs:1870
+Rejected: binding the hooks listener in serve() — it put lib.rs over its arch baseline; Runner::every at routines.rs:83 owns it
+Check: drover arch-check exits 0; cooee doctor prints the hooks line only with [hooks] set
+Owner: Agents can now set up routines that fire on GitHub events, saved only after you approve them with Face ID.
+
+Decided: merged staging after #419; the routine card is a Proposed::Later variant beside the MCP and skill ones in hub/mcp.rs
+Because: crates/cooee-server/src/hub/mcp.rs:55
+Decided: a routine card's approve takes the same proposal path as mcp and skill, so the thread is unlocked before its save runs
+Because: crates/cooee-server/src/hub/cards.rs:54
+Decided: staging build fix, lib.rs is over its size baseline on staging, so the routines' runner builder moves to routines.rs as is
+Because: .drover/arch-baseline.txt:1
+Decided: Runner::every binds the [hooks] listener, as it already starts the catch-up every 15 minutes
+Because: crates/cooee-server/src/routines.rs:83
+Decided: an event routine from create_routine raises a Face ID card (form routine); approving saves it, declining saves nothing
+Because: q1351
+Rejected: keeping hub/proposals.rs — #419 already holds the proposal cards in hub/mcp.rs, two homes would split one concern
+Check: drover arch-check exits 0; routines::serving at routines.rs:578 is the old lib.rs runner(), only moved
+Owner: Agents can now set up routines that fire on GitHub events, saved only after you approve them with Face ID.
+
+Decided: merged staging after #332; [hooks] and auto_update are both Config fields, Hooks stays its own struct
+Because: crates/cooee-core/src/config.rs:57
+Decided: the routine card is a Proposed::Later variant beside the MCP and skill ones in hub/mcp.rs
+Because: crates/cooee-server/src/hub/mcp.rs:55
+Decided: a routine card's approve takes the same proposal path as mcp and skill, so the thread is unlocked before its save runs
+Because: crates/cooee-server/src/hub/cards.rs:54
+Decided: staging build fix, lib.rs was over its size baseline, so the routines' runner builder lives in routines.rs as is
+Because: .drover/arch-baseline.txt:1
+Decided: an event routine from create_routine raises a Face ID card (form routine); approving saves it, declining saves nothing
+Because: q1351
+Rejected: binding the hooks listener in serve() — lib.rs would go over its baseline; Runner::every at routines.rs:83 owns it
+Check: drover arch-check exits 0; routines::serving at routines.rs:578 is the old lib.rs runner(), only moved
+Owner: Agents can now set up routines that fire on GitHub events, saved only after you approve them with Face ID.
+
+Decided: merged staging after #421; the shared Face ID test helper is its own tests/support/passkey.rs and mod.rs is regenerated, never hand-merged
+Because: .drover/arch.toml:4
+Decided: the routine card is a Proposed::Later variant beside the MCP and skill ones in hub/mcp.rs
+Because: crates/cooee-server/src/hub/mcp.rs:55
+Decided: a routine card's approve takes the same proposal path as mcp and skill, so the thread is unlocked before its save runs
+Because: crates/cooee-server/src/hub/cards.rs:54
+Decided: staging build fix, lib.rs was over its size baseline, so the routines' runner builder lives in routines.rs as is
+Because: .drover/arch-baseline.txt:1
+Decided: an event routine from create_routine raises a Face ID card (form routine); approving saves it, declining saves nothing
+Because: q1351
+Rejected: binding the hooks listener in serve() — lib.rs would go over its baseline; Runner::every at routines.rs:83 owns it
+Check: drover arch-check exits 0; routines::serving at routines.rs:578 is the old lib.rs runner(), only moved
+Owner: Agents can now set up routines that fire on GitHub events, saved only after you approve them with Face ID.
+
+Decided: merged staging after #359 and #428; a GitHub routine is `[routine.github]` in routines.toml in place of `when`, its rate and the deliveries seen go in routine-runs.json
+Because: crates/cooee-core/src/routines.rs:2
+Decided: Hooks moves to the public routines module so the frozen root.rs gains no line
+Because: .drover/arch.toml:3
+Decided: the API docs move from the deleted docs/api.md and architecture.md into docs/routines.md, mcp.md and configuration.md
+Because: .drover/arch.toml:3
+Decided: the GitHub trigger, Fields and Skip move to routines/github.rs so routines.rs stays under 800 lines
+Because: .drover/arch.toml:9
+Decided: staging fixed the dated accounts_env test that made msrv red; this merge takes that fix
+Because: crates/cooee/tests/accounts_env.rs:17
+Decided: an event routine from create_routine raises a Face ID card (form routine); approving saves it, declining saves nothing
+Because: q1351
+Rejected: keeping the old single routines.json for the seen guids — staging split the files; a third file would be a second home for run state
+Check: core routines round-trip test saves and loads a GitHub routine with its match, recent and seen; tests/routines.rs github and catch-up tests pass
+Owner: Agents can now set up routines that fire on GitHub events, saved only after you approve them with Face ID.
+
+Decided: merged staging after #360; Routines::save keeps this branch's Book (routines and seen guids) and staging's surgical routines.toml patch
+Because: crates/cooee-core/src/routines.rs:568
+Decided: staging's new comments-kept save test edits book.routines, since load returns a Book on this branch
+Because: crates/cooee-core/tests/disk.rs:31
+Decided: an event routine from create_routine raises a Face ID card (form routine); approving saves it, declining saves nothing
+Because: q1351
+Rejected: none
+Check: ci/gates/test.sh exits 0 at head, a_routine_save_keeps_the_comments included; drover arch-check exits 0
+Owner: Agents can now set up routines that fire on GitHub events, saved only after you approve them with Face ID.
+
+Decided: staging's comments-kept save test edits the Book's routines, since load returns a Book on this branch
+Because: crates/cooee-core/src/routines.rs:510
+Decided: Routines::save keeps this branch's Book (routines and seen guids) and staging's surgical routines.toml patch
+Because: crates/cooee-core/src/routines.rs:572
+Decided: an event routine from create_routine raises a Face ID card (form routine); approving saves it, declining saves nothing
+Because: q1351
+Rejected: changing load back to a Vec — the seen guids and rate live on the Book; the test follows the API
+Check: cargo test -p cooee-core --test disk exits 0 at head; ci/gates/test.sh exits 0
+Owner: Agents can now set up routines that fire on GitHub events, saved only after you approve them with Face ID.
