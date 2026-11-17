@@ -12,7 +12,7 @@ use std::{
 
 use serde::{Deserialize, Serialize};
 
-use crate::{disk, mcp, memory, plugins, profiles::Profile, skills};
+use crate::{browser, disk, mcp, memory, plugins, profiles::Profile, skills};
 
 const DROVER: &str = "drover";
 
@@ -104,6 +104,9 @@ pub struct Agent {
     /// The MCP servers it picks from the registry (#56).
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub mcp: Vec<mcp::Pick>,
+    /// The sites its browser may open (#160).
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub sites: Vec<browser::Site>,
     /// shed's approval policy: `ask`, `allow` or `deny`.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub policy: Option<String>,
@@ -395,6 +398,7 @@ pub fn save(config: &Path, data: &Path, mut a: Agent) -> io::Result<Agent> {
         settings: old.settings,
         env: old.env,
         mcp: old.mcp,
+        sites: old.sites,
         policy: old.policy,
         lent: None,
         ..a

@@ -5,6 +5,7 @@
 mod accounts;
 pub mod agents;
 mod blocks;
+pub mod browser;
 mod chat;
 pub mod clock;
 mod config;
