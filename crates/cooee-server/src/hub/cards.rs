@@ -50,7 +50,7 @@ impl Hub {
             Body::Approval { card, .. }
                 if matches!(
                     card.form.as_deref(),
-                    Some("mcp" | "skill" | "routine" | "secret")
+                    Some("mcp" | "skill" | "memory" | "routine" | "secret")
                 ) =>
             {
                 Ok(self.proposal_answer(id, item, option, value))
