@@ -16,6 +16,16 @@ start a thread as the making chat's agent, marked with the routine, whose finish
 `⟳ <name>` on a thread a routine started or last wrote to. The ADR and its shapes are in
 [architecture/routines](architecture/routines/adr.md).
 
+Consolidation (#219): each persona has a built-in routine, off until its `agent.toml` sets `[consolidate] on = true`
+(optional `when`, a cron, default `0 3 * * *`; `model` and `effort`, default its provider's cheapest model and lowest
+effort). A save that leaves `consolidate` out keeps it. `<data>/watermarks.json` holds, per `consolidate-<persona>`,
+the newest transcript line read and the newest due time seen (the first sight only notes it). At a due time the
+runner opens a thread as the persona, marked `Consolidation`, only when the owner wrote in one of its threads after
+that line (else no run, no tokens). Its fixed prompt has it call `history` with no arguments once: the newest
+20,000 characters of what its threads (routine runs left out) said since the line, which then moves to the newest
+line read, so nothing is read twice. In any routine's run `remember`, like `skill` propose, only raises a card; the
+note is written when the owner approves it.
+
 GitHub events (#261): a routine may instead name a repo, events and an optional `match` (`[routine.github]` in
 place of `when`). An agent's GitHub routine is not saved until the owner approves its card with Face ID (q1351); a
 schedule needs none. `[hooks] bind` is a second listener serving only `POST /hooks/github`, so the main listener's

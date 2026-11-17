@@ -392,7 +392,7 @@ fn own_tools() -> Value {
     });
     let history = json!({
         "name": "history",
-        "description": "Search your persona's past threads (query: words; at most 5 hits, each a thread ref, date and snippet), or read one (thread: its ref; paged with before).",
+        "description": "Search your persona's past threads (query: words; at most 5 hits, each a thread ref, date and snippet), or read one (thread: its ref; paged with before); in a consolidation run, neither gives what is new since the last run.",
         "inputSchema": { "type": "object", "properties": {
             "query": { "type": "string" },
             "thread": { "type": "string" },
