@@ -58,7 +58,7 @@ stateDiagram-v2
 
 ## The neutral-core check
 
-`scripts/neutral-core.sh`, run by `just neutral` (in `just check`) and a `ci.yml` step after `hygiene`:
+`scripts/neutral-core.sh`, run by `just check neutral` (in `just check`) and `ci/gates.sh` in `ci.yml`'s `msrv` job:
 
 - Files: `git ls-files 'crates/*/src/**'` minus `crates/cooee-core/src/providers/**`.
 - In a `.rs` file, lines from its first `#[cfg(test)]` on are skipped.

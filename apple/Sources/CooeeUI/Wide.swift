@@ -1,5 +1,4 @@
 import ComposableArchitecture
-import CooeeCore
 import CooeeFeatures
 import SwiftUI
 
@@ -7,6 +6,7 @@ public struct MacConnect: View {
     @Environment(\.look) private var look
     private let store: StoreOf<PairingFeature>?
     private let setUp: () -> Void
+    @State private var scanning = false
 
     public var body: some View {
         let palette = look.palette
@@ -42,11 +42,21 @@ public struct MacConnect: View {
         return VStack(alignment: .leading, spacing: 10) {
             Text("ADDRESS").ui(11, .semibold, look).foregroundStyle(palette.mute)
             AddressField(store: store) { store?.send(.connect($0)) }
-            HStack(spacing: 8) {
-                Image(systemName: "qrcode.viewfinder").foregroundStyle(palette.link)
-                Text("Scan its QR with this Mac's camera").ui(14, .regular, look).foregroundStyle(palette.link)
+            Button {
+                scanning.toggle()
+            } label: {
+                HStack(spacing: 8) {
+                    Image(systemName: "qrcode.viewfinder")
+                    Text("Scan its QR with this Mac's camera").ui(14, .regular, look)
+                }
+                .foregroundStyle(palette.link)
             }
-            .padding(.top, 8)
+            .buttonStyle(.plain).padding(.top, 8)
+            #if os(macOS)
+                if scanning, let store {
+                    MacQRScanner { store.send(.connect($0)) }.frame(height: 200).clipShape(.rect(cornerRadius: 12))
+                }
+            #endif
         }
     }
 
@@ -58,58 +68,6 @@ public struct MacConnect: View {
     public init(store: StoreOf<PairingFeature>, setUp: @escaping () -> Void) {
         self.store = store
         self.setUp = setUp
-    }
-}
-
-public struct WideView<Detail: View>: View {
-    @Environment(\.look) private var look
-    private let personas: [Persona]
-    private let all: [Persona]
-    private let chats: [ListedChat]
-    private let selected: String?
-    private let actions: HomeActions
-    private let detail: Detail
-
-    public var body: some View {
-        let palette = look.palette
-        HStack(spacing: 0) {
-            VStack(spacing: 0) {
-                TopBar(personas: all, actions: actions).padding(.top, look.still ? 34 : 8)
-                Scroller {
-                    PinnedRow(personas: personas, rows: chats.map(\.row), new: actions.new)
-                        .scaleEffect(0.9, anchor: .leading).padding(.top, 4)
-                    ChatList(chats: chats, selected: selected, open: actions.open).padding(.top, 8)
-                }
-            }
-            .frame(width: 360).background(palette.card.opacity(look.style == .modern ? 0.45 : 0.8))
-            .overlay(alignment: .trailing) { Rectangle().fill(palette.line).frame(width: 1) }
-            detail.padding(.top, 12).frame(maxWidth: .infinity)
-        }
-        .foregroundStyle(palette.foreground)
-    }
-
-    public init(
-        personas: [Persona],
-        all: [Persona]? = nil,
-        chats: [ListedChat],
-        selected: String?,
-        actions: HomeActions,
-        @ViewBuilder detail: () -> Detail
-    ) {
-        self.personas = personas
-        self.all = all ?? personas
-        self.chats = chats
-        self.selected = selected
-        self.actions = actions
-        self.detail = detail()
-    }
-}
-
-extension WideView where Detail == ChatView {
-    public init() {
-        self.init(personas: Fixtures.personas, chats: Fixtures.chats, selected: "t1", actions: HomeActions()) {
-            ChatView.streaming(back: false)
-        }
     }
 }
 

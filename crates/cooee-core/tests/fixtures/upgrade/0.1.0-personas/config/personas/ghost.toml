@@ -1,0 +1,3 @@
+name = "Ghost"
+agent = "fake-acp"
+mood = "unknown key: this file never loaded"

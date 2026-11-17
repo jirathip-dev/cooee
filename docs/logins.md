@@ -1,6 +1,6 @@
 # Where logins live
 
-cooee never reads or stores a token (#30, [architecture.md](architecture.md#sign-ins-m3-and-accounts)). An account
+cooee never reads or stores a token (#30, [sign-ins.md](sign-ins.md)). An account
 is a config folder; `[sign in]` runs the provider's own login with the folder in its variable (`CLAUDE_CONFIG_DIR`
 for Claude Code), and the CLI keeps the login where it always does. The sign-ins card says "signed in" only when the
 provider's status command, run for that folder at start, every 30 s and after each sign-in or sign-out, exits 0;

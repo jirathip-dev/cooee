@@ -1,4 +1,3 @@
-// Bytes the browser receives over the WebSocket for one full reply. Usage: node measure/wsbytes.mjs <base url>
 import { launch } from './cdp.mjs';
 const B = process.argv[2];
 const { page, close } = await launch();

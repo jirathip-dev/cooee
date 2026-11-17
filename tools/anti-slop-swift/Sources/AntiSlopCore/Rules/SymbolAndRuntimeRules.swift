@@ -83,11 +83,8 @@ public final class NoKeyValueCodingRule: SlopRule {
         case "setValue" where labels.contains("forKey") || labels.contains("forKeyPath"):
             break
         case "setNilValueForKey" where labels.isEmpty:
-            // NSObject.setNilValueForKey(_:) takes a single unlabeled argument.
             break
         case "perform" where labels.isEmpty:
-            // Only selector dispatch counts; typed APIs like Vision's
-            // handler.perform([requests]) share the name but take arrays.
             guard Self.isSelectorArgument(node.arguments.first?.expression) else { return }
         default:
             return
@@ -99,8 +96,6 @@ public final class NoKeyValueCodingRule: SlopRule {
                 "Key-value coding and selector dispatch bypass the type system; a typo or rename compiles and crashes at runtime. Call the typed accessor, or parse untrusted input at the boundary."
         )
     }
-    /// `#selector(...)` expansions are the signature of dynamic selector
-    /// dispatch; typed array arguments (Vision, XCTest) are not.
     private static func isSelectorArgument(_ expression: ExprSyntax?) -> Bool {
         guard let expression else { return false }
         if let macro = expression.as(MacroExpansionExprSyntax.self) {
@@ -138,8 +133,6 @@ public final class NoRuntimeTypeSniffingRule: SlopRule {
         let rightIsTypeOf = Self.isTypeOfCall(node.rightOperand)
         guard leftIsTypeOf || rightIsTypeOf else { return }
 
-        // Both sides being `type(of:)` calls is still inspection narrowing;
-        // a single call must be compared against a metatype to count.
         if leftIsTypeOf && rightIsTypeOf {
             if hasPrecedingSafetyComment(for: node.operator) { return }
             report(

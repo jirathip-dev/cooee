@@ -1,10 +1,5 @@
-//! Routines' runner (#75): every 30 seconds it runs each routine whose due time passed, once, and records it;
-//! `create_routine` and the routines' API change them. The run's key is the hub's `random_id`, so a crash between
-//! a run and its record runs into the same thread or message again, never a second one.
-
 use std::{
     path::PathBuf,
-    process::Command,
     sync::{Arc, Mutex, PoisonError},
 };
 
@@ -16,20 +11,12 @@ use cooee_core::{
 use topcoat::{
     Result,
     context::{Cx, app_context},
-    router::{
-        Body as Bytes, RouterBuilder,
-        content::{Form, Json},
-        response::Response,
-        route,
-    },
 };
 
 use crate::{
-    AgentAsk, Answer, bearer,
+    http::refused,
     hub::{Hub, HubError, Recipe, now},
-    plain,
     push::Note,
-    refused, thread_id,
 };
 
 /// How a `new_thread` run starts as `who`: its agent, the agent's name, its folder and its recipe.
@@ -40,23 +27,25 @@ pub type Start =
 pub struct Runner {
     hub: Arc<Hub>,
     file: Routines,
-    /// Held over each read-change-write of the file.
     lock: Mutex<()>,
     start: Start,
-    /// The Mac's UTC offset in minutes, and when it was read (ms).
     offset: Mutex<(i32, u64)>,
 }
 
-/// An hour, in milliseconds.
 const HOUR: u64 = 3_600_000;
 
 impl Runner {
-    /// The routines in `data`, run on `hub`; `new_thread` runs start with `start`.
+    /// The routines of config folder `config` (none: the data folder), their run state in `data`, run on `hub`;
+    /// `new_thread` runs start with `start`.
     #[must_use]
-    pub fn new(hub: Arc<Hub>, data: &std::path::Path, start: Start) -> Self {
+    pub fn new(
+        hub: Arc<Hub>,
+        (config, data): (Option<&std::path::Path>, &std::path::Path),
+        start: Start,
+    ) -> Self {
         Self {
             hub,
-            file: Routines::new(data),
+            file: Routines::new(config.unwrap_or(data), data),
             lock: Mutex::new(()),
             start,
             offset: Mutex::new((0, 0)),
@@ -68,7 +57,7 @@ impl Runner {
         std::thread::spawn(move || {
             loop {
                 runner.tick(now());
-                std::thread::sleep(beat);
+                cooee_core::clock::sleep(beat);
             }
         });
     }
@@ -81,7 +70,6 @@ impl Runner {
         self.file.load().map_err(refused)
     }
 
-    /// Changes the routines with `f`, under the lock, and saves them.
     fn change<T>(
         &self,
         f: impl FnOnce(&mut Vec<Routine>) -> Result<T, HubError>,
@@ -154,13 +142,25 @@ impl Runner {
         let _held = self.lock.lock().unwrap_or_else(PoisonError::into_inner);
         let mut list = match self.list() {
             Ok(list) => list,
-            Err(e) => return eprintln!("cooee: routines: {e}"),
+            Err(e) => return cooee_core::note!("cooee: routines: {e}"),
         };
+        let made: Vec<()> = list
+            .iter_mut()
+            .filter(|r| r.made_at == 0)
+            .map(|r| r.made_at = now)
+            .collect();
+        if !made.is_empty()
+            && let Err(e) = self.file.save(&list)
+        {
+            cooee_core::note!("cooee: routines: {e}");
+        }
         for at in 0..list.len() {
-            let Some(due) = list[at].due(now, offset) else {
+            let Some(r) = list.get_mut(at) else {
                 continue;
             };
-            let r = &mut list[at];
+            let Some(due) = r.due(now, offset) else {
+                continue;
+            };
             if r.paused.is_none() {
                 let outcome = self.run(r, due, offset);
                 if let (Outcome::Failed { .. }, Place::Chat { thread }) = (&outcome, &r.place)
@@ -185,12 +185,11 @@ impl Runner {
             }
             r.last_due = due;
             if let Err(e) = self.file.save(&list) {
-                eprintln!("cooee: routines: {e}");
+                cooee_core::note!("cooee: routines: {e}");
             }
         }
     }
 
-    /// Runs `r` for due time `due`: into its chat, or as a new thread.
     fn run(&self, r: &Routine, due: u64, offset: i32) -> Outcome {
         let (text, key, mark) = (r.text(due, offset), r.key(due), Some(r.mark()));
         let ran = match &r.place {
@@ -215,15 +214,16 @@ impl Runner {
         )
     }
 
-    /// The Mac's UTC offset in minutes (`date +%z`), read again after an hour.
     fn offset(&self, now: u64) -> i32 {
         let mut o = self.offset.lock().unwrap_or_else(PoisonError::into_inner);
         if o.1 == 0 || now.saturating_sub(o.1) >= HOUR {
-            let out = Command::new("date").arg("+%z").output();
+            let out = cooee_core::runner::command("date").arg("+%z").output();
             let text = out.map(|o| String::from_utf8_lossy(&o.stdout).trim().to_owned());
             match text.ok().as_deref().and_then(minutes) {
                 Some(m) => *o = (m, now),
-                None => eprintln!("cooee: routines: can't read the UTC offset; using {}", o.0),
+                None => {
+                    cooee_core::note!("cooee: routines: can't read the UTC offset; using {}", o.0);
+                }
             }
         }
         o.0
@@ -234,8 +234,7 @@ fn runner(cx: &Cx) -> Arc<Runner> {
     Arc::clone(app_context::<Arc<Runner>>(cx))
 }
 
-/// Runs `f` on the runner off the async workers.
-async fn on<T: Send + 'static>(
+pub(crate) async fn on<T: Send + 'static>(
     cx: &Cx,
     f: impl FnOnce(&Runner) -> Result<T, HubError> + Send + 'static,
 ) -> Result<T, HubError> {
@@ -245,57 +244,6 @@ async fn on<T: Send + 'static>(
         .map_err(refused)?
 }
 
-/// `POST /mcp/agent/routine` `{thread, server: {name, when, prompt, place?}}`: `create_routine`'s line.
-#[route(POST "/mcp/agent/routine")]
-async fn mcp_routine(cx: &Cx, Json(a): Json<AgentAsk>) -> Result<Answer<Item>> {
-    let token = bearer(cx);
-    Ok(Answer(
-        on(cx, move |r| {
-            let ask = serde_json::from_value(a.server).map_err(refused)?;
-            r.create((&a.thread, &token), ask, now())
-        })
-        .await,
-    ))
-}
-
-/// `GET /routines.json`: every routine.
-#[route(GET "/routines.json")]
-async fn routine_list(cx: &Cx) -> Result<Answer<Vec<Routine>>> {
-    Ok(Answer(on(cx, Runner::list).await))
-}
-
-/// A 204, or the reason.
-fn back<T>(done: Result<T, HubError>) -> Result<Response> {
-    match done {
-        Ok(_) => Ok(Response::builder().status(204).body(Bytes::from(()))?),
-        Err(e) => plain(400, &e.to_string()),
-    }
-}
-
-/// `POST /routines/{id}` `name`, `when`, `prompt`, `paused` (each optional): its edit.
-#[route(POST "/routines/{id}")]
-async fn routine_edit(cx: &Cx, Form(e): Form<Edit>) -> Result<Response> {
-    let id = thread_id(cx);
-    back(on(cx, move |r| r.edit(&id, e, now())).await)
-}
-
-/// `POST /routines/{id}/delete`.
-#[route(POST "/routines/{id}/delete")]
-async fn routine_delete(cx: &Cx) -> Result<Response> {
-    let id = thread_id(cx);
-    back(on(cx, move |r| r.delete(&id)).await)
-}
-
-/// The routines' routes, on `runner`.
-pub fn routes(runner: Arc<Runner>, b: RouterBuilder) -> RouterBuilder {
-    b.app_context(runner)
-        .route(mcp_routine)
-        .route(routine_list)
-        .route(routine_edit)
-        .route(routine_delete)
-}
-
-/// `+0700` as 420, `-0330` as -210.
 fn minutes(z: &str) -> Option<i32> {
     let (sign, hhmm) = z.split_at_checked(1)?;
     let n: i32 = hhmm.parse().ok().filter(|_| hhmm.len() == 4)?;

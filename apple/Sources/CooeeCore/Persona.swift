@@ -37,8 +37,14 @@ public enum LaneState: String, Sendable, Equatable {
     }
 }
 
-public enum Tint: Sendable, Equatable, CaseIterable {
+public enum ChatStyle: String, Codable, Sendable {
+    case chat, detailed
+}
+
+public enum Tint: String, Sendable, Equatable, CaseIterable {
     case lead, link, cyan, purple, green, amber
+
+    public var avatar: String { "initials-\(rawValue)" }
 }
 
 public struct PersonaLook: Sendable, Equatable {
@@ -83,10 +89,11 @@ public struct Persona: Identifiable, Sendable, Equatable {
         let words = api.name.split(separator: " ")
         let initials =
             words.count > 1 ? words.prefix(2).compactMap(\.first).map(String.init).joined() : String(api.name.prefix(2))
+        let picked = api.avatar.flatMap { avatar in Tint.allCases.first { $0.avatar == avatar } }
         let look = PersonaLook(
             initials: initials.uppercased(),
-            symbol: "person.fill",
-            tint: Tint.allCases[PersonaLook.seed(api.id) % Tint.allCases.count],
+            symbol: picked == nil ? "person.fill" : "",
+            tint: picked ?? Tint.allCases[PersonaLook.seed(api.id) % Tint.allCases.count],
             coat: PersonaLook.coat(api.id)
         )
         self.init(api: api, look: look, state: state)
@@ -120,14 +127,23 @@ public struct Row: Identifiable, Sendable, Equatable {
 public struct ListedChat: Identifiable, Sendable, Equatable {
     public let row: Row
     public let persona: Persona
+    public let workflow: WorkflowLabel?
     public let members: [Persona]
+    public let asker: Persona?
+    public let from: String
 
     public var id: String { row.id }
 
-    public init(row: Row, persona: Persona, members: [Persona] = []) {
+    public init(
+        row: Row, persona: Persona, workflow: WorkflowLabel? = nil, members: [Persona] = [], asker: Persona? = nil,
+        from: String = ""
+    ) {
         self.row = row
         self.persona = persona
+        self.workflow = workflow
         self.members = members
+        self.asker = asker
+        self.from = from
     }
 }
 
@@ -183,5 +199,13 @@ public struct FolderListing: Codable, Sendable, Equatable {
         let words = search.trimmingCharacters(in: .whitespaces)
         return words.isEmpty
             ? all : all.filter { ($0 as NSString).lastPathComponent.localizedCaseInsensitiveContains(words) }
+    }
+}
+
+extension BlockAction {
+    public static func save(_ persona: APIPersona) -> Self {
+        let data = (try? JSONEncoder().encode(persona)) ?? Data()
+        let value = (try? JSONDecoder().decode(JSONValue.self, from: data)) ?? .null
+        return Self(action: "save", values: value.fields)
     }
 }
