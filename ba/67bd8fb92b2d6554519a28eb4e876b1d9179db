@@ -1,0 +1,28 @@
+Decided: the lease is a pure state machine (Control::gate) on an injected time, so the 10-minute expiry is tested without a real clock.
+Because: "the lease expires at 10 min"
+Decided: the agent's browser calls block in Hub::call on a Condvar until hand back or lease end; the proxy's 630 s read timeout already covers a 10-minute wait.
+Because: "the agent's browser tools wait until you hand back with a note"
+Decided: the hand-back note goes into the waiting call's tool result, once.
+Decided: a stdlib CDP client (current tab via /json/list, a minimal WebSocket) for frames and input; no new dependency.
+Because: "The live view streams the browser's current tab."
+Rejected: a WebSocket crate — a new dependency needs owner approval, and the client is about 100 lines.
+Rejected: +10 min — the Screen design gives it to the UI build issue.
+Check: crates/cooee/tests/mcp.rs drives the real proxy and shows the call waiting (waiting 1, Playwright not called) until hand back.
+Owner: You can watch a persona's browser live, take it over for 10 minutes, and hand it back with a note it reads.
+
+Decided: drop the doc comment on the private live route, since the comments gate allows /// only on public API.
+Because: scripts/comments.py:216
+Decided: the lease is a pure state machine (Control::gate) on an injected time, so the 10-minute expiry is tested without a real clock.
+Because: "the lease expires at 10 min"
+Decided: the agent's browser calls block in Hub::call on a Condvar until hand back or lease end.
+Because: "the agent's browser tools wait until you hand back with a note"
+Rejected: making the live route pub to keep its doc line — widens the API only to satisfy a comment.
+Check: CI comments gate is green at the new head; docs/mcp.md:35 still describes the live stream.
+Owner: You can watch a persona's browser live, take it over for 10 minutes, and hand it back with a note it reads.
+
+Decided: merge origin/staging and keep both hub modules (screen from this PR, secret from staging) in crates/cooee-server/src/hub.rs.
+Because: crates/cooee-server/src/hub.rs:32
+Decided: no code change for the round 2 finding; it was only the apple check still pending, which reruns at the new head.
+Rejected: rebasing onto staging — a history rewrite and force-push are not allowed on a lane.
+Check: CI is green at the merge head, apple included; scripts/gen.sh leaves no diff.
+Owner: You can watch a persona's browser live, take it over for 10 minutes, and hand it back with a note it reads.
