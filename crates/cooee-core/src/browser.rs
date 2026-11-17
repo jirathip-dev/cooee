@@ -3,7 +3,6 @@
 //! through cooee's proxy, and the persona's site allowlist (`[[sites]]` in its `agent.toml`).
 
 use std::{
-    collections::BTreeMap,
     fs::{self, DirBuilder, OpenOptions},
     io::{self, Write as _},
     net::TcpStream,
@@ -52,10 +51,7 @@ pub fn server() -> Server {
         kind: "stdio".to_owned(),
         command: "npx".to_owned(),
         args: vec!["-y".to_owned(), PLAYWRIGHT.to_owned()],
-        url: String::new(),
-        env: BTreeMap::new(),
-        headers: BTreeMap::new(),
-        enabled: true,
+        ..Server::default()
     }
 }
 

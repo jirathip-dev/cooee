@@ -535,6 +535,20 @@ impl Logins {
         p.map(|p| p.spec().efforts.clone()).unwrap_or_default()
     }
 
+    /// What a background run of `agent` picks when it names none (#219): its provider's cheapest model and lowest
+    /// effort (empty: the agent's own).
+    #[must_use]
+    pub fn cheapest(&self, agent: &str) -> (String, String) {
+        let p = self.providers.for_agent(agent).map(|p| p.spec());
+        p.map(|s| {
+            (
+                s.cheapest.clone(),
+                s.efforts.first().cloned().unwrap_or_default(),
+            )
+        })
+        .unwrap_or_default()
+    }
+
     /// The words that start `agent` on `effort` (empty: its default).
     ///
     /// # Errors

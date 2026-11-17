@@ -1,9 +1,10 @@
-use std::{collections::BTreeMap, io, path::Path};
+use std::{io, path::Path};
 
 use cooee_core::{
     Body, Card, Change, Config, Item, Launch, Thread,
     agents::{self, Agent, Home},
-    browser,
+    browser, history,
+    library::{self, Source, Update},
     mcp::{self, COOEE, Server},
     memory,
     shed_proto::ApprovalOption,
@@ -69,9 +70,8 @@ impl Proposal {
             command: self.command,
             args: self.args,
             url: self.url,
-            env: BTreeMap::new(),
-            headers: BTreeMap::new(),
             enabled: false,
+            ..Server::default()
         }
     }
 }
@@ -307,12 +307,34 @@ impl Hub {
     }
 
     /// An agent's `remember` in thread `id` (#126, #216): an edit of its persona's notes, for its next sessions; the
-    /// answer names the note's id and the characters used.
+    /// answer names the note's id and the characters used. In a routine's run (#219) it only raises a card, and the
+    /// edit is made when the owner approves it.
     ///
     /// # Errors
     /// [`HubError::Refused`] for a wrong token, a closed thread, one with no persona, or an edit refused.
     pub fn remember(&self, id: &str, token: &str, e: &memory::Edit) -> Result<String, HubError> {
         let home = self.home_of(id, token)?;
+        let meta = self.token_of(id, token)?;
+        if meta.routine.is_some() {
+            let what = match (&e.text, &e.replaces) {
+                (Some(_), Some(r)) => format!("replace {}'s note [{r}]", meta.profile),
+                (Some(_), None) => format!("add a note to {}'s memory", meta.profile),
+                (None, _) => format!("forget {}'s notes {}", meta.profile, e.forget.join(", ")),
+            };
+            let (detail, e) = (e.text.clone().unwrap_or_default(), e.clone());
+            let then = Box::new(move || {
+                memory::remember(&home, "persona", &e, now())
+                    .map(|n| {
+                        n.map_or_else(|| "forgotten".to_owned(), |n| format!("kept as [{}]", n.id))
+                    })
+                    .map_err(|e| e.to_string())
+            });
+            self.raise(id, (what, "memory", detail), Proposed::Later(then))?;
+            return Ok(
+                "Proposed. The owner sees a card; nothing is saved until they approve it."
+                    .to_owned(),
+            );
+        }
         let kept = memory::remember(&home, "persona", e, now())
             .map_err(|e| HubError::Refused(e.to_string()))?;
         let used = memory::used(&memory::notes(&home));
@@ -321,6 +343,22 @@ impl Hub {
             "{what}; {used} of {} characters used.",
             memory::CAP
         ))
+    }
+
+    /// What persona `persona`'s threads said after line `mark` (#219), routine runs left out: none when the owner
+    /// said nothing since.
+    ///
+    /// # Errors
+    /// [`HubError::Refused`] when a thread can't be read.
+    pub fn news(&self, persona: &str, mark: u64) -> Result<Option<(String, u64)>, HubError> {
+        let mine: Vec<String> = self
+            .all()
+            .iter()
+            .map(|l| lock(l).meta.clone())
+            .filter(|m| m.profile == persona && m.routine.is_none())
+            .map(|m| m.id)
+            .collect();
+        history::since(&self.store, &mine, mark).map_err(|e| HubError::Refused(e.to_string()))
     }
 
     /// An agent's `history` in thread `id` (#217): a search of its persona's threads (`query`, at most `limit`
@@ -339,6 +377,28 @@ impl Hub {
         let persona = agents::find(self.config_dir(), &self.data, &meta.profile)
             .map_err(|_| HubError::Refused(format!("thread {id} has no persona")))?;
         let refused = |e: cooee_core::StoreError| HubError::Refused(e.to_string());
+        let run = meta
+            .routine
+            .as_ref()
+            .is_some_and(|r| r.id == agents::CONSOLIDATE);
+        if run && thread.is_empty() && query.trim().is_empty() {
+            let key = format!("{}-{}", agents::CONSOLIDATE, persona.id);
+            let read = history::watermark(&self.data, &key, |w| {
+                let news = self.news(&persona.id, w.line);
+                if let Ok(Some((_, newest))) = &news {
+                    w.line = *newest;
+                }
+                news
+            });
+            return read
+                .map_err(|e| HubError::Refused(e.to_string()))?
+                .map(|n| {
+                    n.map_or_else(
+                        || "nothing new since the last run".to_owned(),
+                        |(text, _)| text,
+                    )
+                });
+        }
         if thread.is_empty() && query.trim().is_empty() {
             return Err(HubError::Refused("give a query or a thread".to_owned()));
         }
@@ -410,6 +470,49 @@ impl Hub {
             replaces: p.replaces,
         };
         self.raise(id, (tool, "skill", detail), pending)
+    }
+
+    /// Brings thread `id`'s persona's library skills up to `sources` (#496), fetching in `work`: an unedited one is
+    /// replaced, an edited one kept and its update raised as a `skill` diff card in the thread. Says what it did.
+    ///
+    /// # Errors
+    /// [`HubError::NoThread`]; [`HubError::Refused`] for a thread with no persona or an update that fails.
+    pub fn update_skills(
+        &self,
+        id: &str,
+        sources: &[Source],
+        work: &Path,
+    ) -> Result<Vec<String>, HubError> {
+        let thread = self.list().into_iter().find(|t| t.id == id);
+        let persona = thread
+            .ok_or_else(|| HubError::NoThread(id.to_owned()))?
+            .persona;
+        let home = self
+            .config_dir()
+            .ok_or_else(|| io::Error::other("no config folder"))
+            .and_then(|c| agents::home(c, &persona))
+            .map_err(|_| HubError::Refused(format!("thread {id} has no persona")))?;
+        let done =
+            library::update(&home, sources, work).map_err(|e| HubError::Refused(e.to_string()))?;
+        let mut said = Vec::new();
+        for (name, u) in done {
+            said.push(match u {
+                Update::Current => format!("{name}: up to date"),
+                Update::Updated => format!("{name}: updated"),
+                Update::Kept { new, old } => {
+                    let tool = format!("update {persona}'s skill {name}: you edited it, so it stays until you approve");
+                    let detail = skills::diff(&old, &new.file());
+                    let pending = Proposed::Skill {
+                        persona: persona.clone(),
+                        skill: new,
+                        replaces: Some(name.clone()),
+                    };
+                    self.raise(id, (tool, "skill", detail), pending)?;
+                    format!("{name}: you edited it, so it is kept; the card shows the update")
+                }
+            });
+        }
+        Ok(said)
     }
 
     /// An agent's `skill` read in thread `id` (#218): its persona's skill `name`'s body, at most 8,000 characters.

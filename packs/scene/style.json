@@ -1,0 +1,25 @@
+{
+  "format": 1,
+  "label": "Scene",
+  "icon": "farm",
+  "type": "default",
+  "radius": 1,
+  "surface": "solid",
+  "fills": "tint",
+  "marks": "symbols",
+  "figures": "sprite",
+  "sections": "title",
+  "labels": {
+    "kind": { "case": "upper" },
+    "header": { "case": "upper" },
+    "group": { "case": "upper" },
+    "back": { "prefix": "‹ " }
+  },
+  "stage": {
+    "ink": "#29251a",
+    "paper": "#f5efda",
+    "edge": "#7a5634",
+    "alert": "#b81d3c",
+    "alert-paper": "#f8dede"
+  }
+}

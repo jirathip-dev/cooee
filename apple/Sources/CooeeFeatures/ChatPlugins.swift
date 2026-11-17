@@ -13,6 +13,7 @@ extension ChatFeature {
     public enum PluginAction: Sendable, Equatable {
         case load
         case loaded([Place], [PluginRow])
+        case teach([JSONValue])
         case open(Place)
         case attach(PluginRow)
     }
@@ -49,6 +50,8 @@ extension ChatFeature {
             state.attachable = installed.filter { row in
                 row.places.contains { $0.kind == "header-strip" } && !places.contains { $0.plugin == row.name }
             }
+        case .teach(let rows):
+            state.teach = rows
         case .open(let place):
             state.screen = ScreenFeature.State(server: state.server, place: place)
         case .attach(let plugin):
@@ -64,6 +67,8 @@ extension ChatFeature {
             async let places = plugins.places(server, persona)
             async let installed = plugins.installed(server)
             await send(.plugins(.loaded(try await places, try await installed)))
+            let screen = try await plugins.screen(server, .core, "/screens/persona/\(persona)")
+            await send(.plugins(.teach(screen.list("blocks").first { $0.type == "actions" }?.list("rows") ?? [])))
         } catch: { error, send in
             await send(.failed(error.localizedDescription))
         }

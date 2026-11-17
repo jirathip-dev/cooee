@@ -50,6 +50,9 @@ pub struct Config {
     /// The plugin index Settings › Plugins and `cooee plugin add <name>` list; default the built-in one
     /// (`plugins/index.toml` in cooee's repo).
     pub plugin_index: Option<PathBuf>,
+    /// The skill index `cooee skill add` and the persona panel list (#496); default the built-in one
+    /// (`plugins/skills.toml` in cooee's repo).
+    pub skill_index: Option<PathBuf>,
     /// The instance's name (`cooee serve --instance`, default `cooee`): its own config, data folder and pairing.
     #[serde(skip)]
     pub instance: String,
@@ -67,6 +70,8 @@ pub struct Config {
     pub hooks: Option<crate::routines::Hooks>,
     /// Whether `cooee update` (its timer, every 15 minutes) installs main's newest green build (default on, #332).
     pub auto_update: bool,
+    /// How many minutes an approval a routine's run raised waits before it counts as Deny (default 30, #505).
+    pub approval_expiry_minutes: u64,
 }
 
 /// `[apns]`: the owner's APNs key's ids and the app it pushes to; none of it is secret.
@@ -140,6 +145,7 @@ impl Default for Config {
             providers: provider::defaults(),
             plugins: Vec::new(),
             plugin_index: None,
+            skill_index: None,
             theme: None,
             dir: None,
             path: None,
@@ -151,6 +157,7 @@ impl Default for Config {
             apns: None,
             hooks: None,
             auto_update: true,
+            approval_expiry_minutes: 30,
         }
     }
 }
