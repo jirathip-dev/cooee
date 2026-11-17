@@ -1,0 +1,5 @@
+Decided: merged the latest origin/staging and changed no code; the macOS reliability failure is a start-up flake outside this diff.
+Because: crates/cooee/tests/reliability.rs:586
+Rejected: changing the background-start path — this PR's hub changes only gate send, queue and steer on an open handoff, never a start.
+Check: CI at the new head; locally reliability, handoff and mcp ran 3 times, exit 0 each.
+Owner: no new behaviour this round; the branch is brought up to date and re-tested.
