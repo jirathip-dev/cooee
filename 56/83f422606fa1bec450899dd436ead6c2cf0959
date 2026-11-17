@@ -1,0 +1,6 @@
+Decided: merged origin/staging (#428's lib.rs split); this PR's housekeep moves from lib.rs into serve.rs beside perf::init
+Decided: the 10-minute rotation wait sleeps through cooee_core::clock::sleep, as arch-check bans thread::sleep outside the clock
+Because: "One rotation function serves all three."
+Rejected: an allow entry for thread::sleep in serve.rs — the clock already owns sleeping
+Check: drover arch-check reports 0 violations; housekeep runs before perf::init in serve.rs
+Owner: Brought up to date with staging; logs still rotate and old theme clones still go on next start.
