@@ -4,7 +4,7 @@
 use serde_json::{Value, json};
 use topcoat::{Result, context::Cx, router::route};
 
-use crate::{Answer, refused};
+use crate::http::{Answer, refused};
 
 const PAIRING: &str =
     include_str!("../../../../apple/Sources/CooeeUI/Default/screens/pairing.json");
