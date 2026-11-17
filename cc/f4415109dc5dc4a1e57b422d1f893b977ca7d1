@@ -1,0 +1,13 @@
+Decided: the app writes each drawn figure as one <symbol> of row-wise <rect> runs; the Mac swaps it into the copied sprites.svg at the same place and the theme gate runs as before.
+Because: "Each figure is saved as one <symbol> of <rect> runs in sprites.svg, and it passes the theme gate."
+Decided: a rect's colour is style="fill:var(--fk-l,#hex)": the token recolours it where pages set the tokens; the dark scheme's value is the fallback.
+Because: docs/design/theme-editor/README.md:28
+Decided: the backdrop is drawn on the 132 x 100 grid, as layers sky sea rocks sand plus #night, shown only by :target.
+Because: "The backdrop's four layers and the night look are drawn the same way."
+Decided: import, zoom and the hint line are left out; import is issue 3/3.
+Because: "Import and the Mac 3-pane layout are issue 3/3."
+Rejected: sending pixel grids to the Mac and rendering there — the app must read the grids back to edit them, so one Swift codec does both ways.
+Rejected: blank-overwriting a figure just by opening it — only touched or read-back figures are sent, so vector figures of farm stay as they are.
+Decided: the Core type is PixelFigure because CooeeUI already has a Figure view.
+Check: crates/cooee/tests/themes.rs saves a drawn s-needs and backdrop, theme check passes, the other symbols keep their place, a second save writes nothing.
+Owner: You can now draw each figure and the backdrop pixel by pixel in the theme editor and see it on a real row in dark and light.
