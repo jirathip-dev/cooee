@@ -1,0 +1,29 @@
+Decided: the heartbeat is a second built-in persona routine beside #219's consolidation, sharing its watermark file and one start path (Runner::as_persona).
+Because: "Shares the watermark with #219, which builds it; this reuses it"
+Decided: news is inlined in the run's one prompt, capped by history::NEW, and the watermark moves when the run starts.
+Because: "reads at most 20,000 characters, ends after one pass"
+Decided: the server, not the model, gates the push: no notify.md rule means no push whatever the reply says; with a rule, only a reply ending NOTIFY pushes.
+Because: "a run pushes only when the persona's notify rule matches"
+Decided: heartbeat runs start with shed policy ask and skip the needs/done/fail pushes, so their cards are background cards that #505 expires as Deny.
+Because: "any action a heartbeat run wants raises a background approval card (#72), which expires as Deny"
+Decided: per_day defaults to 4 runs in any rolling 24 hours, schedule defaults to hourly; an over-limit due time leaves the watermark so the news waits.
+Rejected: polling connectors for a change signal — they have none without a model call, so the run reads them itself and only history and routine results are watermarked.
+Check: a restarted server re-reporting an old run's end must not push again (Beat.run ties the end to its run; covered by the push test's restart).
+Owner: A persona can now check in by itself and tell you only when your own rule in notify.md says so; it is off until you switch it on.
+
+Decided: merged origin/staging; in tests/support/agent.rs staging's conformance hook runs first, then this branch's "fake says:" cue, moved into FakeAgent::said.
+Because: crates/cooee/tests/support/agent.rs:61
+Rejected: none
+Owner: Brought the heartbeat branch up to date with staging; no behaviour change.
+
+Decided: merged origin/staging and changed no code; the apple FAIL is the air-cooee runner drawing SwiftUI Sliders in theme-colours frames as placeholders.
+Because: apple/Sources/CooeeUI/ThemeColours.swift:124
+Rejected: re-recording the theme-colours designs with placeholders, or swapping the Slider — both change another issue's UI.
+Check: the apple job on mini-cooee passes; on air-cooee staging itself fails the same three frames.
+Owner: Nothing changed in the heartbeat; the iPhone check fails only on one build machine (air-cooee), which needs your look.
+
+Decided: merged origin/staging and changed no code; the mcp test FAIL was staging's own break, fixed on staging by #557.
+Because: crates/cooee-core/src/secrets.rs:94
+Rejected: patching secrets::of_persona here — staging already carries the fix, a second copy would conflict.
+Check: CI's test job passes mcp's saved-secret test at 43f7523.
+Owner: Brought the heartbeat branch up to date with staging, which fixed an unrelated failing test; no behaviour change.
