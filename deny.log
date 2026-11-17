@@ -1,0 +1,23 @@
+ci/gates.sh deny
+== deny: Licences, advisories and duplicate versions pass cargo deny.
+warning[license-not-encountered]: license was not encountered
+   ┌─ /Users/jkmacmini/.local/share/drover/work/cooee/issue-221/deny.toml:12:64
+   │
+12 │ allow = ["MIT", "Apache-2.0", "BSD-2-Clause", "BSD-3-Clause", "ISC", "Unicode-3.0", "Unicode-DFS-2016", "Zlib"]
+   │                                                                ━━━ unmatched license allowance
+
+warning[license-not-encountered]: license was not encountered
+   ┌─ /Users/jkmacmini/.local/share/drover/work/cooee/issue-221/deny.toml:12:86
+   │
+12 │ allow = ["MIT", "Apache-2.0", "BSD-2-Clause", "BSD-3-Clause", "ISC", "Unicode-3.0", "Unicode-DFS-2016", "Zlib"]
+   │                                                                                      ━━━━━━━━━━━━━━━━ unmatched license allowance
+
+warning[unnecessary-skip]: skip 'syn = =3.0.9' applied to a crate with only one version
+   ┌─ /Users/jkmacmini/.local/share/drover/work/cooee/issue-221/deny.toml:31:16
+   │
+31 │     { crate = "syn@3.0.9", reason = "serde_derive, thiserror and futures macros; Topcoat's macros use 2" },
+   │                ━━━━━━━━━             ────────────────────────────────────────────────────────────────── reason
+   │                │                      
+   │                unnecessary skip configuration
+
+advisories ok, bans ok, licenses ok, sources ok
