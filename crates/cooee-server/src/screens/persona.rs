@@ -1,6 +1,6 @@
 //! `GET /screens/persona/{id}` (#314): the persona panel and its edit sheet as data, the #244 sections filled
-//! with what core holds for the persona (its routines, places and memory); `POST /screens/action` saves it or
-//! clears its memory.
+//! with what core holds for the persona (its routines, places and memory); `POST /screens/action` saves it,
+//! clears its memory or tests a webhook routine.
 
 use cooee_core::{
     agents::{self, Agent},
@@ -47,7 +47,7 @@ pub struct Act {
 }
 
 /// `POST /screens/action`: on `/screens/persona/<id>`, `save` puts `values` as the persona and answers it, `clear`
-/// forgets its memory and answers the screen again.
+/// forgets its memory and `test` runs webhook routine `values.routine` on a test POST, each answering the screen.
 #[route(POST "/screens/action")]
 pub async fn action(cx: &Cx, Json(a): Json<Act>) -> Result<Answer<Value>> {
     let Some(id) = a
@@ -66,6 +66,19 @@ pub async fn action(cx: &Cx, Json(a): Json<Act>) -> Result<Answer<Value>> {
             Err(e) => Ok(Answer(Err(refused(e)))),
         },
         "clear" => Ok(Answer(clear(cx, id).await)),
+        "test" => {
+            let routine = a
+                .values
+                .get("routine")
+                .and_then(Value::as_str)
+                .unwrap_or_default()
+                .to_owned();
+            let tested = routines::on(cx, move |r| r.test(&routine, crate::hub::now())).await;
+            Ok(Answer(match tested {
+                Ok(_) => fill(cx, id).await,
+                Err(e) => Err(e),
+            }))
+        }
         other => Ok(Answer(Err(refused(format!("no action {other}"))))),
     }
 }
@@ -90,12 +103,18 @@ fn data(cx: &Cx) -> (std::path::PathBuf, Option<std::path::PathBuf>) {
 }
 
 async fn fill(cx: &Cx, id: String) -> Result<Value, HubError> {
-    let all = routines::on(cx, |r| r.list()).await?;
+    let all = routines::on(cx, |r| {
+        Ok(r.list()?
+            .into_iter()
+            .map(|x| (r.url(&x), x))
+            .collect::<Vec<_>>())
+    })
+    .await?;
     let (data, config) = data(cx);
     blocking(cx, move |hub| {
         let p = agents::find(config.as_deref(), &data, &id).map_err(refused)?;
         let chats: Vec<String> = hub.list().into_iter().filter(|t| t.persona == p.id).map(|t| t.id).collect();
-        let mine = |r: &&Routine| match &r.place {
+        let mine = |(_, r): &&(Option<String>, Routine)| match &r.place {
             Place::Chat { thread } => chats.contains(thread),
             Place::NewThread { who } => who.profile == p.id,
         };
@@ -127,6 +146,10 @@ async fn fill(cx: &Cx, id: String) -> Result<Value, HubError> {
     .await
 }
 
-fn routine(r: &Routine) -> Value {
-    json!({ "id": r.id, "name": r.name, "when": r.when(), "on": r.paused.is_none() })
+fn routine((url, r): &(Option<String>, Routine)) -> Value {
+    let mut row = json!({ "id": r.id, "name": r.name, "when": r.when(), "on": r.paused.is_none() });
+    if let (Some(url), Some(o)) = (url, row.as_object_mut()) {
+        o.insert("url".to_owned(), json!(url));
+    }
+    row
 }

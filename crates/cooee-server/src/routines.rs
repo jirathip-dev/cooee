@@ -9,8 +9,8 @@ use std::{
 use cooee_core::{
     Body,
     routines::{
-        Ask, Book, Delivery, Edit, Fields, Hooks, Outcome, Paused, Place, Routine, Routines, Run,
-        Trigger, Who, local,
+        Ask, Book, Delivery, Edit, Fields, Hooks, Inbound, Outcome, Paused, Place, Routine,
+        Routines, Run, Trigger, Who, local,
     },
     secrets,
 };
@@ -43,6 +43,8 @@ pub struct Runner {
 }
 
 const HOUR: u64 = 3_600_000;
+
+type Picked = (Routine, String, String);
 
 impl Runner {
     /// The routines of config folder `config` (none: the data folder), their run state in `data`, run on `hub`;
@@ -101,6 +103,16 @@ impl Runner {
         self.file.load().map(|b| b.routines).map_err(refused)
     }
 
+    /// Routine `r`'s public URL, when it is a webhook one and `[hooks]` is set.
+    #[must_use]
+    pub fn url(&self, r: &Routine) -> Option<String> {
+        let hooks = self
+            .hooks
+            .as_ref()
+            .filter(|_| matches!(r.trigger, Trigger::Webhook(_)))?;
+        Some(hooks.inbound(&r.id))
+    }
+
     fn change<T>(&self, f: impl FnOnce(&mut Book) -> Result<T, HubError>) -> Result<T, HubError> {
         let _held = self.lock.lock().unwrap_or_else(PoisonError::into_inner);
         let mut book = self.file.load().map_err(refused)?;
@@ -110,11 +122,11 @@ impl Runner {
     }
 
     /// `create_routine` by thread `id`'s agent (`token`: its MCP token): a schedule is stored, then its chat gets
-    /// the `Created routine` line; a GitHub one only raises a card, and is stored when the owner approves it with
+    /// the `Created routine` line; a GitHub or webhook one only raises a card, and is stored when the owner approves it with
     /// Face ID. A Workflow session or a routine's own run can't make one. What the agent is told.
     ///
     /// # Errors
-    /// [`HubError::Refused`] for a wrong token, such a thread, no `[hooks]` for a GitHub one, or a routine `ask`
+    /// [`HubError::Refused`] for a wrong token, such a thread, no `[hooks]` for a GitHub or webhook one, or a routine `ask`
     /// doesn't make.
     pub fn create(
         self: &Arc<Self>,
@@ -128,7 +140,7 @@ impl Runner {
                 "NOT_HERE: a Workflow session or a routine's own run can't make routines",
             ));
         }
-        if ask.github.is_some() {
+        if ask.github.is_some() || ask.webhook.is_some() {
             if self.hooks.is_none() {
                 return Err(refused("NO_HOOKS: [hooks] isn't set up on this Mac"));
             }
@@ -294,24 +306,93 @@ impl Runner {
             }
             let mut runs = Vec::new();
             for r in b.routines.iter_mut().filter(|r| r.matches(d)) {
+                let key = r.key(d.guid());
                 match r.admit(now) {
-                    Ok(()) => runs.push(r.clone()),
-                    Err(why) => self.record(r, r.key(d.guid()), Outcome::Skipped { why }, now),
+                    Ok(()) => runs.push((r.clone(), r.text(&Fields::Event(d)), key)),
+                    Err(why) => self.record(r, key, Outcome::Skipped { why }, now),
                 }
             }
             Ok(Some(runs))
         });
+        self.later(picked)
+    }
+
+    /// `POST /hooks/in/<id>`'s answer for a POST with headers `Idempotency-Key` and `X-Signature-256`: 404 for no
+    /// such webhook routine, 503 without its secret, 401 for a wrong signature, else [`Runner::accept`]'s.
+    #[must_use]
+    pub fn inbound(
+        self: &Arc<Self>,
+        id: &str,
+        headers: (&str, &str),
+        body: &[u8],
+        now: u64,
+    ) -> (u16, String) {
+        let list = self.list().unwrap_or_default();
+        let Some(Trigger::Webhook(h)) = list.into_iter().find(|r| r.id == id).map(|r| r.trigger)
+        else {
+            return (404, format!("no webhook routine {id}"));
+        };
+        let secret = match secrets::get(&self.data, &h.secret) {
+            Ok(Some(s)) => s,
+            Ok(None) => return (503, format!("no secret:{}", h.secret)),
+            Err(e) => return (503, e.to_string()),
+        };
+        match Inbound::signed(headers, body, secret.as_bytes()) {
+            Ok(i) => self.accept(id, &i, now),
+            Err(e) => (e.status(), e.to_string()),
+        }
+    }
+
+    /// Settings' test button: routine `id` runs on a test POST as a signed one does.
+    ///
+    /// # Errors
+    /// [`HubError::Refused`] for no such webhook routine, without its secret, or when it isn't run.
+    pub fn test(self: &Arc<Self>, id: &str, now: u64) -> Result<String, HubError> {
+        let list = self.list()?;
+        let Some(Trigger::Webhook(h)) = list.into_iter().find(|r| r.id == id).map(|r| r.trigger)
+        else {
+            return Err(refused(format!("no webhook routine {id}")));
+        };
+        if !secrets::get(&self.data, &h.secret).is_ok_and(|s| s.is_some()) {
+            return Err(refused(format!("no secret:{}", h.secret)));
+        }
+        match self.accept(id, &Inbound::test(now), now) {
+            (202, text) => Ok(text),
+            (_, why) => Err(refused(why)),
+        }
+    }
+
+    /// Signed POST `i` to routine `id`, once per key: 200 when seen before; else 202 and the routine runs on a
+    /// worker (paused, or over the rate: skipped), so the answer comes before the run starts.
+    pub fn accept(self: &Arc<Self>, id: &str, i: &Inbound, now: u64) -> (u16, String) {
+        let picked = self.change(|b| {
+            if !b.see(&format!("{id}:{}", i.key()), now) {
+                return Ok(None);
+            }
+            let mut runs = Vec::new();
+            for r in b.routines.iter_mut().filter(|r| r.id == id) {
+                let key = r.key(i.key());
+                match r.admit(now) {
+                    Ok(()) => runs.push((r.clone(), r.text(&Fields::Inbound(i)), key)),
+                    Err(why) => self.record(r, key, Outcome::Skipped { why }, now),
+                }
+            }
+            Ok(Some(runs))
+        });
+        self.later(picked)
+    }
+
+    fn later(self: &Arc<Self>, picked: Result<Option<Vec<Picked>>, HubError>) -> (u16, String) {
         let runs = match picked {
             Ok(Some(runs)) => runs,
             Ok(None) => return (200, "seen".to_owned()),
             Err(e) => return (500, e.to_string()),
         };
         let n = runs.len();
-        let (runner, d) = (Arc::clone(self), d.clone());
+        let runner = Arc::clone(self);
         std::thread::spawn(move || {
-            for r in runs {
-                let key = r.key(d.guid());
-                let outcome = runner.run(&r, &r.text(&Fields::Event(&d)), &key);
+            for (r, text, key) in runs {
+                let outcome = runner.run(&r, &text, &key);
                 let saved = runner.change(|b| {
                     if let Some(o) = b.routines.iter_mut().find(|o| o.id == r.id) {
                         runner.record(o, key, outcome, crate::hub::now());
@@ -458,6 +539,22 @@ pub(crate) async fn on<T: Send + 'static>(
         .map_err(refused)?
 }
 
+#[route(POST "/hooks/in/{id}")]
+async fn inbound_hook(cx: &Cx, body: Raw) -> Result<Response> {
+    let h = |n: &str| crate::http::header(cx, n).unwrap_or_default().to_owned();
+    let (id, key, sig) = (
+        crate::http::thread_id(cx),
+        h("idempotency-key"),
+        h("x-signature-256"),
+    );
+    let r = runner(cx);
+    let (status, text) =
+        tokio::task::spawn_blocking(move || r.inbound(&id, (&key, &sig), &body, now()))
+            .await
+            .unwrap_or_else(|e| (500, e.to_string()));
+    Ok(Response::builder().status(status).body(Bytes::from(text))?)
+}
+
 #[route(POST "/hooks/github")]
 async fn github_hook(cx: &Cx, body: Raw) -> Result<Response> {
     let h = |n: &str| crate::http::header(cx, n).unwrap_or_default().to_owned();
@@ -475,12 +572,13 @@ async fn github_hook(cx: &Cx, body: Raw) -> Result<Response> {
     Ok(Response::builder().status(status).body(Bytes::from(text))?)
 }
 
-/// `[hooks] bind`'s router: `POST /hooks/github` and nothing else; no Gate, no devices, no other route.
+/// `[hooks] bind`'s router: `POST /hooks/github`, `POST /hooks/in/<id>` and nothing else; no Gate, no devices, no other route.
 #[must_use]
 pub fn hooks(runner: Arc<Runner>) -> Router {
     Router::builder()
         .app_context(runner)
         .route(github_hook)
+        .route(inbound_hook)
         .build()
 }
 
