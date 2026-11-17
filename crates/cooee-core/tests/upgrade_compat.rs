@@ -9,7 +9,7 @@ use std::{
     path::{Path, PathBuf},
 };
 
-use cooee_core::{Store, migrate};
+use cooee_core::{Chat, Item, Store, migrate};
 
 fn releases() -> Vec<PathBuf> {
     let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/upgrade");
@@ -55,11 +55,51 @@ fn copy(from: &Path, to: &Path) {
     }
 }
 
+fn opened(release: &Path, test: &str) -> PathBuf {
+    let name = release.file_name().unwrap().to_string_lossy();
+    let to = cooee_core::scratch::owned(env::temp_dir().join(format!(
+        "cooee-upgrade-{test}-{name}-{}",
+        std::process::id()
+    )));
+    fs::remove_dir_all(&to).ok();
+    copy(&folders(release).1, &to);
+    to
+}
+
+#[test]
+fn every_earlier_release_items_import_with_nothing_lost() {
+    let mut checked = 0;
+    for release in releases() {
+        let threads = folders(&release).1.join("threads");
+        let store = Store::open(&opened(&release, "items")).unwrap();
+        for file in fs::read_dir(&threads).into_iter().flatten().flatten() {
+            let file = file.path();
+            if file.extension().is_none_or(|e| e != "jsonl") {
+                continue;
+            }
+            let text = fs::read_to_string(&file).unwrap();
+            let lines: Vec<Item> = text
+                .lines()
+                .filter_map(|l| serde_json::from_str(l).ok())
+                .collect();
+            assert!(
+                lines.len() + 1 >= text.lines().count(),
+                "at most a torn last line"
+            );
+            let id = file.file_stem().unwrap().to_str().unwrap();
+            let want = Chat::from_versions(lines).items;
+            assert_eq!(store.items(id).unwrap(), want, "{}", file.display());
+            checked += want.len();
+        }
+    }
+    assert!(checked >= 5, "items fixtures missing");
+}
+
 #[test]
 fn every_earlier_release_loads_without_losing_data() {
     let mut checked = 0;
     for release in releases() {
-        let (_, data) = folders(&release);
+        let data = opened(&release, "loads");
         let store = Store::open(&data).unwrap();
         let scratch = cooee_core::scratch::owned(env::temp_dir().join(format!(
             "cooee-upgrade-{}-{}",

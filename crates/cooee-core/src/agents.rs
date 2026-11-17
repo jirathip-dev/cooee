@@ -12,7 +12,7 @@ use std::{
 
 use serde::{Deserialize, Serialize};
 
-use crate::{disk, mcp, memory, plugins, profiles::Profile, skills};
+use crate::{browser, disk, mcp, memory, plugins, profiles::Profile, routines::Schedule, skills};
 
 const DROVER: &str = "drover";
 
@@ -54,6 +54,43 @@ make it with create_routine when they agree.";
 /// What a [`Style::Chat`] agent's new session is told after its brief.
 pub const PLAIN: &str =
     "Answer short, plain and conversational: summarise, and give the details only when asked.";
+
+/// The consolidation routine's mark on its runs (#219), and its watermark's key with the persona's id after a `-`.
+pub const CONSOLIDATE: &str = "consolidate";
+
+/// What a consolidation run is told (#219).
+pub const CONSOLIDATION: &str = "This is your consolidation run. Call history once with no arguments: it gives what \
+was said since the last run. Then propose changes to your notes with remember, preferring to replace or merge a note \
+over adding one, and a skill with skill propose only for something done at least twice. Each is a card the owner \
+approves; nothing is saved before. Stop after this one pass.";
+
+/// A persona's consolidation routine (#219): off unless `on`; at `when` (default nightly, 03:00) a run reads its new
+/// history and proposes notes and skills, on `model` and `effort` (empty: its provider's cheapest).
+#[derive(Debug, Clone, Default, PartialEq, Eq, Deserialize, Serialize)]
+#[serde(default, deny_unknown_fields)]
+pub struct Consolidate {
+    /// Switched on.
+    pub on: bool,
+    /// A 5-field cron in the Mac's local time (none: nightly).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub when: Option<Schedule>,
+    /// Its model (empty: the provider's cheapest).
+    #[serde(skip_serializing_if = "String::is_empty")]
+    pub model: String,
+    /// Its effort (empty: the provider's lowest).
+    #[serde(skip_serializing_if = "String::is_empty")]
+    pub effort: String,
+}
+
+impl Consolidate {
+    /// When it runs: `when`, else nightly at 03:00.
+    #[must_use]
+    pub fn schedule(&self) -> Option<Schedule> {
+        self.when
+            .clone()
+            .or_else(|| Schedule::parse("0 3 * * *").ok())
+    }
+}
 
 /// One agent: JSON on `/personas`; `agent.toml` is this without `id`, `character`, `instructions` and `version`.
 #[derive(Debug, Clone, Default, PartialEq, Eq, Deserialize, Serialize)]
@@ -104,9 +141,15 @@ pub struct Agent {
     /// The MCP servers it picks from the registry (#56).
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub mcp: Vec<mcp::Pick>,
+    /// The sites its browser may open (#160).
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub sites: Vec<browser::Site>,
     /// shed's approval policy: `ask`, `allow` or `deny`.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub policy: Option<String>,
+    /// Its consolidation routine (#219); a save that leaves it out keeps it.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub consolidate: Option<Consolidate>,
     /// Its files' [`disk::version`] when read; a save naming an older one is refused (#360), one naming none isn't.
     #[serde(skip_serializing_if = "String::is_empty")]
     pub version: String,
@@ -395,7 +438,9 @@ pub fn save(config: &Path, data: &Path, mut a: Agent) -> io::Result<Agent> {
         settings: old.settings,
         env: old.env,
         mcp: old.mcp,
+        sites: old.sites,
         policy: old.policy,
+        consolidate: a.consolidate.or(old.consolidate),
         lent: None,
         ..a
     };

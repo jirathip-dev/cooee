@@ -3,6 +3,8 @@
 #![forbid(unsafe_code)]
 
 mod connectors;
+mod contrast;
+mod editor;
 mod gate;
 mod http;
 mod hub;

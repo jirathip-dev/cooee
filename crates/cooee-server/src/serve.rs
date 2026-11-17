@@ -11,7 +11,7 @@ use cooee_machines::Machines;
 use topcoat::router::{BodyLimit, Router};
 
 use crate::{
-    Hub, Layouts, Logins, Manager, connectors,
+    Hub, Layouts, Logins, Manager, connectors, editor,
     gate::{Gate, Timing, names},
     http::{Data, profiles, provider_name, recipe},
     hub, layout, look, pairing,
@@ -50,6 +50,8 @@ fn runner(
 ) -> Arc<routines::Runner> {
     let (dir, config) = (data.to_owned(), config.map(ToOwned::to_owned));
     let (data, settings) = (dir.clone(), config.clone());
+    let cheap = Arc::clone(&logins);
+    let cheapest: routines::Cheapest = Box::new(move |agent| cheap.cheapest(agent));
     let start: routines::Start = Box::new(move |hub, who| {
         let list = profiles(hub, (&data, config.as_deref()));
         let (agent, folder, mut recipe) = recipe(
@@ -68,7 +70,7 @@ fn runner(
     Arc::new(routines::Runner::new(
         Arc::clone(hub),
         (settings.as_deref(), &dir),
-        start,
+        (start, cheapest),
         hooks,
     ))
 }
@@ -95,12 +97,12 @@ pub fn router(
         devices: Devices::new(data),
         hub: Arc::clone(&hub),
     };
-    screens::routes(themes::routes(routes::routes(
+    screens::routes(editor::routes(themes::routes(routes::routes(
         Router::builder()
             .layer(Timing)
             .layer(gate)
             .layer(BodyLimit::max(64 << 20).at("/threads")),
-    )))
+    ))))
     .route(layout::get)
     .route(layout::events)
     .route(layout::reset)

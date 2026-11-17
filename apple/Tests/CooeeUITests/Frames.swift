@@ -44,6 +44,7 @@ extension Frame {
 
     internal static var all: [Frame] {
         designs + styled + settings + missingPoster + additions + QueueFrames.all + DiagramFrames.all
+            + ThemeFrames.all
     }
 
     internal static var everyStyle: [Frame] {

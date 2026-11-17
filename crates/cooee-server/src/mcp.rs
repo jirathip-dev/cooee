@@ -242,7 +242,8 @@ fn only(mut msg: Value, tools: Option<&[String]>) -> Value {
 }
 
 /// `cooee mcp proxy <server> --thread <id>`: forwards the agent's stdio to the server and back, with only the
-/// thread's allowed tools; each `tools/call` checks the grant again, so a closed thread's token stops working.
+/// thread's allowed tools; cooee checks each `tools/call` again (a closed thread's token stops working) and logs a
+/// browser's.
 ///
 /// # Errors
 /// When the grant is refused or the server can't start.
@@ -286,16 +287,12 @@ pub fn proxy(server: &str, thread: &str) -> Result<(), String> {
                     .pointer("/params/name")
                     .and_then(Value::as_str)
                     .unwrap_or_default();
-                let why = match grant(server, thread) {
-                    Err(e) => Some(e),
-                    Ok(g) if !g.tools.as_ref().is_none_or(|t| t.iter().any(|t| t == name)) => {
-                        Some(format!(
-                            "tool {name} isn't allowed in this thread (its profile's tools for {server})"
-                        ))
-                    }
-                    Ok(_) => None,
-                };
-                if let Some(why) = why {
+                let args = msg.pointer("/params/arguments").cloned();
+                let checked = json!({ "server": server, "tool": name, "arguments": args });
+                if let Err(why) = ask(
+                    "/mcp/agent/call",
+                    &json!({ "thread": thread, "server": checked }),
+                ) {
                     put(&out, &error(&id, -32602, &why));
                     continue;
                 }
@@ -392,7 +389,7 @@ fn own_tools() -> Value {
     });
     let history = json!({
         "name": "history",
-        "description": "Search your persona's past threads (query: words; at most 5 hits, each a thread ref, date and snippet), or read one (thread: its ref; paged with before).",
+        "description": "Search your persona's past threads (query: words; at most 5 hits, each a thread ref, date and snippet), or read one (thread: its ref; paged with before); in a consolidation run, neither gives what is new since the last run.",
         "inputSchema": { "type": "object", "properties": {
             "query": { "type": "string" },
             "thread": { "type": "string" },
