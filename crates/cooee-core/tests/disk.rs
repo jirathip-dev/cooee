@@ -28,7 +28,7 @@ fn a_routine_save_keeps_the_comments() {
     std::fs::write(dir.join("routines.toml"), mine).unwrap();
     let file = cooee_core::routines::Routines::new(&dir, &dir);
     let mut r = file.load().unwrap();
-    r[0].prompt = "Renewals?".to_owned();
+    r.routines[0].prompt = "Renewals?".to_owned();
     file.save(&r).unwrap();
     let now = std::fs::read_to_string(dir.join("routines.toml")).unwrap();
     std::fs::remove_dir_all(&dir).unwrap();
