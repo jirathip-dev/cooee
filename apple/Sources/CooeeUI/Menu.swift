@@ -30,7 +30,7 @@ internal struct MenuHost: View {
                 } else if page == .themeEditor, pages.contains(.string(page.rawValue)),
                     let editor = menu.scope(state: \.editor, action: \.editor)
                 {
-                    ThemeEditor(store: editor)
+                    if compact { ThemeEditor(store: editor) } else { ThemeMac(store: editor).toolbar(.hidden) }
                 } else if pages.contains(.string(page.rawValue)) {
                     MenuPage(store: menu, page: page)
                 }
