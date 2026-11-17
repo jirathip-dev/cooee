@@ -1,0 +1,14 @@
+Decided: GET /threads takes ?persona= and filters the existing list rows; title, folder, unseen, state, archived and newest-first order were already there.
+Because: "returns each thread's title, folder, unread count, working state and archived flag, most recently active first"
+Decided: Home adds topics and unread to each persona row itself; GET /personas is unchanged.
+Because: "Home's persona rows carry a topic count (open threads) and the summed unread count"
+Decided: open means not archived; unread sums the unseen badge of those open topics only.
+Because: "the count excludes archived threads"
+Decided: the first-message title is cut at a word boundary within 28 characters, or hard at 28 when one word is longer.
+Because: "takes the opening words of its first message, cut to 28 characters"
+Decided: a persona session's brief opens with "This topic: <title> (folder <path>)."; it is built once at connect, so a retitle mid-session never changes it.
+Because: "A new session's brief carries its thread's title and folder, and stays byte-stable within the session"
+Rejected: topic line after the instructions — it split the ask frame "[Ada]:" from the asked message (crates/cooee/tests/ask.rs:186).
+Rejected: a topic line in plain chats — they have no brief; only persona sessions get one.
+Check: crates/cooee/tests/topics.rs covers open, archived, unread and working rows, the count, the cut title, the brief and a retitle surviving a later send; room member sessions get no topic line.
+Owner: Each persona's topics list now shows title, folder, unread and working state; Home counts open topics; new topics get a short title.
