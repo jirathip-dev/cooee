@@ -1,0 +1,4 @@
+Decided: resolve the secrets.rs conflict by taking staging's version unchanged
+Because: crates/cooee-core/src/secrets.rs:94
+Rejected: none
+Owner: Merged the latest staging; its own fix for saved persona secrets replaces this branch's duplicate.
