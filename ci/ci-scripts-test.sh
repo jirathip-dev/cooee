@@ -116,6 +116,12 @@ RUN_ID=9 "$here/scripts/ci-nightly.sh"
 grep -qF "gh issue edit 6 -R o/r --title nightly red: stable (macos-latest) since #12" "$FIX/calls" ||
   fail "nightly: updates the open nightly red issue: $(cat "$FIX/calls")"
 ! grep -q "issue create" "$FIX/calls" || fail "nightly: no second issue"
+echo '{"workflow_runs": [{"id": 5, "run_started_at": "2026-01-03T12:00:00Z"}]}' \
+  > "$FIX/actions_workflows_apple.yml_runs_event_schedule_status_success_per_page_1.json"
+: > "$FIX/calls"
+RUN_ID=9 WORKFLOW=apple.yml CHECK="apple-check Periphery 3.8.0" "$here/scripts/ci-nightly.sh"
+grep -qF "gh issue edit 6 -R o/r --title nightly red: apple-check Periphery 3.8.0 since #13" "$FIX/calls" ||
+  fail "nightly: apple.yml names its red gate and the first merge after its own green: $(cat "$FIX/calls")"
 
 # e2e: FILE changed on top of the e2e base, on the merge-ready run unless ENV says otherwise; e2e-scope.sh's output
 # has every line in WANT (one per argument).

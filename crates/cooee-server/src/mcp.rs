@@ -371,6 +371,19 @@ pub fn tools(g: &Grant) -> Result<Vec<(String, String)>, String> {
         .collect())
 }
 
+fn secret_tool() -> Value {
+    json!({
+        "name": "secret",
+        "description": "Have a secret (a password, an API key) typed into a terminal you run, without ever seeing it: one your persona saved is typed at once; else the owner drops it with Face ID, typed once (save: kept in the keychain for your persona and its environment, to reuse). You only get `secret NAME entered`.",
+        "inputSchema": { "type": "object", "required": ["name", "terminal"], "properties": {
+            "name": { "type": "string", "description": "a variable's name, like CRUNCHBASE_KEY" },
+            "terminal": { "type": "string", "description": "the shed terminal it is typed into, then enter" },
+            "why": { "type": "string", "description": "what it is for, for the owner" },
+            "save": { "type": "boolean", "description": "keep it for your persona to reuse (default: once, never stored)" }
+        } }
+    })
+}
+
 fn own_tools() -> Value {
     let schema = json!({
         "type": "object",
@@ -453,11 +466,20 @@ fn own_tools() -> Value {
             } }
         } }
     });
-    json!([tool, remember, ask_persona, history, update, routine, skill])
+    json!([
+        tool,
+        remember,
+        ask_persona,
+        history,
+        update,
+        routine,
+        skill,
+        secret_tool()
+    ])
 }
 
 /// `cooee mcp serve --thread <id>`: cooee's own MCP server: `propose_server`, and `remember` (#126),
-/// `ask_persona` (#156), `history` (#217), `update_persona` (#270) and `skill` (#218) for a persona's.
+/// `ask_persona` (#156), `history` (#217), `update_persona` (#270), `skill` (#218) and `secret` (#163) for a persona's.
 ///
 /// # Errors
 /// Never past a broken stdin; each refused proposal is the tool's error.
@@ -502,6 +524,7 @@ pub fn serve(thread: &str) -> Result<(), String> {
                     Some("update_persona") => Some(("/mcp/agent/persona", "")),
                     Some("create_routine") => Some(("/mcp/agent/routine", "")),
                     Some("skill") => Some(("/mcp/agent/skill", "")),
+                    Some("secret") => Some(("/mcp/agent/secret", "")),
                     _ => None,
                 };
                 match call.map(|(path, said)| {
