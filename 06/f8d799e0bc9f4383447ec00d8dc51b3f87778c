@@ -1,0 +1,11 @@
+Decided: one create-only .gitignore in cooee_core::gitignore, written by setup into a config folder it creates, by serve into the instance's own default config folder, and by config init --git before its commit
+Because: "It never overwrites a `.gitignore` the owner already has"
+Decided: serve adds it only when the config is the instance's default path, so a --config file in /tmp or ~ never drops a .gitignore beside it
+Because: crates/cooee-server/src/serve.rs:130
+Decided: init --git refuses when <config>/.git exists, before writing anything, so a second run changes nothing
+Because: "It refuses if the folder is already a git repo"
+Decided: the commit uses the owner's own git identity and sets no remote
+Because: q1606
+Rejected: ignoring config.toml's plugin tokens — config.toml is the file being versioned; the docs say to keep the remote private
+Check: rg 'command\("git"\)' crates --glob '!**/tests/**' finds themes.rs and manage.rs (data folder, pack sources) and machine.rs (work folders), none on <config>
+Owner: your config folder now gets a .gitignore that keeps secrets and caches out, and `cooee config init --git` starts a repo with one commit; cooee never runs git there again
