@@ -11,7 +11,7 @@ SHOTS=${SHOTS:-simulator-shots}
 pair_link() { sh -c "$(cat "$E2E/pair.again")" | sed -n 's/^link  //p'; }
 teardown() {
   mkdir -p "$SHOTS"
-  for look in dark light; do
+  for look in ask dark light; do
     xcrun xcresulttool export attachments --path "$E2E/e2e-$look.xcresult" \
       --output-path "$SHOTS/$look" || true
   done

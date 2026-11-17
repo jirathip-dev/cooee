@@ -13,7 +13,7 @@ public struct CooeeRoot: View {
     private let store = Store(
         initialState: AppFeature.State(
             layout: (try? LayoutStore.liveValue.load()) ?? .bundled, server: ServerStore.liveValue.load(),
-            settings: SettingsStore.liveValue.load(), mac: Self.mac
+            settings: SettingsStore.liveValue.load()
         )
     ) { AppFeature() }
 

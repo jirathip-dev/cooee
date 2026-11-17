@@ -10,7 +10,7 @@ impl issues, in order).
 Today the app has two kinds of screen. Plugin screens are data: JSON blocks (#125, `docs/plugins/screens.schema.json`)
 drawn by `CooeeUI/Block*.swift`, placed where the plugin's manifest says (`[[places]]`: `header-strip`, `menu-row`,
 `chat-cards`). cooee's own screens are Swift: `Root.swift` picks `HomeView` or `WideView` by size class, `Menu.swift`
-hard-codes the avatar menu's rows and their pages, `Onboarding.swift` and `MacSteps.swift` hold pairing and setup,
+hard-codes the avatar menu's rows and their pages, `Onboarding.swift` and `MacSteps.swift` hold pairing and setup (#484 removed the Mac setup),
 `Chat.swift` + `Composer.swift` the chat. The Mac's sidebar is an `HStack` in `Wide.swift`. Nothing outside the
 binary can move a row, add a screen to the menu or put a plugin's screen beside the chat on the Mac.
 
@@ -58,8 +58,8 @@ or **components** (native pieces the layout places and configures). Every block 
 
 1. **Three layers in the app.** `CooeeCore`: `Layout` (decoded, validated, size-class resolved), `Slot`,
    `Placement`, `LiveScreen` (unchanged), `KeptScreen`. `CooeeFeatures`: `LayoutFeature` (load, reload, last-good,
-   reset, one `ScreenFeature` per visible screen); `ChatFeature`, `PairingFeature`, `MacSetupFeature` stay as the
-   component blocks' reducers. `CooeeUI`: `SlotView` resolves a slot to its view: `BlocksView` for a screen, the
+   reset, one `ScreenFeature` per visible screen); `ChatFeature` and `PairingFeature` stay as the
+   component blocks' reducers (#484 removed `MacSetupFeature`: the Mac app is a client only). `CooeeUI`: `SlotView` resolves a slot to its view: `BlocksView` for a screen, the
    component's view for a component. `AppRoot` becomes `SlotView(root)`.
 
 2. **cooee core as a plugin.** `crates/cooee-server/src/screens/` serves `home`, `menu`, `settings/*`,

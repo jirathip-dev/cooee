@@ -91,7 +91,7 @@ register it in one line, keep `[[providers]]` config working, and keep every cal
 
 ## Open questions for the owner
 
-1. **Apple Swift in the check?** `apple/Sources/CooeeUI/Fixtures.swift` and `MacSteps.swift` hold sample rows
+1. **Apple Swift in the check?** `apple/Sources/CooeeUI/Fixtures.swift` holds sample rows
    ("Claude Code", "Codex", "Hermes") for design frames; renaming them re-records snapshots. Default: the check
    covers Rust and web only; apple sample data is out of scope (it has no provider logic). Say if you want apple in.
 2. **`base`**: OK as the one new config key (default above), or would you rather tests' fakes use the plain reading

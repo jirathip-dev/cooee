@@ -4,12 +4,12 @@ import CooeeCore
 @Reducer
 public struct AppFeature: Sendable {
     public static let others = "others"
+    public static let retired = "This Mac's server now comes from `cooee setup`: run it in Terminal."
 
     @ObservableState
     public struct State: Equatable {
         public var home: HomeFeature.State?
         public var pairing: PairingFeature.State?
-        public var setup: MacSetupFeature.State?
         public var chat: ChatFeature.State?
         public var newRoom: NewRoomFeature.State?
         public var path: [String] = []
@@ -17,14 +17,12 @@ public struct AppFeature: Sendable {
         public var terminal: TerminalFeature.State
         public var layout: LayoutFeature.State
         @Presents public var persona: PersonaFeature.State?
-        public let mac: Bool
+        public var notice: String?
 
-        public init(layout: Layout, server: Server?, settings: Settings = Settings(), mac: Bool = false) {
-            self.mac = mac
+        public init(layout: Layout, server: Server?, settings: Settings = Settings()) {
             self.layout = LayoutFeature.State(server: server, layout: layout)
             home = server.map(HomeFeature.State.init)
-            pairing = server == nil && !mac ? PairingFeature.State() : nil
-            setup = server == nil && mac ? MacSetupFeature.State() : nil
+            pairing = server == nil ? PairingFeature.State() : nil
             menu = MenuFeature.State(server: server, settings: settings)
             terminal = TerminalFeature.State(server: server)
         }
@@ -33,8 +31,8 @@ public struct AppFeature: Sendable {
     public enum Action: Sendable {
         case home(HomeFeature.Action)
         case pairing(PairingFeature.Action)
-        case setup(MacSetupFeature.Action)
-        case setUpHere
+        case retire
+        case retired
         case chat(ChatFeature.Action)
         case newRoom(NewRoomFeature.Action)
         case room
@@ -51,6 +49,7 @@ public struct AppFeature: Sendable {
     }
 
     @Dependency(\.serverStore) private var serverStore
+    @Dependency(\.loginItems) private var loginItems
     @Dependency(\.date.now) private var now
 
     public init() {}
@@ -61,21 +60,18 @@ public struct AppFeature: Sendable {
         Scope(state: \.terminal, action: \.terminal) { TerminalFeature() }
         Reduce { state, action in
             switch action {
-            case .pairing(.delegate(.paired(let server))), .setup(.delegate(.paired(let server))):
-                state = State(
-                    layout: state.layout.layout, server: server, settings: state.menu.settings, mac: state.mac)
+            case .pairing(.delegate(.paired(let server))):
+                state = State(layout: state.layout.layout, server: server, settings: state.menu.settings)
                 return .none
             case .home(.delegate(.unauthorized)):
                 serverStore.clear()
-                state = State(layout: state.layout.layout, server: nil, settings: state.menu.settings, mac: state.mac)
+                state = State(layout: state.layout.layout, server: nil, settings: state.menu.settings)
                 return .none
-            case .setup(.delegate(.clientOnly)):
-                state.setup = nil
-                state.pairing = PairingFeature.State()
-                return .none
-            case .setUpHere:
-                state.pairing = nil
-                state.setup = MacSetupFeature.State()
+            case .retire:
+                let loginItems = loginItems
+                return .run { send in if await loginItems.retire() { await send(.retired) } }
+            case .retired:
+                state.notice = Self.retired
                 return .none
             case .persona(.presented(.delegate(.saved))), .persona(.presented(.delegate(.deleted))):
                 state.persona = nil
@@ -111,7 +107,6 @@ public struct AppFeature: Sendable {
         }
         .ifLet(\.home, action: \.home) { HomeFeature() }
         .ifLet(\.pairing, action: \.pairing) { PairingFeature() }
-        .ifLet(\.setup, action: \.setup) { MacSetupFeature() }
         .ifLet(\.chat, action: \.chat) { ChatFeature() }
         .ifLet(\.newRoom, action: \.newRoom) { NewRoomFeature() }
         .ifLet(\.$persona, action: \.persona) { PersonaFeature() }

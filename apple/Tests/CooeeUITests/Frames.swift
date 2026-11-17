@@ -112,15 +112,12 @@ extension Frame {
     }
 
     private static var mac: [Frame] {
-        MacStep.allCases.map { step in mac("mac-setup-\(step.rawValue)", 960, 640, .farmDark) { MacSetup(step: step) } }
-            + [
-                mac("mac-connect", 960, 640, .farmLight) { MacConnect() },
-                mac("mac-window-dark", 1280, 820, .farmDark) { Sidebar() },
-                mac("mac-window-light", 1280, 820, .farmLight) { Sidebar() },
-                mac("mac-persona-panel-dark", 360, 820, .farmDark) {
-                    PersonaPanelBlocks(personaID: "coder", column: true)
-                },
-            ]
+        [
+            mac("mac-connect", 960, 640, .farmLight) { MacConnect() },
+            mac("mac-window-dark", 1280, 820, .farmDark) { Sidebar() },
+            mac("mac-window-light", 1280, 820, .farmLight) { Sidebar() },
+            mac("mac-persona-panel-dark", 360, 820, .farmDark) { PersonaPanelBlocks(personaID: "coder", column: true) },
+        ]
     }
 
     private static var settings: [Frame] {

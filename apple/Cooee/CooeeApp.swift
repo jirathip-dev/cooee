@@ -10,12 +10,6 @@ internal struct CooeeMain: App {
     #endif
 
     internal var body: some Scene {
-        #if os(macOS)
-            WindowGroup { CooeeRoot() }
-                .commands { Updates.commands }
-            Settings { Updates.settings }
-        #else
-            WindowGroup { CooeeRoot() }
-        #endif
+        WindowGroup { CooeeRoot() }
     }
 }

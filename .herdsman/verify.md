@@ -59,13 +59,12 @@ name below and the look (`home-dark_0_…png`).
 
 ### The Mac
 
-An issue about the Mac app takes its 1440 screens from the `mac-setup` job's `mac-setup-shots` artifact, in the same
-`apple` run the Doctor's fallback finds. The recipe does not run that job's `MacSetupUITests` here: it installs cooee
-and shed as login items on the host it runs on.
+An issue about the Mac app (a client only since #484) takes its 1440 screens from the `apple` job's `rendered-frames`
+artifact (the `mac-*` design frames), in the same `apple` run the Doctor's fallback finds.
 
 ```bash
 run=$(gh run list --workflow apple.yml --commit "$(git rev-parse HEAD)" --json databaseId -q '.[0].databaseId')
-gh run download "${run:?no apple run at this head}" -n mac-setup-shots -D "$OUT/shots/mac"; echo "mac shots run $run exit=$?"
+gh run download "${run:?no apple run at this head}" -n rendered-frames -D "$OUT/shots/mac"; echo "mac shots run $run exit=$?"
 ```
 
 ## Known noise
@@ -91,6 +90,7 @@ gh run download "${run:?no apple run at this head}" -n mac-setup-shots -D "$OUT/
 | iOS: Conductor and drover | `attach` (first look only), `conductor`, `events`, `queue`, `queue-live`, `queue-offline` |
 | iOS: Workflow and Others | `conductor-workflow`, `workflow` (one issue unfolded), `workflow-round`, `home-no-lanes`, `others` (`LiveWorkflowUITests`) |
 | iOS: the issue's own screen | add a `keep("<name>")` step to the `apple/UITests/Live*UITests.swift` test for that screen in the PR, after the screen it touches |
-| Mac: first run, pairing approve | CI `mac-setup-shots`: `mac-setup/` (`welcome`, `folders`, `qr`, `approve`, `approved`), `phone-ask/` (`pair-waiting`, `pair-approved`) |
+| Mac: first run | CI `rendered-frames`: `mac-connect` |
+| iOS: a phone asks, `cooee pair approve` answers | `simulator-shots/ask/`: `pair-waiting`, `pair-approved` (`testAsksAndTheCLIApprovesIt`) |
 
 iOS rows name the screenshot the live UI tests keep on that screen (`$OUT/shots/ios/<look>/`), on the path the test walks.

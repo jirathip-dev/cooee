@@ -2,7 +2,7 @@
 
 ## Today
 
-- **Pairing:** QR or a short code, approved from a paired device with its passkey (#68).
+- **Pairing:** QR or a short code, approved from a paired device with its passkey (#68) or with `cooee pair approve` on the server (#484).
 
 ## How it works
 
@@ -15,7 +15,9 @@ of the minute, and five misses drop the code. The device that enters it gets a r
 `<data>/devices.json` (0600) keeps only SHA-256 hashes of codes and tokens, and the passkeys' public keys. The other
 way round, a new device asks to pair (`/pair/request`), shows a two-word check word and polls `/pair/claim`; every
 paired device gets a push and a card, and approving needs a passkey with Face ID (`/pair/answer`); a decline tells the
-new device who said no. Requests last 5 minutes, at most 4 at once. Passkeys are WebAuthn, ES256 on the platform
+new device who said no; on the server's own machine `cooee pair asks` lists the requests and `cooee pair approve|decline
+<id>` answers one (#484: how a Mac running `cooee setup` approves its own Mac app or a phone; the simulator e2e's
+`testAsksAndTheCLIApprovesIt` drives it). Requests last 5 minutes, at most 4 at once. Passkeys are WebAuthn, ES256 on the platform
 authenticator, offered after pairing: the server checks the challenge (once, 5 minutes), the origin, the relying
 party's hash, user verification and the signature. A device that lost its cookie signs back in with its passkey
 (`/passkey/signin`) as a new device. `cooee devices` lists the devices and `cooee devices rm <id>` unpairs one (its

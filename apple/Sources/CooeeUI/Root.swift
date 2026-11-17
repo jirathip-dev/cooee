@@ -11,6 +11,11 @@ public struct AppRoot: View {
     #else
         private let size: UserInterfaceSizeClass? = .regular
     #endif
+    #if os(macOS)
+        private let mac = true
+    #else
+        private let mac = false
+    #endif
     @Bindable private var store: StoreOf<AppFeature>
 
     public var body: some View {
@@ -26,16 +31,20 @@ public struct AppRoot: View {
                     await home.send(.task).finish()
                 }
                 .task { await store.send(.layout(.task)).finish() }
-            } else if let setup = store.scope(state: \.setup, action: \.setup) {
-                MacSetup(store: setup)
             } else if let pairing = store.scope(state: \.pairing, action: \.pairing) {
-                if store.mac && [.welcome, .nearby, .address].contains(pairing.step) {
-                    MacConnect(store: pairing) { store.send(.setUpHere) }
+                if mac && [.welcome, .nearby, .address].contains(pairing.step) {
+                    MacConnect(store: pairing)
                 } else {
                     PairingBlocks(store: pairing)
                 }
             }
         }
+        .safeAreaInset(edge: .top) {
+            if let notice = store.notice {
+                Text(Markdown.inline(notice)).ui(13, .regular, look).foregroundStyle(look.palette.mute).padding(8)
+            }
+        }
+        .task { await store.send(.retire).finish() }
         .sheet(item: $store.scope(state: \.persona, action: \.persona)) { persona in
             PersonaScreen(store: persona) { store.send(.menu(.sprite(persona.draft.id, $0))) }
         }

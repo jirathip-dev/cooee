@@ -29,7 +29,7 @@ pub(crate) fn doctor(config: &Config) -> Result<(), String> {
     if loaded && !app.is_empty() {
         cooee_core::say!(
             "warn both {label} and the Mac app's login items ({}) are installed: two servers on one Mac\n     \
-             fix: in the app, take over the CLI install, or remove the app's login items",
+             fix: open the Mac app once (it removes them), or remove them in System Settings > General > Login Items",
             app.join(", ")
         );
     }

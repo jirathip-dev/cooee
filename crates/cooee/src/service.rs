@@ -38,18 +38,6 @@ pub(crate) fn app_items() -> Vec<&'static str> {
         .collect()
 }
 
-pub(crate) fn refuse_app() -> Result<(), String> {
-    let items = app_items();
-    if items.is_empty() {
-        return Ok(());
-    }
-    Err(format!(
-        "the cooee Mac app already runs this Mac's server (login items {}): use the app, or remove its login \
-         items in System Settings > General > Login Items first",
-        items.join(", ")
-    ))
-}
-
 pub(crate) fn job(instance: &str, verb: &str) -> String {
     match verb {
         "serve" => label(instance),

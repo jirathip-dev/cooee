@@ -21,9 +21,9 @@
         }
 
         @MainActor
-        internal func testAsksAndTheMacApprovesIt() throws {
+        internal func testAsksAndTheCLIApprovesIt() throws {
             guard let server = ProcessInfo.processInfo.environment["COOEE_ASK_ADDRESS"] else {
-                throw XCTSkip("CI's mac-setup job sets COOEE_ASK_ADDRESS, once the Mac shows its QR")
+                throw XCTSkip("apple/e2e/steps/20-app.sh sets COOEE_ASK_ADDRESS and approves with `cooee pair approve`")
             }
             let app = XCUIApplication()
             app.launch()
@@ -35,21 +35,8 @@
             app.buttons["Connect"].firstMatch.tap()
             XCTAssert(labelled(app, "Waiting").waitForExistence(timeout: 30))
             keep("pair-waiting")
-            XCTAssert(app.staticTexts["Paired with 127.0.0.1"].waitForExistence(timeout: 600))
+            XCTAssert(app.staticTexts["Paired with 127.0.0.1"].waitForExistence(timeout: 60))
             keep("pair-approved")
-        }
-
-        @MainActor
-        internal func testStaysPairedAfterTheMacUpdates() throws {
-            guard ProcessInfo.processInfo.environment["COOEE_AFTER_UPDATE"] == "1" else {
-                throw XCTSkip("CI's mac-setup job sets COOEE_AFTER_UPDATE, once the Mac has updated itself")
-            }
-            let app = XCUIApplication()
-            app.launch()
-            XCTAssert(newChat(app).waitForExistence(timeout: 30), "still paired: home, not the pairing screen")
-            newChat(app).tap()
-            XCTAssert(app.buttons["Coder"].firstMatch.waitForExistence(timeout: 30), "the updated server answers")
-            keep("after-mac-update")
         }
     }
 #endif

@@ -35,6 +35,15 @@ internal struct AppFeatureTests {
         #expect(store.state.home?.server == mini && store.state.pairing == nil)
     }
 
+    @Test internal func aMacThatRanTheServerRetiresItsLoginItemsAndSaysSo() async {
+        let store = store(AppFeature.State(layout: testLayout, server: mini))
+        store.dependencies.loginItems.retire = { true }
+        await store.send(.retire)
+        await store.receive(\.retired) { $0.notice = AppFeature.retired }
+        store.dependencies.loginItems.retire = { false }
+        await store.send(.retire)
+    }
+
     @Test internal func aForgottenDevicePairsAgain() async {
         let store = store(AppFeature.State(layout: testLayout, server: mini))
         await store.send(.home(.delegate(.unauthorized))) { $0 = AppFeature.State(layout: testLayout, server: nil) }
@@ -84,27 +93,6 @@ internal struct AppFeatureTests {
             $0.path = ["new:nobody"]
             $0.chat = nil
         }
-    }
-
-    @Test internal func anUnpairedMacSetsItselfUpOrConnectsElsewhere() async {
-        let store = store(AppFeature.State(layout: testLayout, server: nil, mac: true))
-        #expect(store.state.setup == MacSetupFeature.State() && store.state.pairing == nil)
-        await store.send(.setup(.connectElsewhere))
-        await store.receive(\.setup.delegate.clientOnly) {
-            $0.setup = nil
-            $0.pairing = PairingFeature.State()
-        }
-        await store.send(.setUpHere) {
-            $0.pairing = nil
-            $0.setup = MacSetupFeature.State()
-        }
-        await store.send(.setup(.delegate(.paired(mini)))) {
-            $0 = AppFeature.State(layout: testLayout, server: mini, mac: true)
-        }
-        await store.send(.home(.delegate(.unauthorized))) {
-            $0 = AppFeature.State(layout: testLayout, server: nil, mac: true)
-        }
-        #expect(store.state.setup != nil)
     }
 
     @Test internal func withoutHomeNoChatOrPersonaOpens() async {
