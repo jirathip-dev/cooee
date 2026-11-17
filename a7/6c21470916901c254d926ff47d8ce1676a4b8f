@@ -1,0 +1,19 @@
+Decided: the scenario is a data table in crates/cooee/tests/conformance.rs; the fake and the nightly run the same steps and checks
+Because: "The conformance scenario (steps 1, 2, 3 and 6 first; later slices add theirs), run on `FakeShed` in CI"
+Decided: "no sleep is left" is checked inside the session's own process tree, not host-wide
+Because: crates/cooee/tests/conformance.rs:88
+Rejected: host-wide pgrep — another lane's `sleep 120` on the shared Mac failed it
+Decided: the context-token ceiling is bounded by 10 prompts, 10 minutes and the smallest model until slice 6 reports context use
+Because: "at most 10 prompts, 10 minutes and 40,000 context tokens per night on the smallest model"
+Check: break the fake's kill in sleep_until_cancel and step 6 fails with the leftover pid
+Owner: a nightly check of the real Claude, capped at 10 prompts and 10 minutes, with a per-step report and one issue per failing step
+
+Decided: the scenario is a data table in crates/cooee/tests/conformance.rs; the fake and the nightly run the same steps and checks
+Because: "The conformance scenario (steps 1, 2, 3 and 6 first; later slices add theirs), run on `FakeShed` in CI"
+Decided: the report path is set per step from runner.temp, not in job-level env
+Because: .github/workflows/conformance.yml:79
+Rejected: job-level env REPORT from runner.temp — actionlint: the runner context is not allowed there
+Decided: the context-token ceiling is bounded by 10 prompts, 10 minutes and the smallest model until slice 6 reports context use
+Because: "at most 10 prompts, 10 minutes and 40,000 context tokens per night on the smallest model"
+Check: CI's actionlint job is green at the head
+Owner: a nightly check of the real Claude, capped at 10 prompts and 10 minutes, with a per-step report and one issue per failing step
