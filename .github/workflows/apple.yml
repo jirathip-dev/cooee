@@ -13,6 +13,7 @@
 # #440: the e2e runs nightly on staging's head (and on a manual run) whatever `vars.E2E` says; PRs and staging pushes
 # follow `vars.E2E` (#436: `off` skips the e2e steps). #475: a pull request push takes a Mac only on the merge-ready
 # run (or while the PR carries merge-ready); any other push runs `apple` on ubuntu-latest, "waits for merge-ready".
+# #486: the builds use the runner's warm folders (APPLE_DERIVED, APPLE_PACKAGES from .github/actions/mac-runner).
 name: apple
 on:
   push:
@@ -98,11 +99,12 @@ jobs:
         if: github.event_name == 'pull_request' && env.MAC == 'true'
         working-directory: apple
         run: |
-          destinations=("generic/platform=macOS")
-          [ "$E2E" = true ] || destinations+=("generic/platform=iOS Simulator")
+          destinations=("platform=macOS,arch=arm64")
+          [ "$E2E" = true ] || destinations+=("platform=iOS Simulator,name=iPhone 17")
           for destination in "${destinations[@]}"; do
             xcodebuild -skipMacroValidation -project Cooee.xcodeproj -scheme Cooee -destination "$destination" \
-              -derivedDataPath "$RUNNER_TEMP/derived" CODE_SIGNING_ALLOWED=NO build
+              -derivedDataPath "$APPLE_DERIVED/xcode" -clonedSourcePackagesDirPath "$APPLE_PACKAGES/xcode" \
+              CODE_SIGNING_ALLOWED=NO build
           done
       - name: just apple-check
         if: env.FULL == 'true'

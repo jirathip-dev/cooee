@@ -3,6 +3,7 @@
 # that each TODO(#N) names an open issue), SwiftLint, the build (Swift 6, warnings as errors), the tests, coverage of
 # Core, API and Features (95%), unused imports (swiftlint analyze) and Periphery. Without Xcode it runs what the
 # Command Line Tools can and names what it skipped. SwiftLint and Periphery are pinned and checked by sha256.
+# #486: with APPLE_DERIVED and APPLE_PACKAGES set (.github/actions/mac-runner) SwiftPM builds and clones there, warm.
 set -eu
 cd "$(dirname "$0")/.."
 root=$(pwd)
@@ -22,6 +23,16 @@ fetch() {
 
 step() { printf '\n== %s\n' "$1"; }
 
+apple_build="$root/apple/.build" slop_build="$root/tools/anti-slop-swift/.build" cache=""
+if [ -n "${APPLE_DERIVED:-}" ]; then
+  apple_build="$APPLE_DERIVED/swiftpm/apple" slop_build="$APPLE_DERIVED/swiftpm/anti-slop" cache="$APPLE_PACKAGES/swiftpm"
+fi
+spm() {
+  build=$1
+  shift
+  swift "$@" --scratch-path "$build" ${cache:+--cache-path "$cache"}
+}
+
 export COOEE_STRICT=1
 xcode=no
 if xcodebuild -version >/dev/null 2>&1; then xcode=yes; else export TOOLCHAIN_DIR=/Library/Developer/CommandLineTools; fi
@@ -30,8 +41,8 @@ step "swift format"
 (cd apple && swift format lint --strict -r -p Package.swift $swift_dirs)
 
 step "anti-slop"
-swift build -q -c release --package-path tools/anti-slop-swift --product anti-slop
-(cd apple && "$root/tools/anti-slop-swift/.build/release/anti-slop" $swift_dirs)
+spm "$slop_build" build -q -c release --package-path tools/anti-slop-swift --product anti-slop
+(cd apple && "$slop_build/release/anti-slop" $swift_dirs)
 echo "no violations"
 
 step "TODO(#N) names an open issue"
@@ -54,11 +65,15 @@ else
   mkdir -p apple/.build
   log="$root/apple/.build/apple-check-build.log"
   step "build (Swift 6, complete concurrency, warnings as errors)"
-  (cd apple && swift build --build-tests --enable-code-coverage -v >"$log" 2>&1) || { tail -50 "$log"; exit 1; }
+  (cd apple && spm "$apple_build" build --build-tests --enable-code-coverage -v >"$log" 2>&1) || {
+    tail -50 "$log"
+    exit 1
+  }
 
   step "tests with coverage"
-  (cd apple && swift test --enable-code-coverage --skip-build)
-  bin=$(cd apple && swift build --show-bin-path)
+  bin=$(cd apple && spm "$apple_build" build --show-bin-path)
+  rm -rf "${bin:?}/codecov"
+  (cd apple && spm "$apple_build" test --enable-code-coverage --skip-build)
   set --
   for object in "$bin"/Cooee*Tests.xctest/Contents/MacOS/*; do
     [ -f "$object" ] && set -- "$@" -object "$object"
@@ -74,13 +89,13 @@ else
   step "Periphery 3.8.0"
   fetch periphery 3.8.0 https://github.com/peripheryapp/periphery/releases/download/3.8.0/periphery-3.8.0.zip \
     07d4e286e31dd79164df39097e0b59f533c94badbe18158464a455ea88a166d7
-  store=apple/.build/out
-  [ -d "$store/v5" ] || store=apple/.build/debug/index/store
-  (cd apple && "$tools/periphery-3.8.0/periphery" scan --quiet --index-store-path "$root/$store")
+  store="$apple_build/out"
+  [ -d "$store/v5" ] || store="$apple_build/debug/index/store"
+  (cd apple && "$tools/periphery-3.8.0/periphery" scan --quiet --index-store-path "$store")
   echo "no unused code"
 
   step "anti-slop's own tests"
-  swift test -q --package-path tools/anti-slop-swift
+  spm "$slop_build" test -q --package-path tools/anti-slop-swift
 fi
 
 printf '\napple-check: ok\n'
