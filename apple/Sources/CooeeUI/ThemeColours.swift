@@ -4,13 +4,22 @@ import CooeeFeatures
 import SwiftUI
 
 internal struct ThemeColours: View {
-    private static let tokens = [
-        "--a", "--r", "--g", "--fg", "--mute", "--bg", "--card", "--l", "--link", "--edge", "--line", "--scrim", "--p",
-        "--c", "--fk-l", "--fk-p", "--fk-c", "--fk-g", "--fk-a",
+    private static let groups = [
+        ("Text", ["--fg", "--mute", "--l", "--link"]),
+        (
+            "Surfaces · figures",
+            [
+                "--bg", "--card", "--edge", "--line", "--scrim", "--p", "--c", "--fk-l", "--fk-c", "--fk-a", "--fk-g",
+                "--fk-p",
+            ]
+        ),
     ]
     private static let names = [
         "--a": "working", "--r": "needs you · failed", "--g": "done", "--fg": "text", "--mute": "quiet text",
-        "--bg": "background", "--card": "cards", "--l": "lead", "--link": "links", "--edge": "edges", "--line": "lines",
+        "--bg": "background", "--card": "cards", "--l": "accent", "--link": "links", "--edge": "edges",
+        "--line": "lines",
+        "--p": "purple", "--c": "blue", "--fk-l": "figure 1", "--fk-c": "figure 2", "--fk-a": "figure 3",
+        "--fk-g": "figure 4", "--fk-p": "figure 5",
     ]
 
     @Environment(\.look) private var look
@@ -33,10 +42,13 @@ internal struct ThemeColours: View {
                 ThemePreview(state: store.state, chat: true, dark: dark)
                 let fails = report?.fails.count ?? 0
                 Group2(
-                    header: "Theme gate · "
+                    header: "States · theme gate "
                         + (report == nil ? "checking" : fails == 0 ? "✓ passes" : "✗ \(fails) to fix")
                 ) {
-                    ForEach(Self.tokens, id: \.self) { key in row(key, report?.marks[key]) }
+                    ForEach(["--a", "--r", "--g"], id: \.self) { key in row(key, report?.marks[key]) }
+                }
+                ForEach(Self.groups, id: \.0) { header, keys in
+                    Group2(header: header) { ForEach(keys, id: \.self) { key in row(key, report?.marks[key]) } }
                 }
             }
             .padding(16)
@@ -89,15 +101,23 @@ internal struct ThemeColours: View {
                 Text("\(mark.what): \(String(format: "%.2f", mark.value)):1, the gate needs \(mark.min.formatted()):1.")
                     .ui(14, .regular, look).foregroundStyle(look.palette.mute)
             }
-            Slider(value: Binding(get: { shade.hue }, set: { hue in set { $0.hue = hue } })) { Text("Hue") }
-            Slider(value: Binding(get: { shade.light }, set: { light in set { $0.light = light } })) { Text("Light") }
+            slider("Hue", Binding(get: { shade.hue }, set: { hue in set { $0.hue = hue } }))
+            slider("Light", Binding(get: { shade.light }, set: { light in set { $0.light = light } }))
             if let fix = mark?.fix {
-                Button((Shade(hex: fix)?.light ?? 0 < shade.light ? "Darken" : "Lighten") + " to \(fix) ✓") {
+                let ratio = mark?.fixed.map { String(format: " · %.1f:1", $0) } ?? ""
+                Button((Shade(hex: fix)?.light ?? 0 < shade.light ? "Darken" : "Lighten") + " to \(fix)\(ratio) ✓") {
                     store.send(.token(key, fix))
                 }
                 .buttonStyle(.borderedProminent).tint(look.palette.lead)
             }
         }
         .padding(.horizontal, 14).padding(.bottom, 12)
+    }
+
+    private func slider(_ title: String, _ value: Binding<Double>) -> some View {
+        HStack(spacing: 12) {
+            Text(title).ui(14, .regular, look).foregroundStyle(look.palette.mute).frame(width: 44, alignment: .leading)
+            Slider(value: value).accessibilityLabel(title)
+        }
     }
 }

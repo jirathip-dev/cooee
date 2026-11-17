@@ -10,6 +10,8 @@ public struct ThemePack: Codable, Sendable, Equatable {
     public let scheme: Pair
     public let sprites: Bool
     public var style: LookStyle?
+    public var words: [String: String]?
+    public var scene: [String]?
 }
 
 public struct ThemeScheme: Codable, Sendable, Equatable {

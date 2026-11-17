@@ -57,6 +57,9 @@ pub struct Mark {
     /// The nearest passing colour, when it fails.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub fix: Option<String>,
+    /// The token's worst ratio with that fix.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub fixed: Option<f64>,
 }
 
 /// The gate on one mode's colours: every failure, and each token's mark.
@@ -98,6 +101,7 @@ pub fn report(tokens: &BTreeMap<String, String>) -> Report {
             let fix = (c.value < c.min)
                 .then(|| contrast::fix(&s, c.token))
                 .flatten();
+            let fixed = fix.as_ref().and_then(|f| worst(&s, c.token, f));
             let (what, value, min) = (c.what.clone(), c.value, c.min);
             marks.insert(
                 c.token.to_owned(),
@@ -106,12 +110,24 @@ pub fn report(tokens: &BTreeMap<String, String>) -> Report {
                     value,
                     min,
                     fix,
+                    fixed,
                 },
             );
         }
     }
     let fails = contrast::gate(&s).err().into_iter().collect();
     Report { fails, marks }
+}
+
+fn worst(s: &Scheme, token: &str, shade: &str) -> Option<f64> {
+    let mut t = s.clone();
+    t.tokens.insert(token.to_owned(), shade.to_owned());
+    contrast::checks(&t)
+        .ok()?
+        .into_iter()
+        .filter(|c| c.token == token)
+        .min_by(|a, b| (a.value / a.min).total_cmp(&(b.value / b.min)))
+        .map(|c| c.value)
 }
 
 const STARTER: [(&str, &[u8]); 2] = [

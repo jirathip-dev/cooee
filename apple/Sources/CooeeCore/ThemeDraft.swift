@@ -36,6 +36,7 @@ public struct GateMark: Codable, Sendable, Equatable {
     public let value: Double
     public let min: Double
     public var fix: String?
+    public var fixed: Double?
 
     public var passes: Bool { value >= min }
 }

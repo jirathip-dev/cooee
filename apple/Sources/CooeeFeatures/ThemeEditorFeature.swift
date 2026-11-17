@@ -11,6 +11,8 @@ public struct ThemeEditorFeature: Sendable {
         public var kept: String?
         public var art: URL?
         public var schemes: [String: ThemeScheme]
+        public var words: [String: String]
+        public var layers: Int
         public var reports: [String: GateReport] = [:]
         public var colours: Bool?
         public var open: String?
@@ -26,6 +28,9 @@ public struct ThemeEditorFeature: Sendable {
             kept = own ? theme : nil
             art = new ? nil : looks.art(theme, on: server.url)
             schemes = looks.schemes
+            let pack = new ? nil : looks.themes[theme]
+            words = pack?.words ?? [:]
+            layers = pack?.scene?.count ?? 0
         }
 
         public var name: String { kept ?? ThemeDraft.folder(draft.label) }

@@ -34,7 +34,7 @@ public struct MenuFeature: Sendable {
         case loaded(JSONValue)
         case show(String, label: String, source: LayoutSource = .core)
         case page(PresentationAction<ScreenFeature.Action>)
-        case edit(new: Bool)
+        case edit(String?)
         case editor(ThemeEditorFeature.Action)
         case path([Page])
         case load
@@ -65,7 +65,9 @@ public struct MenuFeature: Sendable {
             case .open, .loaded, .show, .page, .edit, .editor:
                 return navigate(&state, action)
             case .path(let path):
+                let opened = path.last == .look && !state.path.contains(.look)
                 state.path = path
+                return opened ? load(state) : .none
             case .load:
                 return load(state)
             case .style(let style):
@@ -157,10 +159,10 @@ public struct MenuFeature: Sendable {
 extension MenuFeature {
     private func editing(_ state: inout State, _ action: Action) -> Effect<Action> {
         switch action {
-        case .edit(let new):
+        case .edit(let pack):
             guard let server = state.server else { return .none }
-            let (theme, style) = (state.settings.theme, state.settings.style)
-            state.editor = .init(server: server, looks: state.looks, theme: theme, style: style, new: new)
+            let (theme, style) = (pack ?? state.settings.theme, state.settings.style)
+            state.editor = .init(server: server, looks: state.looks, theme: theme, style: style, new: pack == nil)
             state.saved = nil
             state.path.append(.themeEditor)
             return .send(.editor(.task))

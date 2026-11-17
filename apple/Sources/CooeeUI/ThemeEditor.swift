@@ -5,7 +5,6 @@ import SwiftUI
 
 internal struct ThemeEditor: View {
     @Environment(\.look) private var look
-    @State private var naming = false
     internal let store: StoreOf<ThemeEditorFeature>
 
     internal var body: some View {
@@ -16,32 +15,22 @@ internal struct ThemeEditor: View {
                 chips
                 gateLine
                 if let error = store.error { Text(error).ui(13, .regular, look).foregroundStyle(palette.red) }
-                Group2 {
-                    Button {
-                        naming = true
-                    } label: {
-                        SettingRow(symbol: "textformat", title: "Name", value: store.draft.label, divider: false)
-                            .contentShape(.rect)
-                    }
-                    .buttonStyle(.plain)
-                }
                 Group2(header: "Style") {
                     ThemeChips(values: LookStyle.allCases, picked: [store.draft.style]) { store.send(.style($0)) }
                 }
                 figures
-                Group2(header: "Colours") {
+                Group2(header: "Scene, colours, words") {
+                    backdrop
                     ForEach([true, false], id: \.self) { dark in colourRow(dark) }
+                    words
                 }
             }
             .padding(16)
         }
         .background(palette.background).foregroundStyle(palette.foreground)
-        .navigationTitle(store.draft.label)
+        .navigationTitle(Binding(get: { store.draft.label }, set: { store.send(.label($0)) }))
+        .toolbarTitleMenu { RenameButton() }
         .toolbar { Button("Save") { store.send(.save) }.disabled(!store.canSave) }
-        .alert("Name", isPresented: $naming) {
-            TextField("Name", text: Binding(get: { store.draft.label }, set: { store.send(.label($0)) }))
-            Button("OK") {}
-        }
         .navigationDestination(
             isPresented: Binding(get: { store.colours != nil }, set: { if !$0 { store.send(.colours(nil)) } })
         ) { ThemeColours(store: store) }
@@ -89,17 +78,43 @@ internal struct ThemeEditor: View {
         }
     }
 
+    private var backdrop: some View {
+        HStack(spacing: 12) {
+            Sprite(name: "scene-strip", pack: "scene.svg").scaledToFill().frame(width: 64, height: 32)
+                .clipShape(.rect(cornerRadius: 6)).environment(\.look, ThemePreview.look(store.state, look, dark: true))
+            Text(store.layers == 0 ? "Backdrop" : "Backdrop · \(store.layers) layers").ui(16, .regular, look)
+            Spacer()
+        }
+        .padding(.horizontal, 14).frame(height: 52).overlay(alignment: .bottom) { line }
+    }
+
+    private var words: some View {
+        let some = store.words.keys.sorted().prefix(2).compactMap { store.words[$0] }.joined(separator: ", ")
+        return HStack {
+            Text("Words").ui(16, .regular, look)
+            Spacer()
+            Text("\(store.words.count) of 9" + (some.isEmpty ? " · the plain words" : " · \(some)…"))
+                .ui(15, .regular, look).foregroundStyle(look.palette.mute).lineLimit(1)
+        }
+        .padding(.horizontal, 14).frame(height: 48)
+    }
+
+    private var line: some View { Rectangle().fill(look.palette.line).frame(height: 0.5).padding(.leading, 14) }
+
     private func colourRow(_ dark: Bool) -> some View {
         let fails = store.reports[dark ? "dark" : "light"]?.fails.count ?? 0
         return Button {
             store.send(.colours(dark))
         } label: {
-            SettingRow(
-                symbol: dark ? "moon" : "sun.max", title: dark ? "Dark colours" : "Light colours",
-                value: store.reports.isEmpty ? "checking…" : fails == 0 ? "✓ passes" : "✗ \(fails) to fix",
-                divider: dark
-            )
-            .contentShape(.rect)
+            HStack {
+                Text(dark ? "Dark colours" : "Light colours").ui(16, .regular, look)
+                Spacer()
+                Text(store.reports.isEmpty ? "checking…" : fails == 0 ? "✓ passes" : "✗ \(fails) to fix")
+                    .ui(15, .medium, look).foregroundStyle(fails == 0 ? look.palette.green : look.palette.amber)
+                Image(systemName: "chevron.right").font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(look.palette.mute)
+            }
+            .padding(.horizontal, 14).frame(height: 48).overlay(alignment: .bottom) { line }.contentShape(.rect)
         }
         .buttonStyle(.plain)
     }
@@ -143,10 +158,26 @@ internal struct ThemePreview: View {
 
     internal var body: some View {
         let shown = Self.look(state, look, dark: dark)
-        Group { if chat { ChatView.cards() } else { HomeView() } }
-            .frame(width: 390, height: 480).scaleEffect(0.94, anchor: .top).frame(height: 450, alignment: .top)
-            .frame(maxWidth: .infinity).background(shown.palette.background).clipShape(.rect(cornerRadius: 22))
-            .environment(\.look, shown).environment(\.colorScheme, dark ? .dark : .light)
-            .allowsHitTesting(false).accessibilityElement(children: .ignore).accessibilityLabel("Preview")
+        Group {
+            if chat {
+                VStack(alignment: .leading, spacing: 14) {
+                    ForEach(Fixtures.cards) { ItemView(item: $0) }
+                }
+                .padding(16).environment(\.asker, Fixtures.persona("res"))
+            } else {
+                VStack(spacing: 0) {
+                    if shown.style == .scene, shown.art != nil {
+                        Sprite(name: "scene-strip", pack: "scene.svg").scaledToFill().frame(height: 120).clipped()
+                    }
+                    ChatList(chats: Array(Fixtures.chats.filter { $0.asker == nil }.prefix(3))).padding(.top, 14)
+                }
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading).foregroundStyle(shown.palette.foreground)
+        .background(shown.palette.background)
+        .clipShape(.rect(cornerRadius: shown.mono ? 0 : 22))
+        .overlay { RoundedRectangle(cornerRadius: shown.mono ? 0 : 22).stroke(shown.palette.edge) }
+        .environment(\.look, shown).environment(\.colorScheme, dark ? .dark : .light)
+        .allowsHitTesting(false).accessibilityElement(children: .ignore).accessibilityLabel("Preview")
     }
 }

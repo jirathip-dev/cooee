@@ -147,7 +147,7 @@ internal struct ThemeEditorMenuTests {
             $0.settings.theme = "tidepool"
             $0.settings.style = .scene
         }
-        await store.send(.edit(new: false)) {
+        await store.send(.edit("tidepool")) {
             $0.editor = ThemeEditorFeature.State(
                 server: mini, looks: looks, theme: "tidepool", style: .scene, new: false)
             $0.path = [.themeEditor]

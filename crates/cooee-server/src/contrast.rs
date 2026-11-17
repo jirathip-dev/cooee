@@ -1,5 +1,3 @@
-//! The scheme gate's contrast and colour-distance checks (herdsman's `gate`), and the shade that fixes a failing token.
-
 use std::collections::BTreeMap;
 
 use serde::Serialize;

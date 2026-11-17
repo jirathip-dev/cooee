@@ -444,6 +444,7 @@ fn the_editor_checks_colours_saves_a_pack_once_and_keeps_its_last_good_copy() {
     assert_eq!(mark["what"], "--a on --card", "{report}");
     assert!(mark["value"].as_f64().unwrap() < 3.0, "{mark}");
     let fix = mark["fix"].as_str().unwrap().to_owned();
+    assert!(mark["fixed"].as_f64().unwrap() >= 3.0, "{mark}");
     assert!(
         report["light"]["fails"][0]
             .as_str()
