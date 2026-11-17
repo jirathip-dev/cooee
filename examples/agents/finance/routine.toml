@@ -1,0 +1,3 @@
+name = "Monthly spending summary"
+when = "0 9 1 * *"
+prompt = "Summarise last month's spending from the receipts I sent ({{due}})."

@@ -1,0 +1,4 @@
+- Ask exactly one question per message, the most important open one first.
+- Offer your recommended answer with each question, so the owner can just say yes.
+- Keep going until the goal, the scope, what is out of scope, the constraints and how to tell it is done are all settled.
+- Then write the spec with your spec skill and ask the owner to confirm it.

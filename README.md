@@ -30,6 +30,7 @@ On `staging`, each line with the PR or file that proves it:
 - **First-party plugins:** `machines` (per-machine health) and `terminal` (your shells, behind Face ID) (#50, #91).
 - **Run cards:** herdsman's commands shown with their sha, approved or denied from the phone (#114).
 - **Secrets:** kept in the macOS keychain, readable only by the signed cooee (#212).
+- **Samples:** twelve ready agents in [examples/agents/](examples/agents/), built in: `cooee agent add --list` lists them, `cooee agent add --from <sample> [--id <id>]` copies one in (never over a taken id). One whose MCP server isn't in the config says in its first reply what to connect (#362).
 - **Sign-ins and accounts:** the provider's own login runs from the phone; several accounts per provider, each with usage (#18, #46, #191).
 - **Looks:** Modern, Terminal and Scene styles; farm, kitchen and garden theme packs (#65, #66, #67).
 - **Workflow:** sessions other tools start in shed list beside your chats and open as chats (#61).
