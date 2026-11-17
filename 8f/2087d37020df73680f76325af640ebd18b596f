@@ -1,0 +1,9 @@
+Decided: staging's comments-kept save test edits the Book's routines, since load returns a Book on this branch
+Because: crates/cooee-core/src/routines.rs:510
+Decided: Routines::save keeps this branch's Book (routines and seen guids) and staging's surgical routines.toml patch
+Because: crates/cooee-core/src/routines.rs:572
+Decided: an event routine from create_routine raises a Face ID card (form routine); approving saves it, declining saves nothing
+Because: q1351
+Rejected: changing load back to a Vec — the seen guids and rate live on the Book; the test follows the API
+Check: cargo test -p cooee-core --test disk exits 0 at head; ci/gates/test.sh exits 0
+Owner: Agents can now set up routines that fire on GitHub events, saved only after you approve them with Face ID.
