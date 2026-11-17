@@ -20,20 +20,42 @@ pub const HITS: usize = 5;
 pub const SNIPPET: usize = 200;
 /// A read is at most this many characters.
 pub const PAGE: usize = 4000;
-/// A consolidation run reads at most this many characters of new history (#219).
+/// A consolidation or heartbeat run reads at most this many characters of new history (#219, #498).
 pub const NEW: usize = 20_000;
 
 static MARKS: Mutex<()> = Mutex::new(());
 
 /// Where a routine stands in a persona's history (#219, the heartbeat's too): the newest line read and the newest
 /// due time run, in Unix ms.
-#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(default)]
 pub struct Watermark {
     /// The newest transcript line read.
     pub line: u64,
     /// The newest due time run (0: none seen yet).
     pub due: u64,
+    /// When the heartbeat ran in the last 24 hours (#498).
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub runs: Vec<u64>,
+    /// The heartbeat's last run (#498).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub last: Option<Beat>,
+}
+
+/// A heartbeat run (#498): when it started, what it read and why it stayed silent (empty: it pushed, or runs).
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(default)]
+pub struct Beat {
+    /// Its start, Unix ms.
+    pub at: u64,
+    /// Its thread's `random_id`.
+    pub run: String,
+    /// What it read.
+    pub read: String,
+    /// Why it stayed silent.
+    pub why: String,
+    /// It pushed.
+    pub pushed: bool,
 }
 
 /// Watermark `key` of `<data>/watermarks.json` changed by `f`, one change at a time, written when it changed: what
@@ -49,8 +71,8 @@ pub fn watermark<T>(data: &Path, key: &str, f: impl FnOnce(&mut Watermark) -> T)
         Err(e) if e.kind() == io::ErrorKind::NotFound => BTreeMap::new(),
         Err(e) => return Err(e),
     };
-    let was = all.get(key).copied().unwrap_or_default();
-    let mut w = was;
+    let was = all.get(key).cloned().unwrap_or_default();
+    let mut w = was.clone();
     let out = f(&mut w);
     if w != was {
         all.insert(key.to_owned(), w);
@@ -59,7 +81,8 @@ pub fn watermark<T>(data: &Path, key: &str, f: impl FnOnce(&mut Watermark) -> T)
     Ok(out)
 }
 
-/// What `threads` said after line `mark` (ms), a routine's prompts left out: none when the owner said nothing since;
+/// What `threads` said after line `mark` (ms), a routine's prompts left out: none when nothing was said since, or
+/// with `owner`, when the owner said nothing since;
 /// else the newest lines that fit in [`NEW`] characters, oldest first, `<thread> <date> <who>: <text>` each, and the
 /// newest line's time, the next mark.
 ///
@@ -68,7 +91,7 @@ pub fn watermark<T>(data: &Path, key: &str, f: impl FnOnce(&mut Watermark) -> T)
 pub fn since(
     store: &Store,
     threads: &[String],
-    mark: u64,
+    (mark, owner_only): (u64, bool),
 ) -> Result<Option<(String, u64)>, StoreError> {
     let (mut lines, mut owner) = (Vec::new(), false);
     for id in threads {
@@ -87,7 +110,7 @@ pub fn since(
             lines.push((i.at, format!("{id} {} {who}: {text}", date(i.at))));
         }
     }
-    if !owner {
+    if lines.is_empty() || (owner_only && !owner) {
         return Ok(None);
     }
     lines.sort_by_key(|l| std::cmp::Reverse(l.0));
@@ -344,8 +367,17 @@ mod tests {
         s.append("t1", &item(2, 20, prompt)).unwrap();
         s.append("t1", &item(3, 30, agent("a reply"))).unwrap();
         let ids = vec!["t1".to_owned(), "t2".to_owned()];
-        assert_eq!(since(&s, &ids, 10).unwrap(), None, "no owner turn after 10");
-        let (text, newest) = since(&s, &ids, 0).unwrap().unwrap();
+        assert_eq!(
+            since(&s, &ids, (10, true)).unwrap(),
+            None,
+            "no owner turn after 10"
+        );
+        let (reply, _) = since(&s, &ids, (10, false)).unwrap().unwrap();
+        assert_eq!(
+            reply, "t1 1970-01-01 reply: a reply",
+            "a heartbeat reads replies too"
+        );
+        let (text, newest) = since(&s, &ids, (0, true)).unwrap().unwrap();
         assert_eq!(newest, 30);
         assert_eq!(
             text,
@@ -362,7 +394,7 @@ mod tests {
             )
             .unwrap();
         }
-        let (text, newest) = since(&s, &ids, 30).unwrap().unwrap();
+        let (text, newest) = since(&s, &ids, (30, true)).unwrap().unwrap();
         assert!(text.chars().count() <= NEW, "{}", text.chars().count());
         assert_eq!(newest, 399);
         assert!(
@@ -374,7 +406,7 @@ mod tests {
             "oldest dropped"
         );
         assert_eq!(
-            since(&s, &ids, newest).unwrap(),
+            since(&s, &ids, (newest, false)).unwrap(),
             None,
             "nothing after the newest"
         );
@@ -387,9 +419,9 @@ mod tests {
         );
         fs::create_dir_all(&dir).unwrap();
         watermark(&dir, "a", |w| w.line = 5).unwrap();
-        let got = watermark(&dir, "b", |w| *w).unwrap();
+        let got = watermark(&dir, "b", |w| w.clone()).unwrap();
         assert_eq!(got, Watermark::default());
-        assert_eq!(watermark(&dir, "a", |w| *w).unwrap().line, 5);
+        assert_eq!(watermark(&dir, "a", |w| w.line).unwrap(), 5);
         fs::remove_dir_all(&dir).unwrap();
     }
 

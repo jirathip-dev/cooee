@@ -1,7 +1,7 @@
 # cooee rules (impl and rev briefs carry these; each names its enforcer)
 
 - Don't comment Rust, Swift or TypeScript code (tests included) except `///` (TS `/** */`, Rust crate-root or `pub mod` `//!`) on public API, `// SAFETY:` above a forced or unsafe operation, `// TODO(#N)` on an open issue and `// biome-ignore <rule>: <why>` — scripts/comments.py (ci/gates/comments.sh), anti-slop no-comments, apple-check TODO step
-- Don't leave Swift imports unsorted or unused — anti-slop sorted-imports, swiftlint analyze unused_import
+- Don't leave Swift imports unsorted or unused — anti-slop sorted-imports, swiftlint analyze unused_import (nightly, not the PR)
 - Don't import across Swift layers (Core → API → Features → UI → App) beyond apple/Package.swift's table — anti-slop layer-imports
 - Don't use `Any` or `AnyObject` as a Swift type — anti-slop no-any
 - Don't leave a Swift declaration without its access level — anti-slop explicit-access
@@ -10,8 +10,9 @@
 - Don't hand-format Swift — swift format lint --strict
 - Don't keep app state outside a TCA `@Reducer`, or call side effects except through a Features `@Dependency` client — anti-slop layer-imports (URLSession only in CooeeAPI), reducer TestStore tests
 - Don't let Swift warnings through: Swift 6, complete concurrency, warnings as errors — apple/Package.swift (COOEE_STRICT=1 in apple-check), Cooee.xcodeproj
-- Don't drop CooeeCore, CooeeAPI or CooeeFeatures under 95% line coverage — scripts/apple-coverage.swift
-- Don't leave unused Swift code — Periphery
+- Don't drop CooeeCore or CooeeAPI under 95% line coverage — scripts/apple-coverage.swift
+- Don't drop CooeeFeatures under 95% line coverage — scripts/apple-coverage.swift (nightly, not the PR)
+- Don't leave unused Swift code — Periphery (nightly, not the PR)
 - Don't change a design frame without its snapshot (apple/design/v1) — CooeeUITests SnapshotTests
 - Don't name a provider (claude, anthropic, codex, openai, gemini, hermes) outside crates/cooee-core/src/providers/ and tests — scripts/neutral-core.sh
 - don't push a PR body without a For humans section, with a placeholder, or with evidence at an older sha than the head (enforced by: pr-body `scripts/pr-body.sh`, shadow since 2026-11-13)
@@ -23,3 +24,4 @@
 - Don't sleep or read the clock outside crates/cooee-core/src/clock.rs, or the environment outside crates/cooee-core/src/config.rs (`env_var`) — CI arch-check `thread::sleep`, `SystemTime::now`, `Instant::now`, `env::var` bans (ci/drover-checks-test.sh)
 - Don't use `any`, non-null `!`, `as` but `as const`, `@ts-ignore`/`@ts-expect-error`, `innerHTML`/`outerHTML`/`insertAdjacentHTML`, `eval`/`new Function`, `console.log`, default exports or `enum` in TypeScript, or TypeScript outside a strict tsconfig — scripts/ts-bans.py (ci/gates/bans.sh, fixtures in ci/bans-test.sh)
 - Don't `print(`, use `DispatchQueue` (but Nearby.swift's Network browser), `UserDefaults.standard` outside CooeeApp/Live.swift's client values, `Task.sleep` instead of a clock dependency, `T!`, or `fatalError` without a `// SAFETY:` line right above it in Swift — apple/.swiftlint.yml (ci/swift-bans-test.sh in apple-check)
+- Don't keep a test that would catch no real regression (the areas that must have them: pairing and device trust, approvals and secrets, the hub's message keeping, routines firing once, the MCP proxy's allowlist, layout last-good, plugin isolation): no tests of copy, wording, constants or configuration, no mock that returns what it was told, and extend an area's test file before adding one — review (a tautological test is a blocking rev finding)

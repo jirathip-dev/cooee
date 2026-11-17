@@ -7,7 +7,7 @@
 //! open.
 
 use std::{
-    collections::HashSet,
+    collections::{HashMap, HashSet},
     env,
     fmt::Write as _,
     io::{self, BufRead, BufReader, Read, Write},
@@ -242,7 +242,8 @@ fn only(mut msg: Value, tools: Option<&[String]>) -> Value {
 }
 
 /// `cooee mcp proxy <server> --thread <id>`: forwards the agent's stdio to the server and back, with only the
-/// thread's allowed tools; each `tools/call` checks the grant again, so a closed thread's token stops working.
+/// thread's allowed tools; cooee checks each `tools/call` again (a closed thread's token stops working) and logs a
+/// browser's, which waits while the owner holds control and then carries their hand-back note in its result.
 ///
 /// # Errors
 /// When the grant is refused or the server can't start.
@@ -252,13 +253,24 @@ pub fn proxy(server: &str, thread: &str) -> Result<(), String> {
     let mut up = open(&g, tx)?;
     let out = Arc::new(Mutex::new(io::stdout()));
     let lists: Arc<Mutex<HashSet<String>>> = Arc::default();
-    let (o, l) = (Arc::clone(&out), Arc::clone(&lists));
+    let notes: Arc<Mutex<HashMap<String, String>>> = Arc::default();
+    let (o, l, n) = (Arc::clone(&out), Arc::clone(&lists), Arc::clone(&notes));
     let tools = g.tools.clone();
     std::thread::spawn(move || {
-        for msg in rx {
+        for mut msg in rx {
             let id = msg.get("id").map(Value::to_string).unwrap_or_default();
-            let listed = msg.get("method").is_none()
-                && l.lock().unwrap_or_else(PoisonError::into_inner).remove(&id);
+            let answer = msg.get("method").is_none();
+            let listed = answer && l.lock().unwrap_or_else(PoisonError::into_inner).remove(&id);
+            let note = n.lock().unwrap_or_else(PoisonError::into_inner).remove(&id);
+            if let (true, Some(note), Some(content)) = (
+                answer,
+                note,
+                msg.pointer_mut("/result/content")
+                    .and_then(Value::as_array_mut),
+            ) {
+                let text = format!("The owner had the browser and handed it back: {note}");
+                content.push(json!({ "type": "text", "text": text }));
+            }
             put(
                 &o,
                 &if listed {
@@ -286,18 +298,23 @@ pub fn proxy(server: &str, thread: &str) -> Result<(), String> {
                     .pointer("/params/name")
                     .and_then(Value::as_str)
                     .unwrap_or_default();
-                let why = match grant(server, thread) {
-                    Err(e) => Some(e),
-                    Ok(g) if !g.tools.as_ref().is_none_or(|t| t.iter().any(|t| t == name)) => {
-                        Some(format!(
-                            "tool {name} isn't allowed in this thread (its profile's tools for {server})"
-                        ))
+                let args = msg.pointer("/params/arguments").cloned();
+                let checked = json!({ "server": server, "tool": name, "arguments": args });
+                match ask(
+                    "/mcp/agent/call",
+                    &json!({ "thread": thread, "server": checked }),
+                ) {
+                    Err(why) => {
+                        put(&out, &error(&id, -32602, &why));
+                        continue;
                     }
-                    Ok(_) => None,
-                };
-                if let Some(why) = why {
-                    put(&out, &error(&id, -32602, &why));
-                    continue;
+                    Ok(Value::String(note)) => {
+                        notes
+                            .lock()
+                            .unwrap_or_else(PoisonError::into_inner)
+                            .insert(id.to_string(), note);
+                    }
+                    Ok(_) => {}
                 }
             }
             _ => {}
@@ -352,6 +369,19 @@ pub fn tools(g: &Grant) -> Result<Vec<(String, String)>, String> {
         .iter()
         .map(|t| (text(t, "name"), text(t, "description")))
         .collect())
+}
+
+fn secret_tool() -> Value {
+    json!({
+        "name": "secret",
+        "description": "Have a secret (a password, an API key) typed into a terminal you run, without ever seeing it: one your persona saved is typed at once; else the owner drops it with Face ID, typed once (save: kept in the keychain for your persona and its environment, to reuse). You only get `secret NAME entered`.",
+        "inputSchema": { "type": "object", "required": ["name", "terminal"], "properties": {
+            "name": { "type": "string", "description": "a variable's name, like CRUNCHBASE_KEY" },
+            "terminal": { "type": "string", "description": "the shed terminal it is typed into, then enter" },
+            "why": { "type": "string", "description": "what it is for, for the owner" },
+            "save": { "type": "boolean", "description": "keep it for your persona to reuse (default: once, never stored)" }
+        } }
+    })
 }
 
 fn own_tools() -> Value {
@@ -436,11 +466,20 @@ fn own_tools() -> Value {
             } }
         } }
     });
-    json!([tool, remember, ask_persona, history, update, routine, skill])
+    json!([
+        tool,
+        remember,
+        ask_persona,
+        history,
+        update,
+        routine,
+        skill,
+        secret_tool()
+    ])
 }
 
 /// `cooee mcp serve --thread <id>`: cooee's own MCP server: `propose_server`, and `remember` (#126),
-/// `ask_persona` (#156), `history` (#217), `update_persona` (#270) and `skill` (#218) for a persona's.
+/// `ask_persona` (#156), `history` (#217), `update_persona` (#270), `skill` (#218) and `secret` (#163) for a persona's.
 ///
 /// # Errors
 /// Never past a broken stdin; each refused proposal is the tool's error.
@@ -485,6 +524,7 @@ pub fn serve(thread: &str) -> Result<(), String> {
                     Some("update_persona") => Some(("/mcp/agent/persona", "")),
                     Some("create_routine") => Some(("/mcp/agent/routine", "")),
                     Some("skill") => Some(("/mcp/agent/skill", "")),
+                    Some("secret") => Some(("/mcp/agent/secret", "")),
                     _ => None,
                 };
                 match call.map(|(path, said)| {

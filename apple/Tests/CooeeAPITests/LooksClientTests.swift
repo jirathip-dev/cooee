@@ -36,4 +36,10 @@ internal struct LooksClientTests {
         #expect(try server.decoded("/api/v1/themes/tidepool", as: ThemeDraft.self) == draft)
         await #expect(throws: APIError.self) { try await client.saveTheme("tidepool", draft) }
     }
+
+    @Test internal func theEditorReadsAPacksArtAsText() async throws {
+        let server = CannedServer(["/look/tidepool/sprites.svg": [Answer(chunks: ["<svg/>"])]])
+        #expect(try await server.client().themeArt("tidepool", "sprites.svg") == "<svg/>")
+        #expect(server.requests("/look/tidepool/sprites.svg").map(\.httpMethod) == ["GET"])
+    }
 }

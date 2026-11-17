@@ -1,7 +1,7 @@
 import Foundation
 
 /// A theme the editor makes, `PUT /api/v1/themes/{name}`: the pack it copies figures, scene and words from, its own
-/// label and style, and its colours per mode.
+/// label and style, its colours per mode, and the figures and backdrop drawn over the copy.
 public struct ThemeDraft: Codable, Sendable, Equatable {
     public static let builtIn: Set<String> = ["plain", "farm", "kitchen", "garden", "starter"]
 
@@ -10,6 +10,10 @@ public struct ThemeDraft: Codable, Sendable, Equatable {
     public var style: LookStyle
     public var dark: [String: String]
     public var light: [String: String]
+    /// Drawn figures, by symbol id: each replaces its `<symbol>` in the copied `sprites.svg`.
+    public var sprites: [String: String] = [:]
+    /// A drawn `scene.svg`, replacing the copied one.
+    public var scene: String?
 
     /// The pack's folder name for `label`: lowercase letters, digits and -.
     public static func folder(_ label: String) -> String {

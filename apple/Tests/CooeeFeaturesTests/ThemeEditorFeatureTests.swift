@@ -31,6 +31,10 @@ private let failing = try! JSONDecoder().decode(
         """#.utf8)
 )
 
+private let idle =
+    "<symbol id=\"s-idle\" viewBox=\"0 0 24 24\"><rect x=\"1\" y=\"2\" width=\"3\" height=\"1\" fill=\"#ffffff\"/></symbol>"
+private let sheet = "<svg>\(idle)</svg>"
+
 @MainActor
 internal struct ThemeEditorFeatureTests {
     private let calls = Calls()
@@ -45,7 +49,13 @@ internal struct ThemeEditorFeatureTests {
                 calls.record("check \(draft.light["--a"] ?? "-")")
                 return ["dark": GateReport(), "light": draft.light["--a"] == "#8a6a00" ? GateReport() : failing]
             }
-            $0.threads.saveTheme = { _, name, draft in calls.record("save \(name) \(draft.label) \(draft.style)") }
+            $0.threads.saveTheme = { _, name, draft in
+                calls.record("save \(name) \(draft.label) \(draft.style) \(draft.sprites.keys.sorted())")
+            }
+            $0.threads.themeArt = { _, theme, file in
+                calls.record("art \(theme)/\(file)")
+                return file == "sprites.svg" ? sheet : ""
+            }
         }
     }
 
@@ -64,8 +74,10 @@ internal struct ThemeEditorFeatureTests {
     @Test internal func saveWaitsForTheGateAndTheOneTapFixFreesIt() async {
         let store = store("tidepool")
         await store.send(.task)
+        await store.receive(\.art) { $0.drawing.figures = PixelFigure.drawn(sprites: sheet, scene: "") }
         await store.receive(\.checked) { $0.reports = ["dark": GateReport(), "light": failing] }
         #expect(!store.state.canSave && store.state.fails == failing.fails)
+        #expect(store.state.drawing.figures["s-idle"]?[0, 3, 2] == 8)
         await store.send(.save)
         await store.send(.colours(false)) { $0.colours = false }
         await store.send(.open("--a")) { $0.open = "--a" }
@@ -76,9 +88,36 @@ internal struct ThemeEditorFeatureTests {
             $0.open = nil
         }
         #expect(store.state.canSave)
-        await store.send(.save) { $0.saving = true }
+        await store.send(.save) {
+            $0.draft.draw($0.drawing)
+            $0.saving = true
+        }
         await store.receive(\.saved)
-        #expect(calls.all == ["check #a88a2a", "check #8a6a00", "save tidepool Tidepool scene"])
+        let art = ["art tidepool/scene.svg", "art tidepool/sprites.svg", "check #8a6a00", "check #a88a2a"]
+        #expect(calls.all.sorted() == art + ["save tidepool Tidepool scene [\"s-idle\"]"])
+    }
+
+    @Test internal func aDrawnFigureAndBackdropGoInTheSavedDraft() async {
+        let store = store("farm", new: true)
+        await store.send(.draw(.open("s-needs"))) { $0.drawing.apply(.open("s-needs")) }
+        await store.send(.draw(.touch(col: 3, row: 4, began: true))) {
+            $0.drawing.apply(.touch(col: 3, row: 4, began: true))
+        }
+        await store.send(.draw(.open("sky"))) { $0.drawing.apply(.open("sky")) }
+        await store.send(.draw(.touch(col: 0, row: 0, began: true))) {
+            $0.drawing.apply(.touch(col: 0, row: 0, began: true))
+        }
+        await store.send(.checked(["dark": GateReport(), "light": GateReport()])) {
+            $0.reports = ["dark": GateReport(), "light": GateReport()]
+        }
+        await store.send(.save) {
+            $0.draft.draw($0.drawing)
+            $0.saving = true
+        }
+        #expect(store.state.draft.sprites["s-needs"]?.contains("<rect x=\"3\" y=\"4\" width=\"1\"") == true)
+        #expect(store.state.draft.scene?.contains("<g id=\"sky\"><rect x=\"0\" y=\"0\"") == true)
+        await store.receive(\.saved)
+        #expect(calls.all == ["save new-theme New theme modern [\"s-needs\"]"])
     }
 
     @Test internal func aStartingSchemeLabelStyleAndPreviewChangeTheDraft() async {
@@ -105,8 +144,10 @@ internal struct ThemeEditorFeatureTests {
         } withDependencies: {
             $0.threads.checkTheme = { _, _ in throw APIErrorStub() }
             $0.threads.saveTheme = { _, _, _ in throw APIErrorStub() }
+            $0.threads.themeArt = { _, _, _ in throw APIErrorStub() }
         }
         await store.send(.task)
+        await store.receive(\.art)
         await store.receive(\.failed) { $0.error = APIErrorStub().localizedDescription }
         await store.send(.checked(["dark": GateReport(), "light": GateReport()])) {
             $0.reports = ["dark": GateReport(), "light": GateReport()]
@@ -138,6 +179,7 @@ internal struct ThemeEditorMenuTests {
             $0.settingsStore.save = { calls.record("save \($0.theme) \($0.style)") }
             $0.threads.looks = { _ in looks }
             $0.threads.checkTheme = { _, _ in [:] }
+            $0.threads.themeArt = { _, _, _ in "" }
         }
     }
 
@@ -153,6 +195,7 @@ internal struct ThemeEditorMenuTests {
             $0.path = [.themeEditor]
         }
         await store.receive(\.editor.task)
+        await store.receive(\.editor.art)
         await store.receive(\.editor.checked)
         await store.send(.editor(.saved("tidepool", .terminal))) {
             $0.settings.style = .terminal

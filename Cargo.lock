@@ -167,6 +167,7 @@ dependencies = [
 name = "cooee-core"
 version = "0.1.0"
 dependencies = [
+ "base64 0.22.1",
  "hkdf 0.13.0",
  "rusqlite",
  "ruzstd",

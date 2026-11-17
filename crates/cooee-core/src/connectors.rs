@@ -1,8 +1,11 @@
 //! Connectors (#497): the reviewed catalogue, one `connectors/<name>.toml` per entry, embedded by the build.
 
-use std::sync::OnceLock;
+use std::{fmt::Write as _, sync::OnceLock};
 
+use base64::{Engine as _, engine::general_purpose::URL_SAFE_NO_PAD as B64};
 use serde::Deserialize;
+use serde_json::Value;
+use sha2::{Digest as _, Sha256};
 
 /// A URL cooee may call: `https://…`, or `http://` on localhost only.
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
@@ -291,6 +294,149 @@ pub fn entry(name: &str) -> Option<&'static Entry> {
     catalogue().iter().find(|e| e.name.as_str() == name)
 }
 
+/// A PKCE pair (S256) made from `random` bytes: the verifier, kept, and its challenge, sent.
+#[must_use]
+pub fn pkce(random: &[u8]) -> (String, String) {
+    let verifier = B64.encode(random);
+    let challenge = challenge(&verifier);
+    (verifier, challenge)
+}
+
+/// The S256 challenge of `verifier`.
+#[must_use]
+pub fn challenge(verifier: &str) -> String {
+    B64.encode(Sha256::digest(verifier.as_bytes()))
+}
+
+/// `pairs`, percent-encoded as a form or a query.
+#[must_use]
+pub fn form(pairs: &[(&str, &str)]) -> String {
+    let enc = |v: &str| {
+        v.bytes().fold(String::new(), |mut s, b| {
+            if b.is_ascii_alphanumeric() || b"-._~".contains(&b) {
+                s.push(char::from(b));
+            } else {
+                write!(s, "%{b:02X}").ok();
+            }
+            s
+        })
+    };
+    let pairs: Vec<String> = pairs
+        .iter()
+        .map(|(k, v)| format!("{}={}", enc(k), enc(v)))
+        .collect();
+    pairs.join("&")
+}
+
+fn well_known(url: &str, doc: &str) -> [String; 2] {
+    let rest = url.split_once("://").map_or("", |(_, r)| r);
+    let at = rest.find('/').unwrap_or(rest.len());
+    let origin = url.get(..url.len() - rest.len() + at).unwrap_or(url);
+    let path = rest.get(at..).unwrap_or_default().trim_end_matches('/');
+    [
+        format!("{origin}/.well-known/{doc}{path}"),
+        format!("{origin}/.well-known/{doc}"),
+    ]
+}
+
+/// Where `url`'s protected-resource metadata may be, in the order to try (RFC 9728).
+#[must_use]
+pub fn resource_metadata(url: &HttpsUrl) -> [String; 2] {
+    well_known(url.as_str(), "oauth-protected-resource")
+}
+
+/// The sign-in server a resource's metadata `doc` names first.
+///
+/// # Errors
+/// When it names none, or one that isn't https.
+pub fn issuer_of(doc: &Value) -> Result<HttpsUrl, String> {
+    let first = doc
+        .get("authorization_servers")
+        .and_then(|v| v.get(0))
+        .and_then(Value::as_str);
+    HttpsUrl::try_from(first.unwrap_or_default().to_owned())
+        .map_err(|e| format!("the server names no sign-in server: {e}"))
+}
+
+/// Where `issuer`'s metadata may be, in the order to try (RFC 8414, then `OpenID`'s).
+#[must_use]
+pub fn issuer_metadata(issuer: &HttpsUrl) -> [String; 2] {
+    let [oauth, _] = well_known(issuer.as_str(), "oauth-authorization-server");
+    let open = format!(
+        "{}/.well-known/openid-configuration",
+        issuer.as_str().trim_end_matches('/')
+    );
+    [oauth, open]
+}
+
+/// A sign-in server's endpoints, from its metadata.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Endpoints {
+    /// Where the owner signs in.
+    pub authorize: HttpsUrl,
+    /// Where a code or a refresh token is exchanged.
+    pub token: HttpsUrl,
+    /// Where a client registers itself, if it may.
+    pub register: Option<HttpsUrl>,
+    /// Where a token is revoked, if it can be.
+    pub revoke: Option<HttpsUrl>,
+}
+
+impl Endpoints {
+    /// Reads `issuer`'s metadata `doc`.
+    ///
+    /// # Errors
+    /// When `doc` is another issuer's, lacks an endpoint, or names one that isn't https.
+    pub fn read(issuer: &HttpsUrl, doc: &Value) -> Result<Self, String> {
+        let trim = |s: &str| s.trim_end_matches('/').to_owned();
+        if doc.get("issuer").and_then(Value::as_str).map(trim) != Some(trim(issuer.as_str())) {
+            return Err(format!("the metadata isn't {}'s", issuer.as_str()));
+        }
+        let url = |k: &str| match doc.get(k).and_then(Value::as_str) {
+            Some(u) => HttpsUrl::try_from(u.to_owned()).map(Some),
+            None => Ok(None),
+        };
+        let need = |k: &str| url(k)?.ok_or_else(|| format!("the sign-in server has no {k}"));
+        Ok(Self {
+            authorize: need("authorization_endpoint")?,
+            token: need("token_endpoint")?,
+            register: url("registration_endpoint")?,
+            revoke: url("revocation_endpoint")?,
+        })
+    }
+}
+
+/// What the owner opens to sign in: `authorize` asked for a code for `client` at `redirect`, with the PKCE
+/// `challenge`, `state`, `scopes` and the MCP server's `resource`.
+#[must_use]
+pub fn authorize_url(
+    authorize: &HttpsUrl,
+    (client, redirect): (&str, &str),
+    (state, challenge): (&str, &str),
+    scopes: &[String],
+    resource: &str,
+) -> String {
+    let scope = scopes.join(" ");
+    let mut pairs = vec![
+        ("response_type", "code"),
+        ("client_id", client),
+        ("redirect_uri", redirect),
+        ("state", state),
+        ("code_challenge", challenge),
+        ("code_challenge_method", "S256"),
+        ("resource", resource),
+    ];
+    if !scope.is_empty() {
+        pairs.push(("scope", &scope));
+    }
+    let join = if authorize.as_str().contains('?') {
+        '&'
+    } else {
+        '?'
+    };
+    format!("{}{join}{}", authorize.as_str(), form(&pairs))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -382,5 +528,68 @@ never = ["drop"]
         }
         assert_eq!(catalogue().len(), FILES.len());
         assert!(entry("github").is_some_and(|e| matches!(e.auth, Auth::Token { .. })));
+    }
+
+    #[test]
+    fn the_sign_in_half_reads_metadata_and_builds_the_url() {
+        assert_eq!(
+            challenge("dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk"),
+            "E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM"
+        );
+        let (verifier, ch) = pkce(&[7; 32]);
+        assert_eq!(
+            (verifier.len(), ch, verifier.contains('=')),
+            (43, challenge(&verifier), false)
+        );
+        let url = HttpsUrl("https://mcp.thing.example/v1/mcp".to_owned());
+        assert_eq!(
+            resource_metadata(&url),
+            [
+                "https://mcp.thing.example/.well-known/oauth-protected-resource/v1/mcp",
+                "https://mcp.thing.example/.well-known/oauth-protected-resource"
+            ]
+        );
+        let issuer = issuer_of(
+            &serde_json::json!({ "authorization_servers": ["https://auth.thing.example"] }),
+        )
+        .unwrap();
+        assert_eq!(
+            issuer_metadata(&issuer),
+            [
+                "https://auth.thing.example/.well-known/oauth-authorization-server",
+                "https://auth.thing.example/.well-known/openid-configuration"
+            ]
+        );
+        assert!(
+            issuer_of(&serde_json::json!({ "authorization_servers": ["http://evil.example"] }))
+                .is_err()
+        );
+        let doc = serde_json::json!({
+            "issuer": "https://auth.thing.example/",
+            "authorization_endpoint": "https://auth.thing.example/authorize",
+            "token_endpoint": "https://auth.thing.example/token",
+            "revocation_endpoint": "https://auth.thing.example/revoke",
+        });
+        let e = Endpoints::read(&issuer, &doc).unwrap();
+        assert_eq!((e.register, e.revoke.is_some()), (None, true));
+        let other = HttpsUrl("https://other.example".to_owned());
+        assert!(
+            Endpoints::read(&other, &doc)
+                .unwrap_err()
+                .contains("isn't https://other.example's")
+        );
+        let open = authorize_url(
+            &e.authorize,
+            ("c 1", "https://mac.tailnet.example/connectors/callback"),
+            ("st", "ch"),
+            &["read".to_owned(), "write".to_owned()],
+            url.as_str(),
+        );
+        assert_eq!(
+            open,
+            "https://auth.thing.example/authorize?response_type=code&client_id=c%201\
+             &redirect_uri=https%3A%2F%2Fmac.tailnet.example%2Fconnectors%2Fcallback&state=st&code_challenge=ch\
+             &code_challenge_method=S256&resource=https%3A%2F%2Fmcp.thing.example%2Fv1%2Fmcp&scope=read%20write"
+        );
     }
 }
