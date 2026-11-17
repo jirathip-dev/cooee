@@ -1,0 +1,13 @@
+Decided: this PR builds Pack, Colours and Save only; Draw, import and the Mac 3-pane are follow-up issues
+Because: q1858
+Decided: the server owns the gate math; the app asks POST /api/v1/themes/check on each change and shows each token's worst check and the nearest passing shade
+Because: crates/cooee-server/src/contrast.rs:1
+Rejected: a Swift port of the gate — two gates to keep equal, and apple_cap has no room for it
+Decided: save writes a staging folder, runs the theme gate, then renames it into themes/<name>/ and keeps a last good copy that every load falls back to
+Because: crates/cooee-server/src/themes.rs:404
+Because: crates/cooee-server/src/look.rs:268
+Decided: the gate math moved from look.rs to contrast.rs, since look.rs was over its arch-check size baseline
+Because: scripts/gen.sh:76
+Check: the_editor_checks_colours_saves_a_pack_once_and_keeps_its_last_good_copy drives cooee serve through check, a refused save, save, the unchanged re-save, built-in names, a hand-broken pack and remove
+Check: apple/design/v4-theme-editor holds the Pack and Colours frames in Modern, Terminal and Scene
+Owner: Look can now make or edit a theme: pick a style and colours that the theme gate checks live, then save it to the Mac with no restart.
