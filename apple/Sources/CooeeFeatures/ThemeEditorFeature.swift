@@ -138,7 +138,7 @@ public struct ThemeEditorFeature: Sendable {
 
     private func save(_ state: inout State) -> Effect<Action> {
         guard state.canSave else { return .none }
-        state.draft.draw(state.drawing.figures)
+        state.draft.draw(state.drawing)
         state.saving = true
         state.error = nil
         let (server, name, draft) = (state.server, state.name, state.draft)

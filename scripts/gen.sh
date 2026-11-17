@@ -73,7 +73,7 @@ crate crates/cooee-core/src "cooee's core: the model and its files. No HTTP." \
   accounts blocks chat config devices login providers root shed store
 routes crates/cooee-server/src/routes
 crate crates/cooee-server/src "cooee's HTTP server: the native app's JSON API (docs/README.md)." \
-  contrast editor gate http hub layout login look manage pairing passkey plugin push root routes routines screens serve themes
+  connectors contrast editor gate http hub layout login look manage pairing passkey net plugin push root routes routines screens serve themes
 cmds crates/cooee/src/cmd
 flat crates/cooee/tests/support
 # today: README.md's list between its markers, from the `## Today` bullets of docs/*.md in file-name order, their ../ links made the README's.
