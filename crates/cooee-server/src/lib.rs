@@ -2,6 +2,8 @@
 
 #![forbid(unsafe_code)]
 
+mod contrast;
+mod editor;
 mod gate;
 mod http;
 mod hub;

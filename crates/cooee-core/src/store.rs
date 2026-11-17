@@ -2,15 +2,18 @@ use std::{
     collections::{BTreeMap, HashMap},
     fs::{self, File},
     io::{self, Write},
-    os::unix::fs::FileExt,
     path::{Path, PathBuf},
-    sync::{Arc, Mutex, PoisonError},
+    sync::{Arc, Mutex, MutexGuard, PoisonError},
+    time::Duration,
 };
 
-use serde::{Deserialize, Serialize, de::DeserializeOwned};
+use rusqlite::{Connection, Transaction, params};
+use serde::{Deserialize, Serialize};
+
+use crate::{Item, history};
 
 /// The on-disk format version this build writes. A file with a newer one is refused, not guessed at.
-pub const FORMAT: u32 = 1;
+pub const FORMAT: u32 = 2;
 
 /// A conversation with one agent.
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
@@ -20,7 +23,7 @@ pub struct Thread {
     pub id: String,
     /// The title shown in the thread list.
     pub title: String,
-    /// The messages, oldest first (0.1.0; a chat's rows are its items, `<id>.jsonl`).
+    /// The messages, oldest first (0.1.0; a chat's rows are its items, in `cooee.db`).
     pub messages: Vec<Message>,
     /// The ACP agent (`shed agents` id).
     #[serde(default, skip_serializing_if = "String::is_empty")]
@@ -236,6 +239,17 @@ pub enum Role {
     Agent,
 }
 
+/// Where a [`Store::page`] read starts.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Page {
+    /// The newest items.
+    Last,
+    /// The newest items before this id.
+    Before(u64),
+    /// The oldest items after this id.
+    After(u64),
+}
+
 #[derive(Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 struct Stored<T> {
@@ -270,6 +284,14 @@ pub enum StoreError {
         /// Its format version.
         found: u32,
     },
+    /// The items database failed.
+    #[error("{path}: {source}")]
+    Db {
+        /// The database file.
+        path: PathBuf,
+        /// The underlying error.
+        source: rusqlite::Error,
+    },
     /// A thread id that can't name a file.
     #[error("invalid thread id {0:?}: use 1 to 64 of A-Z a-z 0-9 - _")]
     InvalidId(String),
@@ -279,22 +301,76 @@ pub enum StoreError {
 #[derive(Debug)]
 pub struct Store {
     threads: PathBuf,
+    db: Mutex<Connection>,
+    path: PathBuf,
     locks: Mutex<HashMap<String, Arc<Mutex<()>>>>,
 }
 
 impl Store {
-    /// Opens the store in `dir`, creating `dir/threads/` if needed.
+    /// Opens the store in `dir`, creating `dir/threads/` and `dir/cooee.db` if needed, and imports any items files.
     ///
     /// # Errors
     ///
-    /// Returns [`StoreError::Io`] if the folder can't be created.
+    /// Returns [`StoreError`] if the folder or database can't be created, or an items file can't be imported.
     pub fn open(dir: &Path) -> Result<Self, StoreError> {
         let threads = dir.join("threads");
         fs::create_dir_all(&threads).map_err(io_err(&threads))?;
-        Ok(Self {
+        let path = dir.join("cooee.db");
+        let db = Connection::open(&path).map_err(db_err(&path))?;
+        db.busy_timeout(Duration::from_secs(10))
+            .and_then(|()| {
+                db.pragma_update_and_check(None, "journal_mode", "wal", |r| r.get::<_, String>(0))
+            })
+            .and_then(|_| {
+                db.execute_batch(
+                    "PRAGMA synchronous = FULL;
+                     CREATE TABLE IF NOT EXISTS items (thread TEXT NOT NULL, id INTEGER NOT NULL,
+                         at INTEGER NOT NULL, kind TEXT NOT NULL, body TEXT NOT NULL, PRIMARY KEY (thread, id));
+                     CREATE VIRTUAL TABLE IF NOT EXISTS said USING fts5(text, tokenize = 'trigram');",
+                )
+            })
+            .map_err(db_err(&path))?;
+        let store = Self {
             threads,
+            db: Mutex::new(db),
+            path,
             locks: Mutex::default(),
-        })
+        };
+        for entry in fs::read_dir(&store.threads).map_err(io_err(&store.threads))? {
+            let file = entry.map_err(io_err(&store.threads))?.path();
+            if file.extension().is_some_and(|e| e == "jsonl") {
+                store.import(&file)?;
+            }
+        }
+        Ok(store)
+    }
+
+    fn import(&self, file: &Path) -> Result<(), StoreError> {
+        let id = file
+            .file_stem()
+            .and_then(|s| s.to_str())
+            .unwrap_or_default();
+        let id = self
+            .path(id)?
+            .file_stem()
+            .map(|s| s.to_string_lossy().into_owned())
+            .unwrap_or_default();
+        let bytes = fs::read(file).map_err(io_err(file))?;
+        let mut db = self.db();
+        let tx = db.transaction().map_err(db_err(&self.path))?;
+        for item in bytes
+            .split(|b| *b == b'\n')
+            .filter_map(|l| serde_json::from_slice(l).ok())
+        {
+            self.put(&tx, &id, &item)?;
+        }
+        tx.commit().map_err(db_err(&self.path))?;
+        drop(db);
+        let done = file.with_extension("jsonl.imported");
+        fs::rename(file, &done).map_err(io_err(&done))?;
+        File::open(&self.threads)
+            .and_then(|dir| dir.sync_all())
+            .map_err(io_err(&self.threads))
     }
 
     /// The ids of every stored thread, sorted.
@@ -384,7 +460,14 @@ impl Store {
         let path = self.path(id)?;
         let lock = self.lock(id);
         let _held = lock.lock().unwrap_or_else(PoisonError::into_inner);
-        for file in [path.with_extension("jsonl"), path] {
+        let db = self.db();
+        db.execute(
+            "DELETE FROM said WHERE rowid IN (SELECT rowid FROM items WHERE thread = ?1)",
+            [id],
+        )
+        .and_then(|_| db.execute("DELETE FROM items WHERE thread = ?1", [id]))
+        .map_err(db_err(&self.path))?;
+        for file in [path.with_extension("jsonl.imported"), path] {
             match fs::remove_file(&file) {
                 Err(e) if e.kind() != io::ErrorKind::NotFound => return Err(io_err(&file)(e)),
                 _ => {}
@@ -393,70 +476,132 @@ impl Store {
         Ok(())
     }
 
-    /// Appends `item` as one line to thread `id`'s items and fsyncs it.
+    /// Stores `item` in thread `id`, replacing an earlier version of it, and commits it to disk.
     ///
     /// # Errors
     ///
-    /// Returns [`StoreError`] if the id is invalid or the line can't be written.
-    pub fn append<T: Serialize>(&self, id: &str, item: &T) -> Result<(), StoreError> {
-        let path = self.path(id)?.with_extension("jsonl");
-        let mut line = serde_json::to_vec(item).map_err(|source| StoreError::Parse {
-            path: path.clone(),
+    /// Returns [`StoreError`] if the id is invalid or the item can't be written.
+    pub fn append(&self, id: &str, item: &Item) -> Result<(), StoreError> {
+        self.path(id)?;
+        let mut db = self.db();
+        let tx = db.transaction().map_err(db_err(&self.path))?;
+        self.put(&tx, id, item)?;
+        tx.commit().map_err(db_err(&self.path))
+    }
+
+    fn put(&self, tx: &Transaction, id: &str, item: &Item) -> Result<(), StoreError> {
+        let body = serde_json::to_value(item).map_err(|source| StoreError::Parse {
+            path: self.path.clone(),
             source,
         })?;
-        line.push(b'\n');
-        let lock = self.lock(id);
-        let _held = lock.lock().unwrap_or_else(PoisonError::into_inner);
-        let mut file = File::options()
-            .create(true)
-            .read(true)
-            .append(true)
-            .open(&path)
-            .map_err(io_err(&path))?;
-        let len = file.metadata().map_err(io_err(&path))?.len();
-        let mut last = *b"\n";
-        if len > 0 {
-            file.read_exact_at(&mut last, len - 1)
-                .map_err(io_err(&path))?;
+        let kind = body
+            .get("kind")
+            .and_then(serde_json::Value::as_str)
+            .unwrap_or_default();
+        let row: i64 = tx
+            .query_row(
+                "INSERT INTO items (thread, id, at, kind, body) VALUES (?1, ?2, ?3, ?4, ?5)
+                 ON CONFLICT (thread, id) DO UPDATE SET at = excluded.at, kind = excluded.kind, body = excluded.body
+                 RETURNING rowid",
+                params![id, int(item.id), int(item.at), kind, body.to_string()],
+                |r| r.get(0),
+            )
+            .and_then(|row| tx.execute("DELETE FROM said WHERE rowid = ?1", [row]).map(|_| row))
+            .map_err(db_err(&self.path))?;
+        if let Some((_, text)) = history::said(item) {
+            tx.execute(
+                "INSERT INTO said (rowid, text) VALUES (?1, ?2)",
+                params![row, text.to_lowercase()],
+            )
+            .map_err(db_err(&self.path))?;
         }
-        if last[0] != b'\n' {
-            line.insert(0, b'\n');
-        }
-        file.write_all(&line)
-            .and_then(|()| file.sync_data())
-            .map_err(io_err(&path))
+        Ok(())
     }
 
-    /// Thread `id`'s item lines, oldest first; none when it has no items file. A line that doesn't parse (the torn
-    /// end of a crashed append) is skipped.
+    /// Thread `id`'s items, oldest first; none when it has none.
     ///
     /// # Errors
     ///
-    /// Returns [`StoreError`] if the id is invalid or the file can't be read.
-    pub fn items<T: DeserializeOwned>(&self, id: &str) -> Result<Vec<T>, StoreError> {
-        self.items_if(id, |_| true)
+    /// Returns [`StoreError`] if the id is invalid or the items can't be read.
+    pub fn items(&self, id: &str) -> Result<Vec<Item>, StoreError> {
+        self.page(id, Page::Last, usize::MAX)
     }
 
-    /// [`Store::items`], or none when `keep` says no to the whole file's bytes, read once and never parsed then.
+    /// At most `n` of thread `id`'s items at `from`, oldest first.
     ///
     /// # Errors
     ///
-    /// Returns [`StoreError`] if the id is invalid or the file can't be read.
-    pub fn items_if<T: DeserializeOwned>(
+    /// Returns [`StoreError`] if the id is invalid or the items can't be read.
+    pub fn page(&self, id: &str, from: Page, n: usize) -> Result<Vec<Item>, StoreError> {
+        self.path(id)?;
+        let (sql, at) = match from {
+            Page::Last => ("id < ?3 ORDER BY id DESC", i64::MAX),
+            Page::Before(b) => ("id < ?3 ORDER BY id DESC", int(b)),
+            Page::After(a) => ("id > ?3 ORDER BY id", int(a)),
+        };
+        let n = u64::try_from(n).map_or(i64::MAX, int);
+        let db = self.db();
+        let mut items = db
+            .prepare_cached(&format!(
+                "SELECT body FROM items WHERE thread = ?1 AND {sql} LIMIT ?2"
+            ))
+            .and_then(|mut q| {
+                q.query_map(params![id, n, at], |r| r.get::<_, String>(0))?
+                    .collect::<Result<Vec<_>, _>>()
+            })
+            .map_err(db_err(&self.path))?
+            .iter()
+            .map(|body| serde_json::from_str(body))
+            .collect::<Result<Vec<Item>, _>>()
+            .map_err(|source| StoreError::Parse {
+                path: self.path.clone(),
+                source,
+            })?;
+        if !matches!(from, Page::After(_)) {
+            items.reverse();
+        }
+        Ok(items)
+    }
+
+    /// The items whose message text holds every one of `words` (lowercase), newest first, with their thread, until
+    /// `each` says stop. A word is looked up in the trigram index; `each` sees a superset (a `%` or `_` in a word
+    /// matches any text there), so it checks the text itself.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`StoreError`] if the index can't be read.
+    pub fn said(
         &self,
-        id: &str,
-        keep: impl FnOnce(&[u8]) -> bool,
-    ) -> Result<Vec<T>, StoreError> {
-        let path = self.path(id)?.with_extension("jsonl");
-        match fs::read(&path) {
-            Ok(bytes) if !keep(&bytes) => Ok(Vec::new()),
-            Ok(bytes) => Ok(bytes
-                .split(|b| *b == b'\n')
-                .filter_map(|line| serde_json::from_slice(line).ok())
-                .collect()),
-            Err(e) if e.kind() == io::ErrorKind::NotFound => Ok(Vec::new()),
-            Err(source) => Err(StoreError::Io { path, source }),
+        words: &[String],
+        mut each: impl FnMut(&str, &Item) -> bool,
+    ) -> Result<(), StoreError> {
+        let like = " AND said.text LIKE ?".repeat(words.len());
+        let sql = format!(
+            "SELECT items.thread, items.body FROM said JOIN items ON items.rowid = said.rowid
+             WHERE 1 {like} ORDER BY items.at DESC, items.id DESC"
+        );
+        let db = self.db();
+        let mut q = db.prepare(&sql).map_err(db_err(&self.path))?;
+        let patterns = words.iter().map(|w| format!("%{w}%"));
+        let mut rows = q
+            .query(rusqlite::params_from_iter(patterns))
+            .map_err(db_err(&self.path))?;
+        while let Some(row) = rows.next().map_err(db_err(&self.path))? {
+            let (thread, body) = row
+                .get::<_, String>(0)
+                .and_then(|t| row.get::<_, String>(1).map(|b| (t, b)))
+                .map_err(db_err(&self.path))?;
+            if let Ok(item) = serde_json::from_str(&body)
+                && !each(&thread, &item)
+            {
+                break;
+            }
         }
+        Ok(())
+    }
+
+    fn db(&self) -> MutexGuard<'_, Connection> {
+        self.db.lock().unwrap_or_else(PoisonError::into_inner)
     }
 
     fn lock(&self, id: &str) -> Arc<Mutex<()>> {
@@ -481,6 +626,17 @@ impl Store {
     }
 }
 
+fn int(n: u64) -> i64 {
+    i64::try_from(n).unwrap_or(i64::MAX)
+}
+
+fn db_err(path: &Path) -> impl FnOnce(rusqlite::Error) -> StoreError + '_ {
+    move |source| StoreError::Db {
+        path: path.to_owned(),
+        source,
+    }
+}
+
 fn io_err(path: &Path) -> impl FnOnce(io::Error) -> StoreError + '_ {
     move |source| StoreError::Io {
         path: path.to_owned(),
@@ -489,134 +645,4 @@ fn io_err(path: &Path) -> impl FnOnce(io::Error) -> StoreError + '_ {
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-    use std::{env, process::Stdio, thread};
-
-    fn scratch(name: &str) -> PathBuf {
-        let dir = crate::scratch::owned(
-            env::temp_dir().join(format!("cooee-store-{name}-{}", std::process::id())),
-        );
-        fs::remove_dir_all(&dir).ok();
-        dir
-    }
-
-    fn sample(id: &str, title: &str) -> Thread {
-        let text = "สวัสดีครับ ".repeat(200);
-        Thread {
-            id: id.into(),
-            title: title.into(),
-            messages: vec![Message {
-                role: Role::User,
-                text,
-            }],
-            ..Thread::default()
-        }
-    }
-
-    #[test]
-    fn save_then_load_round_trips_and_leaves_no_temp() {
-        let dir = scratch("round-trip");
-        let store = Store::open(&dir).unwrap();
-        store.save(&sample("a", "first")).unwrap();
-        store.save(&sample("a", "second")).unwrap();
-        assert_eq!(store.load("a").unwrap(), sample("a", "second"));
-        assert_eq!(store.ids().unwrap(), ["a"]);
-        assert!(!dir.join("threads/a.json.tmp").exists());
-    }
-
-    #[test]
-    fn item_lines_append_and_a_torn_last_line_is_skipped() {
-        let dir = scratch("items");
-        let store = Store::open(&dir).unwrap();
-        assert_eq!(store.items::<u32>("a").unwrap(), Vec::<u32>::new());
-        store.append("a", &1).unwrap();
-        store.append("a", &2).unwrap();
-        let mut file = File::options()
-            .append(true)
-            .open(dir.join("threads/a.jsonl"))
-            .unwrap();
-        file.write_all(b"{\"torn").unwrap();
-        assert_eq!(store.items::<u32>("a").unwrap(), [1, 2]);
-        store.append("a", &3).unwrap();
-        assert_eq!(store.items::<u32>("a").unwrap(), [1, 2, 3]);
-        assert!(store.append("../x", &3).is_err());
-        assert_eq!(store.ids().unwrap(), Vec::<String>::new());
-    }
-
-    #[test]
-    fn bad_ids_and_newer_formats_are_refused() {
-        let dir = scratch("refused");
-        let store = Store::open(&dir).unwrap();
-        for id in ["", "../x", "a/b", "a.json", &"x".repeat(65)] {
-            assert!(
-                matches!(store.save(&sample(id, "t")), Err(StoreError::InvalidId(_))),
-                "{id:?}"
-            );
-        }
-        fs::write(
-            dir.join("threads/n.json"),
-            r#"{"format":2,"thread":{"id":"n","future":true}}"#,
-        )
-        .unwrap();
-        assert!(matches!(
-            store.load("n"),
-            Err(StoreError::Newer { found: 2, .. })
-        ));
-    }
-
-    #[test]
-    fn concurrent_saves_of_one_thread_never_tear() {
-        let dir = scratch("concurrent");
-        let store = Store::open(&dir).unwrap();
-        thread::scope(|s| {
-            for i in 0..8 {
-                let store = &store;
-                s.spawn(move || {
-                    for j in 0..25 {
-                        store.save(&sample("c", &format!("{i}-{j}"))).unwrap();
-                    }
-                });
-            }
-        });
-        assert_eq!(store.load("c").unwrap().messages, sample("c", "").messages);
-    }
-
-    #[test]
-    fn crash_between_temp_write_and_rename_keeps_old_file() {
-        let dir = scratch("crash");
-        let store = Store::open(&dir).unwrap();
-        store.save(&sample("a", "old")).unwrap();
-        let status = crate::runner::command(env::current_exe().unwrap())
-            .args([
-                "--exact",
-                "store::tests::crash_child",
-                "--ignored",
-                "--test-threads=1",
-            ])
-            .env("COOEE_CRASH_DIR", &dir)
-            .stdout(Stdio::null())
-            .status()
-            .unwrap();
-        assert!(!status.success(), "the child must die mid-write");
-        assert!(
-            dir.join("threads/a.json.tmp").exists(),
-            "the child got as far as the temp file"
-        );
-        assert_eq!(store.load("a").unwrap(), sample("a", "old"));
-        assert_eq!(store.ids().unwrap(), ["a"]);
-        store.save(&sample("a", "new")).unwrap();
-        assert_eq!(store.load("a").unwrap(), sample("a", "new"));
-    }
-
-    #[test]
-    #[ignore = "the child process of crash_between_temp_write_and_rename_keeps_old_file"]
-    fn crash_child() {
-        let Some(dir) = crate::env_var("COOEE_CRASH_DIR") else {
-            return;
-        };
-        let store = Store::open(Path::new(&dir)).unwrap();
-        store.stage(&sample("a", "new")).unwrap();
-        std::process::abort();
-    }
-}
+mod tests;

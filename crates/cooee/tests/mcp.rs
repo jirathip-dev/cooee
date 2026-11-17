@@ -659,3 +659,112 @@ fn a_saved_secret_is_typed_again_without_asking_and_reaches_the_personas_environ
     assert!(env.lines().any(|l| l == "MODE=write"), "{env}");
     assert!(!env.contains(DROPPED), "only coder's");
 }
+
+const CHROMIUM: &str = r#"#!/bin/sh
+for a in "$@"; do
+  case "$a" in --user-data-dir=*) d=${a#--user-data-dir=} ;; esac
+done
+printf '%s\n' "$d" >>"$(dirname "$0")/chromium.log"
+printf '1\n/devtools/browser/x\n' >"$d/DevToolsActivePort"
+"#;
+
+const PLAYWRIGHT: &str = r#"#!/bin/sh
+printf '%s\n' "$*" >>"$(dirname "$0")/playwright.log"
+while IFS= read -r line; do
+  id=$(printf '%s' "$line" | sed -n 's/.*"id":\([^,}]*\).*/\1/p')
+  [ -n "$id" ] || continue
+  case "$line" in
+  *'"method":"initialize"'*) r='{"protocolVersion":"2025-06-18","capabilities":{"tools":{}},"serverInfo":{"name":"pw","version":"1"}}' ;;
+  *'"method":"tools/call"'*) printf '%s\n' "$line" >>"$(dirname "$0")/calls.log"; r='{"content":[{"type":"text","text":"done"}]}' ;;
+  *) r='{}' ;;
+  esac
+  printf '{"jsonrpc":"2.0","id":%s,"result":%s}\n' "$id" "$r"
+done
+"#;
+
+#[test]
+fn each_persona_gets_its_own_browser_and_every_call_is_checked_and_logged() {
+    let dir = scratch("mcp-browser");
+    let bin = dir.join("bin");
+    fs::create_dir_all(&bin).unwrap();
+    for (name, text) in [("chromium", CHROMIUM), ("playwright", PLAYWRIGHT)] {
+        fs::write(bin.join(name), text).unwrap();
+        fs::set_permissions(bin.join(name), fs::Permissions::from_mode(0o755)).unwrap();
+    }
+    for (id, site) in [("ann", "example.com"), ("bob", "github.com")] {
+        let toml = format!(
+            "name = \"{id}\"\nagent = \"fake-acp\"\n\n[[mcp]]\nserver = \"browser\"\n\n[[sites]]\nsite = \"{site}\"\naccount = true\n"
+        );
+        agent(&dir, id, &toml, "");
+    }
+    let shed = FakeShed::start(&dir.join("shed"), version());
+    let extra = format!(
+        "chromium = {:?}\n\n[[mcp]]\nname = \"browser\"\ncommand = {:?}\n",
+        bin.join("chromium").to_string_lossy(),
+        bin.join("playwright").to_string_lossy()
+    );
+    let cooee = Cooee::start_env(&dir, &shed.dir, &extra, &[]);
+    let s = Setup {
+        dir: dir.clone(),
+        shed,
+        cooee,
+        token: String::new(),
+    };
+    let navigate = |m: &mut Mcp, url: &str| m.run("browser_navigate", &json!({ "url": url }));
+    let (_, servers) = s.thread("ann");
+    let mut ann = Mcp::start(named(&servers, "browser"), Agent::Claude);
+    let (_, servers) = s.thread("bob");
+    let mut bob = Mcp::start(named(&servers, "browser"), Agent::Codex);
+    assert_eq!(
+        navigate(&mut ann, "https://www.example.com/a"),
+        Ok("done".to_owned())
+    );
+    assert_eq!(
+        navigate(&mut bob, "https://github.com/"),
+        Ok("done".to_owned())
+    );
+    let e = navigate(&mut ann, "https://github.com/").unwrap_err();
+    assert!(
+        e.contains("https://github.com/ isn't on ann's site allowlist"),
+        "{e}"
+    );
+    assert!(ann.run("browser_snapshot", &json!({})).is_ok());
+    drop((ann, bob));
+
+    let data = dir.join("data/browsers");
+    let launched = fs::read_to_string(bin.join("chromium.log")).unwrap();
+    let mut profiles: Vec<&str> = launched.lines().collect();
+    profiles.sort_unstable();
+    profiles.dedup();
+    let want = [data.join("ann"), data.join("bob")].map(|p| p.to_string_lossy().into_owned());
+    assert_eq!(profiles, want);
+    let started = fs::read_to_string(bin.join("playwright.log")).unwrap();
+    assert_eq!(
+        started.lines().collect::<Vec<_>>(),
+        ["--cdp-endpoint http://127.0.0.1:1"; 2]
+    );
+    let calls = fs::read_to_string(bin.join("calls.log")).unwrap();
+    assert_eq!(calls.lines().count(), 3, "{calls}");
+    assert_eq!(calls.matches("https://github.com/").count(), 1, "{calls}");
+    let logged = |id: &str| -> Vec<(String, Value, bool)> {
+        let text = fs::read_to_string(data.join(format!("{id}.log"))).unwrap();
+        text.lines()
+            .map(|l| serde_json::from_str::<Value>(l).unwrap())
+            .map(|v| {
+                (
+                    v["tool"].as_str().unwrap().to_owned(),
+                    v["arguments"].clone(),
+                    v["refused"].as_bool().unwrap(),
+                )
+            })
+            .collect()
+    };
+    let nav = |u: &str| ("browser_navigate".to_owned(), json!({ "url": u }), false);
+    let (mut off, snap) = (
+        nav("https://github.com/"),
+        ("browser_snapshot".to_owned(), json!({}), false),
+    );
+    off.2 = true;
+    assert_eq!(logged("ann"), [nav("https://www.example.com/a"), off, snap]);
+    assert_eq!(logged("bob"), [nav("https://github.com/")]);
+}

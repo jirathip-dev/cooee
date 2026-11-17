@@ -44,6 +44,8 @@ internal struct MenuFeatureTests {
         await store.receive(\.looks) { $0.looks = kitchen }
         await store.receive(\.loaded) { $0.screen = Self.menu }
         await store.send(.path([.look])) { $0.path = [.look] }
+        await store.receive(\.looks)
+        await store.send(.path([.look, .appIcon])) { $0.path = [.look, .appIcon] }
         await store.send(.scheme(.dark)) { $0.settings.scheme = .dark }
         await store.send(.style(.terminal)) { $0.settings.style = .terminal }
         await store.send(.theme("kitchen")) { $0.settings.theme = "kitchen" }
