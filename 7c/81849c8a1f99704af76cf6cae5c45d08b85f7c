@@ -1,0 +1,7 @@
+Decided: merge origin/staging; hub/cards.rs proposal forms keep both staging's memory and this PR's secret
+Because: crates/cooee-server/src/hub/cards.rs:53
+Decided: the saved-secret test reads each terminal's own adapter env, so a concurrent run can't overwrite it
+Because: crates/cooee/tests/support/shed.rs:120
+Rejected: polling the shared adapter.env — a later run of another persona still wins the race
+Check: crates/cooee/tests/mcp.rs saved test still fails if the writer persona's own env holds the value
+Owner: merged the latest staging and fixed a flaky test; the feature is unchanged
