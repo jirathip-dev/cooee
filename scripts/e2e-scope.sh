@@ -3,8 +3,10 @@
 # `full` (apple-check and the e2e steps' turn: a staging push, a dispatch, the merge-ready `labeled` run), `e2e` (the
 # simulator steps run), `only` (their `-only-testing:` arguments; empty runs every test) and `persona` (LivePersonaTests
 # runs). A pull request runs the tests apple/e2e/map.toml pairs with the paths it changes; any other event runs them all.
-# With SUMMARY set, it appends each changed path and its tests there. In: EVENT, ACTION; on a pull request HEAD is
-# GitHub's merge commit, so HEAD^1..HEAD is the change.
+# #475: on a pull request the Mac waits for the merge-ready run (the `labeled` event, or a push while the PR carries
+# merge-ready), as in ci-scope.sh. With SUMMARY set, it appends each changed path and its tests there.
+# In: EVENT, ACTION, CARRIES (true when the PR has merge-ready); on a pull request HEAD is GitHub's merge commit, so
+# HEAD^1..HEAD is the change.
 set -eu
 map=apple/e2e/map.toml
 rules=$(sed -n 's/^"\([^"]*\)" *= *"\([^"]*\)".*/\1 \2/p' "$map")
@@ -16,9 +18,9 @@ done
 for t in $named; do
   printf '%s\n' all none LivePersonaTests "$classes" | grep -qx "$t" || { echo "$map: no test $t" >&2; exit 1; }
 done
-mac=true full=true tests=all why=""
+mac=true full=true tests=all why="" wait=false
 if [ "${EVENT:?}" = pull_request ]; then
-  [ "${ACTION:-}" = labeled ] || full=false
+  [ "${ACTION:-}" = labeled ] || full=${CARRIES:-false}
   mac=false tests=""
   for p in $(git diff --name-only 'HEAD^1' HEAD); do
     hit=""
@@ -34,6 +36,7 @@ EOF
 "
   done
   [ "$mac" = true ] || full=false
+  [ "$full" = true ] || { wait=$mac; mac=false; }
 fi
 case " $tests " in *" all "*) tests=all ;; esac
 case " $tests " in *" LivePersonaTests "*) tests="$tests LivePersonaUITests" ;; esac
@@ -56,8 +59,8 @@ echo "only=${only# }"
 echo "persona=$persona"
 [ -n "${SUMMARY:-}" ] || exit 0
 {
-  if [ "$e2e" = true ]; then echo "### e2e: $tests"; elif [ "$full" = true ] || [ "$mac" = false ]; then
-    echo "### e2e: no screens touched"
-  else echo "### e2e: on the merge-ready run"; fi
+  if [ "$e2e" = true ]; then echo "### e2e: $tests"; elif [ "$wait" = true ]; then
+    echo "### apple: the Mac build waits for merge-ready"
+  else echo "### e2e: no screens touched"; fi
   printf '%s' "$why"
 } >> "$SUMMARY"
