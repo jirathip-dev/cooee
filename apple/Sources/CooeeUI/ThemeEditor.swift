@@ -170,11 +170,10 @@ internal struct ThemePreview: View {
                 }
                 .padding(16).environment(\.asker, Fixtures.persona("res"))
             } else {
+                let chats = Array(Fixtures.chats.filter { $0.asker == nil }.prefix(3))
                 VStack(spacing: 0) {
-                    if shown.style == .scene, shown.art != nil {
-                        Sprite(name: "scene-strip", pack: "scene.svg").scaledToFill().frame(height: 120).clipped()
-                    }
-                    ChatList(chats: Array(Fixtures.chats.filter { $0.asker == nil }.prefix(3))).padding(.top, 14)
+                    if shown.style == .scene { scene(chats, shown) }
+                    ChatList(chats: chats).padding(.top, 14)
                 }
             }
         }
@@ -184,5 +183,29 @@ internal struct ThemePreview: View {
         .overlay { RoundedRectangle(cornerRadius: shown.mono ? 0 : 22).stroke(shown.palette.edge) }
         .environment(\.look, shown).environment(\.colorScheme, dark ? .dark : .light)
         .allowsHitTesting(false).accessibilityElement(children: .ignore).accessibilityLabel("Preview")
+    }
+
+    private func scene(_ chats: [ListedChat], _ shown: Look) -> some View {
+        ZStack(alignment: .bottom) {
+            Sprite(name: "scene-strip", pack: "scene.svg").scaledToFill().frame(height: 180).clipped()
+            HStack(alignment: .bottom) {
+                ForEach(chats) { chat in
+                    let pose = chat.row.state.pose
+                    VStack(spacing: 2) {
+                        Sprite(name: "horse-bay-\(pose)", pack: "sprites.svg#s-\(pose)").frame(width: 72, height: 54)
+                        VStack(spacing: 0) {
+                            Text(chat.persona.name).ui(12, .semibold, shown)
+                            Text(chat.row.state.word).ui(10, .medium, shown)
+                                .foregroundStyle(shown.palette.state(chat.row.state))
+                        }
+                        .lineLimit(1).padding(.horizontal, 8).padding(.vertical, 3)
+                        .background(shown.palette.card.opacity(0.92), in: .rect(cornerRadius: 10))
+                    }
+                    .frame(maxWidth: .infinity)
+                }
+            }
+            .padding(10)
+        }
+        .frame(height: 180)
     }
 }
