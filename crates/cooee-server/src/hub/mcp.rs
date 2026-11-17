@@ -144,13 +144,17 @@ impl Hub {
             return Ok(launch);
         };
         let servers = self.mcp()?;
-        for name in &recipe.mcp {
-            let s = servers.iter().find(|s| &s.name == name && s.enabled);
-            let s = s.ok_or_else(|| {
-                HubError::Refused(format!(
-                    "MCP server {name} is off or gone: settings › mcp servers"
-                ))
-            })?;
+        let picked: Vec<&Server> = servers
+            .iter()
+            .filter(|s| recipe.mcp.contains(&s.name))
+            .collect();
+        for s in &picked {
+            if !s.enabled {
+                return Err(HubError::Refused(format!(
+                    "MCP server {} is off: settings › mcp servers",
+                    s.name
+                )));
+            }
             s.resolved(&self.data).map_err(HubError::Refused)?;
         }
         let var = json!([{ "name": crate::mcp::VAR, "value": format!("{url} {}", crate::mcp::token(&self.mcp_key, id)) }]);
@@ -158,10 +162,9 @@ impl Hub {
         let entry = |name: &str, args: &[&str]| json!({ "name": name, "command": exe, "args": args, "env": var });
         let mut all = vec![entry(COOEE, &["mcp", "serve", "--thread", id])];
         all.extend(
-            recipe
-                .mcp
+            picked
                 .iter()
-                .map(|s| entry(s, &["mcp", "proxy", s, "--thread", id])),
+                .map(|s| entry(&s.name, &["mcp", "proxy", &s.name, "--thread", id])),
         );
         let file = self
             .data
@@ -169,6 +172,26 @@ impl Hub {
             .join(format!(".mcp-{id}-{:x}.json", now()));
         launch.mcp = Some((file, all));
         Ok(launch)
+    }
+
+    pub(super) fn unconnected(&self, recipe: &Recipe) -> Result<String, HubError> {
+        let servers = self.mcp()?;
+        let missing: Vec<&str> = recipe
+            .mcp
+            .iter()
+            .filter(|n| !servers.iter().any(|s| &s.name == *n))
+            .map(String::as_str)
+            .collect();
+        Ok(if missing.is_empty() {
+            String::new()
+        } else {
+            format!(
+                "These MCP servers you expect aren't connected yet: {}. Before anything else, your first reply tells \
+                 the owner to connect each one by that name in Settings › MCP servers (or `cooee mcp add`); until \
+                 then you can't use it.",
+                missing.join(", ")
+            )
+        })
     }
 
     /// Thread `id`, if `token` is its MCP token and it is open.
