@@ -233,10 +233,6 @@ shed_dir = {}
 
     /// Opens thread `id`'s event stream, after `cursor` (sent as `Last-Event-ID` when `header`).
     pub fn events(&self, id: &str, cursor: &str, header: bool) -> Events {
-        let mut stream = TcpStream::connect(&self.addr).unwrap();
-        stream
-            .set_read_timeout(Some(Duration::from_secs(20)))
-            .unwrap();
         let (path, extra) = if header {
             (
                 format!("/threads/{id}/events"),
@@ -248,6 +244,15 @@ shed_dir = {}
                 String::new(),
             )
         };
+        self.sse(&path, &extra)
+    }
+
+    /// Opens the event stream at `path`, with `extra` header lines.
+    pub fn sse(&self, path: &str, extra: &str) -> Events {
+        let mut stream = TcpStream::connect(&self.addr).unwrap();
+        stream
+            .set_read_timeout(Some(Duration::from_secs(20)))
+            .unwrap();
         write!(
             stream,
             "GET {path} HTTP/1.0\r\nHost: {}\r\nCookie: {}\r\n{extra}\r\n",

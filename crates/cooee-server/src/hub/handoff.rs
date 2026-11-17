@@ -38,7 +38,7 @@ impl Hub {
     ///
     /// # Errors
     /// [`HubError::Refused`] with `NO_HANDOFF` when none is open; as [`Hub::send`].
-    pub fn hand_back(&self, id: &str, note: &str, random_id: &str) -> Result<Item, HubError> {
+    pub fn resume_handoff(&self, id: &str, note: &str, random_id: &str) -> Result<Item, HubError> {
         let live = self.live(id)?;
         let mut l = lock(&live);
         if let Some(item) = Self::sent(&l, random_id) {

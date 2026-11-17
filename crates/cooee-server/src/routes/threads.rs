@@ -243,7 +243,10 @@ async fn send(cx: &Cx, Json(m): Json<Message>) -> Result<Answer<cooee_core::Item
 async fn hand_back(cx: &Cx, Json(m): Json<Message>) -> Result<Answer<cooee_core::Item>> {
     let id = thread_id(cx);
     Ok(Answer(
-        blocking(cx, move |hub| hub.hand_back(&id, &m.text, &m.random_id)).await,
+        blocking(cx, move |hub| {
+            hub.resume_handoff(&id, &m.text, &m.random_id)
+        })
+        .await,
     ))
 }
 
