@@ -652,6 +652,10 @@ fn a_saved_secret_is_typed_again_without_asking_and_reaches_the_personas_environ
             .adapter_env()
             .contains(&format!("SITE_KEY={DROPPED}"))
     );
-    d.s.thread("");
-    assert!(!d.s.shed.adapter_env().contains(DROPPED), "only coder's");
+    let writer = "name = \"Writer\"\nagent = \"fake-acp\"\nenv = { MODE = \"write\" }\n";
+    agent(&d.s.dir, "writer", writer, "");
+    d.s.thread("writer");
+    let env = d.s.shed.adapter_env();
+    assert!(env.lines().any(|l| l == "MODE=write"), "{env}");
+    assert!(!env.contains(DROPPED), "only coder's");
 }
