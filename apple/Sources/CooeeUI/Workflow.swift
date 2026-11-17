@@ -148,10 +148,15 @@ internal struct IssueRow: View {
     internal let open: Bool
 
     internal var body: some View {
+        let state = issue.latest.row.state
+        Acting(motion: Motion(state)) { pose in line(pose).background(look.palette.red.opacity(pose.tint)) }
+    }
+
+    private func line(_ pose: Pose) -> some View {
         let (palette, row) = (look.palette, issue.latest.row)
         let tint = palette.state(row.state)
-        HStack(alignment: .center, spacing: 12) {
-            Avatar(persona: issue.latest.persona, size: 40)
+        return HStack(alignment: .center, spacing: 12) {
+            Avatar(persona: issue.latest.persona, size: 40, frame: pose.frame).acting(pose)
             VStack(alignment: .leading, spacing: 3) {
                 HStack(spacing: 0) {
                     Text("\(issue.id) · ")
@@ -178,10 +183,10 @@ internal struct NeutralAvatar: View {
 
     internal var body: some View {
         Circle().fill(look.palette.mute.opacity(0.22)).frame(width: size, height: size).overlay {
-            if persona.look.coat.isEmpty {
+            if persona.look.coat == "" {
                 Text(persona.look.initials).ui(size * 0.34, .bold, look)
             } else {
-                Sprite(name: "horse-\(persona.look.coat)-\(persona.pose)").frame(width: size * 0.62)
+                Sprite(name: "horse-\(look.coat(persona))-\(persona.pose)").frame(width: size * 0.62)
             }
         }
     }

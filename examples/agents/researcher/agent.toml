@@ -1,0 +1,5 @@
+name = "Researcher"
+agent = "claude-acp"
+
+[[mcp]]
+server = "search"

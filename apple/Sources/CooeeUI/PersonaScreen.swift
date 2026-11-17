@@ -6,6 +6,7 @@ import SwiftUI
 
 internal struct PersonaScreen: View {
     @Bindable internal var store: StoreOf<PersonaFeature>
+    internal let sprite: (String?) -> Void
 
     internal var body: some View {
         PersonaEditBlocks(
@@ -58,6 +59,7 @@ internal struct PersonaScreen: View {
         actions.more = { store.send(.showAll) }
         actions.delete = store.isNew ? nil : { store.send(.delete) }
         actions.photo = { store.choosingPhoto = true }
+        actions.sprite = sprite
         return actions
     }
 }

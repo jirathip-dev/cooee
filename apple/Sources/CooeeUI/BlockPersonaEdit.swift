@@ -11,6 +11,7 @@ internal struct PersonaActions {
     internal var more: () -> Void = {}
     internal var delete: (() -> Void)?
     internal var photo: () -> Void = {}
+    internal var sprite: (String?) -> Void = { _ in }
 
     internal init(
         close: @escaping () -> Void = {}, save: @escaping () -> Void = {}, clear: @escaping () -> Void = {},
@@ -120,6 +121,7 @@ extension PersonaEditBlocks {
                     style
                     Toggle("Pin to Home", isOn: $draft.pinned).ui(16, .regular, look).padding(.horizontal, 14)
                         .frame(height: 48)
+                    if !draft.id.isEmpty { SpriteRow(persona: persona, pick: actions.sprite) }
                 }
             }
             Group2(header: "Character") { paragraph("Character", $draft.character) }

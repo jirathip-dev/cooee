@@ -5,6 +5,7 @@ import SwiftUI
 
 public struct AppRoot: View {
     @Environment(\.colorScheme) private var scheme
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     #if os(iOS)
         @Environment(\.horizontalSizeClass) private var size
     #else
@@ -31,11 +32,13 @@ public struct AppRoot: View {
                 if store.mac && [.welcome, .nearby, .address].contains(pairing.step) {
                     MacConnect(store: pairing) { store.send(.setUpHere) }
                 } else {
-                    PhoneOnboarding(store: pairing)
+                    PairingBlocks(store: pairing)
                 }
             }
         }
-        .sheet(item: $store.scope(state: \.persona, action: \.persona)) { persona in PersonaScreen(store: persona) }
+        .sheet(item: $store.scope(state: \.persona, action: \.persona)) { persona in
+            PersonaScreen(store: persona) { store.send(.menu(.sprite(persona.draft.id, $0))) }
+        }
         .sheet(
             isPresented: Binding(
                 get: { store.newRoom != nil }, set: { if !$0 { store.send(.newRoom(.delegate(.cancel))) } })
@@ -50,7 +53,10 @@ public struct AppRoot: View {
         let (menu, theme) = (store.menu, store.menu.settings.theme)
         let picked = menu.looks.tokens(theme, dark: dark).flatMap { Palette(tokens: $0, dark: dark) }
         let art = menu.server.flatMap { menu.looks.art(theme, on: $0.url) }
-        return Look(palette: picked ?? .farm(dark ? .dark : .light), style: menu.settings.style, art: art)
+        var look = Look(palette: picked ?? .farm(dark ? .dark : .light), style: menu.settings.style, art: art)
+        look.moving = menu.settings.moves(reduceMotion: reduceMotion)
+        look.sprites = menu.settings.sprites(in: theme)
+        return look
     }
 
     private var dark: Bool {

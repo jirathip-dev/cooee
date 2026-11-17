@@ -47,6 +47,10 @@ pub const SETUP: &str = "This is a setup chat. Interview the owner, one question
 tone, boundaries and way of working; then write your Character and Instructions with your update_persona tool. \
 Here each update is saved at once.";
 
+/// What a new session is told above its folder's `routine.toml` (#362).
+pub const ROUTINE: &str = "Your routine (routine.toml): if the owner has no routine of yours yet, offer it once and \
+make it with create_routine when they agree.";
+
 /// What a [`Style::Chat`] agent's new session is told after its brief.
 pub const PLAIN: &str =
     "Answer short, plain and conversational: summarise, and give the details only when asked.";
@@ -537,12 +541,18 @@ impl Agent {
                 write!(skills, "\n- {}: {}", s.name, s.description).ok();
             }
         }
+        let routine = home
+            .as_ref()
+            .and_then(|h| fs::read_to_string(h.path().join("routine.toml")).ok())
+            .map(|t| format!("{ROUTINE}\n```toml\n{}\n```", t.trim()))
+            .unwrap_or_default();
         let plain = if self.style == Style::Chat { PLAIN } else { "" };
         let parts = [
             self.character.trim(),
             self.instructions.trim(),
             &notes,
             &skills,
+            &routine,
             plain,
         ];
         let parts = parts

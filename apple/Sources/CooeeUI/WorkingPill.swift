@@ -1,7 +1,9 @@
+import CooeeCore
 import SwiftUI
 
 internal struct WorkingPill: View {
     @Environment(\.look) private var look
+    internal let persona: Persona
     internal var since: Date?
     internal var step: String?
     internal var stop: () -> Void = {}
@@ -9,11 +11,7 @@ internal struct WorkingPill: View {
     internal var body: some View {
         let palette = look.palette
         HStack(spacing: 8) {
-            if look.mono {
-                Text("~o=").ui(13, .bold, look).foregroundStyle(palette.cyan)
-            } else {
-                Circle().fill(palette.cyan).frame(width: 8, height: 8)
-            }
+            Acting(motion: .walk) { pose in StateSprite(persona: persona.with(state: .working), frame: pose.frame) }
             if let since {
                 TimelineView(.periodic(from: since, by: 1)) { context in
                     label(Int(context.date.timeIntervalSince(since)))

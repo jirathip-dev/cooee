@@ -231,6 +231,8 @@ fn a_fresh_machine_runs_every_step_once_in_order_and_a_second_run_skips_them() {
             format!("tailscale serve --bg --https={port} http://127.0.0.1:{port}"),
         ]
     );
+    let ignore = fs::read_to_string(mac.config().with_file_name(".gitignore")).unwrap();
+    assert!(ignore.lines().any(|l| l == "secrets/"), "{ignore}");
     let config = fs::read_to_string(mac.config()).unwrap();
     assert_eq!(
         config,
@@ -462,7 +464,7 @@ fn setup_installs_the_first_party_themes_chosen_with_no_network() {
     assert!(out.status.success(), "{out:?}");
     assert!(
         stdout.contains(
-            "themes:\n  themes to install, or none [farm garden kitchen]:\n  installed theme kitchen\n"
+            "themes:\n  themes to install, or none [garden kitchen]:\n  installed theme farm\n  installed theme kitchen\n"
         ),
         "{stdout}"
     );
@@ -470,6 +472,10 @@ fn setup_installs_the_first_party_themes_chosen_with_no_network() {
     assert_eq!(
         files(&themes),
         [
+            "farm/icon.png",
+            "farm/scene.svg",
+            "farm/sprites.svg",
+            "farm/theme.json",
             "kitchen/icon.png",
             "kitchen/scene.svg",
             "kitchen/sprites.svg",
@@ -482,7 +488,10 @@ fn setup_installs_the_first_party_themes_chosen_with_no_network() {
     .unwrap();
     assert_eq!(
         lock,
-        serde_json::json!([{ "name": "kitchen", "source": swag.url, "commit": swag.commit, "listed": true }])
+        serde_json::json!([
+            { "name": "farm", "source": swag.url, "commit": swag.commit, "listed": true },
+            { "name": "kitchen", "source": swag.url, "commit": swag.commit, "listed": true }
+        ])
     );
     assert!(
         !mac.home
@@ -493,10 +502,10 @@ fn setup_installs_the_first_party_themes_chosen_with_no_network() {
     assert!(out.status.success(), "{out:?}");
     let stdout = String::from_utf8_lossy(&out.stdout);
     assert!(
-        stdout.contains("installed theme farm\n  installed theme garden\n"),
+        stdout.contains("themes:\n  installed theme garden\n"),
         "{stdout}"
     );
-    assert!(themes.join("farm/theme.json").exists() && themes.join("garden/theme.json").exists());
+    assert!(themes.join("garden/theme.json").exists());
     let out = mac.setup(&["--yes"]);
     assert!(String::from_utf8_lossy(&out.stdout).contains("themes: done, skipped\n"));
 }

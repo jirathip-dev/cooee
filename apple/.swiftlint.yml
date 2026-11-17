@@ -64,8 +64,8 @@ custom_rules:
     severity: error
   user_defaults_in_client:
     regex: 'UserDefaults\.standard'
-    excluded: "Sources/CooeeApp/Live.swift"
-    message: "#203: UserDefaults.standard only in its Features @Dependency client's live value (CooeeApp/Live.swift)"
+    excluded: "Sources/CooeeApp/Live"
+    message: "#203: UserDefaults.standard only in its Features @Dependency client's live value (CooeeApp/Live/)"
     severity: error
   task_sleep_behind_clock:
     regex: 'Task\.sleep'

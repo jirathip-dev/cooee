@@ -37,6 +37,7 @@ public struct HomeView: View {
     private let pins: [Pin]
     private let all: [Persona]
     private let chats: [ListedChat]
+    private let loading: Bool
     private let selected: String?
     private let actions: HomeActions
 
@@ -46,8 +47,10 @@ public struct HomeView: View {
             Backdrop()
             VStack(spacing: 0) {
                 TopBar(title: screen.title, personas: all, actions: actions)
+                    .overlay(alignment: .bottom) { if loading { LoadingBar() } }
                 Scroller {
                     HomeBlocks(screen: screen, pins: pins, chats: chats, selected: selected, actions: actions)
+                    if chats.isEmpty { BigSprite(loading: loading) }
                     if !actions.others.isEmpty { OthersRow(titles: actions.others, open: actions.openOthers) }
                 }
             }
@@ -67,6 +70,7 @@ public struct HomeView: View {
         pins: [Pin] = Fixtures.personas.map(Pin.persona),
         all: [Persona] = Fixtures.personas,
         chats: [ListedChat] = Fixtures.chats,
+        loading: Bool = false,
         selected: String? = nil,
         actions: HomeActions = HomeActions()
     ) {
@@ -75,6 +79,7 @@ public struct HomeView: View {
         self.pins = pins
         self.all = all
         self.chats = chats
+        self.loading = loading
         self.selected = selected
         self.actions = actions
     }
