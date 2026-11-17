@@ -1,0 +1,9 @@
+Decided: this PR carries the approved ADR only; no .drover/arch.toml line is added here
+Because: docs/architecture/connectors/adr.md:198
+Decided: the curl ban waits for slice B, which deletes the three curl copies
+Because: crates/cooee-server/src/push.rs:596
+Decided: callers.md's sample tailnet host is a placeholder, as ci/denylist.txt refuses a real-looking ts.net name
+Because: docs/architecture/connectors/callers.md:18
+Rejected: adding the connectors collect now — the ADR puts it in slice A's PR, with the folder
+Check: hygiene and arch-check pass at the head; the impl issues A-F are in adr.md for the orchestrator to file
+Owner: The approved connectors plan lands as docs; the six follow-up issues build it.
