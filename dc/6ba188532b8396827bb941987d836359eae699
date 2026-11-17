@@ -1,0 +1,12 @@
+Decided: the routine's settings are [consolidate] in the persona's agent.toml, off by default, kept when a save leaves them out
+Because: crates/cooee-core/src/agents.rs:439
+Decided: one watermark file, <data>/watermarks.json, keyed per routine and persona, holding the newest line read and the newest due time
+Because: "Its watermark and skip-when-idle are shared with the heartbeat (#498): build them once, here."
+Decided: history with no arguments in a consolidation run returns the new lines (at most 20,000 characters, newest first) and moves the watermark
+Because: "read what changed since the last run with `history`"
+Decided: in any routine run, remember raises a memory approval card; the edit runs only on approve
+Because: "in a routine run, `remember` and `skill propose` both raise background approval cards"
+Rejected: putting the new history in the prompt — that breaks the fixed prompt and the history tool path the spec names
+Rejected: an app toggle in Swift — it needs snapshots and coverage; the server-side setting meets the acceptance criteria
+Check: crates/cooee/tests/consolidate.rs covers idle skip, one read, the watermark move, cards before writes and no second run
+Owner: A persona can now suggest note and skill changes overnight from new chats; each needs your approval.
