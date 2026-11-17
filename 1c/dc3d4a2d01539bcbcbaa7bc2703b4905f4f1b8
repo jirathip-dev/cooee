@@ -1,0 +1,14 @@
+Decided: pin @playwright/mcp@0.0.85 and connect it to the persona's own Chromium with --cdp-endpoint
+Because: "First check that the pinned Playwright MCP version supports connecting to a running browser"
+Decided: each tools/call is checked and logged server-side in POST /mcp/agent/call, replacing the proxy's per-call re-grant
+Because: "every browser tool call passes the proxy and is logged; a site outside the allowlist is refused"
+Decided: profile folders live in <data>/browsers/<persona>, not in the persona's config folder
+Because: crates/cooee-core/src/browser.rs:82
+Decided: sites are kept on save like mcp picks, so only a hand edit of agent.toml widens the allowlist
+Because: crates/cooee-core/src/agents.rs:441
+Decided: update round merges staging; the browser server entry takes staging's new MCP server fields from Server::default()
+Because: crates/cooee-core/src/browser.rs:53
+Rejected: Playwright's --allowed-origins — documented as not a security boundary, and exact origins break a site's CDN subdomains
+Rejected: letting Playwright MCP launch its own browser — cooee must own the browser for take-control and frames later
+Check: a refused URL is logged refused:true and never reaches the server (calls.log count in the test)
+Owner: each persona gets its own headless browser; it may open only its listed sites, and every action is logged
