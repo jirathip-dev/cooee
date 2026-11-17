@@ -89,7 +89,7 @@ internal struct ThemeEditorFeatureTests {
         }
         #expect(store.state.canSave)
         await store.send(.save) {
-            $0.draft.draw($0.drawing.figures)
+            $0.draft.draw($0.drawing)
             $0.saving = true
         }
         await store.receive(\.saved)
@@ -111,7 +111,7 @@ internal struct ThemeEditorFeatureTests {
             $0.reports = ["dark": GateReport(), "light": GateReport()]
         }
         await store.send(.save) {
-            $0.draft.draw($0.drawing.figures)
+            $0.draft.draw($0.drawing)
             $0.saving = true
         }
         #expect(store.state.draft.sprites["s-needs"]?.contains("<rect x=\"3\" y=\"4\" width=\"1\"") == true)
