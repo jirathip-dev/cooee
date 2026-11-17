@@ -50,6 +50,9 @@ pub struct Spec {
     /// any other after its command.
     #[serde(default)]
     pub effort: Vec<String>,
+    /// The model a background run (#219) picks when it names none: its cheapest.
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    pub cheapest: String,
     /// The registered provider whose behaviour it gets (default: the one named `name`, else none).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub base: Option<String>,

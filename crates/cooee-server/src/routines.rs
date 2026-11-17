@@ -8,8 +8,10 @@ use std::{
 
 use cooee_core::{
     Body,
+    agents::{self, CONSOLIDATE, CONSOLIDATION},
+    history,
     routines::{
-        Ask, Book, Delivery, Edit, Fields, Hooks, Inbound, Outcome, Paused, Place, Routine,
+        Ask, Book, Delivery, Edit, Fields, Hooks, Inbound, Mark, Outcome, Paused, Place, Routine,
         Routines, Run, Trigger, Who, local,
     },
     secrets,
@@ -31,10 +33,15 @@ use crate::{
 pub type Start =
     Box<dyn Fn(&Hub, &Who) -> Result<(String, String, PathBuf, Recipe), HubError> + Send + Sync>;
 
+/// The model and effort a background run of an agent picks when it names none (#219): its provider's cheapest.
+pub type Cheapest = Box<dyn Fn(&str) -> (String, String) + Send + Sync>;
+
 /// The routines and what runs them.
 pub struct Runner {
     hub: Arc<Hub>,
     data: PathBuf,
+    config: Option<PathBuf>,
+    cheapest: Cheapest,
     hooks: Option<Hooks>,
     file: Routines,
     lock: Mutex<()>,
@@ -48,17 +55,20 @@ type Picked = (Routine, String, String);
 
 impl Runner {
     /// The routines of config folder `config` (none: the data folder), their run state in `data`, run on `hub`;
-    /// `new_thread` runs start with `start`; GitHub events come on `hooks`.
+    /// `new_thread` runs start with `start`, a persona's consolidation runs (#219) on `cheapest` unless it names a
+    /// model; GitHub events come on `hooks`.
     #[must_use]
     pub fn new(
         hub: Arc<Hub>,
         (config, data): (Option<&std::path::Path>, &std::path::Path),
-        start: Start,
+        (start, cheapest): (Start, Cheapest),
         hooks: Option<Hooks>,
     ) -> Self {
         Self {
             hub,
             data: data.to_owned(),
+            config: config.map(ToOwned::to_owned),
+            cheapest,
             hooks,
             file: Routines::new(config.unwrap_or(data), data),
             lock: Mutex::new(()),
@@ -217,6 +227,7 @@ impl Runner {
     /// burst when it resumes).
     pub fn tick(&self, now: u64) {
         let offset = self.offset(now);
+        self.consolidate(now, offset);
         let _held = self.lock.lock().unwrap_or_else(PoisonError::into_inner);
         let mut book = match self.file.load() {
             Ok(book) => book,
@@ -247,6 +258,65 @@ impl Runner {
             r.last_due = due;
             if let Err(e) = self.file.save(&book) {
                 cooee_core::note!("cooee: routines: {e}");
+            }
+        }
+    }
+
+    fn consolidate(&self, now: u64, offset: i32) {
+        for p in agents::list(self.config.as_deref(), &self.data) {
+            let Some(c) = p.consolidate.as_ref().filter(|c| c.on) else {
+                continue;
+            };
+            let Some(due) = c.schedule().and_then(|s| s.latest(now, offset)) else {
+                continue;
+            };
+            let key = format!("{CONSOLIDATE}-{}", p.id);
+            let line = history::watermark(&self.data, &key, |w| {
+                let run = (w.due != 0 && due > w.due).then_some(w.line);
+                w.due = w.due.max(due);
+                run
+            });
+            let news = match line {
+                Ok(Some(line)) => self.hub.news(&p.id, line),
+                Ok(None) => continue,
+                Err(e) => Err(refused(e)),
+            };
+            let (model, effort) = (self.cheapest)(&p.agent);
+            let pick = |own: &str, cheap: String| {
+                if own.is_empty() {
+                    cheap
+                } else {
+                    own.to_owned()
+                }
+            };
+            let who = Who {
+                agent: p.agent.clone(),
+                account: p.account.clone().unwrap_or_default(),
+                profile: p.id.clone(),
+                folder: PathBuf::new(),
+                model: pick(&c.model, model),
+                effort: pick(&c.effort, effort),
+                machine: p.machine.clone(),
+            };
+            let ran = news.and_then(|news| {
+                let Some(_) = news else { return Ok(()) };
+                let (agent, name, folder, recipe) = (self.start)(&self.hub, &who)?;
+                let mark = Mark {
+                    id: CONSOLIDATE.to_owned(),
+                    name: "Consolidation".to_owned(),
+                };
+                let recipe = Recipe {
+                    routine: Some(mark),
+                    ..recipe
+                };
+                let random = format!("routine-{key}-{due}");
+                let text = (CONSOLIDATION, random.as_str());
+                self.hub
+                    .create_later((&agent, &name), &folder, text, recipe)?;
+                Ok(())
+            });
+            if let Err(e) = ran {
+                cooee_core::note!("cooee: routines: {key}: {e}");
             }
         }
     }
