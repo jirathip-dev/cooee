@@ -1,0 +1,14 @@
+Decided: this PR builds Pack, Colours and Save only; Draw, import and the Mac 3-pane are follow-up issues
+Because: q1858
+Decided: the server owns the gate math and now also returns the ratio its one-tap fix reaches, so the button reads "Darken to #8a6a00 · 4.0:1 ✓"
+Because: crates/cooee-server/src/editor.rs:84
+Decided: Look shows one amber line per broken pack with Open in the editor, hides the green saved line while any pack is broken, and marks your packs yours or last good with their figure
+Because: apple/Sources/CooeeUI/LookPage.swift:30
+Decided: Look reloads the theme list each time it opens, so a pack broken by hand shows without closing the menu
+Because: apple/Sources/CooeeFeatures/MenuFeature.swift:68
+Decided: the pack's name is edited from its title (Rename in the title menu), as the design has no Name row; Backdrop and Words rows show the copied pack's art and words without a screen, since Draw and words editing have no design yet
+Because: apple/Sources/CooeeUI/ThemeEditor.swift:31
+Rejected: a Swift port of the gate — two gates to keep equal, and apple_cap has no room for it
+Check: apple/design/v4-theme-editor holds Look (each style), Look broken, Pack and Colours frames; the figure in Look draws as a web view, which snapshots show as a placeholder
+Check: the_editor_checks_colours_saves_a_pack_once_and_keeps_its_last_good_copy asserts the fix's ratio passes
+Owner: Look now matches the approved design: one amber line with Open in the editor for a broken pack, your packs marked, and a compact preview with the fix's ratio on the Colours screen.
