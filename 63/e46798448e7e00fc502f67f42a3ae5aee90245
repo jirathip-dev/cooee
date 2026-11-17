@@ -1,0 +1,5 @@
+Decided: cut crates/cooee-core/src/routines.rs to 800 lines by trimming this branch's own additions; the POST body is appended through Fields::data
+Because: crates/cooee-core/src/routines/github.rs:202
+Rejected: moving the unit tests into routines/tests.rs — scripts/line-cap.sh counts that file toward the cap
+Check: drover arch-check reports 0 violations, and the routines tests pass unchanged
+Owner: no behaviour change; the routines file is back under the repo's size limit, so the architecture check passes
