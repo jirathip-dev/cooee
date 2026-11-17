@@ -93,3 +93,7 @@ glob = "*.sh"
 [[collect]]
 dir = "apple/e2e/steps"
 glob = "*.sh"
+
+[[collect]]
+dir = "connectors"
+glob = "*.toml"

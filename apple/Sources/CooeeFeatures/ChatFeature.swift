@@ -31,6 +31,7 @@ public struct ChatFeature: Sendable {
         public var exchange: Exchange?
         public var places: [Place] = []
         public var attachable: [PluginRow] = []
+        public var teach: [JSONValue] = []
         public var panel = false
         public var picked: PanelPick?
         public var agents: [AgentOption] = []

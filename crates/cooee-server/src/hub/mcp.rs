@@ -1,4 +1,4 @@
-use std::{collections::BTreeMap, io, path::Path};
+use std::{io, path::Path};
 
 use cooee_core::{
     Body, Card, Change, Config, Item, Launch, Thread,
@@ -69,9 +69,8 @@ impl Proposal {
             command: self.command,
             args: self.args,
             url: self.url,
-            env: BTreeMap::new(),
-            headers: BTreeMap::new(),
             enabled: false,
+            ..Server::default()
         }
     }
 }
