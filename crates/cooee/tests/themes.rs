@@ -570,3 +570,62 @@ fn the_editor_checks_colours_saves_a_pack_once_and_keeps_its_last_good_copy() {
             .is_none()
     );
 }
+
+#[test]
+fn the_editor_saves_drawn_figures_and_a_drawn_backdrop_that_pass_the_gate() {
+    let s = setup("th-draw");
+    let (ok, out) = s.run(&["theme", "add", "farm"]);
+    assert!(ok, "{out}");
+    let looks = s.cooee.json("/api/v1/looks");
+    let (dark, light) = (
+        looks["schemes"]["farm"]["tokens"].clone(),
+        looks["schemes"]["farm-light"]["tokens"].clone(),
+    );
+    let needs = r##"<symbol id="s-needs" viewBox="0 0 24 24" shape-rendering="crispEdges"><g class="f1"><rect x="4" y="8" width="16" height="1" style="fill:var(--fk-l,#ff9e80)"/></g><g class="f2"><rect x="11" y="0" width="2" height="1" fill="#ffffff"/></g></symbol>"##;
+    let scene = r#"<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 132 100"><style>#night{display:none}#night:target{display:inline}</style><g id="sky"><rect x="0" y="0" width="132" height="1" style="fill:var(--fk-c,#4fd1c5)"/></g><g id="sea"></g><g id="rocks"></g><g id="sand"></g><g id="night"></g></svg>"#;
+    let draft = |sprites: Value| json!({"from": "farm", "label": "Rockpool", "style": "scene", "dark": dark, "light": light, "sprites": sprites, "scene": scene});
+
+    for bad in [
+        json!({"s-needs": "<symbol id=\"s-fail\"></symbol>"}),
+        json!({"s-needs": format!("{needs}{needs}")}),
+        json!({"S/x": "<symbol id=\"S/x\"></symbol>"}),
+    ] {
+        let (status, body) = s
+            .cooee
+            .request("PUT", "/api/v1/themes/rockpool", Some(&draft(bad)));
+        assert_eq!(status, 400, "{body}");
+        assert!(body.contains("not one <symbol"), "{body}");
+    }
+    assert!(!s.dir.join("themes/rockpool").exists());
+
+    let (status, body) = s.cooee.request(
+        "PUT",
+        "/api/v1/themes/rockpool",
+        Some(&draft(json!({ "s-needs": needs }))),
+    );
+    assert_eq!((status, body.as_str()), (200, r#"{"written":true}"#));
+    let pack = s.dir.join("themes/rockpool");
+    let (ok, out) = s.run(&["theme", "check", &pack.display().to_string()]);
+    assert!(ok, "{out}");
+    let sheet = fs::read_to_string(pack.join("sprites.svg")).unwrap();
+    let farm = fs::read_to_string(packs().join("themes/farm/sprites.svg")).unwrap();
+    assert_eq!(sheet.matches("id=\"s-needs\"").count(), 1);
+    assert!(sheet.contains(needs));
+    let (before, after) = farm.split_once("<symbol id=\"s-needs\"").unwrap();
+    assert!(sheet.starts_with(before), "the other symbols stay in place");
+    let rest = after.split_once("</symbol>").unwrap().1;
+    assert!(sheet.ends_with(rest));
+    assert_eq!(fs::read_to_string(pack.join("scene.svg")).unwrap(), scene);
+    let looks = s.cooee.json("/api/v1/looks");
+    assert_eq!(
+        looks["themes"]["rockpool"]["scene"],
+        json!(["sky", "sea", "rocks", "sand"])
+    );
+
+    let (status, body) = s.cooee.request(
+        "PUT",
+        "/api/v1/themes/rockpool",
+        Some(&draft(json!({ "s-needs": needs }))),
+    );
+    assert_eq!((status, body.as_str()), (200, r#"{"written":false}"#));
+}

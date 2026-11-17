@@ -29,6 +29,27 @@ internal enum ThemeFrames {
                    "--mute": {"what": "--mute on the needs-you card", "value": 4.95, "min": 4.5}}}
         """#)
 
+    private static let body = [
+        "..c..........c..", ".cc..........cc.", ".c.c........c.c.", "..cc..w..w..cc..", "....c.k..k.c....",
+        ".....cccccc.....", "...cccccccccc...", "..cccccccccccc..", ".cccccccccccccc.", "..cccccccccccc..",
+        "..c.c.c..c.c.c..", ".c..c..c..c..c..",
+    ]
+    private static let raised = [".c............c.", ".cc..........cc.", "..cc........cc.."]
+    private static let inks: [Character: Int] = ["c": 0, "w": 8, "k": 9, "a": 2]
+
+    private static func crab(_ state: String, waving: [Bool]) -> PixelFigure {
+        var figure = PixelFigure(blank: "s-\(state)")
+        figure.frames = waving.map { wave in
+            var cells = figure.frames[0]
+            for (row, line) in ((wave ? raised : []) + body.dropFirst(wave ? 3 : 0)).enumerated() {
+                for (col, ink) in line.enumerated() { cells[(row + 8) * 24 + col + 4] = inks[ink] }
+            }
+            if state == "needs" { for row in [0, 1, 2, 4] { (cells[row * 24 + 11], cells[row * 24 + 12]) = (2, 2) } }
+            return cells
+        }
+        return figure
+    }
+
     private static func looks(_ style: LookStyle) -> Looks {
         let json =
             #"{"themes": {"tidepool": {"label": "Tidepool", "scheme": {"dark": "farm", "light": "farm-light"}, "#
@@ -73,6 +94,19 @@ internal enum ThemeFrames {
     }
 
     @MainActor
+    private static func draw(_ style: LookStyle) -> StoreOf<ThemeEditorFeature> {
+        var state = state(style, colours: false)
+        state.dark = true
+        for figure in ["edit", "read", "run", "idle", "done", "merged", "fail"] {
+            state.drawing.figures["s-\(figure)"] = crab(figure, waving: [figure == "done"])
+        }
+        state.drawing.figures["s-needs"] = crab("needs", waving: [false, true])
+        state.drawing.apply(.open("s-needs"))
+        state.drawing.apply(.frame(1))
+        return Store(initialState: state) { EmptyReducer() }
+    }
+
+    @MainActor
     private static func menu(_ style: LookStyle, broken: Bool) -> StoreOf<MenuFeature> {
         var state = MenuFeature.State(server: server, settings: Settings(style: style, theme: "tidepool"))
         state.looks = looks(style)
@@ -93,6 +127,7 @@ internal enum ThemeFrames {
                 frame("look", style) { look(menu(style, broken: false)) },
                 frame("pack", style) { ThemeEditor(store: store(style, colours: false)) },
                 frame("colours", style) { ThemeColours(store: store(style, colours: true)) },
+                frame("draw", style) { ThemeDraw(store: draw(style)).padding(.top, 54) },
             ]
         } + [frame("look-broken", .modern) { look(menu(.modern, broken: true)) }]
     }
