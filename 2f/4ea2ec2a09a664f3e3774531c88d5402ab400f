@@ -1,0 +1,11 @@
+Decided: samples are embedded with include_str! per file through a small macro, with no new dependency
+Because: "The samples ship inside the build, so `add` works offline"
+Rejected: the include_dir crate — a new dependency needs approval
+Decided: a picked MCP server missing from config.toml is left out of the launch and named in the brief, so the start goes ahead
+Because: "Until that server is in `config.toml`, the agent's first message says what to connect; it never fails silently."
+Rejected: keeping the 400 refusal — the chat never starts, so no first message can say what to connect
+Decided: a schedule ships as routine.toml, shown in the brief so the agent offers it through create_routine
+Because: "A sample with a schedule carries its routine as TOML."
+Rejected: installing the routine on add — a routine needs the chat that made it (made_in)
+Check: samples.rs compares every file under examples/agents byte for byte with the copy, so a file missing from the macro table fails
+Owner: Twelve sample agents ship with cooee; one command copies one in, and an agent missing a service says what to connect.
