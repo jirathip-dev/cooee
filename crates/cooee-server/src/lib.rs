@@ -2,6 +2,9 @@
 
 #![forbid(unsafe_code)]
 
+mod connectors;
+mod contrast;
+mod editor;
 mod gate;
 mod http;
 mod hub;
@@ -11,6 +14,7 @@ mod look;
 pub mod machine;
 mod manage;
 pub mod mcp;
+mod net;
 mod pairing;
 mod passkey;
 mod plugin;

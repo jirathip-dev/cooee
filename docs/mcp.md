@@ -24,6 +24,14 @@ allowed tools and refuses a call to any other (asking again each call, so a clos
 raises an approval card in the thread with the exact command or URL; approving it needs the device's passkey (Face
 ID) and adds the server off. Nothing runs before the owner turns it on and a profile picks it.
 
+`browser` (#160) is built in unless the registry has a server of that name: the pinned Playwright MCP
+(`npx -y @playwright/mcp@0.0.85`). A persona that picks it gets its own headless Chromium (`chromium = "…"` in the
+config, default `/Applications/Chromium.app/Contents/MacOS/Chromium`, `chromium` on Linux) on its profile folder
+`<data>/browsers/<persona>/`, started at the proxy's grant or reused while it listens; the grant adds
+`--cdp-endpoint` to Playwright MCP's args. Each call goes through `POST /mcp/agent/call`, which also checks a `url`
+argument against the persona's `[[sites]]` in `agent.toml` (`site`, its subdomains too; `account` and `no_frames`
+marks) and appends the call to `<data>/browsers/<persona>.log`, a refused one too. Only a hand edit changes `sites`.
+
 ## API
 
 The registry is the Mac's: `cooee mcp add|rm|enable|disable`.

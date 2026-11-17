@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>cooee · theme editor (#307): colours, checked by the gate as you go</title>
+<link rel="stylesheet" href="../../../design-system/app.css">
+<link rel="stylesheet" href="../native-shell/ns.css">
+<link rel="stylesheet" href="te.css">
+<script type="module" src="te.js"></script>
+</head>
+<body>
+<div class="gal">
+
+<!-- Colours: start from a built-in scheme, then tune each token; every row shows its worst contrast from the real gate. -->
+<div class="fr"><p class="cap">Light colours · working fails on cards, one tap fixes it</p>
+<section class="ph" data-f="colours">
+  <nav class="tnav"><a href="#" data-tx="< tidepool">‹ Tidepool</a><b>Light colours</b><a class="sv" href="#" data-tx="[done]">Done</a></nav>
+  <div class="tbody" style="padding-top:8px">
+    <div class="chz"><span class="chip">Paper</span><span class="chip">Farm</span><span class="chip">Garden</span><span class="chip on">Tidepool</span></div>
+    <div class="pvs" style="margin-top:10px">
+      <div class="pv" data-what="chat" data-mode="light"></div>
+    </div>
+    <p class="gh">States · theme gate <span data-y="gsum" data-mode="light"></span></p>
+    <div class="gs" data-y="toks" data-mode="light" data-keys="--a --r --g" data-open="--a"></div>
+    <p class="gh">Text</p>
+    <div class="gs" data-y="toks" data-mode="light" data-keys="--fg --mute --l --link"></div>
+    <p class="gh">Surfaces · figures</p>
+    <div class="gs" data-y="toks" data-mode="light" data-keys="--bg --card --fk-l --fk-c"></div>
+  </div>
+</section></div>
+
+</div>
+</body>
+</html>

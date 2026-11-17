@@ -1,14 +1,19 @@
 #!/bin/sh
-# Every Swift quality gate on apple/ (#147), each blocking: swift format, anti-slop (with cooee's rules and a check
-# that each TODO(#N) names an open issue), SwiftLint, the build (Swift 6, warnings as errors), the tests, coverage of
-# Core, API and Features (95%), unused imports (swiftlint analyze) and Periphery. Without Xcode it runs what the
-# Command Line Tools can and names what it skipped. SwiftLint and Periphery are pinned and checked by sha256.
+# The Swift gates on apple/ (#147). Blocking (the merge-ready run, `just apple-check`): swift format, anti-slop (with
+# cooee's rules and a check that each TODO(#N) names an open issue), SwiftLint, the build (Swift 6, warnings as
+# errors), the tests and 95% coverage of Core and API. #487: `--nightly` (`just apple-check --nightly`, apple.yml's
+# schedule and manual runs) adds Features coverage, unused imports (swiftlint analyze) and Periphery. Each step's wall
+# time and the total print at the end and go to $GITHUB_STEP_SUMMARY; a failure names its step as `gate=` in
+# $GITHUB_OUTPUT. Without Xcode it runs what the Command Line Tools can and names what it skipped. SwiftLint and
+# Periphery are pinned and checked by sha256.
 set -eu
 cd "$(dirname "$0")/.."
 root=$(pwd)
 tools="$root/.tools"
 swift_dirs="Sources Tests Cooee UITests"
 skipped=""
+nightly=no
+[ "${1:-}" != --nightly ] || nightly=yes
 
 fetch() {
   dir="$tools/$1-$2"
@@ -20,7 +25,28 @@ fetch() {
   rm -f "$dir.zip"
 }
 
-step() { printf '\n== %s\n' "$1"; }
+now=$(date +%s)
+begin=$now gate="" times=""
+lap() {
+  [ -z "$gate" ] || times="$times| $gate | $(($(date +%s) - now))s |
+"
+  now=$(date +%s)
+}
+step() {
+  lap
+  gate=$1
+  printf '\n== %s\n' "$1"
+}
+finish() {
+  [ "$1" = 0 ] || [ -z "${GITHUB_OUTPUT:-}" ] || echo "gate=$gate" >>"$GITHUB_OUTPUT"
+  lap
+  table="| step | time |
+|---|---|
+$times| total | $((now - begin))s |"
+  printf '\n%s\n' "$table"
+  [ -z "${GITHUB_STEP_SUMMARY:-}" ] || printf '### apple-check\n\n%s\n' "$table" >>"$GITHUB_STEP_SUMMARY"
+}
+trap 'finish $?' EXIT
 
 export COOEE_STRICT=1
 xcode=no
@@ -64,7 +90,15 @@ else
     [ -f "$object" ] && set -- "$@" -object "$object"
   done
   xcrun llvm-cov export -summary-only -instr-profile "$bin/codecov/default.profdata" "$@" >"$bin/coverage.json"
-  swift scripts/apple-coverage.swift "$bin/coverage.json"
+  swift scripts/apple-coverage.swift "$bin/coverage.json" CooeeCore CooeeAPI
+
+  step "anti-slop's own tests"
+  swift test -q --package-path tools/anti-slop-swift
+fi
+
+if [ "$xcode" = yes ] && [ "$nightly" = yes ]; then
+  step "CooeeFeatures coverage"
+  swift scripts/apple-coverage.swift "$bin/coverage.json" CooeeFeatures
 
   step "unused imports (swiftlint analyze)"
   sed 's/\\#/#/g' "$log" >"$log.analyze"
@@ -78,9 +112,6 @@ else
   [ -d "$store/v5" ] || store=apple/.build/debug/index/store
   (cd apple && "$tools/periphery-3.8.0/periphery" scan --quiet --index-store-path "$root/$store")
   echo "no unused code"
-
-  step "anti-slop's own tests"
-  swift test -q --package-path tools/anti-slop-swift
 fi
 
 printf '\napple-check: ok\n'

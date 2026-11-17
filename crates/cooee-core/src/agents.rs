@@ -12,7 +12,7 @@ use std::{
 
 use serde::{Deserialize, Serialize};
 
-use crate::{disk, mcp, memory, plugins, profiles::Profile, routines::Schedule, skills};
+use crate::{browser, disk, mcp, memory, plugins, profiles::Profile, routines::Schedule, skills};
 
 const DROVER: &str = "drover";
 
@@ -141,6 +141,9 @@ pub struct Agent {
     /// The MCP servers it picks from the registry (#56).
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub mcp: Vec<mcp::Pick>,
+    /// The sites its browser may open (#160).
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub sites: Vec<browser::Site>,
     /// shed's approval policy: `ask`, `allow` or `deny`.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub policy: Option<String>,
@@ -435,6 +438,7 @@ pub fn save(config: &Path, data: &Path, mut a: Agent) -> io::Result<Agent> {
         settings: old.settings,
         env: old.env,
         mcp: old.mcp,
+        sites: old.sites,
         policy: old.policy,
         consolidate: a.consolidate.or(old.consolidate),
         lent: None,
@@ -526,7 +530,8 @@ impl Agent {
         Ok(())
     }
 
-    /// Its env split into plain variables and secret ones, each secret read from [`crate::secrets::get`].
+    /// Its env split into plain variables and secret ones, each secret read from [`crate::secrets::get`], and its
+    /// persona's saved secrets (#163) among the secret ones.
     ///
     /// # Errors
     /// Names the secret that is missing or can't be read.
@@ -544,6 +549,9 @@ impl Agent {
                 None => plain.push((k.clone(), v.clone())),
             }
         }
+        let saved = crate::secrets::of_persona(data, &self.id)
+            .map_err(|e| format!("agent {}'s saved secrets: {e}", self.id))?;
+        secret.extend(saved);
         Ok((plain, secret))
     }
 
