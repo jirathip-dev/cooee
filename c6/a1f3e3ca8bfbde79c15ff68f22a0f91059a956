@@ -1,0 +1,4 @@
+Decided: merged origin/staging; in LiveUITests.swift kept #478's paired() title check with this branch's 60 s wait, and left testStaysPairedAfterTheMacUpdates deleted with mac-setup
+Because: apple/UITests/Live/LiveUITestCase.swift:49
+Rejected: none
+Owner: Brought the branch up to date with staging; the one clash in the phone pairing test keeps both changes.
