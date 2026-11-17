@@ -12,6 +12,7 @@ internal struct PersonaActions {
     internal var delete: (() -> Void)?
     internal var photo: () -> Void = {}
     internal var sprite: (String?) -> Void = { _ in }
+    internal var skill: (String) -> Void = { _ in }
 
     internal init(
         close: @escaping () -> Void = {}, save: @escaping () -> Void = {}, clear: @escaping () -> Void = {},
@@ -134,6 +135,7 @@ extension PersonaEditBlocks {
                 .buttonStyle(.plain)
             }
             if memoryCount > 0 { Group2(header: "Memory · \(memoryCount) notes") { notes } }
+            SkillRows(screen: screen, add: actions.skill)
             Group2 {
                 Button(action: actions.browse) {
                     SettingRow(

@@ -3,6 +3,7 @@ use std::{collections::BTreeMap, io, path::Path};
 use cooee_core::{
     Body, Card, Change, Config, Item, Launch, Thread,
     agents::{self, Home},
+    library::{self, Source, Update},
     mcp::{self, COOEE, Pick, Server},
     memory,
     shed_proto::ApprovalOption,
@@ -345,6 +346,49 @@ impl Hub {
             replaces: p.replaces,
         };
         self.raise(id, (tool, "skill", detail), pending)
+    }
+
+    /// Brings thread `id`'s persona's library skills up to `sources` (#496), fetching in `work`: an unedited one is
+    /// replaced, an edited one kept and its update raised as a `skill` diff card in the thread. Says what it did.
+    ///
+    /// # Errors
+    /// [`HubError::NoThread`]; [`HubError::Refused`] for a thread with no persona or an update that fails.
+    pub fn update_skills(
+        &self,
+        id: &str,
+        sources: &[Source],
+        work: &Path,
+    ) -> Result<Vec<String>, HubError> {
+        let thread = self.list().into_iter().find(|t| t.id == id);
+        let persona = thread
+            .ok_or_else(|| HubError::NoThread(id.to_owned()))?
+            .persona;
+        let home = self
+            .config_dir()
+            .ok_or_else(|| io::Error::other("no config folder"))
+            .and_then(|c| agents::home(c, &persona))
+            .map_err(|_| HubError::Refused(format!("thread {id} has no persona")))?;
+        let done =
+            library::update(&home, sources, work).map_err(|e| HubError::Refused(e.to_string()))?;
+        let mut said = Vec::new();
+        for (name, u) in done {
+            said.push(match u {
+                Update::Current => format!("{name}: up to date"),
+                Update::Updated => format!("{name}: updated"),
+                Update::Kept { new, old } => {
+                    let tool = format!("update {persona}'s skill {name}: you edited it, so it stays until you approve");
+                    let detail = skills::diff(&old, &new.file());
+                    let pending = Proposed::Skill {
+                        persona: persona.clone(),
+                        skill: new,
+                        replaces: Some(name.clone()),
+                    };
+                    self.raise(id, (tool, "skill", detail), pending)?;
+                    format!("{name}: you edited it, so it is kept; the card shows the update")
+                }
+            });
+        }
+        Ok(said)
     }
 
     /// An agent's `skill` read in thread `id` (#218): its persona's skill `name`'s body, at most 8,000 characters.
