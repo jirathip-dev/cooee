@@ -76,14 +76,15 @@ internal enum ThemeFrames {
     }
 
     private static func frame(
-        _ name: String, _ style: LookStyle, _ view: @escaping @MainActor @Sendable () -> some View
+        _ name: String, _ style: LookStyle, phone: Bool = true,
+        _ view: @escaping @MainActor @Sendable () -> some View
     )
         -> Frame
     {
         let light = style == .scene
         return Frame(
-            name: "theme-\(name)-\(style.rawValue)", width: 402, height: 874,
-            palette: light ? .farmLight : .farmDark, style: light ? .modern : style, phone: true,
+            name: "theme-\(name)-\(style.rawValue)", width: phone ? 402 : 1440, height: phone ? 874 : 900,
+            palette: light ? .farmLight : .farmDark, style: light ? .modern : style, phone: phone,
             folder: "v4-theme-editor", view: { AnyView(view()) }
         )
     }
@@ -94,9 +95,10 @@ internal enum ThemeFrames {
     }
 
     @MainActor
-    private static func draw(_ style: LookStyle) -> StoreOf<ThemeEditorFeature> {
+    private static func draw(_ style: LookStyle, passing: Bool = false) -> StoreOf<ThemeEditorFeature> {
         var state = state(style, colours: false)
         state.dark = true
+        if passing { state.reports["light"] = GateReport() }
         for figure in ["edit", "read", "run", "idle", "done", "merged", "fail"] {
             state.drawing.figures["s-\(figure)"] = crab(figure, waving: [figure == "done"])
         }
@@ -128,6 +130,7 @@ internal enum ThemeFrames {
                 frame("pack", style) { ThemeEditor(store: store(style, colours: false)) },
                 frame("colours", style) { ThemeColours(store: store(style, colours: true)) },
                 frame("draw", style) { ThemeDraw(store: draw(style)).padding(.top, 54) },
+                frame("mac", style, phone: false) { ThemeMac(store: draw(style, passing: true), renames: false) },
             ]
         } + [frame("look-broken", .modern) { look(menu(.modern, broken: true)) }]
     }

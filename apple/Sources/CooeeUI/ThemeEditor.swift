@@ -179,7 +179,8 @@ internal struct ThemePreview: View {
     ) -> Look {
         let palette = Palette(tokens: state.tokens(dark: dark), dark: dark) ?? look.palette
         var shown = Look(palette: palette, style: style ?? state.draft.style, still: look.still, art: state.art)
-        (shown.drawn, shown.tokens) = (state.drawing.figures, state.tokens(dark: dark))
+        (shown.drawn, shown.vectors) = (state.drawing.figures, state.drawing.vectors)
+        shown.tokens = state.tokens(dark: dark)
         return shown
     }
 

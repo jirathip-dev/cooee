@@ -629,3 +629,28 @@ fn the_editor_saves_drawn_figures_and_a_drawn_backdrop_that_pass_the_gate() {
     );
     assert_eq!((status, body.as_str()), (200, r#"{"written":false}"#));
 }
+
+#[test]
+fn an_imported_svg_kept_as_vector_in_a_figure_and_a_layer_passes_the_gate() {
+    let s = setup("th-import");
+    let (ok, out) = s.run(&["theme", "add", "farm"]);
+    assert!(ok, "{out}");
+    let looks = s.cooee.json("/api/v1/looks");
+    let vector = r##"<svg viewBox="0 0 48 32" width="100%" height="100%" xmlns:xlink="http://www.w3.org/1999/xlink"><circle id="dot" cx="24" cy="16" r="10" fill="#f80"/><use xlink:href="#dot"/></svg>"##;
+    let needs = format!(r#"<symbol id="s-needs" viewBox="0 0 24 24">{vector}</symbol>"#);
+    let scene = format!(
+        r#"<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 132 100" preserveAspectRatio="xMidYMax slice" shape-rendering="crispEdges"><style>#night{{display:none}}#night:target{{display:inline}}</style><g id="sky">{vector}</g><g id="sea"></g><g id="rocks"></g><g id="sand"></g><g id="night"></g></svg>"#
+    );
+    let draft = json!({"from": "farm", "label": "Inked", "style": "scene",
+        "dark": looks["schemes"]["farm"]["tokens"], "light": looks["schemes"]["farm-light"]["tokens"],
+        "sprites": {"s-needs": needs}, "scene": scene});
+
+    let (status, body) = s.cooee.request("PUT", "/api/v1/themes/inked", Some(&draft));
+    assert_eq!((status, body.as_str()), (200, r#"{"written":true}"#));
+    let pack = s.dir.join("themes/inked");
+    let (ok, out) = s.run(&["theme", "check", &pack.display().to_string()]);
+    assert!(ok, "{out}");
+    let sheet = fs::read_to_string(pack.join("sprites.svg")).unwrap();
+    assert!(sheet.contains(&needs), "{sheet}");
+    assert_eq!(fs::read_to_string(pack.join("scene.svg")).unwrap(), scene);
+}
