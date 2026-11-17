@@ -180,3 +180,28 @@ extension ClientTests {
         #expect(body == want)
     }
 }
+
+extension ClientTests {
+    @Test internal func aPersonasTopicsListRetitleArchiveAndStartInAFolder() async throws {
+        let row =
+            #"[{"id":"t1","title":"cooee queue","agent":"codex","persona":"coder","state":"working","#
+            + #""last":"","at":5,"unseen":1,"archived":false,"folder":"/Users/me/src/cooee"}]"#
+        let empty = Answer(headers: json, chunks: ["null"])
+        let server = CannedServer([
+            "/threads": [Answer(headers: json, chunks: [row]), Answer(headers: json, chunks: [#"{"id":"n3"}"#])],
+            "/threads/t1/title": [empty], "/threads/t1/archive": [empty],
+        ])
+        let client = server.client()
+        let topics = try await client.topics(of: "coder")
+        #expect(topics.map(\.folder) == ["/Users/me/src/cooee"] && topics.map(\.title) == ["cooee queue"])
+        #expect(server.requests("/threads").first?.url?.query == "persona=coder")
+        try await client.retitle("t1", "Queue")
+        try await client.archive("t1", true)
+        #expect(server.body("/threads/t1/title") == #"{"title":"Queue"}"#)
+        #expect(server.body("/threads/t1/archive") == #"{"on":true}"#)
+        let persona = APIPersona(id: "coder", name: "Coder", agent: "fake-acp", folder: "scratch")
+        _ = try await client.newThread(persona: persona, machine: "", text: "hi", randomID: "r7")
+        let started = server.requests("/threads").last?.httpBody.flatMap { String(bytes: $0, encoding: .utf8) }
+        #expect(started?.contains(#""folder":"scratch""#) == true)
+    }
+}
