@@ -1,0 +1,11 @@
+{
+  "format": 1,
+  "thread": {
+    "id": "kitchen",
+    "title": "ต้มยำ",
+    "messages": [],
+    "agent": "fake-acp",
+    "terminal": "cooee-kitchen",
+    "read": 4
+  }
+}

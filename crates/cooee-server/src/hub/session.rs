@@ -8,12 +8,6 @@ use cooee_core::{
 use super::{HubError, Recipe};
 use crate::login::Logins;
 
-/// A persona's session, set up by its provider (#503): its account and [`cooee_core::Launch`] with the provider's
-/// switches, its files written under `<data>/run/<persona>`, the brief where its channel puts it, and the gaps that
-/// hold on this account.
-///
-/// # Errors
-/// As [`Logins::agent`], or a run file that can't be written.
 pub(crate) fn persona(
     logins: &Logins,
     a: &Agent,

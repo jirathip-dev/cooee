@@ -242,7 +242,8 @@ fn only(mut msg: Value, tools: Option<&[String]>) -> Value {
 }
 
 /// `cooee mcp proxy <server> --thread <id>`: forwards the agent's stdio to the server and back, with only the
-/// thread's allowed tools; each `tools/call` checks the grant again, so a closed thread's token stops working.
+/// thread's allowed tools; cooee checks each `tools/call` again (a closed thread's token stops working) and logs a
+/// browser's.
 ///
 /// # Errors
 /// When the grant is refused or the server can't start.
@@ -286,16 +287,12 @@ pub fn proxy(server: &str, thread: &str) -> Result<(), String> {
                     .pointer("/params/name")
                     .and_then(Value::as_str)
                     .unwrap_or_default();
-                let why = match grant(server, thread) {
-                    Err(e) => Some(e),
-                    Ok(g) if !g.tools.as_ref().is_none_or(|t| t.iter().any(|t| t == name)) => {
-                        Some(format!(
-                            "tool {name} isn't allowed in this thread (its profile's tools for {server})"
-                        ))
-                    }
-                    Ok(_) => None,
-                };
-                if let Some(why) = why {
+                let args = msg.pointer("/params/arguments").cloned();
+                let checked = json!({ "server": server, "tool": name, "arguments": args });
+                if let Err(why) = ask(
+                    "/mcp/agent/call",
+                    &json!({ "thread": thread, "server": checked }),
+                ) {
                     put(&out, &error(&id, -32602, &why));
                     continue;
                 }
@@ -352,6 +349,19 @@ pub fn tools(g: &Grant) -> Result<Vec<(String, String)>, String> {
         .iter()
         .map(|t| (text(t, "name"), text(t, "description")))
         .collect())
+}
+
+fn secret_tool() -> Value {
+    json!({
+        "name": "secret",
+        "description": "Have a secret (a password, an API key) typed into a terminal you run, without ever seeing it: one your persona saved is typed at once; else the owner drops it with Face ID, typed once (save: kept in the keychain for your persona and its environment, to reuse). You only get `secret NAME entered`.",
+        "inputSchema": { "type": "object", "required": ["name", "terminal"], "properties": {
+            "name": { "type": "string", "description": "a variable's name, like CRUNCHBASE_KEY" },
+            "terminal": { "type": "string", "description": "the shed terminal it is typed into, then enter" },
+            "why": { "type": "string", "description": "what it is for, for the owner" },
+            "save": { "type": "boolean", "description": "keep it for your persona to reuse (default: once, never stored)" }
+        } }
+    })
 }
 
 fn own_tools() -> Value {
@@ -436,11 +446,20 @@ fn own_tools() -> Value {
             } }
         } }
     });
-    json!([tool, remember, ask_persona, history, update, routine, skill])
+    json!([
+        tool,
+        remember,
+        ask_persona,
+        history,
+        update,
+        routine,
+        skill,
+        secret_tool()
+    ])
 }
 
 /// `cooee mcp serve --thread <id>`: cooee's own MCP server: `propose_server`, and `remember` (#126),
-/// `ask_persona` (#156), `history` (#217), `update_persona` (#270) and `skill` (#218) for a persona's.
+/// `ask_persona` (#156), `history` (#217), `update_persona` (#270), `skill` (#218) and `secret` (#163) for a persona's.
 ///
 /// # Errors
 /// Never past a broken stdin; each refused proposal is the tool's error.
@@ -485,6 +504,7 @@ pub fn serve(thread: &str) -> Result<(), String> {
                     Some("update_persona") => Some(("/mcp/agent/persona", "")),
                     Some("create_routine") => Some(("/mcp/agent/routine", "")),
                     Some("skill") => Some(("/mcp/agent/skill", "")),
+                    Some("secret") => Some(("/mcp/agent/secret", "")),
                     _ => None,
                 };
                 match call.map(|(path, said)| {

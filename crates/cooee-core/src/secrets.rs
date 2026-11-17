@@ -78,6 +78,27 @@ pub fn set(data: &Path, name: &str, value: &str) -> io::Result<()> {
     crate::write_private(&file(data, name), value.as_bytes())
 }
 
+/// The name persona `persona`'s secret `name` is saved under (#163): no `secret:<NAME>` of an env can name it.
+#[must_use]
+pub fn persona(persona: &str, name: &str) -> String {
+    format!("{persona}.{name}")
+}
+
+/// Persona `persona`'s saved secrets, each as its variable and value (#163).
+///
+/// # Errors
+/// As [`names`] and [`get`].
+pub fn of_persona(data: &Path, persona: &str) -> io::Result<Vec<(String, String)>> {
+    let mine = format!("{persona}.");
+    let mut vars = Vec::new();
+    for name in names(data)? {
+        if let (Some(var), Some(v)) = (name.strip_prefix(&mine), get(data, &name)?) {
+            vars.push((var.to_owned(), v));
+        }
+    }
+    Ok(vars)
+}
+
 /// Removes secret `name` from the keychain (macOS) and its file; one already gone is no error.
 ///
 /// # Errors
@@ -91,21 +112,22 @@ pub fn remove(data: &Path, name: &str) -> io::Result<()> {
     }
 }
 
-/// The names of the secrets saved for `data`.
+/// The names of the secrets saved for `data` a `secret:<NAME>` can spell: a dotted one (a connector's) is not.
 ///
 /// # Errors
 /// When the keychain or the folder can't be listed.
 pub fn names(data: &Path) -> io::Result<Vec<String>> {
     #[cfg(target_os = "macos")]
-    return keychain::accounts(prefix(data)).map(|a| {
+    let all = keychain::accounts(prefix(data)).map(|a| {
         let p = prefix(data);
         a.iter()
             .filter_map(|a| a.strip_prefix(&p))
             .map(str::to_owned)
-            .collect()
+            .collect::<Vec<_>>()
     });
     #[cfg(not(target_os = "macos"))]
-    files(data)
+    let all = files(data);
+    all.map(|n| n.into_iter().filter(|n| !n.contains('.')).collect())
 }
 
 fn files(data: &Path) -> io::Result<Vec<String>> {
@@ -309,6 +331,7 @@ mod tests {
         );
         assert_eq!(get(&data, "TOKEN").unwrap().as_deref(), Some("s3cret"));
         fs::write(data.join("secrets/.run-x"), "handoff").unwrap();
+        fs::write(data.join("secrets/connector.linear.main"), "{}").unwrap();
         assert_eq!(names(&data).unwrap(), ["TOKEN"]);
         assert_eq!(migrate(&data).unwrap(), Vec::<String>::new());
         assert!(path.exists());

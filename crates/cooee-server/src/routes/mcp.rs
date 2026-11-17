@@ -62,6 +62,27 @@ async fn mcp_grant(cx: &Cx, Json(a): Json<AgentAsk>) -> Result<Answer<mcp::Grant
     ))
 }
 
+#[route(POST "/mcp/agent/call")]
+async fn mcp_call(cx: &Cx, Json(a): Json<AgentAsk>) -> Result<Answer<bool>> {
+    let token = bearer(cx);
+    let text = |k: &str| {
+        a.server
+            .get(k)
+            .and_then(serde_json::Value::as_str)
+            .unwrap_or_default()
+            .to_owned()
+    };
+    let (server, tool) = (text("server"), text("tool"));
+    let args = a.server.get("arguments").cloned().unwrap_or_default();
+    Ok(Answer(
+        blocking(cx, move |hub| {
+            hub.call((&a.thread, &token), (&server, &tool), &args)
+                .map(|()| true)
+        })
+        .await,
+    ))
+}
+
 #[route(POST "/mcp/agent/ask")]
 async fn mcp_ask(cx: &Cx, Json(a): Json<AgentAsk>) -> Result<Answer<String>> {
     let (token, s) = (bearer(cx), a.server);
@@ -115,8 +136,23 @@ async fn mcp_propose(cx: &Cx, Json(a): Json<AgentAsk>) -> Result<Answer<cooee_co
     ))
 }
 
+#[route(POST "/mcp/agent/secret")]
+async fn mcp_secret(cx: &Cx, Json(a): Json<AgentAsk>) -> Result<Answer<String>> {
+    let token = bearer(cx);
+    Ok(Answer(
+        blocking(cx, move |hub| {
+            let s =
+                serde_json::from_value(a.server).map_err(|e| HubError::Refused(e.to_string()))?;
+            hub.secret(&a.thread, &token, s)
+        })
+        .await,
+    ))
+}
+
 pub(super) fn routes(b: RouterBuilder) -> RouterBuilder {
     b.route(mcp_grant)
+        .route(mcp_secret)
+        .route(mcp_call)
         .route(mcp_propose)
         .route(mcp_ask)
         .route(mcp_remember)
