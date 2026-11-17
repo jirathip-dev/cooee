@@ -23,6 +23,4 @@ source line is on every secret, run, confirm and permissions block.
 
 ## What stays Swift, on purpose
 
-`ChatView`'s transcript and `Composer`, `QRScanner`, `MacSetup` (the server-side first run on a Mac that *is*
-the server: it runs before any layout exists and configures the server that would serve one), the three
-`LookStyle` renderers, and `SwipeBack`. Each is a component block or part of one, never a screen.
+`ChatView`'s transcript and `Composer`, `QRScanner`, the three `LookStyle` renderers, and `SwipeBack`. Each is a component block or part of one, never a screen.

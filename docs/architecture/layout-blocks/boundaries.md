@@ -17,7 +17,7 @@
  app             │
    CooeeFeatures LayoutFeature ── holds Layout, lastGood, broken?, one ScreenFeature per visible screen
                  │   ├─ ScreenFeature   (today's PluginScreenFeature, generalised over Source)
-                 │   ├─ ChatFeature, PairingFeature, MacSetupFeature, MenuFeature  (component reducers, unchanged)
+                 │   ├─ ChatFeature, PairingFeature, MenuFeature  (component reducers, unchanged)
                  │   └─ @Dependency LayoutClient, ScreensClient, KeptScreens, LayoutStore (last-good on disk)
    CooeeUI       SlotView(resolved node) ── BlocksView for a screen · the component's view for a component
                  │   CardBlock draws the source line from CardContext.poster (set by SlotView from the slot)

@@ -741,30 +741,45 @@ fn a_new_build_that_does_not_answer_is_rolled_back_and_the_old_one_serves_again(
 }
 
 #[test]
-fn with_the_mac_apps_login_items_setup_and_install_refuse_and_start_nothing() {
+fn setup_on_a_mac_whose_app_ran_the_server_reuses_its_config_and_data() {
     let mac = Mac::new("su-app", false);
     for item in ["com.jirathip.cooee.serve", "com.jirathip.cooee.shed"] {
         fs::write(mac.home.join(format!("loaded-{item}")), "").unwrap();
     }
-    let port = mac.port.to_string();
-    for args in [
-        vec!["setup", "--port", &port, "--yes"],
-        vec!["setup", "--port", &port, "--dry-run", "--yes"],
-        vec!["install", "--port", &port],
-    ] {
-        let out = mac.cooee(&args);
-        let stderr = String::from_utf8_lossy(&out.stderr);
-        assert_eq!(out.status.code(), Some(1), "{args:?}: {out:?}");
-        assert!(
-            stderr.contains(
-                "the cooee Mac app already runs this Mac's server (login items com.jirathip.cooee.serve, \
-                 com.jirathip.cooee.shed)"
-            ),
-            "{stderr}"
-        );
-        assert_eq!(mac.changes(), Vec::<String>::new(), "{args:?}");
-        assert!(!mac.config().exists() && !mac.home.join("Library/LaunchAgents").exists());
-    }
+    let kept = format!(
+        "roots = [\"~/Projects\"]\nport = {}\nallowed_hosts = [\"mac.tailnet.example\"]\n",
+        mac.port
+    );
+    fs::create_dir_all(mac.config().parent().unwrap()).unwrap();
+    fs::write(
+        mac.config(),
+        format!("shed = \"/Applications/Cooee.app/Contents/Helpers/shed\"\n{kept}"),
+    )
+    .unwrap();
+    fs::create_dir_all(mac.data()).unwrap();
+    let hash = "ab".repeat(32);
+    let devices = format!(
+        r#"{{"devices":[{{"id":"abababab","label":"iPhone","hash":"{hash}","created":1,"used":1}}]}}"#
+    );
+    fs::write(mac.data().join("devices.json"), devices).unwrap();
+    let out = mac.setup(&["--yes"]);
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(out.status.success(), "{out:?}");
+    assert!(
+        stdout.contains("adding the terminal plugin, shed from PATH, not the old Mac app's\n"),
+        "{stdout}"
+    );
+    let config = fs::read_to_string(mac.config()).unwrap();
+    assert_eq!(config, format!("{kept}{}", terminal(mac.port, &config)));
+    let listed = mac.cooee(&["devices"]);
+    let listed = String::from_utf8_lossy(&listed.stdout);
+    assert!(
+        listed.contains("abababab") && listed.contains("iPhone"),
+        "{listed}"
+    );
+    assert!(mac.home.join("loaded-dev.cooee.cooee").exists());
+    assert!(mac.setup(&["--yes"]).status.success());
+    assert_eq!(fs::read_to_string(mac.config()).unwrap(), config);
 }
 
 #[test]

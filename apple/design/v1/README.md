@@ -49,17 +49,11 @@ These are the style frames kept as designs:
 | `style-scene-chat-light.png` | A Scene chat: the persona's horse in the header. |
 | `style-scene-card-light.png` | A block-rendered choice card in Scene: the pack's card with its edge. |
 
-## Mac (the app as the server, q962 option 1)
+## Mac (a client only, #484)
 
 | PNG | shows |
 |---|---|
-| `mac-setup-welcome.png` | Welcome: this Mac runs your agents; nothing goes through a cooee cloud. "Only a client? Connect to a server elsewhere", or Set up this Mac. The steps sidebar notes cooee and shed run as login items. |
-| `mac-setup-folders.png` | Folders & agents: the roots (`~/work`, `~/src`, Add a folder…) and the agents found (Claude Code, Codex; Hermes optional). |
-| `mac-setup-signins.png` | Sign-ins: per agent, signed in or Sign in…. |
-| `mac-setup-tailscale.png` | The Tailscale check, missing: the hint to install it, Check again, or Wi-Fi only for now. |
-| `mac-setup-qr.png` | **The QR code** to scan, the code `K7Q2MX` to type, the address, waiting for a phone; "`cooee setup` in a terminal prints this same QR." |
-| `mac-setup-approve.png` | A phone asks: **Approve** prompt with the same check word `maple`, its address, Decline / Approve · Touch ID. |
-| `mac-connect.png` | The Mac app as a **client only**: Connect to a server: Nearby, an address, or scan its QR with the Mac's camera. |
+| `mac-connect.png` | The Mac app's first run, a **client only**: Connect to a server: Nearby (in the app a cooee answering on this Mac is listed first, as This Mac; the frame shows two others), an address, or scan its QR with the Mac's camera. |
 | `mac-window-dark.png`, `mac-window-light.png` | The Mac window: Home as the sidebar (pinned row, chat list with Coder selected) beside the open chat. iPad uses the same split. |
 
 ## Queue in Scene (#181)
