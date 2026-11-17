@@ -1,0 +1,5 @@
+Decided: trim the PR under the premerge src cap instead of asking for a raise: unit tests moved from src/ to crates/cooee-core/tests/disk.rs, stale check inlined, disk/memory/agents code compacted
+Because: ci/cap.toml:6
+Rejected: a cap raise ask — trimming 77 lines fit without dropping behaviour or tests
+Check: drover cap-check --config ci/cap.toml on a clean git archive of the head gives 27497 / 27500, exit 0; cargo test -p cooee-core --test disk passes
+Owner: The change now fits the code size limit; saves still keep comments, refuse stale edits and pick up hand edits.
