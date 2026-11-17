@@ -1,0 +1,5 @@
+Decided: merged origin/staging (#428, #459) and pushed, so CI re-runs on the current staging; no app code changed.
+Because: crates/cooee/tests/rooms.rs:368
+Rejected: changing the room test or the room server — this PR touches no Rust, and the test passed five runs in a row locally, so the red run is a timing flake in staging's own test.
+Check: stable (macos-latest) is green at this head; cargo test --workspace, line cap and arch-check are green.
+Owner: The branch is up to date with staging again; the … panel is unchanged, and the failed check was a flaky test outside this change.
