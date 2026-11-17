@@ -1,0 +1,11 @@
+Decided: the two actions are an `actions` block core appends in crates/cooee-server/src/screens/persona.rs, their wording and fixed messages in its TEACH table
+Because: "The actions are blocks served by core (`/screens/persona/{id}`), so no client release is needed to change their wording"
+Decided: a tap is `POST /screens/action` with `skill` or `routine` and `values.thread`; it goes through Hub::queue_as with a Mark, like a routine's message
+Because: "marked as the action (not shown as the owner's typing)"
+Rejected: a new mark field on the owner's message — routines' Mark already carries `{id, name}` and the chat already treats marked messages as not the owner's
+Decided: the message key is the action plus the thread's item count, so a double tap before anything changes queues one message
+Because: "each action queues exactly one marked message"
+Rejected: the block in persona.json — the app's bundled fallback and its snapshots would change; core adds it instead
+Decided: the chat's commands menu is left out: the app has no commands menu, only the … panel, and inventing one is new UI beyond this issue
+Check: crates/cooee/tests/skills.rs drives the real endpoint for one marked message per action, approve-only save and the four 400 reasons
+Owner: The chat's … panel gets "Save as skill" and "Make this a routine"; the app has no commands menu yet, so those two aren't there.
