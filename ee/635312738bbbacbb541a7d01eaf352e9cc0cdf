@@ -1,0 +1,9 @@
+Decided: land the approved ADR as a docs-only PR; the slices come as separate impl issues
+Because: docs/architecture/provider-contract/adr.md:136
+Decided: add no .drover/arch.toml line now; the shed.approve ban lands with slice 4
+Because: docs/architecture/provider-contract/adr.md:171
+Decided: shapes.md's example folder uses the /home/user placeholder the hygiene gate asks for
+Because: docs/architecture/provider-contract/shapes.md:121
+Rejected: building the conformance suite here — it is slice 1 of the ADR's issue list
+Check: ci/gates/hygiene.sh passes at the head; it failed on the original ADR commit
+Owner: The approved provider plan is in the docs; nothing in the app changes until its slices are built.
