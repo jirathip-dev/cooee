@@ -1,0 +1,17 @@
+Merge made by the 'ort' strategy.
+ .github/workflows/apple.yml          |  21 +++++-
+ apple/Sources/CooeeApp/MacLive.swift |   2 +-
+ apple/UITests/MacSetupUITests.swift  |   6 ++
+ crates/cooee-core/src/config.rs      |   3 +
+ crates/cooee-core/src/lib.rs         |   1 +
+ crates/cooee-core/src/logs.rs        | 104 +++++++++++++++++++++++++
+ crates/cooee-core/src/perf.rs        |  11 +--
+ crates/cooee-server/src/serve.rs     |  25 ++++++
+ crates/cooee-server/src/themes.rs    | 118 ++++++++++++++++++++---------
+ crates/cooee/src/setup.rs            |  24 ++++--
+ crates/cooee/tests/setup.rs          |  15 +++-
+ crates/cooee/tests/themes.rs         | 142 ++++++++++++++++++++++++++++++++++-
+ docs/configuration.md                |   1 +
+ docs/themes.md                       |   8 +-
+ 14 files changed, 419 insertions(+), 62 deletions(-)
+ create mode 100644 crates/cooee-core/src/logs.rs
