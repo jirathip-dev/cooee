@@ -55,6 +55,8 @@ pub struct Config {
     pub instance: String,
     /// Timing (`[perf]`).
     pub perf: Perf,
+    /// Log rotation (`[logs]`).
+    pub logs: crate::logs::Logs,
     /// The MCP servers profiles pick from (`[[mcp]]`, #56).
     pub mcp: Vec<crate::mcp::Server>,
     /// Apple push for the native app (`[apns]`, #130); its key is `<data>/apns.p8`.
@@ -139,6 +141,7 @@ impl Default for Config {
             path: None,
             instance: "cooee".to_owned(),
             perf: Perf::default(),
+            logs: crate::logs::Logs::default(),
             mcp: Vec::new(),
             apns: None,
             auto_update: true,

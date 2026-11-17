@@ -23,7 +23,7 @@
             shift 3
             for label in "$@"; do /bin/launchctl kickstart -k "gui/$(id -u)/$label" && echo "$(date) restarted $label"; done
             for _ in $(seq 120); do
-              /usr/bin/curl -fsS -o /dev/null "http://127.0.0.1:$port/pair" && { echo "$(date) cooee answers on $port"; exit 0; }
+              /usr/bin/curl -sS -o /dev/null "http://127.0.0.1:$port/pair" && { echo "$(date) cooee answers on $port"; exit 0; }
               sleep 0.5
             done
             echo "$(date) cooee does not answer on $port"

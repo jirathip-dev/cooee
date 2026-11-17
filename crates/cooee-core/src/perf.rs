@@ -17,8 +17,6 @@ use serde_json::{Value, json};
 /// The log's name in the data folder.
 pub const FILE: &str = "perf.log";
 
-const ROTATE: u64 = 16 << 20;
-
 struct Log {
     file: Mutex<File>,
     slow_ms: u64,
@@ -38,12 +36,11 @@ fn now() -> u64 {
 /// # Errors
 /// When the log can't be opened.
 pub fn init(data: &Path, slow_ms: u64) -> io::Result<()> {
-    let path = data.join(FILE);
-    if fs::metadata(&path).is_ok_and(|m| m.len() > ROTATE) {
-        fs::rename(&path, data.join("perf.log.old"))?;
-    }
     fs::create_dir_all(data)?;
-    let file = OpenOptions::new().create(true).append(true).open(path)?;
+    let file = OpenOptions::new()
+        .create(true)
+        .append(true)
+        .open(data.join(FILE))?;
     LOG.set(Log {
         file: Mutex::new(file),
         slow_ms,
