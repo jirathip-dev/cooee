@@ -1,9 +1,10 @@
 //! A persona's history (#217): a search over its own threads and a paged read of one, as plain text for the `history`
-//! tool. A file scan of the store's item lines: no index, no model call. Only the owner's messages and the agent's
+//! tool. The search looks words up in the store's full-text index (#221), the read pages back from the store: no
+//! model call. Only the owner's messages and the agent's
 //! final replies are read (never tool calls, their output or cards), redacted, each result under a hard cap.
 
 use std::{
-    collections::BTreeMap,
+    collections::{BTreeMap, HashSet},
     fs, io,
     path::Path,
     sync::{Mutex, PoisonError},
@@ -11,7 +12,7 @@ use std::{
 
 use serde::{Deserialize, Serialize};
 
-use crate::{Body, Chat, Item, Store, StoreError, redact};
+use crate::{Body, Item, Store, StoreError, redact, store::Page};
 
 /// At most this many hits a search.
 pub const HITS: usize = 5;
@@ -94,11 +95,7 @@ pub fn since(
 ) -> Result<Option<(String, u64)>, StoreError> {
     let (mut lines, mut owner) = (Vec::new(), false);
     for id in threads {
-        for i in chat(store, id, |_| true)?
-            .items
-            .iter()
-            .filter(|i| i.at > mark)
-        {
+        for i in store.items(id)?.iter().filter(|i| i.at > mark) {
             if matches!(
                 &i.body,
                 Body::You {
@@ -134,7 +131,7 @@ pub fn since(
     Ok(Some((out.join("\n"), newest)))
 }
 
-fn said(i: &Item) -> Option<(&str, String)> {
+pub(crate) fn said(i: &Item) -> Option<(&str, String)> {
     let (who, text) = match &i.body {
         Body::You { text, .. } => ("owner", text),
         Body::Agent { text, .. } if i.speaker.is_empty() => ("reply", text),
@@ -160,10 +157,6 @@ fn date(ms: u64) -> String {
     format!("{:04}-{m:02}-{d:02}", yoe + era * 400 + i64::from(m <= 2))
 }
 
-fn chat(store: &Store, id: &str, keep: impl FnOnce(&[u8]) -> bool) -> Result<Chat, StoreError> {
-    Ok(Chat::from_versions(store.items_if(id, keep)?))
-}
-
 /// The newest message across `threads` holding every word of `query` (case-insensitive) per thread, newest first,
 /// at most `limit` and [`HITS`]: one line each, `<thread> <date>: <snippet>`, the snippet at most [`SNIPPET`] characters.
 ///
@@ -176,38 +169,29 @@ pub fn search(
     limit: usize,
 ) -> Result<String, StoreError> {
     let words: Vec<String> = query.split_whitespace().map(str::to_lowercase).collect();
-    let raw = words.iter().all(|w| !w.contains(['"', '\\']));
-    let holds = |bytes: &[u8]| {
-        let lower = String::from_utf8_lossy(bytes).to_lowercase();
-        !raw || words.iter().all(|w| lower.contains(w.as_str()))
-    };
+    let mut left: HashSet<&str> = threads.iter().map(String::as_str).collect();
+    let want = limit.min(HITS);
     let mut hits = Vec::new();
-    for id in threads {
-        let chat = chat(store, id, holds)?;
-        let found = chat.items.iter().rev().find_map(|i| {
-            let (_, text) = said(i)?;
-            let lower = text.to_lowercase();
-            if !words.iter().all(|w| lower.contains(w.as_str())) {
-                return None;
-            }
-            let at = words.first().and_then(|w| lower.find(w.as_str()));
-            let at = lower[..at.unwrap_or(0)].chars().count();
-            let from = at.saturating_sub(SNIPPET / 4);
-            Some((
-                i.at,
-                text.chars().skip(from).take(SNIPPET).collect::<String>(),
-            ))
-        });
-        if let Some((at, snippet)) = found {
-            hits.push((at, format!("{id} {}: {snippet}", date(at))));
+    store.said(&words, |id, i| {
+        if hits.len() >= want {
+            return false;
         }
-    }
+        let Some((_, text)) = said(i) else {
+            return true;
+        };
+        let lower = text.to_lowercase();
+        if !words.iter().all(|w| lower.contains(w.as_str())) || !left.remove(id) {
+            return true;
+        }
+        let at = words.first().and_then(|w| lower.find(w.as_str()));
+        let at = lower[..at.unwrap_or(0)].chars().count();
+        let from = at.saturating_sub(SNIPPET / 4);
+        let snippet: String = text.chars().skip(from).take(SNIPPET).collect();
+        hits.push((i.at, format!("{id} {}: {snippet}", date(i.at))));
+        true
+    })?;
     hits.sort_by_key(|h| std::cmp::Reverse(h.0));
-    let lines: Vec<String> = hits
-        .into_iter()
-        .take(limit.min(HITS))
-        .map(|h| h.1)
-        .collect();
+    let lines: Vec<String> = hits.into_iter().map(|h| h.1).collect();
     Ok(if lines.is_empty() {
         "no match".to_owned()
     } else {
@@ -221,26 +205,26 @@ pub fn search(
 /// # Errors
 /// [`StoreError`] when its items can't be read.
 pub fn read(store: &Store, id: &str, before: Option<u64>) -> Result<String, StoreError> {
-    let chat = chat(store, id, |_| true)?;
-    let older = chat
-        .items
-        .iter()
-        .rev()
-        .filter(|i| before.is_none_or(|b| i.id < b));
     let (mut lines, mut left, mut more) = (Vec::new(), PAGE - 40, None);
-    for i in older {
-        let Some((who, text)) = said(i) else { continue };
-        let line = format!("{} {who}: {text}", date(i.at));
-        let n = line.chars().count();
-        if n > left && !lines.is_empty() {
-            more = lines.last().map(|l: &(u64, String)| l.0);
-            break;
-        }
-        lines.push((i.id, line.chars().take(left).collect()));
-        left = left.saturating_sub(n + 1);
-        if left == 0 {
-            more = Some(i.id);
-            break;
+    let mut from = before.map_or(Page::Last, Page::Before);
+    'pages: loop {
+        let page = store.page(id, from, 50)?;
+        let Some(oldest) = page.first() else { break };
+        from = Page::Before(oldest.id);
+        for i in page.iter().rev() {
+            let Some((who, text)) = said(i) else { continue };
+            let line = format!("{} {who}: {text}", date(i.at));
+            let n = line.chars().count();
+            if n > left && !lines.is_empty() {
+                more = lines.last().map(|l: &(u64, String)| l.0);
+                break 'pages;
+            }
+            lines.push((i.id, line.chars().take(left).collect()));
+            left = left.saturating_sub(n + 1);
+            if left == 0 {
+                more = Some(i.id);
+                break 'pages;
+            }
         }
     }
     let mut out: Vec<String> = lines.into_iter().rev().map(|l| l.1).collect();
@@ -443,7 +427,7 @@ mod tests {
 
     #[test]
     fn a_search_over_1000_threads_stays_under_200_ms() {
-        let s = store("perf");
+        drop(store("perf"));
         let ids: Vec<String> = (0..1000).map(|n| format!("t{n:x}")).collect();
         let dir = crate::scratch::owned(
             std::env::temp_dir().join(format!("cooee-history-perf-{}", std::process::id())),
@@ -458,6 +442,7 @@ mod tests {
             }
             fs::write(dir.join(format!("threads/{id}.jsonl")), lines).unwrap();
         }
+        let s = Store::open(&dir).unwrap();
         let start = crate::clock::instant();
         let got = search(&s, &ids, "question 9 thread 999", 5).unwrap();
         let ms = start.elapsed().as_millis();

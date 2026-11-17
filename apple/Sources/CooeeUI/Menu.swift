@@ -27,6 +27,10 @@ internal struct MenuHost: View {
                         store: store.scope(state: \.terminal, action: \.terminal), config: node.config
                     ) { menu.send(.path(menu.path.dropLast())) }
                     .toolbar(.hidden)
+                } else if page == .themeEditor, pages.contains(.string(page.rawValue)),
+                    let editor = menu.scope(state: \.editor, action: \.editor)
+                {
+                    ThemeEditor(store: editor)
                 } else if pages.contains(.string(page.rawValue)) {
                     MenuPage(store: menu, page: page)
                 }
@@ -87,7 +91,7 @@ internal struct MenuPage: View {
                 case .look: lookPage
                 case .notifications: pushPage
                 case .appIcon: AppIconPicker(store: store)
-                case .terminal: EmptyView()
+                case .terminal, .themeEditor: EmptyView()
                 }
             }
             .padding(16)
@@ -104,17 +108,12 @@ internal struct MenuPage: View {
         case .notifications: "Notifications"
         case .terminal: "Terminal"
         case .appIcon: "App icon"
+        case .themeEditor: "Theme"
         }
     }
 
     @ViewBuilder private var lookPage: some View {
-        if !store.looks.themes.isEmpty {
-            Group2(header: "Theme") {
-                ForEach(store.looks.themes.sorted { $0.key < $1.key }, id: \.key) { name, pack in
-                    pick(pack.label.capitalized, selected: store.settings.theme == name) { store.send(.theme(name)) }
-                }
-            }
-        }
+        LookPage(store: store)
         Group2(header: "Scheme") {
             ForEach(LookScheme.allCases, id: \.self) { scheme in
                 pick(scheme.rawValue.capitalized, selected: store.settings.scheme == scheme) {

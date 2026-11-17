@@ -6,7 +6,7 @@ import Foundation
 public struct MenuFeature: Sendable {
     /// The device-local pages the app draws, never the server: the `settings` component's and the terminal.
     public enum Page: String, CaseIterable, Hashable, Sendable {
-        case look, notifications, appIcon, terminal
+        case look, notifications, appIcon, terminal, themeEditor
     }
 
     @ObservableState
@@ -18,6 +18,8 @@ public struct MenuFeature: Sendable {
         public var path: [Page] = []
         public var screen: JSONValue?
         @Presents public var page: ScreenFeature.State?
+        public var editor: ThemeEditorFeature.State?
+        public var saved: String?
         public var busy = false
         public var error: String?
 
@@ -32,6 +34,8 @@ public struct MenuFeature: Sendable {
         case loaded(JSONValue)
         case show(String, label: String, source: LayoutSource = .core)
         case page(PresentationAction<ScreenFeature.Action>)
+        case edit(String?)
+        case editor(ThemeEditorFeature.Action)
         case path([Page])
         case load
         case looks(Looks)
@@ -58,10 +62,12 @@ public struct MenuFeature: Sendable {
     public var body: some ReducerOf<Self> {
         Reduce { state, action in
             switch action {
-            case .open, .loaded, .show, .page:
+            case .open, .loaded, .show, .page, .edit, .editor:
                 return navigate(&state, action)
             case .path(let path):
+                let opened = path.last == .look && !state.path.contains(.look)
                 state.path = path
+                return opened ? load(state) : .none
             case .load:
                 return load(state)
             case .style(let style):
@@ -80,6 +86,7 @@ public struct MenuFeature: Sendable {
             return .none
         }
         .ifLet(\.$page, action: \.page) { ScreenFeature() }
+        .ifLet(\.editor, action: \.editor) { ThemeEditorFeature() }
     }
 
     private func navigate(_ state: inout State, _ action: Action) -> Effect<Action> {
@@ -98,6 +105,8 @@ public struct MenuFeature: Sendable {
                 })
         case .loaded(let screen):
             state.screen = screen
+        case .edit, .editor:
+            return editing(&state, action)
         case .show(let path, let label, let source):
             guard let server = state.server else { return .none }
             state.page = ScreenFeature.State(server: server, source: source, path: path, label: label)
@@ -123,6 +132,7 @@ public struct MenuFeature: Sendable {
             state.settings.scheme = scheme
         case .theme(let theme):
             state.settings.theme = theme
+            state.settings.style = state.looks.themes[theme]?.style ?? state.settings.style
         case .pinRoom(let room):
             state.settings.pin(room: room)
         default:
@@ -147,6 +157,28 @@ public struct MenuFeature: Sendable {
 }
 
 extension MenuFeature {
+    private func editing(_ state: inout State, _ action: Action) -> Effect<Action> {
+        switch action {
+        case .edit(let pack):
+            guard let server = state.server else { return .none }
+            let (theme, style) = (pack ?? state.settings.theme, state.settings.style)
+            state.editor = .init(server: server, looks: state.looks, theme: theme, style: style, new: pack == nil)
+            state.saved = nil
+            state.path.append(.themeEditor)
+            return .send(.editor(.task))
+        case .editor(.saved(let name, let style)):
+            state.settings.theme = name
+            state.settings.style = style
+            settingsStore.save(state.settings)
+            state.saved = state.editor?.draft.label
+            state.editor = nil
+            state.path.removeAll { $0 == .themeEditor }
+            return load(state)
+        default:
+            return .none
+        }
+    }
+
     private func look(_ state: inout State, _ change: (inout Settings) -> Void) -> Effect<Action> {
         let shown = state.settings.appIcon
         change(&state.settings)
