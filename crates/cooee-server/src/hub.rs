@@ -24,6 +24,7 @@ mod cards;
 mod events;
 mod expire;
 mod folders;
+mod heartbeat;
 mod mcp;
 mod models;
 mod plugins;
@@ -446,7 +447,15 @@ impl Live {
                 hub.room_ask(&self.meta, i.clone());
             }
             let watched = self.tx.as_ref().is_some_and(|t| t.receiver_count() > 0);
-            if let Some(n) = note(
+            let beat = self.meta.routine.as_ref();
+            if beat.is_some_and(|r| r.id == cooee_core::agents::HEARTBEAT) {
+                if let Change::State(t) = &change
+                    && t.state != self.was
+                    && matches!(t.state.as_str(), "done" | "error")
+                {
+                    hub.beat_end(&self.meta, &self.chat, t);
+                }
+            } else if let Some(n) = note(
                 &self.meta, &self.chat, &change, &self.was, watched, &hub.theme,
             ) {
                 hub.push.send(&hub.routed(&self.meta, n));
