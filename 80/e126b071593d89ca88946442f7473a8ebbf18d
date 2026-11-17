@@ -1,0 +1,11 @@
+Decided: the lease is a pure state machine (Control::gate) on an injected time, so the 10-minute expiry is tested without a real clock.
+Because: "the lease expires at 10 min"
+Decided: the agent's browser calls block in Hub::call on a Condvar until hand back or lease end; the proxy's 630 s read timeout already covers a 10-minute wait.
+Because: "the agent's browser tools wait until you hand back with a note"
+Decided: the hand-back note goes into the waiting call's tool result, once.
+Decided: a stdlib CDP client (current tab via /json/list, a minimal WebSocket) for frames and input; no new dependency.
+Because: "The live view streams the browser's current tab."
+Rejected: a WebSocket crate — a new dependency needs owner approval, and the client is about 100 lines.
+Rejected: +10 min — the Screen design gives it to the UI build issue.
+Check: crates/cooee/tests/mcp.rs drives the real proxy and shows the call waiting (waiting 1, Playwright not called) until hand back.
+Owner: You can watch a persona's browser live, take it over for 10 minutes, and hand it back with a note it reads.
