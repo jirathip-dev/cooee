@@ -1,0 +1,5 @@
+Decided: merged origin/staging and changed no code; the apple FAIL is the air-cooee runner drawing SwiftUI Sliders in theme-colours frames as placeholders.
+Because: apple/Sources/CooeeUI/ThemeColours.swift:124
+Rejected: re-recording the theme-colours designs with placeholders, or swapping the Slider — both change another issue's UI.
+Check: the apple job on mini-cooee passes; on air-cooee staging itself fails the same three frames.
+Owner: Nothing changed in the heartbeat; the iPhone check fails only on one build machine (air-cooee), which needs your look.
