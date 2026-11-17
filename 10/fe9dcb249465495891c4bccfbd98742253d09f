@@ -1,0 +1,15 @@
+Decided: items are rows keyed (thread, id) in <data>/cooee.db; a later version upserts the row, matching Chat::from_versions
+Because: "with `body` the same JSON as today's line, primary key `(thread, id)`"
+Decided: the index holds history's said() text lowercased; search rechecks each hit, so LIKE wildcards in a word are harmless
+Because: crates/cooee-core/src/history.rs:17
+Decided: an import re-run after a crash upserts the same rows; the rename is fsynced before any append can follow
+Because: "a kill mid-import leaves the old files and imports again cleanly"
+Decided: routine-runs.json keeps its own format 1; only the thread store's FORMAT goes up
+Because: crates/cooee-core/src/routines.rs:26
+Decided: store's tests move to store/tests.rs so store.rs stays under the 800-line file cap
+Because: .drover/arch.toml:9
+Decided: each upgrade test opens its own copy of a release, since opening imports and renames the jsonl files
+Because: crates/cooee-core/tests/upgrade_compat.rs:58
+Rejected: adding Page to root.rs's re-exports — root.rs is frozen and only the crate uses Page
+Check: last page 10k 7131→34 µs and search 30781→454 µs (cooee perf --store, release, at 10fe9dc)
+Owner: Chats move into one database on first start; the latest page and history search are about 18–200× faster.
