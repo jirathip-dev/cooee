@@ -62,7 +62,7 @@ impl Item {
             card.until.is_some() || (tapped.is_none() && chosen.is_none() && card.line.is_none());
         blocks.extend(open.then(|| match kind {
             "secret" => json!({ "type": "secret", "id": answer, "name": detail, "action": "answer",
-                "values": { "choice": "save" } }),
+                "values": { "choice": options.first().map_or("save", |o| o.id.as_str()) } }),
             "run" => json!({ "type": "run", "id": answer, "action": "answer", "command": detail,
                 "sha": card.sha.as_deref().unwrap_or("") }),
             _ => {

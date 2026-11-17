@@ -1,0 +1,17 @@
+label = "Notion"
+publisher = "Notion (Notion Labs, Inc.)"
+url = "https://mcp.notion.com/mcp"
+transport = "http"
+leaves = "What the persona asks Notion for or writes to it: searches, page and database text."
+reviewed = 2026-11-17
+
+[auth]
+kind = "oauth"
+issuer = "https://mcp.notion.com"
+scopes = ["default"]
+client = "registered"
+
+[tools]
+read = []
+write = []
+never = []

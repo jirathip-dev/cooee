@@ -3,6 +3,7 @@ mod agent;
 mod config;
 mod devices;
 mod doctor;
+mod export;
 mod install;
 mod layout;
 mod machine;
@@ -15,6 +16,7 @@ mod reports;
 mod secrets;
 mod serve;
 mod setup;
+mod skill;
 mod theme;
 mod update;
 
@@ -50,6 +52,12 @@ pub(crate) const ALL: &[Command] = &[
         usage: doctor::USAGE,
         flags: doctor::FLAGS,
         run: doctor::run,
+    },
+    Command {
+        name: "export",
+        usage: export::USAGE,
+        flags: export::FLAGS,
+        run: export::run,
     },
     Command {
         name: "install",
@@ -122,6 +130,12 @@ pub(crate) const ALL: &[Command] = &[
         usage: setup::USAGE,
         flags: setup::FLAGS,
         run: setup::run,
+    },
+    Command {
+        name: "skill",
+        usage: skill::USAGE,
+        flags: skill::FLAGS,
+        run: skill::run,
     },
     Command {
         name: "theme",

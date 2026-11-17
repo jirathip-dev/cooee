@@ -6,6 +6,6 @@ check *gates:
 gen:
     scripts/gen.sh
 
-# The Swift quality gate on apple/ (#147): format, anti-slop, SwiftLint, build, tests, coverage, Periphery.
-apple-check:
-    scripts/apple-check.sh
+# The blocking Swift gates on apple/ (#147); --nightly adds Features coverage, unused imports and Periphery (#487).
+apple-check *flags:
+    scripts/apple-check.sh {{flags}}
