@@ -1,7 +1,7 @@
-//! The config file: one TOML file, every key optional, unknown keys an error.
-
 use std::{
-    env, fs, io,
+    env,
+    ffi::OsString,
+    fs, io,
     net::{IpAddr, Ipv4Addr},
     path::{Path, PathBuf},
 };
@@ -9,6 +9,12 @@ use std::{
 use serde::Deserialize;
 
 use crate::{Spec, provider};
+
+/// The environment variable `name` (#203: CI's arch-check bans `env::var` outside this module).
+#[must_use]
+pub fn env_var(name: &str) -> Option<OsString> {
+    env::var_os(name)
+}
 
 /// cooee's settings, read from `config.toml`.
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
@@ -49,31 +55,16 @@ pub struct Config {
     pub instance: String,
     /// Timing (`[perf]`).
     pub perf: Perf,
+    /// Log rotation (`[logs]`).
+    pub logs: crate::logs::Logs,
     /// The MCP servers profiles pick from (`[[mcp]]`, #56).
     pub mcp: Vec<crate::mcp::Server>,
     /// Apple push for the native app (`[apns]`, #130); its key is `<data>/apns.p8`.
     pub apns: Option<Apns>,
     /// GitHub webhooks for routines (`[hooks]`, #261); off when unset.
-    pub hooks: Option<Hooks>,
+    pub hooks: Option<crate::routines::Hooks>,
     /// Whether `cooee update` (its timer, every 15 minutes) installs main's newest green build (default on, #332).
     pub auto_update: bool,
-}
-
-/// `[hooks]`: a second listener serving only `POST /hooks/github`, published by Tailscale Funnel.
-#[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
-#[serde(deny_unknown_fields)]
-pub struct Hooks {
-    /// Where it listens (`127.0.0.1:4748`).
-    pub bind: std::net::SocketAddr,
-    /// Its public URL, as the GitHub webhook has it (`https://<mac>.ts.net:8443/hooks/github`).
-    pub url: String,
-    /// GitHub's API, for the catch-up (default `https://api.github.com`).
-    #[serde(default = "github_api")]
-    pub api: String,
-}
-
-fn github_api() -> String {
-    "https://api.github.com".to_owned()
 }
 
 /// `[apns]`: the owner's APNs key's ids and the app it pushes to; none of it is secret.
@@ -152,6 +143,7 @@ impl Default for Config {
             path: None,
             instance: "cooee".to_owned(),
             perf: Perf::default(),
+            logs: crate::logs::Logs::default(),
             mcp: Vec::new(),
             apns: None,
             hooks: None,
@@ -288,7 +280,6 @@ pub fn save_roots(path: &Path, roots: &[PathBuf]) -> io::Result<()> {
             },
         )
         .collect();
-    // A JSON array of strings is a TOML inline array too.
     let line = format!("roots = {}", serde_json::to_string(&roots)?);
     let table = toml::de::DeTable::parse(&text).map_err(io::Error::other)?;
     let old = table.get_ref().iter().find(|(k, _)| k.get_ref() == "roots");
@@ -324,7 +315,9 @@ mod tests {
 
     #[test]
     fn roots_under_home_are_expanded() {
-        let path = env::temp_dir().join(format!("cooee-roots-{}.toml", std::process::id()));
+        let path = crate::scratch::owned(
+            env::temp_dir().join(format!("cooee-roots-{}.toml", std::process::id())),
+        );
         fs::write(&path, r#"roots = ["~/Projects", "~", "/srv/~x"]"#).unwrap();
         let roots = Config::load(&path).unwrap().roots;
         fs::remove_file(&path).unwrap();
@@ -337,7 +330,9 @@ mod tests {
 
     #[test]
     fn missing_file_gives_defaults() {
-        let path = env::temp_dir().join(format!("cooee-no-config-{}.toml", std::process::id()));
+        let path = crate::scratch::owned(
+            env::temp_dir().join(format!("cooee-no-config-{}.toml", std::process::id())),
+        );
         assert_eq!(
             Config::load(&path).unwrap(),
             Config {
@@ -350,7 +345,9 @@ mod tests {
 
     #[test]
     fn saving_roots_keeps_the_other_lines() {
-        let path = env::temp_dir().join(format!("cooee-save-{}.toml", std::process::id()));
+        let path = crate::scratch::owned(
+            env::temp_dir().join(format!("cooee-save-{}.toml", std::process::id())),
+        );
         let home = PathBuf::from(env::var_os("HOME").unwrap());
         let text = "# mine\nport = 1\nroots = [\n  \"/a\",\n] # old\n\n[[plugins]]\nname = \"x\"\n";
         fs::write(&path, text).unwrap();

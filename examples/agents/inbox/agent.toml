@@ -1,0 +1,5 @@
+name = "Inbox"
+agent = "claude-acp"
+
+[[mcp]]
+server = "email"

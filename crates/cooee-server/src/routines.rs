@@ -1,21 +1,16 @@
-//! Routines' runner (#75, #261): every 30 seconds it runs each routine whose due time passed, once, and records
-//! it; a signed GitHub delivery on `[hooks] bind` (or one the 15-minute catch-up finds in GitHub's log) runs each
-//! routine it matches. `create_routine` and the routines' API change them. The run's key is the hub's `random_id`,
-//! so a crash between a run and its record runs into the same thread or message again, never a second.
-
 use std::{
     io::Write as _,
     path::PathBuf,
-    process::{Command, Stdio},
+    process::Stdio,
     sync::{Arc, Mutex, PoisonError},
     time::Duration,
 };
 
 use cooee_core::{
-    Body, Config, Hooks,
+    Body,
     routines::{
-        Ask, Book, Delivery, Edit, Fields, Outcome, Paused, Place, Routine, Routines, Run, Trigger,
-        Who, local,
+        Ask, Book, Delivery, Edit, Fields, Hooks, Outcome, Paused, Place, Routine, Routines, Run,
+        Trigger, Who, local,
     },
     secrets,
 };
@@ -23,21 +18,13 @@ use serde_json::Value;
 use topcoat::{
     Result,
     context::{Cx, app_context},
-    router::{
-        Body as Bytes, Router, RouterBuilder,
-        content::{Form, Json},
-        request::Bytes as Raw,
-        response::Response,
-        route,
-    },
+    router::{Body as Bytes, Router, request::Bytes as Raw, response::Response, route},
 };
 
 use crate::{
-    AgentAsk, Answer, bearer,
+    http::refused,
     hub::{Hub, HubError, Recipe, now},
-    plain,
     push::Note,
-    refused, thread_id,
 };
 
 /// How a `new_thread` run starts as `who`: its agent, the agent's name, its folder and its recipe.
@@ -50,25 +37,28 @@ pub struct Runner {
     data: PathBuf,
     hooks: Option<Hooks>,
     file: Routines,
-    /// Held over each read-change-write of the file.
     lock: Mutex<()>,
     start: Start,
-    /// The Mac's UTC offset in minutes, and when it was read (ms).
     offset: Mutex<(i32, u64)>,
 }
 
-/// An hour, in milliseconds.
 const HOUR: u64 = 3_600_000;
 
 impl Runner {
-    /// The routines in `data`, run on `hub`; `new_thread` runs start with `start`; GitHub events come on `config`'s `[hooks]`.
+    /// The routines of config folder `config` (none: the data folder), their run state in `data`, run on `hub`;
+    /// `new_thread` runs start with `start`; GitHub events come on `hooks`.
     #[must_use]
-    pub fn new(hub: Arc<Hub>, data: &std::path::Path, start: Start, config: &Config) -> Self {
+    pub fn new(
+        hub: Arc<Hub>,
+        (config, data): (Option<&std::path::Path>, &std::path::Path),
+        start: Start,
+        hooks: Option<Hooks>,
+    ) -> Self {
         Self {
             hub,
             data: data.to_owned(),
-            hooks: config.hooks.clone(),
-            file: Routines::new(data),
+            hooks,
+            file: Routines::new(config.unwrap_or(data), data),
             lock: Mutex::new(()),
             start,
             offset: Mutex::new((0, 0)),
@@ -90,14 +80,14 @@ impl Runner {
             std::thread::spawn(move || {
                 loop {
                     poll.catch_up(now());
-                    std::thread::sleep(Duration::from_mins(15));
+                    cooee_core::clock::sleep(Duration::from_mins(15));
                 }
             });
         }
         std::thread::spawn(move || {
             loop {
                 runner.tick(now());
-                std::thread::sleep(beat);
+                cooee_core::clock::sleep(beat);
             }
         });
         Ok(())
@@ -111,12 +101,11 @@ impl Runner {
         self.file.load().map(|b| b.routines).map_err(refused)
     }
 
-    /// Changes the routines with `f`, under the lock, and saves them.
     fn change<T>(&self, f: impl FnOnce(&mut Book) -> Result<T, HubError>) -> Result<T, HubError> {
         let _held = self.lock.lock().unwrap_or_else(PoisonError::into_inner);
         let mut book = self.file.load().map_err(refused)?;
         let done = f(&mut book)?;
-        self.file.save(&mut book).map_err(refused)?;
+        self.file.save(&book).map_err(refused)?;
         Ok(done)
     }
 
@@ -219,25 +208,37 @@ impl Runner {
         let _held = self.lock.lock().unwrap_or_else(PoisonError::into_inner);
         let mut book = match self.file.load() {
             Ok(book) => book,
-            Err(e) => return eprintln!("cooee: routines: {e}"),
+            Err(e) => return cooee_core::note!("cooee: routines: {e}"),
         };
+        let made: Vec<()> = book
+            .routines
+            .iter_mut()
+            .filter(|r| r.made_at == 0)
+            .map(|r| r.made_at = now)
+            .collect();
+        if !made.is_empty()
+            && let Err(e) = self.file.save(&book)
+        {
+            cooee_core::note!("cooee: routines: {e}");
+        }
         for at in 0..book.routines.len() {
-            let Some(due) = book.routines[at].due(now, offset) else {
+            let Some(r) = book.routines.get_mut(at) else {
                 continue;
             };
-            let r = &mut book.routines[at];
+            let Some(due) = r.due(now, offset) else {
+                continue;
+            };
             if r.paused.is_none() {
                 let outcome = self.run(r, &r.text(&Fields::Due(due, offset)), &r.key(due));
                 self.record(r, r.key(due), outcome, now);
             }
             r.last_due = due;
-            if let Err(e) = self.file.save(&mut book) {
-                eprintln!("cooee: routines: {e}");
+            if let Err(e) = self.file.save(&book) {
+                cooee_core::note!("cooee: routines: {e}");
             }
         }
     }
 
-    /// Records `r`'s run `key` at `now`; a `chat` run whose chat is closed or gone pauses it, with a push.
     fn record(&self, r: &mut Routine, key: String, outcome: Outcome, now: u64) {
         if let (Outcome::Failed { .. }, Place::Chat { thread }) = (&outcome, &r.place)
             && !self.hub.thread(thread).is_ok_and(|(t, _)| !t.closed)
@@ -318,7 +319,7 @@ impl Runner {
                     Ok(())
                 });
                 if let Err(e) = saved {
-                    eprintln!("cooee: routines: {e}");
+                    cooee_core::note!("cooee: routines: {e}");
                 }
             }
         });
@@ -346,19 +347,20 @@ impl Runner {
         let token = match secrets::get(&self.data, "GITHUB_TOKEN") {
             Ok(Some(t)) => t,
             Ok(None) => {
-                return eprintln!("cooee: routines: no secret:GITHUB_TOKEN for the catch-up");
+                return cooee_core::note!(
+                    "cooee: routines: no secret:GITHUB_TOKEN for the catch-up"
+                );
             }
-            Err(e) => return eprintln!("cooee: routines: GITHUB_TOKEN: {e}"),
+            Err(e) => return cooee_core::note!("cooee: routines: GITHUB_TOKEN: {e}"),
         };
         for (repo, since) in repos {
             let since = local(since.max(now.saturating_sub(24 * HOUR)), 0).replace(' ', "T");
             if let Err(e) = self.missed(hooks, &token, &repo, &since, now) {
-                eprintln!("cooee: routines: catch-up {repo}: {e}");
+                cooee_core::note!("cooee: routines: catch-up {repo}: {e}");
             }
         }
     }
 
-    /// Repo `repo`'s hook for `hooks.url`: its deliveries since `since` (`YYYY-MM-DDTHH:MM`, UTC) not seen, delivered.
     fn missed(
         self: &Arc<Self>,
         hooks: &Hooks,
@@ -373,7 +375,7 @@ impl Runner {
             .as_array()
             .into_iter()
             .flatten()
-            .find(|h| h["config"]["url"] == hooks.url.as_str());
+            .find(|h| h.pointer("/config/url").and_then(Value::as_str) == Some(&hooks.url));
         let Some(hook) = hook.and_then(|h| h["id"].as_u64()) else {
             return Err(format!("no hook for {}", hooks.url));
         };
@@ -388,14 +390,20 @@ impl Runner {
                 continue;
             }
             let full = github(&format!("{api}/{hook}/deliveries/{}", d["id"]), token)?;
-            let event = full["event"].as_str().unwrap_or_default().to_owned();
-            let payload = full["request"]["payload"].clone();
+            let event = full
+                .get("event")
+                .and_then(Value::as_str)
+                .unwrap_or_default()
+                .to_owned();
+            let payload = full
+                .pointer("/request/payload")
+                .cloned()
+                .unwrap_or_default();
             self.deliver(&Delivery::fetched(guid.to_owned(), event, payload), now);
         }
         Ok(())
     }
 
-    /// Runs `r` with prompt `text` and key `key`: into its chat, or as a new thread.
     fn run(&self, r: &Routine, text: &str, key: &str) -> Outcome {
         let mark = Some(r.mark());
         let ran = match &r.place {
@@ -420,15 +428,16 @@ impl Runner {
         )
     }
 
-    /// The Mac's UTC offset in minutes (`date +%z`), read again after an hour.
     fn offset(&self, now: u64) -> i32 {
         let mut o = self.offset.lock().unwrap_or_else(PoisonError::into_inner);
         if o.1 == 0 || now.saturating_sub(o.1) >= HOUR {
-            let out = Command::new("date").arg("+%z").output();
+            let out = cooee_core::runner::command("date").arg("+%z").output();
             let text = out.map(|o| String::from_utf8_lossy(&o.stdout).trim().to_owned());
             match text.ok().as_deref().and_then(minutes) {
                 Some(m) => *o = (m, now),
-                None => eprintln!("cooee: routines: can't read the UTC offset; using {}", o.0),
+                None => {
+                    cooee_core::note!("cooee: routines: can't read the UTC offset; using {}", o.0);
+                }
             }
         }
         o.0
@@ -439,8 +448,7 @@ fn runner(cx: &Cx) -> Arc<Runner> {
     Arc::clone(app_context::<Arc<Runner>>(cx))
 }
 
-/// Runs `f` on the runner off the async workers.
-async fn on<T: Send + 'static>(
+pub(crate) async fn on<T: Send + 'static>(
     cx: &Cx,
     f: impl FnOnce(&Arc<Runner>) -> Result<T, HubError> + Send + 'static,
 ) -> Result<T, HubError> {
@@ -450,60 +458,9 @@ async fn on<T: Send + 'static>(
         .map_err(refused)?
 }
 
-/// `POST /mcp/agent/routine` `{thread, server: {name, when, prompt, place?}}`: `create_routine`'s line.
-#[route(POST "/mcp/agent/routine")]
-async fn mcp_routine(cx: &Cx, Json(a): Json<AgentAsk>) -> Result<Answer<String>> {
-    let token = bearer(cx);
-    Ok(Answer(
-        on(cx, move |r| {
-            let ask = serde_json::from_value(a.server).map_err(refused)?;
-            r.create((&a.thread, &token), ask, now())
-        })
-        .await,
-    ))
-}
-
-/// `GET /routines.json`: every routine.
-#[route(GET "/routines.json")]
-async fn routine_list(cx: &Cx) -> Result<Answer<Vec<Routine>>> {
-    Ok(Answer(on(cx, |r| r.list()).await))
-}
-
-/// A 204, or the reason.
-fn back<T>(done: Result<T, HubError>) -> Result<Response> {
-    match done {
-        Ok(_) => Ok(Response::builder().status(204).body(Bytes::from(()))?),
-        Err(e) => plain(400, &e.to_string()),
-    }
-}
-
-/// `POST /routines/{id}` `name`, `when`, `prompt`, `paused` (each optional): its edit.
-#[route(POST "/routines/{id}")]
-async fn routine_edit(cx: &Cx, Form(e): Form<Edit>) -> Result<Response> {
-    let id = thread_id(cx);
-    back(on(cx, move |r| r.edit(&id, e, now())).await)
-}
-
-/// `POST /routines/{id}/delete`.
-#[route(POST "/routines/{id}/delete")]
-async fn routine_delete(cx: &Cx) -> Result<Response> {
-    let id = thread_id(cx);
-    back(on(cx, move |r| r.delete(&id)).await)
-}
-
-/// The routines' routes, on `runner`.
-pub fn routes(runner: Arc<Runner>, b: RouterBuilder) -> RouterBuilder {
-    b.app_context(runner)
-        .route(mcp_routine)
-        .route(routine_list)
-        .route(routine_edit)
-        .route(routine_delete)
-}
-
-/// `POST /hooks/github`: the only route on `[hooks] bind` (its body at most topcoat's default 2 MiB, else 413).
 #[route(POST "/hooks/github")]
 async fn github_hook(cx: &Cx, body: Raw) -> Result<Response> {
-    let h = |n: &str| crate::header(cx, n).unwrap_or_default().to_owned();
+    let h = |n: &str| crate::http::header(cx, n).unwrap_or_default().to_owned();
     let headers = (
         h("x-github-event"),
         h("x-github-delivery"),
@@ -527,9 +484,8 @@ pub fn hooks(runner: Arc<Runner>) -> Router {
         .build()
 }
 
-/// GitHub API `url`'s JSON, read with `token` (on curl's stdin, never its arguments).
 fn github(url: &str, token: &str) -> Result<Value, String> {
-    let mut c = Command::new("curl")
+    let mut c = cooee_core::runner::command("curl")
         .args(["-sSf", "--max-time", "20", "-K", "-"])
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
@@ -554,7 +510,6 @@ fn github(url: &str, token: &str) -> Result<Value, String> {
     serde_json::from_slice(&out.stdout).map_err(|e| format!("{url}: {e}"))
 }
 
-/// Where a routine's runs post, in words.
 const fn placed(p: &Place) -> &'static str {
     match p {
         Place::Chat { .. } => "in this chat",
@@ -562,7 +517,6 @@ const fn placed(p: &Place) -> &'static str {
     }
 }
 
-/// `+0700` as 420, `-0330` as -210.
 fn minutes(z: &str) -> Option<i32> {
     let (sign, hhmm) = z.split_at_checked(1)?;
     let n: i32 = hhmm.parse().ok().filter(|_| hhmm.len() == 4)?;
@@ -572,33 +526,6 @@ fn minutes(z: &str) -> Option<i32> {
         "-" => Some(-m),
         _ => None,
     }
-}
-
-/// The routines' runner (#75): a `new_thread` run starts as the chat that made it did.
-pub(crate) fn serving(
-    hub: &Arc<Hub>,
-    logins: Arc<crate::Logins>,
-    data: &std::path::Path,
-    c: &Config,
-) -> Arc<Runner> {
-    let (dir, config) = (data.to_owned(), c.dir.clone());
-    let data = dir.clone();
-    let start: Start = Box::new(move |hub, who| {
-        let list = crate::profiles(hub, (&data, config.as_deref()));
-        let (agent, folder, mut recipe) = crate::recipe(
-            &logins,
-            (&data, config.as_deref(), &list),
-            (&who.agent, Some(&who.account), &who.profile),
-            who.folder.clone(),
-            (who.model.clone(), who.effort.clone()),
-        )?;
-        if recipe.machine.is_empty() {
-            recipe.machine.clone_from(&who.machine);
-        }
-        let name = crate::provider_name(&agent, &logins.statuses());
-        Ok((agent, name, folder, recipe))
-    });
-    Arc::new(Runner::new(Arc::clone(hub), &dir, start, c))
 }
 
 #[cfg(test)]

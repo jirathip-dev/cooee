@@ -25,13 +25,22 @@ internal struct ModelsTests {
         #expect(states.map(\.pose) == ["edit", "needs", "done", "idle", "fail", "merged"])
     }
 
-    @Test internal func aServerPersonaGetsInitialsATintAndACoatByItsID() {
+    @Test internal func aServerPersonaGetsInitialsATintAndItsIDAsItsSpriteSeed() {
         let persona = Persona(manager, state: .needs)
-        #expect(persona.look == PersonaLook(initials: "AM", symbol: "person.fill", tint: .cyan, coat: "gry"))
+        #expect(persona.look == PersonaLook(initials: "AM", symbol: "person.fill", tint: .cyan))
+        #expect(persona.seed == "am" && persona.with(state: .done).seed == "am")
         #expect(persona.id == "am" && persona.name == "Account Manager" && persona.figure == "(!)")
         #expect(persona.word == "at the gate" && persona.pose == "needs")
         #expect(Persona(coder).look.initials == "CO")
         #expect(persona.with(state: .done).state == .done && persona.with(state: .done).look == persona.look)
+    }
+
+    @Test internal func anInitialsAvatarDrawsItsInitialsInThePickedTint() {
+        var picked = manager
+        picked.avatar = Tint.green.avatar
+        #expect(Persona(picked).look == PersonaLook(initials: "AM", symbol: "", tint: .green))
+        picked.avatar = "data:image/png;base64,AA=="
+        #expect(Persona(picked).look == Persona(manager).look)
     }
 
     @Test internal func aTurnIsWorkingWhileItRunsOrConnects() {

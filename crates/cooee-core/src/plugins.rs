@@ -1,7 +1,6 @@
 //! Installed plugins (docs/plugins.md): a plugin is a git repo with a `cooee-plugin.toml` at its root. cooee keeps
 //! it in `<data>/plugins/<name>/`, pins it in `<data>/plugins.lock` and writes its tabs as `[[plugins]]` entries in
-//! `<data>/plugins/plugins.toml`, read beside the config's own. The curated index, `plugins/index.toml`, is built in;
-//! its `[[theme]]` entries are the theme packs (docs/themes.md).
+//! `<data>/plugins/plugins.toml`, read beside the config's own. The curated index, `plugins/index.toml`, is built in.
 
 use std::{
     fmt::Write as _,
@@ -115,7 +114,7 @@ pub struct Permissions {
     pub network: Vec<String>,
 }
 
-/// A plugin or theme pack in the index: reviewed, pinned to a commit.
+/// A plugin in the index: reviewed, pinned to a commit.
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize)]
 #[serde(deny_unknown_fields)]
 pub struct Listed {
@@ -125,9 +124,6 @@ pub struct Listed {
     pub url: String,
     /// The reviewed commit.
     pub commit: String,
-    /// A theme pack's folder in the repo (none: its root).
-    #[serde(default, skip_serializing_if = "String::is_empty")]
-    pub path: String,
     /// One line on what it does.
     pub description: String,
     /// It lives with cooee: improved through an issue, not `[improve]`.
@@ -174,8 +170,6 @@ pub const INDEX: &str = include_str!("../../../plugins/index.toml");
 struct IndexFile {
     #[serde(default)]
     plugin: Vec<Listed>,
-    #[serde(default)]
-    theme: Vec<Listed>,
 }
 
 #[derive(Deserialize)]
@@ -202,14 +196,6 @@ fn read_index(path: Option<&Path>) -> io::Result<IndexFile> {
 /// When the file can't be read or parsed.
 pub fn index(path: Option<&Path>) -> io::Result<Vec<Listed>> {
     Ok(read_index(path)?.plugin)
-}
-
-/// The index's theme packs: the index at `path`, else the built-in one.
-///
-/// # Errors
-/// When the file can't be read or parsed.
-pub fn themes(path: Option<&Path>) -> io::Result<Vec<Listed>> {
-    Ok(read_index(path)?.theme)
 }
 
 impl Manifest {
@@ -282,7 +268,7 @@ impl Manifest {
     #[must_use]
     pub fn attach_token_path(&self) -> Option<PathBuf> {
         match self.attach_token.strip_prefix("~/") {
-            Some(rest) => Some(Path::new(&std::env::var_os("HOME")?).join(rest)),
+            Some(rest) => Some(Path::new(&crate::env_var("HOME")?).join(rest)),
             None => (!self.attach_token.is_empty()).then(|| PathBuf::from(&self.attach_token)),
         }
     }
@@ -353,11 +339,10 @@ pub fn read_entries(data: &Path) -> io::Result<Vec<Plugin>> {
 /// # Errors
 /// When it can't be written.
 pub fn write_entries(data: &Path, entries: &[Plugin]) -> io::Result<()> {
-    // A JSON string is a TOML basic string too.
     let q = |s: &str| serde_json::to_string(s).unwrap_or_default();
     let mut text = String::from("# Written by cooee plugin add/update/remove.\n");
     for p in entries {
-        let _ = write!(
+        write!(
             text,
             "\n[[plugins]]\nname = {}\nlabel = {}\nurl = {}\nmodule = {}\ntoken = {}\n",
             q(&p.name),
@@ -365,7 +350,8 @@ pub fn write_entries(data: &Path, entries: &[Plugin]) -> io::Result<()> {
             q(&p.url),
             q(&p.module),
             q(&p.token)
-        );
+        )
+        .ok();
     }
     crate::write_private(&entries_path(data), text.as_bytes())
 }
@@ -382,8 +368,6 @@ mod tests {
                 .iter()
                 .any(|l| l.name == "drover" && l.commit.len() == 40)
         );
-        let names: Vec<_> = themes(None).unwrap().into_iter().map(|t| t.name).collect();
-        assert_eq!(names, ["farm", "kitchen", "garden"]);
     }
 
     #[test]
@@ -417,7 +401,7 @@ mod tests {
         assert_eq!(Manifest::parse(ok).unwrap().attach_port(), None);
         let tok =
             |t: &str| format!("attach = \"http://127.0.0.1:7777\"\nattach_token = {t:?}\n{ok}");
-        let home = std::env::var_os("HOME").unwrap();
+        let home = crate::env_var("HOME").unwrap();
         assert_eq!(
             Manifest::parse(&tok("~/.config/herdsman/cooee-token"))
                 .unwrap()
@@ -430,7 +414,9 @@ mod tests {
 
     #[test]
     fn entries_round_trip() {
-        let data = std::env::temp_dir().join(format!("cooee-entries-{}", std::process::id()));
+        let data = crate::scratch::owned(
+            std::env::temp_dir().join(format!("cooee-entries-{}", std::process::id())),
+        );
         let p = Plugin {
             name: "a".into(),
             label: "A \"q\"".into(),

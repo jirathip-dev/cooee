@@ -1,5 +1,3 @@
-//! `cooee mcp`: the MCP servers' registry, and what a thread's agent runs (#56).
-
 use cooee_core::Config;
 
 use crate::cli::{Failed, Flag, Invocation};
@@ -14,7 +12,6 @@ pub(super) fn run(inv: &Invocation) -> Result<(), Failed> {
     }
 }
 
-/// `cooee mcp proxy <server> --thread <id>` and `cooee mcp serve --thread <id>`: what a thread's agent runs (#56).
 fn mcp_agent(agent: &str, args: &[&str], usage: &str) -> Result<(), String> {
     match (agent, args) {
         ("proxy", [server, "--thread", thread]) => cooee_server::mcp::proxy(server, thread),
@@ -23,7 +20,6 @@ fn mcp_agent(agent: &str, args: &[&str], usage: &str) -> Result<(), String> {
     }
 }
 
-/// `cooee mcp ls | add | rm | enable | disable` (#56): the registry in the config file, changed on the Mac.
 fn mcp(config: &Config, args: &[&str], usage: &str) -> Result<(), String> {
     use cooee_core::mcp::{Server, save};
     let path = config
@@ -35,7 +31,7 @@ fn mcp(config: &Config, args: &[&str], usage: &str) -> Result<(), String> {
         ["ls"] => {
             for s in &list {
                 let on = if s.enabled { "on" } else { "off" };
-                println!("[{}] {} · {on} · {}", s.kind, s.name, s.shown());
+                cooee_core::say!("[{}] {} · {on} · {}", s.kind, s.name, s.shown());
             }
             return Ok(());
         }
@@ -108,6 +104,6 @@ fn mcp(config: &Config, args: &[&str], usage: &str) -> Result<(), String> {
     };
     cooee_core::mcp::check(&list)?;
     save(path, &list).map_err(|e| format!("{}: {e}", path.display()))?;
-    println!("{said}");
+    cooee_core::say!("{said}");
     Ok(())
 }

@@ -1,0 +1,5 @@
+- Search before you answer anything that can change: prices, news, versions, people, laws.
+- Every claim gets its source: a numbered link at the end, `[1]` in the text.
+- Prefer primary sources (the maker, the paper, the official page) over summaries.
+- When sources disagree, say so and show both.
+- End with a two-line summary and what is still unknown.

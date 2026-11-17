@@ -26,6 +26,18 @@ public enum LaneState: String, Sendable, Equatable {
 
     public var pose: String { self == .working ? "edit" : rawValue }
 
+    /// The figure's two frames, as the sprites' (web `.rsa`).
+    public func figure(frame: Int) -> String {
+        guard frame % 2 == 1 else { return figure }
+        switch self {
+        case .working: return "=o~"
+        case .needs: return "( )"
+        case .done, .merged: return "|o|"
+        case .idle: return "-_-"
+        case .fail: return "x.x"
+        }
+    }
+
     public init(api state: String) {
         switch state {
         case "working", "connecting": self = .working
@@ -41,17 +53,19 @@ public enum ChatStyle: String, Codable, Sendable {
     case chat, detailed
 }
 
-public enum Tint: Sendable, Equatable, CaseIterable {
+public enum Tint: String, Sendable, Equatable, CaseIterable {
     case lead, link, cyan, purple, green, amber
+
+    public var avatar: String { "initials-\(rawValue)" }
 }
 
 public struct PersonaLook: Sendable, Equatable {
     public let initials: String
     public let symbol: String
     public let tint: Tint
-    public let coat: String
+    public let coat: String?
 
-    public init(initials: String, symbol: String, tint: Tint, coat: String) {
+    public init(initials: String, symbol: String, tint: Tint, coat: String? = nil) {
         self.initials = initials
         self.symbol = symbol
         self.tint = tint
@@ -59,17 +73,13 @@ public struct PersonaLook: Sendable, Equatable {
     }
 
     public static func seed(_ key: String) -> Int { key.unicodeScalars.reduce(0) { $0 + Int($1.value) } }
-
-    public static func coat(_ key: String) -> String {
-        let coats = ["ch", "gry", "blk", "bay", "wht"]
-        return coats[seed(key) % coats.count]
-    }
 }
 
 public struct Persona: Identifiable, Sendable, Equatable {
     public let api: APIPersona
     public let look: PersonaLook
     public let state: LaneState
+    public let seed: String
 
     public var id: String { api.id }
     public var name: String { api.name }
@@ -77,27 +87,28 @@ public struct Persona: Identifiable, Sendable, Equatable {
     public var word: String { state.word }
     public var pose: String { state.pose }
 
-    public init(api: APIPersona, look: PersonaLook, state: LaneState) {
+    public init(api: APIPersona, look: PersonaLook, state: LaneState, seed: String? = nil) {
         self.api = api
         self.look = look
         self.state = state
+        self.seed = seed ?? api.id
     }
 
-    public init(_ api: APIPersona, state: LaneState = .idle) {
+    public init(_ api: APIPersona, state: LaneState = .idle, seed: String? = nil) {
         let words = api.name.split(separator: " ")
         let initials =
             words.count > 1 ? words.prefix(2).compactMap(\.first).map(String.init).joined() : String(api.name.prefix(2))
+        let picked = api.avatar.flatMap { avatar in Tint.allCases.first { $0.avatar == avatar } }
         let look = PersonaLook(
             initials: initials.uppercased(),
-            symbol: "person.fill",
-            tint: Tint.allCases[PersonaLook.seed(api.id) % Tint.allCases.count],
-            coat: PersonaLook.coat(api.id)
+            symbol: picked == nil ? "person.fill" : "",
+            tint: picked ?? Tint.allCases[PersonaLook.seed(api.id) % Tint.allCases.count]
         )
-        self.init(api: api, look: look, state: state)
+        self.init(api: api, look: look, state: state, seed: seed)
     }
 
     public func with(state: LaneState) -> Persona {
-        Persona(api: api, look: look, state: state)
+        Persona(api: api, look: look, state: state, seed: seed)
     }
 }
 
@@ -196,5 +207,13 @@ public struct FolderListing: Codable, Sendable, Equatable {
         let words = search.trimmingCharacters(in: .whitespaces)
         return words.isEmpty
             ? all : all.filter { ($0 as NSString).lastPathComponent.localizedCaseInsensitiveContains(words) }
+    }
+}
+
+extension BlockAction {
+    public static func save(_ persona: APIPersona) -> Self {
+        let data = (try? JSONEncoder().encode(persona)) ?? Data()
+        let value = (try? JSONDecoder().decode(JSONValue.self, from: data)) ?? .null
+        return Self(action: "save", values: value.fields)
     }
 }

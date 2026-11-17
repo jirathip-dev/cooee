@@ -1,20 +1,19 @@
-//! Routines (#75, #261): a schedule or a GitHub event that posts a prompt to an agent, made by the agent in chat and
-//! kept in `<data>/routines.json` with its run state and the deliveries seen. Pure: the server's runner gives `now`,
-//! the Mac's UTC offset and each delivery.
-
+//! Routines (#75, #261): a schedule or a GitHub event that posts a prompt to an agent, made by the agent in chat.
+//! Each one's settings are `<config>/routines.toml`, its run state and the deliveries seen `<data>/routine-runs.json`
+//! (#359). Pure: the server's runner gives `now`, the Mac's UTC offset and each delivery.
 mod cron;
 mod github;
 
 use std::{
     collections::BTreeMap,
-    io,
+    fs, io,
     path::{Path, PathBuf},
 };
 
 use serde::{Deserialize, Serialize};
 
 pub use cron::{Schedule, local};
-pub use github::{Delivery, Rejected};
+pub use github::{Delivery, Fields, Github, Hooks, Rejected, Skip};
 
 use crate::Thread;
 
@@ -24,10 +23,8 @@ pub const MAX: usize = 50;
 /// How many times an event may run one routine in an hour.
 pub const RATE: usize = 6;
 
-/// An hour, in milliseconds.
 const HOUR: u64 = 3_600_000;
 
-/// How long a delivery's guid is kept (GitHub keeps its log three days).
 const KEEP: u64 = 96 * HOUR;
 
 /// The routine a thread or message came from, as the list and the chat show it.
@@ -81,36 +78,6 @@ pub enum Trigger {
     Github(Github),
 }
 
-/// The GitHub events a routine runs on.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(deny_unknown_fields)]
-pub struct Github {
-    /// `owner/name`, matched case-insensitively with the payload's `repository.full_name`.
-    pub repo: String,
-    /// `pull_request` (any action) or `pull_request.opened`; 1 to 8.
-    pub events: Vec<String>,
-    /// Payload paths (`workflow_run.conclusion`) and the text each must equal.
-    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
-    pub r#match: BTreeMap<String, String>,
-}
-
-impl Github {
-    /// Itself, when its repo and events are well formed.
-    fn checked(self) -> Result<Self, String> {
-        let word = |w: &str| !w.is_empty() && !w.contains(['/', ' ']);
-        let repo = self
-            .repo
-            .split_once('/')
-            .is_some_and(|(o, n)| word(o) && word(n));
-        let events = (1..=8).contains(&self.events.len()) && self.events.iter().all(|e| word(e));
-        if repo && events {
-            Ok(self)
-        } else {
-            Err("BAD_GITHUB: repo is owner/name, events 1 to 8 like pull_request.opened".to_owned())
-        }
-    }
-}
-
 /// Where a routine's runs post.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(tag = "in", rename_all = "snake_case")]
@@ -129,7 +96,8 @@ pub enum Place {
 
 /// How a `new_thread` run starts: the making chat's agent, account, profile or persona, folder, model, effort and
 /// machine.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(default)]
 pub struct Who {
     /// The agent.
     pub agent: String,
@@ -191,16 +159,6 @@ pub enum Outcome {
         /// Why.
         why: Skip,
     },
-}
-
-/// Why an event didn't run a routine.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(rename_all = "snake_case")]
-pub enum Skip {
-    /// It is paused.
-    Paused,
-    /// It ran [`RATE`] times in the last hour.
-    Rate,
 }
 
 /// `create_routine`'s arguments: `when` or `github`.
@@ -416,35 +374,12 @@ impl Routine {
     }
 }
 
-/// What a prompt's `{{…}}` read: a schedule's due time (ms) in a UTC offset (minutes), or an event.
-pub enum Fields<'a> {
-    /// A due time.
-    Due(u64, i32),
-    /// A delivery.
-    Event(&'a Delivery),
-}
-
-impl Fields<'_> {
-    fn get(&self, path: &str) -> String {
-        match (self, path) {
-            (Self::Due(due, offset), "due") => local(*due, *offset),
-            (Self::Event(d), "event") => d.event(),
-            (Self::Event(d), "repo") => d.repo().to_owned(),
-            (Self::Event(d), path) => d.at(path),
-            (Self::Due(..), _) => String::new(),
-        }
-    }
-}
-
-/// `<data>/routines.json`: the routines and the deliveries seen.
-#[derive(Debug, Default, Serialize, Deserialize)]
+/// The routines and the deliveries seen.
+#[derive(Debug, Default, Clone, PartialEq, Eq)]
 pub struct Book {
-    #[serde(default)]
-    format: u32,
     /// The routines.
     pub routines: Vec<Routine>,
     /// Each delivery's guid seen, by the hook or the catch-up, and when (ms).
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub seen: Vec<(String, u64)>,
 }
 
@@ -460,48 +395,186 @@ impl Book {
     }
 }
 
-/// The routines' file.
+#[derive(Debug, Default, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct Settings {
+    #[serde(default)]
+    routine: Vec<Def>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct Def {
+    id: String,
+    name: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    when: Option<Schedule>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    github: Option<Github>,
+    prompt: String,
+    #[serde(default)]
+    paused: bool,
+    place: Place,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+struct RunFile {
+    format: u32,
+    #[serde(default)]
+    runs: BTreeMap<String, State>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    seen: Vec<(String, u64)>,
+}
+
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[serde(default)]
+struct State {
+    made_in: String,
+    made_at: u64,
+    last_due: u64,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    last_run: Option<Run>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    chat_gone: Option<String>,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    recent: Vec<u64>,
+}
+
+pub(crate) fn files(routines: &[Routine], seen: &[(String, u64)]) -> (String, Vec<u8>) {
+    let mut settings = Settings::default();
+    let mut runs = RunFile {
+        format: crate::FORMAT,
+        runs: BTreeMap::new(),
+        seen: seen.to_vec(),
+    };
+    for r in routines {
+        let (when, github) = match r.trigger.clone() {
+            Trigger::Schedule(s) => (Some(s), None),
+            Trigger::Github(g) => (None, Some(g)),
+        };
+        let chat_gone = match &r.paused {
+            Some(Paused::ChatGone { thread }) => Some(thread.clone()),
+            _ => None,
+        };
+        settings.routine.push(Def {
+            id: r.id.clone(),
+            name: r.name.clone(),
+            when,
+            github,
+            prompt: r.prompt.clone(),
+            paused: r.paused == Some(Paused::Owner),
+            place: r.place.clone(),
+        });
+        let state = State {
+            made_in: r.made_in.clone(),
+            made_at: r.made_at,
+            last_due: r.last_due,
+            last_run: r.last_run.clone(),
+            chat_gone,
+            recent: r.recent.clone(),
+        };
+        runs.runs.insert(r.id.clone(), state);
+    }
+    let toml = crate::toml_text(&serde_json::to_value(&settings).unwrap_or_default());
+    (toml, serde_json::to_vec_pretty(&runs).unwrap_or_default())
+}
+
+fn read(path: &Path) -> io::Result<Option<Vec<u8>>> {
+    match fs::read(path) {
+        Err(e) if e.kind() == io::ErrorKind::NotFound => Ok(None),
+        read => read.map(Some),
+    }
+}
+
+/// The routines' two files.
 #[derive(Debug, Clone)]
 pub struct Routines {
-    path: PathBuf,
+    settings: PathBuf,
+    runs: PathBuf,
 }
 
 impl Routines {
-    /// The routines in data folder `data`.
+    /// The routines of config folder `config`, their run state in data folder `data`.
     #[must_use]
-    pub fn new(data: &Path) -> Self {
+    pub fn new(config: &Path, data: &Path) -> Self {
         Self {
-            path: data.join("routines.json"),
+            settings: config.join("routines.toml"),
+            runs: data.join("routine-runs.json"),
         }
     }
 
-    /// Every routine and delivery seen (none before the first).
+    /// Every routine (none before the first), its settings joined with its run state, and the deliveries seen.
     ///
     /// # Errors
-    /// When the file can't be read, isn't a routines file, or is a newer format.
+    /// When a file can't be read, isn't what it should be, or the run state is a newer format.
     pub fn load(&self) -> io::Result<Book> {
-        let bytes = match std::fs::read(&self.path) {
-            Err(e) if e.kind() == io::ErrorKind::NotFound => return Ok(Book::default()),
-            read => read?,
+        let text = String::from_utf8(read(&self.settings)?.unwrap_or_default())
+            .map_err(io::Error::other)?;
+        let bad = |e: toml::de::Error| {
+            io::Error::other(format!("{}: {}", self.settings.display(), e.message()))
         };
-        let f: Book = serde_json::from_slice(&bytes)?;
-        if f.format > crate::FORMAT {
+        let settings: Settings = toml::from_str(&text).map_err(bad)?;
+        let runs: RunFile = match read(&self.runs)? {
+            Some(bytes) => serde_json::from_slice(&bytes)?,
+            None => RunFile {
+                format: crate::FORMAT,
+                runs: BTreeMap::new(),
+                seen: Vec::new(),
+            },
+        };
+        if runs.format > crate::FORMAT {
             return Err(io::Error::other(format!(
                 "{} is format {}, newer than this cooee",
-                self.path.display(),
-                f.format
+                self.runs.display(),
+                runs.format
             )));
         }
-        Ok(f)
+        let mut routines = Vec::new();
+        for d in settings.routine {
+            let s = runs.runs.get(&d.id).cloned().unwrap_or_default();
+            let gone = s.chat_gone.map(|thread| Paused::ChatGone { thread });
+            let trigger = match (d.when, d.github) {
+                (Some(w), None) => Trigger::Schedule(w),
+                (None, Some(g)) => Trigger::Github(g),
+                _ => {
+                    return Err(io::Error::other(format!(
+                        "{}: routine {} needs when or github, one of them",
+                        self.settings.display(),
+                        d.id
+                    )));
+                }
+            };
+            routines.push(Routine {
+                trigger,
+                paused: if d.paused { Some(Paused::Owner) } else { gone },
+                made_in: s.made_in,
+                made_at: s.made_at,
+                last_due: s.last_due,
+                last_run: s.last_run,
+                recent: s.recent,
+                id: d.id,
+                name: d.name,
+                place: d.place,
+                prompt: d.prompt,
+            });
+        }
+        Ok(Book {
+            routines,
+            seen: runs.seen,
+        })
     }
 
-    /// Writes `book` whole (write-temp, fsync, rename).
-    ///
+    /// Writes `book`: each file whole (write-temp, fsync, rename), and only when its part changed.    ///
     /// # Errors
     /// When it can't be written.
-    pub fn save(&self, book: &mut Book) -> io::Result<()> {
-        book.format = crate::FORMAT;
-        crate::write_private(&self.path, &serde_json::to_vec_pretty(book)?)
+    pub fn save(&self, book: &Book) -> io::Result<()> {
+        let (toml, runs) = files(&book.routines, &book.seen);
+        for (path, bytes) in [(&self.settings, toml.as_bytes()), (&self.runs, &runs[..])] {
+            if read(path)?.as_deref() != Some(bytes) {
+                crate::write_private(path, bytes)?;
+            }
+        }
+        Ok(())
     }
 }
 
@@ -510,7 +583,6 @@ mod tests {
     use super::*;
 
     const MIN: u64 = 60_000;
-    /// 2024-11-11 00:00 UTC, a Monday.
     const MON: u64 = 1_731_283_200_000;
 
     fn ask(when: &str, place: &str) -> Ask {
@@ -555,7 +627,6 @@ mod tests {
         );
         r.last_due = nine;
         assert_eq!(r.due(nine + 5 * MIN, 0), None);
-        // Asleep a fortnight: the two missed Mondays run once, as the newest.
         assert_eq!(
             r.due(nine + 14 * 1440 * MIN, 0),
             Some(nine + 14 * 1440 * MIN)
@@ -611,9 +682,11 @@ mod tests {
 
     #[test]
     fn the_file_round_trips_and_refuses_a_newer_format() {
-        let dir = std::env::temp_dir().join(format!("cooee-routines-{}", std::process::id()));
-        let file = Routines::new(&dir);
-        assert_eq!(file.load().unwrap().routines, Vec::new());
+        let dir = crate::scratch::owned(
+            std::env::temp_dir().join(format!("cooee-routines-{}", std::process::id())),
+        );
+        let file = Routines::new(&dir, &dir);
+        assert_eq!(file.load().unwrap(), Book::default());
         let mut r = Routine::make(&[], ask("0 9 * * 1", ""), &chat(), MON).unwrap();
         r.last_run = Some(Run {
             at: MON,
@@ -622,38 +695,31 @@ mod tests {
                 thread: "t-1".to_owned(),
             },
         });
+        let github = Ask {
+            when: None,
+            github: serde_json::from_value(serde_json::json!({
+                "repo": "o/app", "events": ["push"], "match": { "ref": "refs/heads/main" } }))
+            .unwrap(),
+            ..ask("", "")
+        };
+        let mut g = Routine::make(&[], github, &chat(), MON + 1).unwrap();
+        g.recent = vec![MON];
         let mut book = Book {
-            routines: vec![r.clone()],
+            routines: vec![r, g],
             ..Book::default()
         };
         assert!(book.see("g-1", MON) && !book.see("g-1", MON + 1));
-        file.save(&mut book).unwrap();
-        let text = std::fs::read_to_string(dir.join("routines.json")).unwrap();
-        assert!(text.contains("\"schedule\": \"0 9 * * 1\""), "{text}");
-        assert!(text.contains("\"outcome\": \"ran\""), "{text}");
-        let back = file.load().unwrap();
-        assert_eq!(
-            (back.routines, back.seen),
-            (vec![r], vec![("g-1".to_owned(), MON)])
-        );
-        std::fs::write(dir.join("routines.json"), r#"{"format":9,"routines":[]}"#).unwrap();
+        file.save(&book).unwrap();
+        let text = std::fs::read_to_string(dir.join("routines.toml")).unwrap();
+        assert!(text.contains("when = \"0 9 * * 1\""), "{text}");
+        assert!(text.contains("[routine.github.match]"), "{text}");
+        let runs = std::fs::read_to_string(dir.join("routine-runs.json")).unwrap();
+        assert!(runs.contains("\"outcome\": \"ran\""), "{runs}");
+        assert!(runs.contains("\"g-1\""), "{runs}");
+        assert_eq!(file.load().unwrap(), book);
+        std::fs::write(dir.join("routine-runs.json"), r#"{"format":9,"runs":{}}"#).unwrap();
         assert!(file.load().is_err());
         std::fs::remove_dir_all(&dir).unwrap();
-    }
-
-    #[test]
-    fn a_signature_checks_against_githubs_documented_test_vector() {
-        let (secret, body) = (b"It's a Secret to Everybody", b"Hello, World!");
-        let sig = "sha256=757107ea0eb2509fc211221cce984b8a37570b6d7586c22c46f4379c8b043e17";
-        let headers = |sig| ("ping", "g-1", sig);
-        let e = Delivery::signed(headers(sig), body, secret).unwrap_err();
-        assert!(matches!(e, Rejected::NotJson), "the signature passed: {e}");
-        for bad in [&sig.replace("757", "758"), "sha256=75", "", &sig[7..]] {
-            let e = Delivery::signed(headers(bad), body, secret).unwrap_err();
-            assert_eq!(e.status(), 401, "{bad}");
-        }
-        let e = Delivery::signed(("", "g-1", sig), body, secret).unwrap_err();
-        assert_eq!(e.status(), 400);
     }
 
     #[test]
@@ -694,7 +760,7 @@ mod tests {
         let long = r.text(&Fields::Event(&pr("opened", false, &"t".repeat(3000))));
         assert_eq!(long.chars().filter(|c| *c == 't').count(), 2000 + 1);
         assert!(long.contains("t…"), "{long}");
-        for at in 0..RATE as u64 {
+        for at in 0..u64::try_from(RATE).unwrap() {
             assert_eq!(r.admit(MON + at), Ok(()));
         }
         assert_eq!(r.admit(MON + 10), Err(Skip::Rate));

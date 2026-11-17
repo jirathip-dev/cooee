@@ -1,7 +1,3 @@
-//! `cooee plugin check <answer.json|cooee-plugin.toml>...` (#138, #125 Q4): validates a plugin's answers against
-//! docs/plugins/screens.schema.json, naming each field that breaks it, and its manifest by cooee's own rules. It reads the schema keywords that file uses.
-//! `cooee layout check <layout.json>...` checks a layout by the app's rules.
-
 use std::fs;
 
 use cooee_core::plugins::Manifest;
@@ -32,10 +28,10 @@ pub fn run(what: &str, paths: &[&str]) -> Result<(), String> {
             answer.map_or_else(|e| vec![e], |a| errors(&schema, &schema, &a, "$"))
         };
         if fails.is_empty() {
-            println!("ok   {p}");
+            cooee_core::say!("ok   {p}");
         } else {
             failed += 1;
-            println!("FAIL {p}\n     {}", fails.join("\n     "));
+            cooee_core::say!("FAIL {p}\n     {}", fails.join("\n     "));
         }
     }
     match (paths.len(), failed) {
@@ -79,7 +75,8 @@ fn check(root: &Value, s: &Value, v: &Value, at: &str, out: &mut Vec<String>) {
     if let Some(r) = s.get("$ref").and_then(Value::as_str) {
         let target = r
             .strip_prefix("#/$defs/")
-            .map_or(root, |d| &root["$defs"][d]);
+            .and_then(|d| root.get("$defs")?.get(d))
+            .unwrap_or(&Value::Null);
         check(root, target, v, at, out);
     }
     if let Some(t) = s.get("type") {
@@ -165,7 +162,7 @@ fn fields(root: &Value, s: &Value, v: &Value, at: &str, out: &mut Vec<String>) {
     let len = v.as_array().map_or(0, Vec::len);
     if s.get("maxItems")
         .and_then(Value::as_u64)
-        .is_some_and(|m| len as u64 > m)
+        .is_some_and(|m| u64::try_from(len).is_ok_and(|l| l > m))
     {
         out.push(format!("{at}: has {len} items, over {}", s["maxItems"]));
     }

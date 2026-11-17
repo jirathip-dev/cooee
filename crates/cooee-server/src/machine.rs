@@ -4,29 +4,25 @@
 //! hooks) are there as here. Every check runs on `m` as a plain shed terminal; cooee never reaches it but through
 //! shed. With `--yes` a missing folder is cloned there from its git origin here, and the settings are copied there.
 
-use std::{collections::BTreeSet, fs, path::Path, process::Command};
+use std::{collections::BTreeSet, fs, path::Path};
 
 use cooee_core::{
-    Accounts, Config, Provider, Providers, Shed, personas, personas::Persona, profiles,
+    Accounts, Config, Provider, Providers, Shed,
+    agents::{self, Agent},
     shed_proto::LinkState,
 };
 
-/// How long one check may run there, in seconds.
 const PROBE: f64 = 30.0;
-/// How long a clone may run there, in seconds.
 const CLONE: f64 = 600.0;
 
 /// One check's line: whether it passed, and what it says (with its fix when it failed).
 pub type Line = (bool, String);
 
-/// What the checks read: the config, its shed, providers, accounts and personas.
 struct Ctx {
     shed: Shed,
     providers: Providers,
     accounts: Option<Accounts>,
-    personas: Vec<Persona>,
-    config: Option<std::path::PathBuf>,
-    data: std::path::PathBuf,
+    personas: Vec<Agent>,
 }
 
 impl Ctx {
@@ -36,20 +32,16 @@ impl Ctx {
             shed: Shed::new(config.shed.clone(), config.shed_dir.clone()),
             providers: Providers::new(&config.providers),
             accounts: config.data_dir().map(|d| Accounts::new(&d)),
-            personas: personas::list(config.dir.as_deref(), &data),
-            config: config.dir.clone(),
-            data,
+            personas: agents::list(config.dir.as_deref(), &data),
         }
     }
 
-    /// `cmd` on `machine`: whether it exited 0.
     fn ran(&self, machine: &str, cmd: &[&str], timeout: f64) -> Result<bool, String> {
         let cmd = cmd.iter().map(|w| (*w).to_owned()).collect();
         let exit = self.shed.run_on(machine, cmd, timeout);
         exit.map(|e| e == Some(0)).map_err(|e| e.to_string())
     }
 
-    /// Every check of `machine`, applying the fixes with `yes`.
     fn check(&self, machine: &str, yes: bool) -> Vec<Line> {
         let link = match self.shed.link(machine) {
             Ok(Some(l)) if l.state == LinkState::Up => Ok(()),
@@ -71,16 +63,11 @@ impl Ctx {
         vec![(false, format!("shed on {machine}: {why}"))]
     }
 
-    /// Persona `p`'s checks on `machine`.
-    fn persona(&self, machine: &str, p: &Persona, yes: bool) -> Vec<Line> {
-        let profile = p
-            .profile
-            .as_deref()
-            .and_then(|id| profiles::find(self.config.as_deref(), &self.data, id).ok());
+    fn persona(&self, machine: &str, p: &Agent, yes: bool) -> Vec<Line> {
         let mut out = Vec::new();
         match self.providers.for_agent(&p.agent) {
             Some(provider) => {
-                let account = profile.as_ref().and_then(|f| f.account.as_deref());
+                let account = p.account.as_deref();
                 out.push(self.cli(machine, provider.as_ref()));
                 out.push(self.signed_in(machine, provider.as_ref(), account.unwrap_or("")));
             }
@@ -89,8 +76,8 @@ impl Ctx {
         if !matches!(p.folder.as_str(), "" | "scratch") {
             out.push(self.folder(machine, &p.folder, yes));
         }
-        if let Some(settings) = profile.and_then(|f| f.settings) {
-            out.push(self.rules(machine, &settings, yes));
+        if let Some(settings) = &p.settings {
+            out.push(self.rules(machine, settings, yes));
         }
         out.into_iter()
             .map(|(ok, what)| (ok, format!("{}: {what}", p.id)))
@@ -147,7 +134,7 @@ impl Ctx {
             Err(e) => return (false, format!("{what}: {e}")),
             Ok(false) => {}
         }
-        let origin = Command::new("git")
+        let origin = cooee_core::runner::command("git")
             .args(["-C", folder, "remote", "get-url", "origin"])
             .output();
         let origin = origin.ok().filter(|o| o.status.success());
@@ -200,7 +187,7 @@ impl Ctx {
 pub fn run(config: &Config, machine: &str, yes: bool) -> Result<(), String> {
     let lines = Ctx::new(config).check(machine, yes);
     for (ok, what) in &lines {
-        println!("{} {what}", if *ok { "ok  " } else { "FAIL" });
+        cooee_core::say!("{} {what}", if *ok { "ok  " } else { "FAIL" });
     }
     match lines.iter().filter(|(ok, _)| !ok).count() {
         0 => Ok(()),
@@ -239,8 +226,8 @@ pub fn rows(config: &Config) -> Vec<Line> {
 ///
 /// # Errors
 /// What failed, one check a line.
-pub fn ready(config: &Config, machine: &str, p: &Persona) -> Result<(), String> {
-    let p = Persona {
+pub fn ready(config: &Config, machine: &str, p: &Agent) -> Result<(), String> {
+    let p = Agent {
         machine: machine.to_owned(),
         ..p.clone()
     };

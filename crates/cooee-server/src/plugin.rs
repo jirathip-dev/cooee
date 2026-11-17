@@ -1,8 +1,3 @@
-//! Plugins (docs/plugins.md): a tab whose UI module, served by the plugin's own backend, runs in a sandboxed frame.
-//! Its calls reach that backend through cooee with the plugin's token, never the device's cookie: one HTTP/1.0
-//! request per call (so the answer is never chunked), an event stream read line by line. A call ends at its deadline
-//! (connect, send and the whole answer) and a backend has at most [`IN_FLIGHT`] calls at once: one more fails at once.
-
 use std::{
     collections::HashMap,
     io::{self, BufRead, BufReader, Read, Write},
@@ -15,16 +10,13 @@ use cooee_core::{Plugin, Profile};
 use futures_util::{Stream, stream};
 use tokio::io::{AsyncBufReadExt, AsyncReadExt};
 
-/// The largest answer cooee passes on.
 const MAX_BODY: u64 = 16 << 20;
 
 /// The most calls one backend has in flight; one more fails at once instead of taking a blocking thread.
 pub const IN_FLIGHT: usize = 8;
 
-/// The calls in flight, by backend URL.
 static BUSY: LazyLock<Mutex<HashMap<String, usize>>> = LazyLock::new(Mutex::default);
 
-/// One of a backend's [`IN_FLIGHT`] places, given back when dropped.
 struct Permit(String);
 
 impl Permit {
@@ -57,9 +49,10 @@ pub struct Conn {
 }
 
 impl Conn {
-    /// The time left before the deadline.
     fn left(&self) -> io::Result<Option<Duration>> {
-        let left = self.until.saturating_duration_since(Instant::now());
+        let left = self
+            .until
+            .saturating_duration_since(cooee_core::clock::instant());
         if left.is_zero() {
             return Err(io::Error::new(io::ErrorKind::TimedOut, "past the deadline"));
         }
@@ -97,7 +90,7 @@ pub fn check(plugins: &[Plugin]) -> io::Result<()> {
         if p.name.is_empty() || !p.name.bytes().all(name_ok) {
             return bad("`name` must be lowercase letters, digits and -");
         }
-        if plugins[..i].iter().any(|q| q.name == p.name) {
+        if plugins.iter().take(i).any(|q| q.name == p.name) {
             return bad("two plugins have this name");
         }
         if !p.url.starts_with("http://") {
@@ -152,7 +145,7 @@ pub fn call(
     deadline: Duration,
 ) -> io::Result<Reply> {
     let permit = Permit::take(&p.url)?;
-    let until = Instant::now() + deadline;
+    let until = cooee_core::clock::instant() + deadline;
     let rest = p.url.strip_prefix("http://").unwrap_or(&p.url);
     let (authority, base) = rest.split_once('/').unwrap_or((rest, ""));
     let base = base.trim_end_matches('/');
@@ -298,8 +291,8 @@ pub fn answer(
 ) -> io::Result<Result<Option<String>, String>> {
     let mut body =
         serde_json::json!({ "thread": thread, "item": item, "option": option, "by": by });
-    if let Some(value) = value {
-        body["value"] = value.into();
+    if let (Some(value), Some(o)) = (value, body.as_object_mut()) {
+        o.insert("value".to_owned(), value.into());
     }
     let json = [("Content-Type", "application/json")];
     let reply = call(
@@ -380,7 +373,6 @@ mod tests {
 
     use super::*;
 
-    /// A backend that sends a heartbeat and one event, then nothing, and says when cooee closes the connection.
     fn silent_backend() -> (Plugin, mpsc::Receiver<()>) {
         let listener = TcpListener::bind("127.0.0.1:0").unwrap();
         let port = listener.local_addr().unwrap().port();
@@ -410,7 +402,7 @@ mod tests {
         let (p, closed) = silent_backend();
         let reply = call(&p, "GET", "/events", &[], &[], Duration::from_secs(5)).unwrap();
         let mut heard = Box::pin(events(reply).unwrap());
-        let started = tokio::time::Instant::now();
+        let started = tokio::time::sleep(Duration::ZERO).deadline();
         assert!(matches!(heard.next().await, Some(Heard::Beat)));
         let Some(Heard::Event(e)) = heard.next().await else {
             panic!("no event");
@@ -421,7 +413,6 @@ mod tests {
         closed.recv_timeout(Duration::from_secs(5)).unwrap();
     }
 
-    /// A backend that answers one byte a second: its head at once when `head`, else that too a byte a second.
     fn trickle(head: bool) -> Plugin {
         let listener = TcpListener::bind("127.0.0.1:0").unwrap();
         let url = format!("http://{}", listener.local_addr().unwrap());
@@ -429,15 +420,15 @@ mod tests {
             for mut s in listener.incoming().flatten() {
                 thread::spawn(move || {
                     let mut first = [0; 512];
-                    let _ = s.read(&mut first);
+                    s.read(&mut first).map(drop).ok();
                     if head {
-                        let _ = s.write_all(b"HTTP/1.0 200 OK\r\n\r\n");
+                        s.write_all(b"HTTP/1.0 200 OK\r\n\r\n").ok();
                     }
                     for b in b"HTTP/1.0 200 OK\r\n\r\n".iter().cycle() {
                         if s.write_all(&[*b]).is_err() {
                             return;
                         }
-                        thread::sleep(Duration::from_secs(1));
+                        cooee_core::clock::sleep(Duration::from_secs(1));
                     }
                 });
             }
@@ -456,7 +447,7 @@ mod tests {
         let deadline = Duration::from_millis(2500);
         for head in [false, true] {
             let p = trickle(head);
-            let at = Instant::now();
+            let at = cooee_core::clock::instant();
             let got = call(&p, "GET", "/x", &[], &[], deadline).and_then(Reply::bytes);
             let took = at.elapsed();
             assert!(got.is_err(), "head {head}: it answered");

@@ -1,8 +1,6 @@
-//! Cards on a thread: approvals, plugin cards, said lines, links and model picks.
-
 use std::{io, sync::Mutex};
 
-use cooee_core::{Body, Card, Change, Item, Plugin, personas, shed_proto::ApprovalOption};
+use cooee_core::{Body, Card, Change, Item, Plugin, agents, shed_proto::ApprovalOption};
 
 use super::{CHANGE, CardSpec, Hub, HubError, Live, lock, now};
 
@@ -42,7 +40,6 @@ impl Hub {
                 .find(|p| &p.name == name)
                 .ok_or_else(|| io::Error::other("no longer configured"))
                 .and_then(|p| {
-                    // A run card's `approve` carries the sha it showed, never the page's value.
                     let value = match card.form.as_deref() {
                         Some("run-card") => card.sha.as_deref().filter(|_| option == "approve"),
                         _ => value,
@@ -54,6 +51,9 @@ impl Hub {
                 if matches!(card.form.as_deref(), Some("mcp" | "skill" | "routine")) =>
             {
                 Ok(self.proposal_answer(id, item, option))
+            }
+            Body::Approval { card, .. } if card.form.as_deref() == Some("persona") => {
+                Ok(self.persona_answer(id, item, option))
             }
             _ => return self.shed_approve(&live, &terminal, tapped, option),
         };
@@ -88,7 +88,6 @@ impl Hub {
         option: &str,
     ) -> Result<Option<Item>, HubError> {
         if let Err(e) = self.shed.approve(terminal, option) {
-            // Not delivered: the row can be tapped again.
             let mut live = lock(live);
             let untapped = live.chat.update(tapped.id, 0, |b| {
                 if let Body::Approval { tapped, .. } = b {
@@ -111,7 +110,7 @@ impl Hub {
     /// config's diff, a secret's name or a run's command and sha.
     pub fn card(&self, plugin: &Plugin, c: CardSpec) -> Result<Item, HubError> {
         let (thread, owner) = (self.thread(&c.thread)?.0, self.plugin_of(&plugin.name));
-        let personas = personas::list(self.config_dir(), &self.data);
+        let personas = agents::list(self.config_dir(), &self.data);
         let persona = personas.iter().find(|p| p.id == thread.profile);
         if !persona.is_some_and(|p| p.plugins.contains(&owner)) {
             return Err(HubError::Refused(format!(

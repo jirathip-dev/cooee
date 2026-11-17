@@ -91,7 +91,7 @@ internal struct WorkflowTests {
         #expect(loose.persona.name == "T loose" && loose.persona.id.isEmpty && loose.row.title == "fake-acp")
         let lane = try #require(sections[1].chats.first)
         #expect(lane.persona.name == "cooee #33 · impl 1" && lane.persona.api.agent == "drover")
-        #expect(lane.persona.look.coat == "bay" && loose.persona.look.coat.isEmpty)
+        #expect(lane.persona.look.coat == nil && lane.persona.seed == lane.id && loose.persona.look.coat == "")
     }
 
     @Test internal func othersNotesSayWhereEachSourcesSessionsWent() {

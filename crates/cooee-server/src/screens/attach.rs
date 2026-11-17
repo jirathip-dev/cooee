@@ -1,7 +1,7 @@
 //! `GET /screens/plugins/{name}/attach?persona=` (#312): the attach sheet as data, one `permissions` card of what
 //! installed plugin `name` may do for the persona. Only core serves this card kind.
 
-use cooee_core::{personas, plugins::PlaceKind};
+use cooee_core::{agents, plugins::PlaceKind};
 use serde::Deserialize;
 use serde_json::{Value, json};
 use topcoat::{
@@ -15,9 +15,11 @@ use topcoat::{
     },
 };
 
-use crate::{Data, Name, manage::Row, manager, plain};
+use crate::{
+    http::{Data, Name, manager, plain},
+    manage::Row,
+};
 
-/// `?persona=`: whom it attaches to.
 #[derive(Deserialize)]
 struct Query {
     persona: String,
@@ -36,7 +38,7 @@ pub async fn attach(cx: &Cx) -> Result<Response> {
             return Ok(Err(format!("{name} isn't installed.")));
         };
         Ok::<_, std::io::Error>(
-            personas::find(config.as_deref(), &data, &q.persona)
+            agents::find(config.as_deref(), &data, &q.persona)
                 .map(|p| sheet(&row, &p.name))
                 .map_err(|e| e.to_string()),
         )
@@ -48,7 +50,6 @@ pub async fn attach(cx: &Cx) -> Result<Response> {
     }
 }
 
-/// What `p` may do once attached to `persona`, as the app's attach sheet words it.
 fn may(p: &Row) -> Vec<String> {
     let places = p.places.iter().map(|place| match place.kind {
         PlaceKind::HeaderStrip => format!("{} chip on the header strip", place.label),
@@ -61,15 +62,21 @@ fn may(p: &Row) -> Vec<String> {
     places.chain(claims).chain(push).collect()
 }
 
-/// The attach screen of `p` for `persona`: one `permissions` card of three sections, each a header and a list.
 fn sheet(p: &Row, persona: &str) -> Value {
     let (l, perms) = (&p.locked, &p.permissions);
     let row = |title: &str| json!({ "type": "row", "id": title, "title": title });
     let actions = perms.actions.iter().map(|a| {
         let mut r = row(a);
         if perms.destructive.contains(a) {
-            r["style"] = json!("destructive");
-            r["badge"] = json!({ "text": "always confirmed first", "tone": "bad" });
+            if let Some(o) = r.as_object_mut() {
+                o.insert("style".to_owned(), json!("destructive"));
+            }
+            if let Some(o) = r.as_object_mut() {
+                o.insert(
+                    "badge".to_owned(),
+                    json!({ "text": "always confirmed first", "tone": "bad" }),
+                );
+            }
         }
         r
     });

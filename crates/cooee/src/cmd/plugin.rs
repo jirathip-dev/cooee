@@ -1,5 +1,3 @@
-//! `cooee plugin`: install, update, remove, list and check plugins (docs/plugins.md).
-
 use cooee_core::Config;
 
 use crate::{
@@ -22,7 +20,6 @@ pub(super) fn run(inv: &Invocation) -> Result<(), Failed> {
     }
 }
 
-/// `cooee plugin add|update|remove|list` (docs/plugins.md).
 fn plugin(
     config: &Config,
     args: &[&str],
@@ -38,7 +35,7 @@ fn plugin(
             let plan = m.plan(source, rev).map_err(e)?;
             confirm(&plan.text, yes)?;
             m.add(&plan).map_err(e)?;
-            println!("added {}: cooee serve runs it", plan.manifest.name);
+            cooee_core::say!("added {}: cooee serve runs it", plan.manifest.name);
         }
         ["update", names @ ..] => {
             let all: Vec<String> = match names {
@@ -57,13 +54,13 @@ fn plugin(
                     .iter()
                     .any(|l| l.name == name && l.commit == plan.commit)
                 {
-                    println!("{name}: up to date");
+                    cooee_core::say!("{name}: up to date");
                     continue;
                 }
                 confirm(&plan.text, yes)?;
                 m.update(&plan)
                     .map_err(|x| format!("{name}: {x}; the old build keeps running"))?;
-                println!("updated {name} to {}", &plan.commit[..7]);
+                cooee_core::say!("updated {name} to {}", &plan.commit[..7]);
             }
         }
         ["remove", name] => {
@@ -73,13 +70,13 @@ fn plugin(
             } else {
                 " (its checkout stays: --purge removes it)"
             };
-            println!("removed {name}{kept}");
+            cooee_core::say!("removed {name}{kept}");
         }
         ["list"] => {
             for r in m.list().map_err(e)? {
                 let l = &r.locked;
                 let source = if l.listed { "index" } else { "url" };
-                println!(
+                cooee_core::say!(
                     "{}  {}  {}  {source}  {}",
                     l.name,
                     l.version,

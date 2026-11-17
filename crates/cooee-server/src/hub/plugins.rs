@@ -1,5 +1,3 @@
-//! The installed plugins, and the profiles their backends serve (#289).
-
 use std::collections::HashMap;
 
 use cooee_core::{Plugin, Profile};
@@ -28,8 +26,6 @@ impl Hub {
             .unwrap_or(Some(Vec::new()))
     }
 
-    /// Asks each enabled installed plugin's backend for its profiles, the cache never locked while one is asked; a
-    /// failed ask keeps the last answer (logged).
     pub(super) fn refresh_served(&self) {
         let mut fresh = HashMap::new();
         let installed = cooee_core::plugins::read_lock(&self.data).unwrap_or_default();
@@ -38,7 +34,7 @@ impl Hub {
                 continue;
             };
             let got = plugin::profiles(&p).or_else(|e| {
-                eprintln!("cooee: plugin {}: its profiles: {e}", p.name);
+                cooee_core::note!("cooee: plugin {}: its profiles: {e}", p.name);
                 lock(&self.served).get(&name).cloned().ok_or(e)
             });
             if let Ok(list) = got {

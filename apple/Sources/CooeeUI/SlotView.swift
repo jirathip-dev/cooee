@@ -8,7 +8,7 @@ internal struct SlotView: View {
     internal let node: LayoutNode<LayoutPlace>
     internal let compact: Bool
 
-    internal var body: some View {
+    @ViewBuilder private var placed: some View {
         if node.place != .hidden {
             switch node.content {
             case .component(let kind):
@@ -17,12 +17,23 @@ internal struct SlotView: View {
                 HomeSlot(store: store, wide: false) { EmptyView() }
             case .screen(.core, path: "/screens/menu"):
                 MenuScreen(store: store.scope(state: \.menu, action: \.menu))
-            case .screen(.core, path: "/screens/reset-layout"):
-                ActionRow(symbol: "arrow.counterclockwise", title: "Reset layout") { store.send(.layout(.reset)) }
+            case .screen(let source, let path) where node.place == .menu:
+                ActionRow(symbol: "square.grid.2x2.fill", title: node.label ?? path) {
+                    store.send(.menu(.show(path, label: node.label ?? "", source: source)))
+                }
+            case .screen(let source, let path) where node.place == .column:
+                let id = ScreenFeature.State.id(source, path)
+                if let screen = store.scope(state: \.layout.screens[id: id], action: \.layout.screens[id: id]) {
+                    ColumnScreen(store: screen) { store.send(.open($0)) }
+                }
             case .screen:
                 EmptyView()
             }
         }
+    }
+
+    internal var body: some View {
+        placed.transition(node.transition.entering)
     }
 }
 
@@ -34,7 +45,11 @@ internal struct ComponentView: View {
 
     internal var body: some View {
         switch kind {
-        case .nav: NavHost(store: store, main: slot("main"), menu: slot("menu"), compact: compact)
+        case .nav:
+            let size: SizeClass = compact ? .compact : .wide
+            NavHost(
+                store: store, main: slot("main"), side: node.sidebarRows(on: size), menu: node.menuRows(on: size),
+                compact: compact)
         case .chat: ChatSlot(store: store, back: node.config["back"]?.bool ?? compact)
         case .composer:
             if let chat = store.scope(state: \.chat, action: \.chat) {
@@ -63,6 +78,7 @@ extension [String: JSONValue] {
 private struct NavHost: View {
     @Bindable fileprivate var store: StoreOf<AppFeature>
     fileprivate let main: [LayoutNode<LayoutPlace>]
+    fileprivate let side: [LayoutNode<LayoutPlace>]
     fileprivate let menu: [LayoutNode<LayoutPlace>]
     fileprivate let compact: Bool
 
@@ -86,13 +102,14 @@ private struct NavHost: View {
                         #endif
                 }
             } else {
-                HomeSlot(store: store, wide: true) {
+                HomeSlot(store: store, wide: true, column: side) {
                     if store.path.last == AppFeature.others {
                         OthersSlot(store: store)
                     } else {
                         chat.map { SlotView(store: store, node: $0, compact: false) }
                     }
                 }
+                .animation(.snappy, value: store.path.last)
             }
         }
         .sheet(isPresented: Binding(get: { store.menu.open }, set: { store.send(.menu(.open($0))) })) {
@@ -105,6 +122,7 @@ private struct HomeSlot<Detail: View>: View {
     @Environment(\.look) private var look
     fileprivate let store: StoreOf<AppFeature>
     fileprivate let wide: Bool
+    fileprivate var column: [LayoutNode<LayoutPlace>] = []
     @ViewBuilder fileprivate let detail: Detail
 
     fileprivate var body: some View {
@@ -114,12 +132,18 @@ private struct HomeSlot<Detail: View>: View {
             let pins = lists.pins(home.pinned, rooms: actions.rooms)
             Group {
                 if wide {
-                    WideView(
+                    Sidebar(
                         screen: screen, pins: pins, all: home.everyone, chats: chats, selected: store.path.last,
                         actions: actions
-                    ) { detail }
+                    ) {
+                        ForEach(column, id: \.id) { SlotView(store: store, node: $0, compact: false) }
+                    } detail: {
+                        detail
+                    }
                 } else {
-                    HomeView(screen: screen, pins: pins, all: home.everyone, chats: chats, actions: actions)
+                    HomeView(
+                        screen: screen, pins: pins, all: home.everyone, chats: chats, loading: home.loading,
+                        actions: actions)
                 }
             }
             .overlay(alignment: .bottom) {
@@ -183,4 +207,29 @@ private struct ChatSlot: View {
             Text("Pick a chat, or start one with +").foregroundStyle(.secondary).frame(maxHeight: .infinity)
         }
     }
+}
+
+private struct ColumnScreen: View {
+    fileprivate let store: StoreOf<ScreenFeature>
+    fileprivate let open: (String) -> Void
+
+    fileprivate var body: some View {
+        Group {
+            if let screen = store.screen {
+                BlocksView(screen.root, source: store.source) {
+                    store.send(.act($0))
+                } open: {
+                    store.send(.navigate($0))
+                } openThread: {
+                    open($0)
+                }
+                .disabled(store.offline || store.acting).opacity(store.offline ? 0.6 : 1)
+                .environment(\.refresh, screen.root["refresh"]?.bool == true ? refresh : nil)
+            }
+        }
+        .padding(BlocksView.inset)
+        .task { await store.send(.task).finish() }
+    }
+
+    private func refresh() { store.send(.retry) }
 }

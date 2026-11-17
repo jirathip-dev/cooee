@@ -1,5 +1,3 @@
-//! `cooee devices` and `cooee devices rm <id>`: the paired devices.
-
 use cooee_core::Config;
 
 use crate::{
@@ -20,14 +18,14 @@ pub(super) fn run(inv: &Invocation) -> Result<(), Failed> {
 
 fn devices(config: &Config) -> Result<(), String> {
     for d in devices_of(config)?.list().map_err(|e| e.to_string())? {
-        println!("{}  {}", d.id, d.label);
+        cooee_core::say!("{}  {}", d.id, d.label);
     }
     Ok(())
 }
 
 fn remove(config: &Config, id: &str) -> Result<(), String> {
     if devices_of(config)?.remove(id).map_err(|e| e.to_string())? {
-        println!("removed {id}");
+        cooee_core::say!("removed {id}");
         Ok(())
     } else {
         Err(format!("no device {id}"))

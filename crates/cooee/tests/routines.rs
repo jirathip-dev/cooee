@@ -26,9 +26,7 @@ use serde_json::{Value, json};
 use sha2::{Digest, Sha256};
 use support::{Authenticator, Cooee, FakeShed, scratch, version};
 
-/// `name` called with `args` by thread `id`'s agent through cooee's own MCP server: the tool's result.
 fn call(shed: &FakeShed, id: &str, name: &str, args: &Value) -> Value {
-    // A thread that starts behind its answer gets its file once its agent starts.
     let file = shed.dir.join(format!("mcp-cooee-{id}.json"));
     for _ in 0..100 {
         if file.exists() {
@@ -53,22 +51,16 @@ fn call(shed: &FakeShed, id: &str, name: &str, args: &Value) -> Value {
     serde_json::from_slice::<Value>(&out.stdout).unwrap()["result"].clone()
 }
 
-/// The routines' file, changed by `f`.
-fn change(file: &Path, f: impl FnOnce(&mut Vec<Value>)) {
+fn change(file: &Path, f: impl FnOnce(&mut serde_json::Map<String, Value>)) {
     let mut v: Value = serde_json::from_str(&fs::read_to_string(file).unwrap()).unwrap();
-    f(v["routines"].as_array_mut().unwrap());
+    f(v["runs"].as_object_mut().unwrap());
     fs::write(file, v.to_string()).unwrap();
 }
 
-/// Routine `id` once its tick recorded a due time (the runner ticks as cooee starts).
 fn recorded(file: &Path, id: &str) -> Value {
     for _ in 0..100 {
         let v: Value = serde_json::from_str(&fs::read_to_string(file).unwrap()).unwrap();
-        let r = v["routines"]
-            .as_array()
-            .unwrap()
-            .iter()
-            .find(|r| r["id"] == id);
+        let r = v["runs"].get(id);
         if let Some(r) = r.filter(|r| r["last_due"].as_u64().unwrap_or(0) > 0) {
             return r.clone();
         }
@@ -80,7 +72,6 @@ fn recorded(file: &Path, id: &str) -> Value {
     );
 }
 
-/// Thread `id`'s messages a routine sent.
 fn runs(cooee: &Cooee, id: &str) -> Vec<Value> {
     let items = cooee.json(&format!("/threads/{id}/messages"))["items"].clone();
     let items = items.as_array().unwrap().iter();
@@ -90,7 +81,6 @@ fn runs(cooee: &Cooee, id: &str) -> Vec<Value> {
         .collect()
 }
 
-/// cooee with the fake shed and a chat with the fake agent: the folder, the shed, cooee and the chat's id.
 fn chat(name: &str) -> (PathBuf, FakeShed, Cooee, String) {
     let dir = scratch(name);
     let shed = FakeShed::start(&dir.join("shed"), version());
@@ -105,13 +95,11 @@ fn chat(name: &str) -> (PathBuf, FakeShed, Cooee, String) {
     (dir, shed, cooee, id)
 }
 
-/// `days` days ago, in Unix ms.
 fn ago(days: u64) -> u64 {
     let now = SystemTime::now().duration_since(UNIX_EPOCH).unwrap();
     u64::try_from(now.as_millis()).unwrap() - days * 86_400_000
 }
 
-/// A form post to `path`: the status.
 fn form(cooee: &Cooee, path: &str, body: &str) -> String {
     let headers = [
         ("Content-Type", "application/x-www-form-urlencoded"),
@@ -158,10 +146,9 @@ fn a_schedule_made_in_chat_runs_once_per_due_time_even_across_restarts() {
     );
     drop(cooee);
 
-    // Made eight days ago, so a Monday 09:00 has passed since: the tick as cooee starts runs it, into its chat.
     let eight_days_ago = ago(8);
-    let file = dir.join("data/routines.json");
-    change(&file, |list| list[0]["made_at"] = json!(eight_days_ago));
+    let file = dir.join("data/routine-runs.json");
+    change(&file, |runs| runs[&rid]["made_at"] = json!(eight_days_ago));
     let cooee = Cooee::start(&dir, &shed.dir);
     let ran = recorded(&file, &rid);
     let due = ran["last_due"].as_u64().unwrap();
@@ -193,14 +180,24 @@ fn a_schedule_made_in_chat_runs_once_per_due_time_even_across_restarts() {
     assert_eq!(prompts(), 1);
     drop(cooee);
 
-    // A restart runs nothing again: a second routine, due too and after it in the file, marks the tick done.
-    change(&file, |list| {
-        let mut other = list[0].clone();
-        other["id"] = json!("r-other");
-        other["prompt"] = json!("Other due {{due}}");
+    let settings = dir.join("routines.toml");
+    let text = fs::read_to_string(&settings).unwrap();
+    let other = text
+        .replace(&format!("id = \"{rid}\""), "id = \"r-other\"")
+        .replace(
+            "prompt = \"Renewals due {{due}}?\"",
+            "prompt = \"Other due {{due}}\"",
+        );
+    assert!(
+        other.contains("r-other") && other.contains("Other due"),
+        "{text}"
+    );
+    fs::write(&settings, format!("{text}\n{other}")).unwrap();
+    change(&file, |runs| {
+        let mut other = runs[&rid].clone();
         other["last_due"] = json!(0);
         other.as_object_mut().unwrap().remove("last_run");
-        list.push(other);
+        runs.insert("r-other".to_owned(), other);
     });
     let cooee = Cooee::start(&dir, &shed.dir);
     recorded(&file, "r-other");
@@ -208,10 +205,9 @@ fn a_schedule_made_in_chat_runs_once_per_due_time_even_across_restarts() {
     assert_eq!((runs(&cooee, &id).len(), prompts()), (2, 1));
     drop(cooee);
 
-    // A crash between the run and its record: the same key runs again and adopts the message already sent.
-    change(&file, |list| {
-        list[0]["last_due"] = json!(0);
-        list[0].as_object_mut().unwrap().remove("last_run");
+    change(&file, |runs| {
+        runs[&rid]["last_due"] = json!(0);
+        runs[&rid].as_object_mut().unwrap().remove("last_run");
     });
     let cooee = Cooee::start(&dir, &shed.dir);
     assert_eq!(recorded(&file, &rid)["last_due"], due);
@@ -231,8 +227,8 @@ fn a_new_thread_routine_starts_a_thread_marked_with_it_in_the_list() {
         .unwrap()
         .to_owned();
     drop(cooee);
-    let file = dir.join("data/routines.json");
-    change(&file, |list| list[0]["made_at"] = json!(ago(2)));
+    let file = dir.join("data/routine-runs.json");
+    change(&file, |runs| runs[&rid]["made_at"] = json!(ago(2)));
     let cooee = Cooee::start(&dir, &shed.dir);
     let ran = recorded(&file, &rid);
     let started = ran["last_run"]["thread"].as_str().unwrap().to_owned();
@@ -247,12 +243,10 @@ fn a_new_thread_routine_starts_a_thread_marked_with_it_in_the_list() {
     };
     assert_eq!(row(&started).unwrap()["routine"], "Daily digest", "{rows}");
     assert_eq!(row(&id).unwrap()["routine"], "", "{rows}");
-    // A routine's own run can't make routines.
     let again = call(&shed, &started, "create_routine", &ask);
     let said = again["content"][0]["text"].as_str().unwrap();
     assert!(said.starts_with("NOT_HERE"), "{said}");
 
-    // The owner pauses it, then deletes it; the thread it started stays.
     assert_eq!(
         form(&cooee, &format!("/routines/{rid}"), "paused=true"),
         "204"
@@ -276,15 +270,12 @@ fn a_new_thread_routine_starts_a_thread_marked_with_it_in_the_list() {
 const SECRET: &str = "It's a Secret to Everybody";
 const URL: &str = "https://mac.example:8443/hooks/github";
 
-/// A pull request opened in owner/app, titled `title`.
 fn opened(title: &str) -> String {
     json!({ "action": "opened", "repository": { "full_name": "owner/app" },
             "pull_request": { "title": title, "number": 7 } })
     .to_string()
 }
 
-/// cooee with `[hooks]` on a free port, GitHub's API at `api` and the webhook secret and token stored: it and the
-/// hooks port.
 fn hooked(dir: &Path, shed: &FakeShed, api: &str) -> (Cooee, u16) {
     let port = TcpListener::bind("127.0.0.1:0")
         .unwrap()
@@ -299,7 +290,6 @@ fn hooked(dir: &Path, shed: &FakeShed, api: &str) -> (Cooee, u16) {
     (Cooee::start_with(dir, &shed.dir, &extra), port)
 }
 
-/// HMAC-SHA256 of `body` under [`SECRET`], as GitHub's `X-Hub-Signature-256`.
 fn sign(body: &str) -> String {
     let mut key = [0u8; 64];
     key[..SECRET.len()].copy_from_slice(SECRET.as_bytes());
@@ -313,12 +303,11 @@ fn sign(body: &str) -> String {
         .chain_update(inner)
         .finalize();
     outer.iter().fold("sha256=".to_owned(), |mut s, b| {
-        let _ = write!(s, "{b:02x}");
+        write!(s, "{b:02x}").unwrap();
         s
     })
 }
 
-/// `POST /hooks/github` on `port` as GitHub sends it: the status.
 fn hook(port: u16, guid: &str, signature: &str, body: &str) -> u16 {
     let mut c = TcpStream::connect(("127.0.0.1", port)).unwrap();
     write!(
@@ -333,7 +322,6 @@ fn hook(port: u16, guid: &str, signature: &str, body: &str) -> u16 {
     out[9..12].parse().unwrap()
 }
 
-/// The threads' ids.
 fn threads(cooee: &Cooee) -> Vec<String> {
     let rows = cooee.json("/threads");
     let ids = rows.as_array().unwrap().iter();
@@ -353,7 +341,6 @@ fn a_github_routine_waits_for_face_id_then_a_signed_delivery_starts_its_thread_o
         .unwrap()
         .to_owned();
 
-    // A schedule saves at once.
     let schedule = json!({ "name": "Monday renewals", "when": "0 9 * * 1", "prompt": "Renewals?" });
     assert_eq!(
         call(&shed, &id, "create_routine", &schedule)["isError"],
@@ -361,7 +348,6 @@ fn a_github_routine_waits_for_face_id_then_a_signed_delivery_starts_its_thread_o
     );
     assert_eq!(cooee.json("/routines.json").as_array().unwrap().len(), 1);
 
-    // A GitHub one only raises a card; declined, it is never saved.
     let github = |name: &str| {
         json!({ "name": name, "place": "new_thread", "prompt": "Review {{pull_request.title}} ({{event}})",
                 "github": { "repo": "owner/app", "events": ["pull_request.opened"] } })
@@ -415,7 +401,6 @@ fn a_github_routine_waits_for_face_id_then_a_signed_delivery_starts_its_thread_o
     );
     assert_eq!(list[1]["trigger"]["github"]["repo"], "owner/app");
 
-    // A wrong signature: 401 and no thread. A good one: 202 and a thread whose first message has the title.
     let before = threads(&cooee);
     let body = opened("Fix login");
     assert_eq!(hook(port, "g-1", &sign("{}"), &body), 401);
@@ -434,7 +419,6 @@ fn a_github_routine_waits_for_face_id_then_a_signed_delivery_starts_its_thread_o
         .expect("no thread started with a first message");
     assert_eq!(text, "Review Fix login (pull_request.opened)");
 
-    // The same delivery again: 200, and still that one thread.
     assert_eq!(hook(port, "g-1", &sign(&body), &body), 200);
     thread::sleep(Duration::from_millis(500));
     assert_eq!(threads(&cooee).len(), before.len() + 1);
@@ -442,8 +426,6 @@ fn a_github_routine_waits_for_face_id_then_a_signed_delivery_starts_its_thread_o
     assert_eq!(routine["last_run"]["thread"], started.as_str(), "{routine}");
 }
 
-/// A fake GitHub API on a free port: owner/app's hook for [`URL`] logs a delivery just made (77) and one from long
-/// ago (78). Its address, and each path asked for.
 fn fake_github(missed: String) -> (String, Arc<Mutex<Vec<String>>>) {
     let listener = TcpListener::bind("127.0.0.1:0").unwrap();
     let addr = format!("http://{}", listener.local_addr().unwrap());
@@ -477,11 +459,12 @@ fn fake_github(missed: String) -> (String, Arc<Mutex<Vec<String>>>) {
             };
             log.lock().unwrap().push(path);
             let body = body.to_string();
-            let _ = write!(
+            write!(
                 c,
                 "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}",
                 body.len()
-            );
+            )
+            .ok();
         }
     });
     (addr, asked)
@@ -507,15 +490,15 @@ fn the_catch_up_runs_a_delivery_the_hook_missed_once_across_restarts() {
         "no routine names a repo yet"
     );
 
-    let routine = json!({ "id": "r-gh", "name": "PR opened", "made_in": id, "made_at": ago(0),
-        "trigger": { "github": { "repo": "Owner/App", "events": ["pull_request.opened"] } },
-        "place": { "in": "chat", "thread": id }, "prompt": "Look at {{pull_request.title}}" });
-    let file = dir.join("data/routines.json");
-    fs::write(
-        &file,
-        json!({ "format": 1, "routines": [routine] }).to_string(),
-    )
-    .unwrap();
+    let settings = format!(
+        "[[routine]]\nid = \"r-gh\"\nname = \"PR opened\"\nprompt = \"Look at {{{{pull_request.title}}}}\"\n\n\
+         [routine.github]\nrepo = \"Owner/App\"\nevents = [\"pull_request.opened\"]\n\n\
+         [routine.place]\nin = \"chat\"\nthread = \"{id}\"\n"
+    );
+    fs::write(dir.join("routines.toml"), settings).unwrap();
+    let file = dir.join("data/routine-runs.json");
+    let state = json!({ "format": 1, "runs": { "r-gh": { "made_in": id, "made_at": ago(0) } } });
+    fs::write(&file, state.to_string()).unwrap();
     let detail = "/repos/owner/app/hooks/9/deliveries/77";
     let fetched = || {
         asked
@@ -553,5 +536,5 @@ fn the_catch_up_runs_a_delivery_the_hook_missed_once_across_restarts() {
     );
     let book: Value = serde_json::from_str(&fs::read_to_string(&file).unwrap()).unwrap();
     assert_eq!(book["seen"][0][0], "g-missed", "{book}");
-    assert_eq!(book["routines"][0]["last_run"]["outcome"], "ran", "{book}");
+    assert_eq!(book["runs"]["r-gh"]["last_run"]["outcome"], "ran", "{book}");
 }

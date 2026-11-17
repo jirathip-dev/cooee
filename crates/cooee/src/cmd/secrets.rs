@@ -1,5 +1,3 @@
-//! `cooee secrets`: checks the secrets in the keychain.
-
 use crate::{
     cli::{Failed, Flag, Invocation},
     keychain,

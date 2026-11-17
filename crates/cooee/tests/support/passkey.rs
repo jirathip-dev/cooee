@@ -1,5 +1,3 @@
-//! A fake platform authenticator for Face ID approvals (#56, #261).
-
 use base64::{Engine, engine::general_purpose::URL_SAFE_NO_PAD as B64};
 use p256::{
     SecretKey,

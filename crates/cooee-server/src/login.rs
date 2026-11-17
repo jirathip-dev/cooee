@@ -1,11 +1,5 @@
-//! Provider logins and accounts: a provider's own login command for one account's config folder in a shed terminal
-//! (terminal mode), its screen read live for the page (redacted, never stored or logged), typed codes, and the
-//! terminal killed and removed when the command exits, is cancelled or after 10 minutes. A new account's folder is
-//! listed only once its login succeeds; a sign-out runs the CLI's logout, then removes the folder.
-
 use std::{
     collections::BTreeMap,
-    env,
     panic::AssertUnwindSafe,
     path::{Path, PathBuf},
     sync::{Arc, Mutex},
@@ -14,7 +8,9 @@ use std::{
 };
 
 use cooee_core::{
-    Account, Accounts, Launch, Profile, Provider, Providers, Shed, Sheet, Status, links, redact,
+    Account, Accounts, Launch, Provider, Providers, Shed, Sheet, Status,
+    agents::Agent,
+    links, redact,
     shed_proto::{RunParams, WaitOutcome},
 };
 use serde::Serialize;
@@ -24,14 +20,10 @@ use crate::hub::{HubError, lock, now};
 /// How long a login terminal may run, in seconds.
 pub const LOGIN_TIMEOUT: f64 = 600.0;
 
-/// The label every login terminal carries.
 const LABEL: &str = "cooee-login";
 
-/// A provider's login.
 enum Login {
-    /// Its terminal runs.
     Running(String),
-    /// It ended, and why; the account it was for.
     Ended(String, String),
 }
 
@@ -52,37 +44,26 @@ pub struct View {
     pub age: Option<u64>,
 }
 
-/// How often an account's status is checked when nothing asks, in ms (#106).
 const EVERY: u64 = 10 * 60_000;
-/// The longest that interval grows to, doubling after each timeout.
 const SLOWEST: u64 = 80 * 60_000;
-/// How soon after a check another may be asked for (the sign-ins card opened), in ms.
 const GAP: u64 = 30_000;
 
-/// One account's status checks: the last result, and when the next is due.
 #[derive(Default)]
 struct Check {
     status: Option<Status>,
-    /// When the last check finished (ms).
     at: u64,
-    /// The interval after it: [`EVERY`], doubled after each timeout up to [`SLOWEST`].
     every: u64,
-    /// When the next check is due (ms).
     next: u64,
-    /// A check runs: never two at once.
     busy: bool,
 }
 
 impl Check {
-    /// Whether a check is due at `at`; it is then marked running.
     fn start(&mut self, at: u64) -> bool {
         let due = !self.busy && at >= self.next;
         self.busy |= due;
         due
     }
 
-    /// Notes check result `s` at `at`: a timeout keeps the signed-in state last known and doubles the interval, any
-    /// other result resets it.
     fn settle(&mut self, s: Status, at: u64) {
         self.every = if s.unknown {
             (self.every.max(EVERY) * 2).min(SLOWEST)
@@ -101,14 +82,12 @@ impl Check {
         });
     }
 
-    /// Asked for at `at`: due now, unless it backs off after a timeout or ran in the last [`GAP`].
     fn ask(&mut self, at: u64) {
         if self.every <= EVERY && at >= self.at + GAP {
             self.next = self.next.min(at);
         }
     }
 
-    /// Its status as last checked, and its age in seconds at `at`.
     fn known(&self, at: u64) -> (Status, Option<u64>) {
         match &self.status {
             Some(s) => (s.clone(), Some(at.saturating_sub(self.at) / 1000)),
@@ -123,9 +102,6 @@ pub struct Logins {
     providers: Providers,
     accounts: Accounts,
     live: Mutex<BTreeMap<String, Login>>,
-    /// Each account's status checks, by provider and account: a request never runs a status command itself
-    /// (herdsman#337, #106). Checked at start, every 10 minutes (longer after a timeout), when the sign-ins card
-    /// opens, and after a login or sign-out.
     checks: Mutex<BTreeMap<(String, String), Check>>,
 }
 
@@ -144,14 +120,14 @@ impl Logins {
         thread::spawn(move || {
             loop {
                 checker.tick();
-                thread::sleep(Duration::from_secs(1));
+                cooee_core::clock::sleep(Duration::from_secs(1));
             }
         });
         let shed = logins.shed.clone();
         thread::spawn(move || {
             let labels = BTreeMap::from([(LABEL.to_owned(), "1".to_owned())]);
             for t in shed.ls(labels).unwrap_or_default() {
-                let _ = shed.close(&t.name);
+                shed.close(&t.name).ok();
             }
         });
         logins
@@ -207,7 +183,6 @@ impl Logins {
         self.providers.iter().map(sheet).collect()
     }
 
-    /// Starts each account's status check that is due, each on its own thread.
     fn tick(self: &Arc<Self>) {
         for p in self.providers.iter() {
             for a in self.accounts.list(&p.spec().name) {
@@ -221,8 +196,6 @@ impl Logins {
                 }
                 let (logins, p) = (Arc::clone(self), Arc::clone(p));
                 thread::spawn(move || {
-                    // A panicking check still settles, so the account is checked again.
-                    // A signed-in account's usage reading comes with its status (#183).
                     let check = || {
                         let mut s = p.check(a.dir.as_deref());
                         if s.signed_in {
@@ -296,7 +269,7 @@ impl Logins {
         let run = RunParams {
             name: Some(format!("{LABEL}-{name}-{:x}", now())),
             labels: BTreeMap::from([(LABEL.to_owned(), "1".to_owned())]),
-            cwd: env::var_os("HOME")
+            cwd: cooee_core::env_var("HOME")
                 .filter(|_| machine.is_none())
                 .map_or_else(|| PathBuf::from("/"), PathBuf::from),
             keep: false,
@@ -322,8 +295,7 @@ impl Logins {
                 return Err(e.into());
             }
         };
-        // Wide, so a long sign-in link stays on one line.
-        let _ = self.shed.resize(&terminal, 40, 500);
+        self.shed.resize(&terminal, 40, 500).ok();
         live.insert(name.to_owned(), Login::Running(terminal.clone()));
         let logins = Arc::clone(self);
         let name = name.to_owned();
@@ -334,7 +306,6 @@ impl Logins {
         Ok(())
     }
 
-    /// Waits for login terminal `terminal` to exit (or for the timeout), then kills and removes it; how it ended.
     fn ended(&self, terminal: &str) -> (bool, String) {
         let ended = match self.shed.exited(terminal, LOGIN_TIMEOUT) {
             Ok(r) if r.outcome == WaitOutcome::Timeout => {
@@ -348,13 +319,11 @@ impl Logins {
             Err(e) => (false, e.to_string()),
         };
         if let Err(e) = self.shed.close(terminal) {
-            eprintln!("cooee: {terminal}: {e}");
+            cooee_core::note!("cooee: {terminal}: {e}");
         }
         ended
     }
 
-    /// As [`Logins::reap`] for a login on `machine`: its account's status there is `cooee machine check`'s, never
-    /// read here.
     fn reap_on(&self, machine: &str, name: &str, terminal: &str, account: &str) {
         let (_, why) = self.ended(terminal);
         let mut live = lock(&self.live);
@@ -364,8 +333,6 @@ impl Logins {
         }
     }
 
-    /// Waits for login terminal `terminal` to end ([`Logins::ended`]). A login that exited 0 and left the account
-    /// signed in is noted; a new account's folder is then listed, else removed.
     fn reap(&self, name: &str, terminal: &str, account: &str, new: bool, home: Option<&Path>) {
         let (ok, mut why) = self.ended(terminal);
         let status = self.provider(name).ok().map(|p| p.check(home));
@@ -384,7 +351,6 @@ impl Logins {
         } else if ok && !signed_in {
             "the login command finished, but the account isn't signed in".clone_into(&mut why);
         }
-        // A new account's folder moved when it was listed: its status is checked there.
         let moved =
             |p: &Arc<dyn Provider>| Some(p.check(self.accounts.get(name, account)?.dir.as_deref()));
         let status = if new && signed_in {
@@ -481,7 +447,6 @@ impl Logins {
                 .remove(name, account)
                 .map_err(|e| HubError::Refused(e.to_string()))?;
         }
-        // Checked again within a second, whatever its backoff; unknown until then, unless nothing was signed out.
         let key = (name.to_owned(), account.to_owned());
         if let Some(c) = lock(&self.checks).get_mut(&key) {
             c.next = 0;
@@ -513,27 +478,38 @@ impl Logins {
         Ok((a.name, launch))
     }
 
-    /// What a thread of agent profile `p` runs with: its account's label and [`Launch`] (the account's folder, the
-    /// settings file in the provider's `settings` variable (in place of the account's folder when it is the same
-    /// variable), the env, its secrets read from `data` through a file there, the policy, its provider's "no personal
-    /// setup" session options), and its instructions. A profile its agent can't run as written is refused: settings
+    /// Agent `agent`'s provider's "no personal setup" session options, if it has them.
+    #[must_use]
+    pub fn no_personal_setup(&self, agent: &str) -> Option<serde_json::Value> {
+        self.providers.for_agent(agent)?.no_personal_setup()
+    }
+
+    /// What a thread of agent `a` runs with: its account's label (`a`'s, else `account`) and [`Launch`] (the account's
+    /// folder, the settings file in the provider's `settings` variable (in place of the account's folder when it is
+    /// the same variable), the env, its secrets read from `data` through a file there, the policy, and its provider's
+    /// "no personal setup" session options). An agent whose ACP agent can't run it as written is refused: settings
     /// with no `settings` variable (its guard can't run).
     ///
     /// # Errors
-    /// [`HubError::Refused`] as above, for an unknown account, a missing secret or an unreadable file.
-    pub fn profile(&self, p: &Profile, data: &Path) -> Result<(String, Launch, String), HubError> {
+    /// [`HubError::Refused`] as above, for an unknown account or a missing secret.
+    pub fn agent(
+        &self,
+        a: &Agent,
+        account: Option<&str>,
+        data: &Path,
+    ) -> Result<(String, Launch), HubError> {
         let refused = |why: String| HubError::Refused(why);
-        let (account, mut launch) = self.home(&p.agent, p.account.as_deref())?;
-        let provider = self.providers.for_agent(&p.agent);
+        let (account, mut launch) = self.home(&a.agent, a.account.as_deref().or(account))?;
+        let provider = self.providers.for_agent(&a.agent);
         launch.meta = provider.and_then(|v| v.no_personal_setup());
-        if let Some(settings) = &p.settings {
+        if let Some(settings) = &a.settings {
             let var = provider
                 .map(|v| v.spec().settings.as_str())
                 .filter(|v| !v.is_empty());
             let Some(var) = var else {
                 return Err(refused(format!(
                     "this profile's guard can't run with {}: its ACP adapter has no settings variable",
-                    p.agent
+                    a.agent
                 )));
             };
             launch.env.retain(|(k, _)| k != var);
@@ -541,20 +517,15 @@ impl Logins {
                 .env
                 .push((var.to_owned(), settings.display().to_string()));
         }
-        let (plain, secret) = p.env(data).map_err(refused)?;
+        let (plain, secret) = a.env(data).map_err(refused)?;
         launch.env.extend(plain);
         if !secret.is_empty() {
             let name = cooee_core::random(16).map_err(|e| refused(e.to_string()))?;
             let name = cooee_core::sha256(&name);
             launch.secrets = Some((data.join("secrets").join(format!(".run-{name}")), secret));
         }
-        launch.policy.clone_from(&p.policy);
-        let instructions = match &p.instructions {
-            Some(f) => std::fs::read_to_string(f)
-                .map_err(|e| refused(format!("profile {}: {}: {e}", p.name, f.display())))?,
-            None => String::new(),
-        };
-        Ok((account, launch, instructions))
+        launch.policy.clone_from(&a.policy);
+        Ok((account, launch))
     }
 
     /// The efforts `agent`'s provider offers (#553 row 34).
@@ -592,8 +563,6 @@ mod tests {
         }
     }
 
-    /// #106: a check that hangs runs once at a time; each timeout doubles the interval up to 80 minutes, a card
-    /// opening doesn't cut that short, and a result resets it to 10 minutes.
     #[test]
     fn a_hanging_check_starts_once_per_growing_interval() {
         let min = 60_000;
@@ -607,7 +576,6 @@ mod tests {
                 t += 1000;
             }
             started.push(t / min);
-            // It hangs for 10 s: nothing else starts, asked for or not.
             for _ in 0..10 {
                 c.ask(t);
                 t += 1000;
@@ -616,7 +584,6 @@ mod tests {
             c.busy = false;
             c.settle(timeout.clone(), t);
         }
-        // Each start is 10 s after the last ended: 20, 40, then 80 minutes apart.
         assert_eq!(started, [0, 20, 60, 140, 220, 300]);
         assert_eq!(c.every, 80 * min);
 
@@ -624,14 +591,12 @@ mod tests {
         c.busy = false;
         c.settle(status(true, "signed in"), t + 80 * min);
         assert_eq!(c.every, 10 * min);
-        // Healthy: a card opening checks again once 30 s have passed.
         c.ask(t + 80 * min + 29_000);
         assert!(!c.start(t + 80 * min + 29_000));
         c.ask(t + 80 * min + 30_000);
         assert!(c.start(t + 80 * min + 30_000));
     }
 
-    /// #106: a timeout leaves a signed-in account signed in, as unknown; never signed out.
     #[test]
     fn a_timeout_keeps_a_signed_in_account_signed_in_as_unknown() {
         let mut c = Check::default();

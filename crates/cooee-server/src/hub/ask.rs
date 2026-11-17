@@ -1,21 +1,11 @@
-//! `ask_persona` (#156): a thread's persona asks another, one its `can_message` names (G4), in a linked exchange
-//! thread the owner reads and may write a note in; the asked persona's next final reply is the answer. Each
-//! refusal starts with a code the agent can read: `NOT_ALLOWED`, `DEPTH`, `TIMEOUT` or `OFFLINE`. Each ask is an
-//! `ask` card in the asker's chat (#177), and the owner's note goes back to the asker with the reply.
+use std::{sync::mpsc, time::Duration};
 
-use std::{
-    sync::mpsc,
-    time::{Duration, Instant},
-};
-
-use cooee_core::{Body, Change, Item, personas};
+use cooee_core::{Body, Change, Item, agents};
 
 use super::{Hub, HubError, lock, now};
 
-/// How many asks deep a chain goes: an asked persona may ask one more, no further (G4).
 const DEPTH: usize = 2;
 
-/// Ahead of the owner's message in a linked exchange, so the asked persona tells it from the asker's (q1079).
 pub(super) const OWNER_NOTE: &str = "[The owner's note; the asker gets it with your reply]:";
 
 fn no<T>(code: &str, why: &str) -> Result<T, HubError> {
@@ -38,7 +28,7 @@ impl Hub {
         wait: Duration,
     ) -> Result<String, HubError> {
         let meta = self.token_of(id, token)?;
-        let found = |p: &str| personas::find(self.config_dir(), &self.data, p).ok();
+        let found = |p: &str| agents::find(self.config_dir(), &self.data, p).ok();
         let name = found(target).map_or_else(|| target.to_owned(), |p| p.name);
         let card = |thread: &str, outcome: &str| Body::Ask {
             persona: target.to_owned(),
@@ -71,7 +61,7 @@ impl Hub {
             (m.asked_by == id && m.profile == target && !m.closed).then(|| m.id.clone())
         });
         let (rid, by) = (format!("ask-{key}-{}", now()), format!("[{}]:", asker.name));
-        let start = Instant::now();
+        let start = cooee_core::clock::instant();
         let sent = match open {
             Some(x) => self.send_after(&x, message, &rid, &[], &by).map(|_| x),
             None => self.seat(target, (message, &rid), |r| {
@@ -118,7 +108,6 @@ impl Hub {
         })
     }
 
-    /// Ask card `item` in thread `id` ended `outcome` after `secs`, the asker given `note`.
     fn answered(
         &self,
         id: &str,
@@ -146,7 +135,6 @@ impl Hub {
         )
     }
 
-    /// The owner's notes in exchange thread `x` after its question item `question`, one a line.
     fn notes(&self, x: &str, question: u64) -> Result<String, HubError> {
         let live = self.live(x)?;
         let live = lock(&live);
@@ -164,7 +152,6 @@ impl Hub {
         Ok(notes.join("\n"))
     }
 
-    /// Changes thread `id`'s last item that `pick` matches with `f` and tells the pages; its id, 0 for none.
     fn revise(
         &self,
         id: &str,

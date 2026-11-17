@@ -7,6 +7,7 @@ public struct ChatFeature: Sendable {
     public enum Target: Equatable, Sendable {
         case thread(String)
         case new(APIPersona)
+        case setup(APIPersona)
     }
 
     @ObservableState
@@ -25,10 +26,15 @@ public struct ChatFeature: Sendable {
         public var outbox: [Outgoing] = []
         public var pending: String?
         public var answering: Set<Int> = []
+        public var loading: Bool
         public var room: Room?
         public var exchange: Exchange?
         public var places: [Place] = []
         public var attachable: [PluginRow] = []
+        public var panel = false
+        public var picked: PanelPick?
+        public var agents: [AgentOption] = []
+        public var lists: [ModelList] = []
         public var workflow: [ListedChat]?
         public var workflowOpen = false
         public var unfolded: String?
@@ -37,9 +43,12 @@ public struct ChatFeature: Sendable {
         @Presents public var attaching: AttachFeature.State?
 
         public var working: Bool { turn.working }
+        public var sending: Bool { outbox.contains { $0.failure == nil } }
+        public var models: [String] { ModelList.picks(lists, agent: persona.api.agent) }
+        public var efforts: [String] { agents.first { $0.id == persona.api.agent }?.efforts ?? [] }
         public var drawn: [Item] {
             if let exchange { return LinkedItems.build(items, exchange: exchange, outbox: outbox, now: since) }
-            return room.map { RoomItems.build(items, names: $0.names, last: $0.round) }
+            return room.map { RoomItems.build(items, names: $0.names, last: $0.round) + $0.cards }
                 ?? ChatItems.build(
                     items, live: live, outbox: first + outbox, style: persona.api.style, working: working)
         }
@@ -56,6 +65,7 @@ public struct ChatFeature: Sendable {
             self.target = target
             self.persona = persona
             self.room = room
+            if case .thread = target { loading = true } else { loading = false }
             self.exchange = exchange
         }
     }
@@ -69,7 +79,11 @@ public struct ChatFeature: Sendable {
         case outbox(Outbox)
         case cards(Cards)
         case room(Seats)
+        case new
+        case profile
+        case pick(Pick)
         case plugins(PluginAction)
+        case panel(PanelAction)
         case delegate(Delegate)
         case screen(PresentationAction<ScreenFeature.Action>)
         case attaching(PresentationAction<AttachFeature.Action>)
@@ -82,6 +96,7 @@ public struct ChatFeature: Sendable {
             case open(String)
             case persona(String)
             case start(String)
+            case restart(APIPersona)
             case round(String)
         }
     }
@@ -89,6 +104,7 @@ public struct ChatFeature: Sendable {
     @Dependency(\.threads) internal var threads
     @Dependency(\.plugins) internal var pluginAPI
     @Dependency(\.personas) internal var personas
+    @Dependency(\.ownerCheck) internal var ownerCheck
     @Dependency(\.continuousClock) private var clock
     @Dependency(\.date.now) private var now
 
@@ -105,12 +121,15 @@ public struct ChatFeature: Sendable {
                 return cards(&state, action)
             case .room(let action):
                 return seat(&state, action)
+            case .panel(let action):
+                return panel(&state, action)
             case .machine(let action):
                 return machine(&state, action)
             default:
                 return listen(&state, action)
             }
         }
+        Reduce { state, action in agent(&state, action) }
         Reduce { state, action in plugins(&state, action) }
             .ifLet(\.$screen, action: \.screen) { ScreenFeature() }
             .ifLet(\.$attaching, action: \.attaching) { AttachFeature() }
@@ -125,7 +144,7 @@ extension ChatFeature {
         case .loaded(let slice):
             load(&state, slice)
         case .event(let event):
-            state.room?.hear(event)
+            state.room?.hear(event, when: now)
             apply(&state, event)
         case .failed(let error):
             state.error = error
@@ -154,12 +173,14 @@ extension ChatFeature {
     }
 
     private func load(_ state: inout State, _ slice: Slice) {
+        state.loading = false
         state.items = slice.items
         state.queue = slice.queue
         state.turn = slice.turn
         state.since = now
         state.pending = slice.pending?.text
         state.live = slice.turn.working ? slice.turn.text ?? "" : ""
+        state.room?.heard(slice.asks ?? [], when: now)
     }
 
     private func apply(_ state: inout State, _ event: StreamEvent) {
@@ -174,7 +195,7 @@ extension ChatFeature {
             if !state.working { state.live = "" }
         case .queue(let queue):
             state.queue = queue
-        case .reset, .roomTurn, .roomStop:
+        case .reset, .roomTurn, .roomStop, .roomAsk:
             break
         }
     }

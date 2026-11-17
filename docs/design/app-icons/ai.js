@@ -1,4 +1,3 @@
-// #225: the 24 icons and the frames that show them. `?f=<frame>&mode=dark|light` draws one frame.
 const SETS = [
   ['modern', 'Modern', 'Style Modern', [['laughing', 'Laughing'], ['perched', 'Perched'], ['glance', 'Side glance'], ['wings', 'Wings out']]],
   ['terminal', 'Terminal', 'Style Terminal', [['prompt', 'Prompt'], ['dollar', 'Dollar'], ['chevron', 'Chevron'], ['lambda', 'Lambda']]],
@@ -17,11 +16,9 @@ const phone = (body, nav, title) => `<div class="ph">${status}${nav ? `<div clas
 const group = (header, body) => `<div class="gp">${header ? `<div class="gh">${header}</div>` : ''}<div class="gb">${body}</div></div>`;
 const pick = (title, on) => `<div class="rw">${title}${on ? '<span class="ck">✓</span>' : ''}</div>`;
 
-// The home-screen sheet: every set as a row of four, on one wallpaper.
 const wallpaper = (kind, title) => `<div class="wp ${kind}"><h3>${title}</h3>${SETS.map(([set, label, , icons]) =>
   `<div class="hs"><div class="st">${label}</div>${icons.map(([n, name]) => `<div class="ap">${img(set, n)}<span>${name}</span></div>`).join('')}</div>`).join('')}</div>`;
 
-// The picker: Follow the look, then every set as four tiles.
 function picker(picked) {
   const follow = `<div class="rw two">${img('modern', 'laughing', 44)}<div class="tx">Follow the look<small>${picked ? "Off · would show Laughing · Modern" : "Now: Laughing · Modern"}</small></div>${picked ? '' : '<span class="ck">✓</span>'}</div>`;
   const sets = SETS.map(([set, label, , icons]) => group(label, `<div class="tg4">${icons.map(([n, name]) => {

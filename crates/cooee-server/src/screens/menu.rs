@@ -5,9 +5,11 @@ use serde_json::{Value, json};
 use topcoat::{Result, context::Cx, router::route};
 
 use super::settings;
-use crate::{Answer, HubError, refused};
+use crate::{
+    HubError,
+    http::{Answer, refused},
+};
 
-/// The menu the app draws offline.
 const BUNDLED: &str = include_str!("../../../../apple/Sources/CooeeUI/Default/screens/menu.json");
 
 /// `{type: screen, source: core, id, title, blocks}`: `signins` valued with the signed-in accounts, `devices` with
@@ -24,7 +26,7 @@ async fn fill(cx: &Cx) -> Result<Value, HubError> {
         titles.join(", ")
     };
     let mut signins = settings::signin_rows(cx).await?;
-    signins.retain(|r| r["subtitle"]["tone"] == "ok");
+    signins.retain(|r| r.pointer("/subtitle/tone").is_some_and(|t| t == "ok"));
     let values = [
         ("signins", titles(&signins)),
         (
@@ -37,7 +39,11 @@ async fn fill(cx: &Cx) -> Result<Value, HubError> {
             settings::plugin_rows(cx).await?.len().to_string(),
         ),
     ];
-    let groups = screen["blocks"].as_array_mut().into_iter().flatten();
+    let groups = screen
+        .get_mut("blocks")
+        .and_then(Value::as_array_mut)
+        .into_iter()
+        .flatten();
     let rows = groups.filter_map(|g| g.get_mut("rows").and_then(Value::as_array_mut));
     for row in rows.flatten() {
         if let Some((_, v)) = values.iter().find(|(id, _)| row["id"] == *id) {

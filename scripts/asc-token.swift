@@ -1,6 +1,3 @@
-// Prints an App Store Connect API token (ES256 JWT, 20 minutes) for .github/workflows/apple-testflight.yml.
-// Reads the .p8 at $ASC_KEY_PATH and $ASC_KEY_ID / $ASC_ISSUER_ID. CryptoKit only: no Ruby, no pip.
-// Usage: swift scripts/asc-token.swift
 import CryptoKit
 import Foundation
 

@@ -1,5 +1,3 @@
-//! Starting a thread: the installed agents, a session's recipe, its machine, and the shed terminal it runs in.
-
 use std::{
     collections::BTreeMap,
     fs,
@@ -21,8 +19,6 @@ impl Hub {
         lock(&self.agents).0.clone()
     }
 
-    /// Runs `shed agents` again when the list is a minute old at `at`, or `now`; the list is never locked while the
-    /// CLI runs. A failure keeps the list already had (logged), else it is the list's error.
     pub(super) fn refresh(&self, at: u64, now: bool) {
         if !now && at.saturating_sub(lock(&self.agents).1) < AGENTS_FOR {
             return;
@@ -31,13 +27,11 @@ impl Hub {
         let mut agents = lock(&self.agents);
         agents.1 = at;
         match fresh {
-            Err(e) if agents.0.is_ok() => eprintln!("cooee: kept the agent list: {e}"),
+            Err(e) if agents.0.is_ok() => cooee_core::note!("cooee: kept the agent list: {e}"),
             fresh => agents.0 = fresh,
         }
     }
 
-    /// Agent `id`'s adapter command, from the list as last checked; an id it lacks refreshes it once (#55). Empty
-    /// when shed doesn't list it.
     pub(super) fn adapter(&self, id: &str) -> Vec<String> {
         let find = || {
             let agents = self.agents().ok()?;
@@ -83,9 +77,8 @@ impl Hub {
         recipe: &Recipe,
     ) -> Result<String, HubError> {
         let started = self.start_in(agent, folder, (text, random_id), recipe);
-        // The adapter's shell removes it as it starts; a start that never got that far leaves nothing either.
         if let Some((file, _)) = &recipe.launch.secrets {
-            let _ = fs::remove_file(file);
+            fs::remove_file(file).ok();
         }
         started
     }
@@ -143,7 +136,6 @@ impl Hub {
             else {
                 return Ok(());
             };
-            // Never tried: its terminal starts; else it starts again only if it isn't running.
             let fresh = l.chat.turn.state.is_empty();
             "connecting".clone_into(&mut l.chat.turn.state);
             l.chat.turn.note = None;
@@ -157,13 +149,11 @@ impl Hub {
             let done = done.and_then(|()| hub.reachable(&recipe.machine));
             let done =
                 done.and_then(|()| hub.connect(&id, (fresh, true), &text, &random_id, &recipe));
-            // As in [`Hub::start`].
             if let Some((file, _)) = &recipe.launch.secrets {
-                let _ = fs::remove_file(file);
+                fs::remove_file(file).ok();
             }
             let mut l = lock(&live);
             match done {
-                // shed's events say more.
                 Ok(()) if l.chat.turn.state == "connecting" => {
                     "working".clone_into(&mut l.chat.turn.state);
                 }
@@ -178,15 +168,12 @@ impl Hub {
             }
             let turn = l.chat.turn.clone();
             if let Err(e) = l.publish(&hub, vec![Change::State(turn)]) {
-                eprintln!("cooee: {e}");
+                cooee_core::note!("cooee: {e}");
             }
         });
         Ok(())
     }
 
-    /// The thread start `random_id` opened (stored and listed before shed starts it: an event, an ask, that comes
-    /// before the start returns is applied, and a crash after the start is adopted on restart, herdsman#446, #509),
-    /// or a new one; and whether it is new.
     fn admit(
         &self,
         agent: &str,
@@ -221,6 +208,7 @@ impl Hub {
             random_id: random_id.to_owned(),
             room: recipe.room.clone(),
             asked_by: recipe.asked_by.clone(),
+            setup: recipe.setup,
             routine: recipe.routine.clone(),
             ..Thread::default()
         })?;
@@ -234,8 +222,6 @@ impl Hub {
         Ok((id, fresh))
     }
 
-    /// Refuses when `machine` (empty: this host) has no link up (#149): offline, and since when, or unknown. A
-    /// link shed can't report doesn't refuse; the call itself fails then.
     pub(super) fn reachable(&self, machine: &str) -> Result<(), HubError> {
         if machine.is_empty() {
             return Ok(());
@@ -255,14 +241,11 @@ impl Hub {
         }
     }
 
-    /// The thread start `random_id` opened, or a new one `make` makes of a new id, stored and listed; and whether
-    /// it is new.
     pub(super) fn mint(
         &self,
         random_id: &str,
         make: impl FnOnce(String) -> Thread,
     ) -> Result<(String, bool), HubError> {
-        // Taken under the lock and counted up, so two threads started in one millisecond differ.
         let mut last = lock(&self.last);
         let started = self.all().into_iter().find_map(|l| {
             let l = lock(&l);
@@ -285,9 +268,6 @@ impl Hub {
         Ok((id, true))
     }
 
-    /// Starts thread `id`'s terminal when `fresh` (or, `keep`, when it doesn't run), waits for its session and
-    /// sends `text`. A start that failed but came up anyway (a slow CLI) is kept, never started twice
-    /// (herdsman#477); one that didn't come up is removed unless `keep`.
     fn connect(
         &self,
         id: &str,
@@ -302,7 +282,6 @@ impl Hub {
             let folder = l.meta.folder.clone();
             (l.meta.terminal.clone(), l.meta.agent.clone(), folder)
         };
-        // No folder: its own scratch folder, made on its first start.
         let folder = if let Some(f) = folder {
             f
         } else {
@@ -311,7 +290,6 @@ impl Hub {
             dir
         };
         if fresh || (keep && self.shed.get(&terminal).is_err()) {
-            // A member's session is labelled with its room and persona (#154).
             let room = Some(&recipe.room).filter(|r| !r.is_empty());
             let mut labels = BTreeMap::from([
                 (LABEL.to_owned(), "1".to_owned()),
@@ -320,7 +298,6 @@ impl Hub {
             if room.is_some() {
                 labels.insert(format!("{LABEL}.member"), recipe.profile.clone());
             }
-            // A profile's `{thread}` is this thread's id.
             let mut launch = self.mcp_launch(id, recipe)?;
             for (_, v) in &mut launch.env {
                 *v = v.replace("{thread}", id);
@@ -343,9 +320,15 @@ impl Hub {
         if let Some(s) = self.shed.ready(&terminal)?
             && let Err(e) = self.settle(id, &terminal, &s)
         {
-            eprintln!("cooee: {id}: model: {e}");
+            cooee_core::note!("cooee: {id}: model: {e}");
         }
-        self.send_after(id, text, random_id, &[], &recipe.instructions)?;
+        let note = self.unconnected(recipe)?;
+        let before = [recipe.instructions.trim_end(), &note].map(str::trim);
+        let before = before
+            .into_iter()
+            .filter(|s| !s.is_empty())
+            .collect::<Vec<_>>();
+        self.send_after(id, text, random_id, &[], &before.join("\n\n"))?;
         Ok(())
     }
 }

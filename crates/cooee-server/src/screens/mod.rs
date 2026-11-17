@@ -1,15 +1,13 @@
-//! cooee core's own screens as blocks (#300), answered from the data its JSON routes read. Each goes out with
-//! `"source": "core"`, set here and never taken from a body.
-
 pub mod attach;
 pub mod home;
+pub mod locked;
 pub mod menu;
+pub mod persona;
 pub mod settings;
 
 use serde_json::Value;
 use topcoat::router::RouterBuilder;
 
-/// Core's screen routes.
 pub(crate) fn routes(b: RouterBuilder) -> RouterBuilder {
     b.route(home::home)
         .route(menu::menu)
@@ -18,10 +16,15 @@ pub(crate) fn routes(b: RouterBuilder) -> RouterBuilder {
         .route(settings::machines)
         .route(settings::plugins)
         .route(attach::attach)
+        .route(persona::persona)
+        .route(persona::action)
+        .route(locked::pairing)
+        .route(locked::reset_layout)
 }
 
-/// `screen`, marked as core's.
 fn core(mut screen: Value) -> Value {
-    screen["source"] = Value::from("core");
+    if let Some(o) = screen.as_object_mut() {
+        o.insert("source".to_owned(), Value::from("core"));
+    }
     screen
 }

@@ -1,9 +1,4 @@
-//! `cooee perf [--minutes <n>]`: the latency table (#53).
-
-use std::{
-    fs,
-    time::{SystemTime, UNIX_EPOCH},
-};
+use std::{fs, time::UNIX_EPOCH};
 
 use cooee_core::Config;
 
@@ -22,7 +17,6 @@ pub(super) fn run(inv: &Invocation) -> Result<(), Failed> {
     Ok(perf(&inv.config()?, minutes)?)
 }
 
-/// Prints p50/p95/max per route, shed method and first token over the last `minutes` of `perf.log` (#53).
 fn perf(config: &Config, minutes: u64) -> Result<(), String> {
     let data = config
         .data_dir()
@@ -32,10 +26,10 @@ fn perf(config: &Config, minutes: u64) -> Result<(), String> {
         Err(e) if e.kind() == std::io::ErrorKind::NotFound => String::new(),
         Err(e) => return Err(e.to_string()),
     };
-    let now = SystemTime::now()
+    let now = cooee_core::clock::now()
         .duration_since(UNIX_EPOCH)
         .map_or(0, |d| u64::try_from(d.as_millis()).unwrap_or(u64::MAX));
     let since = now.saturating_sub(minutes.saturating_mul(60_000));
-    print!("{}", cooee_core::perf::table(&text, since));
+    cooee_core::say_open!("{}", cooee_core::perf::table(&text, since));
     Ok(())
 }

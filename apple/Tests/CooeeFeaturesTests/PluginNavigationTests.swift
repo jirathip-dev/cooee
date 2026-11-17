@@ -1,4 +1,5 @@
 import ComposableArchitecture
+import CooeeAPI
 import CooeeCore
 @testable import CooeeFeatures
 import Testing
@@ -52,6 +53,32 @@ internal struct PluginNavigationTests {
         #expect(paths.all == ["/screens/fleets/cooee", "/screens/queue"])
     }
 
+    @Test internal func aTimerTapPushesItsSettingsScreenFocusedOnItsFieldAndBackClearsTheFocus() async {
+        let paths = Calls()
+        let store = store(showing: Self.screen) {
+            $0.plugins.screen = { _, _, path in
+                paths.record(path)
+                return .object(["title": .string(path)])
+            }
+        }
+        await store.send(.navigate("/screens/global#limits.stall_minutes")) {
+            $0.path = ["/screens/global"]
+            $0.focus = "limits.stall_minutes"
+            $0.screen = nil
+        }
+        await store.receive(\.loaded) {
+            $0.screen = LiveScreen(.object(["title": .string("/screens/global")]))
+            $0.asOf = epoch
+        }
+        await store.send(.navigate(nil)) {
+            $0.path = []
+            $0.focus = nil
+            $0.screen = nil
+        }
+        await store.receive(\.loaded) { $0.screen = LiveScreen(.object(["title": .string("/screens/queue")])) }
+        #expect(paths.all == ["/screens/global", "/screens/queue"])
+    }
+
     @Test internal func anAnswersOpenPushesThatScreen() async {
         let store = store(showing: Self.screen) {
             $0.plugins.act = { _, _, _, _ in .object(["open": .string("/screens/fleets/review")]) }
@@ -85,6 +112,7 @@ internal struct PluginNavigationTests {
         }
         let task = await store.send(.lane(.presented(.task)))
         await store.receive(\.lane.presented.loaded) {
+            $0.lane?.loading = false
             $0.lane?.items = slice.items
             $0.lane?.since = epoch
         }
@@ -92,5 +120,39 @@ internal struct PluginNavigationTests {
         await task.cancel()
         await store.send(.lane(.dismiss)) { $0.lane = nil }
         #expect(store.state.screen == LiveScreen(Self.screen) && store.state.path.isEmpty)
+    }
+
+    @Test internal func aStateTappedOnTheMacLoadsItsIssuesBesideTheMapAndAPushClearsThem() async {
+        let paths = Calls()
+        let store = store(showing: Self.screen) {
+            $0.plugins.screen = { _, _, path in
+                paths.record(path)
+                return .object(["title": .string(path)])
+            }
+        }
+        await store.send(.beside("/screens/queue?state=fix")) { $0.beside = "/screens/queue?state=fix" }
+        await store.receive(\.besideLoaded) {
+            $0.besideScreen = .object(["title": .string("/screens/queue?state=fix")])
+        }
+        #expect(store.state.path.isEmpty && store.state.screen == LiveScreen(Self.screen))
+        await store.send(.navigate("/screens/global")) {
+            $0.path = ["/screens/global"]
+            $0.screen = nil
+            $0.beside = nil
+            $0.besideScreen = nil
+        }
+        await store.receive(\.loaded) {
+            $0.screen = LiveScreen(.object(["title": .string("/screens/global")]))
+            $0.asOf = epoch
+        }
+        #expect(paths.all == ["/screens/queue?state=fix", "/screens/global"])
+    }
+
+    @Test internal func aStateThatFailsToLoadBesideTheMapSaysWhoIsUnreachable() async {
+        let store = store(showing: Self.screen) {
+            $0.plugins.screen = { _, _, _ in throw APIError(status: 502, text: "") }
+        }
+        await store.send(.beside("/screens/queue?state=fix")) { $0.beside = "/screens/queue?state=fix" }
+        await store.receive(\.failed) { $0.unreachable = "drover isn't answering" }
     }
 }

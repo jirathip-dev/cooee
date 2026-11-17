@@ -1,11 +1,10 @@
-//! MCP servers (#56) and skills (#218): the registry, a thread's proxies and their grants, and what agents propose.
-
-use std::{collections::BTreeMap, path::Path};
+use std::{collections::BTreeMap, io, path::Path};
 
 use cooee_core::{
     Body, Card, Change, Config, Item, Launch, Thread,
+    agents::{self, Home},
     mcp::{self, COOEE, Pick, Server},
-    personas,
+    memory,
     shed_proto::ApprovalOption,
     skills::{self, Skill},
 };
@@ -38,20 +37,13 @@ pub struct Proposal {
     pub why: String,
 }
 
-/// What an agent proposed, until the owner answers its card.
 pub(super) enum Proposed {
-    /// A server for the registry (#56).
     Server(Server),
-    /// A skill for the thread's persona (#218), new or the edit of `replaces`.
     Skill {
-        /// The persona.
         persona: String,
-        /// The skill.
         skill: Skill,
-        /// The skill it edits.
         replaces: Option<String>,
     },
-    /// What else approving does (a routine's save, #261): the card's line, or why not.
     Later(Box<dyn FnOnce() -> Result<String, String> + Send>),
 }
 
@@ -83,11 +75,10 @@ impl Proposal {
     }
 }
 
-/// MCP servers (#56): the registry in the config file, a thread's proxies and their grants, and proposals.
 impl Hub {
     /// Agents' MCP proxies reach cooee at `url` (`cooee serve`, once it listens).
     pub fn listening(&self, url: String) {
-        let _ = self.url.set(url);
+        self.url.set(url).ok();
     }
 
     /// The registry, read from the config file now.
@@ -124,18 +115,17 @@ impl Hub {
         Ok(said)
     }
 
-    /// The config's folder (its `profiles/`).
     pub(super) fn config_dir(&self) -> Option<&Path> {
         self.config.as_deref().and_then(Path::parent)
     }
 
-    /// Profile `id`'s picks (none for Plain or a profile gone).
     fn picks(&self, id: &str) -> Vec<Pick> {
-        cooee_core::profiles::find(self.config_dir(), &self.data, id)
-            .map_or_else(|_| Vec::new(), |p| p.mcp)
+        let list = agents::all(self.config_dir(), &self.data, |_| None);
+        list.into_iter()
+            .find(|a| a.id == id)
+            .map_or_else(Vec::new, |a| a.mcp)
     }
 
-    /// `s` resolved, with `tools` allowed.
     fn grant_of(&self, s: Server, tools: Option<Vec<String>>) -> Result<Grant, String> {
         let (env, headers) = s.resolved(&self.data)?;
         Ok(Grant {
@@ -149,21 +139,23 @@ impl Hub {
         })
     }
 
-    /// `recipe`'s launch for thread `id`, with its MCP servers: cooee's own, then each its profile picks (on, and
-    /// resolving now), each a `cooee mcp proxy` holding the thread's token. Before cooee listens: none.
     pub(super) fn mcp_launch(&self, id: &str, recipe: &Recipe) -> Result<Launch, HubError> {
         let mut launch = recipe.launch.clone();
         let (Some(url), Ok(exe)) = (self.url.get(), std::env::current_exe()) else {
             return Ok(launch);
         };
         let servers = self.mcp()?;
-        for name in &recipe.mcp {
-            let s = servers.iter().find(|s| &s.name == name && s.enabled);
-            let s = s.ok_or_else(|| {
-                HubError::Refused(format!(
-                    "MCP server {name} is off or gone: settings › mcp servers"
-                ))
-            })?;
+        let picked: Vec<&Server> = servers
+            .iter()
+            .filter(|s| recipe.mcp.contains(&s.name))
+            .collect();
+        for s in &picked {
+            if !s.enabled {
+                return Err(HubError::Refused(format!(
+                    "MCP server {} is off: settings › mcp servers",
+                    s.name
+                )));
+            }
             s.resolved(&self.data).map_err(HubError::Refused)?;
         }
         let var = json!([{ "name": crate::mcp::VAR, "value": format!("{url} {}", crate::mcp::token(&self.mcp_key, id)) }]);
@@ -171,10 +163,9 @@ impl Hub {
         let entry = |name: &str, args: &[&str]| json!({ "name": name, "command": exe, "args": args, "env": var });
         let mut all = vec![entry(COOEE, &["mcp", "serve", "--thread", id])];
         all.extend(
-            recipe
-                .mcp
+            picked
                 .iter()
-                .map(|s| entry(s, &["mcp", "proxy", s, "--thread", id])),
+                .map(|s| entry(&s.name, &["mcp", "proxy", &s.name, "--thread", id])),
         );
         let file = self
             .data
@@ -182,6 +173,26 @@ impl Hub {
             .join(format!(".mcp-{id}-{:x}.json", now()));
         launch.mcp = Some((file, all));
         Ok(launch)
+    }
+
+    pub(super) fn unconnected(&self, recipe: &Recipe) -> Result<String, HubError> {
+        let servers = self.mcp()?;
+        let missing: Vec<&str> = recipe
+            .mcp
+            .iter()
+            .filter(|n| !servers.iter().any(|s| &s.name == *n))
+            .map(String::as_str)
+            .collect();
+        Ok(if missing.is_empty() {
+            String::new()
+        } else {
+            format!(
+                "These MCP servers you expect aren't connected yet: {}. Before anything else, your first reply tells \
+                 the owner to connect each one by that name in Settings › MCP servers (or `cooee mcp add`); until \
+                 then you can't use it.",
+                missing.join(", ")
+            )
+        })
     }
 
     /// Thread `id`, if `token` is its MCP token and it is open.
@@ -235,19 +246,15 @@ impl Hub {
     ///
     /// # Errors
     /// [`HubError::Refused`] for a wrong token, a closed thread, one with no persona, or an edit refused.
-    pub fn remember(&self, id: &str, token: &str, e: &personas::Edit) -> Result<String, HubError> {
-        let meta = self.token_of(id, token)?;
-        let found = personas::list(self.config_dir(), &self.data)
-            .into_iter()
-            .find(|p| p.id == meta.profile);
-        let p = found.ok_or_else(|| HubError::Refused(format!("thread {id} has no persona")))?;
-        let kept = personas::remember(&self.data, &p.id, "persona", e, now())
+    pub fn remember(&self, id: &str, token: &str, e: &memory::Edit) -> Result<String, HubError> {
+        let home = self.home_of(id, token)?;
+        let kept = memory::remember(&home, "persona", e, now())
             .map_err(|e| HubError::Refused(e.to_string()))?;
-        let used = personas::used(&personas::notes(&self.data, &p.id));
+        let used = memory::used(&memory::notes(&home));
         let what = kept.map_or_else(|| "Forgotten".to_owned(), |n| format!("Kept as [{}]", n.id));
         Ok(format!(
             "{what}; {used} of {} characters used.",
-            personas::CAP
+            memory::CAP
         ))
     }
 
@@ -264,7 +271,7 @@ impl Hub {
         before: Option<u64>,
     ) -> Result<String, HubError> {
         let meta = self.token_of(id, token)?;
-        let persona = personas::find(self.config_dir(), &self.data, &meta.profile)
+        let persona = agents::find(self.config_dir(), &self.data, &meta.profile)
             .map_err(|_| HubError::Refused(format!("thread {id} has no persona")))?;
         let refused = |e: cooee_core::StoreError| HubError::Refused(e.to_string());
         if thread.is_empty() && query.trim().is_empty() {
@@ -322,8 +329,9 @@ impl Hub {
         (id, token): (&str, &str),
         p: SkillProposal,
     ) -> Result<Item, HubError> {
-        let persona = self.persona_of(id, token)?;
-        let old = skills::check(&self.data, &persona, &p.skill, p.replaces.as_deref())
+        let home = self.home_of(id, token)?;
+        let persona = self.token_of(id, token)?.profile;
+        let old = skills::check(&home, &p.skill, p.replaces.as_deref())
             .map_err(|e| HubError::Refused(e.to_string()))?;
         let verb = if p.replaces.is_some() { "edit" } else { "add" };
         let tool = format!(
@@ -344,21 +352,27 @@ impl Hub {
     /// # Errors
     /// [`HubError::Refused`] for a wrong token, a closed thread, one with no persona, or no such skill of its.
     pub fn read_skill(&self, (id, token): (&str, &str), name: &str) -> Result<String, HubError> {
-        let persona = self.persona_of(id, token)?;
-        let s = skills::read(&self.data, &persona, name)
-            .map_err(|e| HubError::Refused(format!("{e} for {persona}")))?;
+        let home = self.home_of(id, token)?;
+        let s = skills::read(&home, name).map_err(|e| {
+            let persona = home
+                .path()
+                .file_name()
+                .unwrap_or_default()
+                .to_string_lossy();
+            HubError::Refused(format!("{e} for {persona}"))
+        })?;
         Ok(s.body.chars().take(8000).collect())
     }
 
-    /// The id of thread `id`'s persona, for its token.
-    fn persona_of(&self, id: &str, token: &str) -> Result<String, HubError> {
+    fn home_of(&self, id: &str, token: &str) -> Result<Home, HubError> {
         let meta = self.token_of(id, token)?;
-        personas::find(self.config_dir(), &self.data, &meta.profile)
-            .map(|p| p.id)
+        let config = self
+            .config_dir()
+            .ok_or_else(|| HubError::Refused("no config folder".to_owned()))?;
+        agents::home(config, &meta.profile)
             .map_err(|_| HubError::Refused(format!("thread {id} has no persona")))
     }
 
-    /// A proposal's card in thread `id`: what it does, its form and its detail; `p` waits for the owner's answer.
     fn raise(
         &self,
         id: &str,
@@ -416,7 +430,6 @@ impl Hub {
         })
     }
 
-    /// The owner's answer to a proposal: `approve` adds a server, off, or saves a skill.
     pub(super) fn proposal_answer(
         &self,
         id: &str,
@@ -433,7 +446,11 @@ impl Hub {
                 persona,
                 skill,
                 replaces,
-            } => skills::save(&self.data, &persona, skill, replaces.as_deref())
+            } => self
+                .config_dir()
+                .ok_or_else(|| io::Error::other("no config folder"))
+                .and_then(|c| agents::home(c, &persona))
+                .and_then(|h| skills::save(&h, skill, replaces.as_deref()))
                 .map(|s| Some(format!("saved skill {}", s.name)))
                 .map_err(|e| e.to_string()),
             Proposed::Later(then) => then().map(Some),

@@ -1,6 +1,6 @@
 # cooee native app v1: the screens (#124)
 
-Drawn in SwiftUI (`apple/Sources/CooeeUI/`), fed by fixtures shaped like `docs/api.md`. No networking. Each PNG is the
+Drawn in SwiftUI (`apple/Sources/CooeeUI/`), fed by fixtures shaped like the API (`docs/README.md`). No networking. Each PNG is the
 real view, rendered by `swift run shots` (in `apple/`) with SwiftUI's `ImageRenderer`.
 
 **How these were made, and how they differ from a simulator shot.** This host has the Command Line Tools but no Xcode
@@ -90,6 +90,7 @@ field left out because `ImageRenderer` cannot draw it) as the sheet's blocks.
 | `room-home-dark.png` | `home-390-dark` | Rooms in Home's list as a 2×2 stack with `N members`; Coder's linked exchanges hang under its chat, the depth-2 one under that (R4c). |
 | `room-wide-dark.png` | `room-1440` | At 1440 the strip is the members pane: order, agent and machine, state, ≡ and drag to reorder, `+ Add a member`, the cost note. |
 | `room-terminal-dark.png`, `room-terminal-wide.png`, `room-scene-light.png` | `room-terminal-*`, `room-scene-*` | The same room in Terminal and Scene. Terminal: each member's ASCII figure acts its state (`\o/` replied, `-.-` passed, `~o=` replying) with square state dots, `[■ Stop]`, and the owner's message as the bar block. Scene: the strip stands in the farm strip, each horse acting its state over its name card (in the stable, grazing, on the trail). |
+| `room-mention-dark.png`, `room-mention-terminal-dark.png` | `mention-390-dark`, `mention-terminal-390-dark` | @mention (#176, R4b): `@Coder check Q3 with @Re`. The popover lists the room's members: Researcher matched with `replies 2nd`, the others with their machine, Coder dimmed as `mentioned`. The line above the field says who replies (**Coder**, then **Researcher** reply, and anyone they @mention), the strip previews Coder and Researcher *up next* and the others *waiting*, and the tokens are marked in the field and in sent messages. |
 
 ## Linked exchanges (#177, R4c, from `docs/design/rooms/`)
 

@@ -40,7 +40,7 @@ extension ChatFeature {
         return act(state) { threads, server, thread in try await threads.steer(server, thread, randomID) }
     }
 
-    private func act(
+    internal func act(
         _ state: State,
         _ call: @escaping @Sendable (ThreadsClient, Server, String) async throws -> Void
     ) -> Effect<Action> {

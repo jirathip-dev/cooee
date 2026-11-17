@@ -16,6 +16,7 @@ internal struct AppFeatureTests {
             $0.serverStore.clear = { calls.record("clear") }
             $0.threads.home = { _ in HomeAnswer(screen: homeScreen, threads: [row("n1")], personas: [coder]) }
             $0.threads.personas = { _ in [coder] }
+            $0.threads.looks = { _ in Looks() }
             $0.plugins.installed = { _ in [] }
         }
     }
@@ -77,6 +78,7 @@ internal struct AppFeatureTests {
         await store.receive(\.home.loaded) {
             $0.home?.screen = homeScreen
             $0.home?.rows = [row("n1")]
+            $0.home?.loading = false
         }
         await store.send(.start("nobody")) {
             $0.path = ["new:nobody"]
@@ -113,7 +115,7 @@ internal struct AppFeatureTests {
 
     @Test internal func aSavedPersonaClosesItsSheetAndHomeReloads() async {
         let store = store(paired())
-        store.dependencies.personas.save = { _, persona in persona }
+        store.dependencies.plugins.act = { _, _, _, action in .object(action.values) }
         await store.send(.edit("coder")) { $0.persona = PersonaFeature.State(server: mini, persona: coder) }
         await store.send(.persona(.presented(.binding(.set(\.draft.character, "Terse."))))) {
             $0.persona?.draft.character = "Terse."
@@ -124,6 +126,7 @@ internal struct AppFeatureTests {
         await store.receive(\.home.loaded) {
             $0.home?.screen = homeScreen
             $0.home?.rows = [row("n1")]
+            $0.home?.loading = false
         }
     }
 
@@ -151,7 +154,9 @@ internal struct AppFeatureTests {
         }
         #expect(store.state.menu.server == mini)
     }
+}
 
+extension AppFeatureTests {
     @Test internal func aChatAskingToOpenAThreadOpensIt() async {
         let store = store(paired())
         await store.send(.open("t1")) {
@@ -165,5 +170,25 @@ internal struct AppFeatureTests {
                 server: mini, target: .thread("gone"), persona: Persona(APIPersona(id: "", name: "Chat", agent: ""))
             )
         }
+    }
+
+    @Test internal func refineByChatOpensASetupChat() async {
+        let store = store(paired())
+        store.dependencies.plugins.act = { _, _, _, action in .object(action.values) }
+        await store.send(.edit("coder")) { $0.persona = PersonaFeature.State(server: mini, persona: coder) }
+        await store.send(.persona(.presented(.chat))) { $0.persona?.busy = true }
+        await store.receive(\.persona.presented.delegate.chat) {
+            $0.persona = nil
+            $0.path = ["setup:coder"]
+            $0.chat = ChatFeature.State(server: mini, target: .setup(coder), persona: Persona(coder))
+        }
+        await store.receive(\.home.refresh)
+        await store.receive(\.home.loaded) {
+            $0.home?.loading = false
+            $0.home?.screen = homeScreen
+            $0.home?.rows = [row("n1")]
+        }
+        await store.send(.chat(.delegate(.persona("coder"))))
+        await store.receive(\.edit) { $0.persona = PersonaFeature.State(server: mini, persona: coder) }
     }
 }
