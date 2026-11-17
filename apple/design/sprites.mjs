@@ -28,7 +28,6 @@ for (const [coat, vars] of Object.entries(COATS)) for (const pose of POSES) {
   shoot(`<style>html,body{margin:0;background:transparent}svg{display:block}*{animation:none!important}</style>
   <svg width=132 height=100 viewBox="0 0 132 100">${body}</svg>`, 132, 100, `horse-${coat}-${pose}.png`);
 }
-// #246: the walk's two gait frames (herdsman serve.css `gt`: diagonal leg pairs swung ±16deg in opposition).
 const GAIT = { ff: 1, nh: 1, fh: -1, nf: -1 };
 for (const [coat, vars] of Object.entries(COATS)) for (const frame of [0, 1]) {
   const m = sprites.match(/<symbol id="s-scene-edit" viewBox="0 0 132 100">([\s\S]*?)<\/symbol>/);
