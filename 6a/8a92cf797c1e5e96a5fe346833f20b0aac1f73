@@ -1,0 +1,10 @@
+Decided: the style code lives in look/pack.rs, a child of look, because look.rs is over arch-check's 800-line size rule and may not grow
+Because: .drover/arch.toml:9
+Decided: on load a pack whose only failures are style.json lines goes in broken and its theme is still served
+Because: "a broken `style.json` leaves the pack's theme served"
+Decided: terminal and scene are built into the binary and cooee setup installs them with farm, without asking
+Because: crates/cooee/src/setup.rs:306
+Rejected: hand-validating style.json as untyped JSON for nicer messages — serde with deny_unknown_fields is the ADR's shape and refuses unknown keys and values on its own
+Rejected: moving look's existing tests to look/tests.rs to get under the size rule — they would count against the line cap
+Check: every packs/fixtures/styles file passes or fails as its name says (look::pack tests), and GET /api/v1/looks has styles and broken (tests/themes.rs)
+Owner: Terminal and Scene are now style packs the server checks and serves; the app starts reading them in slice 2
