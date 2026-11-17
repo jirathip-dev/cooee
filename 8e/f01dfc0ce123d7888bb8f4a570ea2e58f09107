@@ -1,0 +1,5 @@
+Decided: merge origin/staging after #489 raised apple_cap; no conflicts, no code change in this round
+Because: q1853
+Rejected: a cap edit in this PR — the cap is raised once for the queue by #489
+Check: scripts/line-cap.sh on a clean git archive of the head gives apple lines 14403 / 15250, exit 0
+Owner: The branch is up to date with staging and fits the raised line cap; nothing about the feature changed.
