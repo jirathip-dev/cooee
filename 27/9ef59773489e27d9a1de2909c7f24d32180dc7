@@ -1,0 +1,14 @@
+Decided: a `handoff` tool on cooee's own MCP server posts a handoff card and tells the agent to end its turn; `POST /threads/<id>/handback` resumes it with the owner's note.
+Because: "The agent stops its turn and asks you to log in or do the 2FA; it resumes when you hand back."
+Decided: while a handoff is open, send, queue and steer are refused (HANDOFF) and messages queued earlier stay held, so nothing typed then reaches the model; the note travels only with the hand back.
+Because: "nothing typed during the handoff reaches the model"
+Decided: the open handoff is persisted on the thread (its card's id), so it survives a restart and the gate never depends on whether the chat is loaded.
+Because: crates/cooee-core/src/store.rs:98
+Rejected: blocking the tool call until hand back, like ask_persona — a log-in can take far longer than an MCP call should stay open, and the agent would still be mid-turn.
+Rejected: cancelling the agent's turn from cooee — the tool's answer ends the turn cleanly; a cancel would race the tool result and mark the reply cancelled.
+Rejected: storing (not refusing) owner messages typed during the handoff — they would sit in history the persona's `history` tool can read.
+Decided: the tool is session-agnostic (`what` names a site sign-in or a CLI login), so terminal sessions use the same handoff.
+Because: "Works for terminal sessions too (a CLI login)."
+Check: crates/cooee/tests/handoff.rs drives the fake agent calling `handoff` in its turn, the refused send/queue/steer, the held queue, and the exact prompt the hand back sends.
+Check: a room prompts its members outside send and queue, so a handoff in a member session does not gate the room (rooms not in scope).
+Owner: an agent can now pause and ask you to sign in or enter a 2FA code yourself; it goes on with your note once you hand back.
