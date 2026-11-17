@@ -1,0 +1,8 @@
+Decided: e2e-scope.sh sets full from CARRIES on a non-labeled PR push and mac=false whenever full is false
+Because: "takes the PR's merge-ready state the way `ci-scope.sh` does"
+Because: scripts/ci-scope.sh:15
+Decided: the deferred run's summary reads "### apple: the Mac build waits for merge-ready"
+Because: scripts/e2e-scope.sh:63
+Rejected: gating the runner in apple.yml by label expressions — two places would decide the same rule
+Check: ci/ci-scripts-test.sh fails on base e2e-scope.sh at the plain push case (want mac=false)
+Owner: Apple PR pushes no longer wait for a Mac; the Mac build runs on the merge-ready run only.
