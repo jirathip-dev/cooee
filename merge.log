@@ -1,0 +1,16 @@
+Auto-merging .drover/arch.toml
+Auto-merging crates/cooee-server/src/layout.rs
+Auto-merging crates/cooee-server/src/lib.rs
+CONFLICT (content): Merge conflict in crates/cooee-server/src/lib.rs
+Auto-merging crates/cooee-server/src/pairing.rs
+CONFLICT (content): Merge conflict in crates/cooee-server/src/pairing.rs
+Auto-merging crates/cooee-server/src/routes/relaunch.rs
+Auto-merging crates/cooee-server/src/routines.rs
+Auto-merging crates/cooee-server/src/screens/attach.rs
+Auto-merging crates/cooee-server/src/screens/home.rs
+Auto-merging crates/cooee-server/src/screens/menu.rs
+Auto-merging crates/cooee-server/src/screens/persona.rs
+Auto-merging crates/cooee-server/src/screens/settings.rs
+Recorded preimage for 'crates/cooee-server/src/lib.rs'
+Recorded preimage for 'crates/cooee-server/src/pairing.rs'
+Automatic merge failed; fix conflicts and then commit the result.

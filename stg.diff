@@ -1,0 +1,652 @@
+diff --git a/crates/cooee-server/src/lib.rs b/crates/cooee-server/src/lib.rs
+index c9c19ca54..765b2db1d 100644
+--- a/crates/cooee-server/src/lib.rs
++++ b/crates/cooee-server/src/lib.rs
+@@ -27,13 +27,13 @@ use std::{
+     net::{IpAddr, SocketAddr},
+     path::PathBuf,
+     sync::Arc,
+-    time::{Duration, SystemTime, UNIX_EPOCH},
++    time::{Duration, UNIX_EPOCH},
+ };
+ 
+ use cooee_core::{
+     Config, Device, Devices, Plugin, ShedError,
+-    personas::{self, Persona},
+-    skills,
++    agents::{self, Agent},
++    memory, skills,
+ };
+ use cooee_machines::Machines;
+ use futures_util::{Stream, StreamExt, stream};
+@@ -78,7 +78,7 @@ const OPEN: [&str; 6] = [
+ const COOKIE: &str = "cooee";
+ 
+ fn now() -> u64 {
+-    SystemTime::now()
++    cooee_core::clock::now()
+         .duration_since(UNIX_EPOCH)
+         .map_or(0, |d| u64::try_from(d.as_millis()).unwrap_or(u64::MAX))
+ }
+@@ -133,7 +133,7 @@ impl Layer for Gate {
+                 return plain(403, "forbidden: foreign Host or Origin");
+             }
+             let path = uri(cx).path();
+-            if OPEN.contains(&path) {
++            if OPEN.contains(&path) || path.starts_with("/look/") {
+                 return next.run(cx, body).await;
+             }
+             if path.starts_with("/mcp/agent/") {
+@@ -157,7 +157,7 @@ impl Layer for Gate {
+             let found = match token.map(|t| self.devices.find(t, now())).transpose() {
+                 Ok(found) => found.flatten(),
+                 Err(e) => {
+-                    eprintln!("cooee: devices: {e}");
++                    cooee_core::note!("cooee: devices: {e}");
+                     return plain(503, "cooee can't read its paired devices: try again soon.");
+                 }
+             };
+@@ -181,7 +181,7 @@ impl Layer for Timing {
+ 
+     fn handle<'a>(&'a self, cx: &'a Cx, body: Body, next: Next<'a>) -> LayerFuture<'a> {
+         Box::pin(async move {
+-            let start = std::time::Instant::now();
++            let start = cooee_core::clock::instant();
+             let response = next.run(cx, body).await.into_response(cx)?;
+             let route = try_endpoint(cx).map_or("(none)", |e| match e.path().as_str() {
+                 "" => "/",
+@@ -232,7 +232,7 @@ impl<T: Serialize> IntoResponse for Answer<T> {
+             Err(HubError::Shed(
+                 e @ (ShedError::Rpc(_) | ShedError::Bad(_) | ShedError::Cli { .. }),
+             )) => {
+-                eprintln!("cooee: {e}");
++                cooee_core::note!("cooee: {e}");
+                 (
+                     502,
+                     "shed couldn't do that: run cooee doctor on the Mac.".to_owned(),
+@@ -412,6 +412,8 @@ struct New {
+     effort: String,
+     #[serde(default)]
+     machine: Option<String>,
++    #[serde(default)]
++    setup: bool,
+ }
+ 
+ #[derive(Serialize)]
+@@ -433,7 +435,7 @@ async fn create(cx: &Cx, Json(new): Json<New>) -> Result<Answer<Created>> {
+             (&data, config.as_deref(), &list),
+             (&new.agent, new.account.as_deref(), profile),
+             new.folder,
+-            picked,
++            (picked, new.setup),
+         )?;
+         if let Some(m) = new.machine {
+             recipe.machine = m;
+@@ -450,12 +452,14 @@ async fn create(cx: &Cx, Json(new): Json<New>) -> Result<Answer<Created>> {
+         } else {
+             hub.create(&agent, &folder, &new.text, &new.random_id, &recipe)?
+         };
+-        let ours = list.into_iter().find(|p| p.id() == profile);
+-        let ours = ours.and_then(|p| Some((hub.backend(p.plugin.as_deref()?)?, p.name)));
++        let ours = list.into_iter().find(|a| a.id == profile).and_then(|a| {
++            let name = a.id.split_once('/')?.1.to_owned();
++            Some((hub.backend(&a.lent?.plugin)?, name))
++        });
+         if let Some((b, name)) = ours
+             && let Err(e) = plugin::started(&b, &id, &name)
+         {
+-            eprintln!("cooee: plugin {}: thread-started: {e}", b.name);
++            cooee_core::note!("cooee: plugin {}: thread-started: {e}", b.name);
+         }
+         Ok(id)
+     });
+@@ -486,7 +490,7 @@ async fn retry(cx: &Cx) -> Result<Answer<()>> {
+             (&data, config.as_deref(), &list),
+             (&t.agent, Some(&t.account), &t.profile),
+             PathBuf::new(),
+-            (t.model, t.effort),
++            ((t.model, t.effort), t.setup),
+         )?;
+         let name = provider_name(&t.agent, &logins.statuses());
+         hub.retry(&id, recipe, &name)
+@@ -498,34 +502,13 @@ async fn retry(cx: &Cx) -> Result<Answer<()>> {
+ 
+ fn recipe(
+     logins: &Logins,
+-    (data, config, list): (
+-        &std::path::Path,
+-        Option<&std::path::Path>,
+-        &[cooee_core::Profile],
+-    ),
+-    (agent, account, profile): (&str, Option<&str>, &str),
++    (data, config, list): (&std::path::Path, Option<&std::path::Path>, &[Agent]),
++    (agent, account, id): (&str, Option<&str>, &str),
+     folder: PathBuf,
+-    mut picked: (String, String),
++    (mut picked, setup): ((String, String), bool),
+ ) -> Result<(String, PathBuf, Recipe), HubError> {
+-    let persona = personas::find(config, data, profile).ok();
+-    if let Some(p) = &persona {
+-        for (pick, default) in [(&mut picked.0, &p.model), (&mut picked.1, &p.effort)] {
+-            if pick.is_empty() {
+-                pick.clone_from(default);
+-            }
+-        }
+-    }
+-    let (agent, profile, folder) = match &persona {
+-        Some(p) => {
+-            let keep = ["", "scratch"].contains(&p.folder.as_str());
+-            let folder = if keep { folder } else { (&p.folder).into() };
+-            (p.agent.as_str(), p.profile.as_deref().unwrap_or(""), folder)
+-        }
+-        None => (agent, profile, folder),
+-    };
+-    let (agent, folder, mut recipe) = if profile.is_empty() {
+-        let (account, mut launch) = logins.home(agent, account)?;
+-        launch.meta = persona.as_ref().and(logins.no_personal_setup(agent));
++    let (agent, folder, mut recipe) = if id.is_empty() {
++        let (account, launch) = logins.home(agent, account)?;
+         let recipe = Recipe {
+             account,
+             launch,
+@@ -533,31 +516,43 @@ fn recipe(
+         };
+         (agent.to_owned(), folder, recipe)
+     } else {
+-        let p = list.iter().find(|p| p.id() == profile).cloned();
+-        let p = p.ok_or_else(|| refused(format!("no profile {profile}")))?;
+-        if p.hidden {
+-            return Err(refused(format!("profile {profile} is hidden: {}", p.why)));
++        let a = list.iter().find(|a| a.id == id);
++        let a = a.ok_or_else(|| refused(format!("no profile {id}")))?;
++        if let Some(why) = a.lent.as_ref().and_then(|l| l.hidden.as_ref()) {
++            return Err(refused(format!("profile {id} is hidden: {why}")));
+         }
+-        let (account, launch, instructions) = logins.profile(&p, data)?;
++        for (pick, default) in [(&mut picked.0, &a.model), (&mut picked.1, &a.effort)] {
++            if pick.is_empty() {
++                pick.clone_from(default);
++            }
++        }
++        let (account, launch) = logins.agent(a, account, data)?;
+         let recipe = Recipe {
+             account,
+-            profile: p.id(),
++            profile: a.id.clone(),
+             launch,
+-            instructions,
+-            mcp: p.mcp.iter().map(|k| k.server.clone()).collect(),
++            instructions: a.brief(config),
++            mcp: a.mcp.iter().map(|k| k.server.clone()).collect(),
++            machine: a.machine.clone(),
+             ..Recipe::default()
+         };
+-        (p.agent, p.folder.unwrap_or(folder), recipe)
++        (a.agent.clone(), a.work_folder().unwrap_or(folder), recipe)
+     };
+     recipe.launch.pick(logins.picks(&agent, &picked.1)?);
+     (recipe.model, recipe.effort) = picked;
+-    if let Some(mut p) = persona {
+-        if p.instructions.trim().is_empty() {
+-            p.instructions = std::mem::take(&mut recipe.instructions);
++    if setup {
++        if id.is_empty() || list.iter().any(|a| a.id == id && a.lent.is_some()) {
++            return Err(refused("a setup chat needs one of your own personas"));
+         }
+-        recipe.instructions = p.brief(data);
+-        recipe.profile = p.id;
+-        recipe.machine = p.machine;
++        if !recipe.instructions.is_empty() {
++            recipe.instructions.push_str(
++                "
++
++",
++            );
++        }
++        recipe.instructions.push_str(agents::SETUP);
++        recipe.setup = true;
+     }
+     Ok((agent, folder, recipe))
+ }
+@@ -702,7 +697,7 @@ fn starter(
+             (&data, config.as_deref(), &list),
+             ask,
+             PathBuf::new(),
+-            empty,
++            (empty, false),
+         )
+     })
+ }
+@@ -714,7 +709,7 @@ fn runner(
+     config: Option<&std::path::Path>,
+ ) -> Arc<routines::Runner> {
+     let (dir, config) = (data.to_owned(), config.map(ToOwned::to_owned));
+-    let data = dir.clone();
++    let (data, settings) = (dir.clone(), config.clone());
+     let start: routines::Start = Box::new(move |hub, who| {
+         let list = profiles(hub, (&data, config.as_deref()));
+         let (agent, folder, mut recipe) = recipe(
+@@ -722,7 +717,7 @@ fn runner(
+             (&data, config.as_deref(), &list),
+             (&who.agent, Some(&who.account), &who.profile),
+             who.folder.clone(),
+-            (who.model.clone(), who.effort.clone()),
++            ((who.model.clone(), who.effort.clone()), false),
+         )?;
+         if recipe.machine.is_empty() {
+             recipe.machine.clone_from(&who.machine);
+@@ -730,7 +725,11 @@ fn runner(
+         let name = provider_name(&agent, &logins.statuses());
+         Ok((agent, name, folder, recipe))
+     });
+-    Arc::new(routines::Runner::new(Arc::clone(hub), &dir, start))
++    Arc::new(routines::Runner::new(
++        Arc::clone(hub),
++        (settings.as_deref(), &dir),
++        start,
++    ))
+ }
+ 
+ #[derive(Deserialize)]
+@@ -1030,13 +1029,10 @@ async fn passkey_check(cx: &Cx, Json(p): Json<passkey::Proof>) -> Result<Respons
+ 
+ struct Data(PathBuf, Option<PathBuf>);
+ 
+-fn profiles(
+-    hub: &Hub,
+-    (data, config): (&std::path::Path, Option<&std::path::Path>),
+-) -> Vec<cooee_core::Profile> {
+-    let mut list = cooee_core::profiles::list(config, data, |name| hub.served(name));
++fn profiles(hub: &Hub, (data, config): (&std::path::Path, Option<&std::path::Path>)) -> Vec<Agent> {
++    let mut list = agents::all(config, data, |name| hub.served(name));
+     for p in &mut list {
+-        let via = p.plugin.as_deref().and_then(|n| hub.backend(n));
++        let via = p.lent.as_ref().and_then(|l| hub.backend(&l.plugin));
+         if let (Some(via), Some(a)) = (via, &mut p.avatar)
+             && a.starts_with('/')
+         {
+@@ -1283,7 +1279,10 @@ async fn plugin_log(cx: &Cx) -> Result<Response> {
+         return plain(404, &format!("{} isn't installed.", q.name));
+     }
+     let text = std::fs::read(manager(cx).log(&q.name)).unwrap_or_default();
+-    let tail = String::from_utf8_lossy(&text[text.len().saturating_sub(16 << 10)..]).into_owned();
++    let tail = text
++        .get(text.len().saturating_sub(16 << 10)..)
++        .unwrap_or_default();
++    let tail = String::from_utf8_lossy(tail).into_owned();
+     plain(
+         200,
+         if tail.is_empty() {
+@@ -1664,12 +1663,24 @@ fn bearer(cx: &Cx) -> String {
+ #[route(POST "/mcp/agent/remember")]
+ async fn mcp_remember(cx: &Cx, Json(a): Json<AgentAsk>) -> Result<Answer<String>> {
+     let (token, e) = (bearer(cx), serde_json::from_value(a.server));
+-    let e: personas::Edit = e.map_err(|e| refused(format!("remember: {e}")))?;
++    let e: memory::Edit = e.map_err(|e| refused(format!("remember: {e}")))?;
+     Ok(Answer(
+         blocking(cx, move |hub| hub.remember(&a.thread, &token, &e)).await,
+     ))
+ }
+ 
++#[route(POST "/mcp/agent/persona")]
++async fn mcp_persona(cx: &Cx, Json(a): Json<AgentAsk>) -> Result<Answer<String>> {
++    let token = bearer(cx);
++    Ok(Answer(
++        blocking(cx, move |hub| {
++            let u = serde_json::from_value(a.server).map_err(refused)?;
++            hub.update_persona(&a.thread, &token, u)
++        })
++        .await,
++    ))
++}
++
+ async fn on_personas<T: Send + 'static>(
+     cx: &Cx,
+     f: impl FnOnce(&std::path::Path, &std::path::Path) -> io::Result<T> + Send + 'static,
+@@ -1677,27 +1688,27 @@ async fn on_personas<T: Send + 'static>(
+     let d = app_context::<Data>(cx);
+     let (data, config) = (d.0.clone(), d.1.clone());
+     let done = blocking(cx, move |_| {
+-        let config = config.ok_or_else(|| refused("there is no config folder for personas"))?;
++        let config = config.ok_or_else(|| refused("there is no config folder for agents"))?;
+         f(&data, &config).map_err(refused)
+     });
+     Ok(Answer(done.await))
+ }
+ 
+ #[route(GET "/personas")]
+-async fn persona_list(cx: &Cx) -> Result<Answer<Vec<Persona>>> {
+-    on_personas(cx, |d, c| Ok(personas::list(Some(c), d))).await
++async fn persona_list(cx: &Cx) -> Result<Answer<Vec<Agent>>> {
++    on_personas(cx, |d, c| Ok(agents::list(Some(c), d))).await
+ }
+ 
+ #[route(POST "/personas")]
+-async fn persona_new(cx: &Cx, Json(p): Json<Persona>) -> Result<Answer<Persona>> {
+-    let p = Persona {
++async fn persona_new(cx: &Cx, Json(p): Json<Agent>) -> Result<Answer<Agent>> {
++    let p = Agent {
+         id: String::new(),
+         ..p
+     };
+     persona_save(cx, p).await
+ }
+ 
+-pub(crate) async fn persona_save(cx: &Cx, p: Persona) -> Result<Answer<Persona>> {
++pub(crate) async fn persona_save(cx: &Cx, p: Agent) -> Result<Answer<Agent>> {
+     let installed = hub(cx).installed();
+     let machines = Arc::clone(app_context::<Arc<Machines>>(cx));
+     on_personas(cx, move |d, c| {
+@@ -1706,7 +1717,7 @@ pub(crate) async fn persona_save(cx: &Cx, p: Persona) -> Result<Answer<Persona>>
+             None => allowed(&machines, &p.machine),
+         };
+         why.map_err(|e| io::Error::new(io::ErrorKind::InvalidInput, e))?;
+-        personas::save(c, d, p)
++        agents::save(c, d, p)
+     })
+     .await
+ }
+@@ -1759,14 +1770,14 @@ async fn machine_list(cx: &Cx) -> Result<Answer<Vec<MachineRow>>> {
+ }
+ 
+ #[route(GET "/personas/{id}")]
+-async fn persona_get(cx: &Cx) -> Result<Answer<Persona>> {
++async fn persona_get(cx: &Cx) -> Result<Answer<Agent>> {
+     let id = thread_id(cx);
+-    on_personas(cx, move |d, c| personas::find(Some(c), d, &id)).await
++    on_personas(cx, move |d, c| agents::find(Some(c), d, &id)).await
+ }
+ 
+ #[route(PUT "/personas/{id}")]
+-async fn persona_put(cx: &Cx, Json(p): Json<Persona>) -> Result<Answer<Persona>> {
+-    let p = Persona {
++async fn persona_put(cx: &Cx, Json(p): Json<Agent>) -> Result<Answer<Agent>> {
++    let p = Agent {
+         id: thread_id(cx),
+         ..p
+     };
+@@ -1774,59 +1785,55 @@ async fn persona_put(cx: &Cx, Json(p): Json<Persona>) -> Result<Answer<Persona>>
+ }
+ 
+ #[route(GET "/personas/{id}/places")]
+-async fn places(cx: &Cx) -> Result<Answer<Vec<personas::Place>>> {
++async fn places(cx: &Cx) -> Result<Answer<Vec<agents::Place>>> {
+     let id = thread_id(cx);
+-    on_personas(cx, move |d, c| personas::places(Some(c), d, &id)).await
++    on_personas(cx, move |d, c| agents::places(Some(c), d, &id)).await
+ }
+ 
+ #[route(DELETE "/personas/{id}")]
+ async fn persona_delete(cx: &Cx) -> Result<Answer<()>> {
+     let id = thread_id(cx);
+-    on_personas(cx, move |d, c| personas::remove(c, d, &id)).await
++    on_personas(cx, move |_, c| agents::remove(c, &id)).await
+ }
+ 
+ #[route(GET "/personas/{id}/memory")]
+-async fn memory(cx: &Cx) -> Result<Answer<Vec<personas::Note>>> {
++async fn memory_list(cx: &Cx) -> Result<Answer<Vec<memory::Note>>> {
+     let id = thread_id(cx);
+-    on_personas(cx, move |d, c| {
+-        Ok(personas::notes(d, &personas::find(Some(c), d, &id)?.id))
+-    })
+-    .await
++    on_personas(cx, move |_, c| Ok(memory::notes(&agents::home(c, &id)?))).await
+ }
+ 
+-async fn owner_edit(cx: &Cx, e: personas::Edit) -> Result<Answer<Option<personas::Note>>> {
++async fn owner_edit(cx: &Cx, e: memory::Edit) -> Result<Answer<Option<memory::Note>>> {
+     let id = thread_id(cx);
+-    on_personas(cx, move |d, c| {
+-        let id = personas::find(Some(c), d, &id)?.id;
+-        personas::remember(d, &id, "owner", &e, now())
++    on_personas(cx, move |_, c| {
++        memory::remember(&agents::home(c, &id)?, "owner", &e, now())
+     })
+     .await
+ }
+ 
+ #[route(POST "/personas/{id}/memory")]
+-async fn memory_add(cx: &Cx, Json(n): Json<Code>) -> Result<Answer<Option<personas::Note>>> {
+-    let e = personas::Edit {
++async fn memory_add(cx: &Cx, Json(n): Json<Code>) -> Result<Answer<Option<memory::Note>>> {
++    let e = memory::Edit {
+         text: Some(n.text),
+-        ..personas::Edit::default()
++        ..memory::Edit::default()
+     };
+     owner_edit(cx, e).await
+ }
+ 
+ #[route(PUT "/personas/{id}/memory/{name}")]
+-async fn memory_put(cx: &Cx, Json(n): Json<Code>) -> Result<Answer<Option<personas::Note>>> {
+-    let e = personas::Edit {
++async fn memory_put(cx: &Cx, Json(n): Json<Code>) -> Result<Answer<Option<memory::Note>>> {
++    let e = memory::Edit {
+         text: Some(n.text),
+         replaces: Some(path_param::<Name>(cx).to_owned()),
+-        ..personas::Edit::default()
++        ..memory::Edit::default()
+     };
+     owner_edit(cx, e).await
+ }
+ 
+ #[route(DELETE "/personas/{id}/memory/{name}")]
+-async fn memory_drop(cx: &Cx) -> Result<Answer<Option<personas::Note>>> {
+-    let e = personas::Edit {
++async fn memory_drop(cx: &Cx) -> Result<Answer<Option<memory::Note>>> {
++    let e = memory::Edit {
+         forget: vec![path_param::<Name>(cx).to_owned()],
+-        ..personas::Edit::default()
++        ..memory::Edit::default()
+     };
+     owner_edit(cx, e).await
+ }
+@@ -1834,10 +1841,7 @@ async fn memory_drop(cx: &Cx) -> Result<Answer<Option<personas::Note>>> {
+ #[route(DELETE "/personas/{id}/memory")]
+ async fn memory_clear(cx: &Cx) -> Result<Answer<()>> {
+     let id = thread_id(cx);
+-    on_personas(cx, move |d, c| {
+-        personas::forget(d, &personas::find(Some(c), d, &id)?.id)
+-    })
+-    .await
++    on_personas(cx, move |_, c| memory::forget(&agents::home(c, &id)?)).await
+ }
+ 
+ fn persona_routes(b: topcoat::router::RouterBuilder) -> topcoat::router::RouterBuilder {
+@@ -1852,12 +1856,13 @@ fn persona_routes(b: topcoat::router::RouterBuilder) -> topcoat::router::RouterB
+         .route(places)
+         .route(screen)
+         .route(screen_action)
+-        .route(memory)
++        .route(memory_list)
+         .route(memory_add)
+         .route(memory_put)
+         .route(memory_drop)
+         .route(memory_clear)
+         .route(mcp_remember)
++        .route(mcp_persona)
+         .route(mcp_history)
+         .route(skill_list)
+         .route(skill_add)
+@@ -1870,17 +1875,14 @@ fn persona_routes(b: topcoat::router::RouterBuilder) -> topcoat::router::RouterB
+ #[route(GET "/personas/{id}/skills")]
+ async fn skill_list(cx: &Cx) -> Result<Answer<Vec<skills::Skill>>> {
+     let id = thread_id(cx);
+-    on_personas(cx, move |d, c| {
+-        Ok(skills::list(d, &personas::find(Some(c), d, &id)?.id))
+-    })
+-    .await
++    on_personas(cx, move |_, c| Ok(skills::list(&agents::home(c, &id)?))).await
+ }
+ 
+ #[route(POST "/personas/{id}/skills")]
+ async fn skill_add(cx: &Cx, Json(s): Json<skills::Skill>) -> Result<Answer<skills::Skill>> {
+     let id = thread_id(cx);
+-    on_personas(cx, move |d, c| {
+-        skills::save(d, &personas::find(Some(c), d, &id)?.id, s, None)
++    on_personas(cx, move |_, c| {
++        skills::save(&agents::home(c, &id)?, s, None)
+     })
+     .await
+ }
+@@ -1888,17 +1890,14 @@ async fn skill_add(cx: &Cx, Json(s): Json<skills::Skill>) -> Result<Answer<skill
+ #[route(GET "/personas/{id}/skills/{name}")]
+ async fn skill_get(cx: &Cx) -> Result<Answer<skills::Skill>> {
+     let (id, name) = (thread_id(cx), path_param::<Name>(cx).to_owned());
+-    on_personas(cx, move |d, c| {
+-        skills::read(d, &personas::find(Some(c), d, &id)?.id, &name)
+-    })
+-    .await
++    on_personas(cx, move |_, c| skills::read(&agents::home(c, &id)?, &name)).await
+ }
+ 
+ #[route(PUT "/personas/{id}/skills/{name}")]
+ async fn skill_put(cx: &Cx, Json(s): Json<skills::Skill>) -> Result<Answer<skills::Skill>> {
+     let (id, name) = (thread_id(cx), path_param::<Name>(cx).to_owned());
+-    on_personas(cx, move |d, c| {
+-        skills::save(d, &personas::find(Some(c), d, &id)?.id, s, Some(&name))
++    on_personas(cx, move |_, c| {
++        skills::save(&agents::home(c, &id)?, s, Some(&name))
+     })
+     .await
+ }
+@@ -1906,8 +1905,8 @@ async fn skill_put(cx: &Cx, Json(s): Json<skills::Skill>) -> Result<Answer<skill
+ #[route(DELETE "/personas/{id}/skills/{name}")]
+ async fn skill_delete(cx: &Cx) -> Result<Answer<()>> {
+     let (id, name) = (thread_id(cx), path_param::<Name>(cx).to_owned());
+-    on_personas(cx, move |d, c| {
+-        skills::remove(d, &personas::find(Some(c), d, &id)?.id, &name)
++    on_personas(cx, move |_, c| {
++        skills::remove(&agents::home(c, &id)?, &name)
+     })
+     .await
+ }
+@@ -1918,10 +1917,10 @@ async fn mcp_skill(cx: &Cx, Json(a): Json<AgentAsk>) -> Result<Answer<String>> {
+     Ok(Answer(
+         blocking(cx, move |hub| {
+             let me = (a.thread.as_str(), token.as_str());
+-            if let Some(name) = a.server["read"].as_str() {
++            if let Some(name) = a.server.get("read").and_then(serde_json::Value::as_str) {
+                 return hub.read_skill(me, name);
+             }
+-            let p = serde_json::from_value(a.server["propose"].clone())
++            let p = serde_json::from_value(a.server.get("propose").cloned().unwrap_or_default())
+                 .map_err(|_| HubError::Refused("give read or propose".to_owned()))?;
+             hub.propose_skill(me, p).map(|_| {
+                 "Proposed. The owner sees a card; nothing is saved until they approve it."
+@@ -1943,9 +1942,15 @@ async fn mcp_grant(cx: &Cx, Json(a): Json<AgentAsk>) -> Result<Answer<mcp::Grant
+ #[route(POST "/mcp/agent/ask")]
+ async fn mcp_ask(cx: &Cx, Json(a): Json<AgentAsk>) -> Result<Answer<String>> {
+     let (token, s) = (bearer(cx), a.server);
+-    let text = |k: &str| s[k].as_str().unwrap_or_default().to_owned();
++    let text = |k: &str| {
++        s.get(k)
++            .and_then(serde_json::Value::as_str)
++            .unwrap_or_default()
++            .to_owned()
++    };
+     let (persona, message) = (text("persona"), text("message"));
+-    let wait = Duration::from_secs(s["timeout"].as_u64().unwrap_or(300).min(600));
++    let number = |k: &str| s.get(k).and_then(serde_json::Value::as_u64);
++    let wait = Duration::from_secs(number("timeout").unwrap_or(300).min(600));
+     Ok(Answer(
+         blocking(cx, move |hub| {
+             hub.ask_persona((&a.thread, &token), &persona, &message, wait)
+@@ -1957,9 +1962,15 @@ async fn mcp_ask(cx: &Cx, Json(a): Json<AgentAsk>) -> Result<Answer<String>> {
+ #[route(POST "/mcp/agent/history")]
+ async fn mcp_history(cx: &Cx, Json(a): Json<AgentAsk>) -> Result<Answer<String>> {
+     let (token, s) = (bearer(cx), a.server);
+-    let text = |k: &str| s[k].as_str().unwrap_or_default().to_owned();
+-    let (query, thread, before) = (text("query"), text("thread"), s["before"].as_u64());
+-    let limit = usize::try_from(s["limit"].as_u64().unwrap_or(5)).unwrap_or(5);
++    let text = |k: &str| {
++        s.get(k)
++            .and_then(serde_json::Value::as_str)
++            .unwrap_or_default()
++            .to_owned()
++    };
++    let number = |k: &str| s.get(k).and_then(serde_json::Value::as_u64);
++    let (query, thread, before) = (text("query"), text("thread"), number("before"));
++    let limit = usize::try_from(number("limit").unwrap_or(5)).unwrap_or(5);
+     Ok(Answer(
+         blocking(cx, move |hub| {
+             hub.history((&a.thread, &token), (&query, limit), &thread, before)
+@@ -2019,11 +2030,13 @@ pub fn router(
+     };
+     routines::routes(
+         runner,
+-        room_routes(persona_routes(screens::routes(pairing::routes(
+-            Router::builder()
+-                .layer(Timing)
+-                .layer(gate)
+-                .layer(BodyLimit::max(64 << 20).at("/threads")),
++        room_routes(persona_routes(screens::routes(themes::routes(
++            pairing::routes(
++                Router::builder()
++                    .layer(Timing)
++                    .layer(gate)
++                    .layer(BodyLimit::max(64 << 20).at("/threads")),
++            ),
+         )))),
+     )
+     .route(push_key)
+@@ -2119,9 +2132,13 @@ pub fn serve(config: &Config, ready: impl FnOnce(SocketAddr)) -> io::Result<()>
+     let shed = cooee_core::Shed::new(config.shed.clone(), config.shed_dir.clone());
+     let (looks, refused) = look::Looks::load(config.dir.as_deref(), config.theme.as_deref());
+     for why in refused {
+-        eprintln!("cooee: refused {why}");
++        cooee_core::note!("cooee: refused {why}");
+     }
+-    let theme = looks.themes[&looks.default].clone();
++    let theme = looks
++        .themes
++        .get(&looks.default)
++        .cloned()
++        .ok_or_else(|| io::Error::other(format!("no theme {}", looks.default)))?;
+     let logins = Logins::new(
+         shed.clone(),
+         cooee_core::Providers::new(&config.providers),
+@@ -2142,10 +2159,10 @@ pub fn serve(config: &Config, ready: impl FnOnce(SocketAddr)) -> io::Result<()>
+                 let launch = signins.home(&agent, Some(&account));
+                 let probed = launch.and_then(|(_, l)| daily.probe(&agent, &account, &l));
+                 if let Err(e) = probed {
+-                    eprintln!("cooee: models of {agent}: {e}");
++                    cooee_core::note!("cooee: models of {agent}: {e}");
+                 }
+             }
+-            std::thread::sleep(Duration::from_hours(1));
++            cooee_core::clock::sleep(Duration::from_hours(1));
+         }
+     });
+     let runner = runner(&hub, Arc::clone(&logins), &data, config.dir.as_deref());
+diff --git a/crates/cooee-server/src/pairing.rs b/crates/cooee-server/src/pairing.rs
+index 69b19ba45..f9961d7b2 100644
+--- a/crates/cooee-server/src/pairing.rs
++++ b/crates/cooee-server/src/pairing.rs
+@@ -110,7 +110,12 @@ async fn pair(cx: &Cx, Form(f): Form<PairForm>) -> Result<Response> {
+             !m.is_empty()
+         });
+         let mine = misses.get(&who).map_or(&[][..], Vec::as_slice);
+-        (mine.len() >= TRIES).then(|| (mine[0] + 60_000 - t).div_ceil(1000))
++        (mine.len() >= TRIES)
++            .then(|| {
++                mine.first()
++                    .map(|first| (first + 60_000 - t).div_ceil(1000))
++            })
++            .flatten()
+     };
+     if let Some(wait) = limited {
+         return see_other(&format!("/pair?bad=limit&wait={wait}"), None);
+@@ -289,7 +294,10 @@ fn ceremony(cx: &Cx, kind: &str, client: &[u8], auth: &[u8]) -> Result<(), &'sta
+         return Err("That passkey is for another site.");
+     }
+     let hash = Sha256::digest(rp_id(host).as_bytes());
+-    if auth.len() < 37 || auth[..32] != hash[..] || auth[32] & 0x05 != 0x05 {
++    if auth.len() < 37
++        || auth.get(..32) != Some(&hash[..])
++        || auth.get(32).is_none_or(|f| f & 0x05 != 0x05)
++    {
+         return Err("That passkey wasn't checked with Face ID or a passcode.");
+     }
+     Ok(())

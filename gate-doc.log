@@ -1,0 +1,11 @@
+    Checking cooee-core v0.1.0 (/Users/jkmacmini/.local/share/drover/work/cooee/issue-428/crates/cooee-core)
+ Documenting cooee-core v0.1.0 (/Users/jkmacmini/.local/share/drover/work/cooee/issue-428/crates/cooee-core)
+    Checking cooee-machines v0.1.0 (/Users/jkmacmini/.local/share/drover/work/cooee/issue-428/crates/cooee-machines)
+    Checking cooee-terminal v0.1.0 (/Users/jkmacmini/.local/share/drover/work/cooee/issue-428/crates/cooee-terminal)
+ Documenting cooee-terminal v0.1.0 (/Users/jkmacmini/.local/share/drover/work/cooee/issue-428/crates/cooee-terminal)
+    Checking cooee-server v0.1.0 (/Users/jkmacmini/.local/share/drover/work/cooee/issue-428/crates/cooee-server)
+ Documenting cooee-server v0.1.0 (/Users/jkmacmini/.local/share/drover/work/cooee/issue-428/crates/cooee-server)
+ Documenting cooee-machines v0.1.0 (/Users/jkmacmini/.local/share/drover/work/cooee/issue-428/crates/cooee-machines)
+ Documenting cooee v0.1.0 (/Users/jkmacmini/.local/share/drover/work/cooee/issue-428/crates/cooee)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 2.78s
+   Generated /Users/jkmacmini/.local/share/herdsman/work/.build/cooee-impl-428/doc/cooee/index.html and 4 other files

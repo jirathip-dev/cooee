@@ -1,0 +1,20 @@
+Merge made by the 'ort' strategy.
+ apple/Sources/CooeeApp/MacLive.swift               | 28 +++++++
+ apple/Sources/CooeeCore/MacServer.swift            | 42 ++++++++++
+ apple/Sources/CooeeFeatures/Clients.swift          |  3 +
+ apple/Sources/CooeeFeatures/MacSetupExisting.swift | 34 ++++++++
+ apple/Sources/CooeeFeatures/MacSetupFeature.swift  |  8 +-
+ apple/Sources/CooeeUI/Mac.swift                    |  2 +-
+ apple/Sources/CooeeUI/MacSteps.swift               | 28 ++++++-
+ apple/Tests/CooeeCoreTests/MacServerTests.swift    | 22 ++++++
+ .../CooeeFeaturesTests/MacSetupExistingTests.swift | 91 ++++++++++++++++++++++
+ .../CooeeFeaturesTests/MacSetupFeatureTests.swift  |  3 +
+ crates/cooee/src/cmd/install.rs                    |  1 +
+ crates/cooee/src/doctor.rs                         | 10 ++-
+ crates/cooee/src/service.rs                        | 24 ++++++
+ crates/cooee/src/setup.rs                          |  3 +-
+ crates/cooee/tests/instances.rs                    | 10 ++-
+ crates/cooee/tests/setup.rs                        | 49 ++++++++++++
+ 16 files changed, 351 insertions(+), 7 deletions(-)
+ create mode 100644 apple/Sources/CooeeFeatures/MacSetupExisting.swift
+ create mode 100644 apple/Tests/CooeeFeaturesTests/MacSetupExistingTests.swift
