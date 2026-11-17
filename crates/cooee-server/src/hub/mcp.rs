@@ -44,6 +44,7 @@ pub(super) enum Proposed {
         skill: Skill,
         replaces: Option<String>,
     },
+    Later(Box<dyn FnOnce() -> Result<String, String> + Send>),
 }
 
 /// An agent's `skill` proposal (#218): the skill, and the one it edits.
@@ -403,7 +404,21 @@ impl Hub {
         Ok(item)
     }
 
-    /// Whether item `item` of thread `id` is an MCP proposal's card (approving it needs Face ID).
+    /// A card in thread `id` saying `tool` and `detail`; approving it (with Face ID) runs `then` (#261).
+    ///
+    /// # Errors
+    /// [`HubError::NoThread`] for no such thread.
+    pub fn propose_later(
+        &self,
+        id: &str,
+        (tool, detail): (String, String),
+        then: Box<dyn FnOnce() -> Result<String, String> + Send>,
+    ) -> Result<Item, HubError> {
+        self.raise(id, (tool, "routine", detail), Proposed::Later(then))
+    }
+
+    /// Whether item `item` of thread `id` is an MCP server's or a routine's proposal card (approving it needs Face
+    /// ID).
     #[must_use]
     pub fn is_proposal(&self, id: &str, item: u64) -> bool {
         let Ok(live) = self.live(id) else {
@@ -411,7 +426,7 @@ impl Hub {
         };
         let live = lock(&live);
         live.chat.items.iter().any(|i| {
-            i.id == item && matches!(&i.body, Body::Approval { card, .. } if card.form.as_deref() == Some("mcp"))
+            i.id == item && matches!(&i.body, Body::Approval { card, .. } if matches!(card.form.as_deref(), Some("mcp" | "routine")))
         })
     }
 
@@ -438,6 +453,7 @@ impl Hub {
                 .and_then(|h| skills::save(&h, skill, replaces.as_deref()))
                 .map(|s| Some(format!("saved skill {}", s.name)))
                 .map_err(|e| e.to_string()),
+            Proposed::Later(then) => then().map(Some),
         }
     }
 

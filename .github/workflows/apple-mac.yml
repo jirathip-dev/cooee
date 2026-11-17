@@ -1,23 +1,17 @@
-# #142: the Mac app as the server, as a .dmg (scripts/mac-app.sh): cooee and shed inside, run as login items. With the
-# five secrets below (an Apple Developer ID: a paid Apple Developer membership) it is signed with the Developer ID,
+# #142, #484: the Mac app, a client only, as a .dmg (scripts/mac-app.sh); the server on a Mac is the CLI install. With
+# the five secrets below (an Apple Developer ID: a paid Apple Developer membership) it is signed with the Developer ID,
 # notarized, stapled and checked with `spctl -a -vv`; without them the .dmg is unsigned and the job says which secrets
 # are missing. The secrets go in the `mac-release` environment (staging and main only, set up by the owner);
 # apple/README.md lists them. #329: on a pull request the .dmg is built only on the merge-ready run of a change that
 # reaches the Apple surface (scripts/ci-scope.sh); otherwise `dmg` reports skipped, under the same name. #365: `dmg` runs on
 # our own runners (mini-cooee, air-cooee), never for a fork's pull request; its keychain lives and dies with the job.
-# #333: the app updates itself with Sparkle. With the Developer ID and SPARKLE_ED_KEY (Sparkle's private EdDSA key, also in
-# mac-release) the build carries its public key and turns the updater on; an unsigned build never gets it. `release`
-# publishes each signed, notarized .dmg from main as a GitHub Release `mac-<run>`, with an EdDSA-signed appcast.xml
-# (generate_appcast) and deltas from the previous three; the app reads releases/latest/download/appcast.xml.
 name: apple-mac
 on:
   push:
     branches: [staging, main]
     paths:
       - "apple/**"
-      - "crates/**"
       - "scripts/mac-app.sh"
-      - "scripts/mac-bins.sh"
       - ".github/workflows/apple-mac.yml"
       - ".github/actions/mac-runner/**"
   pull_request:
@@ -60,8 +54,6 @@ jobs:
       (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
     runs-on: [self-hosted, macOS, ARM64, cooee-mac]
     timeout-minutes: 60
-    outputs:
-      signed: ${{ steps.devid.outputs.signed }}
     # Pull requests get no environment and no secrets: they build the unsigned .dmg. (`a && '' || b` is always b, as
     # '' is falsy, so the environment name is the truthy branch.)
     environment: ${{ github.event_name != 'pull_request' && 'mac-release' || '' }}
@@ -74,8 +66,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/mac-runner
-      - uses: dtolnay/rust-toolchain@1.99.1
-      - uses: Swatinem/rust-cache@v2
       - name: the Developer ID, if its secrets are set
         id: devid
         run: |
@@ -106,15 +96,10 @@ jobs:
           team=$(printf '%s' "$identity" | sed -n 's/.*(\([A-Z0-9]*\))$/\1/p')
           echo "::add-mask::$team"
           { echo "MAC_SIGN_IDENTITY=$identity"; echo "MAC_TEAM=$team"; } >> "$GITHUB_ENV"
-          echo "signed=true" >> "$GITHUB_OUTPUT"
       - name: build the app and cooee.dmg
         env:
-          SPARKLE_ED_KEY: ${{ github.event_name != 'pull_request' && secrets.SPARKLE_ED_KEY || '' }}
           MAC_BUILD: ${{ github.run_number }}
-        run: |
-          [ -z "${MISSING:-}" ] || unset SPARKLE_ED_KEY
-          [ -n "${SPARKLE_ED_KEY:-}" ] || echo "::notice::The app's updater is off: no SPARKLE_ED_KEY or no Developer ID."
-          scripts/mac-app.sh "$RUNNER_TEMP/mac"
+        run: scripts/mac-app.sh "$RUNNER_TEMP/mac"
       - name: notarize, staple and check with spctl
         if: env.MISSING == ''
         run: |
@@ -138,7 +123,7 @@ jobs:
           else
             echo "### cooee.dmg: signed with the Developer ID, notarized and stapled" >> "$GITHUB_STEP_SUMMARY"
           fi
-          du -sk "$RUNNER_TEMP/mac/dmg/Cooee.app" "$RUNNER_TEMP/mac/dmg/Cooee.app/Contents/Frameworks/Sparkle.framework" |
+          du -sk "$RUNNER_TEMP/mac/dmg/Cooee.app" |
             awk '{ printf "- %s: %d KB\n", $2, $1 }' | sed "s|$RUNNER_TEMP/mac/dmg/||" >> "$GITHUB_STEP_SUMMARY"
       - uses: actions/upload-artifact@v4
         with:
@@ -154,43 +139,3 @@ jobs:
             read -r -a keychains <<<"$(tr '\n' ' ' < "$RUNNER_TEMP/keychains")"
             security list-keychains -d user -s "${keychains[@]}"
           fi
-
-  release:
-    needs: dmg
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && needs.dmg.outputs.signed == 'true'
-    runs-on: [self-hosted, macOS, ARM64, cooee-mac]
-    timeout-minutes: 30
-    environment: mac-release
-    permissions:
-      contents: write
-    env:
-      SPARKLE_ED_KEY: ${{ secrets.SPARKLE_ED_KEY }}
-      GH_TOKEN: ${{ github.token }}
-      TAG: mac-${{ github.run_number }}
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/download-artifact@v4
-        with:
-          name: cooee-dmg
-          path: ${{ runner.temp }}/new
-      - name: generate_appcast, and the Release with the .dmg, appcast.xml and deltas
-        run: |
-          if [ -z "${SPARKLE_ED_KEY:-}" ]; then
-            echo "::notice::No SPARKLE_ED_KEY in mac-release: no Release (the app's updater is off)."
-            exit 0
-          fi
-          swift package resolve --package-path apple
-          feed="$RUNNER_TEMP/feed"
-          rm -rf "${feed:?}"
-          mkdir -p "$feed"
-          for old in $(gh release list --limit 50 --json tagName -q '.[].tagName | select(startswith("mac-"))' | head -3); do
-            gh release download "$old" --pattern 'Cooee-*.dmg' --dir "$feed"
-          done
-          cp "$RUNNER_TEMP/new/cooee.dmg" "$feed/Cooee-${TAG#mac-}.dmg"
-          printf '%s' "$SPARKLE_ED_KEY" | apple/.build/artifacts/sparkle/Sparkle/bin/generate_appcast --ed-key-file - \
-            --maximum-versions 1 --download-url-prefix "https://github.com/$GITHUB_REPOSITORY/releases/download/$TAG/" "$feed"
-          cat "$feed/appcast.xml"
-          set -- "$feed/Cooee-${TAG#mac-}.dmg" "$feed/appcast.xml"
-          for delta in "$feed"/*.delta; do [ ! -f "$delta" ] || set -- "$@" "$delta"; done
-          gh release create "$TAG" --target "$GITHUB_SHA" --latest --title "cooee for Mac ${TAG#mac-}" \
-            --notes "The Mac app, signed and notarized; it updates itself from this Release's appcast.xml." "$@"

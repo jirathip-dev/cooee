@@ -12,7 +12,7 @@ use crate::{
     cli::load,
     devices::pair,
     doctor::doctor,
-    service::{job, plist, refuse_app, tailnet_name, write_plist},
+    service::{job, plist, tailnet_name, write_plist},
 };
 
 /// `cooee setup`'s flags.
@@ -99,7 +99,6 @@ impl Setup {
 
     /// Every step, in order, then the pairing code.
     pub fn run(&self, path: &Path) -> Result<(), String> {
-        refuse_app()?;
         let uid = output(&["id", "-u"]).ok_or("`id -u` failed")?;
         let gui = format!("gui/{}", uid.trim());
         let updated = self.shed()?;
@@ -192,6 +191,15 @@ impl Setup {
         let keys: toml::Table = text
             .parse()
             .map_err(|e| format!("{}: {e}", path.display()))?;
+        let bundled = keys
+            .get("shed")
+            .and_then(toml::Value::as_str)
+            .is_some_and(|s| s.contains(".app/Contents/Helpers/"));
+        let text = if bundled {
+            without_top_key(&text, "shed")
+        } else {
+            text
+        };
         let port = match (
             keys.get("port").and_then(toml::Value::as_integer),
             self.port,
@@ -240,12 +248,13 @@ impl Setup {
                  module = \"/tab.js\"\ntoken = \"{token}\"\n"
             )
         };
-        let changed = !add.is_empty() || !plugin.is_empty();
+        let changed = bundled || !add.is_empty() || !plugin.is_empty();
         if !step(&format!("config {}", path.display()), !changed) {
             if !text.is_empty() {
                 let what = add.iter().map(String::as_str);
                 let what: Vec<&str> = what
                     .chain((!has).then_some("the terminal plugin"))
+                    .chain(bundled.then_some("shed from PATH, not the old Mac app's"))
                     .collect();
                 cooee_core::say!("  note: kept its keys; adding {}", what.join(", "));
             }
@@ -257,7 +266,7 @@ impl Setup {
                     fs::create_dir_all(dir).map_err(|e| e.to_string())?;
                     cooee_core::gitignore::write(dir).map_err(|e| e.to_string())?;
                 }
-                fs::write(path, &new).map_err(|e| e.to_string())
+                cooee_core::write_private(path, new.as_bytes()).map_err(|e| e.to_string())
             })?;
         }
         let config = if path.exists() {
@@ -410,4 +419,14 @@ impl Setup {
 fn step(name: &str, done: bool) -> bool {
     cooee_core::say!("{name}:{}", if done { " done, skipped" } else { "" });
     done
+}
+
+fn without_top_key(text: &str, key: &str) -> String {
+    let mut top = true;
+    text.split_inclusive('\n')
+        .filter(|line| {
+            top &= !line.trim_start().starts_with('[');
+            !(top && line.split_once('=').is_some_and(|(k, _)| k.trim() == key))
+        })
+        .collect()
 }

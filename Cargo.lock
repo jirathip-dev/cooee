@@ -157,6 +157,7 @@ dependencies = [
 name = "cooee-core"
 version = "0.1.0"
 dependencies = [
+ "hkdf 0.13.0",
  "security-framework",
  "serde",
  "serde_json",
@@ -164,6 +165,7 @@ dependencies = [
  "shed-proto",
  "thiserror",
  "toml",
+ "toml_edit",
 ]
 
 [[package]]
@@ -1748,6 +1750,7 @@ dependencies = [
  "indexmap",
  "toml_datetime",
  "toml_parser",
+ "toml_writer",
  "winnow",
 ]
 

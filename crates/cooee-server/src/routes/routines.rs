@@ -1,7 +1,4 @@
-use cooee_core::{
-    Item,
-    routines::{Edit, Routine},
-};
+use cooee_core::routines::{Edit, Routine};
 use topcoat::{
     Result,
     context::Cx,
@@ -16,11 +13,11 @@ use topcoat::{
 use crate::{
     http::{AgentAsk, Answer, bearer, plain, refused, thread_id},
     hub::{HubError, now},
-    routines::{Runner, on},
+    routines::on,
 };
 
 #[route(POST "/mcp/agent/routine")]
-async fn mcp_routine(cx: &Cx, Json(a): Json<AgentAsk>) -> Result<Answer<Item>> {
+async fn mcp_routine(cx: &Cx, Json(a): Json<AgentAsk>) -> Result<Answer<String>> {
     let token = bearer(cx);
     Ok(Answer(
         on(cx, move |r| {
@@ -33,7 +30,7 @@ async fn mcp_routine(cx: &Cx, Json(a): Json<AgentAsk>) -> Result<Answer<Item>> {
 
 #[route(GET "/routines.json")]
 async fn routine_list(cx: &Cx) -> Result<Answer<Vec<Routine>>> {
-    Ok(Answer(on(cx, Runner::list).await))
+    Ok(Answer(on(cx, |r| r.list()).await))
 }
 
 fn back<T>(done: Result<T, HubError>) -> Result<Response> {

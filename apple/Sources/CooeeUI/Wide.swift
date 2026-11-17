@@ -5,7 +5,6 @@ import SwiftUI
 public struct MacConnect: View {
     @Environment(\.look) private var look
     private let store: StoreOf<PairingFeature>?
-    private let setUp: () -> Void
     @State private var scanning = false
 
     public var body: some View {
@@ -15,7 +14,7 @@ public struct MacConnect: View {
             VStack(spacing: 18) {
                 AppMark(size: 80)
                 Text("Connect to a server").ui(26, .bold, look)
-                Text("cooee runs on another Mac or a Linux box. This Mac only talks to it.").ui(14, .regular, look)
+                Text("cooee runs on this Mac (`cooee setup`), another Mac or a Linux box.").ui(14, .regular, look)
                     .foregroundStyle(palette.mute)
                 HStack(alignment: .top, spacing: 18) {
                     VStack(alignment: .leading, spacing: 10) {
@@ -26,11 +25,6 @@ public struct MacConnect: View {
                 }
                 .frame(maxWidth: 760)
                 Spacer()
-                Button(action: setUp) {
-                    Text("Want this Mac to be the server? Set it up instead").ui(13, .regular, look)
-                        .foregroundStyle(palette.link)
-                }
-                .buttonStyle(.plain)
             }
             .padding(36)
         }
@@ -60,14 +54,8 @@ public struct MacConnect: View {
         }
     }
 
-    public init() {
-        store = nil
-        setUp = {}
-    }
-
-    public init(store: StoreOf<PairingFeature>, setUp: @escaping () -> Void) {
+    public init(store: StoreOf<PairingFeature>? = nil) {
         self.store = store
-        self.setUp = setUp
     }
 }
 

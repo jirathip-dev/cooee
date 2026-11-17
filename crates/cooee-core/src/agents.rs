@@ -12,7 +12,7 @@ use std::{
 
 use serde::{Deserialize, Serialize};
 
-use crate::{mcp, memory, plugins, profiles::Profile, skills};
+use crate::{disk, mcp, memory, plugins, profiles::Profile, skills};
 
 const DROVER: &str = "drover";
 
@@ -55,7 +55,7 @@ make it with create_routine when they agree.";
 pub const PLAIN: &str =
     "Answer short, plain and conversational: summarise, and give the details only when asked.";
 
-/// One agent: JSON on the wire (`/personas`); `agent.toml` is this without `id`, `character` and `instructions`.
+/// One agent: JSON on `/personas`; `agent.toml` is this without `id`, `character`, `instructions` and `version`.
 #[derive(Debug, Clone, Default, PartialEq, Eq, Deserialize, Serialize)]
 #[serde(default, deny_unknown_fields)]
 pub struct Agent {
@@ -107,6 +107,9 @@ pub struct Agent {
     /// shed's approval policy: `ask`, `allow` or `deny`.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub policy: Option<String>,
+    /// Its files' [`disk::version`] when read; a save naming an older one is refused (#360), one naming none isn't.
+    #[serde(skip_serializing_if = "String::is_empty")]
+    pub version: String,
     /// Set for a plugin's profile read as an agent: read-only, no folder.
     #[serde(skip)]
     pub lent: Option<Lent>,
@@ -219,7 +222,7 @@ fn parse(file: &Path) -> Result<Agent, String> {
     };
     let a: Agent = toml::from_str(&text).map_err(line)?;
     let table: toml::Table = toml::from_str(&text).map_err(line)?;
-    if let Some(k) = ["id", "character", "instructions"]
+    if let Some(k) = ["id", "character", "instructions", "version"]
         .into_iter()
         .find(|k| table.contains_key(*k))
     {
@@ -242,6 +245,8 @@ pub(crate) fn style(role: Role, set: Option<Style>) -> Style {
     })
 }
 
+const FILES: [&str; 3] = ["agent.toml", "INSTRUCTIONS.md", "CHARACTER.md"];
+
 fn load(d: &Path, id: &str) -> Result<Agent, String> {
     let a = parse(&d.join("agent.toml"))?;
     let md = |n: &str| fs::read_to_string(d.join(n)).unwrap_or_default();
@@ -255,6 +260,7 @@ fn load(d: &Path, id: &str) -> Result<Agent, String> {
         instructions: md("INSTRUCTIONS.md"),
         settings: a.settings.as_deref().map(|s| whole(s, d)),
         folder,
+        version: disk::version(&FILES.map(|f| d.join(f))),
         ..a
     })
 }
@@ -333,35 +339,56 @@ pub fn find(config: Option<&Path>, data: &Path, id: &str) -> io::Result<Agent> {
     found.ok_or_else(|| refused(format!("no persona {id}")))
 }
 
-pub(crate) fn files(a: &Agent) -> [(&'static str, Vec<u8>); 3] {
+fn card(a: &Agent) -> String {
     let card = Agent {
         id: String::new(),
         character: String::new(),
         instructions: String::new(),
+        version: String::new(),
         ..a.clone()
     };
-    let toml = crate::toml_text(&serde_json::to_value(card).unwrap_or_default());
+    crate::toml_text(&serde_json::to_value(card).unwrap_or_default())
+}
+
+pub(crate) fn files(a: &Agent) -> [(&'static str, Vec<u8>); 3] {
     [
-        ("agent.toml", toml.into_bytes()),
+        ("agent.toml", card(a).into_bytes()),
         ("INSTRUCTIONS.md", a.instructions.clone().into_bytes()),
         ("CHARACTER.md", a.character.clone().into_bytes()),
     ]
 }
 
 /// Saves `a`'s folder: a new one (`id` empty) gets an id made from its name, not taken, and no launch keys; an edit
-/// keeps the launch keys as its `agent.toml` has them. Returns it.
+/// keeps the launch keys, changes only the keys and files that differ, refused [`disk::Stale`] past `a.version`.
 ///
 /// # Errors
-/// No name or agent, an avatar that isn't an image, a name taken, an unknown id, or a file that can't be written.
+/// No name or agent, a non-image avatar, a name taken, an unknown id, a stale version, or a file not written.
 pub fn save(config: &Path, data: &Path, mut a: Agent) -> io::Result<Agent> {
-    let old = if a.id.is_empty() {
+    let (old, text) = if a.id.is_empty() {
         a.id = slug(&a.name);
         if a.id.is_empty() || dir(config, &a.id).exists() {
             return Err(refused(format!("{:?} needs a name of its own", a.name)));
         }
-        Agent::default()
+        (Agent::default(), String::new())
     } else {
-        parse(&home(config, &a.id)?.path().join("agent.toml")).map_err(refused)?
+        let d = home(config, &a.id)?.0;
+        let files = FILES.map(|f| d.join(f));
+        let [what, ..] = &files;
+        if !a.version.is_empty() && a.version != disk::version(&files) {
+            return Err(io::Error::other(disk::Stale(what.display().to_string())));
+        }
+        let old = parse(what).map_err(refused)?;
+        let whole_folder = !matches!(old.folder.as_str(), "" | "scratch")
+            && whole(Path::new(&old.folder), &d) == Path::new(&a.folder);
+        if whole_folder {
+            a.folder.clone_from(&old.folder);
+        }
+        (old, fs::read_to_string(what)?)
+    };
+    let set: toml::Table = toml::from_str(&text).map_err(io::Error::other)?;
+    let was = Agent {
+        style: style(a.role, set.contains_key("style").then_some(old.style)),
+        ..old.clone()
     };
     a = Agent {
         account: old.account,
@@ -376,8 +403,12 @@ pub fn save(config: &Path, data: &Path, mut a: Agent) -> io::Result<Agent> {
         refused("a persona needs a name, an agent, and an image or none as its avatar".to_owned())
     })?;
     let d = dir(config, &a.id);
-    for (name, bytes) in files(&a) {
-        crate::write_private(&d.join(name), &bytes)?;
+    let toml = disk::patch(&text, &card(&was), &card(&a))?;
+    let new = [&toml, &a.instructions, &a.character];
+    for (file, text) in FILES.map(|f| d.join(f)).into_iter().zip(new) {
+        if fs::read_to_string(&file).ok().as_ref() != Some(text) {
+            crate::write_private(&file, text.as_bytes())?;
+        }
     }
     find(Some(config), data, &a.id)
 }

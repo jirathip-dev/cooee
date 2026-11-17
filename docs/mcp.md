@@ -30,7 +30,7 @@ The registry is the Mac's: `cooee mcp add|rm|enable|disable`.
 
 | Call | Body | Answer |
 |---|---|---|
-| `POST /threads/<id>/approve` | on an MCP proposal's card, `approve` needs `passkey` | as any card; 403 without Face ID |
+| `POST /threads/<id>/approve` | on an MCP proposal's or a GitHub routine's card (`form: "routine"`), `approve` needs `passkey` | as any card; 403 without Face ID |
 
 A thread's MCP proxy and `cooee mcp serve` call with `Authorization: Bearer <the thread's token>`, no cookie:
 `POST /mcp/agent/grant` `{thread, server}` → the server resolved and its allowed `tools`; `POST /mcp/agent/propose`
@@ -47,9 +47,12 @@ item `returned to <asker> [with your note] · <secs>s`).
 `query`, at most 5 (and `limit`) of the persona's threads, newest first, `<thread> <date>: <snippet>` (200 characters
 at most); with `thread`, its owner messages and final replies (no tool rows), at most 4,000 characters, ending
 `older: before=<item>` when more are left. Another persona's thread is a 400.
-`POST /mcp/agent/routine` `{thread, server: {name, when, prompt, place?}}` (#75) → `create_routine`'s item, the
-`routine` line it adds to the thread. A refusal is a 400 starting `BAD_SCHEDULE`, `BAD_NAME`, `BAD_PROMPT`,
-`BAD_PLACE`, `TOO_MANY` or `NOT_HERE` (a Workflow session or a routine's own run).
+`POST /mcp/agent/routine` `{thread, server: {name, when | github: {repo, events, match?}, prompt, place?}}` (#75,
+#261) → `create_routine`'s text. A schedule (`when`) is saved at once and adds a `routine` line to the thread; a
+GitHub one only adds a card (`form: "routine"`, `detail` the prompt) and is saved when the owner approves it with Face
+ID (`decline`: never). A refusal is a 400 starting `BAD_SCHEDULE`, `BAD_GITHUB`, `BAD_TRIGGER` (neither or both of
+`when` and `github`), `BAD_NAME`, `BAD_PROMPT`, `BAD_PLACE`, `TOO_MANY`, `NO_HOOKS` (no `[hooks]`) or `NOT_HERE` (a
+Workflow session or a routine's own run).
 `POST /mcp/agent/skill` `{thread, server: {read} | {propose: {name, description, body, replaces?}}}` (#218) → `skill`'s
 text: with `read`, the persona's skill's body (8,000 characters at most; another persona's is a 400); with `propose`,
 a card (`form: "skill"`, `detail` the new file, or for `replaces` its diff) whose `approve` saves it, `decline` or no

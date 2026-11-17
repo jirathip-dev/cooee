@@ -226,7 +226,9 @@ fn a_detailed_persona_gets_no_plain_line() {
 fn an_agents_launch_keys_are_read_only_and_an_edit_keeps_them() {
     let s = setup("personas-launch");
     let file = s.dir.join("agents/coder/agent.toml");
-    let list = s.cooee.json("/personas");
+    let mut list = s.cooee.json("/personas");
+    let version = list[0].as_object_mut().unwrap().remove("version");
+    assert!(version.is_some_and(|v| v.is_string()));
     assert_eq!(
         list,
         json!([{ "id": "coder", "name": "Coder", "avatar": "idle", "character": "",
@@ -338,6 +340,7 @@ fn a_plugin_is_attached_to_a_persona_and_detached() {
     chief["plugins"] = json!(["drover"]);
     let (status, saved) = s.call("PUT", "/personas/chief", Some(&chief));
     assert_eq!(status, 200, "{saved}");
+    chief["version"] = saved["version"].clone();
     assert_eq!(
         s.cooee.json("/personas/chief")["plugins"],
         json!(["drover"])
@@ -563,7 +566,9 @@ fn a_persona_and_its_threads_name_their_machine() {
     let old = "name = \"Old\"\nfolder = \"scratch\"\nagent = \"fake-acp\"\nmodel = \"\"\neffort = \"\"\nplugins = []\n";
     let home = agent(&s.dir, "old", old, "Still.");
     fs::write(home.join("CHARACTER.md"), "Kept.").unwrap();
-    let read = s.cooee.json("/personas/old");
+    let mut read = s.cooee.json("/personas/old");
+    let version = read.as_object_mut().unwrap().remove("version");
+    assert!(version.is_some_and(|v| v.is_string()));
     assert_eq!(
         read,
         json!({ "id": "old", "name": "Old", "character": "Kept.", "instructions": "Still.", "folder": "scratch",

@@ -1,8 +1,11 @@
 import CooeeCore
+import Foundation
 import Network
 import Synchronization
 
 public final class Nearby: Sendable {
+    public static let thisMac = "This Mac"
+
     private let browser: NWBrowser
     private let found = Mutex<[NearbyServer]>([])
     private let queue = DispatchQueue(label: "dev.cooee.nearby")
@@ -11,11 +14,23 @@ public final class Nearby: Sendable {
         browser = NWBrowser(for: .bonjour(type: type, domain: nil), using: .tcp)
     }
 
-    public static func browse(type: String = "_cooee._tcp") -> AsyncStream<[NearbyServer]> {
+    /// The servers on the LAN; with `local`, a cooee answering there comes first, as `thisMac`.
+    public static func browse(type: String = "_cooee._tcp", local: URL? = nil) -> AsyncStream<[NearbyServer]> {
         AsyncStream { continuation in
             let nearby = Nearby(type: type)
             nearby.start { continuation.yield($0) }
-            continuation.onTermination = { _ in nearby.browser.cancel() }
+            let probe = local.map { url in
+                Task {
+                    guard (try? await URLSession.shared.data(from: url.appending(path: "pair")))?.1 is HTTPURLResponse
+                    else { return }
+                    continuation.yield(
+                        nearby.add(NearbyServer(name: thisMac, address: url.absoluteString), first: true))
+                }
+            }
+            continuation.onTermination = { _ in
+                nearby.browser.cancel()
+                probe?.cancel()
+            }
         }
     }
 
@@ -34,15 +49,16 @@ public final class Nearby: Sendable {
                 let address = Self.address(remote)
             else { return }
             connection.cancel()
-            let list = found.withLock { list in
-                if !list.contains(where: { $0.name == name }) {
-                    list.append(NearbyServer(name: name, address: address))
-                }
-                return list
-            }
-            report(list)
+            report(add(NearbyServer(name: name, address: address)))
         }
         connection.start(queue: queue)
+    }
+
+    private func add(_ server: NearbyServer, first: Bool = false) -> [NearbyServer] {
+        found.withLock { list in
+            if !list.contains(where: { $0.name == server.name }) { list.insert(server, at: first ? 0 : list.count) }
+            return list
+        }
     }
 
     private func known(_ name: String) -> Bool {

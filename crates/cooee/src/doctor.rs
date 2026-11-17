@@ -29,7 +29,7 @@ pub(crate) fn doctor(config: &Config) -> Result<(), String> {
     if loaded && !app.is_empty() {
         cooee_core::say!(
             "warn both {label} and the Mac app's login items ({}) are installed: two servers on one Mac\n     \
-             fix: in the app, take over the CLI install, or remove the app's login items",
+             fix: open the Mac app once (it removes them), or remove them in System Settings > General > Login Items",
             app.join(", ")
         );
     }
@@ -96,6 +96,9 @@ pub(crate) fn doctor(config: &Config) -> Result<(), String> {
             );
         }
     }
+    if let Some((up, what)) = hooks(config) {
+        check(up, what);
+    }
     if failed.is_empty() {
         Ok(())
     } else {
@@ -105,4 +108,17 @@ pub(crate) fn doctor(config: &Config) -> Result<(), String> {
             failed.join("\n")
         ))
     }
+}
+
+fn hooks(config: &Config) -> Option<(bool, String)> {
+    let h = config.hooks.as_ref()?;
+    let up = TcpStream::connect_timeout(&h.bind, Duration::from_secs(2)).is_ok();
+    let to = format!("http://{}/hooks/github", h.bind);
+    Some((
+        up,
+        format!(
+            "hooks listening on {} for {}\n     funnel: tailscale funnel --bg --https=8443 --set-path /hooks/github {to}",
+            h.bind, h.url
+        ),
+    ))
 }

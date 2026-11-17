@@ -332,7 +332,7 @@ async fn approve(cx: &Cx, Json(a): Json<Approve>) -> Result<Response> {
     let id = thread_id(cx);
     if a.option == "approve" && hub(cx).is_proposal(&id, a.item) {
         let Some(p) = a.passkey else {
-            return plain(403, "Approving an MCP server needs Face ID.");
+            return plain(403, "Approving this needs Face ID.");
         };
         if let Err(why) = pairing::assert(cx, p).await? {
             return plain(403, why);

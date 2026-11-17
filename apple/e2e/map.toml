@@ -72,16 +72,12 @@
 "crates/cooee/tests/themes.rs" = "LiveThemeUITests"
 "apple/Sources/CooeeUI/Workflow.swift" = "LiveWorkflowUITests"
 "apple/UITests/LiveWorkflowUITests.swift" = "LiveWorkflowUITests"
-# No simulator e2e: docs, design frames, unit tests, the Swift gates and the Mac-only screens (mac-setup covers those).
+# No simulator e2e: docs, design frames, unit tests, the Swift gates and the Mac-only screens.
 "apple/*.md" = "none"
 "apple/design/*" = "none"
 "apple/Tests/*" = "none"
-"apple/LaunchAgents/*" = "none"
-"apple/UITests/MacSetupUITests.swift" = "none"
 "apple/Sources/CooeeUI/Mac*" = "none"
-"apple/Sources/CooeeFeatures/MacSetupFeature.swift" = "none"
 "tools/anti-slop-swift/*" = "none"
 "scripts/apple-check.sh" = "none"
 "scripts/apple-coverage.swift" = "none"
-"scripts/mac-bins.sh" = "none"
 "crates/cooee-core/src/shed.rs" = "none"

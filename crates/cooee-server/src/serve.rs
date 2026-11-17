@@ -43,7 +43,10 @@ fn runner(
     hub: &Arc<Hub>,
     logins: Arc<Logins>,
     data: &std::path::Path,
-    config: Option<&std::path::Path>,
+    (config, hooks): (
+        Option<&std::path::Path>,
+        Option<cooee_core::routines::Hooks>,
+    ),
 ) -> Arc<routines::Runner> {
     let (dir, config) = (data.to_owned(), config.map(ToOwned::to_owned));
     let (data, settings) = (dir.clone(), config.clone());
@@ -66,6 +69,7 @@ fn runner(
         Arc::clone(hub),
         (settings.as_deref(), &dir),
         start,
+        hooks,
     ))
 }
 
@@ -198,7 +202,12 @@ pub fn serve(config: &Config, ready: impl FnOnce(SocketAddr)) -> io::Result<()> 
             cooee_core::clock::sleep(Duration::from_hours(1));
         }
     });
-    let runner = runner(&hub, Arc::clone(&logins), &data, config.dir.as_deref());
+    let runner = runner(
+        &hub,
+        Arc::clone(&logins),
+        &data,
+        (config.dir.as_deref(), config.hooks.clone()),
+    );
     let router = router(
         (Arc::clone(&hub), Arc::clone(&runner)),
         (
@@ -224,7 +233,7 @@ pub fn serve(config: &Config, ready: impl FnOnce(SocketAddr)) -> io::Result<()> 
             let addr = listener.local_addr()?;
             hub.listening(format!("http://127.0.0.1:{}", addr.port()));
             manager.supervise(hub, format!("http://127.0.0.1:{}", addr.port()));
-            routines::Runner::every(runner, Duration::from_secs(30));
+            routines::Runner::every(runner, Duration::from_secs(30))?;
             ready(addr);
             topcoat::serve(listener, router).await
         });

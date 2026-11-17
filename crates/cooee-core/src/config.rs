@@ -61,6 +61,8 @@ pub struct Config {
     pub mcp: Vec<crate::mcp::Server>,
     /// Apple push for the native app (`[apns]`, #130); its key is `<data>/apns.p8`.
     pub apns: Option<Apns>,
+    /// GitHub webhooks for routines (`[hooks]`, #261); off when unset.
+    pub hooks: Option<crate::routines::Hooks>,
     /// Whether `cooee update` (its timer, every 15 minutes) installs main's newest green build (default on, #332).
     pub auto_update: bool,
 }
@@ -144,6 +146,7 @@ impl Default for Config {
             logs: crate::logs::Logs::default(),
             mcp: Vec::new(),
             apns: None,
+            hooks: None,
             auto_update: true,
         }
     }

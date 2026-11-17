@@ -48,7 +48,7 @@ impl Hub {
                 })
                 .map_err(|e| HubError::Refused(format!("plugin {name}: {e}"))),
             Body::Approval { card, .. }
-                if matches!(card.form.as_deref(), Some("mcp" | "skill")) =>
+                if matches!(card.form.as_deref(), Some("mcp" | "skill" | "routine")) =>
             {
                 Ok(self.proposal_answer(id, item, option))
             }
