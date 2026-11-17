@@ -20,8 +20,8 @@ use crate::{
     themes::Themes,
 };
 
-/// A theme the editor made: the pack it copies figures, scene, icon and words from, and its own label, style and
-/// colours per mode.
+/// A theme the editor made: the pack it copies figures, scene, icon and words from, its own label, style and
+/// colours per mode, and the figures and backdrop drawn over the copy.
 #[derive(Debug, Clone, Deserialize)]
 pub struct Draft {
     /// The installed pack it starts from, or `starter`.
@@ -34,6 +34,12 @@ pub struct Draft {
     pub dark: BTreeMap<String, String>,
     /// The same in light mode.
     pub light: BTreeMap<String, String>,
+    /// Drawn figures by symbol id, each in place of its `<symbol>` in the copied `sprites.svg`.
+    #[serde(default)]
+    pub sprites: BTreeMap<String, String>,
+    /// A drawn `scene.svg` of the layers `sky sea rocks sand` and `#night`, in place of the copied one.
+    #[serde(default)]
+    pub scene: Option<String>,
 }
 
 /// The colours of a draft, per mode: what the gate's editor shows.
@@ -161,7 +167,7 @@ pub fn files(name: &str, draft: &Draft, looks: &Looks) -> io::Result<Vec<(String
         icon: None,
         scene_art: Some(STARTER[1].1.to_vec()),
     };
-    let from = match looks.themes.get(&draft.from) {
+    let mut from = match looks.themes.get(&draft.from) {
         Some(t) => t.clone(),
         None if draft.from == "starter" => starter,
         None => {
@@ -171,6 +177,15 @@ pub fn files(name: &str, draft: &Draft, looks: &Looks) -> io::Result<Vec<(String
             )));
         }
     };
+    if !draft.sprites.is_empty() {
+        let sheet = from.sprite_sheet.as_deref().unwrap_or(STARTER[0].1);
+        from.sprite_sheet = Some(splice(sheet, &draft.sprites)?);
+        from.sprites = true;
+    }
+    if let Some(scene) = &draft.scene {
+        from.scene_art = Some(scene.clone().into_bytes());
+        from.scene = ["sky", "sea", "rocks", "sand"].map(str::to_owned).to_vec();
+    }
     let (dark, light) = (format!("{name}-dark"), format!("{name}-light"));
     let theme = Theme {
         label: draft.label.clone(),
@@ -200,6 +215,36 @@ pub fn files(name: &str, draft: &Draft, looks: &Looks) -> io::Result<Vec<(String
         out.extend(bytes.map(|b| (file.to_owned(), b)));
     }
     Ok(out)
+}
+
+fn splice(sheet: &[u8], drawn: &BTreeMap<String, String>) -> io::Result<Vec<u8>> {
+    const CLOSE: &str = "</symbol>";
+    let mut text = String::from_utf8_lossy(sheet).into_owned();
+    for (id, symbol) in drawn {
+        let open = format!("<symbol id=\"{id}\"");
+        let named = id.strip_prefix("s-").is_some_and(|n| {
+            !n.is_empty() && n.bytes().all(|b| b.is_ascii_lowercase() || b == b'-')
+        });
+        if !named
+            || !symbol.starts_with(&open)
+            || symbol
+                .strip_suffix(CLOSE)
+                .is_none_or(|body| body.contains(CLOSE))
+        {
+            return Err(io::Error::other(format!(
+                "{id}: not one <symbol id=\"{id}\">"
+            )));
+        }
+        let old = text.find(&open).and_then(|at| {
+            let end = text.get(at..)?.find(CLOSE)?;
+            Some(at..at + end + CLOSE.len())
+        });
+        match old {
+            Some(range) => text.replace_range(range, symbol),
+            None => text.insert_str(text.rfind("</svg>").unwrap_or(text.len()), symbol),
+        }
+    }
+    Ok(text.into_bytes())
 }
 
 fn pretty<T: Serialize>(v: &T) -> Vec<u8> {

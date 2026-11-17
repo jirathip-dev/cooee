@@ -81,6 +81,8 @@ public struct Look: Sendable {
     public var moving = false
     public var cast = Cast.farm
     public var sprites: [String: String] = [:]
+    public var drawn: [String: PixelFigure] = [:]
+    public var tokens: [String: String] = [:]
 
     internal var mono: Bool { style == .terminal }
 
