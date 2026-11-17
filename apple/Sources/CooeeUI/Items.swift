@@ -78,8 +78,8 @@ internal struct YouBubble: View {
 
     private var roomBubble: some View {
         let palette = look.palette
-        return Text(text).ui(16, .regular, look).foregroundStyle(palette.foreground)
-            .padding(.horizontal, 14).padding(.vertical, 10)
+        return Text(BlockView.mentioned(AttributedString(text), members, palette.link)).ui(16, .regular, look)
+            .foregroundStyle(palette.foreground).padding(.horizontal, 14).padding(.vertical, 10)
             .frame(maxWidth: look.mono ? .infinity : nil, alignment: .leading)
             .background(
                 look.mono ? palette.card : palette.amber.opacity(0.2), in: .rect(cornerRadius: look.mono ? 6 : 20)
@@ -131,14 +131,24 @@ internal struct BlockView: View {
         }
     }
 
-    internal static func mentioned(_ text: AttributedString, _ members: [Persona], _ tint: Color) -> AttributedString {
+    internal static func mentioned(
+        _ text: AttributedString, _ members: [Persona], _ tint: Color, token: Color? = nil
+    ) -> AttributedString {
         var text = text
-        for member in members {
-            var start = text.startIndex
-            while let range = text[start...].range(of: "@\(member.name)") {
-                text[range].foregroundColor = tint
+        let plain = String(text.characters)
+        let cast = members.map(\.api)
+        let typed = token != nil && MentionDraft(plain, members: cast).match != nil
+        for mention in Mentions.all(plain)
+        where Mentions.member(mention.key, cast) != nil || typed && mention.range.upperBound == plain.endIndex {
+            let start = text.index(
+                text.startIndex,
+                offsetByCharacters: plain.distance(from: plain.startIndex, to: mention.range.lowerBound))
+            let range = start..<text.index(start, offsetByCharacters: plain[mention.range].count)
+            text[range].foregroundColor = tint
+            if let token {
+                text[range].backgroundColor = token
+            } else {
                 text[range].inlinePresentationIntent = .stronglyEmphasized
-                start = range.upperBound
             }
         }
         return text

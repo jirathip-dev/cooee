@@ -6,7 +6,7 @@ extension Fixtures {
 
     public static var round: RoomRound {
         var round = RoomRound()
-        round.asked(kestrel, text: "Kestrel signs on the 28th.", when: .distantPast)
+        round.asked(kestrel, named: [], when: .distantPast)
         round.began("chief")
         round.replied("chief")
         round.began("coder")
@@ -75,7 +75,7 @@ extension RoomView {
 
     public static func asking() -> RoomView {
         var round = RoomRound()
-        round.asked(Fixtures.kestrel, text: "Where is Kestrel's revenue heading?", when: .distantPast)
+        round.asked(Fixtures.kestrel, named: [], when: .distantPast)
         round.began("chief")
         round.replied("chief")
         round.began("coder")
@@ -93,6 +93,28 @@ extension RoomView {
             scene: RoomScene(
                 title: "Kestrel launch", members: Fixtures.kestrel.map(Fixtures.persona), others: [], round: round,
                 items: items, inspecting: nil))
+    }
+}
+
+extension RoomView {
+    public static func mentioning() -> RoomView {
+        var scene = Fixtures.room
+        scene.round.replied("am")
+        scene.round.ended("done")
+        scene.items = [
+            scene.items[3],
+            .said(
+                id: 5, speaker: "am", time: "09:42",
+                markdown: [
+                    .text(
+                        "Pricing: a 3-year term at the Birch & Co rate, 8% off list. The order form is in kestrel/order.pdf."
+                    )
+                ]
+            ),
+            .divider(id: 6, text: RoomItems.ended(scene.round.turn, passed: ["Coder"])),
+        ]
+        scene.draft = "@Coder check Q3 with @Re"
+        return RoomView(scene: scene)
     }
 }
 
