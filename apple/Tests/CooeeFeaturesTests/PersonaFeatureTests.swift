@@ -71,10 +71,12 @@ internal struct PersonaFeatureTests {
         await store.receive(\.delegate.saved, saved)
         await store.send(.clearMemory)
         await store.receive(\.loaded) { $0.screen = cleared }
+        await store.send(.addSkill("inbox"))
+        await store.receive(\.loaded) { $0.screen = .object(["name": .string("inbox")]) }
         #expect(
             calls.all == [
                 "screen core /screens/persona/coder", "models", "save /screens/persona/coder Terse. air",
-                "clear /screens/persona/coder",
+                "clear /screens/persona/coder", "add_skill /screens/persona/coder",
             ])
     }
 
