@@ -1,0 +1,59 @@
+No runtime specified, using 'iOS 27.2 (27.2 - 24B8117) - com.apple.CoreSimulator.SimRuntime.iOS-27-2'
+== apple/e2e/steps/10-client.sh
+Building for debugging...
+[Computing dependencies]
+[Using on-disk description]
+[1 / 1]
+[1 / 3] CooeeCore
+[1 / 43] CooeeFeaturesTests-product
+[1 / 74] IssueReporting
+[1 / 74] SwiftNavigationMacros
+[1 / 58] CooeeCoreTests-product
+[1 / 48] OrderedCollections
+[1 / 40] Clocks
+[1 / 40] CustomDump
+[1 / 25] SwiftUINavigation
+[1 / 14] CooeeUI
+[1 / 5] CooeeFeaturesTests-product
+Build complete! (4.16 secs)
+◇ Test run started.
+↳ Testing Library Version: 2403
+↳ Target Platform: arm64e-apple-macos14.0
+➜ Suite LivePersonaTests skipped.
+◇ Suite LiveTests started.
+➜ Test aPersonaRoundTripsAndTheSimulatorsPersonasAreOnTheServer() skipped.
+◇ Test pairsListsAndStreamsAReply() started.
+✘ Test pairsListsAndStreamsAReply() recorded an issue at LiveTests.swift:8:6: Caught error: APIError(status: 303, text: "That code is wrong.")
+✘ Test pairsListsAndStreamsAReply() failed after 0.090 seconds with 1 issue.
+✘ Suite LiveTests failed after 0.090 seconds with 1 issue.
+✘ Test run with 2 tests in 2 suites failed after 0.090 seconds with 1 issue.
+Note: Some test targets reported failures:
+  - CooeeAPITests (Swift Testing)
+Exported 9 attachments for: LiveDroverUITests/testOpensDroversScreens():
+File: 5230390F-9A42-4DF2-AB60-C43EED055099.png, suggested name: "queue-offline-dark_0_0141395D-C012-4BBB-9050-DD235FEBFD41.png"
+File: 5B9FE18B-BE6C-4C92-819B-78F38A4D216E.png, suggested name: "lane-tapped-dark_0_C33CE773-E91B-45FC-BB67-7DEE99A96763.png"
+File: CDBBCB59-7F9D-4CE0-B3E3-50E0649C0C29.png, suggested name: "queue-row-open-dark_0_598FBE0B-7D35-4370-85C8-F00E80209502.png"
+File: C340A098-2023-4E82-8CBC-A89849F94FC7.png, suggested name: "queue-live-dark_0_866FB519-7028-419A-80B0-E4A88779938D.png"
+File: E2A47A19-6455-4771-BF7E-3447585FDB01.png, suggested name: "queue-dark_0_5142F671-C7B0-48C7-AE30-DAA29E9D01D4.png"
+File: 2570DCD3-C8F2-4D85-AD37-D88292D8FBA1.png, suggested name: "events-dark_0_FFD4D0CF-5B69-41C0-A557-3D3F08B29CDD.png"
+File: F313A616-627A-49CB-9EE3-A1B7B7C05031.png, suggested name: "persona-panel-dark_0_CFC114DC-6392-4341-8D9C-9D3B06B1ACB0.png"
+File: 970DDB41-F77A-42BC-A75F-0B32152E4E94.png, suggested name: "conductor-dark_0_06D4CD49-27BB-4C36-8495-26B5695798E7.png"
+File: 77349EA2-E38B-4525-B4EE-40640F780675.png, suggested name: "pair-paired-dark_0_C97621D0-E013-4FFD-B09C-7F5E0A1BA073.png"
+
+Generated manifest file with attachment details: /Users/jkmacmini/.local/share/herdsman/work/.build/.scratch/cooee-impl-236/shots2/dark/manifest.json
+Exported 9 attachments for: LiveDroverUITests/testOpensDroversScreens():
+File: 409D5A0C-9B5B-43F2-A1E8-FF3BF5B91A58.png, suggested name: "queue-offline-light_0_738556EF-CA32-4E12-AEBD-C2E3BAFC5EC4.png"
+File: FD7858D0-48B3-4F23-9B0E-80C3C63B3634.png, suggested name: "lane-tapped-light_0_C7C938EF-DB89-411E-A912-0D85467E77EE.png"
+File: 5A2D8E60-C157-4538-924E-DF74AD1D767F.png, suggested name: "queue-row-open-light_0_6C8D7AF2-7800-4352-B420-3BA39CE5FDB4.png"
+File: CAE954FA-6B47-452D-BE8F-3DF87F0603EE.png, suggested name: "queue-live-light_0_3285B306-C92B-49EF-9399-EDF74F3298CD.png"
+File: D97A1D09-1A12-43E9-AC15-1344FDD5F51A.png, suggested name: "queue-light_0_D350CAA0-E1F1-436B-BE15-FE4A10677670.png"
+File: 8D5C8966-98D6-4336-8A9D-8E7605441FB7.png, suggested name: "events-light_0_182B37DC-49A5-4999-AE6F-132177DEA99F.png"
+File: 871F23D5-D5C1-4DC5-8F43-42AB8943998E.png, suggested name: "persona-panel-light_0_434FF501-3AE2-4BBF-9151-2EA24EC77AD5.png"
+File: D1285DAF-F84E-4DC5-A66A-E3A3BCB5F02E.png, suggested name: "conductor-light_0_D34FCBBD-69C6-4158-80FA-E830718D2734.png"
+File: 8E3D2348-37C2-4E90-934D-39E8F52538AF.png, suggested name: "pair-paired-light_0_E7DB81ED-6378-4EC8-BEF9-0C283663503E.png"
+
+Generated manifest file with attachment details: /Users/jkmacmini/.local/share/herdsman/work/.build/.scratch/cooee-impl-236/shots2/light/manifest.json
+dark
+light
+serve.log
+exit=1

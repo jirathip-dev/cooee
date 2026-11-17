@@ -1,0 +1,266 @@
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	﻿2026-11-15T10:49:37.2295427Z ##[group]Run setsid --wait just test
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-15T10:49:37.2295741Z ^[[36;1msetsid --wait just test^[[0m
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-15T10:49:37.2342138Z shell: /usr/bin/bash -e {0}
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-15T10:49:37.2342303Z env:
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-15T10:49:37.2342421Z   CARGO_TERM_COLOR: always
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-15T10:49:37.2342549Z   REF: 
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-15T10:49:37.2342662Z   CARGO_HOME: /home/runner/.cargo
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-15T10:49:37.2342810Z   CARGO_INCREMENTAL: 0
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-15T10:49:37.2342937Z   CACHE_ON_FAILURE: false
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-15T10:49:37.2343065Z ##[endgroup]
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-15T10:49:37.2463419Z cargo test --workspace --locked
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-15T10:49:37.3587320Z ^[[1m^[[92m   Compiling^[[0m cooee-core v0.1.0 (/home/runner/work/cooee/cooee/crates/cooee-core)
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-15T10:49:38.8183007Z ^[[1m^[[92m   Compiling^[[0m cooee-machines v0.1.0 (/home/runner/work/cooee/cooee/crates/cooee-machines)
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-15T10:49:38.8200212Z ^[[1m^[[92m   Compiling^[[0m cooee-terminal v0.1.0 (/home/runner/work/cooee/cooee/crates/cooee-terminal)
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-15T10:49:39.2108156Z ^[[1m^[[92m   Compiling^[[0m cooee-server v0.1.0 (/home/runner/work/cooee/cooee/crates/cooee-server)
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-15T10:49:46.4224596Z ^[[1m^[[92m   Compiling^[[0m cooee v0.1.0 (/home/runner/work/cooee/cooee/crates/cooee)
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-15T10:49:58.5525285Z ^[[1m^[[92m    Finished^[[0m `test` profile [unoptimized + debuginfo] target(s) in 21.28s
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-15T10:49:58.5793920Z ^[[1m^[[92m     Running^[[0m unittests src/main.rs (target/debug/deps/cooee-9b306da653b94a17)
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-15T10:49:58.5804086Z 
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-15T10:49:58.5804216Z running 0 tests
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-15T10:49:58.5804678Z 
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-15T10:49:58.5804992Z test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-15T10:49:58.5805284Z 
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-15T10:49:58.5813567Z ^[[1m^[[92m     Running^[[0m tests/accounts.rs (target/debug/deps/accounts-00710270a9d0b9db)
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-15T10:49:58.5823036Z 
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-15T10:49:58.5823125Z running 2 tests
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-15T10:49:59.0073561Z test signed_in_only_while_the_status_says_so_not_from_the_last_sign_in_noted ... ok
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-15T10:49:59.0872973Z test add_account_listed_only_on_success_thread_pick_spawns_with_its_folder_sign_out_removes_it ... ok
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-15T10:49:59.0873311Z 
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-15T10:49:59.0874057Z test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.50s
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-15T10:49:59.0874366Z 
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-15T10:49:59.0878084Z ^[[1m^[[92m     Running^[[0m tests/accounts_env.rs (target/debug/deps/accounts_env-2302e0c86aaa77c9)
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-15T10:49:59.0885943Z 
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-15T10:49:59.0886039Z running 7 tests
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-15T10:49:59.1009393Z test a_token_file_goes_in_the_token_variable_only_at_0600_or_tighter ... ok
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-15T10:49:59.1189669Z test an_inherited_token_never_signs_a_folder_in ... ok
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-15T10:49:59.2074442Z test env_prints_a_folder_accounts_variable_and_reports_signed_out ... ok
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-15T10:49:59.2145897Z test unknown_provider_or_account_refuses_on_one_line ... ok
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-15T10:49:59.2227826Z test ls_json_lists_every_account_without_its_token ... ok
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-15T10:49:59.2776963Z test an_adopted_folder_is_an_account_until_dropped_and_the_folder_stays ... ok
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-15T10:49:59.2907681Z test ls_json_carries_usage_and_a_reading_past_its_reset_reads_zero_with_its_age ... ok
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-15T10:49:59.2907968Z 
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-15T10:49:59.2908177Z test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.20s
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-15T10:49:59.2908455Z 
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-15T10:49:59.2910829Z ^[[1m^[[92m     Running^[[0m tests/ask.rs (target/debug/deps/ask-9f2f0b43c804d909)
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-15T10:49:59.2918627Z 
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-15T10:49:59.2918712Z running 4 tests
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-15T10:49:59.4054574Z test a_persona_its_can_message_doesnt_name_is_not_allowed ... ok
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-15T10:49:59.4095621Z test an_allowed_ask_returns_the_reply_in_a_linked_thread_the_owner_reads_and_steers ... ok
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-15T10:49:59.4153605Z test an_asked_persona_may_ask_one_more_and_no_further ... ok
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-15T10:50:00.4204635Z test no_reply_in_time_is_a_timeout_and_a_session_that_cant_start_is_offline ... ok
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-15T10:50:00.4204994Z 
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-15T10:50:00.4205139Z test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.13s
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-15T10:50:00.4205587Z 
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-15T10:50:00.4212198Z ^[[1m^[[92m     Running^[[0m tests/chat.rs (target/debug/deps/chat-6d513def6b7d0430)
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-15T10:50:00.4220197Z 
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-15T10:50:00.4220287Z running 12 tests
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-15T10:50:00.5214812Z test a_reconnect_with_last_event_id_replays_without_gaps_or_duplicates ... ok
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-15T10:50:00.5226084Z test a_message_to_a_stopped_agent_is_refused_never_stored_as_sent ... ok
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-15T10:50:00.5485304Z test a_hanging_shed_approve_never_holds_another_thread ... ok
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-15T10:50:00.5950855Z test a_restarted_cooee_reattaches_to_its_terminals_and_catches_up ... ok
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-15T10:50:00.6119591Z test a_send_to_a_shed_on_another_protocol_says_why_in_the_chat_then_goes_through_once_fixed ... FAILED
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-15T10:50:00.6283371Z test a_tool_call_is_one_row_updated_in_place_and_a_retried_send_is_stored_once ... ok
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-15T10:50:00.6670238Z test a_shed_of_another_protocol_is_refused_naming_both_sides ... ok
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-15T10:50:00.6670927Z test fake_shed_server ... ignored, a server for apple/e2e, not a test
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-15T10:50:00.6823207Z test an_approval_is_sent_to_shed_once_however_often_it_is_tapped ... ok
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-15T10:50:00.6962330Z test cancel_ends_the_turn_and_writes_back_the_tool_call_in_progress ... ok
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-15T10:50:00.7066417Z test closing_a_thread_kills_and_removes_its_terminal ... ok
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-15T10:50:00.7426758Z test new_thread_runs_the_agent_in_an_allowed_folder_and_streams_the_reply ... ok
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-15T10:50:00.7427044Z 
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-15T10:50:00.7427119Z failures:
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-15T10:50:00.7427224Z 
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-15T10:50:00.7427468Z ---- a_send_to_a_shed_on_another_protocol_says_why_in_the_chat_then_goes_through_once_fixed stdout ----
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-15T10:50:00.7427802Z 
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-15T10:50:00.7428156Z thread 'a_send_to_a_shed_on_another_protocol_says_why_in_the_chat_then_goes_through_once_fixed' (4513) panicked at crates/cooee/tests/chat.rs:353:5:
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-15T10:50:00.7436458Z ["SHED_VERSION: cooee speaks shed 0.0.0 (4ac443d) protocol 1; the server runs 0.0.0 (fffffff) protocol 0, an older shed; restart shed serve; fix: cargo install --locked --git https://github.com/jirathip-dev/shed --rev 4ac443dbbcb51227dc9df2fb55e2f0834d6a91eb shed && shed serve", "SHED_VERSION: cooee speaks shed 0.0.0 (4ac443d) protocol 1; the server runs 0.0.0 (fffffff) protocol 0, an older shed; restart shed serve; fix: cargo install --locked --git https://github.com/jirathip-dev/shed --rev 4ac443dbbcb51227dc9df2fb55e2f0834d6a91eb shed && shed serve"]
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-15T10:50:00.7437525Z note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-15T10:50:00.7437692Z 
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-15T10:50:00.7437695Z 
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-15T10:50:00.7437739Z failures:
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-15T10:50:00.7437941Z     a_send_to_a_shed_on_another_protocol_says_why_in_the_chat_then_goes_through_once_fixed
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-15T10:50:00.7438120Z 
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-15T10:50:00.7438263Z test result: FAILED. 10 passed; 1 failed; 1 ignored; 0 measured; 0 filtered out; finished in 0.32s
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-15T10:50:00.7438448Z 
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-15T10:50:00.7440131Z ^[[1m^[[91merror^[[0m: test failed, to rerun pass `-p cooee --test chat`
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-15T10:50:00.7501798Z error: recipe `test` failed on line 14 with exit code 101
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-15T10:50:00.7516389Z ##[error]Process completed with exit code 101.
+stable (ubuntu-latest)	test	﻿2026-11-15T10:49:32.0425074Z ##[group]Run setsid --wait cargo test --workspace --locked
+stable (ubuntu-latest)	test	2026-11-15T10:49:32.0425567Z ^[[36;1msetsid --wait cargo test --workspace --locked^[[0m
+stable (ubuntu-latest)	test	2026-11-15T10:49:32.0445268Z shell: /usr/bin/bash -e {0}
+stable (ubuntu-latest)	test	2026-11-15T10:49:32.0445556Z env:
+stable (ubuntu-latest)	test	2026-11-15T10:49:32.0445772Z   CARGO_TERM_COLOR: always
+stable (ubuntu-latest)	test	2026-11-15T10:49:32.0446080Z   REF: 
+stable (ubuntu-latest)	test	2026-11-15T10:49:32.0446300Z   RUSTUP_TOOLCHAIN: stable
+stable (ubuntu-latest)	test	2026-11-15T10:49:32.0446701Z   CARGO_HOME: /home/runner/.cargo
+stable (ubuntu-latest)	test	2026-11-15T10:49:32.0446972Z   CARGO_INCREMENTAL: 0
+stable (ubuntu-latest)	test	2026-11-15T10:49:32.0447244Z   CACHE_ON_FAILURE: false
+stable (ubuntu-latest)	test	2026-11-15T10:49:32.0447509Z ##[endgroup]
+stable (ubuntu-latest)	test	2026-11-15T10:49:32.0786773Z ^[[1m^[[92m    Updating^[[0m crates.io index
+stable (ubuntu-latest)	test	2026-11-15T10:49:33.1343609Z ^[[1m^[[92m   Compiling^[[0m cooee-core v0.1.0 (/home/runner/work/cooee/cooee/crates/cooee-core)
+stable (ubuntu-latest)	test	2026-11-15T10:49:34.9398582Z ^[[1m^[[92m   Compiling^[[0m cooee-machines v0.1.0 (/home/runner/work/cooee/cooee/crates/cooee-machines)
+stable (ubuntu-latest)	test	2026-11-15T10:49:34.9402957Z ^[[1m^[[92m   Compiling^[[0m cooee-terminal v0.1.0 (/home/runner/work/cooee/cooee/crates/cooee-terminal)
+stable (ubuntu-latest)	test	2026-11-15T10:49:35.3639022Z ^[[1m^[[92m   Compiling^[[0m cooee-server v0.1.0 (/home/runner/work/cooee/cooee/crates/cooee-server)
+stable (ubuntu-latest)	test	2026-11-15T10:49:43.6059472Z ^[[1m^[[92m   Compiling^[[0m cooee v0.1.0 (/home/runner/work/cooee/cooee/crates/cooee)
+stable (ubuntu-latest)	test	2026-11-15T10:49:57.6356407Z ^[[1m^[[92m    Finished^[[0m `test` profile [unoptimized + debuginfo] target(s) in 25.57s
+stable (ubuntu-latest)	test	2026-11-15T10:49:57.6504218Z ^[[1m^[[92m     Running^[[0m unittests src/main.rs (target/debug/build/cooee/4536207da0469da6/out/cooee-4536207da0469da6)
+stable (ubuntu-latest)	test	2026-11-15T10:49:57.6514329Z 
+stable (ubuntu-latest)	test	2026-11-15T10:49:57.6514737Z running 0 tests
+stable (ubuntu-latest)	test	2026-11-15T10:49:57.6514955Z 
+stable (ubuntu-latest)	test	2026-11-15T10:49:57.6515417Z test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+stable (ubuntu-latest)	test	2026-11-15T10:49:57.6515880Z 
+stable (ubuntu-latest)	test	2026-11-15T10:49:57.6516466Z ^[[1m^[[92m     Running^[[0m tests/accounts.rs (target/debug/build/cooee/22a34c1d7ec8680b/out/accounts-22a34c1d7ec8680b)
+stable (ubuntu-latest)	test	2026-11-15T10:49:57.6523547Z 
+stable (ubuntu-latest)	test	2026-11-15T10:49:57.6523640Z running 2 tests
+stable (ubuntu-latest)	test	2026-11-15T10:49:57.8072650Z test signed_in_only_while_the_status_says_so_not_from_the_last_sign_in_noted ... ok
+stable (ubuntu-latest)	test	2026-11-15T10:49:57.9267380Z test add_account_listed_only_on_success_thread_pick_spawns_with_its_folder_sign_out_removes_it ... ok
+stable (ubuntu-latest)	test	2026-11-15T10:49:57.9267777Z 
+stable (ubuntu-latest)	test	2026-11-15T10:49:57.9268031Z test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.27s
+stable (ubuntu-latest)	test	2026-11-15T10:49:57.9268909Z 
+stable (ubuntu-latest)	test	2026-11-15T10:49:57.9273748Z ^[[1m^[[92m     Running^[[0m tests/accounts_env.rs (target/debug/build/cooee/8745e36eab7f6baf/out/accounts_env-8745e36eab7f6baf)
+stable (ubuntu-latest)	test	2026-11-15T10:49:57.9283458Z 
+stable (ubuntu-latest)	test	2026-11-15T10:49:57.9283678Z running 7 tests
+stable (ubuntu-latest)	test	2026-11-15T10:49:57.9342602Z test a_token_file_goes_in_the_token_variable_only_at_0600_or_tighter ... ok
+stable (ubuntu-latest)	test	2026-11-15T10:49:57.9542558Z test an_inherited_token_never_signs_a_folder_in ... ok
+stable (ubuntu-latest)	test	2026-11-15T10:49:58.0408338Z test env_prints_a_folder_accounts_variable_and_reports_signed_out ... ok
+stable (ubuntu-latest)	test	2026-11-15T10:49:58.0465572Z test unknown_provider_or_account_refuses_on_one_line ... ok
+stable (ubuntu-latest)	test	2026-11-15T10:49:58.0583167Z test ls_json_lists_every_account_without_its_token ... ok
+stable (ubuntu-latest)	test	2026-11-15T10:49:58.1104736Z test an_adopted_folder_is_an_account_until_dropped_and_the_folder_stays ... ok
+stable (ubuntu-latest)	test	2026-11-15T10:49:58.1233105Z test ls_json_carries_usage_and_a_reading_past_its_reset_reads_zero_with_its_age ... ok
+stable (ubuntu-latest)	test	2026-11-15T10:49:58.1233538Z 
+stable (ubuntu-latest)	test	2026-11-15T10:49:58.1233884Z test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.19s
+stable (ubuntu-latest)	test	2026-11-15T10:49:58.1234175Z 
+stable (ubuntu-latest)	test	2026-11-15T10:49:58.1235666Z ^[[1m^[[92m     Running^[[0m tests/ask.rs (target/debug/build/cooee/ef1bade73b9efbf5/out/ask-ef1bade73b9efbf5)
+stable (ubuntu-latest)	test	2026-11-15T10:49:58.1243135Z 
+stable (ubuntu-latest)	test	2026-11-15T10:49:58.1243757Z running 4 tests
+stable (ubuntu-latest)	test	2026-11-15T10:49:58.2366222Z test a_persona_its_can_message_doesnt_name_is_not_allowed ... ok
+stable (ubuntu-latest)	test	2026-11-15T10:49:58.2376404Z test an_allowed_ask_returns_the_reply_in_a_linked_thread_the_owner_reads_and_steers ... ok
+stable (ubuntu-latest)	test	2026-11-15T10:49:58.2456909Z test an_asked_persona_may_ask_one_more_and_no_further ... ok
+stable (ubuntu-latest)	test	2026-11-15T10:49:59.2571850Z test no_reply_in_time_is_a_timeout_and_a_session_that_cant_start_is_offline ... ok
+stable (ubuntu-latest)	test	2026-11-15T10:49:59.2572228Z 
+stable (ubuntu-latest)	test	2026-11-15T10:49:59.2572573Z test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.13s
+stable (ubuntu-latest)	test	2026-11-15T10:49:59.2572898Z 
+stable (ubuntu-latest)	test	2026-11-15T10:49:59.2579101Z ^[[1m^[[92m     Running^[[0m tests/chat.rs (target/debug/build/cooee/ca7aac46b1044a2a/out/chat-ca7aac46b1044a2a)
+stable (ubuntu-latest)	test	2026-11-15T10:49:59.2587691Z 
+stable (ubuntu-latest)	test	2026-11-15T10:49:59.2588021Z running 12 tests
+stable (ubuntu-latest)	test	2026-11-15T10:49:59.3507096Z test a_message_to_a_stopped_agent_is_refused_never_stored_as_sent ... ok
+stable (ubuntu-latest)	test	2026-11-15T10:49:59.3569769Z test a_reconnect_with_last_event_id_replays_without_gaps_or_duplicates ... ok
+stable (ubuntu-latest)	test	2026-11-15T10:49:59.3782516Z test a_hanging_shed_approve_never_holds_another_thread ... ok
+stable (ubuntu-latest)	test	2026-11-15T10:49:59.4212896Z test a_restarted_cooee_reattaches_to_its_terminals_and_catches_up ... ok
+stable (ubuntu-latest)	test	2026-11-15T10:49:59.4357064Z test a_send_to_a_shed_on_another_protocol_says_why_in_the_chat_then_goes_through_once_fixed ... FAILED
+stable (ubuntu-latest)	test	2026-11-15T10:49:59.4536014Z test a_tool_call_is_one_row_updated_in_place_and_a_retried_send_is_stored_once ... ok
+stable (ubuntu-latest)	test	2026-11-15T10:49:59.4961838Z test a_shed_of_another_protocol_is_refused_naming_both_sides ... ok
+stable (ubuntu-latest)	test	2026-11-15T10:49:59.4962574Z test fake_shed_server ... ignored, a server for apple/e2e, not a test
+stable (ubuntu-latest)	test	2026-11-15T10:49:59.5033951Z test an_approval_is_sent_to_shed_once_however_often_it_is_tapped ... ok
+stable (ubuntu-latest)	test	2026-11-15T10:49:59.5155690Z test cancel_ends_the_turn_and_writes_back_the_tool_call_in_progress ... ok
+stable (ubuntu-latest)	test	2026-11-15T10:49:59.5287814Z test closing_a_thread_kills_and_removes_its_terminal ... ok
+stable (ubuntu-latest)	test	2026-11-15T10:49:59.5714123Z test new_thread_runs_the_agent_in_an_allowed_folder_and_streams_the_reply ... ok
+stable (ubuntu-latest)	test	2026-11-15T10:49:59.5714803Z 
+stable (ubuntu-latest)	test	2026-11-15T10:49:59.5714934Z failures:
+stable (ubuntu-latest)	test	2026-11-15T10:49:59.5715167Z 
+stable (ubuntu-latest)	test	2026-11-15T10:49:59.5715904Z ---- a_send_to_a_shed_on_another_protocol_says_why_in_the_chat_then_goes_through_once_fixed stdout ----
+stable (ubuntu-latest)	test	2026-11-15T10:49:59.5716382Z 
+stable (ubuntu-latest)	test	2026-11-15T10:49:59.5717087Z thread 'a_send_to_a_shed_on_another_protocol_says_why_in_the_chat_then_goes_through_once_fixed' (4487) panicked at crates/cooee/tests/chat.rs:353:5:
+stable (ubuntu-latest)	test	2026-11-15T10:49:59.5719192Z ["SHED_VERSION: cooee speaks shed 0.0.0 (4ac443d) protocol 1; the server runs 0.0.0 (fffffff) protocol 0, an older shed; restart shed serve; fix: cargo install --locked --git https://github.com/jirathip-dev/shed --rev 4ac443dbbcb51227dc9df2fb55e2f0834d6a91eb shed && shed serve", "SHED_VERSION: cooee speaks shed 0.0.0 (4ac443d) protocol 1; the server runs 0.0.0 (fffffff) protocol 0, an older shed; restart shed serve; fix: cargo install --locked --git https://github.com/jirathip-dev/shed --rev 4ac443dbbcb51227dc9df2fb55e2f0834d6a91eb shed && shed serve"]
+stable (ubuntu-latest)	test	2026-11-15T10:49:59.5721602Z note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+stable (ubuntu-latest)	test	2026-11-15T10:49:59.5721869Z 
+stable (ubuntu-latest)	test	2026-11-15T10:49:59.5721874Z 
+stable (ubuntu-latest)	test	2026-11-15T10:49:59.5721995Z failures:
+stable (ubuntu-latest)	test	2026-11-15T10:49:59.5722346Z     a_send_to_a_shed_on_another_protocol_says_why_in_the_chat_then_goes_through_once_fixed
+stable (ubuntu-latest)	test	2026-11-15T10:49:59.5722970Z 
+stable (ubuntu-latest)	test	2026-11-15T10:49:59.5723225Z test result: FAILED. 10 passed; 1 failed; 1 ignored; 0 measured; 0 filtered out; finished in 0.31s
+stable (ubuntu-latest)	test	2026-11-15T10:49:59.5723585Z 
+stable (ubuntu-latest)	test	2026-11-15T10:49:59.5725003Z ^[[1m^[[91merror^[[0m: test failed, to rerun pass `-p cooee --test chat`
+stable (ubuntu-latest)	test	2026-11-15T10:49:59.5761341Z ##[error]Process completed with exit code 101.
+stable (macos-latest)	test	﻿2026-11-15T10:59:00.8725210Z ##[group]Run cargo test --workspace --locked
+stable (macos-latest)	test	2026-11-15T10:59:00.8725380Z ^[[36;1m cargo test --workspace --locked^[[0m
+stable (macos-latest)	test	2026-11-15T10:59:00.8759330Z shell: /bin/bash -e {0}
+stable (macos-latest)	test	2026-11-15T10:59:00.8759500Z env:
+stable (macos-latest)	test	2026-11-15T10:59:00.8759650Z   CARGO_TERM_COLOR: always
+stable (macos-latest)	test	2026-11-15T10:59:00.8759810Z   REF: 
+stable (macos-latest)	test	2026-11-15T10:59:00.8759960Z   RUSTUP_TOOLCHAIN: stable
+stable (macos-latest)	test	2026-11-15T10:59:00.8760120Z   TMPDIR: /tmp/mini-cooee/
+stable (macos-latest)	test	2026-11-15T10:59:00.8760370Z   CARGO_HOME: /Users/jkmacmini/services/actions-runner-cooee/_work/_tool/cooee/cargo
+stable (macos-latest)	test	2026-11-15T10:59:00.8761260Z   RUSTUP_HOME: /Users/jkmacmini/services/actions-runner-cooee/_work/_tool/cooee/rustup
+stable (macos-latest)	test	2026-11-15T10:59:00.8761630Z   GIT_CONFIG_GLOBAL: /Users/jkmacmini/services/actions-runner-cooee/_work/_temp/gitconfig
+stable (macos-latest)	test	2026-11-15T10:59:00.8761920Z   GIT_CONFIG_NOSYSTEM: 1
+stable (macos-latest)	test	2026-11-15T10:59:00.8762100Z   CARGO_NET_GIT_FETCH_WITH_CLI: true
+stable (macos-latest)	test	2026-11-15T10:59:00.8762320Z   DEVELOPER_DIR: /Applications/Xcode.app/Contents/Developer
+stable (macos-latest)	test	2026-11-15T10:59:00.8762570Z   CARGO_INCREMENTAL: 0
+stable (macos-latest)	test	2026-11-15T10:59:00.8762780Z   CACHE_ON_FAILURE: false
+stable (macos-latest)	test	2026-11-15T10:59:00.8762920Z ##[endgroup]
+stable (macos-latest)	test	2026-11-15T10:59:01.1652760Z ^[[1m^[[92m   Compiling^[[0m cooee-core v0.1.0 (/Users/jkmacmini/services/actions-runner-cooee/_work/cooee/cooee/crates/cooee-core)
+stable (macos-latest)	test	2026-11-15T10:59:03.9481490Z ^[[1m^[[92m   Compiling^[[0m cooee-machines v0.1.0 (/Users/jkmacmini/services/actions-runner-cooee/_work/cooee/cooee/crates/cooee-machines)
+stable (macos-latest)	test	2026-11-15T10:59:03.9482490Z ^[[1m^[[92m   Compiling^[[0m cooee-terminal v0.1.0 (/Users/jkmacmini/services/actions-runner-cooee/_work/cooee/cooee/crates/cooee-terminal)
+stable (macos-latest)	test	2026-11-15T10:59:04.0807170Z ^[[1m^[[92m   Compiling^[[0m cooee-server v0.1.0 (/Users/jkmacmini/services/actions-runner-cooee/_work/cooee/cooee/crates/cooee-server)
+stable (macos-latest)	test	2026-11-15T10:59:10.0182920Z ^[[1m^[[92m   Compiling^[[0m cooee v0.1.0 (/Users/jkmacmini/services/actions-runner-cooee/_work/cooee/cooee/crates/cooee)
+stable (macos-latest)	test	2026-11-15T10:59:15.4638960Z ^[[1m^[[92m    Finished^[[0m `test` profile [unoptimized + debuginfo] target(s) in 14.54s
+stable (macos-latest)	test	2026-11-15T10:59:15.4782360Z ^[[1m^[[92m     Running^[[0m unittests src/main.rs (target/debug/build/cooee/be8dee4d00d7f189/out/cooee-be8dee4d00d7f189)
+stable (macos-latest)	test	2026-11-15T10:59:15.7765870Z 
+stable (macos-latest)	test	2026-11-15T10:59:15.7766650Z running 0 tests
+stable (macos-latest)	test	2026-11-15T10:59:15.7767080Z 
+stable (macos-latest)	test	2026-11-15T10:59:15.7767820Z test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+stable (macos-latest)	test	2026-11-15T10:59:15.7768780Z 
+stable (macos-latest)	test	2026-11-15T10:59:15.7781240Z ^[[1m^[[92m     Running^[[0m tests/accounts.rs (target/debug/build/cooee/8108b4b6b2a50cf5/out/accounts-8108b4b6b2a50cf5)
+stable (macos-latest)	test	2026-11-15T10:59:16.1057890Z 
+stable (macos-latest)	test	2026-11-15T10:59:16.1058910Z running 2 tests
+stable (macos-latest)	test	2026-11-15T10:59:17.5821640Z test signed_in_only_while_the_status_says_so_not_from_the_last_sign_in_noted ... ok
+stable (macos-latest)	test	2026-11-15T10:59:18.3356350Z test add_account_listed_only_on_success_thread_pick_spawns_with_its_folder_sign_out_removes_it ... ok
+stable (macos-latest)	test	2026-11-15T10:59:18.3371470Z ^[[1m^[[92m     Running^[[0m tests/accounts_env.rs (target/debug/build/cooee/4b96b8bcddbd5eed/out/accounts_env-4b96b8bcddbd5eed)
+stable (macos-latest)	test	2026-11-15T10:59:18.3372310Z 
+stable (macos-latest)	test	2026-11-15T10:59:18.3386340Z test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.23s
+stable (macos-latest)	test	2026-11-15T10:59:18.3386760Z 
+stable (macos-latest)	test	2026-11-15T10:59:18.6380330Z 
+stable (macos-latest)	test	2026-11-15T10:59:18.6381170Z running 7 tests
+stable (macos-latest)	test	2026-11-15T10:59:18.6600510Z test a_token_file_goes_in_the_token_variable_only_at_0600_or_tighter ... ok
+stable (macos-latest)	test	2026-11-15T10:59:18.6706590Z test unknown_provider_or_account_refuses_on_one_line ... ok
+stable (macos-latest)	test	2026-11-15T10:59:18.6826610Z test an_inherited_token_never_signs_a_folder_in ... ok
+stable (macos-latest)	test	2026-11-15T10:59:18.7931330Z test ls_json_lists_every_account_without_its_token ... ok
+stable (macos-latest)	test	2026-11-15T10:59:18.7946440Z test env_prints_a_folder_accounts_variable_and_reports_signed_out ... ok
+stable (macos-latest)	test	2026-11-15T10:59:18.9063100Z test ls_json_carries_usage_and_a_reading_past_its_reset_reads_zero_with_its_age ... ok
+stable (macos-latest)	test	2026-11-15T10:59:18.9225600Z test an_adopted_folder_is_an_account_until_dropped_and_the_folder_stays ... ok
+stable (macos-latest)	test	2026-11-15T10:59:18.9226120Z 
+stable (macos-latest)	test	2026-11-15T10:59:18.9228560Z test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.28s
+stable (macos-latest)	test	2026-11-15T10:59:18.9229850Z 
+stable (macos-latest)	test	2026-11-15T10:59:18.9230390Z ^[[1m^[[92m     Running^[[0m tests/ask.rs (target/debug/build/cooee/c961e6adc7a320b3/out/ask-c961e6adc7a320b3)
+stable (macos-latest)	test	2026-11-15T10:59:19.2454300Z 
+stable (macos-latest)	test	2026-11-15T10:59:19.2455070Z running 4 tests
+stable (macos-latest)	test	2026-11-15T10:59:19.6477140Z test a_persona_its_can_message_doesnt_name_is_not_allowed ... ok
+stable (macos-latest)	test	2026-11-15T10:59:19.6997960Z test an_allowed_ask_returns_the_reply_in_a_linked_thread_the_owner_reads_and_steers ... ok
+stable (macos-latest)	test	2026-11-15T10:59:19.7040630Z test an_asked_persona_may_ask_one_more_and_no_further ... ok
+stable (macos-latest)	test	2026-11-15T10:59:20.7757810Z test no_reply_in_time_is_a_timeout_and_a_session_that_cant_start_is_offline ... ok
+stable (macos-latest)	test	2026-11-15T10:59:20.7758810Z 
+stable (macos-latest)	test	2026-11-15T10:59:20.7759490Z test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.53s
+stable (macos-latest)	test	2026-11-15T10:59:20.7760400Z 
+stable (macos-latest)	test	2026-11-15T10:59:20.7776270Z ^[[1m^[[92m     Running^[[0m tests/chat.rs (target/debug/build/cooee/253bfb5e8dc730df/out/chat-253bfb5e8dc730df)
+stable (macos-latest)	test	2026-11-15T10:59:21.1076490Z 
+stable (macos-latest)	test	2026-11-15T10:59:21.1102070Z running 12 tests
+stable (macos-latest)	test	2026-11-15T10:59:21.1103980Z test fake_shed_server ... ignored, a server for apple/e2e, not a test
+stable (macos-latest)	test	2026-11-15T10:59:21.6008240Z test new_thread_runs_the_agent_in_an_allowed_folder_and_streams_the_reply ... ok
+stable (macos-latest)	test	2026-11-15T10:59:21.6385530Z test closing_a_thread_kills_and_removes_its_terminal ... ok
+stable (macos-latest)	test	2026-11-15T10:59:21.6554710Z test a_send_to_a_shed_on_another_protocol_says_why_in_the_chat_then_goes_through_once_fixed ... FAILED
+stable (macos-latest)	test	2026-11-15T10:59:21.6558220Z test a_message_to_a_stopped_agent_is_refused_never_stored_as_sent ... ok
+stable (macos-latest)	test	2026-11-15T10:59:21.6634080Z test cancel_ends_the_turn_and_writes_back_the_tool_call_in_progress ... ok
+stable (macos-latest)	test	2026-11-15T10:59:21.6966380Z test an_approval_is_sent_to_shed_once_however_often_it_is_tapped ... ok
+stable (macos-latest)	test	2026-11-15T10:59:21.7171290Z test a_tool_call_is_one_row_updated_in_place_and_a_retried_send_is_stored_once ... ok
+stable (macos-latest)	test	2026-11-15T10:59:21.7197980Z test a_reconnect_with_last_event_id_replays_without_gaps_or_duplicates ... ok
+stable (macos-latest)	test	2026-11-15T10:59:21.7691530Z test a_shed_of_another_protocol_is_refused_naming_both_sides ... ok
+stable (macos-latest)	test	2026-11-15T10:59:21.7849920Z test a_restarted_cooee_reattaches_to_its_terminals_and_catches_up ... ok
+stable (macos-latest)	test	2026-11-15T10:59:21.8069040Z test a_hanging_shed_approve_never_holds_another_thread ... ok
+stable (macos-latest)	test	2026-11-15T10:59:21.8069490Z 
+stable (macos-latest)	test	2026-11-15T10:59:21.8069600Z failures:
+stable (macos-latest)	test	2026-11-15T10:59:21.8069720Z 
+stable (macos-latest)	test	2026-11-15T10:59:21.8070060Z ---- a_send_to_a_shed_on_another_protocol_says_why_in_the_chat_then_goes_through_once_fixed stdout ----
+stable (macos-latest)	test	2026-11-15T10:59:21.8070560Z 
+stable (macos-latest)	test	2026-11-15T10:59:21.8071050Z thread 'a_send_to_a_shed_on_another_protocol_says_why_in_the_chat_then_goes_through_once_fixed' (121046539) panicked at crates/cooee/tests/chat.rs:353:5:
+stable (macos-latest)	test	2026-11-15T10:59:21.8073960Z ["SHED_VERSION: cooee speaks shed 0.0.0 (4ac443d) protocol 1; the server runs 0.0.0 (fffffff) protocol 0, an older shed; restart shed serve; fix: cargo install --locked --git https://github.com/jirathip-dev/shed --rev 4ac443dbbcb51227dc9df2fb55e2f0834d6a91eb shed && launchctl kickstart -k gui/$(id -u)/dev.shed.serve", "SHED_VERSION: cooee speaks shed 0.0.0 (4ac443d) protocol 1; the server runs 0.0.0 (fffffff) protocol 0, an older shed; restart shed serve; fix: cargo install --locked --git https://github.com/jirathip-dev/shed --rev 4ac443dbbcb51227dc9df2fb55e2f0834d6a91eb shed && launchctl kickstart -k gui/$(id -u)/dev.shed.serve"]
+stable (macos-latest)	test	2026-11-15T10:59:21.8076590Z note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+stable (macos-latest)	test	2026-11-15T10:59:21.8076950Z 
+stable (macos-latest)	test	2026-11-15T10:59:21.8076950Z 
+stable (macos-latest)	test	2026-11-15T10:59:21.8077050Z failures:
+stable (macos-latest)	test	2026-11-15T10:59:21.8077420Z     a_send_to_a_shed_on_another_protocol_says_why_in_the_chat_then_goes_through_once_fixed
+stable (macos-latest)	test	2026-11-15T10:59:21.8077810Z 
+stable (macos-latest)	test	2026-11-15T10:59:21.8078100Z test result: FAILED. 10 passed; 1 failed; 1 ignored; 0 measured; 0 filtered out; finished in 0.70s
+stable (macos-latest)	test	2026-11-15T10:59:21.8078500Z 
+stable (macos-latest)	test	2026-11-15T10:59:21.8081580Z ^[[1m^[[91merror^[[0m: test failed, to rerun pass `-p cooee --test chat`
+stable (macos-latest)	test	2026-11-15T10:59:21.8134340Z ##[error]Process completed with exit code 101.

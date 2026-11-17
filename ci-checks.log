@@ -1,0 +1,14 @@
+dmg	skipping	0	https://github.com/jirathip-dev/cooee/actions/runs/43748874317/job/132918210000	
+mac-setup	skipping	0	https://github.com/jirathip-dev/cooee/actions/runs/43748874380/job/132918160713	
+nightly-red	skipping	0	https://github.com/jirathip-dev/cooee/actions/runs/43748874666/job/132918971470	
+release	skipping	0	https://github.com/jirathip-dev/cooee/actions/runs/43748874317/job/132918209735	
+arch-check / arch-check	pass	2m34s	https://github.com/jirathip-dev/cooee/actions/runs/43748874666/job/132918212948	
+stable (macos-latest)	skipping	0	https://github.com/jirathip-dev/cooee/actions/runs/43748874666/job/132918214163	
+msrv (ubuntu-latest)	pass	2m38s	https://github.com/jirathip-dev/cooee/actions/runs/43748874666/job/132918212863	
+stable (ubuntu-latest)	pass	2m13s	https://github.com/jirathip-dev/cooee/actions/runs/43748874666/job/132918212904	
+apple	pending	0	https://github.com/jirathip-dev/cooee/actions/runs/43748874380/job/132918209512	
+actionlint	pass	8s	https://github.com/jirathip-dev/cooee/actions/runs/43748874666/job/132918212874	
+lessons	pass	10s	https://github.com/jirathip-dev/cooee/actions/runs/43748876378/job/132918164249	
+scope	pass	9s	https://github.com/jirathip-dev/cooee/actions/runs/43748874317/job/132918159156	
+scope	pass	9s	https://github.com/jirathip-dev/cooee/actions/runs/43748874380/job/132918158965	
+scope	pass	9s	https://github.com/jirathip-dev/cooee/actions/runs/43748874666/job/132918159581	

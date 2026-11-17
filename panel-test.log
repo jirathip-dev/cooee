@@ -1,0 +1,69 @@
+Building for debugging...
+[Computing dependencies]
+[Using on-disk description]
+[1 / 1]
+[1 / 71] IssueReporting
+[2 / 16] CooeeFeatures
+[4 / 18] CooeeFeatures
+[13 / 27] CooeeFeatures
+/Users/jkmacmini/.local/share/drover/work/cooee/issue-236/apple/Sources/CooeeFeatures/AppFeature.swift:54:41: [1;33mwarning: [1;39mcannot use struct 'Date' in a property declaration member of a type not marked '@_implementationOnly'; 'Foundation' was not imported by this file[0;0m
+ [0;36m52 |[0;0m 
+ [0;36m53 |[0;0m     @Dependency(\.serverStore) private var serverStore
+ [0;36m54 |[0;0m     @Dependency(\.date.now) private var now
+    [0;36m|[0;0m                                         `- [1;33mwarning: [1;39mcannot use struct 'Date' in a property declaration member of a type not marked '@_implementationOnly'; 'Foundation' was not imported by this file[0;0m
+ [0;36m55 |[0;0m 
+ [0;36m56 |[0;0m     public init() {}
+
+Foundation.Date:2:15: [1;39mnote: [1;39mstruct declared here[0;0m
+ [0;36m1 |[0;0m @available(macOS 10.10, iOS 8.0, watchOS 2.0, tvOS 9.0, *)
+ [0;36m2 |[0;0m public struct Date : Comparable, Hashable, Equatable, Sendable {
+   [0;36m|[0;0m               `- [1;39mnote: [1;39mstruct declared here[0;0m
+ [0;36m3 |[0;0m     public static let timeIntervalBetween1970AndReferenceDate: Double
+ [0;36m4 |[0;0m     public static var timeIntervalSinceReferenceDate: TimeInterval { get }
+[18 / 32] CooeeUI
+[19 / 33] CooeeUI
+[24 / 39] CooeeApp
+[25 / 40] CooeeApp
+[28 / 44] CooeeApp
+/Users/jkmacmini/.local/share/drover/work/cooee/issue-236/apple/Sources/CooeeFeatures/AppFeature.swift:54:41: [1;33mwarning: [1;39mcannot use struct 'Date' in a property declaration member of a type not marked '@_implementationOnly'; 'Foundation' was not imported by this file[0;0m
+ [0;36m52 |[0;0m 
+ [0;36m53 |[0;0m     @Dependency(\.serverStore) private var serverStore
+ [0;36m54 |[0;0m     @Dependency(\.date.now) private var now
+    [0;36m|[0;0m                                         `- [1;33mwarning: [1;39mcannot use struct 'Date' in a property declaration member of a type not marked '@_implementationOnly'; 'Foundation' was not imported by this file[0;0m
+ [0;36m55 |[0;0m 
+ [0;36m56 |[0;0m     public init() {}
+
+Foundation.Date:2:15: [1;39mnote: [1;39mstruct declared here[0;0m
+ [0;36m1 |[0;0m @available(macOS 10.10, iOS 8.0, watchOS 2.0, tvOS 9.0, *)
+ [0;36m2 |[0;0m public struct Date : Comparable, Hashable, Equatable, Sendable {
+   [0;36m|[0;0m               `- [1;39mnote: [1;39mstruct declared here[0;0m
+ [0;36m3 |[0;0m     public static let timeIntervalBetween1970AndReferenceDate: Double
+ [0;36m4 |[0;0m     public static var timeIntervalSinceReferenceDate: TimeInterval { get }
+[29 / 44] CooeeFeatures
+[42 / 57] CooeeUI
+[48 / 70] CooeeFeaturesTests-product
+[50 / 70] CooeeFeaturesTests-product
+[52 / 70] CooeeUI
+[54 / 70] CooeeFeaturesTests-product
+[56 / 71] CooeeUI
+[56 / 71] CooeeFeaturesTests-product
+[58 / 71] CooeeUI
+[61 / 69] CooeeFeaturesTests-product
+[70 / 77] CooeeUITests-product
+[74 / 80] CooeeFeaturesTests-product
+[76 / 80] CooeeUITests-product
+Build complete! (33.42 secs)
+◇ Test run started.
+↳ Testing Library Version: 2403
+↳ Target Platform: arm64e-apple-macos14.0
+◇ Suite ChatPanelTests started.
+◇ Test aPickInTheSheetRunsOnceTheSheetHasGone() started.
+◇ Test theColumnOpensAPlaceOrAttachesAPluginAtOnce() started.
+◇ Test editOpensThePersonaSheetAndNewChatStartsOneWithThePersona() started.
+◇ Test allIssuesOpensTheWorkflowSheetOnceThePanelHasGone() started.
+✔ Test allIssuesOpensTheWorkflowSheetOnceThePanelHasGone() passed after 0.034 seconds.
+✔ Test aPickInTheSheetRunsOnceTheSheetHasGone() passed after 0.038 seconds.
+✔ Test theColumnOpensAPlaceOrAttachesAPluginAtOnce() passed after 0.041 seconds.
+✔ Test editOpensThePersonaSheetAndNewChatStartsOneWithThePersona() passed after 0.047 seconds.
+✔ Suite ChatPanelTests passed after 0.047 seconds.
+✔ Test run with 4 tests in 1 suite passed after 0.047 seconds.

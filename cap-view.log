@@ -1,0 +1,16 @@
+cooee: non-test lines 22053 / cap 27500 at staging 125a437, headroom 5447
+cooee: apple lines 14402 / cap 14316 at staging 125a437, headroom -86
+counted by `sh scripts/line-cap.sh`
+open PRs (src/ net):
+  #261 (PR #306): unknown (conflicts with staging or the script printed no cap)
+  issue-249-r2 (PR #398): +0 non-test lines, +3 apple lines (script)
+  #236 (PR #406): unknown (conflicts with staging or the script printed no cap)
+  #176 (PR #409): +0 non-test lines, +196 apple lines (script)
+  #221 (PR #411): unknown (conflicts with staging or the script printed no cap)
+  #477 (PR #480): +0 non-test lines, +0 apple lines (script)
+  #360 (PR #482): +192 non-test lines, +1 apple lines (script)
+  #478 (PR #483): +0 non-test lines, +1 apple lines (script)
+queued, no PR: #484, #486, #487, #485, #219, #220, #249, #166, #307, #364, #488
+non-test lines: sum of open PRs: +192; projected total 22245 / cap 27500, headroom 5255
+apple lines: sum of open PRs: +201; projected total 14603 / cap 14316, headroom -287
+ask options: 1. raise apple lines to 15103 in one orchestrator-filed issue (recommended) 2. trim

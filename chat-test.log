@@ -1,0 +1,24 @@
+   Compiling cooee-core v0.1.0 (/Users/jkmacmini/.local/share/drover/work/cooee/issue-236/crates/cooee-core)
+   Compiling cooee-machines v0.1.0 (/Users/jkmacmini/.local/share/drover/work/cooee/issue-236/crates/cooee-machines)
+   Compiling cooee-terminal v0.1.0 (/Users/jkmacmini/.local/share/drover/work/cooee/issue-236/crates/cooee-terminal)
+   Compiling cooee-server v0.1.0 (/Users/jkmacmini/.local/share/drover/work/cooee/issue-236/crates/cooee-server)
+   Compiling cooee v0.1.0 (/Users/jkmacmini/.local/share/drover/work/cooee/issue-236/crates/cooee)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 12.39s
+     Running tests/chat.rs (/Users/jkmacmini/.local/share/herdsman/work/.build/cooee-impl-236/debug/deps/chat-323341443d5ac5d1)
+
+running 12 tests
+test fake_shed_server ... ignored, a server for apple/e2e, not a test
+test cancel_ends_the_turn_and_writes_back_the_tool_call_in_progress ... ok
+test new_thread_runs_the_agent_in_an_allowed_folder_and_streams_the_reply ... ok
+test a_message_to_a_stopped_agent_is_refused_never_stored_as_sent ... ok
+test a_shed_of_another_protocol_is_refused_naming_both_sides ... ok
+test closing_a_thread_kills_and_removes_its_terminal ... ok
+test an_approval_is_sent_to_shed_once_however_often_it_is_tapped ... ok
+test a_send_to_a_shed_on_another_protocol_says_why_in_the_chat_then_goes_through_once_fixed ... ok
+test a_tool_call_is_one_row_updated_in_place_and_a_retried_send_is_stored_once ... ok
+test a_reconnect_with_last_event_id_replays_without_gaps_or_duplicates ... ok
+test a_restarted_cooee_reattaches_to_its_terminals_and_catches_up ... ok
+test a_hanging_shed_approve_never_holds_another_thread ... ok
+
+test result: ok. 11 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out; finished in 1.33s
+

@@ -1,0 +1,211 @@
+diff --git a/apple/Sources/CooeeUI/PanelContent.swift b/apple/Sources/CooeeUI/PanelContent.swift
+index c186384e0..6dffc6a7f 100644
+--- a/apple/Sources/CooeeUI/PanelContent.swift
++++ b/apple/Sources/CooeeUI/PanelContent.swift
+@@ -24,7 +24,8 @@ internal struct PanelContent: Sendable {
+     internal var terminal: [String] = []
+     internal var issues: [PanelIssue] = []
+     internal var moreIssues = 0
+-    internal var routines: [PanelRoutine] = []
++    internal var routines: [PanelRoutine]? = []
+     internal var places: [PanelPlace] = []
++    internal var attachable: [String] = []
+     internal var memory = 0
+ }
+diff --git a/apple/Sources/CooeeUI/PanelSections.swift b/apple/Sources/CooeeUI/PanelSections.swift
+index 0af69cc52..11661e726 100644
+--- a/apple/Sources/CooeeUI/PanelSections.swift
++++ b/apple/Sources/CooeeUI/PanelSections.swift
+@@ -3,14 +3,15 @@ import SwiftUI
+ internal struct PanelSections: View {
+     @Environment(\.look) internal var look
+     internal let content: PanelContent
++    internal var actions = PanelActions()
+ 
+     internal var body: some View {
+         VStack(spacing: 18) {
+             if !content.screen.isEmpty { screen }
+             if !content.terminal.isEmpty { terminal }
+             if !content.issues.isEmpty { workflow }
+-            routines
+-            if !content.places.isEmpty { places }
++            if let routines = content.routines { self.routines(routines) }
++            if !content.places.isEmpty || !content.attachable.isEmpty { places }
+         }
+     }
+ 
+@@ -57,15 +58,15 @@ internal struct PanelSections: View {
+ }
+ 
+ extension PanelSections {
+-    private var routines: some View {
++    private func routines(_ routines: [PanelRoutine]) -> some View {
+         VStack(alignment: .leading, spacing: 6) {
+             heading("Routines") {
+                 Text(look.mono ? "[+ add]" : "+ Add").ui(14, .semibold, look).foregroundStyle(look.palette.link)
+             }
+-            if !content.routines.isEmpty {
++            if !routines.isEmpty {
+                 Group2 {
+-                    ForEach(Array(content.routines.enumerated()), id: \.offset) { index, routine in
+-                        routineRow(routine, divider: index < content.routines.count - 1)
++                    ForEach(Array(routines.enumerated()), id: \.offset) { index, routine in
++                        routineRow(routine, divider: index < routines.count - 1)
+                     }
+                 }
+             }
+@@ -96,10 +97,24 @@ extension PanelSections {
+     private var places: some View {
+         Group2(header: "Places") {
+             ForEach(Array(content.places.enumerated()), id: \.offset) { index, place in
+-                SettingRow(
+-                    symbol: place.symbol, title: place.name, tint: look.palette.green, value: "\(place.count)",
+-                    divider: index < content.places.count - 1
+-                )
++                Button {
++                    actions.open(index)
++                } label: {
++                    SettingRow(
++                        symbol: place.symbol, title: place.name, tint: look.palette.green,
++                        value: place.count > 0 ? "\(place.count)" : "",
++                        divider: index < content.places.count - 1 || !content.attachable.isEmpty
++                    )
++                }
++                .buttonStyle(.plain)
++            }
++            ForEach(Array(content.attachable.enumerated()), id: \.offset) { index, name in
++                Button {
++                    actions.attach(index)
++                } label: {
++                    SettingRow(symbol: "plus", title: "Attach \(name)…", divider: index < content.attachable.count - 1)
++                }
++                .buttonStyle(.plain)
+             }
+         }
+     }
+diff --git a/apple/Sources/CooeeUI/PersonaPanel.swift b/apple/Sources/CooeeUI/PersonaPanel.swift
+index 25c845435..2408682dc 100644
+--- a/apple/Sources/CooeeUI/PersonaPanel.swift
++++ b/apple/Sources/CooeeUI/PersonaPanel.swift
+@@ -1,12 +1,23 @@
+ import CooeeCore
+ import SwiftUI
+ 
++internal struct PanelActions {
++    internal var close: () -> Void = {}
++    internal var edit: (() -> Void)?
++    internal var newChat: (() -> Void)?
++    internal var memory: (() -> Void)?
++    internal var stop: (() -> Void)?
++    internal var open: (Int) -> Void = { _ in }
++    internal var attach: (Int) -> Void = { _ in }
++}
++
+ public struct PersonaPanel: View {
+     @Environment(\.look) private var look
+     private let persona: Persona
+     private let content: PanelContent
+     private let column: Bool
+     private let end: Bool
++    private var actions = PanelActions(edit: {}, newChat: {}, memory: {})
+ 
+     public var body: some View {
+         let palette = look.palette
+@@ -16,7 +27,8 @@ public struct PersonaPanel: View {
+             }
+             header
+             Scroller(end: end) {
+-                PanelSections(content: content).padding(.horizontal, 16).padding(.top, 4).padding(.bottom, 16)
++                PanelSections(content: content, actions: actions).padding(.horizontal, 16).padding(.top, 4).padding(
++                    .bottom, 16)
+             }
+             footer.padding(.horizontal, 16).padding(.top, 10).padding(.bottom, column ? 16 : 30)
+                 .overlay(alignment: .top) { Rectangle().fill(palette.line).frame(height: 0.5) }
+@@ -31,6 +43,14 @@ public struct PersonaPanel: View {
+         self.column = column
+         self.end = end
+     }
++
++    internal init(persona: Persona, content: PanelContent, column: Bool, actions: PanelActions) {
++        self.persona = persona
++        self.content = content
++        self.column = column
++        self.actions = actions
++        end = false
++    }
+ }
+ 
+ extension PersonaPanel {
+@@ -42,40 +62,50 @@ extension PersonaPanel {
+                 AgentChip(persona: persona)
+             }
+             Spacer(minLength: 4)
+-            if column {
+-                RoundButton(symbol: "sidebar.right", ascii: "]", size: 34).accessibilityLabel("Hide panel")
+-            } else {
+-                RoundButton(symbol: "xmark", ascii: "x", size: 36).accessibilityLabel("Close")
++            Button(action: actions.close) {
++                if column {
++                    RoundButton(symbol: "sidebar.right", ascii: "]", size: 34)
++                } else {
++                    RoundButton(symbol: "xmark", ascii: "x", size: 36)
++                }
+             }
++            .buttonStyle(.plain).accessibilityLabel(column ? "Hide panel" : "Close")
+         }
+         .padding(.horizontal, 16).padding(.vertical, 10)
+     }
+ 
+     private var footer: some View {
+-        HStack(spacing: 10) {
+-            action("pencil", "Edit")
+-            action("square.and.pencil", "New chat")
+-            action("brain.head.profile", content.memory > 0 ? "Memory · \(content.memory)" : "Memory")
++        let memory = content.memory > 0 ? "Memory · \(content.memory)" : "Memory"
++        return HStack(spacing: 10) {
++            if let edit = actions.edit { action("pencil", "Edit", "Edit \(persona.name)", edit) }
++            if let newChat = actions.newChat {
++                action("square.and.pencil", "New chat", "New chat with \(persona.name)", newChat)
++            }
++            if let open = actions.memory { action("brain.head.profile", memory, memory, open) }
++            if let stop = actions.stop { action("stop.fill", "Stop", "Stop \(persona.name)", stop) }
+         }
+     }
+ 
+-    private func action(_ symbol: String, _ title: String) -> some View {
++    private func action(_ symbol: String, _ title: String, _ label: String, _ run: @escaping () -> Void) -> some View {
+         let palette = look.palette
+-        return VStack(spacing: 6) {
+-            if look.mono {
+-                Text("[\(title.lowercased())]").ui(13, .semibold, look)
+-            } else {
+-                Image(systemName: symbol).font(.system(size: 17, weight: .semibold))
+-                Text(title).ui(12, .medium, look).lineLimit(1)
++        return Button(action: run) {
++            VStack(spacing: 6) {
++                if look.mono {
++                    Text("[\(title.lowercased())]").ui(13, .semibold, look)
++                } else {
++                    Image(systemName: symbol).font(.system(size: 17, weight: .semibold))
++                    Text(title).ui(12, .medium, look).lineLimit(1)
++                }
++            }
++            .foregroundStyle(palette.link).frame(maxWidth: .infinity).frame(height: 64)
++            .background(
++                palette.card.opacity(look.style == .modern ? 0.75 : 1), in: .rect(cornerRadius: look.mono ? 0 : 16)
++            )
++            .overlay {
++                if look.mono { Rectangle().strokeBorder(palette.edge, lineWidth: 1) }
+             }
+         }
+-        .foregroundStyle(palette.link).frame(maxWidth: .infinity).frame(height: 64)
+-        .background(
+-            palette.card.opacity(look.style == .modern ? 0.75 : 1), in: .rect(cornerRadius: look.mono ? 0 : 16)
+-        )
+-        .overlay {
+-            if look.mono { Rectangle().strokeBorder(palette.edge, lineWidth: 1) }
+-        }
++        .buttonStyle(.plain).accessibilityLabel(label)
+     }
+ 
+     @ViewBuilder private var background: some View {

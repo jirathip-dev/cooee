@@ -1,0 +1,511 @@
+Building for debugging...
+[Computing dependencies]
+[Pre-planning 1 / 1306]
+[Planning 128 / 1306]
+[Planning deferred tasks]
+[Constructing 2681 / 2968]
+[1 / 1]
+[1 / 36] CooeeAPITests-product
+[1 / 135] SwiftUINavigation
+[31 / 192] CooeeCore
+[35 / 189] UIKitNavigationShim
+[41 / 193] Sharing1
+[49 / 194] CasePathsMacrosSupport
+[56 / 201] PerceptionMacros
+[58 / 207] DependenciesMacrosPlugin
+[63 / 240] IssueReporting
+[65 / 266] CooeeCore
+[66 / 266] PerceptionMacros
+[70 / 266] CasePathsMacrosSupport
+[72 / 266] IssueReporting
+[78 / 267] ConcurrencyExtras
+[83 / 267] PerceptionMacros
+[84 / 267] IssueReporting
+[86 / 267] IssueReporting
+[91 / 268] IssueReporting
+[94 / 277] PerceptionCore
+[107 / 277] InternalCollectionsUtilities
+[110 / 277] InternalCollectionsUtilities
+[112 / 280] OrderedCollections
+[116 / 292] DependenciesMacrosPlugin
+[118 / 292] InternalCollectionsUtilities
+[122 / 305] CasePathsCore
+[126 / 305] PerceptionCore
+[128 / 331] CustomDump
+[129 / 331] PerceptionCore
+[133 / 331] PerceptionCore
+[134 / 331] PerceptionCore
+[136 / 331] PerceptionCore
+[140 / 331] OrderedCollections
+[142 / 331] OrderedCollections
+[146 / 332] PerceptionCore
+[151 / 333] CustomDump
+[160 / 334] CustomDump
+[162 / 334] CustomDump
+[163 / 334] CustomDump
+[164 / 334] CustomDump
+[166 / 334] CustomDump
+[172 / 334] PerceptionCore
+[173 / 334] CooeeCore
+[174 / 334] CooeeCore
+[176 / 337] CooeeCoreTests-product
+[180 / 347] OrderedCollections
+[182 / 347] CooeeCore
+[184 / 347] CooeeAPI
+[190 / 347] OrderedCollections
+[193 / 348] CooeeCore
+[202 / 354] CooeeAPI
+[206 / 367] IdentifiedCollections
+[209 / 367] IdentifiedCollections
+[212 / 367] IdentifiedCollections
+[214 / 367] IdentifiedCollections
+[215 / 367] IdentifiedCollections
+[218 / 367] CooeeCore
+[223 / 373] Clocks
+[224 / 373] ConcurrencyExtras
+[229 / 373] IdentifiedCollections
+[230 / 373] IdentifiedCollections
+[237 / 387] ComposableArchitectureMacros
+[242 / 396] IdentifiedCollections
+[247 / 396] ComposableArchitectureMacros
+[252 / 396] CombineSchedulers
+[256 / 396] CombineSchedulers
+[260 / 397] CombineSchedulers
+[269 / 398] Clocks
+[271 / 401] Dependencies
+[274 / 401] Clocks
+[279 / 401] CasePathsCore
+[281 / 401] CasePathsCore
+[284 / 401] CasePathsCore
+[289 / 401] InternalCollectionsUtilities
+[295 / 414] CasePathsCore
+[301 / 414] Dependencies
+[308 / 422] Perception
+[309 / 422] DependenciesMacros
+[313 / 425] Perception
+[315 / 429] Perception
+[326 / 433] IssueReporting
+[329 / 429] PerceptionCore
+[337 / 430] Perception
+[345 / 435] CasePathsMacros
+[353 / 440] DependenciesMacros
+[363 / 453] DependenciesMacros
+[367 / 466] CooeeCoreTests-product
+[369 / 466] CooeeCoreTests-product
+[372 / 479] Sharing
+[373 / 479] SwiftNavigationMacros
+[374 / 479] Sharing
+[375 / 479] Sharing
+[377 / 479] Sharing
+[379 / 479] Sharing
+[380 / 479] Sharing
+[383 / 480] CooeeAPITests-product
+[394 / 479] Dependencies
+[396 / 481] Sharing
+[398 / 481] Sharing
+[404 / 483] CooeeCoreTests-product
+[405 / 483] CooeeCoreTests-product
+[407 / 483] CooeeAPITests-product
+[407 / 483] CooeeCoreTests-product
+[408 / 483] CooeeAPITests-product
+[410 / 483] CooeeAPITests-product
+[412 / 483] CooeeAPITests-product
+[414 / 483] CooeeCoreTests-product
+[416 / 483] DependenciesMacros
+[421 / 485] CooeeCoreTests-product
+[423 / 489] CooeeAPITests-product
+[429 / 496] CasePaths
+[430 / 496] CooeeAPITests-product
+[430 / 496] CasePaths
+[434 / 500] CasePaths
+[436 / 500] SwiftNavigation
+[447 / 513] SwiftNavigation
+[449 / 513] SwiftNavigation
+[451 / 513] SwiftNavigation
+[451 / 513] CooeeCoreTests-product
+[453 / 511] SwiftNavigation
+[458 / 518] UIKitNavigation
+[472 / 531] UIKitNavigation
+[473 / 531] UIKitNavigation
+[476 / 534] SwiftUINavigation
+[486 / 547] SwiftUINavigation
+[487 / 547] SwiftUINavigation
+[489 / 547] SwiftUINavigation
+[494 / 545] SwiftUINavigation
+[497 / 548] SwiftUINavigation
+[499 / 548] ComposableArchitecture
+[512 / 561] ComposableArchitecture
+[516 / 565] ComposableArchitecture
+[516 / 565] CooeeFeatures
+[528 / 578] CooeeFeatures
+[529 / 578] CooeeFeatures
+[531 / 578] CooeeFeatures
+/Users/jkmacmini/.local/share/drover/work/cooee/issue-236/apple/Sources/CooeeFeatures/AppFeature.swift:54:41: [1;33mwarning: [1;39mcannot use struct 'Date' in a property declaration member of a type not marked '@_implementationOnly'; 'Foundation' was not imported by this file[0;0m
+ [0;36m52 |[0;0m 
+ [0;36m53 |[0;0m     @Dependency(\.serverStore) private var serverStore
+ [0;36m54 |[0;0m     @Dependency(\.date.now) private var now
+    [0;36m|[0;0m                                         `- [1;33mwarning: [1;39mcannot use struct 'Date' in a property declaration member of a type not marked '@_implementationOnly'; 'Foundation' was not imported by this file[0;0m
+ [0;36m55 |[0;0m 
+ [0;36m56 |[0;0m     public init() {}
+
+Foundation.Date:2:15: [1;39mnote: [1;39mstruct declared here[0;0m
+ [0;36m1 |[0;0m @available(macOS 10.10, iOS 8.0, watchOS 2.0, tvOS 9.0, *)
+ [0;36m2 |[0;0m public struct Date : Comparable, Hashable, Equatable, Sendable {
+   [0;36m|[0;0m               `- [1;39mnote: [1;39mstruct declared here[0;0m
+ [0;36m3 |[0;0m     public static let timeIntervalBetween1970AndReferenceDate: Double
+ [0;36m4 |[0;0m     public static var timeIntervalSinceReferenceDate: TimeInterval { get }
+[537 / 580] CooeeUI
+[549 / 593] CooeeUI
+[550 / 593] CooeeUI
+[551 / 593] CooeeUI
+[556 / 595] CooeeUITests-product
+[556 / 593] CooeeApp
+[559 / 598] CooeeApp
+[560 / 598] CooeeApp
+[561 / 598] CooeeApp
+[563 / 598] CooeeApp
+[565 / 600] CooeeApp
+[565 / 600] CooeeUI
+[566 / 600] CooeeUI
+/Users/jkmacmini/.local/share/drover/work/cooee/issue-236/apple/Sources/CooeeFeatures/AppFeature.swift:54:41: [1;33mwarning: [1;39mcannot use struct 'Date' in a property declaration member of a type not marked '@_implementationOnly'; 'Foundation' was not imported by this file[0;0m
+ [0;36m52 |[0;0m 
+ [0;36m53 |[0;0m     @Dependency(\.serverStore) private var serverStore
+ [0;36m54 |[0;0m     @Dependency(\.date.now) private var now
+    [0;36m|[0;0m                                         `- [1;33mwarning: [1;39mcannot use struct 'Date' in a property declaration member of a type not marked '@_implementationOnly'; 'Foundation' was not imported by this file[0;0m
+ [0;36m55 |[0;0m 
+ [0;36m56 |[0;0m     public init() {}
+
+Foundation.Date:2:15: [1;39mnote: [1;39mstruct declared here[0;0m
+ [0;36m1 |[0;0m @available(macOS 10.10, iOS 8.0, watchOS 2.0, tvOS 9.0, *)
+ [0;36m2 |[0;0m public struct Date : Comparable, Hashable, Equatable, Sendable {
+   [0;36m|[0;0m               `- [1;39mnote: [1;39mstruct declared here[0;0m
+ [0;36m3 |[0;0m     public static let timeIntervalBetween1970AndReferenceDate: Double
+ [0;36m4 |[0;0m     public static var timeIntervalSinceReferenceDate: TimeInterval { get }
+[567 / 600] CooeeFeatures
+[572 / 598] CooeeUI
+[577 / 596] CooeeApp-product
+[578 / 598] CooeeFeaturesTests-product
+[591 / 621] CooeeUITests-product
+[592 / 621] CooeeUITests-product
+[594 / 620] CooeeFeaturesTests-product
+[600 / 620] CooeeUITests-product
+[601 / 620] CooeeUITests-product
+[608 / 619] CooeeUITests-product
+[609 / 619] CooeeUITests-product
+[611 / 619] CooeeFeaturesTests-product
+[613 / 619] CooeeUITests-product
+[615 / 619] CooeeUITests-product
+[615 / 619] CooeeFeaturesTests-product
+Build complete! (81.07 secs)
+◇ Test run started.
+↳ Testing Library Version: 2403
+↳ Target Platform: arm64e-apple-macos14.0
+◇ Suite SnapshotTests started.
+◇ Test frameMatchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → home-dark to frameMatchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → chat-streaming-dark to frameMatchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → chat-card-dark to frameMatchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → chat-cards-more-dark to frameMatchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → chat-conductor-dark to frameMatchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → persona-dark to frameMatchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → avatar-menu-dark to frameMatchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → persona-panel-dark to frameMatchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → pair-welcome-dark to frameMatchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → pair-scan-dark to frameMatchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → pair-nearby-dark to frameMatchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → pair-address-dark to frameMatchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → pair-waiting-dark to frameMatchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → pair-paired-dark to frameMatchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → home-light to frameMatchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → chat-streaming-light to frameMatchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → chat-card-light to frameMatchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → chat-cards-more-light to frameMatchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → chat-conductor-light to frameMatchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → persona-light to frameMatchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → avatar-menu-light to frameMatchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → persona-panel-light to frameMatchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → pair-welcome-light to frameMatchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → pair-scan-light to frameMatchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → pair-nearby-light to frameMatchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → pair-address-light to frameMatchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → pair-waiting-light to frameMatchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → pair-paired-light to frameMatchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → mac-setup-welcome to frameMatchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → mac-setup-folders to frameMatchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → mac-setup-signins to frameMatchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → mac-setup-tailscale to frameMatchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → mac-setup-qr to frameMatchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → mac-setup-approve to frameMatchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → mac-connect to frameMatchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → mac-window-dark to frameMatchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → mac-window-light to frameMatchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → mac-persona-panel-dark to frameMatchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → room-dark to frameMatchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → room-light to frameMatchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → room-create-dark to frameMatchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → room-create-light to frameMatchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → room-member-dark to frameMatchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → room-home-dark to frameMatchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → room-pinned-dark to frameMatchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → room-pinned-terminal-dark to frameMatchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → room-pinned-scene-light to frameMatchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → room-terminal-dark to frameMatchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → room-scene-light to frameMatchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → room-ask-dark to frameMatchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → room-ask-terminal-dark to frameMatchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → room-ask-scene-light to frameMatchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → room-wide-dark to frameMatchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → asked-dark to frameMatchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → asked-light to frameMatchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → linked-dark to frameMatchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → linked-terminal-dark to frameMatchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → linked-wide-light to frameMatchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → room-terminal-wide to frameMatchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → style-terminal-home-dark to frameMatchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → style-terminal-chat-dark to frameMatchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → style-terminal-card-dark to frameMatchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → style-terminal-persona-dark to frameMatchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → style-scene-home-light to frameMatchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → style-scene-chat-light to frameMatchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → style-scene-card-light to frameMatchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → persona-panel-end-dark to frameMatchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → persona-panel-empty-dark to frameMatchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → persona-panel-terminal-dark to frameMatchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → persona-panel-scene-light to frameMatchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → sign-ins-dark to frameMatchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → sign-ins-light to frameMatchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → devices-dark to frameMatchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → devices-light to frameMatchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → machines-dark to frameMatchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → machines-light to frameMatchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → plugins-dark to frameMatchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → plugins-light to frameMatchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → mac-sign-ins to frameMatchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → mac-devices to frameMatchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → mac-machines to frameMatchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → mac-plugins to frameMatchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → terminal-dark to frameMatchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → you-terminal-dark to frameMatchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → you-terminal-terminal-dark to frameMatchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → you-terminal-scene-light to frameMatchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → sign-ins-terminal-dark to frameMatchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → machines-scene-light to frameMatchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → mac-plugins-light to frameMatchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → missing-poster-confirm@modern to frameMatchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → missing-poster-confirm@terminal to frameMatchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → missing-poster-confirm@scene to frameMatchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → missing-poster-permissions@modern to frameMatchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → missing-poster-permissions@terminal to frameMatchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → missing-poster-permissions@scene to frameMatchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → missing-poster-run@modern to frameMatchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → missing-poster-run@terminal to frameMatchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → missing-poster-run@scene to frameMatchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → missing-poster-secret@modern to frameMatchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → missing-poster-secret@terminal to frameMatchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → missing-poster-secret@scene to frameMatchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → queue-scene-dark to frameMatchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → queue-modern-dark to frameMatchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → queue-terminal-dark to frameMatchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → queue-scene-light to frameMatchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → queue-modern-light to frameMatchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → queue-terminal-light to frameMatchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → queue-mac-scene-dark to frameMatchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → queue-mac-modern-dark to frameMatchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → queue-mac-terminal-dark to frameMatchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → queue-figures-modern-dark to frameMatchesTheDesign(_:) started.
+✔ Test frameMatchesTheDesign(_:) with 111 test cases passed after 175.794 seconds.
+◇ Test frameFitsInEveryStyle(_:) started.
+◇ Test case passing 1 argument frame → home-dark@modern to frameFitsInEveryStyle(_:) started.
+◇ Test case passing 1 argument frame → home-dark@terminal to frameFitsInEveryStyle(_:) started.
+◇ Test case passing 1 argument frame → home-dark@scene to frameFitsInEveryStyle(_:) started.
+◇ Test case passing 1 argument frame → chat-streaming-dark@modern to frameFitsInEveryStyle(_:) started.
+◇ Test case passing 1 argument frame → chat-streaming-dark@terminal to frameFitsInEveryStyle(_:) started.
+◇ Test case passing 1 argument frame → chat-streaming-dark@scene to frameFitsInEveryStyle(_:) started.
+◇ Test case passing 1 argument frame → chat-card-dark@modern to frameFitsInEveryStyle(_:) started.
+◇ Test case passing 1 argument frame → chat-card-dark@terminal to frameFitsInEveryStyle(_:) started.
+◇ Test case passing 1 argument frame → chat-card-dark@scene to frameFitsInEveryStyle(_:) started.
+◇ Test case passing 1 argument frame → chat-cards-more-dark@modern to frameFitsInEveryStyle(_:) started.
+◇ Test case passing 1 argument frame → chat-cards-more-dark@terminal to frameFitsInEveryStyle(_:) started.
+◇ Test case passing 1 argument frame → chat-cards-more-dark@scene to frameFitsInEveryStyle(_:) started.
+◇ Test case passing 1 argument frame → chat-conductor-dark@modern to frameFitsInEveryStyle(_:) started.
+◇ Test case passing 1 argument frame → chat-conductor-dark@terminal to frameFitsInEveryStyle(_:) started.
+◇ Test case passing 1 argument frame → chat-conductor-dark@scene to frameFitsInEveryStyle(_:) started.
+◇ Test case passing 1 argument frame → persona-dark@modern to frameFitsInEveryStyle(_:) started.
+◇ Test case passing 1 argument frame → persona-dark@terminal to frameFitsInEveryStyle(_:) started.
+◇ Test case passing 1 argument frame → persona-dark@scene to frameFitsInEveryStyle(_:) started.
+◇ Test case passing 1 argument frame → avatar-menu-dark@modern to frameFitsInEveryStyle(_:) started.
+◇ Test case passing 1 argument frame → avatar-menu-dark@terminal to frameFitsInEveryStyle(_:) started.
+◇ Test case passing 1 argument frame → avatar-menu-dark@scene to frameFitsInEveryStyle(_:) started.
+◇ Test case passing 1 argument frame → persona-panel-dark@modern to frameFitsInEveryStyle(_:) started.
+◇ Test case passing 1 argument frame → persona-panel-dark@terminal to frameFitsInEveryStyle(_:) started.
+◇ Test case passing 1 argument frame → persona-panel-dark@scene to frameFitsInEveryStyle(_:) started.
+◇ Test case passing 1 argument frame → pair-welcome-dark@modern to frameFitsInEveryStyle(_:) started.
+◇ Test case passing 1 argument frame → pair-welcome-dark@terminal to frameFitsInEveryStyle(_:) started.
+◇ Test case passing 1 argument frame → pair-welcome-dark@scene to frameFitsInEveryStyle(_:) started.
+◇ Test case passing 1 argument frame → pair-scan-dark@modern to frameFitsInEveryStyle(_:) started.
+◇ Test case passing 1 argument frame → pair-scan-dark@terminal to frameFitsInEveryStyle(_:) started.
+◇ Test case passing 1 argument frame → pair-scan-dark@scene to frameFitsInEveryStyle(_:) started.
+◇ Test case passing 1 argument frame → pair-nearby-dark@modern to frameFitsInEveryStyle(_:) started.
+◇ Test case passing 1 argument frame → pair-nearby-dark@terminal to frameFitsInEveryStyle(_:) started.
+◇ Test case passing 1 argument frame → pair-nearby-dark@scene to frameFitsInEveryStyle(_:) started.
+◇ Test case passing 1 argument frame → pair-address-dark@modern to frameFitsInEveryStyle(_:) started.
+◇ Test case passing 1 argument frame → pair-address-dark@terminal to frameFitsInEveryStyle(_:) started.
+◇ Test case passing 1 argument frame → pair-address-dark@scene to frameFitsInEveryStyle(_:) started.
+◇ Test case passing 1 argument frame → pair-waiting-dark@modern to frameFitsInEveryStyle(_:) started.
+◇ Test case passing 1 argument frame → pair-waiting-dark@terminal to frameFitsInEveryStyle(_:) started.
+◇ Test case passing 1 argument frame → pair-waiting-dark@scene to frameFitsInEveryStyle(_:) started.
+◇ Test case passing 1 argument frame → pair-paired-dark@modern to frameFitsInEveryStyle(_:) started.
+◇ Test case passing 1 argument frame → pair-paired-dark@terminal to frameFitsInEveryStyle(_:) started.
+◇ Test case passing 1 argument frame → pair-paired-dark@scene to frameFitsInEveryStyle(_:) started.
+◇ Test case passing 1 argument frame → home-light@modern to frameFitsInEveryStyle(_:) started.
+◇ Test case passing 1 argument frame → home-light@terminal to frameFitsInEveryStyle(_:) started.
+◇ Test case passing 1 argument frame → home-light@scene to frameFitsInEveryStyle(_:) started.
+◇ Test case passing 1 argument frame → chat-streaming-light@modern to frameFitsInEveryStyle(_:) started.
+◇ Test case passing 1 argument frame → chat-streaming-light@terminal to frameFitsInEveryStyle(_:) started.
+◇ Test case passing 1 argument frame → chat-streaming-light@scene to frameFitsInEveryStyle(_:) started.
+◇ Test case passing 1 argument frame → chat-card-light@modern to frameFitsInEveryStyle(_:) started.
+◇ Test case passing 1 argument frame → chat-card-light@terminal to frameFitsInEveryStyle(_:) started.
+◇ Test case passing 1 argument frame → chat-card-light@scene to frameFitsInEveryStyle(_:) started.
+◇ Test case passing 1 argument frame → chat-cards-more-light@modern to frameFitsInEveryStyle(_:) started.
+◇ Test case passing 1 argument frame → chat-cards-more-light@terminal to frameFitsInEveryStyle(_:) started.
+◇ Test case passing 1 argument frame → chat-cards-more-light@scene to frameFitsInEveryStyle(_:) started.
+◇ Test case passing 1 argument frame → chat-conductor-light@modern to frameFitsInEveryStyle(_:) started.
+◇ Test case passing 1 argument frame → chat-conductor-light@terminal to frameFitsInEveryStyle(_:) started.
+◇ Test case passing 1 argument frame → chat-conductor-light@scene to frameFitsInEveryStyle(_:) started.
+◇ Test case passing 1 argument frame → persona-light@modern to frameFitsInEveryStyle(_:) started.
+◇ Test case passing 1 argument frame → persona-light@terminal to frameFitsInEveryStyle(_:) started.
+◇ Test case passing 1 argument frame → persona-light@scene to frameFitsInEveryStyle(_:) started.
+◇ Test case passing 1 argument frame → avatar-menu-light@modern to frameFitsInEveryStyle(_:) started.
+◇ Test case passing 1 argument frame → avatar-menu-light@terminal to frameFitsInEveryStyle(_:) started.
+◇ Test case passing 1 argument frame → avatar-menu-light@scene to frameFitsInEveryStyle(_:) started.
+◇ Test case passing 1 argument frame → persona-panel-light@modern to frameFitsInEveryStyle(_:) started.
+◇ Test case passing 1 argument frame → persona-panel-light@terminal to frameFitsInEveryStyle(_:) started.
+◇ Test case passing 1 argument frame → persona-panel-light@scene to frameFitsInEveryStyle(_:) started.
+◇ Test case passing 1 argument frame → pair-welcome-light@modern to frameFitsInEveryStyle(_:) started.
+◇ Test case passing 1 argument frame → pair-welcome-light@terminal to frameFitsInEveryStyle(_:) started.
+◇ Test case passing 1 argument frame → pair-welcome-light@scene to frameFitsInEveryStyle(_:) started.
+◇ Test case passing 1 argument frame → pair-scan-light@modern to frameFitsInEveryStyle(_:) started.
+◇ Test case passing 1 argument frame → pair-scan-light@terminal to frameFitsInEveryStyle(_:) started.
+◇ Test case passing 1 argument frame → pair-scan-light@scene to frameFitsInEveryStyle(_:) started.
+◇ Test case passing 1 argument frame → pair-nearby-light@modern to frameFitsInEveryStyle(_:) started.
+◇ Test case passing 1 argument frame → pair-nearby-light@terminal to frameFitsInEveryStyle(_:) started.
+◇ Test case passing 1 argument frame → pair-nearby-light@scene to frameFitsInEveryStyle(_:) started.
+◇ Test case passing 1 argument frame → pair-address-light@modern to frameFitsInEveryStyle(_:) started.
+◇ Test case passing 1 argument frame → pair-address-light@terminal to frameFitsInEveryStyle(_:) started.
+◇ Test case passing 1 argument frame → pair-address-light@scene to frameFitsInEveryStyle(_:) started.
+◇ Test case passing 1 argument frame → pair-waiting-light@modern to frameFitsInEveryStyle(_:) started.
+◇ Test case passing 1 argument frame → pair-waiting-light@terminal to frameFitsInEveryStyle(_:) started.
+◇ Test case passing 1 argument frame → pair-waiting-light@scene to frameFitsInEveryStyle(_:) started.
+◇ Test case passing 1 argument frame → pair-paired-light@modern to frameFitsInEveryStyle(_:) started.
+◇ Test case passing 1 argument frame → pair-paired-light@terminal to frameFitsInEveryStyle(_:) started.
+◇ Test case passing 1 argument frame → pair-paired-light@scene to frameFitsInEveryStyle(_:) started.
+◇ Test case passing 1 argument frame → mac-setup-welcome@modern to frameFitsInEveryStyle(_:) started.
+◇ Test case passing 1 argument frame → mac-setup-welcome@terminal to frameFitsInEveryStyle(_:) started.
+◇ Test case passing 1 argument frame → mac-setup-welcome@scene to frameFitsInEveryStyle(_:) started.
+◇ Test case passing 1 argument frame → mac-setup-folders@modern to frameFitsInEveryStyle(_:) started.
+◇ Test case passing 1 argument frame → mac-setup-folders@terminal to frameFitsInEveryStyle(_:) started.
+◇ Test case passing 1 argument frame → mac-setup-folders@scene to frameFitsInEveryStyle(_:) started.
+◇ Test case passing 1 argument frame → mac-setup-signins@modern to frameFitsInEveryStyle(_:) started.
+◇ Test case passing 1 argument frame → mac-setup-signins@terminal to frameFitsInEveryStyle(_:) started.
+◇ Test case passing 1 argument frame → mac-setup-signins@scene to frameFitsInEveryStyle(_:) started.
+◇ Test case passing 1 argument frame → mac-setup-tailscale@modern to frameFitsInEveryStyle(_:) started.
+◇ Test case passing 1 argument frame → mac-setup-tailscale@terminal to frameFitsInEveryStyle(_:) started.
+◇ Test case passing 1 argument frame → mac-setup-tailscale@scene to frameFitsInEveryStyle(_:) started.
+◇ Test case passing 1 argument frame → mac-setup-qr@modern to frameFitsInEveryStyle(_:) started.
+◇ Test case passing 1 argument frame → mac-setup-qr@terminal to frameFitsInEveryStyle(_:) started.
+◇ Test case passing 1 argument frame → mac-setup-qr@scene to frameFitsInEveryStyle(_:) started.
+◇ Test case passing 1 argument frame → mac-setup-approve@modern to frameFitsInEveryStyle(_:) started.
+◇ Test case passing 1 argument frame → mac-setup-approve@terminal to frameFitsInEveryStyle(_:) started.
+◇ Test case passing 1 argument frame → mac-setup-approve@scene to frameFitsInEveryStyle(_:) started.
+◇ Test case passing 1 argument frame → mac-connect@modern to frameFitsInEveryStyle(_:) started.
+◇ Test case passing 1 argument frame → mac-connect@terminal to frameFitsInEveryStyle(_:) started.
+◇ Test case passing 1 argument frame → mac-connect@scene to frameFitsInEveryStyle(_:) started.
+◇ Test case passing 1 argument frame → mac-window-dark@modern to frameFitsInEveryStyle(_:) started.
+◇ Test case passing 1 argument frame → mac-window-dark@terminal to frameFitsInEveryStyle(_:) started.
+◇ Test case passing 1 argument frame → mac-window-dark@scene to frameFitsInEveryStyle(_:) started.
+◇ Test case passing 1 argument frame → mac-window-light@modern to frameFitsInEveryStyle(_:) started.
+◇ Test case passing 1 argument frame → mac-window-light@terminal to frameFitsInEveryStyle(_:) started.
+◇ Test case passing 1 argument frame → mac-window-light@scene to frameFitsInEveryStyle(_:) started.
+◇ Test case passing 1 argument frame → mac-persona-panel-dark@modern to frameFitsInEveryStyle(_:) started.
+◇ Test case passing 1 argument frame → mac-persona-panel-dark@terminal to frameFitsInEveryStyle(_:) started.
+◇ Test case passing 1 argument frame → mac-persona-panel-dark@scene to frameFitsInEveryStyle(_:) started.
+◇ Test case passing 1 argument frame → room-dark@modern to frameFitsInEveryStyle(_:) started.
+◇ Test case passing 1 argument frame → room-dark@terminal to frameFitsInEveryStyle(_:) started.
+◇ Test case passing 1 argument frame → room-dark@scene to frameFitsInEveryStyle(_:) started.
+◇ Test case passing 1 argument frame → room-light@modern to frameFitsInEveryStyle(_:) started.
+◇ Test case passing 1 argument frame → room-light@terminal to frameFitsInEveryStyle(_:) started.
+◇ Test case passing 1 argument frame → room-light@scene to frameFitsInEveryStyle(_:) started.
+◇ Test case passing 1 argument frame → room-create-dark@modern to frameFitsInEveryStyle(_:) started.
+◇ Test case passing 1 argument frame → room-create-dark@terminal to frameFitsInEveryStyle(_:) started.
+◇ Test case passing 1 argument frame → room-create-dark@scene to frameFitsInEveryStyle(_:) started.
+◇ Test case passing 1 argument frame → room-create-light@modern to frameFitsInEveryStyle(_:) started.
+◇ Test case passing 1 argument frame → room-create-light@terminal to frameFitsInEveryStyle(_:) started.
+◇ Test case passing 1 argument frame → room-create-light@scene to frameFitsInEveryStyle(_:) started.
+◇ Test case passing 1 argument frame → room-member-dark@modern to frameFitsInEveryStyle(_:) started.
+◇ Test case passing 1 argument frame → room-member-dark@terminal to frameFitsInEveryStyle(_:) started.
+◇ Test case passing 1 argument frame → room-member-dark@scene to frameFitsInEveryStyle(_:) started.
+◇ Test case passing 1 argument frame → room-home-dark@modern to frameFitsInEveryStyle(_:) started.
+◇ Test case passing 1 argument frame → room-home-dark@terminal to frameFitsInEveryStyle(_:) started.
+◇ Test case passing 1 argument frame → room-home-dark@scene to frameFitsInEveryStyle(_:) started.
+◇ Test case passing 1 argument frame → room-pinned-dark@modern to frameFitsInEveryStyle(_:) started.
+◇ Test case passing 1 argument frame → room-pinned-dark@terminal to frameFitsInEveryStyle(_:) started.
+◇ Test case passing 1 argument frame → room-pinned-dark@scene to frameFitsInEveryStyle(_:) started.
+◇ Test case passing 1 argument frame → room-pinned-terminal-dark@modern to frameFitsInEveryStyle(_:) started.
+◇ Test case passing 1 argument frame → room-pinned-terminal-dark@terminal to frameFitsInEveryStyle(_:) started.
+◇ Test case passing 1 argument frame → room-pinned-terminal-dark@scene to frameFitsInEveryStyle(_:) started.
+◇ Test case passing 1 argument frame → room-pinned-scene-light@modern to frameFitsInEveryStyle(_:) started.
+◇ Test case passing 1 argument frame → room-pinned-scene-light@terminal to frameFitsInEveryStyle(_:) started.
+◇ Test case passing 1 argument frame → room-pinned-scene-light@scene to frameFitsInEveryStyle(_:) started.
+◇ Test case passing 1 argument frame → room-terminal-dark@modern to frameFitsInEveryStyle(_:) started.
+◇ Test case passing 1 argument frame → room-terminal-dark@terminal to frameFitsInEveryStyle(_:) started.
+◇ Test case passing 1 argument frame → room-terminal-dark@scene to frameFitsInEveryStyle(_:) started.
+◇ Test case passing 1 argument frame → room-scene-light@modern to frameFitsInEveryStyle(_:) started.
+◇ Test case passing 1 argument frame → room-scene-light@terminal to frameFitsInEveryStyle(_:) started.
+◇ Test case passing 1 argument frame → room-scene-light@scene to frameFitsInEveryStyle(_:) started.
+◇ Test case passing 1 argument frame → room-ask-dark@modern to frameFitsInEveryStyle(_:) started.
+◇ Test case passing 1 argument frame → room-ask-dark@terminal to frameFitsInEveryStyle(_:) started.
+◇ Test case passing 1 argument frame → room-ask-dark@scene to frameFitsInEveryStyle(_:) started.
+◇ Test case passing 1 argument frame → room-ask-terminal-dark@modern to frameFitsInEveryStyle(_:) started.
+◇ Test case passing 1 argument frame → room-ask-terminal-dark@terminal to frameFitsInEveryStyle(_:) started.
+◇ Test case passing 1 argument frame → room-ask-terminal-dark@scene to frameFitsInEveryStyle(_:) started.
+◇ Test case passing 1 argument frame → room-ask-scene-light@modern to frameFitsInEveryStyle(_:) started.
+◇ Test case passing 1 argument frame → room-ask-scene-light@terminal to frameFitsInEveryStyle(_:) started.
+◇ Test case passing 1 argument frame → room-ask-scene-light@scene to frameFitsInEveryStyle(_:) started.
+◇ Test case passing 1 argument frame → room-wide-dark@modern to frameFitsInEveryStyle(_:) started.
+◇ Test case passing 1 argument frame → room-wide-dark@terminal to frameFitsInEveryStyle(_:) started.
+◇ Test case passing 1 argument frame → room-wide-dark@scene to frameFitsInEveryStyle(_:) started.
+◇ Test case passing 1 argument frame → asked-dark@modern to frameFitsInEveryStyle(_:) started.
+◇ Test case passing 1 argument frame → asked-dark@terminal to frameFitsInEveryStyle(_:) started.
+◇ Test case passing 1 argument frame → asked-dark@scene to frameFitsInEveryStyle(_:) started.
+◇ Test case passing 1 argument frame → asked-light@modern to frameFitsInEveryStyle(_:) started.
+◇ Test case passing 1 argument frame → asked-light@terminal to frameFitsInEveryStyle(_:) started.
+◇ Test case passing 1 argument frame → asked-light@scene to frameFitsInEveryStyle(_:) started.
+◇ Test case passing 1 argument frame → linked-dark@modern to frameFitsInEveryStyle(_:) started.
+◇ Test case passing 1 argument frame → linked-dark@terminal to frameFitsInEveryStyle(_:) started.
+◇ Test case passing 1 argument frame → linked-dark@scene to frameFitsInEveryStyle(_:) started.
+◇ Test case passing 1 argument frame → linked-terminal-dark@modern to frameFitsInEveryStyle(_:) started.
+◇ Test case passing 1 argument frame → linked-terminal-dark@terminal to frameFitsInEveryStyle(_:) started.
+◇ Test case passing 1 argument frame → linked-terminal-dark@scene to frameFitsInEveryStyle(_:) started.
+◇ Test case passing 1 argument frame → linked-wide-light@modern to frameFitsInEveryStyle(_:) started.
+◇ Test case passing 1 argument frame → linked-wide-light@terminal to frameFitsInEveryStyle(_:) started.
+◇ Test case passing 1 argument frame → linked-wide-light@scene to frameFitsInEveryStyle(_:) started.
+◇ Test case passing 1 argument frame → room-terminal-wide@modern to frameFitsInEveryStyle(_:) started.
+◇ Test case passing 1 argument frame → room-terminal-wide@terminal to frameFitsInEveryStyle(_:) started.
+◇ Test case passing 1 argument frame → room-terminal-wide@scene to frameFitsInEveryStyle(_:) started.
+✔ Test frameFitsInEveryStyle(_:) with 177 test cases passed after 197.985 seconds.
+◇ Test aViewWiderThanItsFrameIsCaught() started.
+✔ Test aViewWiderThanItsFrameIsCaught() passed after 0.068 seconds.
+✔ Suite SnapshotTests passed after 373.848 seconds.
+✔ Test run with 3 tests in 1 suite passed after 373.849 seconds.
+◇ Test run started.
+↳ Testing Library Version: 2403
+↳ Target Platform: arm64e-apple-macos14.0
+◇ Suite ChatPanelTests started.
+◇ Test theColumnOpensAPlaceOrAttachesAPluginAtOnce() started.
+◇ Test editOpensThePersonaSheetAndNewChatStartsOneWithThePersona() started.
+◇ Test aPickInTheSheetRunsOnceTheSheetHasGone() started.
+✔ Test aPickInTheSheetRunsOnceTheSheetHasGone() passed after 0.062 seconds.
+✔ Test theColumnOpensAPlaceOrAttachesAPluginAtOnce() passed after 0.067 seconds.
+✔ Test editOpensThePersonaSheetAndNewChatStartsOneWithThePersona() passed after 0.127 seconds.
+✔ Suite ChatPanelTests passed after 0.127 seconds.
+✔ Test run with 3 tests in 1 suite passed after 0.127 seconds.

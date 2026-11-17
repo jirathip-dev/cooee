@@ -1,0 +1,138 @@
+Building for debugging...
+[Computing dependencies]
+[Constructing description]
+[Pre-planning 1 / 1188]
+[Planning deferred tasks]
+[Starting]
+[1 / 48] swift-sharing_Sharing
+[16 / 130] Cooee_CooeeAPITests
+[20 / 132] CooeeCore
+[36 / 145] Sharing1
+[45 / 146] CasePathsMacrosSupport
+[53 / 159] DependenciesMacrosPlugin
+[59 / 159] CasePathsMacrosSupport
+[66 / 218] PerceptionMacros
+[69 / 218] IssueReporting
+[76 / 219] ComposableArchitectureMacros
+[81 / 219] IssueReporting
+[84 / 219] IssueReporting
+[86 / 219] IssueReporting
+[91 / 219] CooeeCore
+[104 / 222] InternalCollectionsUtilities
+[111 / 232] CustomDump
+[117 / 245] DependenciesMacrosPlugin
+[119 / 248] OrderedCollections
+[120 / 248] OrderedCollections
+[121 / 260] CasePathsCore
+[122 / 273] PerceptionCore
+[125 / 298] CustomDump
+[126 / 298] CasePathsCore
+[130 / 298] PerceptionCore
+[132 / 298] PerceptionCore
+[136 / 298] CooeeAPI
+[140 / 300] CooeeAPI
+[144 / 300] OrderedCollections
+[147 / 300] PerceptionCore
+[154 / 302] CustomDump
+[163 / 303] CustomDump
+[164 / 303] CustomDump
+[168 / 303] CustomDump
+[170 / 303] DependenciesMacrosPlugin
+[174 / 303] CooeeCore
+[178 / 303] CooeeCore
+[185 / 304] OrderedCollections
+[186 / 303] OrderedCollections
+[187 / 304] CooeeCore
+[192 / 307] CooeeAPI
+[193 / 320] CooeeAPI
+[198 / 320] IdentifiedCollections
+[204 / 320] IdentifiedCollections
+[209 / 320] IdentifiedCollections
+[219 / 321] ConcurrencyExtras
+[223 / 327] Clocks
+[233 / 327] ComposableArchitectureMacros
+[235 / 327] ComposableArchitectureMacros
+[244 / 349] CombineSchedulers
+[249 / 349] CombineSchedulers
+[255 / 349] Clocks
+[263 / 350] CombineSchedulers
+[270 / 354] Clocks
+[273 / 354] CasePathsCore
+[277 / 354] CasePathsCore
+[285 / 354] CooeeCore
+[296 / 367] Dependencies
+[300 / 369] PerceptionMacros
+[303 / 375] DependenciesMacros
+[311 / 375] CustomDump
+[318 / 377] PerceptionCore
+[322 / 380] DependenciesMacros
+[330 / 388] Dependencies
+[339 / 392] Sharing
+[343 / 392] DependenciesMacros
+[349 / 392] Perception
+[353 / 392] Perception
+[355 / 392] Dependencies
+[359 / 394] CasePathsMacros
+[373 / 408] Sharing
+[375 / 411] CasePaths
+[379 / 418] CasePaths
+[382 / 418] CasePaths
+[383 / 418] Sharing
+[385 / 419] CasePaths
+[387 / 419] Sharing
+[393 / 423] SwiftNavigation
+[406 / 436] SwiftNavigation
+[411 / 443] SwiftNavigation
+[425 / 456] UIKitNavigation
+[428 / 456] UIKitNavigation
+[443 / 469] SwiftUINavigation
+[446 / 472] SwiftUINavigation
+[448 / 472] ComposableArchitecture
+[461 / 485] ComposableArchitecture
+[465 / 487] CooeeFeatures
+[476 / 500] CooeeFeatures
+[477 / 500] CooeeFeatures
+[478 / 500] CooeeFeatures
+[478 / 500] ComposableArchitecture
+[480 / 500] CooeeFeatures
+/Users/jkmacmini/.local/share/drover/work/cooee/issue-236/apple/Sources/CooeeFeatures/AppFeature.swift:54:41: [1;33mwarning: [1;39mcannot use struct 'Date' in a property declaration member of a type not marked '@_implementationOnly'; 'Foundation' was not imported by this file[0;0m
+ [0;36m52 |[0;0m 
+ [0;36m53 |[0;0m     @Dependency(\.serverStore) private var serverStore
+ [0;36m54 |[0;0m     @Dependency(\.date.now) private var now
+    [0;36m|[0;0m                                         `- [1;33mwarning: [1;39mcannot use struct 'Date' in a property declaration member of a type not marked '@_implementationOnly'; 'Foundation' was not imported by this file[0;0m
+ [0;36m55 |[0;0m 
+ [0;36m56 |[0;0m     public init() {}
+
+Foundation.Date:2:15: [1;39mnote: [1;39mstruct declared here[0;0m
+ [0;36m1 |[0;0m @available(macOS 10.10, iOS 8.0, watchOS 2.0, tvOS 9.0, *)
+ [0;36m2 |[0;0m public struct Date : Comparable, Hashable, Equatable, Sendable {
+   [0;36m|[0;0m               `- [1;39mnote: [1;39mstruct declared here[0;0m
+ [0;36m3 |[0;0m     public static let timeIntervalBetween1970AndReferenceDate: Double
+ [0;36m4 |[0;0m     public static var timeIntervalSinceReferenceDate: TimeInterval { get }
+[485 / 499] CooeeFeatures
+[486 / 514]
+[499 / 514] CooeeUI
+[502 / 513] CooeeUI
+[506 / 516] CooeeApp
+[510 / 521] CooeeApp
+[512 / 521] CooeeApp
+[515 / 523] CooeeApp
+[515 / 523] CooeeUI
+[516 / 523] CooeeUI
+/Users/jkmacmini/.local/share/drover/work/cooee/issue-236/apple/Sources/CooeeFeatures/AppFeature.swift:54:41: [1;33mwarning: [1;39mcannot use struct 'Date' in a property declaration member of a type not marked '@_implementationOnly'; 'Foundation' was not imported by this file[0;0m
+ [0;36m52 |[0;0m 
+ [0;36m53 |[0;0m     @Dependency(\.serverStore) private var serverStore
+ [0;36m54 |[0;0m     @Dependency(\.date.now) private var now
+    [0;36m|[0;0m                                         `- [1;33mwarning: [1;39mcannot use struct 'Date' in a property declaration member of a type not marked '@_implementationOnly'; 'Foundation' was not imported by this file[0;0m
+ [0;36m55 |[0;0m 
+ [0;36m56 |[0;0m     public init() {}
+
+Foundation.Date:2:15: [1;39mnote: [1;39mstruct declared here[0;0m
+ [0;36m1 |[0;0m @available(macOS 10.10, iOS 8.0, watchOS 2.0, tvOS 9.0, *)
+ [0;36m2 |[0;0m public struct Date : Comparable, Hashable, Equatable, Sendable {
+   [0;36m|[0;0m               `- [1;39mnote: [1;39mstruct declared here[0;0m
+ [0;36m3 |[0;0m     public static let timeIntervalBetween1970AndReferenceDate: Double
+ [0;36m4 |[0;0m     public static var timeIntervalSinceReferenceDate: TimeInterval { get }
+[517 / 523] CooeeFeatures
+[523 / 523] CooeeUI-product
+Build complete! (24.00 secs)

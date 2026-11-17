@@ -1,0 +1,56 @@
+Merge made by the 'ort' strategy.
+ .drover/arch-baseline.txt                        |    7 +-
+ .drover/arch.toml                                |   14 +-
+ .github/workflows/apple.yml                      |   21 +-
+ apple/Sources/CooeeApp/MacLive.swift             |    2 +-
+ apple/UITests/MacSetupUITests.swift              |    6 +
+ crates/cooee-server/src/gate.rs                  |  135 ++
+ crates/cooee-server/src/http.rs                  |  265 +++
+ crates/cooee-server/src/layout.rs                |    5 +-
+ crates/cooee-server/src/lib.rs                   | 2189 +---------------------
+ crates/cooee-server/src/pairing.rs               |  320 +---
+ crates/cooee-server/src/root.rs                  |    8 +
+ crates/cooee-server/src/routes/devices.rs        |  125 ++
+ crates/cooee-server/src/routes/folders.rs        |   59 +
+ crates/cooee-server/src/routes/logins.rs         |   80 +
+ crates/cooee-server/src/routes/mcp.rs            |  126 ++
+ crates/cooee-server/src/routes/mod.rs            |   33 +
+ crates/cooee-server/src/routes/pairing.rs        |  304 +++
+ crates/cooee-server/src/routes/personas.rs       |  200 ++
+ crates/cooee-server/src/routes/plugins.rs        |  499 +++++
+ crates/cooee-server/src/routes/push.rs           |  135 ++
+ crates/cooee-server/src/{ => routes}/relaunch.rs |   16 +-
+ crates/cooee-server/src/routes/report.rs         |   51 +
+ crates/cooee-server/src/routes/rooms.rs          |   45 +
+ crates/cooee-server/src/routes/routines.rs       |   63 +
+ crates/cooee-server/src/routes/skills.rs         |   55 +
+ crates/cooee-server/src/routes/threads.rs        |  413 ++++
+ crates/cooee-server/src/routines.rs              |   55 +-
+ crates/cooee-server/src/screens/attach.rs        |    5 +-
+ crates/cooee-server/src/screens/home.rs          |    2 +-
+ crates/cooee-server/src/screens/menu.rs          |    5 +-
+ crates/cooee-server/src/screens/persona.rs       |    6 +-
+ crates/cooee-server/src/screens/settings.rs      |    6 +-
+ crates/cooee-server/src/serve.rs                 |  204 ++
+ crates/cooee-server/src/themes.rs                |    6 +-
+ scripts/gen.sh                                   |   17 +
+ 35 files changed, 2924 insertions(+), 2558 deletions(-)
+ create mode 100644 crates/cooee-server/src/gate.rs
+ create mode 100644 crates/cooee-server/src/http.rs
+ create mode 100644 crates/cooee-server/src/root.rs
+ create mode 100644 crates/cooee-server/src/routes/devices.rs
+ create mode 100644 crates/cooee-server/src/routes/folders.rs
+ create mode 100644 crates/cooee-server/src/routes/logins.rs
+ create mode 100644 crates/cooee-server/src/routes/mcp.rs
+ create mode 100644 crates/cooee-server/src/routes/mod.rs
+ create mode 100644 crates/cooee-server/src/routes/pairing.rs
+ create mode 100644 crates/cooee-server/src/routes/personas.rs
+ create mode 100644 crates/cooee-server/src/routes/plugins.rs
+ create mode 100644 crates/cooee-server/src/routes/push.rs
+ rename crates/cooee-server/src/{ => routes}/relaunch.rs (84%)
+ create mode 100644 crates/cooee-server/src/routes/report.rs
+ create mode 100644 crates/cooee-server/src/routes/rooms.rs
+ create mode 100644 crates/cooee-server/src/routes/routines.rs
+ create mode 100644 crates/cooee-server/src/routes/skills.rs
+ create mode 100644 crates/cooee-server/src/routes/threads.rs
+ create mode 100644 crates/cooee-server/src/serve.rs
