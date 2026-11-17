@@ -231,6 +231,8 @@ fn a_fresh_machine_runs_every_step_once_in_order_and_a_second_run_skips_them() {
             format!("tailscale serve --bg --https={port} http://127.0.0.1:{port}"),
         ]
     );
+    let ignore = fs::read_to_string(mac.config().with_file_name(".gitignore")).unwrap();
+    assert!(ignore.lines().any(|l| l == "secrets/"), "{ignore}");
     let config = fs::read_to_string(mac.config()).unwrap();
     assert_eq!(
         config,

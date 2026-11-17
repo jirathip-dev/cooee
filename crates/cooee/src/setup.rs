@@ -252,7 +252,11 @@ impl Setup {
             let head: String = add.iter().flat_map(|k| [k.as_str(), "\n"]).collect();
             let new = format!("{head}{text}{plugin}");
             self.write(path, &new, || {
-                fs::create_dir_all(path.parent().unwrap_or(path)).map_err(|e| e.to_string())?;
+                let dir = path.parent().unwrap_or(path);
+                if !dir.exists() {
+                    fs::create_dir_all(dir).map_err(|e| e.to_string())?;
+                    cooee_core::gitignore::write(dir).map_err(|e| e.to_string())?;
+                }
                 fs::write(path, &new).map_err(|e| e.to_string())
             })?;
         }

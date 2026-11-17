@@ -151,6 +151,10 @@ pub fn serve(config: &Config, ready: impl FnOnce(SocketAddr)) -> io::Result<()> 
             config.bind
         )));
     }
+    let own = config.path.is_some() && config.path == Config::default_path(&config.instance);
+    if let Some(dir) = config.dir.as_deref().filter(|d| own && d.is_dir()) {
+        cooee_core::gitignore::write(dir)?;
+    }
     let manager = Manager::new(config)?;
     plugin::check(&manager.tabs())?;
     let data = config
