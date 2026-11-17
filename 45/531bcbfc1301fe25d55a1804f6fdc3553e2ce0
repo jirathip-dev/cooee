@@ -1,0 +1,7 @@
+Decided: merge origin/staging; routes/mcp.rs registers both mcp_secret (this PR) and mcp_call (#160)
+Because: crates/cooee-server/src/routes/mcp.rs:155
+Decided: tests/mcp.rs keeps the secret-drop tests and staging's browser test side by side
+Because: crates/cooee/tests/mcp.rs:484
+Rejected: dropping either side's additions — both conflicts were pure additions at the same spot
+Check: crates/cooee/tests/mcp.rs saved test still fails if the writer persona's own env holds the value
+Owner: merged the latest staging again; the secret-drop feature is unchanged
