@@ -109,6 +109,19 @@ extension CooeeCore.Layout {
     }()
 }
 
+extension Style {
+    private static let bundled = LookStyle.allCases.map { pick in
+        let (name, folder) = pick == .modern ? ("style", "Default") : (pick.rawValue, "Default/styles")
+        // SAFETY: Default/style.json and Default/styles/ are copied into this module's bundle by Package.swift
+        let url = Bundle.module.url(forResource: name, withExtension: "json", subdirectory: folder)!
+        // SAFETY: DefaultLayoutTests decodes every bundled style, so a bad edit fails the tests first
+        return try! JSONDecoder().decode(Style.self, from: Data(contentsOf: url))
+    }
+
+    /// The bundled style for a pick: Modern's `Default/style.json`, or a pack's copy in `Default/styles/`.
+    public static func bundled(_ pick: LookStyle) -> Style { bundled[LookStyle.allCases.firstIndex(of: pick) ?? 0] }
+}
+
 extension HomeScreen {
     /// The bundled home (`Default/screens/home.json`): drawn until the server's first answer, and offline.
     public static let bundled: HomeScreen = {

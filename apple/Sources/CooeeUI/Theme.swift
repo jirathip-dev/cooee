@@ -50,10 +50,7 @@ extension Palette {
         let keys = [
             "--bg", "--card", "--edge", "--line", "--fg", "--mute", "--l", "--link", "--g", "--a", "--r", "--p", "--c",
         ]
-        let colors = keys.compactMap { key in
-            tokens[key].flatMap { $0.count == 7 && $0.hasPrefix("#") ? UInt32($0.dropFirst(), radix: 16) : nil }
-                .map(Color.hex)
-        }
+        let colors = keys.compactMap { key in tokens[key].flatMap(Color.hex) }
         guard colors.count == keys.count else { return nil }
         self.init(
             background: colors[0], card: colors[1], edge: colors[2], line: colors[3], foreground: colors[4],
@@ -71,20 +68,24 @@ extension Color {
             blue: Double(value & 0xff) / 255
         )
     }
+
+    internal static func hex(_ token: String) -> Color? {
+        token.count == 7 && token.hasPrefix("#") ? UInt32(token.dropFirst(), radix: 16).map(hex) : nil
+    }
 }
 
 public struct Look: Sendable {
     public var palette: Palette
-    public var style: LookStyle
+    public var style: Style
     public var still: Bool
     public var art: URL?
     public var moving = false
     public var cast = Cast.farm
     public var sprites: [String: String] = [:]
 
-    internal var mono: Bool { style == .terminal }
+    internal var mono: Bool { style.type == .mono }
 
-    public init(palette: Palette = .farmDark, style: LookStyle = .modern, still: Bool = false, art: URL? = nil) {
+    public init(palette: Palette = .farmDark, style: Style = .bundled(.modern), still: Bool = false, art: URL? = nil) {
         self.palette = palette
         self.style = style
         self.still = still
@@ -124,16 +125,16 @@ internal struct Surface: ViewModifier {
 
     internal func body(content: Content) -> some View {
         let palette = look.palette
-        switch look.style {
-        case .terminal:
+        switch look.style.surface {
+        case .dashed:
             content.background(palette.card.opacity(0.6))
                 .overlay(Rectangle().strokeBorder(palette.edge, style: StrokeStyle(lineWidth: 1, dash: [3, 2])))
-        case .scene:
+        case .solid:
             content.background(palette.card, in: .rect(cornerRadius: radius * 0.6))
                 .overlay(RoundedRectangle(cornerRadius: radius * 0.6).strokeBorder(palette.edge, lineWidth: 1.5))
-        case .modern where look.still:
+        case .glass where look.still:
             content.background(stillGlass(palette)).overlay(stillRim(palette))
-        case .modern:
+        case .glass:
             content.glassEffect(interactive ? .regular.interactive() : .regular, in: .rect(cornerRadius: radius))
         }
     }
@@ -163,7 +164,7 @@ internal struct Backdrop: View {
         let palette = look.palette
         ZStack {
             palette.background
-            if look.style == .modern {
+            if look.style.surface == .glass {
                 RadialGradient(
                     colors: [palette.lead.opacity(palette.dark ? 0.10 : 0.22), .clear],
                     center: .topLeading,

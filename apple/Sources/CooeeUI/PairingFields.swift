@@ -192,8 +192,10 @@ private struct Avatars: View {
     fileprivate var body: some View {
         HStack(spacing: -10) {
             ForEach(personas) { persona in
-                Avatar(persona: persona, size: 48)
-                    .overlay(Circle().strokeBorder(look.palette.background, lineWidth: look.style == .modern ? 3 : 0))
+                FigureView(persona: persona, size: 48)
+                    .overlay(
+                        Circle().strokeBorder(look.palette.background, lineWidth: look.style.figures == .avatar ? 3 : 0)
+                    )
             }
         }
     }

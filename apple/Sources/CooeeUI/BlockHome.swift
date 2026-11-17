@@ -121,7 +121,7 @@ internal struct HomeBlocks: View {
                     .scaleEffect(wide ? 0.9 : 1, anchor: .leading).padding(.top, wide ? 4 : 6)
             case "chats":
                 ChatList(chats: chats, selected: selected, open: actions.open, actions: actions)
-                    .padding(.top, wide ? 8 : look.style == .scene ? 0 : 14)
+                    .padding(.top, wide ? 8 : look.style.stage != nil ? 0 : 14)
             default:
                 EmptyView()
             }
@@ -175,7 +175,7 @@ internal struct ChatList: View {
                     look.mono ? 12 : 20, look.mono ? .regular : .bold, look
                 )
                 .foregroundStyle(look.mono ? palette.mute : palette.foreground).padding(.horizontal, 16)
-                .padding(.bottom, 6).padding(.top, look.style == .scene ? 12 : 0)
+                .padding(.bottom, 6).padding(.top, look.style.stage != nil ? 12 : 0)
             }
             ForEach(Array(chats.enumerated()), id: \.element.id) { index, chat in
                 Button {

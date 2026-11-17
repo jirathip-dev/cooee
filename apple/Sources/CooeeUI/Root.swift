@@ -62,7 +62,7 @@ public struct AppRoot: View {
         let (menu, theme) = (store.menu, store.menu.settings.theme)
         let picked = menu.looks.tokens(theme, dark: dark).flatMap { Palette(tokens: $0, dark: dark) }
         let art = menu.server.flatMap { menu.looks.art(theme, on: $0.url) }
-        var look = Look(palette: picked ?? .farm(dark ? .dark : .light), style: menu.settings.style, art: art)
+        var look = Look(palette: picked ?? .farm(dark ? .dark : .light), style: .bundled(menu.settings.style), art: art)
         look.moving = menu.settings.moves(reduceMotion: reduceMotion)
         look.sprites = menu.settings.sprites(in: theme)
         return look

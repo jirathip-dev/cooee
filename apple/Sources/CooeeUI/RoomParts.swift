@@ -43,7 +43,7 @@ internal struct Said: View {
     internal var body: some View {
         let persona = members.first { $0.id == speaker } ?? Fixtures.persona(speaker)
         HStack(alignment: .top, spacing: 10) {
-            Avatar(persona: persona, size: 32)
+            FigureView(persona: persona, size: 32)
             VStack(alignment: .leading, spacing: 4) {
                 HStack(spacing: 6) {
                     Text(persona.name).ui(14, .semibold, look).foregroundStyle(look.palette.tint(persona.look.tint))
@@ -98,7 +98,7 @@ internal struct RoomStack: View {
     }
 
     private func avatars(_ some: ArraySlice<Persona>) -> some View {
-        ForEach(some) { persona in Avatar(persona: state.map(persona.with) ?? persona, size: size) }
+        ForEach(some) { persona in FigureView(persona: state.map(persona.with) ?? persona, size: size) }
     }
 }
 

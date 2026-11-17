@@ -119,7 +119,7 @@ internal struct CardBlock: View {
         .padding(14)
         .surface(look, radius: 20)
         .overlay(alignment: .leading) {
-            if look.style == .modern {
+            if look.style.surface == .glass {
                 RoundedRectangle(cornerRadius: 2).fill(tint).frame(width: 3).padding(.vertical, 16)
             }
         }
@@ -142,7 +142,7 @@ internal struct CardBlock: View {
                     Text(look.mono ? "## \(kind.label)" : kind.label.uppercased()).ui(11, .bold, look)
                 }
                 if let member {
-                    Avatar(persona: member, size: 22)
+                    FigureView(persona: member, size: 22)
                     Text(member.name).ui(15, .semibold, look).foregroundStyle(look.palette.tint(member.look.tint))
                 }
                 Spacer(minLength: 4)
