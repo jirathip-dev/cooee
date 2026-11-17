@@ -464,7 +464,7 @@ fn setup_installs_the_first_party_themes_chosen_with_no_network() {
     assert!(out.status.success(), "{out:?}");
     assert!(
         stdout.contains(
-            "themes:\n  themes to install, or none [garden kitchen]:\n  installed theme farm\n  installed theme kitchen\n"
+            "themes:\n  themes to install, or none [garden kitchen]:\n  installed theme farm\n  installed theme scene\n  installed theme terminal\n  installed theme kitchen\n"
         ),
         "{stdout}"
     );
@@ -479,7 +479,9 @@ fn setup_installs_the_first_party_themes_chosen_with_no_network() {
             "kitchen/icon.png",
             "kitchen/scene.svg",
             "kitchen/sprites.svg",
-            "kitchen/theme.json"
+            "kitchen/theme.json",
+            "scene/style.json",
+            "terminal/style.json"
         ]
     );
     let lock: serde_json::Value = serde_json::from_slice(
@@ -490,7 +492,9 @@ fn setup_installs_the_first_party_themes_chosen_with_no_network() {
         lock,
         serde_json::json!([
             { "name": "farm", "source": swag.url, "commit": swag.commit, "listed": true },
-            { "name": "kitchen", "source": swag.url, "commit": swag.commit, "listed": true }
+            { "name": "kitchen", "source": swag.url, "commit": swag.commit, "listed": true },
+            { "name": "scene", "source": "built in", "commit": "", "listed": true },
+            { "name": "terminal", "source": "built in", "commit": "", "listed": true }
         ])
     );
     assert!(

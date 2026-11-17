@@ -23,7 +23,7 @@ fn theme(
         let mut failed = 0;
         for p in paths {
             match cooee_server::check(Path::new(p)) {
-                Ok(()) => cooee_core::say!("ok   {p}"),
+                Ok(holds) => cooee_core::say!("ok   {p} ({holds})"),
                 Err(fails) => {
                     failed += 1;
                     cooee_core::say!("FAIL {p}\n     {}", fails.join("\n     "));

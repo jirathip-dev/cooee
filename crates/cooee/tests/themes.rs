@@ -91,10 +91,15 @@ fn check_passes_the_first_party_packs_and_fails_a_broken_one() {
     let first: Vec<String> = ["farm", "kitchen", "garden"]
         .map(|t| packs().join("themes").join(t).display().to_string())
         .into();
-    let first: Vec<&str> = first.iter().map(String::as_str).collect();
+    let styles = ["terminal", "scene"].map(|p| packs().join(p).display().to_string());
+    let first: Vec<&str> = first.iter().chain(&styles).map(String::as_str).collect();
     let (ok, out) = s.run(&[&["theme", "check"], first.as_slice()].concat());
     assert!(ok, "{out}");
-    assert_eq!(out.matches("ok   ").count(), 3, "{out}");
+    assert_eq!(out.matches(" (theme)\n").count(), 3, "{out}");
+    assert!(
+        out.ends_with(&format!("ok   {} (style)\n", styles[1])),
+        "{out}"
+    );
     let broken = s.dir.join("broken");
     farm_at(&broken, true);
     let (ok, out) = s.run(&["theme", "check", &broken.display().to_string()]);
@@ -132,7 +137,7 @@ fn add_remove_and_list_with_the_lock() {
     );
     let (ok, out) = s.run(&["theme", "add", "sea"]);
     assert!(
-        !ok && out.contains("sea isn't a first-party theme (farm garden kitchen)"),
+        !ok && out.contains("sea isn't a first-party theme (farm garden kitchen scene terminal)"),
         "{out}"
     );
     let looks = s.cooee.json("/api/v1/looks");
@@ -210,6 +215,41 @@ fn add_remove_and_list_with_the_lock() {
     );
     let (ok, out) = s.run(&["theme", "remove", "farm"]);
     assert!(!ok && out.contains("farm isn't installed"), "{out}");
+}
+
+#[test]
+fn a_built_in_style_pack_adds_and_a_broken_style_leaves_its_theme_served() {
+    let s = setup("th-style");
+    let themes = s.dir.join("themes");
+    let kitchen = packs().join("themes/kitchen").display().to_string();
+    assert!(s.run(&["theme", "add", &kitchen, "--yes"]).0);
+    let (ok, out) = s.run(&["theme", "add", "terminal"]);
+    assert!(
+        ok && out.starts_with("theme terminal from built in at cooee "),
+        "{out}"
+    );
+    assert_eq!(
+        fs::read(themes.join("terminal/style.json")).unwrap(),
+        fs::read(packs().join("terminal/style.json")).unwrap()
+    );
+    fs::write(
+        themes.join("kitchen/style.json"),
+        r#"{"format":1,"surface":"blur"}"#,
+    )
+    .unwrap();
+    let looks = s.cooee.json("/api/v1/looks");
+    assert_eq!(
+        looks["styles"]["terminal"]["labels"]["button"]["suffix"],
+        " ]"
+    );
+    assert!(looks["themes"].get("terminal").is_none());
+    assert!(looks["themes"].get("kitchen").is_some());
+    assert!(looks["styles"].get("kitchen").is_none());
+    let why = looks["broken"]["kitchen"].as_str().unwrap();
+    assert!(
+        why.starts_with("style.json: unknown variant `blur`"),
+        "{why}"
+    );
 }
 
 #[test]
