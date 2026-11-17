@@ -1,0 +1,7 @@
+Decided: the theme editor's preview builds a Style with .bundled and asks for a stage, not the scene name
+Because: apple/Sources/CooeeUI/Theme.swift:91
+Decided: the staging conflict in the preview keeps staging's vectors line on top of the .bundled style
+Because: apple/Sources/CooeeUI/ThemeEditor.swift:183
+Rejected: a Look init that still takes the old style name — two ways to pick a style, against the ADR
+Check: apple-check and the xcodebuild for macOS and iOS Simulator succeed at the head merged with staging
+Owner: The theme editor that just landed builds again with the new style files; nothing on screen changes.
