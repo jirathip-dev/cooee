@@ -1,0 +1,5 @@
+Decided: merged origin/staging and changed no code; the mcp test FAIL was staging's own break, fixed on staging by #557.
+Because: crates/cooee-core/src/secrets.rs:94
+Rejected: patching secrets::of_persona here — staging already carries the fix, a second copy would conflict.
+Check: CI's test job passes mcp's saved-secret test at 43f7523.
+Owner: Brought the heartbeat branch up to date with staging, which fixed an unrelated failing test; no behaviour change.
