@@ -1,0 +1,13 @@
+Decided: this PR builds Pack, Colours and Save only; Draw, import and the Mac 3-pane are follow-up issues
+Because: q1858
+Decided: in Scene style the Pack preview always draws the backdrop with three figures and name chips, from the bundled Farm art when the pack has no server art
+Because: apple/Sources/CooeeUI/ThemeEditor.swift:188
+Because: apple/Sources/CooeeUI/Layout.swift:29
+Decided: on merging #509, this branch's built-in style enum is LookStyle, as staging's Style is the style.json pack
+Because: crates/cooee-server/src/look.rs:69
+Decided: broken lists a pack whose style.json fails (its theme still served) and any other failing pack served from its last good copy
+Because: crates/cooee-server/src/look.rs:271
+Rejected: dropping either meaning of broken — staging's kitchen test and the editor's tidepool test each assert one
+Check: apple/design/v4-theme-editor/theme-pack-scene.png shows the farm backdrop with Coder, Researcher and Conductor above Chats
+Check: cargo test -p cooee --test themes passes both broken cases
+Owner: the Scene preview in the theme editor now shows the scene with its figures, and the branch is merged with the latest staging.
