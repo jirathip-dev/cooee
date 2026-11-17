@@ -299,48 +299,85 @@ impl Themes {
     }
 
     fn fetch(&self, pack: &Pack, stage: &Path) -> io::Result<String> {
-        let repo = self.data.join("themes").join(format!("{}.git", pack.name));
-        if repo.exists() {
-            git(&repo, &["remote", "set-url", "origin", &pack.source])?;
-            git(&repo, &["fetch", "--quiet", "origin"])?;
-        } else {
-            fs::create_dir_all(repo.parent().unwrap_or(&repo))?;
-            let at = repo.to_string_lossy();
-            git(
-                &self.data,
-                &["clone", "--quiet", "--mirror", "--", &pack.source, &at],
-            )?;
-        }
-        let commit = git(
+        let repo = self.data.join("themes").join(&pack.name);
+        fs::create_dir_all(&repo)?;
+        let only = format!("/{}/", pack.path.trim_matches('/')).replace("//", "/*");
+        git(&repo, &["init", "--quiet"])?;
+        git(&repo, &["config", "remote.origin.url", &pack.source])?;
+        git(&repo, &["sparse-checkout", "set", "--no-cone", &only])?;
+        git(
             &repo,
-            &["rev-parse", "--verify", &format!("{}^{{commit}}", pack.rev)],
+            &[
+                "fetch",
+                "--quiet",
+                "--depth",
+                "1",
+                "--filter=blob:none",
+                "origin",
+                &pack.rev,
+            ],
         )
-        .map_err(|_| other(format!("{} has no commit {}", pack.source, pack.rev)))?;
-        fs::create_dir_all(stage)?;
-        let mut archive = cooee_core::runner::command("git")
-            .arg("-C")
-            .arg(&repo)
-            .args([
-                "archive",
-                "--format=tar",
-                &format!("{commit}:{}", pack.path),
-            ])
-            .stdout(Stdio::piped())
-            .stderr(Stdio::null())
-            .spawn()?;
-        let untar = cooee_core::runner::command("tar")
-            .arg("-x")
-            .arg("-C")
-            .arg(stage)
-            .stdin(archive.stdout.take().ok_or_else(|| other("git archive"))?)
-            .status()?;
-        if !archive.wait()?.success() || !untar.success() {
+        .map_err(|e| other(format!("{} has no commit {}: {e}", pack.source, pack.rev)))?;
+        git(
+            &repo,
+            &["checkout", "--quiet", "--force", "--detach", "FETCH_HEAD"],
+        )?;
+        let commit = git(&repo, &["rev-parse", "HEAD"])?;
+        let folder = repo.join(&pack.path);
+        if !folder.is_dir() {
             return Err(other(format!(
                 "{} has no folder {:?} at {commit}",
                 pack.source, pack.path
             )));
         }
+        copy(&folder, stage)?;
         Ok(commit)
+    }
+
+    /// Replaces each old full clone, `<data>/themes/<name>.git`, once its new form is in place (a first-party pack's
+    /// is the build, any other's its shallow clone); returns the bytes freed.
+    ///
+    /// # Errors
+    /// When the lock can't be read; a pack that can't be fetched now (offline) keeps its old clone till next time.
+    pub fn migrate(&self) -> io::Result<u64> {
+        let pinned = self.pinned()?;
+        let mut freed = 0;
+        let Ok(dirs) = fs::read_dir(self.data.join("themes")) else {
+            return Ok(0);
+        };
+        for old in dirs.flatten().map(|e| e.path()) {
+            let Some(name) = old
+                .file_name()
+                .and_then(|n| n.to_str()?.strip_suffix(".git"))
+            else {
+                continue;
+            };
+            let Some(pin) = pinned.iter().find(|p| p.name == name) else {
+                continue;
+            };
+            let placed = if pin.listed {
+                Ok(())
+            } else {
+                self.plan(&pin.source, Some(&pin.commit)).and_then(|p| {
+                    let p = Pack {
+                        name: name.to_owned(),
+                        ..p
+                    };
+                    let stage = self.dir.join(".themes-stage").join(name);
+                    let fetched = self.fetch(&p, &stage);
+                    fs::remove_dir_all(&stage).ok();
+                    fetched.map(drop)
+                })
+            };
+            match placed {
+                Ok(()) => {
+                    freed += size(&old);
+                    fs::remove_dir_all(&old)?;
+                }
+                Err(e) => cooee_core::note!("cooee: theme {name} keeps its old clone for now: {e}"),
+            }
+        }
+        Ok(freed)
     }
 
     /// Removes installed theme `name`: its folder and its pin.
@@ -381,6 +418,19 @@ impl Themes {
         rows.sort_by(|a, b| a.name.cmp(&b.name));
         Ok(rows)
     }
+}
+
+fn size(dir: &Path) -> u64 {
+    fs::read_dir(dir)
+        .into_iter()
+        .flatten()
+        .flatten()
+        .map(|e| match e.metadata() {
+            Ok(m) if m.is_dir() => size(&e.path()),
+            Ok(m) => m.len(),
+            Err(_) => 0,
+        })
+        .sum()
 }
 
 pub(crate) fn routes(b: topcoat::router::RouterBuilder) -> topcoat::router::RouterBuilder {

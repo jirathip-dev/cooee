@@ -15,7 +15,8 @@ internal struct MenuHost: View {
         NavigationStack(path: Binding(get: { menu.path }, set: { menu.send(.path($0)) })) {
             ScrollView {
                 VStack(spacing: 12) {
-                    ForEach(rows, id: \.id) { SlotView(store: store, node: $0, compact: compact) }
+                    ForEach(rows.filter { !$0.locked }, id: \.id) { SlotView(store: store, node: $0, compact: compact) }
+                    ActionRow(symbol: "arrow.counterclockwise", title: "Reset layout") { store.send(.layout(.reset)) }
                 }
                 .padding(12)
             }
@@ -125,6 +126,10 @@ internal struct MenuPage: View {
             ForEach(LookStyle.allCases, id: \.self) { style in
                 pick(style.rawValue.capitalized, selected: store.settings.style == style) { store.send(.style(style)) }
             }
+        }
+        Group2 {
+            Toggle("Motion", isOn: Binding(get: { store.settings.motion != false }, set: { store.send(.motion($0)) }))
+                .ui(16, .regular, look).padding(.horizontal, 14).frame(height: 48)
         }
         Group2(header: "App icon") {
             Button {

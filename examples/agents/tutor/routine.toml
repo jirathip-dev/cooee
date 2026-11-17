@@ -1,0 +1,3 @@
+name = "Weekly recap"
+when = "0 18 * * 0"
+prompt = "Recap what we covered this week and set three practice questions ({{due}})."

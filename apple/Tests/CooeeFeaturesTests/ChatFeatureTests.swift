@@ -65,6 +65,7 @@ internal struct ChatFeatureTests {
             $0.turn = slice.turn
             $0.since = epoch
             $0.live = "Hel"
+            $0.loading = false
         }
         await store.receive(\.event) { $0.live = "Hello" }
         await store.receive(\.event) {

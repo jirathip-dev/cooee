@@ -41,6 +41,7 @@ internal struct CardAnswerTests {
         let secret = APIItem(
             id: 6, time: 0, kind: "approval", block: .object(["type": .string("card"), "kind": .string("secret")]))
         await store.send(.loaded(Slice(items: [secret], turn: Turn(), cursor: "", queue: []))) {
+            $0.loading = false
             $0.items = [secret]
             $0.since = epoch
         }

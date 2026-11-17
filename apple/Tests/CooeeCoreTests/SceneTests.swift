@@ -28,9 +28,9 @@ internal struct SceneTests {
 
     @Test internal func aHorseKeepsItsIssuesCoatInTheStripAndItsRow() {
         #expect(SceneLane.coat("#641") == SceneLane.coat("#641 hosts bootstrap: an ambiguous machine label"))
-        #expect(SceneLane.coat("#641") == PersonaLook.coat("#641"))
+        #expect(SceneLane.coat("#641") == Cast.farm.pick("#641"))
         let lane = SceneLane(.object(["id": .string("l"), "title": .string("#641"), "state": .string("lost")]))
-        #expect(lane.state == .idle && lane.name == "#641" && lane.sprite == "horse-\(PersonaLook.coat("#641"))-idle")
+        #expect(lane.state == .idle && lane.name == "#641" && lane.sprite == "horse-\(Cast.farm.pick("#641"))-idle")
         #expect(SceneLane(.null).id == "" && SceneLane(.null).title == "")
     }
 

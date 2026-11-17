@@ -1,6 +1,7 @@
 //! Theme packs end to end (docs/themes.md): `cooee theme check` passes the first-party packs and fails a broken one;
 //! `cooee theme add` of a first-party pack (the build's copy at swag's pin, no fetch), a git URL ("not reviewed") and
-//! a folder, each pinned in the lock; a pack failing the gate, or holding a symlink, is never installed; list and remove.
+//! a folder, each pinned in the lock; a pack failing the gate, or holding a symlink, is never installed; list and remove;
+//! a git source is a shallow clone of its folder alone (#363), and an old full clone is replaced on start.
 
 mod support;
 
@@ -8,6 +9,8 @@ use std::{
     fs,
     path::{Path, PathBuf},
     process::Command,
+    thread,
+    time::Duration,
 };
 
 use cooee_core::swag::Swag;
@@ -282,4 +285,141 @@ fn the_gate_fails_active_content_in_a_packs_svg() {
     .unwrap();
     let (ok, out) = s.run(&["theme", "check", &dir.display().to_string()]);
     assert!(ok, "{out}");
+}
+
+fn until(what: &str, f: impl Fn() -> bool) {
+    for _ in 0..400 {
+        if f() {
+            return;
+        }
+        thread::sleep(Duration::from_millis(50));
+    }
+    panic!("never: {what}");
+}
+
+fn files_outside_git(dir: &Path, under: &Path, out: &mut Vec<String>) {
+    for e in fs::read_dir(dir).unwrap().map(Result::unwrap) {
+        let path = e.path();
+        if e.file_name() == ".git" {
+            continue;
+        }
+        if path.is_dir() {
+            files_outside_git(&path, under, out);
+        } else {
+            let rel = path.strip_prefix(under).unwrap();
+            out.push(rel.display().to_string());
+        }
+    }
+}
+
+fn local_swag(dir: &Path) -> (PathBuf, String) {
+    let repo = dir.join("swag");
+    for t in ["garden", "kitchen"] {
+        let to = repo.join("packs").join(t);
+        fs::create_dir_all(&to).unwrap();
+        for f in fs::read_dir(packs().join("themes").join(t)).unwrap() {
+            let f = f.unwrap();
+            fs::copy(f.path(), to.join(f.file_name())).unwrap();
+        }
+        if t == "garden" {
+            git(&repo, &["init", "--quiet", "-b", "main"]);
+        }
+        git(&repo, &["add", "-A"]);
+        git(&repo, &["commit", "--quiet", "-m", t]);
+    }
+    let commit = git(&repo, &["rev-parse", "HEAD"]);
+    (repo, commit)
+}
+
+#[test]
+fn a_git_pack_is_a_shallow_clone_of_its_folder_alone() {
+    let s = setup("th-shallow");
+    let (repo, commit) = local_swag(&s.dir);
+    let swag = Swag::pinned();
+    let add = |rev: &str| {
+        let out = s
+            .cooee
+            .command()
+            .env("GIT_CONFIG_COUNT", "1")
+            .env(
+                "GIT_CONFIG_KEY_0",
+                format!("url.{}.insteadOf", repo.display()),
+            )
+            .env("GIT_CONFIG_VALUE_0", &swag.url)
+            .args(["theme", "add", "kitchen", "--rev", rev, "--yes"])
+            .output()
+            .unwrap();
+        assert!(out.status.success(), "{out:?}");
+    };
+    add(&commit);
+    assert_eq!(
+        fs::read(s.dir.join("themes/kitchen/sprites.svg")).unwrap(),
+        fs::read(packs().join("themes/kitchen/sprites.svg")).unwrap()
+    );
+    let clone = s.dir.join("data/themes/kitchen");
+    assert_eq!(
+        git(&clone, &["rev-parse", "--is-shallow-repository"]),
+        "true"
+    );
+    assert_eq!(git(&clone, &["rev-list", "--count", "HEAD"]), "1");
+    assert_eq!(git(&clone, &["rev-parse", "HEAD"]), commit);
+    let mut files = Vec::new();
+    files_outside_git(&clone, &clone, &mut files);
+    files.sort();
+    let pack = ["icon.png", "scene.svg", "sprites.svg", "theme.json"];
+    assert_eq!(files, pack.map(|f| format!("packs/kitchen/{f}")));
+    assert!(s.run(&["theme", "remove", "kitchen"]).0);
+    add(&commit);
+    assert_eq!(git(&clone, &["rev-list", "--count", "HEAD"]), "1");
+}
+
+#[test]
+fn an_old_full_clone_is_replaced_on_start_once_the_new_one_is_in_place() {
+    let dir = scratch("th-migrate");
+    let shed = FakeShed::start(&dir.join("shed"), version());
+    let (repo, commit) = local_swag(&dir);
+    let themes = dir.join("data/themes");
+    fs::create_dir_all(&themes).unwrap();
+    for name in ["kitchen.git", "sea.git", "gone.git"] {
+        let to = themes.join(name).display().to_string();
+        git(
+            &dir,
+            &[
+                "clone",
+                "--quiet",
+                "--mirror",
+                &repo.display().to_string(),
+                &to,
+            ],
+        );
+    }
+    let swag = Swag::pinned();
+    let lock = json!([
+        { "name": "gone", "source": dir.join("nowhere").display().to_string(), "commit": commit, "listed": false },
+        { "name": "kitchen", "source": swag.url, "commit": swag.commit, "listed": true },
+        { "name": "sea", "source": repo.display().to_string(), "commit": commit, "listed": false }
+    ]);
+    fs::write(dir.join("data/themes.lock"), lock.to_string()).unwrap();
+    let _cooee = Cooee::start(&dir, &shed.dir);
+    until("the space freed is logged", || {
+        fs::read_to_string(dir.join("cooee.err"))
+            .unwrap()
+            .contains("cooee: themes: freed ")
+    });
+    assert!(!themes.join("kitchen.git").exists() && !themes.join("sea.git").exists());
+    assert!(!themes.join("kitchen").exists());
+    assert_eq!(git(&themes.join("sea"), &["rev-parse", "HEAD"]), commit);
+    assert_eq!(
+        git(
+            &themes.join("sea"),
+            &["rev-parse", "--is-shallow-repository"]
+        ),
+        "true"
+    );
+    let err = fs::read_to_string(dir.join("cooee.err")).unwrap();
+    assert!(
+        err.contains("cooee: theme gone keeps its old clone for now: "),
+        "{err}"
+    );
+    assert!(themes.join("gone.git").is_dir());
 }

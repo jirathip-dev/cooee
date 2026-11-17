@@ -3,6 +3,7 @@
 ## Today
 
 - **Secrets:** kept in the macOS keychain, readable only by the signed cooee (#212).
+- **Samples:** twelve ready agents in [examples/agents/](../examples/agents/), built in: `cooee agent add --list` lists them, `cooee agent add --from <sample> [--id <id>]` copies one in (never over a taken id). One whose MCP server isn't in the config says in its first reply what to connect (#362).
 
 ## How it works
 

@@ -112,6 +112,7 @@ internal struct PluginNavigationTests {
         }
         let task = await store.send(.lane(.presented(.task)))
         await store.receive(\.lane.presented.loaded) {
+            $0.lane?.loading = false
             $0.lane?.items = slice.items
             $0.lane?.since = epoch
         }

@@ -17,8 +17,6 @@ internal struct SlotView: View {
                 HomeSlot(store: store, wide: false) { EmptyView() }
             case .screen(.core, path: "/screens/menu"):
                 MenuScreen(store: store.scope(state: \.menu, action: \.menu))
-            case .screen(.core, path: "/screens/reset-layout"):
-                ActionRow(symbol: "arrow.counterclockwise", title: "Reset layout") { store.send(.layout(.reset)) }
             case .screen(let source, let path) where node.place == .menu:
                 ActionRow(symbol: "square.grid.2x2.fill", title: node.label ?? path) {
                     store.send(.menu(.show(path, label: node.label ?? "", source: source)))
@@ -143,7 +141,9 @@ private struct HomeSlot<Detail: View>: View {
                         detail
                     }
                 } else {
-                    HomeView(screen: screen, pins: pins, all: home.everyone, chats: chats, actions: actions)
+                    HomeView(
+                        screen: screen, pins: pins, all: home.everyone, chats: chats, loading: home.loading,
+                        actions: actions)
                 }
             }
             .overlay(alignment: .bottom) {

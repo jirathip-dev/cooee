@@ -5,6 +5,7 @@ internal struct Avatar: View {
     @Environment(\.look) private var look
     internal let persona: Persona
     internal var size: CGFloat = 44
+    internal var frame = 0
 
     internal var body: some View {
         if persona.id.isEmpty && look.style != .terminal {
@@ -28,12 +29,13 @@ internal struct Avatar: View {
                 .clipShape(Circle())
                 .frame(width: size, height: size)
         case .terminal:
-            Text(persona.figure).font(.system(size: size * 0.30, weight: .bold, design: .monospaced))
-                .foregroundStyle(tint).frame(width: size, height: size)
-                .overlay(Rectangle().strokeBorder(tint.opacity(0.7), lineWidth: 1))
+            Text(persona.state.figure(frame: frame)).font(
+                .system(size: size * 0.30, weight: .bold, design: .monospaced)
+            )
+            .foregroundStyle(tint).frame(width: size, height: size)
+            .overlay(Rectangle().strokeBorder(tint.opacity(0.7), lineWidth: 1))
         case .scene:
-            Sprite(name: "horse-\(persona.look.coat)-\(persona.pose)", pack: "sprites.svg#s-\(persona.pose)").frame(
-                width: size * 1.32, height: size)
+            StateSprite(persona: persona, frame: frame, size: size)
         }
     }
 

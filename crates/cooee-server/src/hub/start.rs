@@ -322,7 +322,13 @@ impl Hub {
         {
             cooee_core::note!("cooee: {id}: model: {e}");
         }
-        self.send_after(id, text, random_id, &[], &recipe.instructions)?;
+        let note = self.unconnected(recipe)?;
+        let before = [recipe.instructions.trim_end(), &note].map(str::trim);
+        let before = before
+            .into_iter()
+            .filter(|s| !s.is_empty())
+            .collect::<Vec<_>>();
+        self.send_after(id, text, random_id, &[], &before.join("\n\n"))?;
         Ok(())
     }
 }

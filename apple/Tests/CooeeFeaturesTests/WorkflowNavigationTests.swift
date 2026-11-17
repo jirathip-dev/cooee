@@ -45,6 +45,7 @@ internal struct WorkflowNavigationTests {
             $0.chat?.workflow = sessions
         }
         await store.send(.home(.loaded(homeScreen, [row("t1"), lane("l1")], [coder, conductor], []))) {
+            $0.home?.loading = false
             $0.home?.plugins = []
             $0.chat?.workflow = nil
         }

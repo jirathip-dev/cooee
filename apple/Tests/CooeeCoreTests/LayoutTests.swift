@@ -50,18 +50,23 @@ internal struct LayoutTests {
         #expect(Self.refusal(Data(json.utf8)) == .tooMany(200))
     }
 
-    @Test internal func aLayoutCannotDropReSourceOrRePlaceTheLockedScreens() throws {
-        let replaced = try Layout(json: try Self.fixture("locked-replaced"), etag: "e")
+    @Test internal func aLayoutThatReplacesOrHidesALockedScreenIsRefused() throws {
+        #expect(Self.refusal(try Self.fixture("locked-replaced")) == .locked(path: "root.slots.menu[0]"))
+        let reset = #"{"type": "screen", "source": "core", "path": "/screens/reset-layout", "place": "hidden"}"#
+        let dropped = #"{"format": 1, "root": {"type": "nav", "slots": {"main": [\#(reset)]}}}"#
+        #expect(Self.refusal(Data(dropped.utf8)) == .locked(path: "root.slots.main[0]"))
+        let hidden = #"{"format": 1, "root": {"type": "nav", "place": {"compact": "hidden"}}}"#
+        #expect(Self.refusal(Data(hidden.utf8)) == .locked(path: "root"))
+    }
+
+    @Test internal func everyLayoutHoldsBothLockedScreensFromTheDecoder() throws {
         let minimal = try Layout(json: Data(#"{"format": 1, "root": {"type": "nav"}}"#.utf8), etag: "e")
-        #expect(replaced.root.slots["main"]?.map(\.id) == ["home", "pairing"])
-        #expect(replaced.root.slots["menu"]?.map(\.id) == ["menu", "reset-layout"])
-        #expect(replaced.root.slots["main"]?.last == minimal.root.slots["main"]?.last)
-        #expect(replaced.root.slots["menu"]?.last == minimal.root.slots["menu"]?.last)
         let pairing = try #require(minimal.root.slots["main"]?.last)
         #expect(pairing.locked && pairing.content == .screen(.core, path: "/screens/pairing"))
         #expect(pairing.resolvedPlaces == [.push, .push])
         let reset = try #require(minimal.root.slots["menu"]?.last)
-        #expect(reset.locked && reset.resolvedPlaces == [.menu, .menu])
+        #expect(reset.locked && reset.content == .screen(.core, path: "/screens/reset-layout"))
+        #expect(reset.resolvedPlaces == [.menu, .menu])
     }
 
     @Test internal func aMissingSizeInheritsTheOtherAndResolvesPerSize() throws {
