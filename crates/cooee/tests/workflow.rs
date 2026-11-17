@@ -9,7 +9,6 @@ use std::{thread, time::Duration};
 use serde_json::{Value, json};
 use support::{Cooee, FakeShed, is_item, scratch, version};
 
-/// A lane's labels, as a tool sets them (`role` and `round` vary).
 fn labels<'a>(item: &'a str, role: &'a str, round: &'a str) -> [(&'a str, &'a str); 6] {
     [
         ("source", "drover"),
@@ -21,7 +20,6 @@ fn labels<'a>(item: &'a str, role: &'a str, round: &'a str) -> [(&'a str, &'a st
     ]
 }
 
-/// The Workflow sessions `GET /threads` lists, waiting until there are `n`.
 fn workflow(cooee: &Cooee, n: usize) -> Vec<Value> {
     for _ in 0..250 {
         let rows = cooee.json("/threads");
@@ -77,13 +75,14 @@ fn a_lane_is_listed_with_its_labels_but_never_among_the_agents() {
             &json!("2")
         )
     );
-    let (_, page) = cooee.get("/");
+    let list = cooee.json("/threads");
+    let mine = list.as_array().unwrap().iter().find(|r| r["id"] == own);
+    let mine = mine.expect("the own chat is listed");
     assert!(
-        !page.contains("cooee #33")
-            && !page.contains(&format!("/t/{}", id_of(&rows[0])))
-            && page.contains(&format!(r#"href="/t/{own}""#)),
-        "{page}"
+        mine["title"] == "My own chat" && !mine["workflow"].is_object(),
+        "{mine}"
     );
+    assert_ne!(id_of(&rows[0]), own);
 }
 
 #[test]
@@ -95,16 +94,14 @@ fn a_lane_opens_as_a_chat_that_streams_takes_a_reply_and_stops() {
     shed.lane(lane, &labels("#33", "impl", "2"));
     let id = id_of(&workflow(&cooee, 1)[0]);
 
-    let (status, page) = cooee.get(&format!("/t/{id}"));
-    assert_eq!(status, 200);
-    assert!(page.contains("impl · round 2"), "{page}");
-    assert!(
-        page.contains(r#"href="https://github.com/o/cooee/pull/60""#),
-        "{page}"
-    );
-    assert!(
-        page.contains(r#"id="composer""#) && page.contains(r#"class="stop""#),
-        "{page}"
+    let w = &workflow(&cooee, 1)[0]["workflow"];
+    assert_eq!(
+        (&w["role"], &w["round"], &w["url"]),
+        (
+            &json!("impl"),
+            &json!("2"),
+            &json!("https://github.com/o/cooee/pull/60")
+        )
     );
 
     let cursor = cooee.json(&format!("/threads/{id}/messages"))["cursor"]
@@ -122,7 +119,6 @@ fn a_lane_opens_as_a_chat_that_streams_takes_a_reply_and_stops() {
         .map(|e| e.data["text"].as_str().unwrap())
         .collect();
     assert_eq!(text, "Hello");
-    // The tool's own prompt shows as a message too; the owner's reply shows once.
     shed.input(lane, "\x1e{\"prompt\":\"Fix the bug\"}\n");
     events.until(|e| is_item(e, "agent"));
     let items = cooee.json(&format!("/threads/{id}/messages"))["items"].clone();
@@ -145,7 +141,6 @@ fn a_lane_opens_as_a_chat_that_streams_takes_a_reply_and_stops() {
     assert!(shed.sent(lane).contains(&"\x1e\"cancel\"\n".to_owned()));
     events.until(|e| is_item(e, "agent") && e.data["stop_reason"] == "cancelled");
 
-    // Its tool closes it, not the owner.
     let (status, _) = cooee.post(&format!("/threads/{id}/close"), &json!({}));
     assert_eq!(status, 400);
     assert_eq!(shed.calls("kill", lane), Vec::<Value>::new());
@@ -155,14 +150,12 @@ fn a_lane_opens_as_a_chat_that_streams_takes_a_reply_and_stops() {
 fn a_lane_goes_once_its_tool_removes_it() {
     let dir = scratch("workflow-done");
     let shed = FakeShed::start(&dir.join("shed"), version());
-    // Running before cooee starts: listed from shed's terminals.
     shed.lane("lane-rev", &labels("#31", "rev", "1"));
     let mut cooee = Cooee::start(&dir, &shed.dir);
     shed.lane("lane-impl", &labels("#32", "impl", "1"));
     shed.lane("lane-fix", &labels("#33", "fix", "3"));
     workflow(&cooee, 3);
 
-    // The tool removes it: gone from the list (here at the restart's look at shed's terminals).
     shed.vanish("lane-fix");
     drop(cooee);
     cooee = Cooee::start(&dir, &shed.dir);

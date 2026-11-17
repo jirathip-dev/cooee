@@ -1,6 +1,6 @@
 [workspace]
 resolver = "3"
-members = ["crates/*", "web"]
+members = ["crates/*"]
 
 [workspace.package]
 version = "0.1.0"
@@ -15,7 +15,6 @@ cooee-core = { path = "crates/cooee-core" }
 cooee-machines = { path = "crates/cooee-machines" }
 cooee-terminal = { path = "crates/cooee-terminal" }
 cooee-server = { path = "crates/cooee-server" }
-cooee-web = { path = "web" }
 # Web push (herdsman's webpush.rs): RFC 8291 encryption and the ES256 VAPID JWT; paired-device token hashes.
 aes-gcm = { version = "=0.10.3", default-features = false, features = ["aes", "alloc"] }
 base64 = "=0.22.1"
@@ -30,14 +29,14 @@ serde_json = "=1.0.154"
 shed-proto = { git = "https://github.com/jirathip-dev/shed", rev = "4ac443dbbcb51227dc9df2fb55e2f0834d6a91eb" }
 futures-util = { version = "=0.3.34", default-features = false }
 thiserror = "=2.0.21"
-# web/build.rs strips the types from web/ts (#49): oxc's parser, TypeScript transform and codegen.
-oxc = { version = "=0.157.0", default-features = false, features = ["codegen", "semantic", "transformer"] }
 # Pinned exactly (ADR 0001): Topcoat is pre-1.0 and its minors break.
 topcoat = { version = "=0.11.0", default-features = false, features = ["serve", "sse"] }
 tokio = { version = "=1.54.1", features = ["rt-multi-thread", "net", "sync"] }
 # cooee-core's secrets (#167): in-process keychain calls, so an item's access list names the signed cooee.
 security-framework = { version = "=3.7.0", default-features = false, features = ["OSX_10_14"] }
 toml = { version = "=1.2.0", default-features = false, features = ["parse", "serde"] }
+# Surgical config saves (#360): only the touched keys change, comments and layout stay.
+toml_edit = { version = "=0.25.18", default-features = false, features = ["parse", "display"] }
 
 [workspace.lints.rust]
 unsafe_code = "forbid"
@@ -45,4 +44,15 @@ missing_docs = "warn"
 
 [workspace.lints.clippy]
 pedantic = { level = "warn", priority = -1 }
-allow_attributes_without_reason = "warn"
+allow_attributes_without_reason = "deny"
+unwrap_used = "deny"
+expect_used = "deny"
+panic = "deny"
+todo = "deny"
+unimplemented = "deny"
+dbg_macro = "deny"
+indexing_slicing = "deny"
+as_conversions = "deny"
+print_stdout = "deny"
+print_stderr = "deny"
+let_underscore_must_use = "deny"

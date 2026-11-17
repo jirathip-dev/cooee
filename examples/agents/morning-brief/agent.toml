@@ -1,0 +1,11 @@
+name = "Morning brief"
+agent = "claude-acp"
+
+[[mcp]]
+server = "calendar"
+
+[[mcp]]
+server = "weather"
+
+[[mcp]]
+server = "search"

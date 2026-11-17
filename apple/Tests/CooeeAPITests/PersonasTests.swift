@@ -12,10 +12,12 @@ extension APIPersona {
         coder.avatar = "data:image/png;base64,AA=="
         coder.machine = "air"
         coder.role = "orchestrator"
+        coder.style = .detailed
         coder.fleets = ["cooee"]
         coder.canMessage = ["chief"]
         coder.pinned = true
         coder.profile = "coder"
+        coder.version = "v1"
         return coder
     }
 }
@@ -23,37 +25,37 @@ extension APIPersona {
 internal struct PersonasTests {
     private let persona = try? Fixture.text("personas.json").dropFirst().dropLast(2)
 
-    @Test internal func anEditPutsEveryFieldBackSoNothingTheAppDoesNotDrawIsLost() async throws {
+    @Test internal func anEditSavesEveryFieldThroughItsScreenSoNothingTheAppDoesNotDrawIsLost() async throws {
         let one = Answer(headers: json, chunks: [String(try #require(persona))])
-        let server = CannedServer(["/personas/coder": [one], "/personas": [one]])
+        let server = CannedServer(["/screens/action": [one], "/personas": [one]])
         var edited = APIPersona.coder
         edited.character = "Terse, kind."
-        let saved = try await server.client().save(edited)
-        #expect(saved == .coder)
-        let put = try #require(server.requests("/personas/coder").first)
-        #expect(put.httpMethod == "PUT")
-        #expect(try server.decoded("/personas/coder", as: APIPersona.self) == edited)
-        let sent = try #require(server.body("/personas/coder"))
+        _ = try await server.client().act(.core, screen: "/screens/persona/coder", .save(edited))
+        let sent = try server.decoded("/screens/action", as: JSONValue.self)
+        #expect(sent.string("screen") == "/screens/persona/coder" && sent.string("action") == "save")
+        let values = try JSONEncoder().encode(try #require(sent["values"]))
+        #expect(try JSONDecoder().decode(APIPersona.self, from: values) == edited)
+        let body = try #require(server.body("/screens/action"))
         #expect(
-            sent.contains(#""can_message":["chief"]"#) && sent.contains(#""machine":"air""#)
-                && sent.contains(#""pinned":true"#)
-                && sent.contains(#""role":"orchestrator""#) && sent.contains(#""fleets":["cooee"]"#))
+            body.contains(#""can_message":["chief"]"#) && body.contains(#""machine":"air""#)
+                && body.contains(#""pinned":true"#)
+                && body.contains(#""role":"orchestrator""#) && body.contains(#""fleets":["cooee"]"#)
+                && body.contains(#""style":"detailed""#) && body.contains(#""version":"v1""#))
         _ = try await server.client().create(APIPersona(id: "", name: "Coder", agent: "fake-acp"))
         #expect(server.requests("/personas").first?.httpMethod == "POST")
     }
 
-    @Test internal func memoryReadsAndClears() async throws {
-        let notes = #"[{"text":"Renewals live in renewals.md","by":"owner","at":5}]"#
+    @Test internal func aDeleteRemovesThePersonaAndAModelPickGoesToItsThread() async throws {
         let server = CannedServer([
-            "/personas/coder/memory": [Answer(headers: json, chunks: [notes]), Answer(headers: json, chunks: ["null"])]
+            "/personas/coder": [Answer(headers: json, chunks: ["null"])],
+            "/threads/t1/model": [Answer(headers: json, chunks: [#""switched""#])],
         ])
         let client = server.client()
+        try await client.remove("coder")
+        try await client.model("t1", model: "opus", effort: "high")
+        #expect(server.requests("/personas/coder").map(\.httpMethod) == ["DELETE"])
         #expect(
-            try await client.memory("coder") == [
-                PersonaNote(text: "Renewals live in renewals.md", author: "owner", time: 5)
-            ])
-        try await client.forget("coder")
-        #expect(server.requests("/personas/coder/memory").map(\.httpMethod) == ["GET", "DELETE"])
+            try server.decoded("/threads/t1/model", as: [String: String].self) == ["model": "opus", "effort": "high"])
     }
 
     @Test internal func pushOnPostsTheDeviceTokenAndOffDeletesIt() async throws {
@@ -98,5 +100,13 @@ internal struct PersonasTests {
         _ = try await client.folders(nil)
         let asked = server.requests("/folders").map { $0.url?.query() }
         #expect(asked == ["path=%2Fw%2Fmy%20app", nil])
+    }
+
+    @Test internal func aNewThreadCarriesThePickedModelAndEffort() async throws {
+        let server = CannedServer(["/threads": [Answer(headers: json, chunks: [#"{"id":"n1"}"#])]])
+        let persona = APIPersona(id: "coder", name: "Coder", agent: "fake-acp", model: "opus", effort: "high")
+        _ = try await server.client().newThread(persona: persona, machine: "", text: "hi", randomID: "r9")
+        let sent = try server.decoded("/threads", as: [String: JSONValue].self)
+        #expect(sent["model"] == .string("opus") && sent["effort"] == .string("high"))
     }
 }

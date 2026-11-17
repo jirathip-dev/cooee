@@ -1,5 +1,5 @@
-//! The binary end to end: `--version`, and `cooee serve` on the configured port: an unpaired browser gets the
-//! pairing page and the PWA's files.
+//! The binary end to end: `--version`, and `cooee serve` on the configured port: an unpaired client is told to
+//! pair first.
 
 use std::{
     env, fs,
@@ -31,7 +31,9 @@ fn unknown_args_and_config_keys_fail() {
             .code(),
         Some(2)
     );
-    let config = env::temp_dir().join(format!("cooee-bad-config-{}.toml", std::process::id()));
+    let config = cooee_core::scratch::owned(
+        env::temp_dir().join(format!("cooee-bad-config-{}.toml", std::process::id())),
+    );
     fs::write(&config, "prot = 1\n").unwrap();
     let out = Command::new(BIN)
         .arg("serve")
@@ -57,13 +59,14 @@ fn get(addr: &str, path: &str) -> String {
 
 #[test]
 fn serve_listens_on_localhost_at_the_configured_port() {
-    // Port 0 in the config: the server binds a free port on 127.0.0.1 and prints it.
-    let config = env::temp_dir().join(format!("cooee-config-{}.toml", std::process::id()));
+    let config = cooee_core::scratch::owned(
+        env::temp_dir().join(format!("cooee-config-{}.toml", std::process::id())),
+    );
     fs::write(
         &config,
         format!(
             "port = 0\ndata = {:?}\n",
-            env::temp_dir().join("cooee-cli-data")
+            cooee_core::scratch::owned(env::temp_dir().join("cooee-cli-data"))
         ),
     )
     .unwrap();
@@ -84,11 +87,7 @@ fn serve_listens_on_localhost_at_the_configured_port() {
         .unwrap()
         .to_owned();
 
-    let page = get(&addr, "/");
-    let pair = get(&addr, "/pair");
-    let manifest = get(&addr, "/manifest.webmanifest");
-    let worker = get(&addr, "/sw.js");
-    let icon = get(&addr, "/icon-512.png");
+    let threads = get(&addr, "/threads");
     child.kill().unwrap();
     child.wait().unwrap();
     assert!(
@@ -96,32 +95,16 @@ fn serve_listens_on_localhost_at_the_configured_port() {
         "{addr}"
     );
     assert!(
-        page.starts_with("HTTP/1.1 303") && page.to_ascii_lowercase().contains("location: /pair"),
-        "{page}"
-    );
-    assert!(pair.starts_with("HTTP/1.1 200"), "{pair}");
-    assert!(
-        pair.contains("pair this device") && pair.contains(r#"rel="manifest""#),
-        "{pair}"
-    );
-    assert!(worker.contains(r#"addEventListener("push""#), "{worker}");
-    assert!(icon.contains("image/png"), "{icon}");
-    assert!(
-        manifest
-            .to_ascii_lowercase()
-            .contains("content-type: application/manifest+json"),
-        "{manifest}"
-    );
-    assert!(
-        manifest.contains(r#""display": "standalone""#)
-            && manifest.contains(r#""sizes": "512x512""#),
-        "{manifest}"
+        threads.starts_with("HTTP/1.1 401") && threads.contains("pair this device first"),
+        "{threads}"
     );
 }
 
 #[test]
 fn listening_beyond_localhost_needs_allowed_hosts() {
-    let config = env::temp_dir().join(format!("cooee-bind-{}.toml", std::process::id()));
+    let config = cooee_core::scratch::owned(
+        env::temp_dir().join(format!("cooee-bind-{}.toml", std::process::id())),
+    );
     fs::write(&config, "port = 0\nbind = \"0.0.0.0\"\n").unwrap();
     let out = Command::new(BIN)
         .args(["serve", "--config"])

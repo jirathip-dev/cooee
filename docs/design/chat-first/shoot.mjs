@@ -1,7 +1,3 @@
-// #86: shoot the three pages in each Style at 390 (DPR 2, every phone screen in turn) and 1440 (DPR 1, the screen,
-// grown until nothing scrolls inside), under reduced motion so every loop shows frame 1. Each shot is checked: no
-// sideways scroll, nothing past the right edge, a cut line ellipsised. No deps: Chrome's --remote-debugging-pipe, as
-// docs/design/look/shoot.mjs. Usage (repo root): node docs/design/chat-first/shoot.mjs <chrome-headless-shell> [regexp]
 import { spawn } from 'node:child_process';
 import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { createServer } from 'node:http';
@@ -10,18 +6,19 @@ import { extname, join } from 'node:path';
 
 const here = new URL('.', import.meta.url).pathname, root = join(here, '../../..');
 const [chrome, re] = process.argv.slice(2);
-// Style → [theme, mode] at 390 and at 1440, so every theme shows once and each Style in light and dark.
 const LOOKS = { modern: [['farm', 'dark'], ['garden', 'light']], terminal: [['plain', 'light'], ['plain', 'dark']],
   scene: [['farm', 'light'], ['kitchen', 'dark']] };
 const VIEWS = [];
 for (const page of ['agents', 'new', 'received']) for (const [style, looks] of Object.entries(LOOKS))
   for (const [i, w] of [390, 1440].entries()) VIEWS.push([page, style, w, ...looks[i]]);
 const TYPES = { '.html': 'text/html', '.css': 'text/css', '.js': 'text/javascript', '.png': 'image/png', '.json': 'application/json', '.svg': 'image/svg+xml' };
+const missing = [];
 const srv = createServer((q, r) => {
   try {
     const p = join(root, decodeURIComponent(new URL(q.url, 'http://x').pathname));
-    r.writeHead(200, { 'content-type': TYPES[extname(p)] || 'application/octet-stream' }).end(readFileSync(p));
-  } catch { r.writeHead(404).end(); }
+    const b = readFileSync(p);
+    r.writeHead(200, { 'content-type': TYPES[extname(p)] || 'application/octet-stream' }).end(b);
+  } catch { if (!q.url.endsWith('/favicon.ico')) missing.push(q.url); r.writeHead(404).end(); }
 }).listen(0, '127.0.0.1');
 await new Promise(ok => srv.on('listening', ok));
 const base = `http://127.0.0.1:${srv.address().port}/docs/design/chat-first/`;
@@ -47,7 +44,6 @@ function audit() {
   const bad = [], W = innerWidth, name = e => e.tagName.toLowerCase() + (typeof e.className === 'string' && e.className ? '.' + e.className.trim().split(/\s+/).join('.') : '') + ` "${(e.textContent || '').trim().slice(0, 30)}"`;
   if (document.documentElement.scrollWidth > W) bad.push(`sideways scroll ${document.documentElement.scrollWidth} > ${W}`);
   for (const e of document.querySelectorAll('body *')) {
-    // The scene's pages and the composer's chips scroll sideways by design.
     if (!e.getClientRects().length || e.closest('.spg,.mc,svg')) continue;
     const r = e.getBoundingClientRect(), s = getComputedStyle(e);
     if (r.right > W + 0.5) bad.push(`past the right edge ${Math.round(r.right)} · ${name(e)}`);
@@ -79,6 +75,7 @@ for (const [page, style, w, theme, mode] of VIEWS) {
   await sleep(300);
   const { data } = await cmd('Page.captureScreenshot', { format: 'png' });
   writeFileSync(join(here, out), Buffer.from(data, 'base64'));
+  bad.push(...missing.splice(0).map(u => `404 ${u}`));
   console.log(`${bad.length ? 'FAIL' : 'ok  '} ${out} ${theme} ${mode} ${w}×${h}${bad.length ? '\n  ' + bad.join('\n  ') : ''}`);
   fail += bad.length;
 }

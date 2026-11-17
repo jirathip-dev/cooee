@@ -76,7 +76,7 @@ internal struct RoomFeatureTests {
         let reply = APIItem(id: 2, time: 2_000, kind: "agent", text: "Hello", speaker: "a")
         await store.send(.event(.item(asked))) {
             $0.items = [asked]
-            $0.room?.round.asked(["a", "b"], text: "hi all", when: Date(timeIntervalSince1970: 1))
+            $0.room?.round.asked(["a", "b"], named: [], when: Date(timeIntervalSince1970: 1))
         }
         await store.send(.event(.roomTurn("a"))) { $0.room?.round.began("a") }
         await store.send(.event(.item(reply))) {
@@ -90,34 +90,48 @@ internal struct RoomFeatureTests {
         #expect(store.state.room?.names["a"] == "A")
     }
 
+    @Test internal func anOwnerMessageNamingAMemberQueuesOnlyThatMember() async {
+        let store = TestStore(initialState: room(["a", "b"])) {
+            ChatFeature()
+        } withDependencies: {
+            dependencies(&$0)
+        }
+        store.exhaustivity = .off
+        let asked = APIItem(id: 1, time: 1_000, kind: "you", text: "@B, check Q3", speaker: "owner")
+        await store.send(.event(.item(asked)))
+        #expect(store.state.room?.round.state("a") == .waiting)
+        #expect(store.state.room?.round.state("b") == .upNext)
+    }
+
     @Test internal func aMemberIsInspectedMovedAddedAndTakenOut() async {
         let store = TestStore(initialState: room(["a", "b"])) {
             ChatFeature()
         } withDependencies: {
             dependencies(&$0)
         }
-        await store.send(.inspect("a")) { $0.room?.inspecting = "a" }
-        await store.send(.move("b", 0)) { $0.room?.members = ["b", "a"] }
-        await store.receive(\.seated)
-        await store.send(.seat("c"))
-        await store.receive(\.seated) { $0.room?.members = ["b", "a", "c"] }
-        await store.send(.unseat("c")) { $0.room?.inspecting = nil }
-        await store.receive(\.seated) { $0.room?.members = ["b", "a"] }
-        await store.send(.seat("f"))
+        await store.send(.room(.inspect("a"))) { $0.room?.inspecting = "a" }
+        await store.send(.room(.move("b", 0))) { $0.room?.members = ["b", "a"] }
+        await store.receive(\.room.seated)
+        await store.send(.room(.seat("c")))
+        await store.receive(\.room.seated) { $0.room?.members = ["b", "a", "c"] }
+        await store.send(.room(.unseat("c"))) { $0.room?.inspecting = nil }
+        await store.receive(\.room.seated) { $0.room?.members = ["b", "a"] }
+        await store.send(.room(.seat("f")))
         await store.receive(\.failed) { $0.error = "a room has at most 5 members" }
         #expect(calls.all == ["seat r1 b 0 false", "seat r1 c end false", "seat r1 c end true", "seat r1 f end false"])
     }
 
     @Test internal func aRoomIsMadeFromHomeAndOpensFromTheList() async {
-        var state = AppFeature.State(server: mini)
+        var state = AppFeature.State(layout: testLayout, server: mini)
         state.home?.personas = cast
         let (rows, cast) = ([roomRow()], cast)
         let store = TestStore(initialState: state) {
             AppFeature()
         } withDependencies: {
             $0.date.now = epoch
-            $0.threads.threads = { _ in rows }
+            $0.threads.home = { _ in HomeAnswer(screen: homeScreen, threads: rows, personas: cast) }
             $0.threads.personas = { _ in cast }
+            $0.plugins.installed = { _ in [] }
         }
         store.exhaustivity = .off
         await store.send(.room) { $0.newRoom = NewRoomFeature.State(server: mini, personas: self.cast) }

@@ -24,7 +24,8 @@ public enum LayoutSource: Sendable, Equatable {
     case core
     case plugin(String)
 
-    internal var name: String {
+    /// The name a screen's key and a refusal use: `core` or the plugin's.
+    public var name: String {
         switch self {
         case .core: "core"
         case .plugin(let name): name
@@ -84,6 +85,7 @@ public struct LayoutNode<Place: Sendable & Equatable>: Sendable, Equatable {
     public let content: LayoutContent
     public let label: String?
     public let place: Place
+    public let transition: LayoutTransition
     public let config: [String: JSONValue]
     public let slots: [String: [Self]]
     public let locked: Bool
@@ -92,28 +94,15 @@ public struct LayoutNode<Place: Sendable & Equatable>: Sendable, Equatable {
         var slots = slots
         slots[slot, default: []].append(child)
         return Self(
-            id: id, content: content, label: label, place: place, config: config, slots: slots, locked: locked)
+            id: id, content: content, label: label, place: place, transition: transition, config: config,
+            slots: slots, locked: locked)
     }
 
     internal func map<Other>(_ resolve: (Place) -> Other) -> LayoutNode<Other> {
         LayoutNode<Other>(
-            id: id, content: content, label: label, place: resolve(place), config: config,
+            id: id, content: content, label: label, place: resolve(place), transition: transition, config: config,
             slots: slots.mapValues { $0.map { $0.map(resolve) } }, locked: locked)
     }
-}
-
-/// Why a `layout.json` was refused, with the JSON path of the node at fault.
-public enum LayoutError: Error, Equatable {
-    case format(Int)
-    case json(String)
-    case unknownType(path: String, type: String)
-    case badScreen(path: String)
-    case unknownSlot(path: String, slot: String)
-    case unknownConfig(path: String, key: String)
-    case badPlace(path: String, place: String)
-    case duplicateId(String)
-    case tooDeep(path: String)
-    case tooMany(Int)
 }
 
 /// The owner's `layout.json`, decoded and validated, with the two locked screens always in it.
@@ -128,7 +117,7 @@ public struct Layout: Sendable, Equatable {
     public let root: LayoutNode<Placement>
     public let etag: String
 
-    /// Decodes and validates `json`, drops any node naming a locked screen and appends the locked two.
+    /// Decodes and validates `json`, refuses a node naming a locked screen or a hidden root, appends the locked two.
     public init(json: Data, etag: String) throws(LayoutError) {
         guard json.count <= Self.maxBytes else { throw .json("over \(Self.maxBytes) bytes") }
         let file: JSONValue
@@ -141,9 +130,9 @@ public struct Layout: Sendable, Equatable {
         guard (1...Self.knownFormat).contains(format) else { throw .format(format) }
         var decoder = LayoutDecoder()
         let rootJSON = file["root"] ?? .null
-        guard let root = try decoder.node(rootJSON, at: "root", depth: 1), root.content == .component(.nav) else {
-            throw .unknownType(path: "root", type: rootJSON.type)
-        }
+        let root = try decoder.node(rootJSON, at: "root", depth: 1)
+        guard root.content == .component(.nav) else { throw .unknownType(path: "root", type: rootJSON.type) }
+        guard ![root.place.compact, root.place.wide].contains(.hidden) else { throw .locked(path: "root") }
         self.format = format
         self.theme = file.string("theme")
         self.etag = etag
@@ -156,7 +145,7 @@ public struct Layout: Sendable, Equatable {
     private static func locked(_ name: String, place: LayoutPlace) -> LayoutNode<Placement> {
         LayoutNode(
             id: name, content: .screen(.core, path: "/screens/\(name)"), label: nil,
-            place: Placement(compact: place, wide: place), config: [:], slots: [:], locked: true)
+            place: Placement(compact: place, wide: place), transition: .push, config: [:], slots: [:], locked: true)
     }
 }
 
@@ -172,16 +161,17 @@ private struct LayoutDecoder {
 
     fileprivate mutating func node(
         _ json: JSONValue, at path: String, depth: Int
-    ) throws(LayoutError) -> LayoutNode<Placement>? {
+    ) throws(LayoutError) -> LayoutNode<Placement> {
         guard depth <= Self.maxDepth else { throw .tooDeep(path: path) }
         count += 1
         guard count <= Self.maxNodes else { throw .tooMany(Self.maxNodes) }
         let content = try Self.content(json, at: path)
-        if case .screen(_, let screen) = content, Self.lockedPaths.contains(screen) { return nil }
+        if case .screen(_, let screen) = content, Self.lockedPaths.contains(screen) { throw .locked(path: path) }
         let id = json.string("id") ?? content.defaultId
         guard ids.insert(id).inserted else { throw .duplicateId(id) }
         return LayoutNode(
             id: id, content: content, label: json.string("label"), place: try Self.placement(json["place"], at: path),
+            transition: try LayoutTransition(json["transition"], at: path),
             config: try Self.config(json, of: content, at: path),
             slots: try slots(json, of: content, at: path, depth: depth), locked: false)
     }
@@ -196,9 +186,7 @@ private struct LayoutDecoder {
             guard allowed.contains(name) else { throw .unknownSlot(path: path, slot: name) }
             var nodes: [LayoutNode<Placement>] = []
             for (index, child) in (slots[name]?.items ?? []).enumerated() {
-                if let node = try node(child, at: "\(path).slots.\(name)[\(index)]", depth: depth + 1) {
-                    nodes.append(node)
-                }
+                nodes.append(try node(child, at: "\(path).slots.\(name)[\(index)]", depth: depth + 1))
             }
             decoded[name] = nodes
         }

@@ -42,4 +42,30 @@ internal struct DeviceTests {
         let server = try #require(found.first { $0.name == "mini-test" })
         #expect(server.address.hasPrefix("http://") && server.address.hasSuffix(":\(listener.port?.rawValue ?? 0)"))
     }
+
+    @Test(.timeLimit(.minutes(1)))
+    internal func aCooeeAnsweringOnThisMacIsFoundFirstAsThisMac() async throws {
+        let listener = try NWListener(using: .tcp)
+        let answer = Data("HTTP/1.1 200 OK\r\nContent-Length: 0\r\nConnection: close\r\n\r\n".utf8)
+        listener.newConnectionHandler = { connection in
+            connection.start(queue: .global())
+            connection.receive(minimumIncompleteLength: 1, maximumLength: 4096) { _, _, _, _ in
+                connection.send(content: answer, completion: .contentProcessed { _ in connection.cancel() })
+            }
+        }
+        let ready = AsyncStream<Void> { done in
+            listener.stateUpdateHandler = { if case .ready = $0 { done.finish() } }
+        }
+        listener.start(queue: .global())
+        defer { listener.cancel() }
+        for await _ in ready {}
+        let local = try #require(URL(string: "http://127.0.0.1:\(listener.port?.rawValue ?? 0)"))
+        let type = "_cooee-\(UUID().uuidString.prefix(6).lowercased())._tcp"
+        var found: [NearbyServer] = []
+        for await servers in Nearby.browse(type: type, local: local) where !servers.isEmpty {
+            found = servers
+            break
+        }
+        #expect(found == [NearbyServer(name: "This Mac", address: local.absoluteString)])
+    }
 }

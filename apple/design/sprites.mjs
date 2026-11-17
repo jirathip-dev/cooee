@@ -1,6 +1,3 @@
-// #124: rasterise the farm pack's scene horses (packs/themes/farm/sprites.svg, s-scene-*) in each persona's coat, and
-// the scene strip, to PNGs the SwiftUI views load. The art is the pack's; only the coats are set here (as #116's ns.css).
-// Usage (repo root): node apple/design/sprites.mjs <chrome-headless-shell>
 import { execFileSync } from 'node:child_process';
 import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -22,16 +19,28 @@ function shoot(html, w, h, file) {
     '--default-background-color=00000000', `--window-size=${w},${h}`, `--screenshot=${join(out, file)}`, `file://${p}`],
     { stdio: 'ignore' });
 }
-// The sprite's own <g style="--c…"> sets the default coat; the coat class overrides it on the inner group.
 for (const [coat, vars] of Object.entries(COATS)) for (const pose of POSES) {
   const html = `<style>html,body{margin:0;background:transparent}svg{display:block}.k g[style]{${vars}!important}
   .k *{animation:none!important}</style><div style="display:none">${sprites}</div>
   <svg class=k width=132 height=100 viewBox="0 0 132 100"><use href="#s-scene-${pose}"/></svg>`;
-  // <use> clones keep the symbol's inline style, so inline the symbol instead and swap its coat.
   const m = sprites.match(new RegExp(`<symbol id="s-scene-${pose}" viewBox="0 0 132 100">([\\s\\S]*?)</symbol>`));
   const body = m[1].replace(/style="--c:[^"]*"/, `style="${vars};--fk:#58a6ff"`);
   shoot(`<style>html,body{margin:0;background:transparent}svg{display:block}*{animation:none!important}</style>
   <svg width=132 height=100 viewBox="0 0 132 100">${body}</svg>`, 132, 100, `horse-${coat}-${pose}.png`);
+}
+const GAIT = { ff: 1, nh: 1, fh: -1, nf: -1 };
+for (const [coat, vars] of Object.entries(COATS)) for (const frame of [0, 1]) {
+  const m = sprites.match(/<symbol id="s-scene-edit" viewBox="0 0 132 100">([\s\S]*?)<\/symbol>/);
+  const body = m[1].replace(/style="--c:[^"]*"/, `style="${vars};--fk:#58a6ff"`)
+    .replace(/<g class="leg leg-(\w+)" style="[^"]*">/g, (_, l) => `<g transform="rotate(${GAIT[l] * (frame ? -16 : 16)})">`);
+  shoot(`<style>html,body{margin:0;background:transparent}svg{display:block}*{animation:none!important}</style>
+  <svg width=132 height=100 viewBox="0 0 132 100">${body}</svg>`, 132, 100, `horse-${coat}-edit-gait${frame}.png`);
+}
+for (const id of ['edit', 'read', 'run', 'idle', 'done', 'needs', 'fail', 'merged']) {
+  const [, box, body] = sprites.match(new RegExp(`<symbol id="s-${id}" viewBox="([^"]*)">([\\s\\S]*?)</symbol>`));
+  const [, , w, h] = box.split(' ').map(Number);
+  shoot(`<style>html,body{margin:0;background:transparent}svg{display:block}.kf2{display:none}</style>
+  <svg width=${w} height=${h} viewBox="${box}">${body}</svg>`, w, h, `row-${id}.png`);
 }
 shoot(`<style>html,body{margin:0}svg{display:block;width:402px;height:300px}</style>${readFileSync('packs/themes/farm/scene.svg', 'utf8')}`,
   402, 300, 'scene-strip.png');

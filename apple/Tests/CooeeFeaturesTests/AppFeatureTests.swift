@@ -14,28 +14,39 @@ internal struct AppFeatureTests {
         } withDependencies: {
             $0.date.now = epoch
             $0.serverStore.clear = { calls.record("clear") }
-            $0.threads.threads = { _ in [row("n1")] }
+            $0.threads.home = { _ in HomeAnswer(screen: homeScreen, threads: [row("n1")], personas: [coder]) }
             $0.threads.personas = { _ in [coder] }
+            $0.threads.looks = { _ in Looks() }
+            $0.plugins.installed = { _ in [] }
         }
     }
 
     private func paired() -> AppFeature.State {
-        var state = AppFeature.State(server: mini)
+        var state = AppFeature.State(layout: testLayout, server: mini)
         state.home?.rows = [row("t1", state: "working")]
         state.home?.personas = [coder]
         return state
     }
 
     @Test internal func anUnpairedAppPairsThenShowsHome() async {
-        let store = store(AppFeature.State(server: nil))
+        let store = store(AppFeature.State(layout: testLayout, server: nil))
         #expect(store.state.home == nil && store.state.pairing != nil)
-        await store.send(.pairing(.delegate(.paired(mini)))) { $0 = AppFeature.State(server: mini) }
+        await store.send(.pairing(.delegate(.paired(mini)))) { $0 = AppFeature.State(layout: testLayout, server: mini) }
         #expect(store.state.home?.server == mini && store.state.pairing == nil)
     }
 
+    @Test internal func aMacThatRanTheServerRetiresItsLoginItemsAndSaysSo() async {
+        let store = store(AppFeature.State(layout: testLayout, server: mini))
+        store.dependencies.loginItems.retire = { true }
+        await store.send(.retire)
+        await store.receive(\.retired) { $0.notice = AppFeature.retired }
+        store.dependencies.loginItems.retire = { false }
+        await store.send(.retire)
+    }
+
     @Test internal func aForgottenDevicePairsAgain() async {
-        let store = store(AppFeature.State(server: mini))
-        await store.send(.home(.delegate(.unauthorized))) { $0 = AppFeature.State(server: nil) }
+        let store = store(AppFeature.State(layout: testLayout, server: mini))
+        await store.send(.home(.delegate(.unauthorized))) { $0 = AppFeature.State(layout: testLayout, server: nil) }
         #expect(calls.all == ["clear"])
     }
 
@@ -60,7 +71,6 @@ internal struct AppFeatureTests {
             $0.path = []
             $0.chat = nil
         }
-        await store.send(.menu(.open(true))) { $0.menu.open = true }
     }
 
     @Test internal func aNewChatBecomesItsThreadOnceStarted() async {
@@ -75,7 +85,9 @@ internal struct AppFeatureTests {
         }
         await store.receive(\.home.refresh)
         await store.receive(\.home.loaded) {
+            $0.home?.screen = homeScreen
             $0.home?.rows = [row("n1")]
+            $0.home?.loading = false
         }
         await store.send(.start("nobody")) {
             $0.path = ["new:nobody"]
@@ -83,32 +95,15 @@ internal struct AppFeatureTests {
         }
     }
 
-    @Test internal func anUnpairedMacSetsItselfUpOrConnectsElsewhere() async {
-        let store = store(AppFeature.State(server: nil, mac: true))
-        #expect(store.state.setup == MacSetupFeature.State() && store.state.pairing == nil)
-        await store.send(.setup(.connectElsewhere))
-        await store.receive(\.setup.delegate.clientOnly) {
-            $0.setup = nil
-            $0.pairing = PairingFeature.State()
-        }
-        await store.send(.setUpHere) {
-            $0.pairing = nil
-            $0.setup = MacSetupFeature.State()
-        }
-        await store.send(.setup(.delegate(.paired(mini)))) { $0 = AppFeature.State(server: mini, mac: true) }
-        await store.send(.home(.delegate(.unauthorized))) { $0 = AppFeature.State(server: nil, mac: true) }
-        #expect(store.state.setup != nil)
-    }
-
     @Test internal func withoutHomeNoChatOrPersonaOpens() async {
-        let store = store(AppFeature.State(server: nil))
+        let store = store(AppFeature.State(layout: testLayout, server: nil))
         await store.send(.open("t1")) { $0.path = ["t1"] }
         await store.send(.edit(nil))
     }
 
     @Test internal func aSavedPersonaClosesItsSheetAndHomeReloads() async {
         let store = store(paired())
-        store.dependencies.personas.save = { _, persona in persona }
+        store.dependencies.plugins.act = { _, _, _, action in .object(action.values) }
         await store.send(.edit("coder")) { $0.persona = PersonaFeature.State(server: mini, persona: coder) }
         await store.send(.persona(.presented(.binding(.set(\.draft.character, "Terse."))))) {
             $0.persona?.draft.character = "Terse."
@@ -116,7 +111,11 @@ internal struct AppFeatureTests {
         await store.send(.persona(.presented(.save))) { $0.persona?.busy = true }
         await store.receive(\.persona.presented.delegate.saved) { $0.persona = nil }
         await store.receive(\.home.refresh)
-        await store.receive(\.home.loaded) { $0.home?.rows = [row("n1")] }
+        await store.receive(\.home.loaded) {
+            $0.home?.screen = homeScreen
+            $0.home?.rows = [row("n1")]
+            $0.home?.loading = false
+        }
     }
 
     @Test internal func aNewPersonaStartsBlankOnTheFirstPersonasAgent() async {
@@ -134,9 +133,50 @@ internal struct AppFeatureTests {
 
     @Test internal func theLookOutlivesPairingAgain() async {
         let dark = Settings(scheme: .dark, style: .terminal)
-        let store = store(AppFeature.State(server: mini, settings: dark))
-        await store.send(.home(.delegate(.unauthorized))) { $0 = AppFeature.State(server: nil, settings: dark) }
-        await store.send(.pairing(.delegate(.paired(mini)))) { $0 = AppFeature.State(server: mini, settings: dark) }
+        let store = store(AppFeature.State(layout: testLayout, server: mini, settings: dark))
+        await store.send(.home(.delegate(.unauthorized))) {
+            $0 = AppFeature.State(layout: testLayout, server: nil, settings: dark)
+        }
+        await store.send(.pairing(.delegate(.paired(mini)))) {
+            $0 = AppFeature.State(layout: testLayout, server: mini, settings: dark)
+        }
         #expect(store.state.menu.server == mini)
+    }
+}
+
+extension AppFeatureTests {
+    @Test internal func aChatAskingToOpenAThreadOpensIt() async {
+        let store = store(paired())
+        await store.send(.open("t1")) {
+            $0.path = ["t1"]
+            $0.chat = ChatFeature.State(server: mini, target: .thread("t1"), persona: Persona(coder, state: .working))
+        }
+        await store.send(.chat(.delegate(.open("gone"))))
+        await store.receive(\.open, "gone") {
+            $0.path = ["gone"]
+            $0.chat = ChatFeature.State(
+                server: mini, target: .thread("gone"), persona: Persona(APIPersona(id: "", name: "Chat", agent: ""))
+            )
+        }
+    }
+
+    @Test internal func refineByChatOpensASetupChat() async {
+        let store = store(paired())
+        store.dependencies.plugins.act = { _, _, _, action in .object(action.values) }
+        await store.send(.edit("coder")) { $0.persona = PersonaFeature.State(server: mini, persona: coder) }
+        await store.send(.persona(.presented(.chat))) { $0.persona?.busy = true }
+        await store.receive(\.persona.presented.delegate.chat) {
+            $0.persona = nil
+            $0.path = ["setup:coder"]
+            $0.chat = ChatFeature.State(server: mini, target: .setup(coder), persona: Persona(coder))
+        }
+        await store.receive(\.home.refresh)
+        await store.receive(\.home.loaded) {
+            $0.home?.loading = false
+            $0.home?.screen = homeScreen
+            $0.home?.rows = [row("n1")]
+        }
+        await store.send(.chat(.delegate(.persona("coder"))))
+        await store.receive(\.edit) { $0.persona = PersonaFeature.State(server: mini, persona: coder) }
     }
 }

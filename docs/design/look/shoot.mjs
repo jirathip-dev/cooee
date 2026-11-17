@@ -1,40 +1,28 @@
-// #7: shoot the look design's views (each theme, dark and light) and measure them against herdsman's docs/ui.md gate 2,
-// as v1's shoot.mjs (#1) does: no sideways scroll or box past the right edge, text 11/13 px (inputs
-// 16), every bracket control 28 px tall (a choice row: ≤ 4 lines) with a ≥ 44 px tap, every tap row ≥ 44 px,
-// one-line cells ellipsised. The Modern style (amendment A) has its own scale: text 13/15/17 px, controls 36 px. Prints one line per shot, exits 1 on a failure. No deps: Chrome's --remote-debugging-pipe.
-// Usage (repo root): node docs/design/look/shoot.mjs <chrome-headless-shell>. Frame 1 of every loop (reduced motion).
 import { spawn } from 'node:child_process';
 import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { createServer } from 'node:http';
 import { tmpdir } from 'node:os';
 import { extname, join } from 'node:path';
 
-const here = new URL('.', import.meta.url).pathname;
-const [chrome] = process.argv.slice(2); // and an optional regexp: shoot only the names it matches
-// [page, query, name, width, height: full (the page) | sheet (the sheet's list) | screen (844 / 900), DPR, the system's mode]
+const here = new URL('.', import.meta.url).pathname, root = join(here, '../../..');
+const [chrome] = process.argv.slice(2);
 const VIEWS = [];
 for (const [w, dpr] of [[390, 2], [1440, 1]]) {
   for (const m of ['dark', 'light']) {
     for (const t of ['farm', 'kitchen', 'garden', 'terminal']) VIEWS.push(['themes.html', `?theme=${t}`, `themes-${t}-${w}-${m}`, w, 'full', dpr, m]);
     VIEWS.push(['settings.html', '?theme=farm', `settings-${w}-${m}`, w, 'sheet', dpr, m]);
   }
-  // The look sheet: four states, so every theme and both appearances show once at each width.
   VIEWS.push(['look.html', '?theme=farm&mode=system', `look-${w}-dark`, w, 'screen', dpr, 'dark'],
     ['look.html', '?theme=garden&mode=light', `look-${w}-light`, w, 'screen', dpr, 'dark'],
     ['look.html', '?theme=kitchen&mode=dark&light=paper', `look-kitchen-${w}-dark`, w, 'screen', dpr, 'light'],
     ['look.html', '?theme=terminal&mode=system', `look-terminal-${w}-light`, w, 'screen', dpr, 'light']);
 }
-// The first pass is the Terminal style: its 28 shots keep their names.
 for (const v of VIEWS) v[1] += '&style=terminal';
-// Amendment A. The chat in farm in all four combinations (Style × Sprites), light and dark, at 390.
 for (const m of ['dark', 'light']) for (const st of ['modern', 'terminal']) for (const sp of ['on', 'off'])
   VIEWS.push(['themes.html', `?theme=farm&style=${st}&sprites=${sp}`, `combo-${st}-sprites-${sp}-390-${m}`, 390, 'full', 2, m]);
-// Then each theme once in Modern with sprites on (the default; farm is combo-modern-sprites-on), the modes
-// alternating, and farm at 1440.
 for (const [t, m] of [['kitchen', 'light'], ['garden', 'dark'], ['terminal', 'light']])
   VIEWS.push(['themes.html', `?theme=${t}`, `modern-${t}-390-${m}`, 390, 'full', 2, m]);
 VIEWS.push(['themes.html', '?theme=farm', 'modern-farm-1440-dark', 1440, 'full', 1, 'dark'],
-  // The look sheet and Settings with the defaults (Modern, sprites on) at both widths.
   ['look.html', '?theme=farm&mode=system', 'look-modern-390-dark', 390, 'screen', 2, 'dark'],
   ['look.html', '?theme=garden&mode=system', 'look-modern-1440-light', 1440, 'screen', 1, 'light'],
   ['settings.html', '?theme=farm', 'settings-modern-390-dark', 390, 'sheet', 2, 'dark'],
@@ -43,12 +31,12 @@ const only = process.argv[3] ? new RegExp(process.argv[3]) : null;
 const TYPES = { '.html': 'text/html', '.css': 'text/css', '.js': 'text/javascript', '.png': 'image/png', '.json': 'application/json', '.svg': 'image/svg+xml' };
 const srv = createServer((q, r) => {
   try {
-    const p = join(here, decodeURIComponent(new URL(q.url, 'http://x').pathname));
+    const p = join(root, decodeURIComponent(new URL(q.url, 'http://x').pathname));
     r.writeHead(200, { 'content-type': TYPES[extname(p)] || 'application/octet-stream' }).end(readFileSync(p));
   } catch { r.writeHead(404).end(); }
 }).listen(0, '127.0.0.1');
 await new Promise(ok => srv.on('listening', ok));
-const base = `http://127.0.0.1:${srv.address().port}/`;
+const base = `http://127.0.0.1:${srv.address().port}/docs/design/look/`;
 
 const c = spawn(chrome, ['--headless', '--no-sandbox', '--hide-scrollbars', '--remote-debugging-pipe', '--no-first-run',
   `--user-data-dir=${mkdtempSync(join(tmpdir(), 'cooee-prof-'))}`], { stdio: ['ignore', 'ignore', 'ignore', 'pipe', 'pipe'] });
@@ -67,7 +55,6 @@ const send = (method, params = {}, sessionId) => new Promise((ok, no) => {
 });
 const sleep = ms => new Promise(ok => setTimeout(ok, ms));
 
-// Runs in the page: every rule above, as a list of "what · where" strings.
 function audit() {
   const modern = document.documentElement.dataset.style === 'modern', SIZES = modern ? [13, 15, 17] : [11, 13], CTL = modern ? 36 : 28;
   const bad = [], W = innerWidth, name = e => e.tagName.toLowerCase() + (e.className && typeof e.className === 'string' ? '.' + e.className.trim().split(/\s+/).join('.') : '') + ` "${(e.textContent || e.placeholder || '').trim().slice(0, 30)}"`;

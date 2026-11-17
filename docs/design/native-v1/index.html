@@ -12,7 +12,7 @@ figure{margin:0;background:var(--card);border:1px solid var(--edge);border-radiu
 img{width:100%;display:block;border-radius:8px}figcaption{font-size:12px;color:var(--mute);margin-top:6px;overflow-wrap:anywhere}
 </style>
 <h1>cooee native v1: the screens</h1>
-<p>Drawn in SwiftUI in <code>apple/</code>, fed by fixtures shaped like <code>docs/api.md</code>, rendered by <code>swift run shots</code>.
+<p>Drawn in SwiftUI in <code>apple/</code>, fed by fixtures shaped like <code>docs/README.md</code>, rendered by <code>swift run shots</code>.
 Farm scheme. Glass is drawn as a stand-in in these renders (no Xcode on the design host); see <code>apple/design/v1/README.md</code> for each frame and its decision.</p>
 <div id=s></div>
 <script>
@@ -22,7 +22,7 @@ const S = [
   ['iPhone, light', 'home avatar-menu chat-streaming chat-card chat-cards-more persona'.split(' ').map(f => f + '-light')],
   ['iPhone first run', 'welcome scan nearby address waiting paired'.split(' ').map(f => 'pair-' + f + '-dark')],
   ['Styles: Terminal and Scene', 'terminal-home-dark terminal-chat-dark terminal-card-dark terminal-persona-dark scene-home-light scene-chat-light scene-card-light'.split(' ').map(f => 'style-' + f)],
-  ['Mac: server setup, QR, approve, client', 'welcome folders signins tailscale qr approve'.split(' ').map(f => 'mac-setup-' + f).concat(['mac-connect']), 1],
+  ['Mac: client', ['mac-connect'], 1],
   ['Mac window: sidebar + chat', ['mac-window-dark', 'mac-window-light'], 1],
 ];
 document.getElementById('s').innerHTML = S.map(([h, fs, w]) => `<h2>${h}</h2><div class="g${w ? ' w' : ''}">${fs.map(f =>

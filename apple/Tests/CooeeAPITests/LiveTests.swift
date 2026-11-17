@@ -10,8 +10,8 @@ internal struct LiveTests {
         let token = try await Client(base: target.url).pair(code: try #require(target.code))
         let client = Client(Server(url: target.url, token: token))
         let coder = try #require(try await client.personas().first { $0.id == "coder" })
-        let id = try await client.newThread(persona: coder, text: "slow 3")
-        #expect(try await client.threads().contains { $0.id == id && $0.persona == "coder" })
+        let id = try await client.newThread(persona: coder, machine: "", text: "slow 3")
+        #expect(try await client.home().threads.contains { $0.id == id && $0.persona == "coder" })
         let slice = try await client.messages(id)
         var live = ""
         var turn = slice.turn
@@ -25,7 +25,7 @@ internal struct LiveTests {
         var items: [APIItem] = []
         for _ in 0..<100 where !items.contains(where: { $0.kind == "agent" }) {
             items = try await client.messages(id).items
-            try await Task.sleep(for: .milliseconds(100))
+            try await ContinuousClock().sleep(for: .milliseconds(100))
         }
         #expect(items.map(\.kind) == ["you", "agent"])
         #expect(items.last?.text == "streamed 3 words")
@@ -41,14 +41,15 @@ internal struct LivePersonaTests {
         let client = Client(Server(url: target.url, token: token))
         var probe = try await client.create(APIPersona(id: "", name: "Probe", agent: "fake-acp"))
         probe.character = "Checks the round trip."
-        #expect(try await client.save(probe) == probe)
+        let screen = "/screens/persona/\(probe.id)"
+        _ = try await client.act(.core, screen: screen, .save(probe))
         #expect(try await client.personas().contains(probe))
-        #expect(try await client.memory(probe.id).isEmpty)
-        try await client.forget(probe.id)
+        let cleared = try await client.act(.core, screen: screen, BlockAction(action: "clear", values: [:]))
+        #expect(cleared.list("blocks").first { $0.type == "memory" }?["count"] == .number(0))
         for look in (environment["COOEE_SIM_LOOKS"] ?? "").split(separator: " ") {
             let made = try await client.personas().first { $0.id == "scout-\(look)" }
             #expect(made?.character == "Finds the facts first." && made?.instructions == "Cite every source.")
-            #expect(made?.pinned == true)
+            #expect(made?.pinned == true && made?.style == .detailed)
             #expect(made?.agent == "fake-acp" && made?.folder.hasSuffix("/root/project") == true)
         }
     }

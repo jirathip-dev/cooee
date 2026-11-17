@@ -1,0 +1,3 @@
+# The last layout before agents/ (#359): personas and profiles in the config folder, notes, skills and routines in
+# the data folder. Never edited: a later release adds its own.
+port = 4747

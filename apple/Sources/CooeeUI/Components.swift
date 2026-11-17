@@ -5,8 +5,17 @@ internal struct Avatar: View {
     @Environment(\.look) private var look
     internal let persona: Persona
     internal var size: CGFloat = 44
+    internal var frame = 0
 
     internal var body: some View {
+        if persona.id.isEmpty && look.style != .terminal {
+            NeutralAvatar(persona: persona, size: size)
+        } else {
+            styled
+        }
+    }
+
+    @ViewBuilder private var styled: some View {
         let palette = look.palette
         let tint = palette.tint(persona.look.tint)
         switch look.style {
@@ -16,17 +25,27 @@ internal struct Avatar: View {
                     LinearGradient(
                         colors: [tint.opacity(0.95), tint.opacity(0.6)], startPoint: .top, endPoint: .bottom)
                 )
-                .overlay(
-                    Image(systemName: persona.look.symbol).font(.system(size: size * 0.40, weight: .semibold))
-                        .foregroundStyle(palette.dark ? Color.black.opacity(0.75) : .white)
-                )
+                .overlay { face.foregroundStyle(palette.dark ? Color.black.opacity(0.75) : .white) }
+                .clipShape(Circle())
                 .frame(width: size, height: size)
         case .terminal:
-            Text(persona.figure).font(.system(size: size * 0.30, weight: .bold, design: .monospaced))
-                .foregroundStyle(tint).frame(width: size, height: size)
-                .overlay(Rectangle().strokeBorder(tint.opacity(0.7), lineWidth: 1))
+            Text(persona.state.figure(frame: frame)).font(
+                .system(size: size * 0.30, weight: .bold, design: .monospaced)
+            )
+            .foregroundStyle(tint).frame(width: size, height: size)
+            .overlay(Rectangle().strokeBorder(tint.opacity(0.7), lineWidth: 1))
         case .scene:
-            Sprite(name: "horse-\(persona.look.coat)-\(persona.pose)").frame(width: size * 1.32, height: size)
+            StateSprite(persona: persona, frame: frame, size: size)
+        }
+    }
+
+    @ViewBuilder private var face: some View {
+        if let photo = AvatarPicture.image(persona.api.avatar) {
+            Image(decorative: photo, scale: 1).resizable().scaledToFill()
+        } else if persona.look.symbol.isEmpty {
+            Text(persona.look.initials).font(.system(size: size * 0.36, weight: .semibold))
+        } else {
+            Image(systemName: persona.look.symbol).font(.system(size: size * 0.40, weight: .semibold))
         }
     }
 }
@@ -84,11 +103,12 @@ internal struct RoundSurface: ViewModifier {
 internal struct Badge: View {
     @Environment(\.look) private var look
     internal let count: Int
+    internal var tint: Color?
 
     internal var body: some View {
         Text("\(count)").ui(12, .bold, look).foregroundStyle(look.palette.dark ? .black : .white)
             .padding(.horizontal, 6).frame(minWidth: 20, minHeight: 20)
-            .background(look.palette.link, in: look.mono ? AnyShape(Rectangle()) : AnyShape(Capsule()))
+            .background(tint ?? look.palette.link, in: look.mono ? AnyShape(Rectangle()) : AnyShape(Capsule()))
     }
 }
 

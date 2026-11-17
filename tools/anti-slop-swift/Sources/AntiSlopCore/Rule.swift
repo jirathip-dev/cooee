@@ -104,15 +104,9 @@ open class SlopRule: SyntaxVisitor {
         converter.location(for: position).line
     }
 
-    /// True when a comment containing "SAFETY:" appears in the contiguous
-    /// block of non-blank comment lines immediately above `node`.
-    ///
-    /// This is the documented escape hatch for genuinely necessary force
-    /// casts, force tries, and force unwraps: the author must state the
-    /// invariant they checked by hand.
     func hasPrecedingSafetyComment(for node: some SyntaxProtocol) -> Bool {
         let line = converter.location(for: node.positionAfterSkippingLeadingTrivia).line
-        var index = line - 2 // zero-based index of the previous line
+        var index = line - 2
         while index >= 0 {
             let trimmed = sourceLines[index].trimmingCharacters(in: .whitespaces)
             if trimmed.isEmpty { return false }
@@ -167,8 +161,6 @@ public enum AntiSlop {
         rules: [SlopRule.Type]
     ) -> [Violation] {
         let tree = Parser.parse(source: source)
-        // Fold binary-operator sequences (`as!`, `as?`, `??`, ...) into typed
-        // nodes so rules can see them; keep going on unfoldable input.
         let folded = OperatorTable.standardOperators.foldAll(tree) { _ in }
         let converter = SourceLocationConverter(fileName: fileName, tree: folded)
         return rules.flatMap { ruleType -> [Violation] in

@@ -1,26 +1,25 @@
 //! Plugins end to end: `cooee serve` with two plugins, each on a fake backend that records what it is sent. The
-//! proxy carries the plugin's own token and never the device's cookie, an event stream comes through, the frame is
-//! sandboxed, a backend posts with its token or is refused, and a choice card's answer goes to its own plugin.
+//! proxy carries the plugin's own token and never the device's cookie, an event stream comes through, a backend
+//! posts with its token or is refused, and a choice card's answer goes to its own plugin.
 
 mod support;
 
 use std::{
-    io::{BufRead, BufReader, Read, Write},
+    io::{BufRead, BufReader, ErrorKind, Read, Write},
     net::{TcpListener, TcpStream},
     process::Command,
     sync::{
         Arc, Mutex,
         atomic::{AtomicBool, Ordering},
+        mpsc,
     },
     thread,
-    time::Duration,
+    time::{Duration, Instant},
 };
 
 use serde_json::{Value, json};
-use support::{Cooee, FakeShed, is_item, others_go_on, scratch, version};
+use support::{Cooee, FakeShed, HANG, is_item, others_go_on, scratch, version};
 
-/// A plugin backend on a free port: every request's head (request line and lowercased headers) and body. Its
-/// next answer to `/cooee/choice` is `choice`'s, when set; while `hang` is set it answers no choice.
 struct Backend {
     port: u16,
     seen: Arc<Mutex<Vec<(String, String)>>>,
@@ -50,7 +49,6 @@ impl Backend {
         }
     }
 
-    /// The `/cooee/choice` bodies it was sent.
     fn choices(&self) -> Vec<Value> {
         self.seen()
             .into_iter()
@@ -86,24 +84,40 @@ fn answer(
     log.lock()
         .unwrap()
         .push((head, String::from_utf8(body).unwrap()));
-    while path == "/cooee/choice" && hang.load(Ordering::SeqCst) {
+    let until = Instant::now() + HANG;
+    while matches!(path.as_str(), "/cooee/choice" | "/hang")
+        && hang.load(Ordering::SeqCst)
+        && Instant::now() < until
+    {
         thread::sleep(Duration::from_millis(20));
     }
     if path == "/cooee/choice"
         && let Some((code, v)) = choice.lock().unwrap().take()
     {
         let mut s = r.into_inner();
-        let _ = write!(
+        write!(
             s,
             "HTTP/1.0 {code} X\r\nContent-Type: application/json\r\n\r\n{v}"
-        );
+        )
+        .ok();
+        return;
+    }
+    if path == "/beats" {
+        let mut s = r.into_inner();
+        write!(
+            s,
+            "HTTP/1.0 200 OK\r\nContent-Type: text/event-stream\r\n\r\n"
+        )
+        .ok();
+        while s.write_all(b": beat\n\n").is_ok() {
+            thread::sleep(Duration::from_millis(50));
+        }
+        log.lock()
+            .unwrap()
+            .push(("closed /beats".to_owned(), String::new()));
         return;
     }
     let (kind, text) = match path.as_str() {
-        "/tab.js" => (
-            "text/javascript",
-            "document.body.append('module ran');".to_owned(),
-        ),
         "/events" => (
             "text/event-stream",
             ": open\n\nid: 7\nevent: tick\ndata: one\ndata: two\n\n".to_owned(),
@@ -111,7 +125,7 @@ fn answer(
         _ => ("application/json", json!({ "path": path }).to_string()),
     };
     let mut s = r.into_inner();
-    let _ = write!(s, "HTTP/1.0 200 OK\r\nContent-Type: {kind}\r\n\r\n{text}");
+    write!(s, "HTTP/1.0 200 OK\r\nContent-Type: {kind}\r\n\r\n{text}").ok();
 }
 
 const TOKEN_A: &str = "token-a-0123456789abcdef";
@@ -136,7 +150,6 @@ fn setup(name: &str) -> Setup {
     };
     let extra = plugin("a", "Alpha", a.port, TOKEN_A) + &plugin("b", "Beta", b.port, TOKEN_B);
     let cooee = Cooee::start_with(&dir, &shed.dir, &extra);
-    // Both plugins attached to persona `chief` (#129): their cards go to its threads only.
     let chief = json!({ "name": "Chief", "agent": "fake-acp", "plugins": ["a", "b"] });
     let (code, body) = cooee.post("/personas", &chief);
     assert_eq!(code, 200, "{body}");
@@ -154,7 +167,6 @@ fn status(head: &str) -> u16 {
 }
 
 impl Setup {
-    /// POSTs `body` to `path` as a plugin backend would: with `auth` (maybe none) and no cookie.
     fn as_backend(&self, path: &str, auth: &str, body: &Value) -> (u16, String) {
         let json = ("Content-Type", "application/json");
         let headers: &[(&str, &str)] = if auth.is_empty() {
@@ -185,7 +197,6 @@ fn the_proxy_sends_the_plugins_own_token_and_never_the_cookie() {
     );
     assert_eq!(sent, r#"{"n":1}"#);
 
-    // The other plugin's backend gets its own token; neither sees the other's calls.
     assert_eq!(s.cooee.get("/p/b/api/echo").0, 200);
     let (head, _) = s.b.seen().pop().unwrap();
     assert!(
@@ -195,7 +206,6 @@ fn the_proxy_sends_the_plugins_own_token_and_never_the_cookie() {
     assert_eq!(s.a.seen().len(), 1);
     assert!(s.b.seen().iter().all(|(h, _)| !h.contains(TOKEN_A)));
 
-    // An unpaired caller doesn't get through; an unknown plugin is not found.
     let (head, _) = s.cooee.raw("GET", "/p/a/api/echo", &[], "");
     assert_eq!(status(&head), 401);
     assert_eq!(s.a.seen().len(), 1);
@@ -231,49 +241,30 @@ fn a_backends_event_stream_comes_through_the_proxy() {
 }
 
 #[test]
-fn the_tab_frames_the_module_in_a_sandbox() {
-    let s = setup("plugin-frame");
-    let (code, page) = s.cooee.get("/");
-    assert_eq!(code, 200);
-    assert!(
-        page.contains(r#"<a href="/p/a""#) && page.contains("Alpha") && page.contains("Beta"),
-        "{page}"
-    );
-    let (code, page) = s.cooee.get("/p/a");
-    assert_eq!(code, 200);
-    assert!(
-        page.contains(r#"sandbox="allow-scripts""#) && page.contains(r#"data-src="/p/a/frame""#),
-        "{page}"
-    );
-
-    let (head, page) = s
-        .cooee
-        .raw("GET", "/p/a/frame", &[("Cookie", &s.cooee.cookie)], "");
-    assert_eq!(status(&head), 200, "{head}");
-    let csp = head
-        .lines()
-        .find_map(|l| l.strip_prefix("content-security-policy: "))
+fn a_closed_page_closes_its_backend_stream() {
+    let s = setup("plugin-sse-closed");
+    let mut stream = TcpStream::connect(&s.cooee.addr).unwrap();
+    stream
+        .set_read_timeout(Some(Duration::from_secs(20)))
         .unwrap();
-    for rule in [
-        "sandbox allow-scripts;",
-        "default-src 'none';",
-        "script-src 'sha256-",
-    ] {
-        assert!(csp.contains(rule), "{csp}");
+    write!(
+        stream,
+        "GET /p/a/api/beats HTTP/1.0\r\nHost: {}\r\nCookie: {}\r\n\r\n",
+        s.cooee.addr, s.cooee.cookie
+    )
+    .unwrap();
+    let mut lines = BufReader::new(stream).lines().map(Result::unwrap);
+    let head = lines.next().unwrap();
+    assert!(head.contains(" 200 "), "{head}");
+    drop(lines);
+    let closed = || s.a.seen().iter().any(|(h, _)| h == "closed /beats");
+    for _ in 0..100 {
+        if closed() {
+            return;
+        }
+        thread::sleep(Duration::from_millis(50));
     }
-    assert!(
-        !csp.contains("allow-same-origin") && !csp.contains("connect-src"),
-        "{csp}"
-    );
-    assert!(
-        page.contains("globalThis.cooee") && page.contains("document.body.append('module ran');"),
-        "{page}"
-    );
-    let (head, _) = s.a.seen().pop().unwrap();
-    assert!(
-        head.starts_with("get /tab.js ") && head.contains(TOKEN_A),
-        "{head}"
-    );
+    panic!("the backend's stream is still open 5 s after its page closed");
 }
 
 #[test]
@@ -285,7 +276,6 @@ fn a_plugin_without_its_token_is_refused() {
         assert_eq!(s.as_backend("/plugin/push", auth, &push).0, 401, "{auth}");
         assert_eq!(s.as_backend("/plugin/card", auth, &card).0, 401, "{auth}");
     }
-    // A paired device's cookie is not a plugin's token.
     assert_eq!(s.cooee.post("/plugin/push", &push).0, 401);
 
     let (code, note) = s.as_backend("/plugin/push", &format!("Bearer {TOKEN_A}"), &push);
@@ -387,7 +377,7 @@ fn the_docs_show_the_example_plugin_the_ui_tests_run() {
 }
 
 #[test]
-fn a_plugin_names_its_push_tag_and_puts_a_dot_on_its_own_tab() {
+fn a_plugin_names_its_push_tag_and_sets_its_dot_only_with_its_token() {
     let s = setup("plugin-dot");
     let a = format!("Bearer {TOKEN_A}");
     let push = json!({ "text": "air offline", "path": "air", "tag": "machine" });
@@ -399,42 +389,26 @@ fn a_plugin_names_its_push_tag_and_puts_a_dot_on_its_own_tab() {
         (&json!("machine"), &json!("/p/a#air"))
     );
 
-    let dot = "Alpha<i class=\"dot\" aria-hidden=\"true\">●</i>";
-    assert!(!s.cooee.get("/").1.contains("class=\"dot\""));
     assert_eq!(
         s.as_backend("/plugin/dot", "", &json!({ "on": true })).0,
         401
     );
-    assert_eq!(
-        s.as_backend("/plugin/dot", &a, &json!({ "on": true })).0,
-        200
-    );
-    let home = s.cooee.get("/").1;
-    assert!(
-        home.contains(dot) && home.matches("class=\"dot\"").count() == 1,
-        "{home}"
-    );
-    assert!(s.cooee.get("/p/b").1.contains(dot));
-    assert_eq!(
-        s.as_backend("/plugin/dot", &a, &json!({ "on": false })).0,
-        200
-    );
-    assert!(!s.cooee.get("/").1.contains("class=\"dot\""));
+    for on in [true, false] {
+        let (code, body) = s.as_backend("/plugin/dot", &a, &json!({ "on": on }));
+        assert_eq!((code, body), (200, on.to_string()));
+    }
 }
 
-/// This device's label, as an answer's `by` names it.
 fn me(s: &Setup) -> String {
     let devices = s.cooee.json("/devices");
     let me = devices.as_array().unwrap().iter().find(|d| d["me"] == true);
     me.unwrap()["label"].as_str().unwrap().to_owned()
 }
 
-/// A new thread's id: one of persona `chief`'s.
 fn new_thread(s: &Setup, text: &str) -> String {
     thread_of(s, "chief", text)
 }
 
-/// A new thread of persona `persona` (none: Plain), once its agent has answered: its id.
 fn thread_of(s: &Setup, persona: &str, text: &str) -> String {
     let random = format!("r-{persona}-{text}");
     let new = json!({ "agent": "fake-acp", "profile": persona, "folder": s.dir.join("root/project"), "text": text, "random_id": random });
@@ -452,13 +426,11 @@ fn thread_of(s: &Setup, persona: &str, text: &str) -> String {
 }
 
 impl Setup {
-    /// Plugin a's card: its status and answer.
     fn card(&self, card: &Value) -> (u16, Value) {
         let (code, body) = self.as_backend("/plugin/card", &format!("Bearer {TOKEN_A}"), card);
         (code, serde_json::from_str(&body).unwrap_or(Value::Null))
     }
 
-    /// The owner's answer to `item` in `thread`.
     fn tap(&self, thread: &str, answer: &Value) -> Value {
         let (code, body) = self
             .cooee
@@ -468,8 +440,6 @@ impl Setup {
     }
 }
 
-/// #553 row 30: the recommended choice comes first and says so; the "other" box's text goes to the plugin like a
-/// choice; the answer keeps who (this device) and when.
 #[test]
 fn row_30_choice_rows_recommended_first_other_text_and_who_and_when() {
     let s = setup("card-30");
@@ -497,8 +467,6 @@ fn row_30_choice_rows_recommended_first_other_text_and_who_and_when() {
     assert!(answer["answered"].as_u64().unwrap() >= card["at"].as_u64().unwrap());
 }
 
-/// #553 row 31: a card the conductor answered itself shows its answer with [change] for 30 minutes; the owner's
-/// change goes to the plugin, and is the last.
 #[test]
 fn row_31_a_conductors_answer_takes_one_change_from_the_owner() {
     let s = setup("card-31");
@@ -531,8 +499,6 @@ fn row_31_a_conductors_answer_takes_one_change_from_the_owner() {
     );
 }
 
-/// #553 row 32: a config card carries its diff and waits (the slice and the thread list say so); [apply] settles
-/// it with the plugin's line; a plugin's 409 leaves it stale, with no buttons.
 #[test]
 fn row_32_config_card_waits_applies_with_the_plugins_line_or_goes_stale() {
     let s = setup("card-32");
@@ -586,7 +552,6 @@ fn row_32_config_card_waits_applies_with_the_plugins_line_or_goes_stale() {
     assert_eq!(s.a.choices().len(), 2, "a stale card takes no second tap");
 }
 
-/// #553 row 33: a secret card's value goes to its plugin and nowhere else: not the item, not the thread's files.
 #[test]
 fn row_33_a_secrets_value_reaches_its_plugin_only() {
     let s = setup("card-33");
@@ -618,8 +583,6 @@ fn row_33_a_secrets_value_reaches_its_plugin_only() {
     );
 }
 
-/// #553 row 35: a handoff puts `continued in` in the source and the text `from` it in the target; a line flows
-/// back; a pick-a-thread card offers the other open threads.
 #[test]
 fn row_35_handoff_chips_flow_back_lines_and_pick_a_thread() {
     let s = setup("card-35");
@@ -677,9 +640,6 @@ fn row_35_handoff_chips_flow_back_lines_and_pick_a_thread() {
     );
 }
 
-/// #83: a herdsman run card shows its command and sha; [approve] goes to the plugin once, carrying the card's sha
-/// (never the page's value), and settles with the exit code and output tail; a second approve sends nothing; [deny]
-/// carries no sha; an expired card's 409 leaves it stale.
 #[test]
 fn a_run_card_approves_once_with_its_sha_and_shows_the_tail() {
     let s = setup("card-83");
@@ -752,7 +712,6 @@ fn a_run_card_approves_once_with_its_sha_and_shows_the_tail() {
     );
 }
 
-/// #129: a plugin's card goes only to a thread of a persona it is attached to; any other is refused, with why.
 #[test]
 fn a_card_to_a_thread_of_a_persona_its_plugin_isnt_attached_to_is_refused() {
     let s = setup("card-unattached");
@@ -775,7 +734,6 @@ fn a_card_to_a_thread_of_a_persona_its_plugin_isnt_attached_to_is_refused() {
     assert_eq!(code, 200, "{body}");
 }
 
-/// `cooee plugin check` on `answer`: whether it passed, and what it printed.
 fn checked(s: &Setup, answer: &Value) -> (bool, String) {
     let file = s.dir.join("answer.json");
     std::fs::write(&file, answer.to_string()).unwrap();
@@ -790,8 +748,6 @@ fn checked(s: &Setup, answer: &Value) -> (bool, String) {
     )
 }
 
-/// #138: cooee's own choice, config, secret and run cards go out as #125 card blocks the schema passes, in the
-/// card's answer and in the thread's slice; once settled, a card shows its line and no longer asks.
 #[test]
 fn cooees_own_cards_go_out_as_blocks_and_settle_to_their_line() {
     let s = setup("card-blocks");
@@ -864,15 +820,19 @@ fn cooees_own_cards_go_out_as_blocks_and_settle_to_their_line() {
     );
 }
 
-/// #138: `cooee plugin check` passes every #125 and #184 fixture and fails a broken answer, naming the field.
 #[test]
 fn plugin_check_passes_the_fixtures_and_names_a_broken_field() {
     let design = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../docs/design");
-    let mut files: Vec<_> = ["screens-as-data", "fleets-config"]
-        .iter()
-        .flat_map(|d| std::fs::read_dir(design.join(d).join("fixtures")).unwrap())
-        .map(|f| f.unwrap().path())
-        .collect();
+    let mut files: Vec<_> = [
+        "screens-as-data",
+        "fleets-config",
+        "queue-scene",
+        "workflow-diagram",
+    ]
+    .iter()
+    .flat_map(|d| std::fs::read_dir(design.join(d).join("fixtures")).unwrap())
+    .map(|f| f.unwrap().path())
+    .collect();
     files.sort();
     let out = Command::new(env!("CARGO_BIN_EXE_cooee"))
         .args(["plugin", "check"])
@@ -882,7 +842,7 @@ fn plugin_check_passes_the_fixtures_and_names_a_broken_field() {
     let said = String::from_utf8_lossy(&out.stdout);
     assert!(
         out.status.success()
-            && said.lines().count() == 19
+            && said.lines().count() == 25
             && said.lines().all(|l| l.starts_with("ok")),
         "{said}"
     );
@@ -892,7 +852,9 @@ fn plugin_check_passes_the_fixtures_and_names_a_broken_field() {
         { "type": "list", "rows": [{ "type": "row", "title": "#722", "badge": { "text": "impl", "tone": "red" } }] },
         { "type": "secret", "name": "GH_TOKEN", "action": "set", "value": "leaked" },
         { "type": "editor", "name": "toml", "text": "" },
-        { "type": "a-newer-block" } ] });
+        { "type": "a-newer-block" },
+        { "type": "scene", "lanes": [{ "id": "l-1", "title": "#1", "state": "lost" }] },
+        { "type": "row", "title": "#2", "rounds": [{ "id": "r-1", "state": "done" }] } ] });
     let (ok, said) = checked(&s, &broken);
     assert!(!ok);
     assert_eq!(
@@ -901,12 +863,38 @@ fn plugin_check_passes_the_fixtures_and_names_a_broken_field() {
             "$.blocks[0].rows[0].badge.tone: \"red\" is not one of \"ok\", \"warn\", \"bad\", \"info\", \"mute\", \"accent\", \"working\", \"needs\", \"done\", \"fail\", \"idle\"",
             "$.blocks[1].value: must not be sent",
             "$.blocks[2].action: is required",
+            "$.blocks[4].lanes[0].state: \"lost\" is not one of \"working\", \"needs\", \"done\", \"idle\", \"fail\", \"merged\"",
+            "$.blocks[5].rounds[0].name: is required",
         ]
     );
 }
 
-/// #288: a plugin whose answer hangs holds only its own card: meanwhile another thread's send, the thread list and
-/// the home page each answer within 200 ms, and that thread's reply streams in.
+#[test]
+fn plugin_check_knows_swipe_menu_and_refresh() {
+    let s = setup("additions-check");
+    let act = json!({ "label": "Archive", "action": "archive", "tone": "bad" });
+    let good = json!({ "type": "screen", "title": "Queue", "refresh": true,
+        "actions": [{ "label": "More", "icon": "more", "menu": [act] }], "blocks": [
+        { "type": "list", "rows": [{ "type": "row", "title": "#1", "swipe": [act], "menu": [act] }] },
+        { "type": "card", "title": "Merge?", "menu": [act] } ] });
+    let (ok, said) = checked(&s, &good);
+    assert!(ok, "{said}");
+    let bad = json!({ "type": "screen", "title": "Queue", "refresh": "yes", "blocks": [
+        { "type": "row", "title": "#1", "swipe": [{ "action": "archive" }], "menu": { "label": "Archive" } },
+        { "type": "card", "menu": [{ "label": "Pin", "tone": "red" }] } ] });
+    let (ok, said) = checked(&s, &bad);
+    assert!(!ok);
+    assert_eq!(
+        said.lines().skip(1).map(str::trim).collect::<Vec<_>>(),
+        [
+            "$.blocks[0].swipe[0].label: is required",
+            "$.blocks[0].menu: an object is not array",
+            "$.blocks[1].menu[0].tone: \"red\" is not one of \"ok\", \"warn\", \"bad\", \"info\", \"mute\", \"accent\", \"working\", \"needs\", \"done\", \"fail\", \"idle\"",
+            "$.refresh: \"yes\" is not boolean",
+        ]
+    );
+}
+
 #[test]
 fn a_hanging_plugin_answer_never_holds_another_thread() {
     let s = setup("plugin-hang");
@@ -931,7 +919,62 @@ fn a_hanging_plugin_answer_never_holds_another_thread() {
     });
 }
 
-/// #226: `cooee plugin check` checks a `cooee-plugin.toml` by the manifest's rules, `attach` included.
+#[test]
+fn a_hung_plugin_holds_only_its_own_calls() {
+    let s = setup("plugin-busy");
+    let other = new_thread(&s, "Say hi");
+    s.a.hang.store(true, Ordering::SeqCst);
+    let (addr, cookie) = (&s.cooee.addr, &s.cooee.cookie);
+    let get = format!("GET /p/a/api/hang HTTP/1.0\r\nHost: {addr}\r\nCookie: {cookie}\r\n\r\n");
+    let call = || {
+        let mut last = String::new();
+        for _ in 0..500 {
+            let mut answer = String::new();
+            let got = TcpStream::connect(addr).and_then(|mut c| {
+                c.set_read_timeout(Some(Duration::from_secs(20)))?;
+                c.write_all(get.as_bytes())?;
+                BufReader::new(c).read_to_string(&mut answer)
+            });
+            match got {
+                Ok(_) => return answer,
+                Err(e) if matches!(e.kind(), ErrorKind::WouldBlock | ErrorKind::TimedOut) => {
+                    return e.to_string();
+                }
+                Err(e) => {
+                    last = e.to_string();
+                    thread::sleep(Duration::from_millis(20));
+                }
+            }
+        }
+        last
+    };
+    thread::scope(|scope| {
+        let (tx, answers) = mpsc::channel();
+        for _ in 0..600 {
+            let tx = tx.clone();
+            scope.spawn(move || {
+                tx.send(call()).ok();
+            });
+        }
+        let busy: Vec<String> = answers.iter().take(592).collect();
+        let not_busy = busy
+            .iter()
+            .find(|a| !a.contains("busy: 8 calls already in flight"));
+        assert!(not_busy.is_none(), "{not_busy:?}");
+        assert_eq!(s.a.seen().len(), 8);
+        others_go_on(&s.cooee, &other);
+        let at = Instant::now();
+        assert_eq!(s.cooee.get("/p/b/api/echo").0, 200);
+        let took = at.elapsed();
+        assert!(took < HANG / 2, "plugin b took {took:?}");
+        assert!(answers.try_recv().is_err(), "the 8 calls to a still hang");
+        s.a.hang.store(false, Ordering::SeqCst);
+        for answer in answers.iter().take(8) {
+            assert!(answer.contains(r#"{"path":"/hang"}"#), "{answer}");
+        }
+    });
+}
+
 #[test]
 fn plugin_check_checks_a_manifest() {
     let s = setup("manifest-check");
