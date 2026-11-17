@@ -16,6 +16,7 @@ public struct ChatFeature: Sendable {
         public let target: Target
         public var persona: Persona
         public var items: [APIItem] = []
+        public var frames: [String: Data] = [:]
         public var turn = Turn()
         public var queue: [Queued] = []
         public var live = ""
@@ -90,6 +91,8 @@ public struct ChatFeature: Sendable {
         case attaching(PresentationAction<AttachFeature.Action>)
         case workflow(WorkflowAction)
         case machine(MachineAction)
+        case frame(String)
+        case framed(String, Data)
 
         @CasePathable
         public enum Delegate: Sendable, Equatable {
@@ -131,6 +134,7 @@ public struct ChatFeature: Sendable {
             }
         }
         Reduce { state, action in agent(&state, action) }
+        Reduce { state, action in frames(&state, action) }
         Reduce { state, action in plugins(&state, action) }
             .ifLet(\.$screen, action: \.screen) { ScreenFeature() }
             .ifLet(\.$attaching, action: \.attaching) { AttachFeature() }

@@ -24,6 +24,7 @@ mod cards;
 mod events;
 mod expire;
 mod folders;
+mod frames;
 mod mcp;
 mod models;
 mod plugins;
@@ -134,6 +135,7 @@ fn glance(live: &Live) -> Glance {
         Body::You { text, .. }
         | Body::Agent { text, .. }
         | Body::Note { text }
+        | Body::Frame { text, .. }
         | Body::Link { text, .. }
         | Body::Ask { text, .. }
         | Body::Ended { text } => text,

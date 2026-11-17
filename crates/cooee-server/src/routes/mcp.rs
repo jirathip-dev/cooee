@@ -63,7 +63,7 @@ async fn mcp_grant(cx: &Cx, Json(a): Json<AgentAsk>) -> Result<Answer<mcp::Grant
 }
 
 #[route(POST "/mcp/agent/call")]
-async fn mcp_call(cx: &Cx, Json(a): Json<AgentAsk>) -> Result<Answer<bool>> {
+async fn mcp_call(cx: &Cx, Json(a): Json<AgentAsk>) -> Result<Answer<Option<String>>> {
     let token = bearer(cx);
     let text = |k: &str| {
         a.server
@@ -77,7 +77,25 @@ async fn mcp_call(cx: &Cx, Json(a): Json<AgentAsk>) -> Result<Answer<bool>> {
     Ok(Answer(
         blocking(cx, move |hub| {
             hub.call((&a.thread, &token), (&server, &tool), &args)
-                .map(|()| true)
+        })
+        .await,
+    ))
+}
+
+#[route(POST "/mcp/agent/frame")]
+async fn mcp_frame(cx: &Cx, Json(a): Json<AgentAsk>) -> Result<Answer<()>> {
+    let token = bearer(cx);
+    let text = |k: &str| {
+        a.server
+            .get(k)
+            .and_then(serde_json::Value::as_str)
+            .unwrap_or_default()
+            .to_owned()
+    };
+    let (caption, image) = (text("caption"), text("image"));
+    Ok(Answer(
+        blocking(cx, move |hub| {
+            hub.frame((&a.thread, &token), &caption, &image)
         })
         .await,
     ))
@@ -139,6 +157,7 @@ async fn mcp_propose(cx: &Cx, Json(a): Json<AgentAsk>) -> Result<Answer<cooee_co
 pub(super) fn routes(b: RouterBuilder) -> RouterBuilder {
     b.route(mcp_grant)
         .route(mcp_call)
+        .route(mcp_frame)
         .route(mcp_propose)
         .route(mcp_ask)
         .route(mcp_remember)

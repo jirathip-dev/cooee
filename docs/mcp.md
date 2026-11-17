@@ -32,6 +32,16 @@ config, default `/Applications/Chromium.app/Contents/MacOS/Chromium`, `chromium`
 argument against the persona's `[[sites]]` in `agent.toml` (`site`, its subdomains too; `account` and `no_frames`
 marks) and appends the call to `<data>/browsers/<persona>.log`, a refused one too. Only a hand edit changes `sites`.
 
+Replay frames (#161): `POST /mcp/agent/call` answers a caption for each browser action (`click "Sign in"`; text typed
+into a field named like a password is `••••••••` there and in the log; none for `browser_snapshot`,
+`browser_take_screenshot` and the other reads). The proxy then calls `browser_take_screenshot` itself, before the
+agent gets the action's answer, and sends the image to `POST /mcp/agent/frame` instead of to the agent: the model only
+sees a screenshot it asked for. cooee keeps the frame only while every page open in the persona's Chromium (its CDP
+`/json/list`) is on the allowlist and on no `no_frames` site, encrypted (AES-256-GCM, key `FRAMES_KEY` in the
+keychain, a 0600 file on Linux) at `<data>/frames/<thread>/<at>-<hash>`, and adds a `frame` item (`text`: the caption,
+`name`) to the thread; `GET /threads/<id>/frames/<name>` serves it decrypted. Frames are deleted 14 days after they
+were taken. The app shows each as a step with its caption and picture, in the thread and the trace sheet.
+
 ## API
 
 The registry is the Mac's: `cooee mcp add|rm|enable|disable`.

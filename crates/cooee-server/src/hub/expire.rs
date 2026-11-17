@@ -6,6 +6,7 @@ const EXPIRED: &str = "expired";
 
 impl Hub {
     pub(super) fn expire(&self, now: u64) {
+        self.drop_frames(now);
         for live in self.all() {
             let due = {
                 let l = lock(&live);

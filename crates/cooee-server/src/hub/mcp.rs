@@ -120,7 +120,7 @@ impl Hub {
         self.config.as_deref().and_then(Path::parent)
     }
 
-    fn persona(&self, id: &str) -> Agent {
+    pub(super) fn persona(&self, id: &str) -> Agent {
         let list = agents::all(self.config_dir(), &self.data, |_| None);
         list.into_iter().find(|a| a.id == id).unwrap_or_default()
     }
@@ -133,7 +133,7 @@ impl Hub {
         Ok(list)
     }
 
-    fn chromium(&self) -> Result<std::path::PathBuf, HubError> {
+    pub(super) fn chromium(&self) -> Result<std::path::PathBuf, HubError> {
         let Some(c) = &self.config else {
             return Ok(browser::CHROMIUM.into());
         };
@@ -273,7 +273,8 @@ impl Hub {
     }
 
     /// Thread `id`'s proxy's `tools/call` of `tool` on `server` with `args`, checked again: the grant still holds, the
-    /// tool is allowed and, on the browser, a `url` is on the persona's site allowlist; each browser call is logged.
+    /// tool is allowed and, on the browser, a `url` is on the persona's site allowlist; each browser call is logged
+    /// (password typing masked). The caption of the replay frame the proxy takes after it (#161), if any.
     ///
     /// # Errors
     /// [`HubError::Refused`] as [`Hub::grant`], for a tool not allowed, or a site not on the allowlist.
@@ -282,7 +283,7 @@ impl Hub {
         (id, token): (&str, &str),
         (server, tool): (&str, &str),
         args: &Value,
-    ) -> Result<(), HubError> {
+    ) -> Result<Option<String>, HubError> {
         let (persona, pick, _) = self.granted(id, token, server)?;
         if !pick.allows(tool) {
             return Err(HubError::Refused(format!(
@@ -290,10 +291,11 @@ impl Hub {
             )));
         }
         if server != browser::SERVER {
-            return Ok(());
+            return Ok(None);
         }
         let url = args.get("url").and_then(Value::as_str);
         let off = url.filter(|u| !browser::allows(&persona.sites, u));
+        let args = browser::masked(args);
         let line = json!({ "at": now(), "thread": id, "tool": tool, "arguments": args, "refused": off.is_some() });
         let profile = browser::profile(&self.data, &persona.id);
         browser::log(&profile, &line).map_err(|e| refused(&profile, &e))?;
@@ -302,7 +304,7 @@ impl Hub {
                 "{u} isn't on {}'s site allowlist",
                 persona.id
             ))),
-            None => Ok(()),
+            None => Ok(browser::caption(tool, &args)),
         }
     }
 

@@ -10,9 +10,11 @@ mod support;
 use std::{
     fs,
     io::{BufRead, BufReader, Write},
+    net::TcpListener,
     os::unix::fs::PermissionsExt,
     path::{Path, PathBuf},
     process::{Child, ChildStdin, ChildStdout, Command, Stdio},
+    sync::{Arc, Mutex},
 };
 
 use serde_json::{Value, json};
@@ -493,6 +495,7 @@ while IFS= read -r line; do
   [ -n "$id" ] || continue
   case "$line" in
   *'"method":"initialize"'*) r='{"protocolVersion":"2025-06-18","capabilities":{"tools":{}},"serverInfo":{"name":"pw","version":"1"}}' ;;
+  *'"name":"browser_take_screenshot"'*) printf '%s\n' "$line" >>"$(dirname "$0")/shots.log"; r='{"content":[{"type":"text","text":"shot"},{"type":"image","data":"ZnJhbWUtcGl4ZWxz","mimeType":"image/jpeg"}]}' ;;
   *'"method":"tools/call"'*) printf '%s\n' "$line" >>"$(dirname "$0")/calls.log"; r='{"content":[{"type":"text","text":"done"}]}' ;;
   *) r='{}' ;;
   esac
@@ -585,4 +588,149 @@ fn each_persona_gets_its_own_browser_and_every_call_is_checked_and_logged() {
     off.2 = true;
     assert_eq!(logged("ann"), [nav("https://www.example.com/a"), off, snap]);
     assert_eq!(logged("bob"), [nav("https://github.com/")]);
+}
+
+fn fake_cdp(pages: Arc<Mutex<Vec<String>>>) -> u16 {
+    let cdp = TcpListener::bind("127.0.0.1:0").unwrap();
+    let port = cdp.local_addr().unwrap().port();
+    std::thread::spawn(move || {
+        for mut c in cdp.incoming().map_while(Result::ok) {
+            let head: Vec<String> = BufReader::new(&c)
+                .lines()
+                .map_while(Result::ok)
+                .take_while(|l| !l.trim().is_empty())
+                .collect();
+            if !head
+                .first()
+                .is_some_and(|l| l.starts_with("GET /json/list "))
+            {
+                continue;
+            }
+            let list: Vec<Value> = pages
+                .lock()
+                .unwrap()
+                .iter()
+                .map(|u| json!({ "type": "page", "url": u }))
+                .collect();
+            let body = json!(list).to_string();
+            write!(
+                c,
+                "HTTP/1.1 200 OK\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}",
+                body.len()
+            )
+            .ok();
+        }
+    });
+    port
+}
+
+fn frames_setup(dir: &Path, port: u16) -> Setup {
+    let bin = dir.join("bin");
+    fs::create_dir_all(&bin).unwrap();
+    let chromium = CHROMIUM.replace("printf '1\\n", &format!("printf '{port}\\n"));
+    for (name, text) in [("chromium", chromium.as_str()), ("playwright", PLAYWRIGHT)] {
+        fs::write(bin.join(name), text).unwrap();
+        fs::set_permissions(bin.join(name), fs::Permissions::from_mode(0o755)).unwrap();
+    }
+    let toml = "name = \"ann\"\nagent = \"fake-acp\"\n\n[[mcp]]\nserver = \"browser\"\n\n[[sites]]\nsite = \"example.com\"\n\n[[sites]]\nsite = \"bank.com\"\nno_frames = true\n";
+    agent(dir, "ann", toml, "");
+    let secrets = dir.join("data/secrets");
+    fs::create_dir_all(&secrets).unwrap();
+    let key = "BwcHBwcHBwcHBwcHBwcHBwcHBwcHBwcHBwcHBwcHBwc=";
+    fs::write(secrets.join("FRAMES_KEY"), key).unwrap();
+    let shed = FakeShed::start(&dir.join("shed"), version());
+    let extra = format!(
+        "chromium = {:?}\n\n[[mcp]]\nname = \"browser\"\ncommand = {:?}\n",
+        bin.join("chromium").to_string_lossy(),
+        bin.join("playwright").to_string_lossy()
+    );
+    let cooee = Cooee::start_env(dir, &shed.dir, &extra, &[]);
+    Setup {
+        dir: dir.to_owned(),
+        shed,
+        cooee,
+        token: String::new(),
+    }
+}
+
+#[test]
+fn each_browser_action_leaves_one_captioned_encrypted_frame_and_a_no_frames_site_none() {
+    let dir = scratch("mcp-frames");
+    let pages = Arc::new(Mutex::new(vec!["https://www.example.com/a".to_owned()]));
+    let s = frames_setup(&dir, fake_cdp(Arc::clone(&pages)));
+    let (id, servers) = s.thread("ann");
+    let mut ann = Mcp::start(named(&servers, "browser"), Agent::Claude);
+    let shown = [
+        (
+            "browser_navigate",
+            json!({ "url": "https://www.example.com/a" }),
+        ),
+        (
+            "browser_click",
+            json!({ "element": "Sign in", "ref": "e1" }),
+        ),
+        (
+            "browser_type",
+            json!({ "element": "Password", "ref": "e2", "text": "hunter2" }),
+        ),
+        ("browser_snapshot", json!({})),
+    ];
+    let banked = [
+        (
+            "browser_navigate",
+            json!({ "url": "https://bank.com/acct" }),
+        ),
+        (
+            "browser_click",
+            json!({ "element": "Transfer", "ref": "e3" }),
+        ),
+    ];
+    for (tool, args) in &shown {
+        assert_eq!(ann.run(tool, args), Ok("done".to_owned()), "{tool}");
+    }
+    *pages.lock().unwrap() = vec!["https://bank.com/acct".to_owned()];
+    for (tool, args) in &banked {
+        assert_eq!(ann.run(tool, args), Ok("done".to_owned()), "{tool}");
+    }
+    drop(ann);
+
+    let items = s.cooee.json(&format!("/threads/{id}/messages"))["items"].clone();
+    let frames: Vec<(&str, &str)> = items
+        .as_array()
+        .unwrap()
+        .iter()
+        .filter(|i| i["kind"] == "frame")
+        .map(|i| (i["text"].as_str().unwrap(), i["name"].as_str().unwrap()))
+        .collect();
+    let captions: Vec<&str> = frames.iter().map(|f| f.0).collect();
+    let want = [
+        r#"navigate "https://www.example.com/a""#,
+        r#"click "Sign in""#,
+        r#"type "••••••••" into "Password""#,
+    ];
+    assert_eq!(captions, want, "{items}");
+    let stored = dir.join("data/frames").join(&id);
+    assert_eq!(fs::read_dir(&stored).unwrap().count(), 3);
+    for (_, name) in &frames {
+        let served = s.cooee.get(&format!("/threads/{id}/frames/{name}"));
+        assert_eq!(served, (200, "frame-pixels".to_owned()));
+        let sealed = fs::read(stored.join(name)).unwrap();
+        assert!(
+            !sealed.windows(12).any(|w| w == b"frame-pixels"),
+            "{name} is plain on disk"
+        );
+    }
+    let bin = dir.join("bin");
+    let shots = fs::read_to_string(bin.join("shots.log")).unwrap();
+    assert_eq!(shots.lines().count(), 5, "{shots}");
+    assert!(
+        fs::read_to_string(bin.join("calls.log"))
+            .unwrap()
+            .contains("hunter2")
+    );
+    let log = fs::read_to_string(dir.join("data/browsers/ann.log")).unwrap();
+    assert!(
+        !log.contains("hunter2") && log.contains("••••••••"),
+        "{log}"
+    );
 }

@@ -7,7 +7,7 @@
 //! open.
 
 use std::{
-    collections::HashSet,
+    collections::{HashMap, HashSet},
     env,
     fmt::Write as _,
     io::{self, BufRead, BufReader, Read, Write},
@@ -241,25 +241,81 @@ fn only(mut msg: Value, tools: Option<&[String]>) -> Value {
     msg
 }
 
+#[derive(Default)]
+struct Frames {
+    acts: HashMap<String, String>,
+    shots: HashMap<String, (String, Value)>,
+    next: u64,
+}
+
+fn held<T>(m: &Mutex<T>) -> std::sync::MutexGuard<'_, T> {
+    m.lock().unwrap_or_else(PoisonError::into_inner)
+}
+
+fn keep(thread: &str, caption: &str, shot: &Value) {
+    let list = shot.pointer("/result/content").and_then(Value::as_array);
+    let image = list
+        .into_iter()
+        .flatten()
+        .find(|c| c.get("type").and_then(Value::as_str) == Some("image"))
+        .and_then(|c| c.get("data"))
+        .cloned();
+    if let Some(image) = image {
+        let frame = json!({ "thread": thread, "server": { "caption": caption, "image": image } });
+        if let Err(e) = ask("/mcp/agent/frame", &frame) {
+            cooee_core::note!("cooee: a replay frame: {e}");
+        }
+    }
+}
+
 /// `cooee mcp proxy <server> --thread <id>`: forwards the agent's stdio to the server and back, with only the
 /// thread's allowed tools; cooee checks each `tools/call` again (a closed thread's token stops working) and logs a
-/// browser's.
+/// browser's. After a browser action cooee captions, the proxy takes a screenshot for cooee's replay frame (#161)
+/// before the agent gets the answer; the agent never sees it.
 ///
 /// # Errors
 /// When the grant is refused or the server can't start.
 pub fn proxy(server: &str, thread: &str) -> Result<(), String> {
     let g = grant(server, thread)?;
     let (tx, rx): (Sender<Value>, Receiver<Value>) = mpsc::channel();
-    let mut up = open(&g, tx)?;
+    let up = Arc::new(Mutex::new(open(&g, tx)?));
     let out = Arc::new(Mutex::new(io::stdout()));
     let lists: Arc<Mutex<HashSet<String>>> = Arc::default();
-    let (o, l) = (Arc::clone(&out), Arc::clone(&lists));
-    let tools = g.tools.clone();
+    let frames: Arc<Mutex<Frames>> = Arc::default();
+    let (o, l, pending, upstream) = (
+        Arc::clone(&out),
+        Arc::clone(&lists),
+        Arc::clone(&frames),
+        Arc::clone(&up),
+    );
+    let (tools, me) = (g.tools.clone(), thread.to_owned());
     std::thread::spawn(move || {
         for msg in rx {
             let id = msg.get("id").map(Value::to_string).unwrap_or_default();
-            let listed = msg.get("method").is_none()
-                && l.lock().unwrap_or_else(PoisonError::into_inner).remove(&id);
+            let answer = msg.get("method").is_none();
+            if let Some((caption, reply)) =
+                answer.then(|| held(&pending).shots.remove(&id)).flatten()
+            {
+                keep(&me, &caption, &msg);
+                put(&o, &reply);
+                continue;
+            }
+            if let Some(caption) = answer.then(|| held(&pending).acts.remove(&id)).flatten() {
+                let mut fr = held(&pending);
+                fr.next += 1;
+                let shot = json!(format!("cooee-frame-{}", fr.next));
+                let call = json!({ "jsonrpc": "2.0", "id": shot, "method": "tools/call",
+                                   "params": { "name": "browser_take_screenshot", "arguments": { "type": "jpeg" } } });
+                fr.shots.insert(shot.to_string(), (caption, msg));
+                drop(fr);
+                if held(&upstream).send(&call).is_err()
+                    && let Some((_, reply)) = held(&pending).shots.remove(&shot.to_string())
+                {
+                    put(&o, &reply);
+                }
+                continue;
+            }
+            let listed = answer && held(&l).remove(&id);
             put(
                 &o,
                 &if listed {
@@ -277,10 +333,7 @@ pub fn proxy(server: &str, thread: &str) -> Result<(), String> {
         let id = msg.get("id").cloned().unwrap_or(Value::Null);
         match msg.get("method").and_then(Value::as_str) {
             Some("tools/list") => {
-                lists
-                    .lock()
-                    .unwrap_or_else(PoisonError::into_inner)
-                    .insert(id.to_string());
+                held(&lists).insert(id.to_string());
             }
             Some("tools/call") => {
                 let name = msg
@@ -289,19 +342,25 @@ pub fn proxy(server: &str, thread: &str) -> Result<(), String> {
                     .unwrap_or_default();
                 let args = msg.pointer("/params/arguments").cloned();
                 let checked = json!({ "server": server, "tool": name, "arguments": args });
-                if let Err(why) = ask(
+                match ask(
                     "/mcp/agent/call",
                     &json!({ "thread": thread, "server": checked }),
                 ) {
-                    put(&out, &error(&id, -32602, &why));
-                    continue;
+                    Err(why) => {
+                        put(&out, &error(&id, -32602, &why));
+                        continue;
+                    }
+                    Ok(Value::String(caption)) => {
+                        held(&frames).acts.insert(id.to_string(), caption);
+                    }
+                    Ok(_) => {}
                 }
             }
             _ => {}
         }
-        up.send(&msg)?;
+        held(&up).send(&msg)?;
     }
-    if let Upstream::Stdio(mut child, _) = up {
+    if let Upstream::Stdio(child, _) = &mut *held(&up) {
         child.kill().ok();
         child.wait().ok();
     }

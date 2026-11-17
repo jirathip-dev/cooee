@@ -125,6 +125,13 @@ pub enum Body {
         /// Where it posts, in words.
         place: String,
     },
+    /// A browser action's replay frame (#161): its caption and the frame (`GET /threads/<id>/frames/<name>`).
+    Frame {
+        /// The caption, like `click "Sign in"`.
+        text: String,
+        /// The frame's name.
+        name: String,
+    },
     /// A line from cooee itself (`model sonnet · effort low from the next start`).
     Note {
         /// The line.

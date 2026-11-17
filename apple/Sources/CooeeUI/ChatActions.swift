@@ -32,6 +32,7 @@ public struct ChatActions {
     internal var choices: PersonaChoices?
     public var agent: @MainActor @Sendable (String) -> Void = { _ in }
     public var model: (String, String) -> Void = { _, _ in }
+    public var frames = FrameImages()
 
     public init(
         draft: Binding<String>? = nil,

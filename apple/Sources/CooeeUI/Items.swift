@@ -199,6 +199,7 @@ internal struct ToolFold: View {
                     row(last, count: rows.count)
                 }
                 .buttonStyle(.plain)
+                if let frame = last.frame { FrameThumb(name: frame) }
             }
             if open.wrappedValue {
                 ForEach(Array(rows.dropLast().enumerated()), id: \.offset) { _, earlier in
