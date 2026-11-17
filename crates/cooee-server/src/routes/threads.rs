@@ -90,9 +90,23 @@ async fn events(cx: &Cx) -> Result<Sse<impl Stream<Item = Result<Event>> + use<>
     Ok(Sse::new(stream::iter(first.into_iter().map(Ok)).chain(rest)).keep_alive(KeepAlive::new()))
 }
 
+#[derive(Deserialize)]
+struct Of {
+    persona: Option<String>,
+}
+
 #[route(GET "/threads")]
 async fn thread_list(cx: &Cx) -> Result<Answer<Vec<cooee_core::Summary>>> {
-    Ok(Answer(blocking(cx, |hub| Ok(hub.list())).await))
+    let of: Option<Of> = parse_query_params(cx).ok();
+    let persona = of.and_then(|o| o.persona);
+    Ok(Answer(
+        blocking(cx, move |hub| {
+            let mut rows = hub.list();
+            rows.retain(|r| persona.as_ref().is_none_or(|p| &r.persona == p));
+            Ok(rows)
+        })
+        .await,
+    ))
 }
 
 #[derive(Deserialize)]

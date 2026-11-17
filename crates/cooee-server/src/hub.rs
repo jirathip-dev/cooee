@@ -22,6 +22,7 @@ use crate::push::{Push, note};
 mod ask;
 mod cards;
 mod events;
+mod expire;
 mod folders;
 mod mcp;
 mod models;
@@ -318,6 +319,7 @@ pub struct Hub {
     starter: OnceLock<Starter>,
     asks: Mutex<HashMap<String, mpsc::Sender<String>>>,
     models: Mutex<Vec<cooee_core::models::Offered>>,
+    expiry: u64,
 }
 
 pub(crate) fn now() -> u64 {
@@ -465,7 +467,8 @@ impl Live {
 impl Hub {
     /// Loads every stored thread, re-attaches the open ones to their shed terminals by name, and starts
     /// following shed's events. A push speaks `theme`'s words; `plugins` may post choice cards and get their answers;
-    /// roots added or removed on the phone are saved in `config`.
+    /// roots added or removed on the phone are saved in `config`; a routine's approval
+    /// waits `expiry` milliseconds before it counts as Deny.
     ///
     /// # Errors
     /// [`HubError::Store`] when the store can't be read.
@@ -476,6 +479,7 @@ impl Hub {
         theme: crate::look::Theme,
         plugins: Vec<Plugin>,
         apns: Option<cooee_core::Apns>,
+        expiry: u64,
     ) -> Result<Arc<Self>, HubError> {
         let store = Store::open(data)?;
         let key = data.join("mcp.key");
@@ -528,6 +532,7 @@ impl Hub {
             starter: OnceLock::new(),
             asks: Mutex::default(),
             models: Mutex::new(cooee_core::models::load(&data.join("models.json"))),
+            expiry,
         });
         let worker = Arc::clone(&hub);
         thread::spawn(move || {

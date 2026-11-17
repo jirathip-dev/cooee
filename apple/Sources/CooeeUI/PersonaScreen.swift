@@ -60,6 +60,7 @@ internal struct PersonaScreen: View {
         actions.delete = store.isNew ? nil : { store.send(.delete) }
         actions.photo = { store.choosingPhoto = true }
         actions.sprite = sprite
+        actions.skill = { store.send(.addSkill($0)) }
         return actions
     }
 }
