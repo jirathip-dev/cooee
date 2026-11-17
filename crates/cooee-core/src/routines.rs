@@ -23,6 +23,8 @@ pub const MAX: usize = 50;
 /// How many times an event may run one routine in an hour.
 pub const RATE: usize = 6;
 
+const RUNS_FORMAT: u32 = 1;
+
 const HOUR: u64 = 3_600_000;
 
 const KEEP: u64 = 96 * HOUR;
@@ -443,7 +445,7 @@ struct State {
 pub(crate) fn files(routines: &[Routine], seen: &[(String, u64)]) -> (String, Vec<u8>) {
     let mut settings = Settings::default();
     let mut runs = RunFile {
-        format: crate::FORMAT,
+        format: RUNS_FORMAT,
         runs: BTreeMap::new(),
         seen: seen.to_vec(),
     };
@@ -517,12 +519,12 @@ impl Routines {
         let runs: RunFile = match read(&self.runs)? {
             Some(bytes) => serde_json::from_slice(&bytes)?,
             None => RunFile {
-                format: crate::FORMAT,
+                format: RUNS_FORMAT,
                 runs: BTreeMap::new(),
                 seen: Vec::new(),
             },
         };
-        if runs.format > crate::FORMAT {
+        if runs.format > RUNS_FORMAT {
             return Err(io::Error::other(format!(
                 "{} is format {}, newer than this cooee",
                 self.runs.display(),

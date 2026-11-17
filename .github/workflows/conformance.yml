@@ -1,0 +1,96 @@
+# #503, #531: the provider contract's conformance scenario (crates/cooee/tests/conformance.rs) against each real harness,
+# nightly on the Mac runner on the owner's own login; docs/architecture/provider-contract/conformance.md. Never on
+# pull_request, so no fork's code runs here. Everything lives in RUNNER_TEMP: the pinned shed, its `serve --dir`, and
+# cooee serve, which the test starts. The ceiling per provider and night: 10 prompts (the test's), 10 minutes (the
+# step's timeout), the smallest model. The report goes to the job summary; a step that is not `pass` opens or updates
+# one `conformance: <provider> <step>` issue. A harness not installed or not signed in is `skipped`, not red.
+name: conformance
+on:
+  schedule:
+    - cron: "41 20 * * *"
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: The branch or sha to prove (a slice's branch before it merges)
+        default: staging
+
+concurrency:
+  group: conformance
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  provider:
+    name: ${{ matrix.provider }}
+    runs-on: [self-hosted, macOS, ARM64, cooee-mac]
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      max-parallel: 1
+      matrix:
+        include:
+          - provider: claude
+            status: claude auth status
+            agent: claude-acp
+            model: haiku
+    env:
+      PROVIDER: ${{ matrix.provider }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref || 'staging' }}
+      - uses: ./.github/actions/mac-runner
+      - name: installed and signed in
+        id: ready
+        env:
+          STATUS: ${{ matrix.status }}
+        run: |
+          cli=${STATUS%% *}
+          if ! command -v "$cli" >/dev/null; then why="$cli is not installed on the runner"
+          elif ! $STATUS >/dev/null 2>&1; then why="$cli is not signed in on the runner"
+          else echo "run=true" >> "$GITHUB_OUTPUT"; exit 0; fi
+          printf '### conformance: %s\n\nskipped: %s\n' "$PROVIDER" "$why" | tee -a "$GITHUB_STEP_SUMMARY"
+      - uses: dtolnay/rust-toolchain@1.99.1
+        if: steps.ready.outputs.run == 'true'
+      - name: build cooee's suite and the pinned shed
+        if: steps.ready.outputs.run == 'true'
+        run: |
+          rev=$(sed -n 's/^shed-proto = .*rev = "\([0-9a-f]*\)".*/\1/p' Cargo.toml)
+          cargo install --locked --git https://github.com/jirathip-dev/shed --rev "$rev" shed --root "$RUNNER_TEMP/shed-bin"
+          mkdir -p "$RUNNER_TEMP/shed"
+          cp "$RUNNER_TEMP/shed-bin/bin/shed" "$RUNNER_TEMP/shed/shed"
+          cargo test --locked -p cooee --test conformance --no-run
+      - name: shed serve
+        if: steps.ready.outputs.run == 'true'
+        run: |
+          "$RUNNER_TEMP/shed/shed" --dir "$RUNNER_TEMP/shed" serve > "$RUNNER_TEMP/shed.log" 2>&1 &
+          echo $! > "$RUNNER_TEMP/shed.pid"
+          for _ in $(seq 50); do [ -S "$RUNNER_TEMP/shed/shed.sock" ] && exit 0; sleep 0.2; done
+          echo "shed serve did not come up"; cat "$RUNNER_TEMP/shed.log"; exit 1
+      - name: the scenario
+        if: steps.ready.outputs.run == 'true'
+        timeout-minutes: 10
+        env:
+          CONFORMANCE_PROVIDER: ${{ matrix.provider }}
+          CONFORMANCE_AGENT: ${{ matrix.agent }}
+          CONFORMANCE_MODEL: ${{ matrix.model }}
+          CONFORMANCE_REPORT: ${{ runner.temp }}/conformance-${{ matrix.provider }}.md
+        run: |
+          CONFORMANCE_SHED_PID=$(cat "$RUNNER_TEMP/shed.pid")
+          export CONFORMANCE_SHED="$RUNNER_TEMP/shed" CONFORMANCE_SHED_PID
+          cargo test --locked -p cooee --test conformance -- --ignored --nocapture
+      - name: report
+        if: always() && steps.ready.outputs.run == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_ID: ${{ github.run_id }}
+          REPORT: ${{ runner.temp }}/conformance-${{ matrix.provider }}.md
+        run: |
+          [ -s "$REPORT" ] || printf '### conformance: %s\n\nfail: no report (the run stopped: over ceiling or broken)\n' "$PROVIDER" > "$REPORT"
+          cat "$REPORT" >> "$GITHUB_STEP_SUMMARY"
+          scripts/conformance-issues.sh "$PROVIDER" "$REPORT"
+      - name: stop shed serve
+        if: always() && steps.ready.outputs.run == 'true'
+        run: '[ -s "$RUNNER_TEMP/shed.pid" ] && kill "$(cat "$RUNNER_TEMP/shed.pid")" || true'

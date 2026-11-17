@@ -10,6 +10,7 @@ internal struct PanelActions {
     internal var open: (Int) -> Void = { _ in }
     internal var workflow: () -> Void = {}
     internal var routine: (() -> Void)?
+    internal var teach: ((String) -> Void)?
 }
 
 public struct PersonaPanelBlocks: View {
@@ -29,7 +30,8 @@ public struct PersonaPanelBlocks: View {
             header
             Scroller(end: end) {
                 PersonaBlocks(
-                    screen: screen, open: actions.open, workflow: actions.workflow, routine: actions.routine
+                    screen: screen, open: actions.open, workflow: actions.workflow, routine: actions.routine,
+                    teach: actions.teach
                 ).padding(.horizontal, 16)
                     .padding(.top, 4).padding(
                         .bottom, 16)

@@ -1,0 +1,17 @@
+label = "Linear"
+publisher = "Linear (Linear Orbit, Inc.)"
+url = "https://mcp.linear.app/mcp"
+transport = "http"
+leaves = "What the persona asks Linear for or writes to it: searches, issue and project text, comments."
+reviewed = 2026-11-17
+
+[auth]
+kind = "oauth"
+issuer = "https://mcp.linear.app"
+scopes = ["read", "write"]
+client = "registered"
+
+[tools]
+read = []
+write = []
+never = []

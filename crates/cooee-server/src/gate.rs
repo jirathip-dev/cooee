@@ -16,7 +16,8 @@ use crate::{
     http::{COOKIE, Caller, Paired, header, now, plain},
 };
 
-pub(crate) const OPEN: [&str; 6] = [
+pub(crate) const OPEN: [&str; 7] = [
+    "/connectors/callback",
     "/pair",
     "/pair/request",
     "/pair/claim",

@@ -91,10 +91,15 @@ fn check_passes_the_first_party_packs_and_fails_a_broken_one() {
     let first: Vec<String> = ["farm", "kitchen", "garden"]
         .map(|t| packs().join("themes").join(t).display().to_string())
         .into();
-    let first: Vec<&str> = first.iter().map(String::as_str).collect();
+    let styles = ["terminal", "scene"].map(|p| packs().join(p).display().to_string());
+    let first: Vec<&str> = first.iter().chain(&styles).map(String::as_str).collect();
     let (ok, out) = s.run(&[&["theme", "check"], first.as_slice()].concat());
     assert!(ok, "{out}");
-    assert_eq!(out.matches("ok   ").count(), 3, "{out}");
+    assert_eq!(out.matches(" (theme)\n").count(), 3, "{out}");
+    assert!(
+        out.ends_with(&format!("ok   {} (style)\n", styles[1])),
+        "{out}"
+    );
     let broken = s.dir.join("broken");
     farm_at(&broken, true);
     let (ok, out) = s.run(&["theme", "check", &broken.display().to_string()]);
@@ -132,7 +137,7 @@ fn add_remove_and_list_with_the_lock() {
     );
     let (ok, out) = s.run(&["theme", "add", "sea"]);
     assert!(
-        !ok && out.contains("sea isn't a first-party theme (farm garden kitchen)"),
+        !ok && out.contains("sea isn't a first-party theme (farm garden kitchen scene terminal)"),
         "{out}"
     );
     let looks = s.cooee.json("/api/v1/looks");
@@ -210,6 +215,41 @@ fn add_remove_and_list_with_the_lock() {
     );
     let (ok, out) = s.run(&["theme", "remove", "farm"]);
     assert!(!ok && out.contains("farm isn't installed"), "{out}");
+}
+
+#[test]
+fn a_built_in_style_pack_adds_and_a_broken_style_leaves_its_theme_served() {
+    let s = setup("th-style");
+    let themes = s.dir.join("themes");
+    let kitchen = packs().join("themes/kitchen").display().to_string();
+    assert!(s.run(&["theme", "add", &kitchen, "--yes"]).0);
+    let (ok, out) = s.run(&["theme", "add", "terminal"]);
+    assert!(
+        ok && out.starts_with("theme terminal from built in at cooee "),
+        "{out}"
+    );
+    assert_eq!(
+        fs::read(themes.join("terminal/style.json")).unwrap(),
+        fs::read(packs().join("terminal/style.json")).unwrap()
+    );
+    fs::write(
+        themes.join("kitchen/style.json"),
+        r#"{"format":1,"surface":"blur"}"#,
+    )
+    .unwrap();
+    let looks = s.cooee.json("/api/v1/looks");
+    assert_eq!(
+        looks["styles"]["terminal"]["labels"]["button"]["suffix"],
+        " ]"
+    );
+    assert!(looks["themes"].get("terminal").is_none());
+    assert!(looks["themes"].get("kitchen").is_some());
+    assert!(looks["styles"].get("kitchen").is_none());
+    let why = looks["broken"]["kitchen"].as_str().unwrap();
+    assert!(
+        why.starts_with("style.json: unknown variant `blur`"),
+        "{why}"
+    );
 }
 
 #[test]
@@ -422,4 +462,195 @@ fn an_old_full_clone_is_replaced_on_start_once_the_new_one_is_in_place() {
         "{err}"
     );
     assert!(themes.join("gone.git").is_dir());
+}
+
+#[test]
+fn the_editor_checks_colours_saves_a_pack_once_and_keeps_its_last_good_copy() {
+    let s = setup("th-editor");
+    let (ok, out) = s.run(&["theme", "add", "farm"]);
+    assert!(ok, "{out}");
+    let looks = s.cooee.json("/api/v1/looks");
+    let dark = looks["schemes"]["farm"]["tokens"].clone();
+    let mut light = looks["schemes"]["farm-light"]["tokens"].clone();
+    light["--a"] = json!("#a88a2a");
+    let (status, body) = s.cooee.post(
+        "/api/v1/themes/check",
+        &json!({"dark": dark, "light": light}),
+    );
+    assert_eq!(status, 200, "{body}");
+    let report: Value = serde_json::from_str(&body).unwrap();
+    assert_eq!(report["dark"]["fails"], json!([]));
+    let mark = &report["light"]["marks"]["--a"];
+    assert_eq!(mark["what"], "--a on --card", "{report}");
+    assert!(mark["value"].as_f64().unwrap() < 3.0, "{mark}");
+    let fix = mark["fix"].as_str().unwrap().to_owned();
+    assert!(mark["fixed"].as_f64().unwrap() >= 3.0, "{mark}");
+    assert!(
+        report["light"]["fails"][0]
+            .as_str()
+            .unwrap()
+            .contains("--a on an amber group header 2."),
+        "{report}"
+    );
+
+    let draft = |light: &Value| json!({"from": "farm", "label": "Tidepool", "style": "terminal", "dark": dark, "light": light});
+    let (status, body) = s
+        .cooee
+        .request("PUT", "/api/v1/themes/tidepool", Some(&draft(&light)));
+    assert_eq!(status, 400, "{body}");
+    assert!(body.contains("--a on an amber group header"), "{body}");
+    assert!(!s.dir.join("themes/tidepool").exists());
+
+    light["--a"] = json!(fix);
+    let (status, body) = s
+        .cooee
+        .request("PUT", "/api/v1/themes/tidepool", Some(&draft(&light)));
+    assert_eq!((status, body.as_str()), (200, r#"{"written":true}"#));
+    let pack = s.dir.join("themes/tidepool");
+    let (ok, out) = s.run(&["theme", "check", &pack.display().to_string()]);
+    assert!(ok, "{out}");
+    let looks = s.cooee.json("/api/v1/looks");
+    let theme = &looks["themes"]["tidepool"];
+    assert_eq!(theme["label"], "Tidepool");
+    assert_eq!(theme["style"], "terminal");
+    assert_eq!(
+        looks["schemes"]["tidepool-light"]["tokens"]["--a"],
+        json!(fix)
+    );
+    assert!(looks["themes"]["farm"].get("style").is_none());
+    assert_eq!(s.lock()[1]["source"], "made here");
+
+    let written = fs::metadata(pack.join("theme.json"))
+        .unwrap()
+        .modified()
+        .unwrap();
+    let (status, body) = s
+        .cooee
+        .request("PUT", "/api/v1/themes/tidepool", Some(&draft(&light)));
+    assert_eq!((status, body.as_str()), (200, r#"{"written":false}"#));
+    assert_eq!(
+        fs::metadata(pack.join("theme.json"))
+            .unwrap()
+            .modified()
+            .unwrap(),
+        written
+    );
+
+    for name in ["farm", "plain", "Bad/name"] {
+        let path = format!("/api/v1/themes/{name}");
+        let (status, body) = s.cooee.request("PUT", &path, Some(&draft(&light)));
+        assert_eq!(
+            status,
+            if name.contains('/') { 404 } else { 400 },
+            "{name}: {body}"
+        );
+    }
+
+    let svg = fs::read_to_string(pack.join("sprites.svg")).unwrap();
+    fs::write(
+        pack.join("sprites.svg"),
+        svg.replace("id=\"s-fail\"", "id=\"x\""),
+    )
+    .unwrap();
+    let looks = s.cooee.json("/api/v1/looks");
+    assert_eq!(looks["themes"]["tidepool"]["label"], "Tidepool");
+    assert_eq!(looks["broken"]["tidepool"], "sprites.svg: no s-fail");
+    let (_, art) = s.cooee.raw("GET", "/look/tidepool/sprites.svg", &[], "");
+    assert!(
+        art.contains("id=\"s-fail\""),
+        "the last good sheet is served"
+    );
+
+    let (ok, out) = s.run(&["theme", "remove", "tidepool"]);
+    assert!(ok, "{out}");
+    assert!(!s.dir.join(".themes-stage/.good/tidepool").exists());
+    assert!(
+        s.cooee.json("/api/v1/looks")["themes"]
+            .get("tidepool")
+            .is_none()
+    );
+}
+
+#[test]
+fn the_editor_saves_drawn_figures_and_a_drawn_backdrop_that_pass_the_gate() {
+    let s = setup("th-draw");
+    let (ok, out) = s.run(&["theme", "add", "farm"]);
+    assert!(ok, "{out}");
+    let looks = s.cooee.json("/api/v1/looks");
+    let (dark, light) = (
+        looks["schemes"]["farm"]["tokens"].clone(),
+        looks["schemes"]["farm-light"]["tokens"].clone(),
+    );
+    let needs = r##"<symbol id="s-needs" viewBox="0 0 24 24" shape-rendering="crispEdges"><g class="f1"><rect x="4" y="8" width="16" height="1" style="fill:var(--fk-l,#ff9e80)"/></g><g class="f2"><rect x="11" y="0" width="2" height="1" fill="#ffffff"/></g></symbol>"##;
+    let scene = r#"<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 132 100"><style>#night{display:none}#night:target{display:inline}</style><g id="sky"><rect x="0" y="0" width="132" height="1" style="fill:var(--fk-c,#4fd1c5)"/></g><g id="sea"></g><g id="rocks"></g><g id="sand"></g><g id="night"></g></svg>"#;
+    let draft = |sprites: Value| json!({"from": "farm", "label": "Rockpool", "style": "scene", "dark": dark, "light": light, "sprites": sprites, "scene": scene});
+
+    for bad in [
+        json!({"s-needs": "<symbol id=\"s-fail\"></symbol>"}),
+        json!({"s-needs": format!("{needs}{needs}")}),
+        json!({"S/x": "<symbol id=\"S/x\"></symbol>"}),
+    ] {
+        let (status, body) = s
+            .cooee
+            .request("PUT", "/api/v1/themes/rockpool", Some(&draft(bad)));
+        assert_eq!(status, 400, "{body}");
+        assert!(body.contains("not one <symbol"), "{body}");
+    }
+    assert!(!s.dir.join("themes/rockpool").exists());
+
+    let (status, body) = s.cooee.request(
+        "PUT",
+        "/api/v1/themes/rockpool",
+        Some(&draft(json!({ "s-needs": needs }))),
+    );
+    assert_eq!((status, body.as_str()), (200, r#"{"written":true}"#));
+    let pack = s.dir.join("themes/rockpool");
+    let (ok, out) = s.run(&["theme", "check", &pack.display().to_string()]);
+    assert!(ok, "{out}");
+    let sheet = fs::read_to_string(pack.join("sprites.svg")).unwrap();
+    let farm = fs::read_to_string(packs().join("themes/farm/sprites.svg")).unwrap();
+    assert_eq!(sheet.matches("id=\"s-needs\"").count(), 1);
+    assert!(sheet.contains(needs));
+    let (before, after) = farm.split_once("<symbol id=\"s-needs\"").unwrap();
+    assert!(sheet.starts_with(before), "the other symbols stay in place");
+    let rest = after.split_once("</symbol>").unwrap().1;
+    assert!(sheet.ends_with(rest));
+    assert_eq!(fs::read_to_string(pack.join("scene.svg")).unwrap(), scene);
+    let looks = s.cooee.json("/api/v1/looks");
+    assert_eq!(
+        looks["themes"]["rockpool"]["scene"],
+        json!(["sky", "sea", "rocks", "sand"])
+    );
+
+    let (status, body) = s.cooee.request(
+        "PUT",
+        "/api/v1/themes/rockpool",
+        Some(&draft(json!({ "s-needs": needs }))),
+    );
+    assert_eq!((status, body.as_str()), (200, r#"{"written":false}"#));
+}
+
+#[test]
+fn an_imported_svg_kept_as_vector_in_a_figure_and_a_layer_passes_the_gate() {
+    let s = setup("th-import");
+    let (ok, out) = s.run(&["theme", "add", "farm"]);
+    assert!(ok, "{out}");
+    let looks = s.cooee.json("/api/v1/looks");
+    let vector = r##"<svg viewBox="0 0 48 32" width="100%" height="100%" xmlns:xlink="http://www.w3.org/1999/xlink"><circle id="dot" cx="24" cy="16" r="10" fill="#f80"/><use xlink:href="#dot"/></svg>"##;
+    let needs = format!(r#"<symbol id="s-needs" viewBox="0 0 24 24">{vector}</symbol>"#);
+    let scene = format!(
+        r#"<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 132 100" preserveAspectRatio="xMidYMax slice" shape-rendering="crispEdges"><style>#night{{display:none}}#night:target{{display:inline}}</style><g id="sky">{vector}</g><g id="sea"></g><g id="rocks"></g><g id="sand"></g><g id="night"></g></svg>"#
+    );
+    let draft = json!({"from": "farm", "label": "Inked", "style": "scene",
+        "dark": looks["schemes"]["farm"]["tokens"], "light": looks["schemes"]["farm-light"]["tokens"],
+        "sprites": {"s-needs": needs}, "scene": scene});
+
+    let (status, body) = s.cooee.request("PUT", "/api/v1/themes/inked", Some(&draft));
+    assert_eq!((status, body.as_str()), (200, r#"{"written":true}"#));
+    let pack = s.dir.join("themes/inked");
+    let (ok, out) = s.run(&["theme", "check", &pack.display().to_string()]);
+    assert!(ok, "{out}");
+    let sheet = fs::read_to_string(pack.join("sprites.svg")).unwrap();
+    assert!(sheet.contains(&needs), "{sheet}");
+    assert_eq!(fs::read_to_string(pack.join("scene.svg")).unwrap(), scene);
 }

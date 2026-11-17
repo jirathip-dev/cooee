@@ -1,5 +1,7 @@
 use std::{
-    env,
+    env, fs,
+    io::Write as _,
+    process::{Command, Stdio},
     sync::mpsc::{self, Receiver},
     thread,
     time::Duration,
@@ -68,7 +70,14 @@ impl FakeShed {
                 .and_then(|v| v.parse().ok())
                 .unwrap_or(0),
         );
+        let topic = prompt.strip_prefix("This topic: ");
+        let prompt = topic
+            .and_then(|t| t.split_once(").\n\n"))
+            .map_or(prompt, |t| t.1);
         let read = "Read src/lib.rs";
+        if let Some(turn) = self.conformance(name, prompt, rx) {
+            return Some(turn);
+        }
         Some(if let Some(said) = self.cued(name) {
             (vec![reply(&said, "end_turn")], "end_turn")
         } else if prompt.contains("approve") {
@@ -155,6 +164,83 @@ impl FakeShed {
             let events = vec![text("Hel"), text("lo"), reply("Hello", "end_turn")];
             (events, "end_turn")
         })
+    }
+
+    fn conformance(
+        &self,
+        name: &str,
+        prompt: &str,
+        rx: &Receiver<Input>,
+    ) -> Option<(Vec<EventKind>, &'static str)> {
+        let said = if prompt.contains("What is the code word?") {
+            let word = prompt
+                .split("The code word is ")
+                .nth(1)
+                .unwrap_or("unknown.");
+            word.split_whitespace()
+                .next()
+                .unwrap()
+                .trim_end_matches('.')
+                .to_owned()
+        } else if prompt.contains("with your remember tool") {
+            let note = json!({ "text": "The conformance check ran." });
+            self.cooee_tool(name, "remember", &note)
+        } else if prompt.contains("Use your conformance skill") {
+            self.cooee_tool(name, "skill", &json!({ "read": "conformance" }))
+        } else if prompt.contains("Run `sleep 120`") {
+            return Some(self.sleep_until_cancel(name, rx));
+        } else {
+            return None;
+        };
+        Some((vec![reply(&said, "end_turn")], "end_turn"))
+    }
+
+    fn cooee_tool(&self, name: &str, tool: &str, arguments: &Value) -> String {
+        let file = self.dir.join(format!("mcp-{name}.json"));
+        let servers: Value = serde_json::from_str(&fs::read_to_string(file).unwrap()).unwrap();
+        let cooee = servers
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|s| s["name"] == "cooee")
+            .unwrap();
+        let args = cooee["args"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|a| a.as_str().unwrap());
+        let mut command = Command::new(cooee["command"].as_str().unwrap());
+        for v in cooee["env"].as_array().unwrap() {
+            command.env(v["name"].as_str().unwrap(), v["value"].as_str().unwrap());
+        }
+        let mut child = command
+            .args(args)
+            .stdin(Stdio::piped())
+            .stdout(Stdio::piped())
+            .spawn()
+            .unwrap();
+        let call = json!({ "jsonrpc": "2.0", "id": 1, "method": "tools/call",
+                           "params": { "name": tool, "arguments": arguments } });
+        writeln!(child.stdin.take().unwrap(), "{call}").unwrap();
+        let out = child.wait_with_output().unwrap();
+        let answer: Value = serde_json::from_slice(&out.stdout).unwrap();
+        answer["result"]["content"][0]["text"]
+            .as_str()
+            .unwrap()
+            .to_owned()
+    }
+
+    fn sleep_until_cancel(
+        &self,
+        name: &str,
+        rx: &Receiver<Input>,
+    ) -> (Vec<EventKind>, &'static str) {
+        let mut sleep = Command::new("sleep").arg("120").spawn().unwrap();
+        self.emit(name, tool("s1", "sleep 120", "in_progress"));
+        while rx.recv().is_ok_and(|i| i != Input::Cancel) {}
+        sleep.kill().unwrap();
+        sleep.wait().unwrap();
+        (vec![reply("", "cancelled")], "cancelled")
     }
 
     fn approval(&self, name: &str, rx: &Receiver<Input>) -> (Vec<EventKind>, &'static str) {
