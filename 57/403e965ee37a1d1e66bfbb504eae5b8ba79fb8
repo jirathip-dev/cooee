@@ -1,0 +1,10 @@
+Decided: a card is background when the turn that raised it was sent by a routine; the owner's own turn never expires
+Because: "a card in a thread the owner is in never expires"
+Decided: expiry runs inside Hub::watch and answers through Hub::approve with the card's reject_once option, by "expired"
+Because: crates/cooee-server/src/hub/expire.rs:22
+Decided: one top-level setting approval_expiry_minutes, default 30
+Because: "The expiry time is one setting with a default"
+Rejected: expiring while nobody watches the page (SSE subscribers) — a routine's run hangs whether or not a tab is open
+Rejected: expiring plugin cards — their plugin owns them; rules stay in #72
+Check: the test fails with self.expire(now) removed from watch (left 0, right 1)
+Owner: cards from routine runs now auto-deny after 30 minutes; your own cards wait as before
