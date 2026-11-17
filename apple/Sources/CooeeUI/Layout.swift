@@ -26,7 +26,9 @@ internal struct Sprite: View {
     internal var pack: String?
 
     internal var body: some View {
-        if let pack, let art = look.art {
+        if let id = pack?.split(separator: "#").last, let figure = look.drawn[String(id)] {
+            FigureArt(figure: figure)
+        } else if let pack, let art = look.art {
             PackArt(art: art, path: pack)
         } else if let url = Bundle.module.url(forResource: name, withExtension: "png", subdirectory: "Sprites"),
             let image = PlatformImage(contentsOfFile: url.path)

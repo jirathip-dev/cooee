@@ -587,7 +587,8 @@ impl Agent {
         Ok(())
     }
 
-    /// Its env split into plain variables and secret ones, each secret read from [`crate::secrets::get`].
+    /// Its env split into plain variables and secret ones, each secret read from [`crate::secrets::get`], and its
+    /// persona's saved secrets (#163) among the secret ones.
     ///
     /// # Errors
     /// Names the secret that is missing or can't be read.
@@ -605,6 +606,9 @@ impl Agent {
                 None => plain.push((k.clone(), v.clone())),
             }
         }
+        let saved = crate::secrets::of_persona(data, &self.id)
+            .map_err(|e| format!("agent {}'s saved secrets: {e}", self.id))?;
+        secret.extend(saved);
         Ok((plain, secret))
     }
 
