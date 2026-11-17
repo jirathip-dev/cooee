@@ -1,0 +1,4 @@
+Decided: merged origin/staging and kept both sides of the module lists in lib.rs, serve.rs and gen.sh
+Because: crates/cooee-server/src/lib.rs:5
+Rejected: none
+Owner: the connectors branch now sits on top of the latest staging with nothing lost from either side.
