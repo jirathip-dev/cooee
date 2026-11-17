@@ -257,7 +257,7 @@ impl Setup {
                     fs::create_dir_all(dir).map_err(|e| e.to_string())?;
                     cooee_core::gitignore::write(dir).map_err(|e| e.to_string())?;
                 }
-                fs::write(path, &new).map_err(|e| e.to_string())
+                cooee_core::write_private(path, new.as_bytes()).map_err(|e| e.to_string())
             })?;
         }
         let config = if path.exists() {

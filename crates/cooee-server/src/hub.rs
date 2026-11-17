@@ -63,6 +63,9 @@ pub enum HubError {
     /// The request can't be done (a folder outside the roots, a closed thread, an empty message).
     #[error("{0}")]
     Refused(String),
+    /// A save naming a file version older than the disk's (#360): the client reloads.
+    #[error("{0}")]
+    Stale(String),
     /// shed failed.
     #[error(transparent)]
     Shed(#[from] ShedError),

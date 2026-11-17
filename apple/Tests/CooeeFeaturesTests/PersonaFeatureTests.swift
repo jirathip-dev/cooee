@@ -161,3 +161,18 @@ internal struct PersonaFeatureTests {
         #expect(calls.all == ["folders roots", "folders /w", "post Scout"])
     }
 }
+
+extension PersonaFeatureTests {
+    @Test internal func aStaleSaveSaysReloadAndKeepsTheUnsavedText() async {
+        let store = store(coder)
+        let stale = APIError(status: 409, text: "agents/coder/agent.toml changed on disk, reload")
+        store.dependencies.plugins.act = { _, _, _, _ in throw stale }
+        await store.send(.binding(.set(\.draft.instructions, "Mine."))) { $0.draft.instructions = "Mine." }
+        await store.send(.save) { $0.busy = true }
+        await store.receive(\.failed) {
+            $0.busy = false
+            $0.error = stale.text
+        }
+        #expect(store.state.draft.instructions == "Mine.")
+    }
+}

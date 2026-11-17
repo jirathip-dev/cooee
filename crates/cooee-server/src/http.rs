@@ -75,6 +75,7 @@ impl<T: Serialize> IntoResponse for Answer<T> {
             Ok(value) => return Json(value).into_response(cx),
             Err(e @ HubError::NoThread(_)) => (404, e.to_string()),
             Err(e @ HubError::Refused(_)) => (400, e.to_string()),
+            Err(e @ HubError::Stale(_)) => (409, e.to_string()),
             Err(HubError::Shed(e)) if e.no_such_terminal() => (
                 410,
                 "Not delivered: this thread's agent is gone.".to_owned(),
@@ -221,7 +222,10 @@ pub(crate) async fn on_personas<T: Send + 'static>(
     let (data, config) = (d.0.clone(), d.1.clone());
     let done = blocking(cx, move |_| {
         let config = config.ok_or_else(|| refused("there is no config folder for agents"))?;
-        f(&data, &config).map_err(refused)
+        f(&data, &config).map_err(|e| match e.get_ref() {
+            Some(s) if s.is::<cooee_core::disk::Stale>() => HubError::Stale(e.to_string()),
+            _ => refused(e),
+        })
     });
     Ok(Answer(done.await))
 }
