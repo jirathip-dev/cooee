@@ -62,6 +62,10 @@ internal struct ThemeEditor: View {
         }
     }
 
+    private static let drawn = [
+        "read": "row-read", "run": "row-run", "loading": "horse-bay-edit", "empty": "horse-bay-idle",
+    ]
+
     private var figures: some View {
         let states = ["edit", "read", "run", "idle", "done", "needs", "merged", "fail", "loading", "empty"]
         let shown = ThemePreview.look(store.state, look, dark: look.palette.dark)
@@ -69,7 +73,8 @@ internal struct ThemeEditor: View {
             LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 5), spacing: 10) {
                 ForEach(states, id: \.self) { state in
                     VStack(spacing: 4) {
-                        Sprite(name: "horse-bay-\(state)", pack: "sprites.svg#s-\(state)").frame(width: 40, height: 30)
+                        Sprite(name: Self.drawn[state] ?? "horse-bay-\(state)", pack: "sprites.svg#s-\(state)").frame(
+                            width: 40, height: 30)
                         Text("s-\(state)").ui(11, .regular, look).lineLimit(1).minimumScaleFactor(0.7)
                     }
                 }

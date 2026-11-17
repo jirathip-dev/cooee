@@ -105,10 +105,14 @@ internal struct ThemeColours: View {
             slider("Light", Binding(get: { shade.light }, set: { light in set { $0.light = light } }))
             if let fix = mark?.fix {
                 let ratio = mark?.fixed.map { String(format: " · %.1f:1", $0) } ?? ""
-                Button((Shade(hex: fix)?.light ?? 0 < shade.light ? "Darken" : "Lighten") + " to \(fix)\(ratio) ✓") {
+                Button {
                     store.send(.token(key, fix))
+                } label: {
+                    Text((Shade(hex: fix)?.light ?? 0 < shade.light ? "Darken" : "Lighten") + " to \(fix)\(ratio) ✓")
+                        .ui(15, .semibold, look).padding(.horizontal, 16).frame(height: 40)
+                        .background(look.palette.lead, in: .capsule).foregroundStyle(look.palette.background)
                 }
-                .buttonStyle(.borderedProminent).tint(look.palette.lead)
+                .buttonStyle(.plain)
             }
         }
         .padding(.horizontal, 14).padding(.bottom, 12)
