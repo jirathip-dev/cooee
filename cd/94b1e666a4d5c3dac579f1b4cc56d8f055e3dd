@@ -1,0 +1,6 @@
+Decided: merged origin/staging after #489 instead of rebasing, so the cap gate counts against apple_cap 15250
+Because: q1857
+Because: ci/cap.toml:7
+Rejected: a rebase onto staging — lane rules forbid history rewrites and force-pushes
+Check: the cap step in the msrv and stable jobs is green at the new head; the Swift and Rust are unchanged from c9c3c48
+Owner: Only the new Swift line limit came in from staging; the two test fixes are unchanged.
