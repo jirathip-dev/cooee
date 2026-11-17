@@ -210,6 +210,8 @@ jobs:
       # #333: version 1 finds version 2 on a local appcast (EdDSA-signed, with a delta), installs it on quit and restarts
       # cooee and shed; port 4747 answers and the phone is still paired.
       - name: the Mac updates itself through a local appcast; the phone stays paired
+        id: update
+        continue-on-error: true
         working-directory: apple
         run: |
           app="$RUNNER_TEMP/mac/Build/Products/Debug/Cooee.app"
@@ -256,8 +258,18 @@ jobs:
           TEST_RUNNER_COOEE_AFTER_UPDATE=1 xcodebuild -project Cooee.xcodeproj -scheme Cooee -destination "id=$SIM" \
             -clonedSourcePackagesDirPath "$RUNNER_TEMP/packages" -derivedDataPath "$RUNNER_TEMP/ios" -only-testing:CooeeAppUITests/LiveUITests/testStaysPairedAfterTheMacUpdates \
             -resultBundlePath "$RUNNER_TEMP/after-update.xcresult" test-without-building
+      - name: "self-update result (report only, #459)"
+        if: always() && steps.update.outcome != 'skipped'
+        env:
+          OUTCOME: ${{ steps.update.outcome }}
+        run: |
+          if [ "$OUTCOME" = success ]; then
+            echo "self-update: pass" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "self-update: FAIL (report only, #459) [run]($GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID)" >> "$GITHUB_STEP_SUMMARY"
+          fi
       - name: what the Mac ran (on failure)
-        if: failure()
+        if: failure() || steps.update.outcome == 'failure'
         run: |
           pgrep -lf 'cooee|shed|zsh|security' || true
           for f in "$HOME/.config/cooee/cooee/config.toml" "$HOME/.local/share/cooee/cooee/devices.json"; do
