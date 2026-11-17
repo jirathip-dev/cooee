@@ -1,0 +1,7 @@
+Decided: the app's Pair preview draws PairingBlocks(step: .welcome), the view that replaced the deleted PhoneOnboarding
+Because: apple/Cooee/RootView.swift:11
+Decided: locked screens import Answer and refused from crate::http after staging moved them there
+Because: crates/cooee-server/src/http.rs:70
+Rejected: restore Onboarding.swift for the preview — the issue deletes the step chrome; the preview should show the block screen
+Check: dmg and the macOS xcodebuild of the Cooee scheme are green at the head
+Owner: The Mac app builds again; the pairing preview now uses the new pairing screen.
