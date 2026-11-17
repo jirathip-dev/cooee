@@ -85,12 +85,13 @@ pub(crate) fn render(mut notes: Vec<Note>) -> (Vec<Note>, String) {
             n.id = id;
         }
     }
-    let mut text = String::new();
-    for n in &notes {
-        let body = n.text.replace("\r\n", "\n").replace('\n', "<br>");
-        writeln!(text, "- [{}] {body} <!-- by:{} at:{} -->", n.id, n.by, n.at).ok();
-    }
+    let text = notes.iter().map(line).collect();
     (notes, text)
+}
+
+fn line(n: &Note) -> String {
+    let body = n.text.replace("\r\n", "\n").replace('\n', "<br>");
+    format!("- [{}] {body} <!-- by:{} at:{} -->\n", n.id, n.by, n.at)
 }
 
 /// The agent's notes, oldest first; any without an id get one, kept in the file.
@@ -125,8 +126,28 @@ pub fn used(notes: &[Note]) -> usize {
 }
 
 fn write(home: &Home, notes: &[Note]) -> io::Result<()> {
-    let (_, text) = render(notes.to_vec());
-    crate::write_private(&home.path().join("memory.md"), text.as_bytes())
+    let path = home.path().join("memory.md");
+    let old = fs::read_to_string(&path).unwrap_or_default();
+    let (mut left, mut text) = (render(notes.to_vec()).0, String::new());
+    for l in old.lines() {
+        let Some(was) = parse(l) else {
+            writeln!(text, "{l}").ok();
+            continue;
+        };
+        let same = |n: &Note| {
+            n.id == was.id || (was.id.is_empty() && (&n.text, n.at) == (&was.text, was.at))
+        };
+        if let Some(at) = left.iter().position(same) {
+            let n = left.remove(at);
+            if n == was {
+                writeln!(text, "{l}").ok();
+            } else {
+                text.push_str(&line(&n));
+            }
+        }
+    }
+    text.extend(left.iter().map(line));
+    crate::write_private(&path, text.as_bytes())
 }
 
 /// Applies `e` `by` (`persona` or `owner`) at `at` to the agent's notes: the note added or replaced (an exact

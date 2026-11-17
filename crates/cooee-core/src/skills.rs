@@ -139,7 +139,7 @@ pub fn save(home: &Home, s: Skill, replaces: Option<&str>) -> io::Result<Skill> 
     };
     let folder = dir(home).join(&s.name);
     fs::create_dir_all(&folder)?;
-    fs::write(folder.join("SKILL.md"), s.file())?;
+    crate::write_private(&folder.join("SKILL.md"), s.file().as_bytes())?;
     if let Some(old) = replaces.filter(|r| *r != s.name) {
         remove(home, old)?;
     }

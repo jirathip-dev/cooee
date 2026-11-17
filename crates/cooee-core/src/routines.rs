@@ -435,12 +435,18 @@ impl Routines {
         Ok(joined.collect())
     }
 
-    /// Writes `routines`: each file whole (write-temp, fsync, rename), and only when its part changed.
+    /// Writes `routines` (write-temp, fsync, rename), each file only when its part changed; `routines.toml` changes
+    /// only in the keys that differ (#360), its comments and layout kept.
     ///
     /// # Errors
-    /// When it can't be written.
+    /// When it can't be read or written.
     pub fn save(&self, routines: &[Routine]) -> io::Result<()> {
         let (toml, runs) = files(routines);
+        let text = String::from_utf8(read(&self.settings)?.unwrap_or_default())
+            .map_err(io::Error::other)?;
+        let was: Settings = toml::from_str(&text).map_err(io::Error::other)?;
+        let was = crate::toml_text(&serde_json::to_value(&was).unwrap_or_default());
+        let toml = crate::disk::patch(&text, &was, &toml)?;
         for (path, bytes) in [(&self.settings, toml.as_bytes()), (&self.runs, &runs[..])] {
             if read(path)?.as_deref() != Some(bytes) {
                 crate::write_private(path, bytes)?;
@@ -568,7 +574,16 @@ mod tests {
         assert!(text.contains("when = \"0 9 * * 1\""), "{text}");
         let runs = std::fs::read_to_string(dir.join("routine-runs.json")).unwrap();
         assert!(runs.contains("\"outcome\": \"ran\""), "{runs}");
-        assert_eq!(file.load().unwrap(), vec![r]);
+        assert_eq!(file.load().unwrap(), vec![r.clone()]);
+        let mine = format!("# mine\n{text}");
+        std::fs::write(dir.join("routines.toml"), &mine).unwrap();
+        let edited = Routine {
+            prompt: "Renewals?".to_owned(),
+            ..r
+        };
+        file.save(std::slice::from_ref(&edited)).unwrap();
+        let now = std::fs::read_to_string(dir.join("routines.toml")).unwrap();
+        assert_eq!(now, mine.replace("Renewals due {{due}}?", "Renewals?"));
         std::fs::write(dir.join("routine-runs.json"), r#"{"format":9,"runs":{}}"#).unwrap();
         assert!(file.load().is_err());
         std::fs::remove_dir_all(&dir).unwrap();

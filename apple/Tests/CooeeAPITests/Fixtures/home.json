@@ -77,7 +77,8 @@
         "chief"
       ],
       "pinned": true,
-      "profile": "coder"
+      "profile": "coder",
+      "version": "v1"
     }
   ]
 }
