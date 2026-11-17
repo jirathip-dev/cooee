@@ -88,6 +88,74 @@ fn url(port: u16) -> String {
 
 static STARTING: Mutex<()> = Mutex::new(());
 
+/// The CDP port of the Chromium running on `profile`, if one listens.
+#[must_use]
+pub fn port(profile: &Path) -> Option<u16> {
+    let p = fs::read_to_string(profile.join("DevToolsActivePort")).ok()?;
+    let p = p.lines().next()?.trim().parse::<u16>().ok()?;
+    TcpStream::connect(("127.0.0.1", p)).is_ok().then_some(p)
+}
+
+/// How long the owner holds a persona's browser once they take control, in ms (10 min).
+pub const LEASE_MS: u64 = 600_000;
+
+/// Who drives a persona's browser.
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize)]
+#[serde(tag = "by", rename_all = "snake_case")]
+pub enum Control {
+    /// The agent: its browser tools run.
+    #[default]
+    Agent,
+    /// The owner, until `until` (ms since the epoch): the agent's browser tools wait.
+    Owner {
+        /// When the lease ends.
+        until: u64,
+    },
+    /// The agent again, with the owner's note for its next browser call.
+    Back {
+        /// What the owner says they did.
+        note: String,
+    },
+}
+
+/// What an agent's browser call does now.
+#[derive(Debug, PartialEq, Eq)]
+pub enum Gate {
+    /// Wait this long at most: the owner holds the browser.
+    Wait(Duration),
+    /// Go on, with the owner's note if they just handed back.
+    Go(Option<String>),
+}
+
+impl Control {
+    /// The owner takes control at `now` (ms) for [`LEASE_MS`].
+    #[must_use]
+    pub fn take(now: u64) -> Self {
+        Self::Owner {
+            until: now.saturating_add(LEASE_MS),
+        }
+    }
+
+    /// The owner hands back with `note`; `None` unless they hold the lease.
+    #[must_use]
+    pub fn hand_back(&self, note: String) -> Option<Self> {
+        matches!(self, Self::Owner { .. }).then_some(Self::Back { note })
+    }
+
+    /// An agent's browser call at `now` (ms): it waits while the lease runs, else goes on and takes the note once.
+    pub fn gate(&mut self, now: u64) -> Gate {
+        if let Self::Owner { until } = *self
+            && now < until
+        {
+            return Gate::Wait(Duration::from_millis(until.saturating_sub(now)));
+        }
+        match std::mem::take(self) {
+            Self::Back { note } => Gate::Go(Some(note)),
+            _ => Gate::Go(None),
+        }
+    }
+}
+
 /// The CDP endpoint of the Chromium on `profile`: the one running there, else `chromium` started headless on it.
 ///
 /// # Errors
@@ -95,16 +163,7 @@ static STARTING: Mutex<()> = Mutex::new(());
 pub fn endpoint(chromium: &Path, profile: &Path) -> io::Result<String> {
     let _held = STARTING.lock().unwrap_or_else(PoisonError::into_inner);
     let file = profile.join("DevToolsActivePort");
-    let port = || {
-        fs::read_to_string(&file)
-            .ok()?
-            .lines()
-            .next()?
-            .trim()
-            .parse::<u16>()
-            .ok()
-    };
-    if let Some(p) = port().filter(|p| TcpStream::connect(("127.0.0.1", *p)).is_ok()) {
+    if let Some(p) = port(profile) {
         return Ok(url(p));
     }
     DirBuilder::new()
@@ -129,8 +188,17 @@ pub fn endpoint(chromium: &Path, profile: &Path) -> io::Result<String> {
         .stderr(Stdio::null())
         .spawn()
         .map_err(|e| io::Error::new(e.kind(), format!("{}: {e}", chromium.display())))?;
+    let written = || {
+        fs::read_to_string(&file)
+            .ok()?
+            .lines()
+            .next()?
+            .trim()
+            .parse::<u16>()
+            .ok()
+    };
     for _ in 0..200 {
-        if let Some(p) = port() {
+        if let Some(p) = written() {
             std::thread::spawn(move || child.wait().ok());
             return Ok(url(p));
         }
@@ -195,5 +263,23 @@ mod tests {
             assert!(!allows(&sites, no), "{no}");
         }
         assert!(!allows(&[Site::default()], "https://x.com"));
+    }
+
+    #[test]
+    fn the_owners_lease_holds_the_agent_until_hand_back_or_ten_minutes() {
+        let t0 = 1_000_000;
+        let mut c = Control::take(t0);
+        assert_eq!(c.gate(t0), Gate::Wait(Duration::from_secs(600)));
+        assert_eq!(
+            c.gate(t0 + LEASE_MS - 1),
+            Gate::Wait(Duration::from_millis(1))
+        );
+        let mut back = c.hand_back("signed in".to_owned()).unwrap();
+        assert_eq!(back.gate(t0 + 1), Gate::Go(Some("signed in".to_owned())));
+        assert_eq!(back, Control::Agent);
+        assert_eq!(back.gate(t0 + 2), Gate::Go(None));
+        assert_eq!(back.hand_back("late".to_owned()), None);
+        assert_eq!(c.gate(t0 + LEASE_MS), Gate::Go(None));
+        assert_eq!(c, Control::Agent);
     }
 }

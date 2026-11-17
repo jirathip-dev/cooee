@@ -26,6 +26,17 @@ that line (else no run, no tokens). Its fixed prompt has it call `history` with 
 line read, so nothing is read twice. In any routine's run `remember`, like `skill` propose, only raises a card; the
 note is written when the owner approves it.
 
+Heartbeat (#498): each persona has a second built-in routine, off until its `agent.toml` sets `[heartbeat] on = true`
+(optional `when`, default `0 * * * *`; `model` and `effort`, default its provider's cheapest; `per_day`, default 4
+runs in any 24 hours). At a due time it reads, under the `heartbeat-<persona>` watermark, what the persona's threads
+and its routines' runs said since the last line read (its own runs left out); nothing new means no run and no
+tokens, and a due time over `per_day` leaves the news for the next one. Else it opens a thread marked `Heartbeat`
+with shed policy `ask`, whose one prompt carries the owner's notify rule (`notify.md` in the persona's folder, empty
+until the owner writes one) and the newest 20,000 characters of news. The run never pushes on its own: its approval
+cards are background cards that expire as Deny, and its end pushes `<persona> · heartbeat` only when the rule is
+set and its reply's last line is `NOTIFY` (else `SILENT: <why>`). The persona panel's routines list a `Heartbeat`
+row: its last run's time, what it read and why it stayed silent.
+
 GitHub events (#261): a routine may instead name a repo, events and an optional `match` (`[routine.github]` in
 place of `when`). An agent's GitHub routine is not saved until the owner approves its card with Face ID (q1351); a
 schedule needs none. `[hooks] bind` is a second listener serving only `POST /hooks/github`, so the main listener's
