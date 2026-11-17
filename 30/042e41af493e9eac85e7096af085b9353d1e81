@@ -1,0 +1,10 @@
+Decided: this PR builds Pack, Colours and Save only; Draw, import and the Mac 3-pane are follow-up issues
+Because: q1858
+Decided: with no server art (Farm, a new pack) the Pack grid draws read, run, loading and empty from the bundled row-read, row-run and working and grazing horse PNGs, which match the Farm sheet's s-read, s-run, s-loading and s-empty
+Because: apple/Sources/CooeeUI/ThemeEditor.swift:65
+Because: apple/Sources/CooeeCore/Looks.swift:46
+Decided: the one-tap fix button draws the background colour on lead, as the chips do, so its label is dark on cream in the dark look
+Because: apple/Sources/CooeeUI/ThemeColours.swift:110
+Rejected: serving Farm's sprites.svg to the editor — Looks.art keeps Farm on the app's own art everywhere, and snapshots have no server
+Check: apple/design/v4-theme-editor/theme-pack-modern.png shows all ten figures; theme-colours-modern.png shows "Darken to #8a6a00 · 4.0:1 ✓" dark on cream
+Owner: the editor's Pack screen now shows all ten figures of a copied Farm, and the fix button's label is readable.
