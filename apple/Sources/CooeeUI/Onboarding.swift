@@ -185,7 +185,7 @@ internal struct Paired: View {
         VStack(spacing: 16) {
             Spacer()
             Image(systemName: "checkmark.circle.fill").font(.system(size: 84)).foregroundStyle(palette.green)
-            Text("Paired with \(store?.host ?? "mini")").ui(28, .bold, look)
+            Text("Paired with \(store?.host ?? "mini")").ui(28, .bold, look).accessibilityIdentifier("paired")
             if store == nil {
                 Text("Guy approved this iPhone from the Mac.").ui(16, .regular, look).foregroundStyle(palette.mute)
             }
