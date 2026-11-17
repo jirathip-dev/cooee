@@ -1,0 +1,14 @@
+Decided: the proxy takes each frame itself with Playwright MCP's browser_take_screenshot after the action and holds the action's answer until cooee has the frame, so the agent never gets the image and frames stay in action order
+Because: "never sent to the model unless the agent asked for that screenshot"
+Decided: cooee keeps a frame only while every page open in the persona's Chromium (CDP /json/list) is on the allowlist and on no no_frames site; a link click onto a bank page is caught too, and an unknown page means no frame
+Because: "none for 'no frames' sites"
+Rejected: tracking the last browser_navigate URL — a click can leave it, and it fails open after a restart
+Decided: AES-256-GCM with a random 32-byte key kept as secret FRAMES_KEY (keychain on macOS, 0600 file on Linux), a fresh nonce per frame stored before the ciphertext
+Because: "Storage per D3: on the Mini, encrypted at rest, 14 days"
+Decided: password typing is masked when the element or field name contains "pass"; it is masked in the caption and in the browser log, while the browser still gets the real text
+Because: "password typing masked"
+Decided: frames are swept in the hub's existing expire pass (watch), by the time in the frame's name, so tests drive it with a fake now
+Decided: the app shows a frame as a done step with its caption and picture, in the tool fold and in the trace sheet, loaded through the threads client
+Because: "Frames show in the thread and the trace sheet (#79)"
+Check: crates/cooee/tests/mcp.rs drives the real proxy and server: three frames for three actions, none for a snapshot or on bank.com, served decrypted, not plain on disk
+Owner: Each browser step now leaves a captioned, encrypted picture on the Mini for 14 days, never for 'no frames' sites
