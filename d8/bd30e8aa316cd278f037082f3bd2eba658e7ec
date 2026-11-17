@@ -1,0 +1,69 @@
+Decided: one Logs::rotate (copy then truncate in place) serves cooee.log, terminal.log and perf.log, run at start and every 10 minutes
+Because: "One rotation function serves all three."
+Decided: farm at the index's commit installs from bytes compiled into the build; any other pack is a depth-1 sparse fetch of its folder into <data>/themes/<name>/
+Because: q1616
+Decided: on start an old <data>/themes/<name>.git is deleted only after its new form is fetched; an unfetchable one stays and is retried next start
+Because: "only once the new form is in place"
+Rejected: renaming the logs instead of copy+truncate — launchd's stdout and the perf writer hold the file open and would keep writing to the rotated file
+Rejected: running the migration on the live mini data folder from the lane — it deletes owner data; measured on a copy of it instead
+Check: kitchen's clone is shallow with only packs/kitchen checked out (tests/themes.rs an_index_pack_is_a_shallow_clone_of_its_folder_alone)
+Owner: Logs stop growing past 16 MB each, and themes take under 1 MB instead of 123 MB; farm works offline on first run.
+
+Decided: merged origin/staging; justfile keeps #323's lessons recipe and this PR's themes recipe (packs/farm and the starter)
+Because: "`packs/themes/` is removed from cooee's repo."
+Decided: one Logs::rotate (copy then truncate in place) serves cooee.log, terminal.log and perf.log, run at start and every 10 minutes
+Because: "One rotation function serves all three."
+Decided: farm at the index's commit installs from the build; any other pack is a depth-1 sparse fetch of its folder
+Because: q1616
+Decided: an old <data>/themes/<name>.git is deleted only after its new form is fetched
+Because: "only once the new form is in place"
+Rejected: running the migration on the live mini data folder from the lane — it deletes owner data; measured on a copy instead
+Check: justfile's check line lists lessons and themes, and `just themes` checks packs/farm packs/starter
+Owner: Logs stop growing past 16 MB each, and themes take under 1 MB instead of 123 MB; farm works offline on first run.
+
+Decided: merged origin/staging; sprites.mjs keeps #181's row-figure loop and reads farm from packs/farm, qs.js reads packs/
+Because: "`packs/themes/` is removed from cooee's repo."
+Decided: one Logs::rotate (copy then truncate in place) serves cooee.log, terminal.log and perf.log, run at start and every 10 minutes
+Because: "One rotation function serves all three."
+Decided: farm at the index's commit installs from the build; any other pack is a depth-1 sparse fetch of its folder
+Because: q1616
+Decided: an old <data>/themes/<name>.git is deleted only after its new form is fetched
+Because: "only once the new form is in place"
+Rejected: running the migration on the live mini data folder from the lane — it deletes owner data; measured on a copy instead
+Check: no file at the head references packs/themes; `just themes` checks packs/farm packs/starter
+Owner: Logs stop growing past 16 MB each, and themes take under 1 MB instead of 123 MB; farm works offline on first run.
+
+Decided: merged origin/staging; themes.rs keeps #319's SVG-gate tests beside this PR's clone, offline and migration tests
+Because: "A test installs kitchen from a local swag fixture"
+Decided: one Logs::rotate (copy then truncate in place) serves cooee.log, terminal.log and perf.log, run at start and every 10 minutes
+Because: "One rotation function serves all three."
+Decided: farm at the index's commit installs from the build; any other pack is a depth-1 sparse fetch of its folder
+Because: q1616
+Decided: an old <data>/themes/<name>.git is deleted only after its new form is fetched
+Because: "only once the new form is in place"
+Rejected: running the migration on the live mini data folder from the lane — it deletes owner data; measured on a copy instead
+Check: crates/cooee/tests/themes.rs runs 7 tests, the two #319 gate tests among them; no file references packs/themes
+Owner: Logs stop growing past 16 MB each, and themes take under 1 MB instead of 123 MB; farm works offline on first run.
+
+Decided: merged origin/staging; the theme source is #318's (swag pinned in packs/swag.toml, first-party packs vendored into the build), and this PR's packs/farm, tests/swag and [[theme]] entries are dropped
+Because: "farm ships inside the build, so the first run works offline."
+Decided: a git theme source is a depth-1 fetch with only its folder checked out, replacing #318's mirror clone
+Because: "Each is a shallow clone (`--depth 1`) of only its own folder (sparse checkout)."
+Decided: on start an old <data>/themes/<name>.git goes once its new form is in place: a first-party pack's is the build, any other's its shallow clone, kept under its pinned name
+Because: "only once the new form is in place"
+Rejected: keeping farm-only bundling and an index of swag entries — #318 already merged all three into the build, so a second source would be a second way to do one thing
+Check: crates/cooee/tests/themes.rs a_git_pack_is_a_shallow_clone_of_its_folder_alone and the migration test; mini copy du 428M -> 307M
+Owner: Logs stop growing past 16 MB each; old theme clones (122 MB on the mini) go on next start; farm works offline.
+
+Decided: merged origin/staging; this PR's rotation, shallow fetch and farm-first pick list now print through say!/note!
+Decided: the [logs] row moves to docs/configuration.md, as staging deleted docs/architecture.md
+Because: "One rotation function serves all three."
+Rejected: none
+Owner: Brought up to date with staging; logs still rotate and old theme clones still go on next start.
+
+Decided: merged origin/staging (#428's lib.rs split); this PR's housekeep moves from lib.rs into serve.rs beside perf::init
+Decided: the 10-minute rotation wait sleeps through cooee_core::clock::sleep, as arch-check bans thread::sleep outside the clock
+Because: "One rotation function serves all three."
+Rejected: an allow entry for thread::sleep in serve.rs — the clock already owns sleeping
+Check: drover arch-check reports 0 violations; housekeep runs before perf::init in serve.rs
+Owner: Brought up to date with staging; logs still rotate and old theme clones still go on next start.
