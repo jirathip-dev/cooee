@@ -1,0 +1,5 @@
+Decided: no code change this round; merged staging, whose #557 fixed the failing mcp secrets test
+Because: crates/cooee-core/src/secrets.rs:94
+Rejected: touching the Rust secrets code here — this branch changes no Rust, and staging already fixed it
+Check: CI gates and apple are green at the head merged with staging
+Owner: The failing check was another change's, already fixed upstream; this branch picks up the fix.
