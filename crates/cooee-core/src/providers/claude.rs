@@ -2,7 +2,11 @@ use std::sync::Arc;
 
 use serde_json::json;
 
-use crate::{Entry, Provider, Ran, Spec, Status, Usage, Window, login::one_line};
+use crate::{
+    Entry, Provider, Ran, Spec, Status, Usage, Window,
+    action::{Action, Call},
+    login::one_line,
+};
 
 /// Claude Code: `claude auth status`'s JSON, `/usage`'s `N% used · resets …` lines (read in UTC, nonessential traffic
 /// on), `CLAUDE_CONFIG_DIR` as its account and settings folder (herdsman#565), and an inherited
@@ -88,6 +92,16 @@ impl Provider for Claude {
             "settings": { "claudeMdExcludes": excludes },
         });
         Some(json!({ "claudeCode": { "options": options } }))
+    }
+
+    fn action(&self, call: &Call) -> Action {
+        let mcp = call.title.strip_prefix("mcp__").and_then(|t| t.split_once("__"));
+        match mcp {
+            Some((server, tool)) if !server.is_empty() && !tool.is_empty() => {
+                Action::tool(server, tool)
+            }
+            _ => Action::plain(call),
+        }
     }
 }
 

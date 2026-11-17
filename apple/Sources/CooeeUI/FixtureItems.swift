@@ -6,9 +6,9 @@ extension Fixtures {
         .tools(
             id: 2,
             rows: [
-                ToolRow("Read web/e2e/look.spec.ts", "done"),
-                ToolRow("Run npx playwright test look --repeat-each 10", "done"),
-                ToolRow("Read web/ts/look.ts", "done"),
+                ToolRow(.read, "web/e2e/look.spec.ts", "done"),
+                ToolRow(.run, "npx playwright test look --repeat-each 10", "done"),
+                ToolRow(.read, "web/ts/look.ts", "done"),
             ]
         ),
         .agent(
@@ -27,8 +27,8 @@ extension Fixtures {
         .tools(
             id: 4,
             rows: [
-                ToolRow("Edit web/e2e/look.spec.ts", "done"),
-                ToolRow("Run npx playwright test look --repeat-each 50", "running"),
+                ToolRow(.edit, "web/e2e/look.spec.ts", "done"),
+                ToolRow(.run, "npx playwright test look --repeat-each 50", "running"),
             ]
         ),
     ]
@@ -80,7 +80,7 @@ extension Fixtures {
 
     public static let conductor: [Item] = [
         .you(id: 1, text: "How's cooee's queue?"),
-        .tools(id: 2, rows: [ToolRow("Run herdsman board cooee", "done"), ToolRow("Run herdsman asks cooee", "done")]),
+        .tools(id: 2, rows: [ToolRow(.run, "herdsman board cooee", "done"), ToolRow(.run, "herdsman asks cooee", "done")]),
         .agent(
             id: 3,
             markdown: [

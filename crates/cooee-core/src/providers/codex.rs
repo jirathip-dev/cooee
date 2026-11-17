@@ -1,12 +1,39 @@
 use std::sync::Arc;
 
-use crate::{Entry, Plain, Spec};
+use crate::{
+    Entry, Provider, Spec,
+    action::{Action, Call, Kind},
+};
+
+/// Codex: codex-acp titles an MCP call `mcp.<server>.<tool>` and a command with its shell prefix stripped.
+#[derive(Debug)]
+pub struct Codex(Spec);
 
 pub const ENTRY: Entry = Entry {
     name: "codex",
     defaults,
-    build: |s| Arc::new(Plain(s)),
+    build: |s| Arc::new(Codex(s)),
 };
+
+impl Provider for Codex {
+    fn spec(&self) -> &Spec {
+        &self.0
+    }
+
+    fn action(&self, call: &Call) -> Action {
+        let mcp = call.title.strip_prefix("mcp.").and_then(|t| t.split_once('.'));
+        match (mcp, Action::plain(call)) {
+            (Some((server, tool)), _) if !server.is_empty() && !tool.is_empty() => {
+                Action::tool(server, tool)
+            }
+            (_, Action { kind: Kind::Run, .. }) => Action {
+                kind: Kind::Run,
+                subject: call.title.to_owned(),
+            },
+            (_, plain) => plain,
+        }
+    }
+}
 
 fn defaults() -> Spec {
     let v = |s: &str| s.split(' ').map(str::to_owned).collect();

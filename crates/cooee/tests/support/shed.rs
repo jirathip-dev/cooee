@@ -229,7 +229,16 @@ impl FakeShed {
         };
         let tool = "Edit early.rs".to_owned();
         let options = vec![option("allow"), option("reject")];
-        self.emit(name, EventKind::ApprovalRequest { tool, options });
+        let (id, call) = (String::new(), None);
+        self.emit(
+            name,
+            EventKind::ApprovalRequest {
+                id,
+                tool,
+                options,
+                call,
+            },
+        );
         self.report(name, "blocked", Some("Edit early.rs"));
     }
 

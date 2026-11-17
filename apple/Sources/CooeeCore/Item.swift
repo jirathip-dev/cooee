@@ -6,13 +6,20 @@ public enum Block: Sendable, Equatable {
     case bullets([String])
 }
 
+/// What a tool call does, as the server read it from the agent: never a harness's tool name.
+public enum ToolKind: String, Sendable, CaseIterable {
+    case read, edit, run, search, fetch, tool, other
+}
+
 public struct ToolRow: Sendable, Equatable {
+    public let kind: ToolKind
     public let title: String
     public let status: String
 
     public var running: Bool { status == "running" }
 
-    public init(_ title: String, _ status: String) {
+    public init(_ kind: ToolKind, _ title: String, _ status: String) {
+        self.kind = kind
         self.title = title
         self.status = status
     }
@@ -160,7 +167,7 @@ public enum ChatItems {
 
     private static func row(_ item: APIItem) -> ToolRow {
         let status = item.status == "completed" ? "done" : item.status == "failed" ? "failed" : "running"
-        return ToolRow(item.title ?? "", status)
+        return ToolRow(ToolKind(rawValue: item.action ?? "") ?? .other, item.title ?? "", status)
     }
 
     private static func fold(_ item: APIItem, into out: inout [Item]) {

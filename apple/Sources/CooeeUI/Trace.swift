@@ -66,7 +66,7 @@ internal struct TraceSheet: View {
                 )
                 .font(.system(size: 13)).foregroundStyle(tint)
             }
-            Text(step.title).ui(14, .regular, look).lineLimit(2).truncationMode(.middle)
+            Text(step.said).ui(14, .regular, look).lineLimit(2).truncationMode(.middle)
             Spacer(minLength: 0)
         }
         .padding(.horizontal, 14).padding(.vertical, 10)

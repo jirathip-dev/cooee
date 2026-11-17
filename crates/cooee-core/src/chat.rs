@@ -4,6 +4,8 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use shed_proto::{ApprovalOption, EventKind};
 
+use crate::action::{Action, Call, Kind};
+
 /// One row of a thread, as stored and as the page draws it. A later version of an item replaces the earlier one.
 /// An approval is sent with its card block (`blocks.rs`).
 #[derive(Debug, Clone, PartialEq, Deserialize)]
@@ -51,8 +53,12 @@ pub enum Body {
     Tool {
         /// The agent's tool call id.
         call: String,
-        /// What it does, in the agent's words.
-        title: String,
+        /// What it acts on: a path, a command, a query, a URL, `server/tool`, or the agent's title.
+        #[serde(rename = "title")]
+        subject: String,
+        /// Its kind of action; a row stored before kinds were read is `other`.
+        #[serde(default)]
+        action: Kind,
         /// `pending`, `in_progress`, `completed`, `failed` or `cancelled`.
         status: String,
         /// When it ended, in Unix milliseconds.
@@ -355,8 +361,46 @@ impl Chat {
         changes
     }
 
-    /// Applies shed event `seq` of this thread's terminal at time `at`.
-    pub fn apply(&mut self, at: u64, seq: u64, event: EventKind) -> Vec<Change> {
+    fn tool(
+        &mut self,
+        at: u64,
+        seq: u64,
+        id: String,
+        status: String,
+        read: Action,
+        facts: bool,
+    ) -> Vec<Change> {
+        let ended = matches!(status.as_str(), "completed" | "failed").then_some(at);
+        let found = self.find(|b| matches!(b, Body::Tool { call, .. } if *call == id));
+        let before = found.and_then(|n| self.items.iter().find(|i| i.id == n));
+        let kept = before.and_then(|i| match &i.body {
+            Body::Tool {
+                subject, action, ..
+            } if !facts && *action == read.kind => Some(subject.clone()),
+            _ => None,
+        });
+        let body = Body::Tool {
+            call: id,
+            subject: kept.unwrap_or(read.subject),
+            action: read.kind,
+            status,
+            ended,
+        };
+        let item = match found {
+            Some(n) => self.update(n, seq, |b| *b = body),
+            None => Some(self.push(at, seq, body)),
+        };
+        item.map(Change::Item).into_iter().collect()
+    }
+
+    /// Applies shed event `seq` of this thread's terminal at time `at`, a tool call's action as `read` reads it.
+    pub fn apply(
+        &mut self,
+        at: u64,
+        seq: u64,
+        event: EventKind,
+        read: &dyn Fn(&Call) -> Action,
+    ) -> Vec<Change> {
         match event {
             EventKind::Started
             | EventKind::Resources(_)
@@ -370,32 +414,21 @@ impl Chat {
                 vec![Change::Text(text)]
             }
             EventKind::ToolCall {
-                id, title, status, ..
+                id,
+                title,
+                status,
+                kind,
+                locations,
+                raw_input,
             } => {
-                let done = matches!(status.as_str(), "completed" | "failed");
-                let ended = done.then_some(at);
-                let call = |b: &Body| matches!(b, Body::Tool { call, .. } if *call == id);
-                let item = match self.find(call) {
-                    Some(item) => self.update(item, seq, |b| {
-                        *b = Body::Tool {
-                            call: id,
-                            title,
-                            status,
-                            ended,
-                        };
-                    }),
-                    None => Some(self.push(
-                        at,
-                        seq,
-                        Body::Tool {
-                            call: id,
-                            title,
-                            status,
-                            ended,
-                        },
-                    )),
+                let call = Call {
+                    title: &title,
+                    kind: kind.as_deref(),
+                    locations: &locations,
+                    raw_input: raw_input.as_ref(),
                 };
-                item.map(Change::Item).into_iter().collect()
+                let facts = !locations.is_empty() || raw_input.is_some();
+                self.tool(at, seq, id, status, read(&call), facts)
             }
             EventKind::Plan { entries } => {
                 let plan = |b: &Body| matches!(b, Body::Plan { .. });
@@ -405,7 +438,7 @@ impl Chat {
                 };
                 item.map(Change::Item).into_iter().collect()
             }
-            EventKind::ApprovalRequest { tool, options } => {
+            EventKind::ApprovalRequest { tool, options, .. } => {
                 let body = Body::Approval {
                     tool,
                     options,
@@ -519,7 +552,7 @@ mod tests {
         let card = chat.push(1, 0, approval(Some("drover"))).id;
         let ask = chat.push(2, 1, approval(None)).id;
         let option = "allow".to_owned();
-        chat.apply(3, 2, EventKind::Approved { option });
+        chat.apply(3, 2, EventKind::Approved { option }, &Action::plain);
         let chosen = |id| match &chat.items.iter().find(|i| i.id == id).unwrap().body {
             Body::Approval { chosen, .. } => chosen.clone(),
             _ => None,

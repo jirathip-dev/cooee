@@ -176,13 +176,10 @@ pub fn serve(config: &Config, ready: impl FnOnce(SocketAddr)) -> io::Result<()> 
         .get(&looks.default)
         .cloned()
         .ok_or_else(|| io::Error::other(format!("no theme {}", looks.default)))?;
-    let logins = Logins::new(
-        shed.clone(),
-        cooee_core::Providers::new(&config.providers),
-        &data,
-    );
+    let providers = cooee_core::Providers::new(&config.providers);
+    let logins = Logins::new(shed.clone(), providers.clone(), &data);
     let hub = Hub::open(
-        shed,
+        (shed, providers),
         &data,
         (config.roots.clone(), config.path.clone()),
         theme,

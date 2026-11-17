@@ -44,6 +44,7 @@ impl FakeShed {
             };
             let turn = EventKind::Turn {
                 prompt: prompt.clone(),
+                agent: Vec::new(),
             };
             self.emit(name, turn);
             let Some((events, stop)) = self.script(name, &prompt, rx) else {
@@ -92,10 +93,18 @@ impl FakeShed {
             events.push(reply("Ran 3 commands.", "end_turn"));
             (events, "end_turn")
         } else if prompt.contains("tool") {
+            let read = |status: &str, at: Vec<std::path::PathBuf>| EventKind::ToolCall {
+                id: "c1".to_owned(),
+                title: read.to_owned(),
+                status: status.to_owned(),
+                kind: Some("read".to_owned()),
+                locations: at,
+                raw_input: None,
+            };
             let events = [
-                tool("c1", read, "pending"),
-                tool("c1", read, "in_progress"),
-                tool("c1", read, "completed"),
+                read("pending", vec!["src/lib.rs".into()]),
+                read("in_progress", Vec::new()),
+                read("completed", Vec::new()),
                 text("Read "),
                 text("it."),
                 reply("Read it.", "end_turn"),
@@ -174,8 +183,10 @@ impl FakeShed {
         self.emit(
             name,
             EventKind::ApprovalRequest {
+                id: String::new(),
                 tool: tool_name,
                 options,
+                call: None,
             },
         );
         self.report(name, "blocked", Some(call));
@@ -229,6 +240,8 @@ fn tool(id: &str, title: &str, status: &str) -> EventKind {
         title: title.to_owned(),
         status: status.to_owned(),
         kind: None,
+        locations: Vec::new(),
+        raw_input: None,
     }
 }
 

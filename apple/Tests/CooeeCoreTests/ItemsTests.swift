@@ -1,4 +1,5 @@
 @testable import CooeeCore
+import Foundation
 import Testing
 
 internal struct ItemsTests {
@@ -23,7 +24,8 @@ internal struct ItemsTests {
             drawn == [
                 .you(id: 1, text: "Fix it", files: ["1-0-log.txt"]),
                 .tools(
-                    id: 2, rows: [ToolRow("Read a", "done"), ToolRow("Run b", "running"), ToolRow("Run c", "failed")]),
+                    id: 2,
+                    rows: [ToolRow(.other, "Read a", "done"), ToolRow(.other, "Run b", "running"), ToolRow(.other, "Run c", "failed")]),
                 .card(id: 5, poster: "edgar", block: .object(["type": .string("card")])),
                 .note(id: 7, text: "Model set"),
                 .agent(id: 10, markdown: [.text("Done.")]),
@@ -32,11 +34,22 @@ internal struct ItemsTests {
             ]
         )
         #expect(drawn.map(\.id) == [1, 2, 5, 7, 10, 11, 12])
-        #expect(ToolRow("Run b", "running").running && !ToolRow("Read a", "done").running)
+        #expect(ToolRow(.run, "b", "running").running && !ToolRow(.read, "a", "done").running)
+    }
+
+    @Test internal func aToolRowDrawsTheServersActionAndAnUnknownOneAsOther() throws {
+        let wire = #"""
+            [{"id": 2, "at": 2, "kind": "tool", "call": "c1", "title": "src/lib.rs", "action": "read", "status": "completed"},
+             {"id": 3, "at": 3, "kind": "tool", "call": "c2", "title": "cooee/remember", "action": "tool", "status": "failed"},
+             {"id": 4, "at": 4, "kind": "tool", "call": "c3", "title": "Look", "action": "browse", "status": "pending"}]
+            """#
+        let items = try JSONDecoder().decode([APIItem].self, from: Data(wire.utf8))
+        let rows = [ToolRow(.read, "src/lib.rs", "done"), ToolRow(.tool, "cooee/remember", "failed"), ToolRow(.other, "Look", "running")]
+        #expect(ChatItems.build(items, live: "") == [.tools(id: 2, rows: rows)])
     }
 
     private static let card = JSONValue.object(["type": .string("card")])
-    private static let steps = (2...6).map { ToolRow("Step \($0)", "done") }
+    private static let steps = (2...6).map { ToolRow(.other, "Step \($0)", "done") }
     private static let turn: [APIItem] = {
         let tools = (2...6).map {
             APIItem(id: $0, time: Int64($0) * 1000, kind: "tool", title: "Step \($0)", status: "completed")

@@ -100,7 +100,7 @@ impl Hub {
             live.chat.turn.note = None;
             changes.push(Change::State(live.chat.turn.clone()));
         }
-        if let (Some(_), shed_proto::EventKind::Turn { prompt }) =
+        if let (Some(_), shed_proto::EventKind::Turn { prompt, .. }) =
             (&live.meta.workflow, &event.kind)
         {
             let own = live
@@ -118,7 +118,8 @@ impl Hub {
                 changes.push(Change::Item(live.chat.push(now(), event.seq, body)));
             }
         }
-        changes.extend(live.chat.apply(now(), event.seq, event.kind));
+        let read = |c: &cooee_core::action::Call| self.providers.action(&live.meta.agent, c);
+        changes.extend(live.chat.apply(now(), event.seq, event.kind, &read));
         let chunk = changes.iter().any(|c| match c {
             Change::Text(_) => true,
             Change::Item(i) => matches!(i.body, Body::Agent { .. }),

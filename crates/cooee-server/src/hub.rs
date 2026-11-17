@@ -137,7 +137,7 @@ fn glance(live: &Live) -> Glance {
         | Body::Link { text, .. }
         | Body::Ask { text, .. }
         | Body::Ended { text } => text,
-        Body::Tool { title, .. } => title,
+        Body::Tool { subject, .. } => subject,
         Body::Approval { tool, .. } => tool,
         Body::Plan { .. } => "plan",
         Body::Routine { name, .. } => name,
@@ -293,6 +293,7 @@ pub struct Recipe {
 /// The threads and the shed they run on.
 pub struct Hub {
     shed: Shed,
+    providers: cooee_core::Providers,
     store: Store,
     scratch: PathBuf,
     files: PathBuf,
@@ -465,14 +466,14 @@ impl Live {
 
 impl Hub {
     /// Loads every stored thread, re-attaches the open ones to their shed terminals by name, and starts
-    /// following shed's events. A push speaks `theme`'s words; `plugins` may post choice cards and get their answers;
+    /// following shed's events, each tool call read by its agent's provider in `providers`. A push speaks `theme`'s words; `plugins` may post choice cards and get their answers;
     /// roots added or removed on the phone are saved in `config`; a routine's approval
     /// waits `expiry` milliseconds before it counts as Deny.
     ///
     /// # Errors
     /// [`HubError::Store`] when the store can't be read.
     pub fn open(
-        shed: Shed,
+        (shed, providers): (Shed, cooee_core::Providers),
         data: &Path,
         (roots, config): (Vec<PathBuf>, Option<PathBuf>),
         theme: crate::look::Theme,
@@ -508,6 +509,7 @@ impl Hub {
             agents: Mutex::new((shed.agents().map_err(|e| e.to_string()), now())),
             served: Mutex::default(),
             shed,
+            providers,
             store,
             scratch: data.join("scratch"),
             files: data.join("files"),

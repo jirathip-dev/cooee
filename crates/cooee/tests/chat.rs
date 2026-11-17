@@ -139,6 +139,15 @@ fn a_tool_call_is_one_row_updated_in_place_and_a_retried_send_is_stored_once() {
     let statuses: Vec<&Value> = tools.iter().map(|e| &e.data["status"]).collect();
     assert_eq!(statuses, ["pending", "in_progress", "completed"]);
     assert!(tools.iter().all(|e| e.data["id"] == tools[0].data["id"]));
+    let rows: Vec<(&Value, &Value)> = tools
+        .iter()
+        .map(|e| (&e.data["action"], &e.data["title"]))
+        .collect();
+    assert!(
+        rows.iter()
+            .all(|r| *r == (&json!("read"), &json!("src/lib.rs"))),
+        "{rows:?}"
+    );
     assert!(tools[1].data.get("ended").is_none() && tools[2].data["ended"].is_u64());
     assert_eq!(text_of(&events), "Read it.");
     let kinds: Vec<Value> = s.items(&id).iter().map(|i| i["kind"].clone()).collect();

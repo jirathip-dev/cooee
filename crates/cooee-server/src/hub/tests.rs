@@ -11,7 +11,7 @@ fn hub_on(dir: &Path, bin: PathBuf) -> Arc<Hub> {
     let (looks, _) = crate::look::Looks::load(None, None);
     let theme = looks.themes[&looks.default].clone();
     Hub::open(
-        shed,
+        (shed, cooee_core::Providers::default()),
         &dir.join("data"),
         (Vec::new(), None),
         theme,
@@ -157,7 +157,16 @@ fn a_members_ask_shows_in_its_room_and_pauses_its_deadline() {
         kind: "allow_once".into(),
     };
     let (tool, options) = ("fetch sec.gov".to_owned(), vec![option]);
-    hub.apply(event("s1", 1, EventKind::ApprovalRequest { tool, options }));
+    hub.apply(event(
+        "s1",
+        1,
+        EventKind::ApprovalRequest {
+            id: String::new(),
+            tool,
+            options,
+            call: None,
+        },
+    ));
     let ask = rx.try_recv().unwrap();
     let data: serde_json::Value = serde_json::from_str(&ask.data).unwrap();
     assert_eq!(ask.event, "room-ask");

@@ -26,6 +26,10 @@ pages read that. The sign-ins' status is checked per account at start, every 10 
 (at most once per 30 s), after a login and after a sign-out, one check per account at a time; pages and
 `GET /logins/<provider>` read the last result and its age, never waiting on a check (#106).
 
+A tool row is `{kind: "tool", call, title, action, status, ended?}`: `action` is what it does (`read`, `edit`, `run`,
+`search`, `fetch`, `tool`, `other`) and `title` what to (a path, a command, a URL, `server/tool`, else the agent's title),
+both read by the thread's provider from ACP's facts, never a harness's tool name (#533); a row stored before is `other`.
+
 Each shed event maps to items through one exhaustive `match` (`cooee-core/src/chat.rs`). The page gets them over SSE
 (`/threads/<id>/events`), each with id `<run>.<seq>`; a thread keeps its last 4,096 page events, so a page that
 reconnects with `Last-Event-ID` gets exactly what it missed, and one from another run or too far behind gets `reset`

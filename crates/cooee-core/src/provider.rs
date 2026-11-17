@@ -4,6 +4,7 @@ use std::{fmt, sync::Arc};
 
 use crate::{
     Usage,
+    action::{Action, Call},
     login::{Ran, Spec, Status, plain_status},
     providers::REGISTRY,
 };
@@ -36,6 +37,11 @@ pub trait Provider: Send + Sync + fmt::Debug {
     /// The session options (ACP `_meta`) that keep the owner's personal setup out of a profile's thread (#320).
     fn no_personal_setup(&self) -> Option<serde_json::Value> {
         None
+    }
+
+    /// A tool call's kind and subject from ACP's facts; the default reads ACP's own fields only.
+    fn action(&self, call: &Call) -> Action {
+        Action::plain(call)
     }
 }
 
@@ -94,6 +100,13 @@ impl Providers {
     #[must_use]
     pub fn named(&self, name: &str) -> Option<&Arc<dyn Provider>> {
         self.iter().find(|p| p.spec().name == name)
+    }
+
+    /// A tool call of ACP agent `agent` as its provider reads it; an agent no provider runs: ACP's own fields.
+    #[must_use]
+    pub fn action(&self, agent: &str, call: &Call) -> Action {
+        self.for_agent(agent)
+            .map_or_else(|| Action::plain(call), |p| p.action(call))
     }
 
     /// The provider that signs in ACP agent `agent`.
