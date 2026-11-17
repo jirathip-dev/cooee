@@ -178,7 +178,6 @@ pub struct Ask {
     #[serde(default)]
     pub github: Option<Github>,
     /// The signed POST.
-    #[serde(default)]
     pub webhook: Option<Webhook>,
     /// The prompt.
     pub prompt: String,
@@ -231,12 +230,7 @@ impl Routine {
             (Some(w), None, None) => Trigger::Schedule(Schedule::parse(&w)?),
             (None, Some(g), None) => Trigger::Github(g.checked()?),
             (None, None, Some(h)) => Trigger::Webhook(h.checked()?),
-            _ => {
-                return Err(
-                    "BAD_TRIGGER: give when (a schedule), github or webhook, one of them"
-                        .to_owned(),
-                );
-            }
+            _ => return Err("BAD_TRIGGER: give one of when, github or webhook".to_owned()),
         };
         let mut stamp = now;
         while list.iter().any(|r| r.id == format!("r-{stamp}")) {
@@ -338,8 +332,7 @@ impl Routine {
     }
 
     /// The prompt, each `{{path}}` filled: `due` (local `YYYY-MM-DD HH:MM`), `event`, `repo`, or a dotted path into
-    /// the event's payload (`pull_request.title`); each value at most 2,000 characters, a missing one empty. A signed
-    /// POST's body follows it, marked untrusted.
+    /// the event's payload (`pull_request.title`), each at most 2,000 characters; then a POST's untrusted body.
     #[must_use]
     pub fn text(&self, f: &Fields) -> String {
         let (mut out, mut rest) = (String::new(), self.prompt.as_str());
@@ -355,10 +348,7 @@ impl Routine {
             }
             rest = tail;
         }
-        match f {
-            Fields::Inbound(i) => out + rest + &i.data(),
-            _ => out + rest,
-        }
+        out + rest + &f.data()
     }
 
     /// Whether delivery `d` is one of its events: its repo, one of its events and every `match`.

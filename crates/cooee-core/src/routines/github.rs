@@ -198,6 +198,13 @@ impl Fields<'_> {
             (Self::Due(..) | Self::Inbound(_), _) => String::new(),
         }
     }
+
+    pub(super) fn data(&self) -> String {
+        match self {
+            Self::Inbound(i) => i.data(),
+            Self::Due(..) | Self::Event(_) => String::new(),
+        }
+    }
 }
 
 #[cfg(test)]
