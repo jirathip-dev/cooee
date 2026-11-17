@@ -1,0 +1,9 @@
+Decided: hub/session.rs::persona is pub(crate), so it carries no doc comment; the comments gate allows /// only on public API
+Because: crates/cooee-server/src/hub/session.rs:11
+Decided: the agents.rs import keeps staging's browser and this branch's provider::Builtin
+Because: crates/cooee-core/src/agents.rs:15
+Decided: the fake shed keeps both meta() from this branch and adapter_env_of() from staging
+Because: crates/cooee/tests/support/shed.rs:291
+Rejected: making persona pub to keep its doc comment — it is only called inside the server crate
+Check: CI's comments gate is green at the head, and conformance step 8 still passes on the fake
+Owner: Fixes the style check that failed and brings the branch up to date with staging; behaviour is unchanged.
