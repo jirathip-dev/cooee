@@ -282,19 +282,30 @@ impl Hub {
     }
 
     /// What persona `persona`'s threads said after line `mark` (#219), routine runs left out: none when the owner
-    /// said nothing since.
+    /// said nothing since. For its `heartbeat` (#498) routines' results count and only its own runs are left out:
+    /// none when nothing was said since.
     ///
     /// # Errors
     /// [`HubError::Refused`] when a thread can't be read.
-    pub fn news(&self, persona: &str, mark: u64) -> Result<Option<(String, u64)>, HubError> {
+    pub fn news(
+        &self,
+        persona: &str,
+        (mark, heartbeat): (u64, bool),
+    ) -> Result<Option<(String, u64)>, HubError> {
         let mine: Vec<String> = self
             .all()
             .iter()
             .map(|l| lock(l).meta.clone())
-            .filter(|m| m.profile == persona && m.routine.is_none())
+            .filter(|m| {
+                m.profile == persona
+                    && m.routine
+                        .as_ref()
+                        .is_none_or(|r| heartbeat && r.id != agents::HEARTBEAT)
+            })
             .map(|m| m.id)
             .collect();
-        history::since(&self.store, &mine, mark).map_err(|e| HubError::Refused(e.to_string()))
+        history::since(&self.store, &mine, (mark, !heartbeat))
+            .map_err(|e| HubError::Refused(e.to_string()))
     }
 
     /// An agent's `history` in thread `id` (#217): a search of its persona's threads (`query`, at most `limit`
@@ -320,7 +331,7 @@ impl Hub {
         if run && thread.is_empty() && query.trim().is_empty() {
             let key = format!("{}-{}", agents::CONSOLIDATE, persona.id);
             let read = history::watermark(&self.data, &key, |w| {
-                let news = self.news(&persona.id, w.line);
+                let news = self.news(&persona.id, (w.line, false));
                 if let Ok(Some((_, newest))) = &news {
                     w.line = *newest;
                 }

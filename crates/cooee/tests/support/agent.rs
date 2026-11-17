@@ -73,7 +73,10 @@ impl FakeShed {
             .and_then(|t| t.split_once(").\n\n"))
             .map_or(prompt, |t| t.1);
         let read = "Read src/lib.rs";
-        Some(if let Some(said) = self.cued(name) {
+        let says = prompt
+            .split_once("fake says: ")
+            .map(|(_, s)| s.lines().next().unwrap_or_default().replace(" / ", "\n"));
+        Some(if let Some(said) = self.cued(name).or(says) {
             (vec![reply(&said, "end_turn")], "end_turn")
         } else if prompt.contains("approve") {
             self.approval(name, rx)
