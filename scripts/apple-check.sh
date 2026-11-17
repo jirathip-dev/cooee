@@ -1,7 +1,7 @@
 #!/bin/sh
 # The Swift gates on apple/ (#147). Blocking (the merge-ready run, `just apple-check`): swift format, anti-slop (with
 # cooee's rules and a check that each TODO(#N) names an open issue), SwiftLint, the build (Swift 6, warnings as
-# errors), the tests and 95% coverage of Core and API. #487: `--nightly` (`just apple-check-nightly`, apple.yml's
+# errors), the tests and 95% coverage of Core and API. #487: `--nightly` (`just apple-check --nightly`, apple.yml's
 # schedule and manual runs) adds Features coverage, unused imports (swiftlint analyze) and Periphery. Each step's wall
 # time and the total print at the end and go to $GITHUB_STEP_SUMMARY; a failure names its step as `gate=` in
 # $GITHUB_OUTPUT. Without Xcode it runs what the Command Line Tools can and names what it skipped. SwiftLint and

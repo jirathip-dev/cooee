@@ -6,10 +6,6 @@ check *gates:
 gen:
     scripts/gen.sh
 
-# The blocking Swift gates on apple/ (#147, #487): format, anti-slop, SwiftLint, build, tests, Core and API coverage.
-apple-check:
-    scripts/apple-check.sh
-
-# Every Swift gate, as the nightly runs them: apple-check plus Features coverage, unused imports and Periphery.
-apple-check-nightly:
-    scripts/apple-check.sh --nightly
+# The blocking Swift gates on apple/ (#147); --nightly adds Features coverage, unused imports and Periphery (#487).
+apple-check *flags:
+    scripts/apple-check.sh {{flags}}

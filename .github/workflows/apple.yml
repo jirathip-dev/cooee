@@ -117,7 +117,7 @@ jobs:
           NIGHTLY: ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
         run: |
           mkdir -p "$COOEE_RENDERED"
-          if [ "$NIGHTLY" = true ]; then just apple-check-nightly; else just apple-check; fi
+          if [ "$NIGHTLY" = true ]; then just apple-check --nightly; else just apple-check; fi
       - uses: actions/upload-artifact@v4
         if: always() && env.FULL == 'true'
         with:
