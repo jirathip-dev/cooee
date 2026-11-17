@@ -16,6 +16,7 @@ public struct ThemeEditorFeature: Sendable {
         public var reports: [String: GateReport] = [:]
         public var colours: Bool?
         public var open: String?
+        public var drawing = Drawing()
         public var chat = false
         public var dark = true
         public var saving = false
@@ -52,6 +53,8 @@ public struct ThemeEditorFeature: Sendable {
         case open(String?)
         case preview(chat: Bool, dark: Bool)
         case token(String, String)
+        case draw(DrawEdit)
+        case art(sprites: String, scene: String)
         case start(String)
         case checked([String: GateReport])
         case save
@@ -67,7 +70,11 @@ public struct ThemeEditorFeature: Sendable {
         Reduce { state, action in
             switch action {
             case .task:
-                return check(state)
+                return .concatenate(load(state), check(state))
+            case .draw(let edit):
+                state.drawing.apply(edit)
+            case .art(let sprites, let scene):
+                state.drawing.figures = PixelFigure.drawn(sprites: sprites, scene: scene)
             case .token, .start:
                 return edit(&state, action)
             case .checked(let reports):
@@ -119,8 +126,19 @@ public struct ThemeEditorFeature: Sendable {
         .cancellable(id: "check", cancelInFlight: true)
     }
 
+    private func load(_ state: State) -> Effect<Action> {
+        let (server, from) = (state.server, state.draft.from)
+        guard from != "starter" else { return .none }
+        return .run { send in
+            async let sprites = threads.themeArt(server, from, "sprites.svg")
+            async let scene = threads.themeArt(server, from, "scene.svg")
+            await send(.art(sprites: (try? await sprites) ?? "", scene: (try? await scene) ?? ""))
+        }
+    }
+
     private func save(_ state: inout State) -> Effect<Action> {
         guard state.canSave else { return .none }
+        state.draft.draw(state.drawing.figures)
         state.saving = true
         state.error = nil
         let (server, name, draft) = (state.server, state.name, state.draft)

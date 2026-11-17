@@ -78,6 +78,27 @@ pub fn set(data: &Path, name: &str, value: &str) -> io::Result<()> {
     crate::write_private(&file(data, name), value.as_bytes())
 }
 
+/// The name persona `persona`'s secret `name` is saved under (#163): no `secret:<NAME>` of an env can name it.
+#[must_use]
+pub fn persona(persona: &str, name: &str) -> String {
+    format!("{persona}.{name}")
+}
+
+/// Persona `persona`'s saved secrets, each as its variable and value (#163).
+///
+/// # Errors
+/// As [`names`] and [`get`].
+pub fn of_persona(data: &Path, persona: &str) -> io::Result<Vec<(String, String)>> {
+    let mine = format!("{persona}.");
+    let mut vars = Vec::new();
+    for name in names(data)? {
+        if let (Some(var), Some(v)) = (name.strip_prefix(&mine), get(data, &name)?) {
+            vars.push((var.to_owned(), v));
+        }
+    }
+    Ok(vars)
+}
+
 /// Removes secret `name` from the keychain (macOS) and its file; one already gone is no error.
 ///
 /// # Errors

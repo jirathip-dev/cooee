@@ -47,6 +47,7 @@ pub(super) enum Proposed {
         replaces: Option<String>,
     },
     Later(Box<dyn FnOnce() -> Result<String, String> + Send>),
+    Secret(super::secret::Asked),
 }
 
 /// An agent's `skill` proposal (#218): the skill, and the one it edits.
@@ -541,7 +542,7 @@ impl Hub {
             .map_err(|_| HubError::Refused(format!("thread {id} has no persona")))
     }
 
-    fn raise(
+    pub(super) fn raise(
         &self,
         id: &str,
         (tool, form, detail): (String, &str, String),
@@ -585,8 +586,8 @@ impl Hub {
         self.raise(id, (tool, "routine", detail), Proposed::Later(then))
     }
 
-    /// Whether item `item` of thread `id` is an MCP server's or a routine's proposal card (approving it needs Face
-    /// ID).
+    /// Whether item `item` of thread `id` is an MCP server's, a routine's or a secret's card of cooee's (approving
+    /// it needs Face ID).
     #[must_use]
     pub fn is_proposal(&self, id: &str, item: u64) -> bool {
         let Ok(live) = self.live(id) else {
@@ -594,7 +595,7 @@ impl Hub {
         };
         let live = lock(&live);
         live.chat.items.iter().any(|i| {
-            i.id == item && matches!(&i.body, Body::Approval { card, .. } if matches!(card.form.as_deref(), Some("mcp" | "routine")))
+            i.id == item && matches!(&i.body, Body::Approval { card, plugin: None, .. } if matches!(card.form.as_deref(), Some("mcp" | "routine" | "secret")))
         })
     }
 
@@ -603,6 +604,7 @@ impl Hub {
         id: &str,
         item: u64,
         option: &str,
+        value: Option<&str>,
     ) -> Result<Option<String>, String> {
         let p = lock(&self.proposals).remove(&(id.to_owned(), item));
         if option != "approve" {
@@ -622,6 +624,7 @@ impl Hub {
                 .map(|s| Some(format!("saved skill {}", s.name)))
                 .map_err(|e| e.to_string()),
             Proposed::Later(then) => then().map(Some),
+            Proposed::Secret(a) => self.drop_secret((id, item), &a, value).map(Some),
         }
     }
 
