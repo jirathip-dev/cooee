@@ -8,7 +8,7 @@ use topcoat::{
     router::route,
 };
 
-use crate::{Answer, Data, blocking, refused};
+use crate::http::{Answer, Data, blocking, refused};
 
 const BUNDLED: &str = include_str!("../../../../apple/Sources/CooeeUI/Default/screens/home.json");
 
