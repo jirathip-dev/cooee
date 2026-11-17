@@ -1,0 +1,6 @@
+Decided: land the approved topics design as files in apple/design/topics/ only, and record q1891's answers in the README
+Because: q1891
+Because: "This issue lands the design files in apple/design/topics/ only, with no product code and no server change"
+Rejected: building the strip now — the amendment puts the build in the issues filed from the design
+Check: the diff against staging touches only apple/design/topics/, and the README shows reference.jpeg first
+Owner: The approved topics design is in the repo as pictures and notes; no app change yet.
