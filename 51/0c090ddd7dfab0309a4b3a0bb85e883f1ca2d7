@@ -1,0 +1,9 @@
+Decided: the self-update step gets id update and continue-on-error; a separate step writes its pass or FAIL line to the step summary
+Because: "carries `continue-on-error: true`. A failure in it leaves `mac-setup` green"
+Decided: the diagnostics step runs on failure() or steps.update.outcome == 'failure', because continue-on-error keeps failure() false
+Because: "The on-failure diagnostics (\"what the Mac ran\") and the screenshot upload still run when the self-update step fails"
+Decided: the summary step's name is quoted, since an unquoted # starts a YAML comment
+Because: .github/workflows/apple.yml:258
+Rejected: echoing the summary line inside the update step — its exit 1 paths would skip it
+Check: a workflow_dispatch mac-setup run shows the self-update line in the summary and a green job
+Owner: the Mac self-update check now only reports in CI, so it no longer holds the staging to main promotion.
