@@ -14,7 +14,7 @@ internal enum TopicFrames {
         ThreadRow(
             id: id, title: title, agent: "codex", persona: "cond", state: working ? "working" : "done", last: last,
             updated: (1_000_000_000 - age) * 1000, unseen: unread, archived: archived,
-            folder: folder.map { "/Users/me/src/\($0)" } ?? ""
+            folder: folder.map { "/home/user/src/\($0)" } ?? ""
         )
     }
 
@@ -47,8 +47,8 @@ internal enum TopicFrames {
     private static func strip(_ current: String, pressed: String? = nil) -> TopicActions {
         var strip = TopicActions(topics: topics, current: current)
         strip.pressed = pressed
-        strip.folder = "/Users/me/src/cooee"
-        strip.recent = ["/Users/me/src/cooee", "/Users/me/src/herdsman"]
+        strip.folder = "/home/user/src/cooee"
+        strip.recent = ["/home/user/src/cooee", "/home/user/src/herdsman"]
         return strip
     }
 

@@ -185,7 +185,7 @@ extension ClientTests {
     @Test internal func aPersonasTopicsListRetitleArchiveAndStartInAFolder() async throws {
         let row =
             #"[{"id":"t1","title":"cooee queue","agent":"codex","persona":"coder","state":"working","#
-            + #""last":"","at":5,"unseen":1,"archived":false,"folder":"/Users/me/src/cooee"}]"#
+            + #""last":"","at":5,"unseen":1,"archived":false,"folder":"/home/user/src/cooee"}]"#
         let empty = Answer(headers: json, chunks: ["null"])
         let server = CannedServer([
             "/threads": [Answer(headers: json, chunks: [row]), Answer(headers: json, chunks: [#"{"id":"n3"}"#])],
@@ -193,7 +193,7 @@ extension ClientTests {
         ])
         let client = server.client()
         let topics = try await client.topics(of: "coder")
-        #expect(topics.map(\.folder) == ["/Users/me/src/cooee"] && topics.map(\.title) == ["cooee queue"])
+        #expect(topics.map(\.folder) == ["/home/user/src/cooee"] && topics.map(\.title) == ["cooee queue"])
         #expect(server.requests("/threads").first?.url?.query == "persona=coder")
         try await client.retitle("t1", "Queue")
         try await client.archive("t1", true)

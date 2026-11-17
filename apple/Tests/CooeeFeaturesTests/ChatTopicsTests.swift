@@ -11,7 +11,7 @@ internal struct ChatTopicsTests {
     nonisolated private static func topic(_ id: String, _ age: Int64, archived: Bool = false) -> ThreadRow {
         ThreadRow(
             id: id, title: "T \(id)", agent: "codex", persona: "coder", state: "done", last: "",
-            updated: 999_000_000 - age * 60_000, unseen: 0, archived: archived, folder: "/Users/me/src/\(id)"
+            updated: 999_000_000 - age * 60_000, unseen: 0, archived: archived, folder: "/home/user/src/\(id)"
         )
     }
 
@@ -111,8 +111,8 @@ internal struct ChatTopicsTests {
     @Test internal func newWithAPickedFolderStartsTheThreadInIt() async {
         let store = await loaded(.new(coder))
         store.exhaustivity = .off
-        #expect(store.state.bar?.recent.first == "/Users/me/src/t1")
-        await store.send(.topics(.folder("/Users/me/src/t2"))) { $0.bar?.folder = "/Users/me/src/t2" }
+        #expect(store.state.bar?.recent.first == "/home/user/src/t1")
+        await store.send(.topics(.folder("/home/user/src/t2"))) { $0.bar?.folder = "/home/user/src/t2" }
         await store.send(.compose(.draftChanged("Plan it")))
         await store.send(.compose(.send))
         await store.receive(\.delegate.started)
@@ -120,7 +120,7 @@ internal struct ChatTopicsTests {
         await store.send(.compose(.draftChanged("Scratch it")))
         await store.send(.compose(.send))
         await store.receive(\.delegate.started)
-        #expect(calls.all == ["topics coder", "start /Users/me/src/t2 Plan it", "start scratch Scratch it"])
+        #expect(calls.all == ["topics coder", "start /home/user/src/t2 Plan it", "start scratch Scratch it"])
     }
 }
 
