@@ -12,7 +12,9 @@ use std::{
 
 use serde::{Deserialize, Serialize};
 
-use crate::{disk, mcp, memory, plugins, profiles::Profile, routines::Schedule, skills};
+use crate::{
+    disk, mcp, memory, plugins, profiles::Profile, provider::Builtin, routines::Schedule, skills,
+};
 
 const DROVER: &str = "drover";
 
@@ -545,6 +547,17 @@ impl Agent {
             }
         }
         Ok((plain, secret))
+    }
+
+    /// The harness built-ins its sessions turn off (#503): every one cooee replaces; web stays the harness's.
+    #[must_use]
+    pub fn off(&self) -> Vec<Builtin> {
+        vec![
+            Builtin::Browser,
+            Builtin::Memory,
+            Builtin::SubAgents,
+            Builtin::Skills,
+        ]
     }
 
     /// The folder its chats work in; none: each chat's own.

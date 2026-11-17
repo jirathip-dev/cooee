@@ -6,7 +6,7 @@ use std::{
     thread,
 };
 
-use cooee_core::{Agent, Body, Change, Chat, Thread, shed_proto};
+use cooee_core::{Agent, Body, Change, Chat, Thread, provider::Gap, shed_proto};
 
 use super::{AGENTS_FOR, Hub, HubError, LABEL, Live, Recipe, lock, now, on_machine, refused};
 
@@ -207,10 +207,13 @@ impl Hub {
             routine: recipe.routine.clone(),
             ..Thread::default()
         })?;
-        if fresh && !recipe.machine.is_empty() {
+        let machine = Some(&recipe.machine).filter(|m| !m.is_empty());
+        let personal = recipe.gaps.contains(&Gap::PersonalFiles);
+        let notes = machine.map(|m| format!("runs on {m}")).into_iter();
+        let notes = notes.chain(personal.then(|| Gap::PersonalFiles.words()));
+        for text in notes.filter(|_| fresh) {
             let live = self.live(&id)?;
             let mut live = lock(&live);
-            let text = format!("runs on {}", recipe.machine);
             let item = live.chat.push(now(), 0, Body::Note { text });
             live.publish(self, vec![Change::Item(item)])?;
         }

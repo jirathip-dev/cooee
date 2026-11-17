@@ -172,11 +172,11 @@ impl FakeShed {
         prompt: &str,
         rx: &Receiver<Input>,
     ) -> Option<(Vec<EventKind>, &'static str)> {
+        let meta = self.meta(name).unwrap_or_default();
         let said = if prompt.contains("What is the code word?") {
-            let word = prompt
-                .split("The code word is ")
-                .nth(1)
-                .unwrap_or("unknown.");
+            let system = meta["systemPrompt"]["append"].as_str().unwrap_or_default();
+            let word = format!("{system}\n{prompt}");
+            let word = word.split("The code word is ").nth(1).unwrap_or("unknown.");
             word.split_whitespace()
                 .next()
                 .unwrap()
@@ -187,6 +187,14 @@ impl FakeShed {
             self.cooee_tool(name, "remember", &note)
         } else if prompt.contains("Use your conformance skill") {
             self.cooee_tool(name, "skill", &json!({ "read": "conformance" }))
+        } else if prompt.contains("List the names of every tool you have") {
+            let on = meta["claudeCode"]["options"]["tools"].as_array();
+            let on = |t: &str| on.is_none_or(|on| on.iter().any(|o| o == t));
+            TOOLS
+                .into_iter()
+                .filter(|t| on(t))
+                .collect::<Vec<_>>()
+                .join("\n")
         } else if prompt.contains("Run `sleep 120`") {
             return Some(self.sleep_until_cancel(name, rx));
         } else {
@@ -281,6 +289,20 @@ impl FakeShed {
         )
     }
 }
+
+const TOOLS: [&str; 11] = [
+    "Read",
+    "Write",
+    "Edit",
+    "Bash",
+    "Glob",
+    "Grep",
+    "TodoWrite",
+    "WebSearch",
+    "WebFetch",
+    "Agent",
+    "Skill",
+];
 
 /// The `markdown` turn's reply: a heading, inline marks, a link, a 3-column table, a fenced block, a list and raw
 /// HTML (which stays text).

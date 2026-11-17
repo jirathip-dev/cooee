@@ -2,7 +2,11 @@ use std::sync::Arc;
 
 use serde_json::json;
 
-use crate::{Entry, Provider, Ran, Spec, Status, Usage, Window, login::one_line};
+use crate::{
+    Entry, Provider, Ran, Spec, Status, Usage, Window,
+    login::one_line,
+    provider::{Builtin, Channel, Setup, Want},
+};
 
 /// Claude Code: `claude auth status`'s JSON, `/usage`'s `N% used · resets …` lines (read in UTC, nonessential traffic
 /// on), `CLAUDE_CONFIG_DIR` as its account and settings folder (herdsman#565), and an inherited
@@ -17,6 +21,28 @@ pub const ENTRY: Entry = Entry {
 };
 
 const TOKEN: &str = "CLAUDE_CODE_OAUTH_TOKEN";
+
+const KEPT: [&str; 13] = [
+    "Read",
+    "Write",
+    "Edit",
+    "NotebookEdit",
+    "Glob",
+    "Grep",
+    "Bash",
+    "TaskStop",
+    "TodoWrite",
+    "TaskCreate",
+    "TaskGet",
+    "TaskUpdate",
+    "TaskList",
+];
+
+const OFFABLE: [(Builtin, &[&str]); 3] = [
+    (Builtin::Web, &["WebSearch", "WebFetch"]),
+    (Builtin::SubAgents, &["Agent", "Workflow"]),
+    (Builtin::Skills, &["Skill"]),
+];
 
 fn defaults() -> Spec {
     let v = |s: &str| s.split(' ').map(str::to_owned).collect();
@@ -81,14 +107,30 @@ impl Provider for Claude {
         (u.five_hour.is_some() || u.seven_day.is_some()).then_some(u)
     }
 
-    fn no_personal_setup(&self) -> Option<serde_json::Value> {
+    fn session(&self, want: &Want) -> Setup {
+        let mut tools = KEPT.to_vec();
+        for (b, names) in OFFABLE {
+            if !want.off.contains(&b) {
+                tools.extend(names);
+            }
+        }
         let excludes = ["{/Users/*,/home/*,/root}/.claude/{CLAUDE.md,rules/**}"];
+        let settings = json!({ "claudeMdExcludes": excludes,
+                               "autoMemoryEnabled": !want.off.contains(&Builtin::Memory) });
         let options = json!({
             "settingSources": ["project", "local"],
             "strictMcpConfig": true,
-            "settings": { "claudeMdExcludes": excludes },
+            "tools": tools,
+            "settings": settings,
         });
-        Some(json!({ "claudeCode": { "options": options } }))
+        Setup {
+            meta: Some(json!({
+                "systemPrompt": { "append": want.brief, "excludeDynamicSections": true },
+                "claudeCode": { "options": options },
+            })),
+            brief: Channel::System,
+            ..Setup::default()
+        }
     }
 }
 

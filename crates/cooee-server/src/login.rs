@@ -10,7 +10,9 @@ use std::{
 use cooee_core::{
     Account, Accounts, Launch, Provider, Providers, Shed, Sheet, Status,
     agents::Agent,
-    links, redact,
+    links,
+    provider::{Setup, Want},
+    redact,
     shed_proto::{RunParams, WaitOutcome},
 };
 use serde::Serialize;
@@ -478,16 +480,15 @@ impl Logins {
         Ok((a.name, launch))
     }
 
-    /// Agent `agent`'s provider's "no personal setup" session options, if it has them.
+    /// How agent `agent`'s provider sets up a persona session for `want` (#503); none: no provider signs it in.
     #[must_use]
-    pub fn no_personal_setup(&self, agent: &str) -> Option<serde_json::Value> {
-        self.providers.for_agent(agent)?.no_personal_setup()
+    pub fn session(&self, agent: &str, want: &Want) -> Option<Setup> {
+        Some(self.providers.for_agent(agent)?.session(want))
     }
 
     /// What a thread of agent `a` runs with: its account's label (`a`'s, else `account`) and [`Launch`] (the account's
     /// folder, the settings file in the provider's `settings` variable (in place of the account's folder when it is
-    /// the same variable), the env, its secrets read from `data` through a file there, the policy, and its provider's
-    /// "no personal setup" session options). An agent whose ACP agent can't run it as written is refused: settings
+    /// the same variable), the env, its secrets read from `data` through a file there, and the policy). An agent whose ACP agent can't run it as written is refused: settings
     /// with no `settings` variable (its guard can't run).
     ///
     /// # Errors
@@ -501,7 +502,6 @@ impl Logins {
         let refused = |why: String| HubError::Refused(why);
         let (account, mut launch) = self.home(&a.agent, a.account.as_deref().or(account))?;
         let provider = self.providers.for_agent(&a.agent);
-        launch.meta = provider.and_then(|v| v.no_personal_setup());
         if let Some(settings) = &a.settings {
             let var = provider
                 .map(|v| v.spec().settings.as_str())
