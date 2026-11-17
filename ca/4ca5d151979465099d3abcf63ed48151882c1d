@@ -1,0 +1,29 @@
+Decided: testAvatarMenu waits for the Sign-ins, Devices, Machines and Plugins rows to exist instead of asserting they are absent
+Because: crates/cooee-server/src/screens/menu.rs:13
+Because: crates/cooee-server/src/screens/settings.rs:87
+Rejected: waitForNonExistence on the same rows — #312 made the menu list them on purpose, so it fails every run (3/3 dispatch runs)
+Decided: the Paired title carries the accessibility identifier "paired"; both pairing waits query it by identifier and check its label
+Because: "query a narrow element (an accessibility identifier) and poll it, rather than evaluating the whole tree"
+Because: apple/Sources/CooeeUI/Onboarding.swift:188
+Rejected: a retry around the test or the wait — the issue rules out retry wrappers
+Check: dispatch runs listed in the PR body show both tests passing on the Mac runners
+Owner: Two phone app tests that kept turning CI red now check what the app really shows today.
+
+Decided: testAvatarMenu waits for the Sign-ins, Devices, Machines and Plugins rows to exist instead of asserting they are absent
+Because: crates/cooee-server/src/screens/menu.rs:13
+Because: crates/cooee-server/src/screens/settings.rs:87
+Rejected: waitForNonExistence on the same rows — #312 made the menu list them on purpose, so it fails every run (3/3 dispatch runs)
+Decided: the Paired title's text block carries id "paired", text blocks pass their id through as the accessibility identifier, and both pairing waits query it by identifier and check its label
+Because: "query a narrow element (an accessibility identifier) and poll it, rather than evaluating the whole tree"
+Because: apple/Sources/CooeeUI/Default/screens/pairing.json:95
+Because: apple/Sources/CooeeUI/BlockPairing.swift:119
+Rejected: a retry around the test or the wait — the issue rules out retry wrappers
+Check: dispatch runs listed in the PR body show both tests passing on the Mac runners
+Owner: Two phone app tests that kept turning CI red now check what the app really shows today.
+
+Decided: merged origin/staging after #489 instead of rebasing, so the cap gate counts against apple_cap 15250
+Because: q1857
+Because: ci/cap.toml:7
+Rejected: a rebase onto staging — lane rules forbid history rewrites and force-pushes
+Check: the cap step in the msrv and stable jobs is green at the new head; the Swift and Rust are unchanged from c9c3c48
+Owner: Only the new Swift line limit came in from staging; the two test fixes are unchanged.
