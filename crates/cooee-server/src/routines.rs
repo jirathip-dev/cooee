@@ -29,6 +29,8 @@ use crate::{
     push::Note,
 };
 
+mod webhook;
+
 /// How a `new_thread` run starts as `who`: its agent, the agent's name, its folder and its recipe.
 pub type Start =
     Box<dyn Fn(&Hub, &Who) -> Result<(String, String, PathBuf, Recipe), HubError> + Send + Sync>;
@@ -495,51 +497,6 @@ impl Runner {
         self.later(picked)
     }
 
-    /// `POST /hooks/in/<id>`'s answer for a POST with headers `Idempotency-Key` and `X-Signature-256`: 404 for no
-    /// such webhook routine, 503 without its secret, 401 for a wrong signature, else [`Runner::accept`]'s.
-    #[must_use]
-    pub fn inbound(
-        self: &Arc<Self>,
-        id: &str,
-        headers: (&str, &str),
-        body: &[u8],
-        now: u64,
-    ) -> (u16, String) {
-        let list = self.list().unwrap_or_default();
-        let Some(Trigger::Webhook(h)) = list.into_iter().find(|r| r.id == id).map(|r| r.trigger)
-        else {
-            return (404, format!("no webhook routine {id}"));
-        };
-        let secret = match secrets::get(&self.data, &h.secret) {
-            Ok(Some(s)) => s,
-            Ok(None) => return (503, format!("no secret:{}", h.secret)),
-            Err(e) => return (503, e.to_string()),
-        };
-        match Inbound::signed(headers, body, secret.as_bytes()) {
-            Ok(i) => self.accept(id, &i, now),
-            Err(e) => (e.status(), e.to_string()),
-        }
-    }
-
-    /// Settings' test button: routine `id` runs on a test POST as a signed one does.
-    ///
-    /// # Errors
-    /// [`HubError::Refused`] for no such webhook routine, without its secret, or when it isn't run.
-    pub fn test(self: &Arc<Self>, id: &str, now: u64) -> Result<String, HubError> {
-        let list = self.list()?;
-        let Some(Trigger::Webhook(h)) = list.into_iter().find(|r| r.id == id).map(|r| r.trigger)
-        else {
-            return Err(refused(format!("no webhook routine {id}")));
-        };
-        if !secrets::get(&self.data, &h.secret).is_ok_and(|s| s.is_some()) {
-            return Err(refused(format!("no secret:{}", h.secret)));
-        }
-        match self.accept(id, &Inbound::test(now), now) {
-            (202, text) => Ok(text),
-            (_, why) => Err(refused(why)),
-        }
-    }
-
     /// Signed POST `i` to routine `id`, once per key: 200 when seen before; else 202 and the routine runs on a
     /// worker (paused, or over the rate: skipped), so the answer comes before the run starts.
     pub fn accept(self: &Arc<Self>, id: &str, i: &Inbound, now: u64) -> (u16, String) {
@@ -717,22 +674,6 @@ pub(crate) async fn on<T: Send + 'static>(
         .map_err(refused)?
 }
 
-#[route(POST "/hooks/in/{id}")]
-async fn inbound_hook(cx: &Cx, body: Raw) -> Result<Response> {
-    let h = |n: &str| crate::http::header(cx, n).unwrap_or_default().to_owned();
-    let (id, key, sig) = (
-        crate::http::thread_id(cx),
-        h("idempotency-key"),
-        h("x-signature-256"),
-    );
-    let r = runner(cx);
-    let (status, text) =
-        tokio::task::spawn_blocking(move || r.inbound(&id, (&key, &sig), &body, now()))
-            .await
-            .unwrap_or_else(|e| (500, e.to_string()));
-    Ok(Response::builder().status(status).body(Bytes::from(text))?)
-}
-
 #[route(POST "/hooks/github")]
 async fn github_hook(cx: &Cx, body: Raw) -> Result<Response> {
     let h = |n: &str| crate::http::header(cx, n).unwrap_or_default().to_owned();
@@ -756,7 +697,7 @@ pub fn hooks(runner: Arc<Runner>) -> Router {
     Router::builder()
         .app_context(runner)
         .route(github_hook)
-        .route(inbound_hook)
+        .route(webhook::inbound_hook)
         .build()
 }
 
