@@ -43,7 +43,7 @@ fn init_git_commits_the_config_without_its_secrets_once() {
     fs::write(dir.join("config.toml"), "port = 4100\n").unwrap();
     fs::write(dir.join("agents/coder/agent.toml"), "name = \"Coder\"\n").unwrap();
     fs::write(dir.join("secrets/TOKEN"), "s3cret\n").unwrap();
-    fs::write(dir.join("apns.p8"), "-----BEGIN PRIVATE KEY-----\n").unwrap();
+    fs::write(dir.join("apns.p8"), "placeholder-key\n").unwrap();
     let config = dir.join("config.toml");
     let args = [
         "config",
