@@ -4,6 +4,9 @@ import SwiftUI
 internal struct PersonaBlocks: View {
     @Environment(\.look) internal var look
     internal let screen: JSONValue
+    internal var open: (Int) -> Void = { _ in }
+    internal var workflow: () -> Void = {}
+    internal var routine: (() -> Void)?
 
     internal var body: some View {
         VStack(spacing: 18) {
@@ -12,7 +15,7 @@ internal struct PersonaBlocks: View {
                 case "screen" where !(block.string("url") ?? "").isEmpty: live(block)
                 case "terminal" where !block.list("lines").isEmpty: terminal(block)
                 case "workflow" where !block.list("issues").isEmpty: workflow(block)
-                case "routines": routines(block.list("rows"))
+                case "routines" where routine != nil: routines(block.list("rows"))
                 case "places" where !block.list("rows").isEmpty: places(block.list("rows"))
                 default: EmptyView()
                 }
@@ -23,10 +26,13 @@ internal struct PersonaBlocks: View {
     private func workflow(_ block: JSONValue) -> some View {
         let issues = block.list("issues")
         return VStack(alignment: .leading, spacing: 6) {
-            heading("Workflow") { mapToggle }
+            heading("Workflow") {
+                if block["map"]?.bool != false { mapToggle }
+            }
             Group2 {
                 ForEach(Array(issues.enumerated()), id: \.offset) { _, issue in issueRow(issue) }
-                more("All \(issues.count + Int(block["more"]?.number ?? 0)) issues")
+                Button(action: workflow) { more("All \(issues.count + Int(block["more"]?.number ?? 0)) issues") }
+                    .buttonStyle(.plain)
             }
         }
     }
@@ -65,7 +71,12 @@ extension PersonaBlocks {
     private func routines(_ rows: [JSONValue]) -> some View {
         VStack(alignment: .leading, spacing: 6) {
             heading("Routines") {
-                Text(look.mono ? "[+ add]" : "+ Add").ui(14, .semibold, look).foregroundStyle(look.palette.link)
+                Button {
+                    routine?()
+                } label: {
+                    Text(look.mono ? "[+ add]" : "+ Add").ui(14, .semibold, look).foregroundStyle(look.palette.link)
+                }
+                .buttonStyle(.plain).accessibilityLabel("Add routine")
             }
             if !rows.isEmpty {
                 Group2 {
@@ -103,10 +114,16 @@ extension PersonaBlocks {
     private func places(_ rows: [JSONValue]) -> some View {
         Group2(header: "Places") {
             ForEach(Array(rows.enumerated()), id: \.offset) { index, place in
-                SettingRow(
-                    symbol: place.string("symbol") ?? "puzzlepiece.extension.fill", title: place.string("title") ?? "",
-                    tint: look.palette.green, value: place.string("value") ?? "", divider: index < rows.count - 1
-                )
+                Button {
+                    open(index)
+                } label: {
+                    SettingRow(
+                        symbol: place.string("symbol") ?? "puzzlepiece.extension.fill",
+                        title: place.string("title") ?? "", tint: look.palette.green,
+                        value: place.string("value") ?? "", divider: index < rows.count - 1
+                    )
+                }
+                .buttonStyle(.plain)
             }
         }
     }
@@ -128,7 +145,7 @@ extension PersonaBlocks {
             Image(systemName: "chevron.right").font(.system(size: 12, weight: .semibold))
                 .foregroundStyle(look.palette.mute)
         }
-        .padding(.horizontal, 14).frame(height: 44)
+        .padding(.horizontal, 14).frame(height: 44).contentShape(.rect)
     }
 
     @ViewBuilder internal func rule(_ shown: Bool) -> some View {

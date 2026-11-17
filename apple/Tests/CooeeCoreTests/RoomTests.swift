@@ -8,7 +8,7 @@ internal struct RoomTests {
 
     @Test internal func aRoundShowsWhoRepliedPassedAndReplies() {
         var round = RoomRound()
-        round.asked(members, text: "What's still open?", when: now)
+        round.asked(members, named: [], when: now)
         #expect(members.map(round.state) == [.upNext, .upNext, .upNext] && round.running)
         round.began("chief")
         round.replied("chief")
@@ -24,11 +24,11 @@ internal struct RoomTests {
 
     @Test internal func aMentionWaitsTheOthersAndStopKeepsTheReplies() {
         var round = RoomRound()
-        round.asked(members, text: "@res check Q3", when: now)
+        round.asked(members, named: ["res"], when: now)
         round.began("res")
         round.replied("res")
         round.began("chief")
-        round.asked(members, text: "and pricing?", when: now)
+        round.asked(members, named: [], when: now)
         #expect(members.map(round.state) == [.replying, .upNext, .upNext] && round.turn == 0)
         round.ended("stop")
         #expect(members.map(round.state) == [.waiting, .waiting, .waiting] && round.passed.isEmpty)
@@ -43,7 +43,7 @@ internal struct RoomTests {
             APIItem(id: 4, time: 180_000, kind: "tool", title: "fetch sec.gov", status: "completed", speaker: "res"),
         ]
         var round = RoomRound()
-        round.asked(members, text: "What's open?", when: now)
+        round.asked(members, named: [], when: now)
         round.began("coder")
         round.ended("done")
         let built = RoomItems.build(items, names: ["coder": "Coder"], last: round)

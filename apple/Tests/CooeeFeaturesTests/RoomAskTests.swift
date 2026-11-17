@@ -12,7 +12,7 @@ internal struct RoomAskTests {
     private func store() -> TestStoreOf<ChatFeature> {
         let cast = ["a", "b"].map { APIPersona(id: $0, name: $0.uppercased(), agent: "codex") }
         var room = Room(title: "Kestrel", members: ["a", "b"], cast: cast)
-        room.round.asked(["a", "b"], text: "hi", when: Date(timeIntervalSince1970: 0))
+        room.round.asked(["a", "b"], named: [], when: Date(timeIntervalSince1970: 0))
         room.round.began("a")
         let state = ChatFeature.State(server: mini, target: .thread("r1"), persona: Persona(coder), room: room)
         let (calls, clock) = (calls, clock)

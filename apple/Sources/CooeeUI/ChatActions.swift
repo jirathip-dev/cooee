@@ -20,8 +20,7 @@ public struct ChatActions {
     public var counts: [Int?] = []
     public var new: (() -> Void)?
     public var open: (Int) -> Void = { _ in }
-    public var attachable: [String] = []
-    public var attachPlugin: (Int) -> Void = { _ in }
+    public var more: () -> Void = {}
     public var step: String?
     public var workflow: Int?
     public var workflowOpen = false
