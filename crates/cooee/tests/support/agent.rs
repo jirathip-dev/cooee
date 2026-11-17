@@ -68,6 +68,10 @@ impl FakeShed {
                 .and_then(|v| v.parse().ok())
                 .unwrap_or(0),
         );
+        let topic = prompt.strip_prefix("This topic: ");
+        let prompt = topic
+            .and_then(|t| t.split_once(").\n\n"))
+            .map_or(prompt, |t| t.1);
         let read = "Read src/lib.rs";
         Some(if let Some(said) = self.cued(name) {
             (vec![reply(&said, "end_turn")], "end_turn")
