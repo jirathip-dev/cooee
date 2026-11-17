@@ -178,7 +178,8 @@ internal struct ThemePreview: View {
         _ state: ThemeEditorFeature.State, _ look: Look, dark: Bool, style: LookStyle? = nil
     ) -> Look {
         let palette = Palette(tokens: state.tokens(dark: dark), dark: dark) ?? look.palette
-        var shown = Look(palette: palette, style: style ?? state.draft.style, still: look.still, art: state.art)
+        var shown = Look(
+            palette: palette, style: .bundled(style ?? state.draft.style), still: look.still, art: state.art)
         (shown.drawn, shown.tokens) = (state.drawing.figures, state.tokens(dark: dark))
         return shown
     }
@@ -197,7 +198,7 @@ internal struct ThemePreview: View {
                     pose.map { pose in [all.first { $0.row.state.pose == pose } ?? all.first].compactMap(\.self) }
                     ?? Array(all.prefix(3))
                 VStack(spacing: 0) {
-                    if shown.style == .scene, pose == nil { scene(chats, shown) }
+                    if shown.style.stage != nil, pose == nil { scene(chats, shown) }
                     ChatList(chats: chats, title: pose == nil ? "Chats" : nil).padding(.vertical, pose == nil ? 0 : 4)
                         .padding(.top, 14)
                 }
