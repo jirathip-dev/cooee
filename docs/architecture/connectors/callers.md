@@ -15,7 +15,7 @@ GET  /connectors
 POST /connectors                 { "catalogue": "linear" }
 → { "name": "linear", "reviewed": true }
 
-POST /connectors/linear/signin   { "account": "main", "origin": "https://mac.tail1234.ts.net" }
+POST /connectors/linear/signin   { "account": "main", "origin": "https://<mac>.<tailnet>.ts.net" }
 → { "flow": "f9c2…", "open": "https://linear.app/oauth/authorize?…", "until": "cooee" }
 ```
 
