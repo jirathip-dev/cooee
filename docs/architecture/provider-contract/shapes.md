@@ -118,7 +118,7 @@ id = "3f"
 effect = "allow"          # allow | ask | deny
 kind = "run"              # read | edit | run | search | fetch | tool | other
 pattern = "cargo test *"
-folder = "/Users/owner/code/cooee"
+folder = "/home/user/code/cooee"
 by = "card"
 at = 1731283200000
 ```
