@@ -1,0 +1,30 @@
+diff: shots/theme-colours-modern-390.png vs docs/design/theme-editor/colours-modern-390.png: 100.000 % of pixels differ: 804x1748 vs 780x1688
+FAIL diff: shots/theme-colours-modern-390.png vs docs/design/theme-editor/colours-modern-390.png: 100.000 % of pixels differ: 804x1748 vs 780x1688
+exit=1
+diff: shots/theme-colours-scene-390.png vs docs/design/theme-editor/colours-scene-390.png: 100.000 % of pixels differ: 804x1748 vs 780x1688
+FAIL diff: shots/theme-colours-scene-390.png vs docs/design/theme-editor/colours-scene-390.png: 100.000 % of pixels differ: 804x1748 vs 780x1688
+exit=1
+diff: shots/theme-colours-terminal-390.png vs docs/design/theme-editor/colours-terminal-390.png: 100.000 % of pixels differ: 804x1748 vs 780x1688
+FAIL diff: shots/theme-colours-terminal-390.png vs docs/design/theme-editor/colours-terminal-390.png: 100.000 % of pixels differ: 804x1748 vs 780x1688
+exit=1
+diff: shots/theme-look-broken-modern-390.png vs docs/design/theme-editor/look-broken-modern-390.png: 100.000 % of pixels differ: 804x1748 vs 780x1688
+FAIL diff: shots/theme-look-broken-modern-390.png vs docs/design/theme-editor/look-broken-modern-390.png: 100.000 % of pixels differ: 804x1748 vs 780x1688
+exit=1
+diff: shots/theme-look-modern-390.png vs docs/design/theme-editor/look-modern-390.png: 100.000 % of pixels differ: 804x1748 vs 780x1688
+FAIL diff: shots/theme-look-modern-390.png vs docs/design/theme-editor/look-modern-390.png: 100.000 % of pixels differ: 804x1748 vs 780x1688
+exit=1
+diff: shots/theme-look-scene-390.png vs docs/design/theme-editor/look-scene-390.png: 100.000 % of pixels differ: 804x1748 vs 780x1688
+FAIL diff: shots/theme-look-scene-390.png vs docs/design/theme-editor/look-scene-390.png: 100.000 % of pixels differ: 804x1748 vs 780x1688
+exit=1
+diff: shots/theme-look-terminal-390.png vs docs/design/theme-editor/look-terminal-390.png: 100.000 % of pixels differ: 804x1748 vs 780x1688
+FAIL diff: shots/theme-look-terminal-390.png vs docs/design/theme-editor/look-terminal-390.png: 100.000 % of pixels differ: 804x1748 vs 780x1688
+exit=1
+diff: shots/theme-pack-modern-390.png vs docs/design/theme-editor/pack-modern-390.png: 100.000 % of pixels differ: 804x1748 vs 780x1688
+FAIL diff: shots/theme-pack-modern-390.png vs docs/design/theme-editor/pack-modern-390.png: 100.000 % of pixels differ: 804x1748 vs 780x1688
+exit=1
+diff: shots/theme-pack-scene-390.png vs docs/design/theme-editor/pack-scene-390.png: 100.000 % of pixels differ: 804x1748 vs 780x1688
+FAIL diff: shots/theme-pack-scene-390.png vs docs/design/theme-editor/pack-scene-390.png: 100.000 % of pixels differ: 804x1748 vs 780x1688
+exit=1
+diff: shots/theme-pack-terminal-390.png vs docs/design/theme-editor/pack-terminal-390.png: 100.000 % of pixels differ: 804x1748 vs 780x1688
+FAIL diff: shots/theme-pack-terminal-390.png vs docs/design/theme-editor/pack-terminal-390.png: 100.000 % of pixels differ: 804x1748 vs 780x1688
+exit=1
