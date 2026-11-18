@@ -1142,6 +1142,9 @@ fn a_lease_saved_as_a_skill_hands_the_persona_its_steps_and_no_typed_value_and_a
         let (status, body) = s.cooee.post("/personas/ann/screen/input", &input);
         assert_eq!(status, 200, "{body}");
     }
+    let until = |b: &str| serde_json::from_str::<Value>(b).unwrap()["control"]["until"].as_u64();
+    let (_, more) = s.cooee.post("/personas/ann/screen/control", &json!({}));
+    assert_eq!(until(&more), until(&body).map(|u| u + 600_000), "{more}");
     let back = json!({ "note": "done it", "skill": true });
     let (status, body) = s.cooee.post("/personas/ann/screen/back", &back);
     assert_eq!(status, 200, "{body}");

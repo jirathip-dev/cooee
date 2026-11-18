@@ -29,6 +29,7 @@ public struct ChatActions {
     public var machine: MachineRow?
     public var showMachine: () -> Void = {}
     public var persona: (() -> Void)?
+    public var screen: (() -> Void)?
     internal var choices: PersonaChoices?
     public var agent: @MainActor @Sendable (String) -> Void = { _ in }
     public var model: (String, String) -> Void = { _, _ in }

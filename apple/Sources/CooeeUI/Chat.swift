@@ -152,6 +152,10 @@ internal struct ChatHeader: View {
                     Button(action: new) { RoundButton(symbol: "plus", ascii: "+", size: 40) }
                         .buttonStyle(.plain).accessibilityLabel("New chat")
                 }
+                if let screen = actions.screen {
+                    Button(action: screen) { RoundButton(symbol: "display", ascii: "scr", size: 40) }
+                        .buttonStyle(.plain).accessibilityLabel("Screen")
+                }
                 more
             }
             if plugged && (!chips.isEmpty || actions.workflow != nil) { plugins }
