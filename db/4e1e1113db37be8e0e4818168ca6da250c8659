@@ -1,0 +1,18 @@
+Decided: frame LoadingBar to 2 pt top-aligned inside Home's header overlay so the line lands on the bottom edge and the sprite spills below
+Because: "The 2 pt loading line sits on the header's bottom edge, with the sprite below it"
+Rejected: alignmentGuide(.bottom) on the bar — the render showed no effect (line stayed at row 37)
+Rejected: changing LoadingBar itself — Chat's header uses it with its own offset; "No other visual change"
+Check: zIndex(1) at apple/Sources/CooeeUI/BlockHome.swift:53 keeps the sprite over the scrolling list
+Owner: The Home loading line now sits on the header's bottom edge, horse below, nothing over the title or buttons.
+
+Decided: the Home loading test lists rows that differ by more than 16 per channel instead of comparing bytes exactly
+Because: apple/Tests/CooeeUITests/HeaderRenderTests.swift:53
+Rejected: exact byte equality above row 54 — CI's hosted runner rendered it differently, while the line itself was fixed
+Check: the test fails on base BlockHome.swift with rows [37 … 55] and passes at head (first row 54)
+Owner: The test for the Home loading line now tolerates tiny rendering noise, so it checks the line's position and nothing else.
+
+Decided: no code change this round; merged origin/staging so CI runs again on a fresh head
+Because: apple/Sources/CooeeUI/BlockHome.swift:53
+Rejected: waiting on the old run — its apple job sat queued with no macOS runner, not failing
+Check: apple CI job at da4cfae is green; the PR diff is still only BlockHome.swift and HeaderRenderTests.swift
+Owner: Nothing new in the fix; this round only brought the branch up to date so the Apple checks run again.
