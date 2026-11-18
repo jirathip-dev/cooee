@@ -19,6 +19,7 @@
    "rows": [
     {
      "type": "row",
+     "id": "driving-3-lanes",
      "figure": {
       "state": "working",
       "coat": "wht"
@@ -44,6 +45,7 @@
      "rows": [
       {
        "type": "row",
+       "id": "impl",
        "title": "impl",
        "subtitle": "Claude Code · opus 5.5 · A → B → C",
        "tap": {
@@ -52,6 +54,7 @@
       },
       {
        "type": "row",
+       "id": "rev",
        "title": "rev",
        "subtitle": {
         "text": "Claude Code · sonnet 5.5 · high · A → B → C",
@@ -64,12 +67,14 @@
       },
       {
        "type": "row",
+       "id": "design-architect-verify",
        "title": "design · architect · verify",
        "subtitle": "Claude Code · opus 5.5 · high",
        "tap": {}
       },
       {
        "type": "row",
+       "id": "add-a-role",
        "title": "+ Add a role",
        "style": "link",
        "tap": {}
@@ -131,12 +136,14 @@
      "rows": [
       {
        "type": "row",
+       "id": "apple",
        "title": "apple",
        "subtitle": "apple/Cooee.xcodeproj/** · 1 at a time",
        "tap": {}
       },
       {
        "type": "row",
+       "id": "add-a-group",
        "title": "+ Add a group",
        "style": "link",
        "tap": {}
@@ -175,12 +182,14 @@
      "rows": [
       {
        "type": "row",
+       "id": "verify-recipe",
        "title": "Verify recipe",
        "subtitle": ".herdsman/verify.md · in the repo",
        "tap": {}
       },
       {
        "type": "row",
+       "id": "notifiers",
        "title": "Notifiers",
        "value": "global",
        "tap": {}
