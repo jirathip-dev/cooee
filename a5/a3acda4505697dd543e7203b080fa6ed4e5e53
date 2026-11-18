@@ -1,0 +1,9 @@
+Decided: CooeeRoot reads one static store, so every rebuild of the root view draws the store its polling task feeds
+Because: "Rebuilding `CooeeRoot` keeps the same store."
+Because: apple/Sources/CooeeApp/CooeeRoot.swift:13
+Rejected: @State on CooeeRoot — it also fixes the device bug, but its kept value lives only in the SwiftUI graph, so no host-free test can show it
+Rejected: re-keying AppRoot's home task on the store — it hides the second store instead of removing it
+Decided: a CooeeAppTests target holds the regression test, as no test target imported CooeeApp
+Check: commit 1 fails with `first === rebuilt → false`; head passes in apple-check
+Check: on macOS two windows now share one store, which is the single app state the spec asks for
+Owner: The app keeps one copy of its state, so Home shows your chats after the server's first answer.
