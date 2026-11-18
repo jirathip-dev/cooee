@@ -1,0 +1,5 @@
+Decided: fix round 1 removes the two-line /// above Connectors::rpc; it is pub(crate), and the comments gate allows /// only on public API
+Because: crates/cooee-server/src/connectors/upstream.rs:224
+Rejected: making Connectors::rpc pub to keep its doc line — widening an API to keep a comment
+Check: scripts/comments.py exits 0 at the head; nothing else changed since 090f83d
+Owner: A comment-rule failure in the build is fixed; nothing changes in behaviour.
