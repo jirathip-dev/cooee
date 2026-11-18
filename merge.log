@@ -1,0 +1,21 @@
+Merge made by the 'ort' strategy.
+ ci/cap.toml                               |   4 +-
+ crates/cooee-core/src/chat.rs             |  10 ++
+ crates/cooee-core/src/store.rs            |   4 +
+ crates/cooee-server/src/hub.rs            |   2 +
+ crates/cooee-server/src/hub/events.rs     |   7 +-
+ crates/cooee-server/src/hub/handoff.rs    |  77 ++++++++++++
+ crates/cooee-server/src/hub/send.rs       |  13 +++
+ crates/cooee-server/src/mcp.rs            |  11 +-
+ crates/cooee-server/src/routes/mcp.rs     |  11 ++
+ crates/cooee-server/src/routes/threads.rs |  12 ++
+ crates/cooee/tests/handoff.rs             | 188 ++++++++++++++++++++++++++++++
+ crates/cooee/tests/mcp.rs                 |   1 +
+ crates/cooee/tests/support/agent.rs       |   2 +
+ docs/README.md                            |   1 +
+ docs/cap-history/2026-11-18-559.md        |  13 +++
+ docs/mcp.md                               |   7 +-
+ 16 files changed, 358 insertions(+), 5 deletions(-)
+ create mode 100644 crates/cooee-server/src/hub/handoff.rs
+ create mode 100644 crates/cooee/tests/handoff.rs
+ create mode 100644 docs/cap-history/2026-11-18-559.md
