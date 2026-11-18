@@ -1,0 +1,18 @@
+Decided: a switch reuses relaunch: new terminal on the other agent, then the old one closes; the thread keeps its id.
+Because: docs/architecture/provider-contract/adr.md:94
+Decided: history::handoff writes the first owner message, the newest turns in 4,000 characters and a history-tool line, no model call.
+Because: docs/architecture/provider-contract/adr.md:95
+Decided: the route rebuilds the persona's recipe with the new agent, no account and no model, so the new provider's session() renders a fresh brief.
+Because: docs/architecture/provider-contract/shapes.md:198
+Decided: the header's agent menu on a started chat now switches that chat; the old restart-as-new-chat delegate is deleted.
+Rejected: keeping restart-as-new-chat next to switch — two ways to do one thing.
+Decided: a switch is refused while a turn works or asks, for an unknown agent, and to the agent it already runs on.
+Because: docs/architecture/provider-contract/boundaries.md:104
+Check: move_thread.rs's switch test: the new session's first prompt holds the brief and the handoff; persona files unchanged.
+Owner: Picking another agent in a chat's header now moves that same chat onto it, with a summary of what was said.
+
+Decided: fix the CI race in the profiles test by waiting for the room member's meta file, not only its run line.
+Because: crates/cooee/tests/support/shed.rs:78
+Rejected: moving the fake shed's cli.log write after the argument loop — other tests read the log while a run is held.
+Check: profiles.rs's room loop only takes a line once options() finds its meta file.
+Owner: A test that failed now and then on a busy CI machine now waits for the file it checks.
