@@ -1,4 +1,5 @@
-# #144: archive the iOS app (apple/) and upload it to TestFlight from CI; no local Xcode, no Ruby/fastlane, no .p12.
+# #144, #485: archive the app (apple/) for iOS and macOS, one matrix job each in the same run, and upload both to
+# TestFlight from CI; no local Xcode, no Ruby/fastlane, no .p12. The Mac build is sandboxed (Cooee-mac.entitlements).
 # Apple manages the distribution certificate and profiles (cloud signing through the App Store Connect API key).
 # Uploads run only on a merge to `main` (#180). The ASC_* secrets live in the `testflight` environment, which only
 # `main` and `staging` may deploy from: pull_request and fork runs can't read them.
@@ -29,6 +30,13 @@ defaults:
 jobs:
   testflight:
     if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/staging'
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { platform: iOS, asc: IOS, link: ios, device: phone, entitlements: Cooee.entitlements }
+          - { platform: macOS, asc: MAC_OS, link: macos, device: Mac, entitlements: Cooee-mac.entitlements }
+    name: testflight (${{ matrix.platform }})
     runs-on: ${{ vars.MAC_RUNNER_TESTFLIGHT == 'hosted' && 'xcode-27' || fromJSON('["self-hosted","macOS","ARM64","cooee-mac"]') }}
     environment: testflight
     timeout-minutes: 60
@@ -77,18 +85,18 @@ jobs:
           echo "::add-mask::$team"
           app=$(api "apps?filter[bundleId]=$bundle&fields[apps]=bundleId" | jq -r --arg b "$bundle" '.data | map(select(.attributes.bundleId == $b))[0].id // empty')
           if [ -z "$app" ]; then
-            echo "::error::No App Store Connect app for $bundle. Create it once (Apps → + → New App): platform iOS, name cooee: agent chat, primary language English (U.S.), bundle id $bundle, SKU cooee-ios, user access Full Access. Then re-run this workflow."
+            echo "::error::No App Store Connect app for $bundle. Create it once (Apps → + → New App): platforms iOS and macOS (Add Platform on an existing record), name cooee: agent chat, primary language English (U.S.), bundle id $bundle, SKU cooee-ios, user access Full Access. Then re-run this workflow."
             exit 1
           fi
-          latest=$(api "builds?filter[app]=$app&sort=-uploadedDate&limit=1&fields[builds]=version" | jq -r '.data[0].attributes.version // "0"')
+          latest=$(api "builds?filter[app]=$app&filter[preReleaseVersion.platform]=${{ matrix.asc }}&sort=-uploadedDate&limit=1&fields[builds]=version" | jq -r '.data[0].attributes.version // "0"')
           { echo "TEAM=$team"; echo "APP=$app"; echo "VERSION=$version"; echo "BUILD=$((latest + 1))"; } >> "$GITHUB_ENV"
       - name: archive (unsigned)
         working-directory: apple
         run: |
-          xcodebuild archive -skipMacroValidation -project Cooee.xcodeproj -scheme Cooee -destination 'generic/platform=iOS' \
+          xcodebuild archive -skipMacroValidation -project Cooee.xcodeproj -scheme Cooee -destination 'generic/platform=${{ matrix.platform }}' \
             -archivePath "$RUNNER_TEMP/Cooee.xcarchive" CODE_SIGNING_ALLOWED=NO CURRENT_PROJECT_VERSION="$BUILD" \
             INFOPLIST_KEY_ITSAppUsesNonExemptEncryption=NO 2>&1 | tee -a "$LOG"
-          codesign --force --sign - --entitlements Cooee.entitlements "$RUNNER_TEMP/Cooee.xcarchive/Products/Applications/Cooee.app"
+          codesign --force --sign - --entitlements ${{ matrix.entitlements }} "$RUNNER_TEMP/Cooee.xcarchive/Products/Applications/Cooee.app"
       - name: export (cloud signing; uploads to TestFlight unless a dry run)
         run: |
           destination=$([ "$UPLOAD" = true ] && echo upload || echo export)
@@ -108,13 +116,13 @@ jobs:
             -authenticationKeyID "$ASC_KEY_ID" -authenticationKeyIssuerID "$ASC_ISSUER_ID" 2>&1 | tee -a "$LOG"
       - name: summary (dry run)
         if: env.UPLOAD != 'true'
-        run: echo "### cooee $VERSION ($BUILD) archived and signed on $RUNNER_NAME; not uploaded (dry run)" >> "$GITHUB_STEP_SUMMARY"
+        run: echo "### cooee $VERSION ($BUILD) for ${{ matrix.platform }} archived and signed on $RUNNER_NAME; not uploaded (dry run)" >> "$GITHUB_STEP_SUMMARY"
       - name: summary
         if: env.UPLOAD == 'true'
         run: |
-          { echo "### cooee $VERSION ($BUILD) uploaded to TestFlight"
-            echo "Apple processes it for a few minutes, then it shows in TestFlight on the phone."
-            echo "[TestFlight in App Store Connect](https://appstoreconnect.apple.com/apps/$APP/testflight/ios)"; } >> "$GITHUB_STEP_SUMMARY"
+          { echo "### cooee $VERSION ($BUILD) for ${{ matrix.platform }} uploaded to TestFlight"
+            echo "Apple processes it for a few minutes, then it shows in TestFlight on the ${{ matrix.device }}."
+            echo "[TestFlight in App Store Connect](https://appstoreconnect.apple.com/apps/$APP/testflight/${{ matrix.link }})"; } >> "$GITHUB_STEP_SUMMARY"
       - name: explain a signing failure
         if: failure()
         run: |
@@ -133,7 +141,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: failure()
         with:
-          name: xcodebuild-log
+          name: xcodebuild-log-${{ matrix.platform }}
           path: ${{ runner.temp }}/xcodebuild.log
           retention-days: 7
           if-no-files-found: ignore
