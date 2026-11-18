@@ -1,0 +1,13 @@
+scope SUCCESS https://github.com/jirathip-dev/cooee/actions/runs/44205642437/job/134470725719
+scope SUCCESS https://github.com/jirathip-dev/cooee/actions/runs/44205642572/job/134470726276
+scope SUCCESS https://github.com/jirathip-dev/cooee/actions/runs/44205642899/job/134470727268
+lessons SUCCESS https://github.com/jirathip-dev/cooee/actions/runs/44205642454/job/134470725355
+dmg SKIPPED https://github.com/jirathip-dev/cooee/actions/runs/44205642572/job/134470812939
+apple SUCCESS https://github.com/jirathip-dev/cooee/actions/runs/44205642437/job/134470822004
+actionlint SUCCESS https://github.com/jirathip-dev/cooee/actions/runs/44205642899/job/134470841227
+nightly-red SKIPPED https://github.com/jirathip-dev/cooee/actions/runs/44205642437/job/134470939200
+arch-check / arch-check SUCCESS https://github.com/jirathip-dev/cooee/actions/runs/44205642899/job/134470841594
+msrv (ubuntu-latest) SUCCESS https://github.com/jirathip-dev/cooee/actions/runs/44205642899/job/134470841349
+stable (ubuntu-latest) SUCCESS https://github.com/jirathip-dev/cooee/actions/runs/44205642899/job/134470841323
+stable (macos-latest) SKIPPED https://github.com/jirathip-dev/cooee/actions/runs/44205642899/job/134470844497
+nightly-red SKIPPED https://github.com/jirathip-dev/cooee/actions/runs/44205642899/job/134472871090

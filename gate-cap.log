@@ -1,0 +1,8 @@
+== cap: The line cap holds (crates/*/src ≤ line_cap; apple/ Swift ≤ apple_cap), and its script's own tests pass.
+non-test lines: 27492 / 28390
+apple lines: 15075 / 16300
+non-test lines: 1 / 100
+apple lines: 5 / 5
+non-test lines: 1 / 100
+apple lines: 6 / 5
+line-cap test ok

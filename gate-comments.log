@@ -1,0 +1,3 @@
+== comments: One comment rule (#201): no // or /* */; /// only on public API; // SAFETY: and // TODO(#N) on an open issue allowed.
+no comments break the rule
+comments test ok
