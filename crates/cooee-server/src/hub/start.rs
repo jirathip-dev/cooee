@@ -334,7 +334,7 @@ impl Hub {
     }
 }
 
-fn opening(text: &str) -> String {
+pub(super) fn opening(text: &str) -> String {
     let line = text.trim().lines().next().unwrap_or_default().trim();
     let cut: String = line.chars().take(TITLE + 1).collect();
     if cut.chars().count() <= TITLE {

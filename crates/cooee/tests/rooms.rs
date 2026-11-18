@@ -129,6 +129,30 @@ fn each_member_takes_a_turn_in_its_own_session_and_hears_the_others_attributed()
 }
 
 #[test]
+fn a_rooms_topics_are_the_rooms_of_its_members_titled_by_their_first_message() {
+    let (_dir, _shed, cooee) = setup("room-topics");
+    let first = room(&cooee, &["ada", "bo"]);
+    let second = room(&cooee, &["bo", "ada"]);
+    let other = room(&cooee, &["ada", "cy"]);
+    send(&cooee, &second, "Plan the release notes for next week");
+    replies(&cooee, &second, 2);
+    let rows = cooee.json(&format!("/threads?room={first}"));
+    let rows = rows.as_array().unwrap();
+    let ids: Vec<&Value> = rows.iter().map(|r| &r["id"]).collect();
+    assert_eq!(ids, [&json!(second), &json!(first)], "{rows:?}");
+    let row = &rows[0];
+    assert_eq!(row["title"], "Plan the release notes for", "{row}");
+    assert_eq!(row["archived"], false, "{row}");
+    assert_eq!(row["unseen"], 2, "{row}");
+    assert_eq!(row["last"], "Ada: Hello", "{row}");
+    assert_eq!(rows[1]["title"], "ada, bo", "{rows:?}");
+    let others = cooee.json(&format!("/threads?room={other}"));
+    assert_eq!(others[0]["id"], json!(other), "{others}");
+    assert_eq!(others.as_array().unwrap().len(), 1, "{others}");
+    assert_eq!(cooee.json("/threads?room=nope"), json!([]));
+}
+
+#[test]
 fn members_are_given_final_replies_only() {
     let (dir, shed, cooee) = setup("room-final");
     let id = room(&cooee, &["ada", "bo"]);
@@ -501,7 +525,7 @@ fn a_room_pushes_only_when_a_member_addresses_the_owner_asks_or_fails() {
     send(&cooee, &id, "@ada over to you");
     replies(&cooee, &id, 2);
     let at_you = (
-        "ada, bo · Ada".to_owned(),
+        "hi all · Ada".to_owned(),
         "needs you · Ada: @you can you sign the order form?".to_owned(),
     );
     let quiet = "a reply to each other, a pass and a turn's end push nothing";
@@ -510,7 +534,7 @@ fn a_room_pushes_only_when_a_member_addresses_the_owner_asks_or_fails() {
     let ada = terminal(&dir, "ada");
     shed.ask(&ada);
     let asks = (
-        "ada, bo · Ada".to_owned(),
+        "hi all · Ada".to_owned(),
         "needs you · fake-acp: Edit early.rs".to_owned(),
     );
     assert_eq!(pushed(&log, 2), [at_you.clone(), asks.clone()]);
@@ -527,7 +551,7 @@ fn a_room_pushes_only_when_a_member_addresses_the_owner_asks_or_fails() {
 
     shed.report(&terminal(&dir, "bo"), "error", Some("rate limited"));
     let fails = (
-        "ada, bo · Bo".to_owned(),
+        "hi all · Bo".to_owned(),
         "failed · fake-acp: rate limited".to_owned(),
     );
     assert_eq!(pushed(&log, 3), [at_you, asks, fails]);

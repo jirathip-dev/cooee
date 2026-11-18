@@ -10,9 +10,14 @@ extension Client {
         fileprivate let archived: Bool
     }
 
-    public func topics(of persona: String) async throws -> [ThreadRow] {
-        let id = persona.addingPercentEncoding(withAllowedCharacters: .alphanumerics) ?? persona
-        return try await call("GET", "/threads?persona=\(id)")
+    public func topics(of owner: TopicsOf) async throws -> [ThreadRow] {
+        let (key, id) =
+            switch owner {
+            case .persona(let id): ("persona", id)
+            case .room(let id): ("room", id)
+            }
+        let escaped = id.addingPercentEncoding(withAllowedCharacters: .alphanumerics) ?? id
+        return try await call("GET", "/threads?\(key)=\(escaped)")
     }
 
     public func retitle(_ id: String, _ title: String) async throws {

@@ -2,7 +2,7 @@ import ComposableArchitecture
 import CooeeCore
 import Foundation
 
-/// A persona chat's topics strip, its list sheet and New's folder (#515).
+/// A persona or room chat's topics strip, its list sheet and New's folder (#515).
 public struct TopicBar: Equatable, Sendable {
     public var topics = Topics()
     public var listing = false
@@ -57,7 +57,7 @@ extension ChatFeature {
         switch action {
         case .load: return load(state)
         case .loaded(let rows): bar.topics.load(rows)
-        case .open(let id): return open(&bar, id ?? "new:\(state.persona.api.id)", from: state.current)
+        case .open(let id): return open(&bar, id, state)
         case .list(let shown): (bar.listing, bar.renaming, bar.search) = (shown, nil, "")
         case .search(let words): bar.search = words
         case .press(let id): bar.pressed = id
@@ -101,17 +101,27 @@ extension ChatFeature {
     }
 
     private func load(_ state: State) -> Effect<Action> {
-        let (threads, server, persona) = (threads, state.server, state.persona.api.id)
+        let owner: TopicsOf = state.room == nil ? .persona(state.persona.api.id) : .room(state.current)
+        let (threads, server) = (threads, state.server)
         return .run { send in
-            await send(.topics(.loaded(try await threads.topics(server, persona))))
+            await send(.topics(.loaded(try await threads.topics(server, owner))))
         } catch: { error, send in
             await send(.failed(error.localizedDescription))
         }
     }
 
-    private func open(_ bar: inout TopicBar, _ target: String, from current: String) -> Effect<Action> {
+    private func open(_ bar: inout TopicBar, _ id: String?, _ state: State) -> Effect<Action> {
         (bar.listing, bar.pressed, bar.renaming) = (false, nil, nil)
-        return target == current ? .none : .send(.delegate(.topic(target)))
+        if id == nil, let members = state.room?.members {
+            let (threads, server) = (threads, state.server)
+            return .run { send in
+                await send(.delegate(.topic(try await threads.room(server, "", members))))
+            } catch: { error, send in
+                await send(.failed(error.localizedDescription))
+            }
+        }
+        let target = id ?? "new:\(state.persona.api.id)"
+        return target == state.current ? .none : .send(.delegate(.topic(target)))
     }
 
     private func retitle(_ bar: inout TopicBar, _ server: Server) -> Effect<Action> {

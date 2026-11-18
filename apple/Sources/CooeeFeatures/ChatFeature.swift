@@ -78,7 +78,7 @@ public struct ChatFeature: Sendable {
             if case .thread = target { loading = true } else { loading = false }
             self.exchange = exchange
             let setup = if case .setup = target { true } else { false }
-            guard room == nil, exchange == nil, !persona.api.id.isEmpty, !setup else { return }
+            guard exchange == nil, room != nil || !persona.api.id.isEmpty, !setup else { return }
             bar = TopicBar(folder: persona.api.folder)
         }
     }
