@@ -1,0 +1,6 @@
+Decided: frame LoadingBar to 2 pt top-aligned inside Home's header overlay so the line lands on the bottom edge and the sprite spills below
+Because: "The 2 pt loading line sits on the header's bottom edge, with the sprite below it"
+Rejected: alignmentGuide(.bottom) on the bar — the render showed no effect (line stayed at row 37)
+Rejected: changing LoadingBar itself — Chat's header uses it with its own offset; "No other visual change"
+Check: zIndex(1) at apple/Sources/CooeeUI/BlockHome.swift:53 keeps the sprite over the scrolling list
+Owner: The Home loading line now sits on the header's bottom edge, horse below, nothing over the title or buttons.
