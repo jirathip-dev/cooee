@@ -40,7 +40,7 @@ impl Hub {
     ///
     /// # Errors
     /// [`HubError::Refused`] as [`Hub::token_of`], or when the frame can't be sealed or stored.
-    pub fn frame(
+    pub fn keep_frame(
         &self,
         (id, token): (&str, &str),
         caption: &str,

@@ -268,10 +268,32 @@ fn keep(thread: &str, caption: &str, shot: &Value) {
     }
 }
 
+fn shoot(
+    pending: &Mutex<Frames>,
+    up: &Mutex<Upstream>,
+    out: &Mutex<io::Stdout>,
+    caption: String,
+    reply: Value,
+) {
+    let mut fr = held(pending);
+    fr.next += 1;
+    let shot = json!(format!("cooee-frame-{}", fr.next));
+    let call = json!({ "jsonrpc": "2.0", "id": shot, "method": "tools/call",
+                       "params": { "name": "browser_take_screenshot", "arguments": { "type": "jpeg" } } });
+    fr.shots.insert(shot.to_string(), (caption, reply));
+    drop(fr);
+    if held(up).send(&call).is_err()
+        && let Some((_, reply)) = held(pending).shots.remove(&shot.to_string())
+    {
+        put(out, &reply);
+    }
+}
+
 /// `cooee mcp proxy <server> --thread <id>`: forwards the agent's stdio to the server and back, with only the
 /// thread's allowed tools; cooee checks each `tools/call` again (a closed thread's token stops working) and logs a
-/// browser's. After a browser action cooee captions, the proxy takes a screenshot for cooee's replay frame (#161)
-/// before the agent gets the answer; the agent never sees it.
+/// browser's, which waits while the owner holds control and then carries their hand-back note in its result. After a
+/// browser action cooee captions, the proxy takes a screenshot for cooee's replay frame (#161) before the agent gets
+/// the answer; the agent never sees it.
 ///
 /// # Errors
 /// When the grant is refused or the server can't start.
@@ -282,17 +304,29 @@ pub fn proxy(server: &str, thread: &str) -> Result<(), String> {
     let out = Arc::new(Mutex::new(io::stdout()));
     let lists: Arc<Mutex<HashSet<String>>> = Arc::default();
     let frames: Arc<Mutex<Frames>> = Arc::default();
-    let (o, l, pending, upstream) = (
+    let notes: Arc<Mutex<HashMap<String, String>>> = Arc::default();
+    let (o, l, pending, n, upstream) = (
         Arc::clone(&out),
         Arc::clone(&lists),
         Arc::clone(&frames),
+        Arc::clone(&notes),
         Arc::clone(&up),
     );
     let (tools, me) = (g.tools.clone(), thread.to_owned());
     std::thread::spawn(move || {
-        for msg in rx {
+        for mut msg in rx {
             let id = msg.get("id").map(Value::to_string).unwrap_or_default();
             let answer = msg.get("method").is_none();
+            let note = held(&n).remove(&id);
+            if let (true, Some(note), Some(content)) = (
+                answer,
+                note,
+                msg.pointer_mut("/result/content")
+                    .and_then(Value::as_array_mut),
+            ) {
+                let text = format!("The owner had the browser and handed it back: {note}");
+                content.push(json!({ "type": "text", "text": text }));
+            }
             if let Some((caption, reply)) =
                 answer.then(|| held(&pending).shots.remove(&id)).flatten()
             {
@@ -301,18 +335,7 @@ pub fn proxy(server: &str, thread: &str) -> Result<(), String> {
                 continue;
             }
             if let Some(caption) = answer.then(|| held(&pending).acts.remove(&id)).flatten() {
-                let mut fr = held(&pending);
-                fr.next += 1;
-                let shot = json!(format!("cooee-frame-{}", fr.next));
-                let call = json!({ "jsonrpc": "2.0", "id": shot, "method": "tools/call",
-                                   "params": { "name": "browser_take_screenshot", "arguments": { "type": "jpeg" } } });
-                fr.shots.insert(shot.to_string(), (caption, msg));
-                drop(fr);
-                if held(&upstream).send(&call).is_err()
-                    && let Some((_, reply)) = held(&pending).shots.remove(&shot.to_string())
-                {
-                    put(&o, &reply);
-                }
+                shoot(&pending, &upstream, &o, caption, msg);
                 continue;
             }
             let listed = answer && held(&l).remove(&id);
@@ -350,10 +373,16 @@ pub fn proxy(server: &str, thread: &str) -> Result<(), String> {
                         put(&out, &error(&id, -32602, &why));
                         continue;
                     }
-                    Ok(Value::String(caption)) => {
-                        held(&frames).acts.insert(id.to_string(), caption);
+                    Ok(called) => {
+                        let field =
+                            |k: &str| called.get(k).and_then(Value::as_str).map(str::to_owned);
+                        if let Some(caption) = field("caption") {
+                            held(&frames).acts.insert(id.to_string(), caption);
+                        }
+                        if let Some(note) = field("note") {
+                            held(&notes).insert(id.to_string(), note);
+                        }
                     }
-                    Ok(_) => {}
                 }
             }
             _ => {}
@@ -423,6 +452,16 @@ fn secret_tool() -> Value {
     })
 }
 
+fn handoff_tool() -> Value {
+    json!({
+        "name": "handoff",
+        "description": "Hand a log-in, a 2FA code or a CLI login to the owner: they do it themselves, in your browser or their terminal, and you never see what they type. Then end your turn; when they hand back, their note is your next message.",
+        "inputSchema": { "type": "object", "required": ["what"], "properties": {
+            "what": { "type": "string", "description": "what the owner is to do, like Sign in to linkedin.com or Run gh auth login" }
+        } }
+    })
+}
+
 fn own_tools() -> Value {
     let schema = json!({
         "type": "object",
@@ -479,7 +518,7 @@ fn own_tools() -> Value {
     });
     let routine = json!({
         "name": "create_routine",
-        "description": "Make a routine (when the owner asks for something on a schedule or on a GitHub event): at each due time (when) or matching event (github) its prompt is sent to you, in this chat (place chat, the default) or as a new thread like this one (place new_thread). The owner sees it in this chat and changes it in Settings › routines; a github one is saved only once the owner approves its card. In the prompt {{due}} is the due time; {{event}}, {{repo}} and {{a.b}} (a path into the event's payload, like {{pull_request.title}}) fill from the event. A refusal starts with BAD_SCHEDULE, BAD_GITHUB, BAD_TRIGGER, BAD_NAME, BAD_PROMPT, BAD_PLACE, TOO_MANY, NO_HOOKS or NOT_HERE.",
+        "description": "Make a routine (when the owner asks for something on a schedule, on a GitHub event or on a signed POST from elsewhere): at each due time (when), matching event (github) or signed POST (webhook) its prompt is sent to you, in this chat (place chat, the default) or as a new thread like this one (place new_thread). The owner sees it in this chat and changes it in Settings › routines; a github or webhook one is saved only once the owner approves its card; a webhook's POST body follows the prompt as untrusted data. In the prompt {{due}} is the due time; {{event}}, {{repo}} and {{a.b}} (a path into the event's payload, like {{pull_request.title}}) fill from the event. A refusal starts with BAD_SCHEDULE, BAD_GITHUB, BAD_WEBHOOK, BAD_TRIGGER, BAD_NAME, BAD_PROMPT, BAD_PLACE, TOO_MANY, NO_HOOKS or NOT_HERE.",
         "inputSchema": { "type": "object", "required": ["name", "prompt"], "properties": {
             "name": { "type": "string", "description": "1 to 60 characters" },
             "when": { "type": "string", "description": "5-field cron in the Mac's local time (minute hour day-of-month month day-of-week; numbers, *, a-b, */n, lists), at least 15 minutes apart: 0 9 * * 1 is Mondays 09:00" },
@@ -487,6 +526,9 @@ fn own_tools() -> Value {
                 "repo": { "type": "string", "description": "owner/name" },
                 "events": { "type": "array", "items": { "type": "string" }, "description": "1 to 8, like pull_request (any action) or pull_request.opened" },
                 "match": { "type": "object", "additionalProperties": { "type": "string" }, "description": "payload path to the text it must equal, like {\"workflow_run.conclusion\": \"failure\"}" }
+            } },
+            "webhook": { "type": "object", "required": ["secret"], "properties": {
+                "secret": { "type": "string", "description": "the secret's name the sender signs with (A-Z, 0-9, _), like ALERTS_HOOK" }
             } },
             "prompt": { "type": "string" },
             "place": { "type": "string", "enum": ["chat", "new_thread"] }
@@ -509,6 +551,7 @@ fn own_tools() -> Value {
         tool,
         remember,
         ask_persona,
+        handoff_tool(),
         history,
         update,
         routine,
@@ -518,7 +561,7 @@ fn own_tools() -> Value {
 }
 
 /// `cooee mcp serve --thread <id>`: cooee's own MCP server: `propose_server`, and `remember` (#126),
-/// `ask_persona` (#156), `history` (#217), `update_persona` (#270), `skill` (#218) and `secret` (#163) for a persona's.
+/// `ask_persona` (#156), `handoff` (#164), `history` (#217), `update_persona` (#270), `skill` (#218) and `secret` (#163) for a persona's.
 ///
 /// # Errors
 /// Never past a broken stdin; each refused proposal is the tool's error.
@@ -559,6 +602,7 @@ pub fn serve(thread: &str) -> Result<(), String> {
                     )),
                     Some("remember") => Some(("/mcp/agent/remember", "")),
                     Some("ask_persona") => Some(("/mcp/agent/ask", "")),
+                    Some("handoff") => Some(("/mcp/agent/handoff", "")),
                     Some("history") => Some(("/mcp/agent/history", "")),
                     Some("update_persona") => Some(("/mcp/agent/persona", "")),
                     Some("create_routine") => Some(("/mcp/agent/routine", "")),

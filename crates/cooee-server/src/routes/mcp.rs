@@ -10,6 +10,7 @@ use topcoat::{
 use crate::{
     HubError,
     http::{AgentAsk, Answer, bearer, blocking, refused},
+    hub::Called,
     mcp,
 };
 
@@ -63,7 +64,7 @@ async fn mcp_grant(cx: &Cx, Json(a): Json<AgentAsk>) -> Result<Answer<mcp::Grant
 }
 
 #[route(POST "/mcp/agent/call")]
-async fn mcp_call(cx: &Cx, Json(a): Json<AgentAsk>) -> Result<Answer<Option<String>>> {
+async fn mcp_call(cx: &Cx, Json(a): Json<AgentAsk>) -> Result<Answer<Called>> {
     let token = bearer(cx);
     let text = |k: &str| {
         a.server
@@ -95,7 +96,7 @@ async fn mcp_frame(cx: &Cx, Json(a): Json<AgentAsk>) -> Result<Answer<()>> {
     let (caption, image) = (text("caption"), text("image"));
     Ok(Answer(
         blocking(cx, move |hub| {
-            hub.frame((&a.thread, &token), &caption, &image)
+            hub.keep_frame((&a.thread, &token), &caption, &image)
         })
         .await,
     ))
@@ -118,6 +119,16 @@ async fn mcp_ask(cx: &Cx, Json(a): Json<AgentAsk>) -> Result<Answer<String>> {
             hub.ask_persona((&a.thread, &token), &persona, &message, wait)
         })
         .await,
+    ))
+}
+
+#[route(POST "/mcp/agent/handoff")]
+async fn mcp_handoff(cx: &Cx, Json(a): Json<AgentAsk>) -> Result<Answer<String>> {
+    let token = bearer(cx);
+    let what = a.server.get("what").and_then(serde_json::Value::as_str);
+    let what = what.unwrap_or_default().to_owned();
+    Ok(Answer(
+        blocking(cx, move |hub| hub.handoff((&a.thread, &token), &what)).await,
     ))
 }
 
@@ -174,6 +185,7 @@ pub(super) fn routes(b: RouterBuilder) -> RouterBuilder {
         .route(mcp_frame)
         .route(mcp_propose)
         .route(mcp_ask)
+        .route(mcp_handoff)
         .route(mcp_remember)
         .route(mcp_persona)
         .route(mcp_history)

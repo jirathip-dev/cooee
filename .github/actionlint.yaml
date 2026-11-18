@@ -1,3 +1,3 @@
-# #365: our own macOS runners (mini-cooee, air-cooee).
+# #365: our own macOS runner (mini-cooee). #565: GitHub-hosted xcode-27 (public preview, actionlint does not know it yet).
 self-hosted-runner:
-  labels: [cooee-mac]
+  labels: [cooee-mac, xcode-27]

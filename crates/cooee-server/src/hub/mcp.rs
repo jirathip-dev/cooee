@@ -10,7 +10,7 @@ use cooee_core::{
     shed_proto::ApprovalOption,
     skills::{self, Skill},
 };
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
 
 use crate::mcp::Grant;
@@ -75,6 +75,15 @@ impl Proposal {
             ..Server::default()
         }
     }
+}
+
+/// What a checked browser call answers the proxy.
+#[derive(Debug, Default, Serialize)]
+pub struct Called {
+    /// The owner's hand-back note (#162), if they had the browser.
+    pub note: Option<String>,
+    /// The caption of the replay frame the proxy takes after it (#161), if any.
+    pub caption: Option<String>,
 }
 
 impl Hub {
@@ -274,8 +283,8 @@ impl Hub {
     }
 
     /// Thread `id`'s proxy's `tools/call` of `tool` on `server` with `args`, checked again: the grant still holds, the
-    /// tool is allowed and, on the browser, a `url` is on the persona's site allowlist; each browser call is logged
-    /// (password typing masked). The caption of the replay frame the proxy takes after it (#161), if any.
+    /// tool is allowed and, on the browser, a `url` is on the persona's site allowlist; each browser call waits while
+    /// the owner holds control and is logged (password typing masked).
     ///
     /// # Errors
     /// [`HubError::Refused`] as [`Hub::grant`], for a tool not allowed, or a site not on the allowlist.
@@ -284,7 +293,7 @@ impl Hub {
         (id, token): (&str, &str),
         (server, tool): (&str, &str),
         args: &Value,
-    ) -> Result<Option<String>, HubError> {
+    ) -> Result<Called, HubError> {
         let (persona, pick, _) = self.granted(id, token, server)?;
         if !pick.allows(tool) {
             return Err(HubError::Refused(format!(
@@ -292,8 +301,9 @@ impl Hub {
             )));
         }
         if server != browser::SERVER {
-            return Ok(None);
+            return Ok(Called::default());
         }
+        let note = self.wait_turn(&persona.id);
         let url = args.get("url").and_then(Value::as_str);
         let off = url.filter(|u| !browser::allows(&persona.sites, u));
         let args = browser::masked(args);
@@ -305,7 +315,10 @@ impl Hub {
                 "{u} isn't on {}'s site allowlist",
                 persona.id
             ))),
-            None => Ok(browser::caption(tool, &args)),
+            None => Ok(Called {
+                note,
+                caption: browser::caption(tool, &args),
+            }),
         }
     }
 
@@ -349,19 +362,30 @@ impl Hub {
     }
 
     /// What persona `persona`'s threads said after line `mark` (#219), routine runs left out: none when the owner
-    /// said nothing since.
+    /// said nothing since. For its `heartbeat` (#498) routines' results count and only its own runs are left out:
+    /// none when nothing was said since.
     ///
     /// # Errors
     /// [`HubError::Refused`] when a thread can't be read.
-    pub fn news(&self, persona: &str, mark: u64) -> Result<Option<(String, u64)>, HubError> {
+    pub fn news(
+        &self,
+        persona: &str,
+        (mark, heartbeat): (u64, bool),
+    ) -> Result<Option<(String, u64)>, HubError> {
         let mine: Vec<String> = self
             .all()
             .iter()
             .map(|l| lock(l).meta.clone())
-            .filter(|m| m.profile == persona && m.routine.is_none())
+            .filter(|m| {
+                m.profile == persona
+                    && m.routine
+                        .as_ref()
+                        .is_none_or(|r| heartbeat && r.id != agents::HEARTBEAT)
+            })
             .map(|m| m.id)
             .collect();
-        history::since(&self.store, &mine, mark).map_err(|e| HubError::Refused(e.to_string()))
+        history::since(&self.store, &mine, (mark, !heartbeat))
+            .map_err(|e| HubError::Refused(e.to_string()))
     }
 
     /// An agent's `history` in thread `id` (#217): a search of its persona's threads (`query`, at most `limit`
@@ -387,7 +411,7 @@ impl Hub {
         if run && thread.is_empty() && query.trim().is_empty() {
             let key = format!("{}-{}", agents::CONSOLIDATE, persona.id);
             let read = history::watermark(&self.data, &key, |w| {
-                let news = self.news(&persona.id, w.line);
+                let news = self.news(&persona.id, (w.line, false));
                 if let Ok(Some((_, newest))) = &news {
                     w.line = *newest;
                 }

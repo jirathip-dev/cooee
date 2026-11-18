@@ -18,13 +18,13 @@ fn eventually(mut f: impl FnMut() -> bool) {
     panic!("never happened");
 }
 
-fn setup(name: &str) -> (std::path::PathBuf, FakeShed, Cooee) {
+fn setup(name: &str, extra: &str) -> (std::path::PathBuf, FakeShed, Cooee) {
     let dir = scratch(name);
     let profiles = dir.join("profiles");
     fs::create_dir_all(&profiles).unwrap();
     fs::write(
         profiles.join("coder.toml"),
-        "name = \"coder\"\nlabel = \"Coder\"\nagent = \"fake-acp\"\n",
+        format!("name = \"coder\"\nlabel = \"Coder\"\nagent = \"fake-acp\"\n{extra}"),
     )
     .unwrap();
     let shed = FakeShed::start(&dir.join("shed"), version());
@@ -57,7 +57,7 @@ fn topic(cooee: &Cooee, id: &str) -> Value {
 
 #[test]
 fn a_personas_topics_carry_their_fields_and_home_counts_the_open_ones() {
-    let (dir, _shed, cooee) = setup("topics-list");
+    let (dir, _shed, cooee) = setup("topics-list", "");
     let folder = dir.join("root/project");
     let plain = create(&cooee, &folder, "", "Say hello from a plain chat");
     let read = create(&cooee, &folder, "coder", "Say hello, then read");
@@ -151,7 +151,7 @@ fn a_personas_topics_carry_their_fields_and_home_counts_the_open_ones() {
 
 #[test]
 fn a_topic_is_titled_by_its_first_words_and_a_set_title_stays() {
-    let (dir, shed, cooee) = setup("topics-title");
+    let (dir, shed, cooee) = setup("topics-title", "");
     let folder = dir.join("root/project");
     let id = create(
         &cooee,
@@ -179,4 +179,24 @@ fn a_topic_is_titled_by_its_first_words_and_a_set_title_stays() {
     let sent = shed.sent(&terminal);
     assert_eq!(sent[0], first);
     assert!(!sent[1].contains("This topic"), "{}", sent[1]);
+}
+
+#[test]
+fn a_picked_folder_beats_the_personas_and_scratch_means_none() {
+    let root = scratch("topics-folder").join("root");
+    let (own, picked) = (root.join("project"), root.clone());
+    let extra = format!("folder = {:?}\n", own.display().to_string());
+    let (_dir, _shed, cooee) = setup("topics-folder", &extra);
+    let default = create(&cooee, Path::new(""), "coder", "Say hello in my own folder");
+    let chosen = create(&cooee, &picked, "coder", "Say hello in the picked one");
+    let scratch = create(
+        &cooee,
+        Path::new("scratch"),
+        "coder",
+        "Say hello in scratch",
+    );
+    let folder = |id: &str| topic(&cooee, id)["folder"].clone();
+    assert_eq!(folder(&default), json!(fs::canonicalize(&own).unwrap()));
+    assert_eq!(folder(&chosen), json!(fs::canonicalize(&picked).unwrap()));
+    assert_eq!(folder(&scratch), json!(""));
 }

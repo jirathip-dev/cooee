@@ -31,6 +31,9 @@ extension ThreadsClient: DependencyKey {
         },
         move: { server, thread, machine in try await Client(server).move(thread, to: machine) },
         retry: { server, thread in try await Client(server).retry(thread) },
+        topics: { server, persona in try await Client(server).topics(of: persona) },
+        retitle: { server, thread, title in try await Client(server).retitle(thread, title) },
+        archive: { server, thread, archived in try await Client(server).archive(thread, archived) },
         room: { server, title, members in try await Client(server).newRoom(title: title, members: members) },
         seat: { server, room, persona, place, remove in
             try await Client(server).seat(room, persona: persona, place: place, remove: remove)

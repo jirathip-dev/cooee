@@ -33,6 +33,7 @@ public struct ChatActions {
     public var agent: @MainActor @Sendable (String) -> Void = { _ in }
     public var model: (String, String) -> Void = { _, _ in }
     public var frames = FrameImages()
+    public var topics: TopicActions?
 
     public init(
         draft: Binding<String>? = nil,

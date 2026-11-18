@@ -8,11 +8,11 @@ use std::{
 
 use cooee_core::{
     Body,
-    agents::{self, CONSOLIDATE, CONSOLIDATION},
-    history,
+    agents::{self, BEAT, CONSOLIDATE, CONSOLIDATION, HEARTBEAT, Heartbeat},
+    history::{self, Beat},
     routines::{
-        Ask, Book, Delivery, Edit, Fields, Hooks, Mark, Outcome, Paused, Place, Routine, Routines,
-        Run, Trigger, Who, local,
+        Ask, Book, Delivery, Edit, Fields, Hooks, Inbound, Mark, Outcome, Paused, Place, Routine,
+        Routines, Run, Trigger, Who, local,
     },
     secrets,
 };
@@ -28,6 +28,8 @@ use crate::{
     hub::{Hub, HubError, Recipe, now},
     push::Note,
 };
+
+mod webhook;
 
 /// How a `new_thread` run starts as `who`: its agent, the agent's name, its folder and its recipe.
 pub type Start =
@@ -50,6 +52,8 @@ pub struct Runner {
 }
 
 const HOUR: u64 = 3_600_000;
+
+type Picked = (Routine, String, String);
 
 impl Runner {
     /// The routines of config folder `config` (none: the data folder), their run state in `data`, run on `hub`;
@@ -111,6 +115,16 @@ impl Runner {
         self.file.load().map(|b| b.routines).map_err(refused)
     }
 
+    /// Routine `r`'s public URL, when it is a webhook one and `[hooks]` is set.
+    #[must_use]
+    pub fn url(&self, r: &Routine) -> Option<String> {
+        let hooks = self
+            .hooks
+            .as_ref()
+            .filter(|_| matches!(r.trigger, Trigger::Webhook(_)))?;
+        Some(hooks.inbound(&r.id))
+    }
+
     fn change<T>(&self, f: impl FnOnce(&mut Book) -> Result<T, HubError>) -> Result<T, HubError> {
         let _held = self.lock.lock().unwrap_or_else(PoisonError::into_inner);
         let mut book = self.file.load().map_err(refused)?;
@@ -120,11 +134,11 @@ impl Runner {
     }
 
     /// `create_routine` by thread `id`'s agent (`token`: its MCP token): a schedule is stored, then its chat gets
-    /// the `Created routine` line; a GitHub one only raises a card, and is stored when the owner approves it with
+    /// the `Created routine` line; a GitHub or webhook one only raises a card, and is stored when the owner approves it with
     /// Face ID. A Workflow session or a routine's own run can't make one. What the agent is told.
     ///
     /// # Errors
-    /// [`HubError::Refused`] for a wrong token, such a thread, no `[hooks]` for a GitHub one, or a routine `ask`
+    /// [`HubError::Refused`] for a wrong token, such a thread, no `[hooks]` for a GitHub or webhook one, or a routine `ask`
     /// doesn't make.
     pub fn create(
         self: &Arc<Self>,
@@ -138,7 +152,7 @@ impl Runner {
                 "NOT_HERE: a Workflow session or a routine's own run can't make routines",
             ));
         }
-        if ask.github.is_some() {
+        if ask.github.is_some() || ask.webhook.is_some() {
             if self.hooks.is_none() {
                 return Err(refused("NO_HOOKS: [hooks] isn't set up on this Mac"));
             }
@@ -216,6 +230,7 @@ impl Runner {
     pub fn tick(&self, now: u64) {
         let offset = self.offset(now);
         self.consolidate(now, offset);
+        self.heartbeat(now, offset);
         let _held = self.lock.lock().unwrap_or_else(PoisonError::into_inner);
         let mut book = match self.file.load() {
             Ok(book) => book,
@@ -265,48 +280,155 @@ impl Runner {
                 run
             });
             let news = match line {
-                Ok(Some(line)) => self.hub.news(&p.id, line),
+                Ok(Some(line)) => self.hub.news(&p.id, (line, false)),
                 Ok(None) => continue,
                 Err(e) => Err(refused(e)),
             };
-            let (model, effort) = (self.cheapest)(&p.agent);
-            let pick = |own: &str, cheap: String| {
-                if own.is_empty() {
-                    cheap
-                } else {
-                    own.to_owned()
-                }
-            };
-            let who = Who {
-                agent: p.agent.clone(),
-                account: p.account.clone().unwrap_or_default(),
-                profile: p.id.clone(),
-                folder: PathBuf::new(),
-                model: pick(&c.model, model),
-                effort: pick(&c.effort, effort),
-                machine: p.machine.clone(),
-            };
             let ran = news.and_then(|news| {
                 let Some(_) = news else { return Ok(()) };
-                let (agent, name, folder, recipe) = (self.start)(&self.hub, &who)?;
-                let mark = Mark {
-                    id: CONSOLIDATE.to_owned(),
-                    name: "Consolidation".to_owned(),
-                };
-                let recipe = Recipe {
-                    routine: Some(mark),
-                    ..recipe
-                };
-                let random = format!("routine-{key}-{due}");
-                let text = (CONSOLIDATION, random.as_str());
-                self.hub
-                    .create_later((&agent, &name), &folder, text, recipe)?;
-                Ok(())
+                let mark = (CONSOLIDATE, "Consolidation");
+                let text = (CONSOLIDATION, format!("routine-{key}-{due}"));
+                self.as_persona(&p, (&c.model, &c.effort), mark, text, None)
             });
             if let Err(e) = ran {
                 cooee_core::note!("cooee: routines: {key}: {e}");
             }
         }
+    }
+
+    fn heartbeat(&self, now: u64, offset: i32) {
+        for p in agents::list(self.config.as_deref(), &self.data) {
+            let Some(h) = p.heartbeat.as_ref().filter(|h| h.on) else {
+                continue;
+            };
+            let Some(due) = h.schedule().and_then(|s| s.latest(now, offset)) else {
+                continue;
+            };
+            let key = format!("{HEARTBEAT}-{}", p.id);
+            let limit = h.per_day.unwrap_or(Heartbeat::PER_DAY);
+            let picked = history::watermark(&self.data, &key, |w| {
+                let seen = w.due != 0 && due > w.due;
+                w.due = w.due.max(due);
+                w.runs.retain(|at| now.saturating_sub(*at) < 24 * HOUR);
+                if !seen {
+                    return Ok::<_, HubError>(None);
+                }
+                let Some((text, newest)) = self.hub.news(&p.id, (w.line, true))? else {
+                    return Ok(None);
+                };
+                if w.runs.len() >= limit {
+                    cooee_core::note!("cooee: routines: {key}: {limit} runs in 24 hours already");
+                    return Ok(None);
+                }
+                w.line = newest;
+                w.runs.push(now);
+                let read = format!(
+                    "{} new lines, {} characters",
+                    text.lines().count(),
+                    text.chars().count()
+                );
+                let run = format!("routine-{key}-{due}-{newest}");
+                w.last = Some(Beat {
+                    at: now,
+                    run: run.clone(),
+                    read,
+                    why: String::new(),
+                    pushed: false,
+                });
+                Ok(Some((text, run)))
+            });
+            let ran = picked.map_err(refused).and_then(|news| {
+                let Some((news, run)) = news? else {
+                    return Ok(());
+                };
+                let home = self
+                    .config
+                    .as_deref()
+                    .and_then(|c| agents::home(c, &p.id).ok());
+                let rule = home.as_ref().map(agents::notify).unwrap_or_default();
+                let rule = if rule.is_empty() {
+                    "none, so stay silent"
+                } else {
+                    &rule
+                };
+                let text = format!(
+                    "{BEAT}\n\nThe owner's notify rule: {rule}\n\nNew since the last run:\n{news}"
+                );
+                let mark = (HEARTBEAT, "Heartbeat");
+                let text = (text.as_str(), run);
+                self.as_persona(&p, (&h.model, &h.effort), mark, text, Some("ask"))
+            });
+            if let Err(e) = ran {
+                cooee_core::note!("cooee: routines: {key}: {e}");
+            }
+        }
+    }
+
+    fn as_persona(
+        &self,
+        p: &agents::Agent,
+        (model, effort): (&str, &str),
+        (id, name): (&str, &str),
+        (text, random): (&str, String),
+        policy: Option<&str>,
+    ) -> Result<(), HubError> {
+        let (cheap_model, cheap_effort) = (self.cheapest)(&p.agent);
+        let pick = |own: &str, cheap: String| {
+            if own.is_empty() {
+                cheap
+            } else {
+                own.to_owned()
+            }
+        };
+        let who = Who {
+            agent: p.agent.clone(),
+            account: p.account.clone().unwrap_or_default(),
+            profile: p.id.clone(),
+            folder: PathBuf::new(),
+            model: pick(model, cheap_model),
+            effort: pick(effort, cheap_effort),
+            machine: p.machine.clone(),
+        };
+        let (agent, agent_name, folder, mut recipe) = (self.start)(&self.hub, &who)?;
+        if let Some(policy) = policy {
+            recipe.launch.policy = Some(policy.to_owned());
+        }
+        let recipe = Recipe {
+            routine: Some(Mark {
+                id: id.to_owned(),
+                name: name.to_owned(),
+            }),
+            ..recipe
+        };
+        self.hub
+            .create_later((&agent, &agent_name), &folder, (text, &random), recipe)?;
+        Ok(())
+    }
+
+    /// Persona `persona`'s heartbeat (#498) as a row of its panel's routines: its schedule, and its last run's
+    /// time, what it read and why it stayed silent; none when it has no heartbeat.
+    #[must_use]
+    pub fn beat(&self, persona: &str, now: u64) -> Option<Value> {
+        let p = agents::find(self.config.as_deref(), &self.data, persona).ok()?;
+        let h = p.heartbeat?;
+        let key = format!("{HEARTBEAT}-{}", p.id);
+        let last = history::watermark(&self.data, &key, |w| w.last.clone()).ok()?;
+        let offset = self.offset(now);
+        let next = last.map_or_else(
+            || "no run yet".to_owned(),
+            |b| {
+                let why = match (b.pushed, b.why.as_str()) {
+                    (true, _) => "pushed".to_owned(),
+                    (false, "") => "running".to_owned(),
+                    (false, why) => format!("silent: {why}"),
+                };
+                format!("last run {}: read {} · {why}", local(b.at, offset), b.read)
+            },
+        );
+        let when = h.schedule().map(|s| s.describe()).unwrap_or_default();
+        Some(
+            serde_json::json!({ "id": HEARTBEAT, "name": "Heartbeat", "when": when, "on": h.on, "next": next }),
+        )
     }
 
     fn record(&self, r: &mut Routine, key: String, outcome: Outcome, now: u64) {
@@ -364,24 +486,48 @@ impl Runner {
             }
             let mut runs = Vec::new();
             for r in b.routines.iter_mut().filter(|r| r.matches(d)) {
+                let key = r.key(d.guid());
                 match r.admit(now) {
-                    Ok(()) => runs.push(r.clone()),
-                    Err(why) => self.record(r, r.key(d.guid()), Outcome::Skipped { why }, now),
+                    Ok(()) => runs.push((r.clone(), r.text(&Fields::Event(d)), key)),
+                    Err(why) => self.record(r, key, Outcome::Skipped { why }, now),
                 }
             }
             Ok(Some(runs))
         });
+        self.later(picked)
+    }
+
+    /// Signed POST `i` to routine `id`, once per key: 200 when seen before; else 202 and the routine runs on a
+    /// worker (paused, or over the rate: skipped), so the answer comes before the run starts.
+    pub fn accept(self: &Arc<Self>, id: &str, i: &Inbound, now: u64) -> (u16, String) {
+        let picked = self.change(|b| {
+            if !b.see(&format!("{id}:{}", i.key()), now) {
+                return Ok(None);
+            }
+            let mut runs = Vec::new();
+            for r in b.routines.iter_mut().filter(|r| r.id == id) {
+                let key = r.key(i.key());
+                match r.admit(now) {
+                    Ok(()) => runs.push((r.clone(), r.text(&Fields::Inbound(i)), key)),
+                    Err(why) => self.record(r, key, Outcome::Skipped { why }, now),
+                }
+            }
+            Ok(Some(runs))
+        });
+        self.later(picked)
+    }
+
+    fn later(self: &Arc<Self>, picked: Result<Option<Vec<Picked>>, HubError>) -> (u16, String) {
         let runs = match picked {
             Ok(Some(runs)) => runs,
             Ok(None) => return (200, "seen".to_owned()),
             Err(e) => return (500, e.to_string()),
         };
         let n = runs.len();
-        let (runner, d) = (Arc::clone(self), d.clone());
+        let runner = Arc::clone(self);
         std::thread::spawn(move || {
-            for r in runs {
-                let key = r.key(d.guid());
-                let outcome = runner.run(&r, &r.text(&Fields::Event(&d)), &key);
+            for (r, text, key) in runs {
+                let outcome = runner.run(&r, &text, &key);
                 let saved = runner.change(|b| {
                     if let Some(o) = b.routines.iter_mut().find(|o| o.id == r.id) {
                         runner.record(o, key, outcome, crate::hub::now());
@@ -545,12 +691,13 @@ async fn github_hook(cx: &Cx, body: Raw) -> Result<Response> {
     Ok(Response::builder().status(status).body(Bytes::from(text))?)
 }
 
-/// `[hooks] bind`'s router: `POST /hooks/github` and nothing else; no Gate, no devices, no other route.
+/// `[hooks] bind`'s router: `POST /hooks/github`, `POST /hooks/in/<id>` and nothing else; no Gate, no devices, no other route.
 #[must_use]
 pub fn hooks(runner: Arc<Runner>) -> Router {
     Router::builder()
         .app_context(runner)
         .route(github_hook)
+        .route(webhook::inbound_hook)
         .build()
 }
 

@@ -1,4 +1,4 @@
-# Routines (#75, #261)
+# Routines (#75, #261, #499)
 
 ## How it works
 
@@ -26,6 +26,17 @@ that line (else no run, no tokens). Its fixed prompt has it call `history` with 
 line read, so nothing is read twice. In any routine's run `remember`, like `skill` propose, only raises a card; the
 note is written when the owner approves it.
 
+Heartbeat (#498): each persona has a second built-in routine, off until its `agent.toml` sets `[heartbeat] on = true`
+(optional `when`, default `0 * * * *`; `model` and `effort`, default its provider's cheapest; `per_day`, default 4
+runs in any 24 hours). At a due time it reads, under the `heartbeat-<persona>` watermark, what the persona's threads
+and its routines' runs said since the last line read (its own runs left out); nothing new means no run and no
+tokens, and a due time over `per_day` leaves the news for the next one. Else it opens a thread marked `Heartbeat`
+with shed policy `ask`, whose one prompt carries the owner's notify rule (`notify.md` in the persona's folder, empty
+until the owner writes one) and the newest 20,000 characters of news. The run never pushes on its own: its approval
+cards are background cards that expire as Deny, and its end pushes `<persona> · heartbeat` only when the rule is
+set and its reply's last line is `NOTIFY` (else `SILENT: <why>`). The persona panel's routines list a `Heartbeat`
+row: its last run's time, what it read and why it stayed silent.
+
 GitHub events (#261): a routine may instead name a repo, events and an optional `match` (`[routine.github]` in
 place of `when`). An agent's GitHub routine is not saved until the owner approves its card with Face ID (q1351); a
 schedule needs none. `[hooks] bind` is a second listener serving only `POST /hooks/github`, so the main listener's
@@ -37,6 +48,15 @@ Each routine runs at most 6 times an hour, the rest `skipped: rate`. Every 15 mi
 reads, with `secret:GITHUB_TOKEN` over curl (the token on its stdin), the log of the repo's hook whose URL is
 `[hooks] url`: each delivery of the last 24 hours, and since a routine named the repo, whose guid isn't seen goes
 through the same `deliver`. A run's key is `routine-<id>-<guid>`, the hub's `random_id`, as a schedule's is.
+
+Signed POSTs (#499): a routine may instead have `[routine.webhook] secret = "<NAME>"`, so anything that can POST (a CI,
+a monitor, a form, n8n) runs it at `POST /hooks/in/<id>` on the same listener (its URL is `[hooks] url` with `/github`
+as `/in/<id>`; funnel `/hooks`, as `cooee doctor` prints). Like a GitHub routine, an agent's needs the owner's Face ID
+card, and it runs at most 6 times an hour. The body's HMAC-SHA256 is checked against `secret:<NAME>` before it is
+read; it is deduped by `Idempotency-Key`, else the body's SHA-256, in `seen` as `<id>:<key>`; it is answered 202
+before the run starts. The body is never part of the prompt: it follows it as one JSON string, at most 8,000
+characters, marked untrusted data whose instructions are not followed. The persona panel's row shows the URL and a
+Test button (`POST /screens/action` `test`, `values.routine`), which runs it on `{"test":true}` as a signed POST would.
 
 ## API
 
@@ -62,3 +82,7 @@ Each routine whose `repo` (case-insensitive), one of `events` (`pull_request` or
 `match` (payload path = text) fit runs with the delivery's guid in its key; a paused one, or one that ran 6 times in
 the hour, is `skipped`. Its prompt's `{{a.b}}` read the payload (each value at most 2,000 characters), `{{event}}` and
 `{{repo}}` the event.
+
+| Route | Body | Answer |
+|---|---|---|
+| `POST /hooks/in/<id>` | anything, at most 2 MiB (else 413), with `X-Signature-256: sha256=<hex>` and an optional `Idempotency-Key` | 404 for no webhook routine `<id>`; 503 without its `secret:`; 401 for a wrong signature; 200 `seen` for a key already handled (kept 4 days); else 202 `runs: <n>` (0 when paused or over the rate), answered before the run starts |

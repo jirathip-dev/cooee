@@ -141,6 +141,7 @@ async fn create(cx: &Cx, Json(new): Json<New>) -> Result<Answer<Created>> {
         let profile = new.profile.as_deref().unwrap_or_default();
         let list = profiles(&hub, (&data, config.as_deref()));
         let picked = (new.model, new.effort);
+        let asked = new.folder.clone();
         let (agent, folder, mut recipe) = recipe(
             &logins,
             (&data, config.as_deref(), &list),
@@ -148,6 +149,7 @@ async fn create(cx: &Cx, Json(new): Json<New>) -> Result<Answer<Created>> {
             new.folder,
             (picked, new.setup),
         )?;
+        let folder = topic_folder(asked, folder);
         if let Some(m) = new.machine {
             recipe.machine = m;
         }
@@ -239,6 +241,17 @@ async fn send(cx: &Cx, Json(m): Json<Message>) -> Result<Answer<cooee_core::Item
     ))
 }
 
+#[route(POST "/threads/{id}/handback")]
+async fn hand_back(cx: &Cx, Json(m): Json<Message>) -> Result<Answer<cooee_core::Item>> {
+    let id = thread_id(cx);
+    Ok(Answer(
+        blocking(cx, move |hub| {
+            hub.resume_handoff(&id, &m.text, &m.random_id)
+        })
+        .await,
+    ))
+}
+
 #[route(POST "/threads/{id}/queue")]
 async fn queue(cx: &Cx, Json(m): Json<Message>) -> Result<Answer<Vec<cooee_core::Queued>>> {
     let id = thread_id(cx);
@@ -269,6 +282,16 @@ async fn steer(cx: &Cx, Json(q): Json<Queued>) -> Result<Answer<Vec<cooee_core::
     Ok(Answer(
         blocking(cx, move |hub| hub.unqueue(&id, &q.random_id, true)).await,
     ))
+}
+
+fn topic_folder(asked: PathBuf, default: PathBuf) -> PathBuf {
+    if asked.as_os_str() == "scratch" {
+        PathBuf::new()
+    } else if asked.as_os_str().is_empty() {
+        default
+    } else {
+        asked
+    }
 }
 
 #[derive(Deserialize)]
@@ -431,6 +454,7 @@ pub(super) fn routes(b: RouterBuilder) -> RouterBuilder {
         .route(create)
         .route(retry)
         .route(send)
+        .route(hand_back)
         .route(queue)
         .route(unqueue)
         .route(steer)

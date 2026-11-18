@@ -15,7 +15,7 @@ exact command or URL and needs Face ID; it is added off), saves a secret to the 
 profiles' servers and tools. A command or URL changes on the Mac only: the server refuses it from the phone.
 
 Every thread's agent gets, through shed's `--mcp` file (0600, removed once shed read it): `cooee` (`cooee mcp serve
---thread <id>`), whose tools are `propose_server {name, type, command|url, args, why}`, `remember`, `ask_persona` and `history` ([API](#api)); and for each server its
+--thread <id>`), whose tools are `propose_server {name, type, command|url, args, why}`, `remember`, `ask_persona`, `handoff` and `history` ([API](#api)); and for each server its
 profile picks (on, its references resolving), `cooee mcp proxy <server> --thread <id>`. Each carries `COOEE_MCP`
 (cooee's URL and the thread's token, `sha256(<data>/mcp.key:<thread>)`), good while the thread is open. The proxy asks
 `POST /mcp/agent/grant` for its server, its references resolved in memory then and never written, starts it (stdio) or
@@ -42,6 +42,13 @@ keychain, a 0600 file on Linux) at `<data>/frames/<thread>/<at>-<hash>`, and add
 `name`) to the thread; `GET /threads/<id>/frames/<name>` serves it decrypted. Frames are deleted 14 days after they
 were taken. The app shows each as a step with its caption and picture, in the thread and the trace sheet.
 
+The Screen (#162): `GET /personas/{id}/screen/live` streams the persona's current tab over SSE, a `frame {url,
+title, jpeg}` every half second (or `gone {why}` while its browser isn't running). `POST /personas/{id}/screen/control`
+gives the owner a 10-minute lease: the agent's browser calls wait until `POST …/screen/back {note}` (the waiting call
+then goes on and its result carries the note) or the lease ends. While it runs, `POST …/screen/input` takes
+`{"click": {"x", "y"}}` or `{"text": "…"}` on the current tab. `GET /personas/{id}/screen` answers who drives it
+(`agent`, `owner` with `until` in ms, or `back` with the note) and how many agent calls wait.
+
 ## API
 
 The registry is the Mac's: `cooee mcp add|rm|enable|disable`.
@@ -61,15 +68,20 @@ can't start). Each ask is an `ask` item in the asker's thread (#177), `asking` u
 question is a `you` item whose `speaker` is the asker's persona. The owner's message there reaches the asked persona
 marked as the owner's note, and the reply goes back with it (the card's `note`; the exchange ends with the `note`
 item `returned to <asker> [with your note] · <secs>s`).
+`POST /mcp/agent/handoff` `{thread, server: {what}}` (#164, W5) → `handoff`'s answer: the agent hands a log-in, a 2FA
+code or a CLI login to the owner and ends its turn. Its thread gets a `handoff` item (`waiting`); until the owner's
+`POST /threads/<id>/handback` `{text, random_id}` (once per `random_id`; none open: a 400 `NO_HANDOFF`) a send,
+queue or steer there is a 400 `HANDOFF`, and messages queued before wait. Hand back sets the item `handed_back` with
+its `note` and sends the agent `[The owner handed back: <what>; their note]:` and the note (`Done.` when empty).
 `POST /mcp/agent/history` `{thread, server: {query?, thread?, before?, limit?}}` (#217) → `history`'s text: with
 `query`, at most 5 (and `limit`) of the persona's threads, newest first, `<thread> <date>: <snippet>` (200 characters
 at most); with `thread`, its owner messages and final replies (no tool rows), at most 4,000 characters, ending
 `older: before=<item>` when more are left. Another persona's thread is a 400.
-`POST /mcp/agent/routine` `{thread, server: {name, when | github: {repo, events, match?}, prompt, place?}}` (#75,
-#261) → `create_routine`'s text. A schedule (`when`) is saved at once and adds a `routine` line to the thread; a
-GitHub one only adds a card (`form: "routine"`, `detail` the prompt) and is saved when the owner approves it with Face
-ID (`decline`: never). A refusal is a 400 starting `BAD_SCHEDULE`, `BAD_GITHUB`, `BAD_TRIGGER` (neither or both of
-`when` and `github`), `BAD_NAME`, `BAD_PROMPT`, `BAD_PLACE`, `TOO_MANY`, `NO_HOOKS` (no `[hooks]`) or `NOT_HERE` (a
+`POST /mcp/agent/routine` `{thread, server: {name, when | github: {repo, events, match?} | webhook: {secret}, prompt,
+place?}}` (#75, #261, #499) → `create_routine`'s text. A schedule (`when`) is saved at once and adds a `routine` line to the thread; a
+GitHub or webhook one only adds a card (`form: "routine"`, `detail` the prompt) and is saved when the owner approves it with Face
+ID (`decline`: never). A refusal is a 400 starting `BAD_SCHEDULE`, `BAD_GITHUB`, `BAD_WEBHOOK`, `BAD_TRIGGER` (not
+one of `when`, `github` and `webhook`), `BAD_NAME`, `BAD_PROMPT`, `BAD_PLACE`, `TOO_MANY`, `NO_HOOKS` (no `[hooks]`) or `NOT_HERE` (a
 Workflow session or a routine's own run).
 `POST /mcp/agent/skill` `{thread, server: {read} | {propose: {name, description, body, replaces?}}}` (#218) → `skill`'s
 text: with `read`, the persona's skill's body (8,000 characters at most; another persona's is a 400); with `propose`,
