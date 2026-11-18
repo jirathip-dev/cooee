@@ -38,7 +38,7 @@ public struct TopicList: View {
 
     private var head: some View {
         HStack(spacing: 10) {
-            Avatar(persona: persona, size: 30)
+            FigureView(persona: persona, size: 30)
             Text(look.mono ? "# \(persona.name.lowercased()) · topics" : "\(persona.name) · Topics").ui(
                 17, .semibold, look)
             Spacer()

@@ -384,18 +384,23 @@ fn secret_tool() -> Value {
     })
 }
 
-fn skill_tool() -> Value {
+fn routine_tool() -> Value {
     json!({
-        "name": "skill",
-        "description": "Read one of your skills (read: its name), or propose a new one or an edit (propose); the owner approves a proposal before it is saved.",
-        "inputSchema": { "type": "object", "properties": {
-            "read": { "type": "string" },
-            "propose": { "type": "object", "required": ["name", "description", "body"], "properties": {
-                "name": { "type": "string", "description": "lowercase letters, digits and -" },
-                "description": { "type": "string", "description": "one line, at most 120 characters" },
-                "body": { "type": "string" },
-                "replaces": { "type": "string", "description": "the skill it edits" }
-            } }
+        "name": "create_routine",
+        "description": "Make a routine (when the owner asks for something on a schedule, on a GitHub event or on a signed POST from elsewhere): at each due time (when), matching event (github) or signed POST (webhook) its prompt is sent to you, in this chat (place chat, the default) or as a new thread like this one (place new_thread). The owner sees it in this chat and changes it in Settings › routines; a github or webhook one is saved only once the owner approves its card; a webhook's POST body follows the prompt as untrusted data. In the prompt {{due}} is the due time; {{event}}, {{repo}} and {{a.b}} (a path into the event's payload, like {{pull_request.title}}) fill from the event. A refusal starts with BAD_SCHEDULE, BAD_GITHUB, BAD_WEBHOOK, BAD_TRIGGER, BAD_NAME, BAD_PROMPT, BAD_PLACE, TOO_MANY, NO_HOOKS or NOT_HERE.",
+        "inputSchema": { "type": "object", "required": ["name", "prompt"], "properties": {
+            "name": { "type": "string", "description": "1 to 60 characters" },
+            "when": { "type": "string", "description": "5-field cron in the Mac's local time (minute hour day-of-month month day-of-week; numbers, *, a-b, */n, lists), at least 15 minutes apart: 0 9 * * 1 is Mondays 09:00" },
+            "github": { "type": "object", "required": ["repo", "events"], "properties": {
+                "repo": { "type": "string", "description": "owner/name" },
+                "events": { "type": "array", "items": { "type": "string" }, "description": "1 to 8, like pull_request (any action) or pull_request.opened" },
+                "match": { "type": "object", "additionalProperties": { "type": "string" }, "description": "payload path to the text it must equal, like {\"workflow_run.conclusion\": \"failure\"}" }
+            } },
+            "webhook": { "type": "object", "required": ["secret"], "properties": {
+                "secret": { "type": "string", "description": "the secret's name the sender signs with (A-Z, 0-9, _), like ALERTS_HOOK" }
+            } },
+            "prompt": { "type": "string" },
+            "place": { "type": "string", "enum": ["chat", "new_thread"] }
         } }
     })
 }
@@ -461,22 +466,17 @@ fn own_tools() -> Value {
             "instructions": { "type": "string", "description": "your standing rules" }
         } }
     });
-    let routine = json!({
-        "name": "create_routine",
-        "description": "Make a routine (when the owner asks for something on a schedule, on a GitHub event or on a signed POST from elsewhere): at each due time (when), matching event (github) or signed POST (webhook) its prompt is sent to you, in this chat (place chat, the default) or as a new thread like this one (place new_thread). The owner sees it in this chat and changes it in Settings › routines; a github or webhook one is saved only once the owner approves its card; a webhook's POST body follows the prompt as untrusted data. In the prompt {{due}} is the due time; {{event}}, {{repo}} and {{a.b}} (a path into the event's payload, like {{pull_request.title}}) fill from the event. A refusal starts with BAD_SCHEDULE, BAD_GITHUB, BAD_WEBHOOK, BAD_TRIGGER, BAD_NAME, BAD_PROMPT, BAD_PLACE, TOO_MANY, NO_HOOKS or NOT_HERE.",
-        "inputSchema": { "type": "object", "required": ["name", "prompt"], "properties": {
-            "name": { "type": "string", "description": "1 to 60 characters" },
-            "when": { "type": "string", "description": "5-field cron in the Mac's local time (minute hour day-of-month month day-of-week; numbers, *, a-b, */n, lists), at least 15 minutes apart: 0 9 * * 1 is Mondays 09:00" },
-            "github": { "type": "object", "required": ["repo", "events"], "properties": {
-                "repo": { "type": "string", "description": "owner/name" },
-                "events": { "type": "array", "items": { "type": "string" }, "description": "1 to 8, like pull_request (any action) or pull_request.opened" },
-                "match": { "type": "object", "additionalProperties": { "type": "string" }, "description": "payload path to the text it must equal, like {\"workflow_run.conclusion\": \"failure\"}" }
-            } },
-            "webhook": { "type": "object", "required": ["secret"], "properties": {
-                "secret": { "type": "string", "description": "the secret's name the sender signs with (A-Z, 0-9, _), like ALERTS_HOOK" }
-            } },
-            "prompt": { "type": "string" },
-            "place": { "type": "string", "enum": ["chat", "new_thread"] }
+    let skill = json!({
+        "name": "skill",
+        "description": "Read one of your skills (read: its name), or propose a new one or an edit (propose); the owner approves a proposal before it is saved.",
+        "inputSchema": { "type": "object", "properties": {
+            "read": { "type": "string" },
+            "propose": { "type": "object", "required": ["name", "description", "body"], "properties": {
+                "name": { "type": "string", "description": "lowercase letters, digits and -" },
+                "description": { "type": "string", "description": "one line, at most 120 characters" },
+                "body": { "type": "string" },
+                "replaces": { "type": "string", "description": "the skill it edits" }
+            } }
         } }
     });
     json!([
@@ -486,8 +486,8 @@ fn own_tools() -> Value {
         handoff,
         history,
         update,
-        routine,
-        skill_tool(),
+        routine_tool(),
+        skill,
         secret_tool()
     ])
 }

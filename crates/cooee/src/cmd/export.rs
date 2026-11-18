@@ -17,7 +17,7 @@ fn export(config: &Config, id: &str) -> Result<(), String> {
         .data_dir()
         .ok_or("no data folder: set `data` or HOME")?;
     let items = Store::open(&data)
-        .and_then(|s| s.items(id))
+        .and_then(|s| s.whole(id))
         .map_err(|e| e.to_string())?;
     for item in items {
         cooee_core::say!(

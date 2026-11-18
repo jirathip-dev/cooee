@@ -89,7 +89,7 @@ public struct NewRoomSheet: View {
         let place = picked.firstIndex(of: persona.id)
         return HStack(spacing: 14) {
             number(place)
-            Avatar(persona: persona.with(state: .idle), size: 38)
+            FigureView(persona: persona.with(state: .idle), size: 38)
             VStack(alignment: .leading, spacing: 2) {
                 Text(persona.name).ui(16, .semibold, look)
                 Text(subtitle(persona)).ui(14, .regular, look).foregroundStyle(palette.mute)

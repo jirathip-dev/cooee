@@ -76,9 +76,9 @@ internal struct AskCard: View {
         let palette = look.palette
         let asked = Text(" asked ").foregroundStyle(palette.mute)
         return HStack(spacing: 8) {
-            Avatar(persona: from, size: 22)
+            FigureView(persona: from, size: 22)
             Text("→").ui(13, .regular, look).foregroundStyle(palette.mute)
-            Avatar(persona: target, size: 22)
+            FigureView(persona: target, size: 22)
             Text("\(Text(from.name).fontWeight(.semibold))\(asked)\(Text(target.name).fontWeight(.semibold))")
                 .ui(15, .regular, look).lineLimit(1)
         }

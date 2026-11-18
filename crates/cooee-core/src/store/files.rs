@@ -29,6 +29,7 @@ struct Stored<T> {
 #[derive(Debug)]
 pub struct Store {
     threads: PathBuf,
+    pub(super) archive: PathBuf,
     db: Mutex<Connection>,
     pub(super) path: PathBuf,
     locks: Mutex<HashMap<String, Arc<Mutex<()>>>>,
@@ -54,12 +55,15 @@ impl Store {
                     "PRAGMA synchronous = FULL;
                      CREATE TABLE IF NOT EXISTS items (thread TEXT NOT NULL, id INTEGER NOT NULL,
                          at INTEGER NOT NULL, kind TEXT NOT NULL, body TEXT NOT NULL, PRIMARY KEY (thread, id));
-                     CREATE VIRTUAL TABLE IF NOT EXISTS said USING fts5(text, tokenize = 'trigram');",
+                     CREATE VIRTUAL TABLE IF NOT EXISTS said USING fts5(text, tokenize = 'trigram');
+                     CREATE TABLE IF NOT EXISTS archived (thread TEXT NOT NULL, month TEXT NOT NULL,
+                         PRIMARY KEY (thread, month));",
                 )
             })
             .map_err(db_err(&path))?;
         let store = Self {
             threads,
+            archive: dir.join("archive"),
             db: Mutex::new(db),
             path,
             locks: Mutex::default(),
@@ -245,7 +249,7 @@ pub(super) mod tests {
         dir
     }
 
-    fn sample(id: &str, title: &str) -> Thread {
+    pub(in crate::store) fn sample(id: &str, title: &str) -> Thread {
         let text = "สวัสดีครับ ".repeat(200);
         Thread {
             id: id.into(),

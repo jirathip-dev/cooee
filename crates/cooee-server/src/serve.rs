@@ -123,6 +123,20 @@ pub fn router(
     .build()
 }
 
+fn retain(config: &Config, kept: std::path::PathBuf) {
+    let history = config.history;
+    std::thread::spawn(move || {
+        loop {
+            match cooee_core::Store::open(&kept).and_then(|s| s.retain(hub::now(), &history)) {
+                Ok(0) => {}
+                Ok(n) => cooee_core::note!("cooee: history: archived or trimmed {n} items"),
+                Err(e) => cooee_core::note!("cooee: history: {e}"),
+            }
+            cooee_core::clock::sleep(Duration::from_hours(1));
+        }
+    });
+}
+
 fn housekeep(config: &Config, data: &std::path::Path) -> io::Result<()> {
     let logs = (config.logs.clone(), data.to_owned());
     std::thread::spawn(move || {
@@ -193,6 +207,7 @@ pub fn serve(config: &Config, ready: impl FnOnce(SocketAddr)) -> io::Result<()> 
         config.apns.clone(),
         config.approval_expiry_minutes.saturating_mul(60_000),
     )?;
+    retain(config, data.clone());
     let (daily, signins) = (Arc::clone(&hub), Arc::clone(&logins));
     std::thread::spawn(move || {
         loop {
