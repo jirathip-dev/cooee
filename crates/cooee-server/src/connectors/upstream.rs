@@ -9,7 +9,10 @@ use cooee_core::{
 };
 use serde_json::{Value, json};
 
-use super::lock;
+use super::{
+    calls::{Decision, Permit, decide, offered},
+    lock,
+};
 use crate::{
     Hub,
     mcp::{error, only},
@@ -229,19 +232,38 @@ impl super::Connectors {
         msg: &Value,
         now: u64,
     ) -> Result<Vec<Value>, String> {
-        let (_, pick, s) = hub
+        let (persona, pick, s) = hub
             .granted(thread, token, server)
             .map_err(|e| e.to_string())?;
         let method = msg.get("method").and_then(Value::as_str);
         if method == Some("tools/call") {
-            let tool = msg.pointer("/params/name").and_then(Value::as_str);
+            let tool = msg
+                .pointer("/params/name")
+                .and_then(Value::as_str)
+                .unwrap_or_default();
             let args = msg
                 .pointer("/params/arguments")
                 .cloned()
                 .unwrap_or_default();
-            if let Err(e) = hub.call((thread, token), (server, tool.unwrap_or_default()), &args) {
+            let gate = hub
+                .call((thread, token), (server, tool), &args)
+                .map_err(|e| e.to_string())
+                .and_then(|_| match decide(&s, tool) {
+                    Decision::Allow => Ok(()),
+                    Decision::Ask => {
+                        let key = Permit {
+                            thread: thread.to_owned(),
+                            server: server.to_owned(),
+                            tool: tool.to_owned(),
+                            args: args.to_string(),
+                        };
+                        self.ask(hub, (&persona, &pick), &key, now)
+                    }
+                    Decision::Deny => Err(format!("tool {tool} isn't offered")),
+                });
+            if let Err(e) = gate {
                 let id = msg.get("id").cloned().unwrap_or_default();
-                return Ok(vec![error(&id, -32602, &e.to_string())]);
+                return Ok(vec![error(&id, -32602, &e)]);
             }
         }
         let (url, transport, _) = super::target(&s)?;
@@ -261,7 +283,7 @@ impl super::Connectors {
         Ok(match method {
             Some("tools/list") => got
                 .into_iter()
-                .map(|m| only(m, pick.tools.as_deref()))
+                .map(|m| offered(only(m, pick.tools.as_deref()), &s))
                 .collect(),
             _ => got,
         })

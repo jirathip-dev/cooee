@@ -22,7 +22,7 @@ use std::{
 };
 
 use serde_json::{Value, json};
-use support::{Authenticator, Cooee, FakeShed, agent, scratch, version};
+use support::{Authenticator, Cooee, FakeShed, agent, is_item, scratch, version};
 
 const SERVER: &str = r#"#!/bin/sh
 : >"$(dirname "$0")/ran"
@@ -1357,7 +1357,7 @@ fn a_streamable_http_and_an_sse_server_answer_through_the_pipe_with_headers_on_c
     let (port, seen) = fake_web(token.clone());
     let server = |name: &str, kind: &str, at: &str| {
         format!(
-            "[[mcp]]\nname = \"{name}\"\ntype = \"{kind}\"\nurl = \"http://127.0.0.1:{port}/{at}\"\nheaders = {{ Authorization = \"secret:WEB\" }}\n\n"
+            "[[mcp]]\nname = \"{name}\"\ntype = \"{kind}\"\nurl = \"http://127.0.0.1:{port}/{at}\"\nheaders = {{ Authorization = \"secret:WEB\" }}\nread = [\"a\", \"c\"]\n\n"
         )
     };
     let extra = server("web", "http", "mcp")
@@ -1429,4 +1429,86 @@ fn a_streamable_http_and_an_sse_server_answer_through_the_pipe_with_headers_on_c
     files(&dir.join("data"), &mut all);
     all.push_str(&fs::read_to_string(dir.join("cooee.err")).unwrap());
     assert!(!all.contains(&s.token), "a value was written");
+}
+
+#[test]
+fn a_read_tool_runs_with_no_card_and_a_write_tool_runs_only_once_its_card_is_allowed() {
+    let dir = scratch("mcp-gate");
+    let token = format!("tk-{}", "g5".repeat(16));
+    fs::create_dir_all(dir.join("data/secrets")).unwrap();
+    fs::write(dir.join("data/secrets/WEB"), format!("Bearer {token}\n")).unwrap();
+    let picks = "name = \"Web\"\nagent = \"fake-acp\"\n\n[[mcp]]\nserver = \"web\"\n";
+    agent(&dir, "web", picks, "");
+    let (port, seen) = fake_web(token.clone());
+    let extra = format!(
+        "[[mcp]]\nname = \"web\"\ntype = \"http\"\nurl = \"http://127.0.0.1:{port}/mcp\"\nheaders = {{ Authorization = \"secret:WEB\" }}\nread = [\"a\"]\n"
+    );
+    let shed = FakeShed::start(&dir.join("shed"), version());
+    let cooee = Cooee::start_with(&dir, &shed.dir, &extra);
+    let s = Setup {
+        dir,
+        shed,
+        cooee,
+        token,
+    };
+    let (id, servers) = s.thread("web");
+    let messages = || s.cooee.json(&format!("/threads/{id}/messages"));
+    let sent = |tool: &str| {
+        let name = format!("\"name\":\"{tool}\"");
+        seen.lock()
+            .unwrap()
+            .iter()
+            .filter(|h| h.contains(&name))
+            .count()
+    };
+    let mut web = Mcp::start(named(&servers, "web"), Agent::Claude);
+
+    assert_eq!(
+        web.run("a", &json!({})),
+        Ok("a ran; the token matches".to_owned())
+    );
+    let items = messages()["items"].clone();
+    assert!(
+        !items
+            .as_array()
+            .unwrap()
+            .iter()
+            .any(|i| i["kind"] == "approval"),
+        "{items}"
+    );
+
+    for (tool, option) in [("b", "approve"), ("c", "decline")] {
+        let cursor = messages()["cursor"].as_str().unwrap().to_owned();
+        let mut events = s.cooee.events(&id, &cursor, false);
+        let asked = thread::spawn(move || {
+            let r = web.run(tool, &json!({ "title": "Fix it" }));
+            (web, r)
+        });
+        let card = events
+            .until(|e| is_item(e, "approval") && e.data["form"] == "tool")
+            .pop()
+            .unwrap()
+            .data;
+        assert_eq!(
+            card["tool"],
+            format!("Web · web: {tool} {{\"title\":\"Fix it\"}}"),
+            "{card}"
+        );
+        assert_eq!(sent(tool), 0, "nothing is sent before the owner answers");
+        let tap = json!({ "item": card["id"], "option": option });
+        let (status, body) = s.cooee.post(&format!("/threads/{id}/approve"), &tap);
+        assert_eq!(status, 200, "{body}");
+        let (back, r) = asked.join().unwrap();
+        web = back;
+        if option == "approve" {
+            assert_eq!(r, Ok("b ran; the token matches".to_owned()));
+            assert_eq!(sent(tool), 1);
+        } else {
+            assert_eq!(
+                r,
+                Err("the owner didn't allow c: its card was declined or expired".to_owned())
+            );
+            assert_eq!(sent(tool), 0);
+        }
+    }
 }
