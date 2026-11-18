@@ -1,0 +1,19 @@
+Decided: shed's reset is read as a shed-proto Request notification with method "reset" and params.seq, beside Event, in one Streamed enum
+Because: crates/cooee-core/src/shed/acp.rs:19
+Decided: on a reset the follow loop sets its cursor to the reset's seq and reconnects, so reattach re-reads every live thread's state and the stream resumes after the lost events
+Because: crates/cooee-server/src/hub/events.rs:35
+Rejected: carry on reading the same stream after a reset — nothing would refresh the threads whose events were lost
+Rejected: treat lagged like reset — shed closes a lagged stream itself and the client resumes from its own cursor, which the loop already does
+Check: crates/cooee/tests/chat.rs a_reset_from_shed_resyncs_the_stream_and_drops_no_event fails at f79a51041 on the base code and passes at the head
+Owner: When shed says old events are gone, cooee now catches up instead of logging a dropped event.
+
+Decided: shed's reset is read as a shed-proto Request notification with method "reset" and params.seq, beside Event, in one Streamed enum
+Because: crates/cooee-core/src/shed/acp.rs:29
+Decided: on a reset the follow loop sets its cursor to the reset's seq and reconnects, so reattach re-reads every live thread's state and the stream resumes after the lost events
+Because: crates/cooee-server/src/hub/events.rs:35
+Decided: fix round 1 regenerates crates/cooee-core/src/shed.rs with scripts/gen.sh instead of hand-editing it (it now writes pub use acp::*)
+Because: .drover/arch.toml:4
+Rejected: carry on reading the same stream after a reset — nothing would refresh the threads whose events were lost
+Rejected: treat lagged like reset — shed closes a lagged stream itself and the client resumes from its own cursor, which the loop already does
+Check: crates/cooee/tests/chat.rs a_reset_from_shed_resyncs_the_stream_and_drops_no_event fails at f79a51041 on the base code and passes at the head
+Owner: When shed says old events are gone, cooee now catches up instead of logging a dropped event.
