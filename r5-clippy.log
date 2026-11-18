@@ -1,0 +1,14 @@
+   Compiling cooee-core v0.1.0 (/Users/jkmacmini/.local/share/drover/work/cooee/issue-161/crates/cooee-core)
+    Checking twox-hash v2.1.5
+    Checking ruzstd v0.9.1
+    Checking cooee-machines v0.1.0 (/Users/jkmacmini/.local/share/drover/work/cooee/issue-161/crates/cooee-machines)
+    Checking cooee-terminal v0.1.0 (/Users/jkmacmini/.local/share/drover/work/cooee/issue-161/crates/cooee-terminal)
+    Checking cooee-server v0.1.0 (/Users/jkmacmini/.local/share/drover/work/cooee/issue-161/crates/cooee-server)
+    Checking cooee v0.1.0 (/Users/jkmacmini/.local/share/drover/work/cooee/issue-161/crates/cooee)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 5.55s
+   Compiling cooee-core v0.1.0 (/Users/jkmacmini/.local/share/drover/work/cooee/issue-161/crates/cooee-core)
+    Checking cooee-machines v0.1.0 (/Users/jkmacmini/.local/share/drover/work/cooee/issue-161/crates/cooee-machines)
+    Checking cooee-terminal v0.1.0 (/Users/jkmacmini/.local/share/drover/work/cooee/issue-161/crates/cooee-terminal)
+    Checking cooee-server v0.1.0 (/Users/jkmacmini/.local/share/drover/work/cooee/issue-161/crates/cooee-server)
+    Checking cooee v0.1.0 (/Users/jkmacmini/.local/share/drover/work/cooee/issue-161/crates/cooee)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 34.18s
