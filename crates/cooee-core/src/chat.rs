@@ -120,6 +120,16 @@ pub enum Body {
         #[serde(default, skip_serializing_if = "String::is_empty")]
         note: String,
     },
+    /// The agent handed a log-in or 2FA to the owner (#164, W5): its turn stopped until the owner hands back.
+    Handoff {
+        /// What the owner is to do (`Sign in to linkedin.com`).
+        text: String,
+        /// `waiting` or `handed_back`.
+        outcome: String,
+        /// The owner's note, which the agent resumed with.
+        #[serde(default, skip_serializing_if = "String::is_empty")]
+        note: String,
+    },
     /// The agent made a routine (#75): `⟳ Created routine: <name> · <when> · <place>`.
     Routine {
         /// Its id.
