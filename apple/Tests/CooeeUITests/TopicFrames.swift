@@ -30,7 +30,7 @@ internal enum TopicFrames {
 
     private static let items: [Item] = [
         .you(id: 1, text: "How's cooee's queue?"),
-        .tools(id: 2, rows: [ToolRow("Run drover board cooee", "done"), ToolRow("Run drover asks cooee", "done")]),
+        .tools(id: 2, rows: [ToolRow(.run, "drover board cooee", "done"), ToolRow(.run, "drover asks cooee", "done")]),
         .agent(
             id: 3,
             markdown: [
