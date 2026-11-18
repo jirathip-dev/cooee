@@ -251,7 +251,7 @@ pub fn specs(rows: &[Table], records: &[Record]) -> Result<Vec<Spec>, String> {
             .find(|(_, t)| field(t, "agent").as_ref() == Some(&r.id))
         {
             Some((keep, t)) => {
-                facts.retain(|k, _| !keep.contains(&k.as_ref()));
+                facts.retain(|k, _| !keep.contains(&k));
                 t.extend(facts);
             }
             None if facts.contains_key("login") && facts.contains_key("status") => {
