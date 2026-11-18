@@ -1,0 +1,23 @@
+Decided: the warm folders live only on our runner (mini-cooee); on hosted xcode-27 they sit in RUNNER_TEMP and the pin check still runs
+Because: .github/actions/mac-runner/action.yml:19
+Decided: compilation caching stays off: 77 vs 81 s cold, 18 vs 20 s warm, one run each, within noise
+Because: "kept only if it is faster; the PR body gives both numbers"
+Decided: numbers come from local runs on the Mini: the dispatch (q1886 option 1) was denied by the lane's permission check, and the Air is no longer a runner (#565)
+Because: q1886
+Decided: staging build fix: create_routine's schema moves into routine_tool(), so own_tools is under clippy's 100 lines
+Because: crates/cooee-server/src/mcp.rs:387
+Rejected: an allow on too_many_lines — the repo caps allows, each with a reason, and a split is smaller
+Check: a merge-ready or dispatched run on the Mini shows "started again" then "kept" in the summary, and the PR build step passes for iPhone 17
+Owner: Mac CI builds warm on the Mini and refuses any Xcode but 27.2; CI timings on the PR itself still need a merge-ready or dispatched run.
+
+Decided: round 3: the dmg red was staging's old TopicList.swift (Avatar); merging origin/staging brings its FigureView fix, no Swift edit here
+Because: apple/Sources/CooeeUI/TopicList.swift:41
+Decided: the warm folders live only on our runner (mini-cooee); on hosted xcode-27 they sit in RUNNER_TEMP and the pin check still runs
+Because: .github/actions/mac-runner/action.yml:19
+Decided: compilation caching stays off: 77 vs 81 s cold, 18 vs 20 s warm, one run each, within noise
+Because: "kept only if it is faster; the PR body gives both numbers"
+Decided: numbers come from local runs on the Mini: the dispatch (q1886 option 1) was denied by the lane's permission check
+Because: q1886
+Rejected: re-fixing TopicList.swift in this PR — staging already has the fix, a second copy would only conflict
+Check: the dmg job is green at the head, and a merge-ready or dispatched run on the Mini shows "started again" then "kept"
+Owner: Mac CI builds warm on the Mini and refuses any Xcode but 27.2; CI timings on the PR itself still need a merge-ready or dispatched run.
