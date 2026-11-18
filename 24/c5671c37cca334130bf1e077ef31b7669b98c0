@@ -1,0 +1,6 @@
+Decided: line_cap 29141 = 28262 staging + 379 open PRs + 500 margin; apple_cap stays 16300
+Because: "line_cap 29,141 = 28,262 staging + 379 open PRs = 28,641, + 500 margin"
+Because: q1925
+Rejected: raising apple_cap too — the AC keeps it at 16300 and apple has 196 lines of headroom
+Check: sh scripts/line-cap.sh exits 0 with non-test lines 28262 / 29141
+Owner: The code line limit goes up to 29,141 so the blocked queue can merge.
