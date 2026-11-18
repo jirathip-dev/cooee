@@ -39,7 +39,8 @@ agent gets the action's answer, and sends the image to `POST /mcp/agent/frame` i
 sees a screenshot it asked for. cooee keeps the frame only while every page open in the persona's Chromium (its CDP
 `/json/list`) is on the allowlist and on no `no_frames` site, encrypted (AES-256-GCM, key `FRAMES_KEY` in the
 keychain, a 0600 file on Linux) at `<data>/frames/<thread>/<at>-<hash>`, and adds a `frame` item (`text`: the caption,
-`name`) to the thread; `GET /threads/<id>/frames/<name>` serves it decrypted. Frames are deleted 14 days after they
+`name`) to the thread; a screenshot the agent took itself is kept too, as a frame with `asked: true` captioned with
+the page's address, which the app shows as a `screen` block (#166); `GET /threads/<id>/frames/<name>` serves it decrypted. Frames are deleted 14 days after they
 were taken. The app shows each as a step with its caption and picture, in the thread and the trace sheet.
 
 The Screen (#162): `GET /personas/{id}/screen/live` streams the persona's current tab over SSE, a `frame {url,

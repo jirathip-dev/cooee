@@ -47,33 +47,41 @@ internal struct ChatBrowserTests {
 
     private func store(
         _ clock: TestClock<Duration>, _ time: LockIsolated<Date>,
-        _ live: AsyncThrowingStream<LiveEvent, any Error> = .finished()
+        _ live: AsyncThrowingStream<LiveEvent, any Error> = .finished(), items: [APIItem] = []
     ) -> TestStoreOf<ChatFeature> {
-        let (calls, until) = (calls, start.addingTimeInterval(600))
-        let state = ChatFeature.State(server: mini, target: .thread("a1"), persona: Persona(coder))
+        var state = ChatFeature.State(server: mini, target: .thread("a1"), persona: Persona(coder))
+        state.items = items
         return TestStore(initialState: state) {
             ChatFeature()
         } withDependencies: {
             $0.continuousClock = clock
             $0.date = DateGenerator { time.value }
-            $0.threads.screen = { _, persona in
-                calls.record("screen \(persona)")
-                return BrowserScreen()
-            }
-            $0.threads.live = { _, _ in live }
-            $0.threads.takeControl = { _, persona in
-                calls.record("take \(persona)")
-                return BrowserScreen(until: until, waiting: 1)
-            }
-            $0.threads.handBack = { _, persona, note in
-                calls.record("back \(persona) \(note)")
-                return BrowserScreen()
-            }
-            $0.threads.input = { _, persona, input in
-                calls.record("input \(persona) \(input)")
-                if case .text = input { throw APIError(status: 400, text: "take control of coder's browser first") }
-            }
+            $0.threads = threads(live)
         }
+    }
+
+    private func threads(_ live: AsyncThrowingStream<LiveEvent, any Error>) -> ThreadsClient {
+        let (calls, until) = (calls, start.addingTimeInterval(600))
+        var threads = ThreadsClient()
+        threads.screen = { _, persona in
+            calls.record("screen \(persona)")
+            return BrowserScreen()
+        }
+        threads.live = { _, _ in live }
+        threads.takeControl = { _, persona in
+            calls.record("take \(persona)")
+            return BrowserScreen(until: until, waiting: 1)
+        }
+        threads.resume = { _, thread, note in calls.record("resume \(thread) \(note)") }
+        threads.handBack = { _, persona, note in
+            calls.record("back \(persona) \(note)")
+            return BrowserScreen()
+        }
+        threads.input = { _, persona, input in
+            calls.record("input \(persona) \(input)")
+            if case .text = input { throw APIError(status: 400, text: "take control of coder's browser first") }
+        }
+        return threads
     }
 
     @Test internal func theSheetShowsEachLiveFrameAndWhyTheBrowserIsGone() async {
@@ -135,5 +143,33 @@ internal struct ChatBrowserTests {
             calls.all == [
                 "input coder click(left: 10.0, top: 20.0)", "input coder text(\"hunter2\")", "back coder signed in",
             ])
+    }
+
+    @Test internal func aWaitingHandoffResumesWithTheNoteOnHandBackOrDone() async {
+        var handoff = APIItem(id: 4, time: 4000, kind: "handoff", text: "Sign in to a.com")
+        handoff.outcome = "waiting"
+        let store = store(TestClock(), LockIsolated(start), items: [handoff])
+        #expect(store.state.handoff == handoff)
+        await store.send(.browse(.takeOver)) { $0.browser = BrowserSheet(now: self.start) }
+        await store.receive(\.browse.screen) {
+            $0.browser?.screen = BrowserScreen(until: self.start.addingTimeInterval(600), waiting: 1)
+        }
+        await store.send(.browse(.note("signed in"))) { $0.browser?.note = "signed in" }
+        await store.send(.browse(.handBack)) { $0.browser?.note = "" }
+        await store.receive(\.browse.screen) { $0.browser?.screen = BrowserScreen() }
+        await store.send(.browse(.done))
+        await store.send(.browse(.open("f2"))) { $0.browser = BrowserSheet(replay: "f2", now: self.start) }
+        #expect(Set(calls.all) == ["take coder", "back coder signed in", "resume a1 signed in", "resume a1 "])
+    }
+
+    @Test internal func withNoHandoffWaitingHandBackOnlyReturnsTheBrowser() async {
+        var closed = APIItem(id: 4, time: 4000, kind: "handoff")
+        closed.outcome = "handed_back"
+        let store = store(TestClock(), LockIsolated(start), items: [closed])
+        await store.send(.browse(.show(true))) { $0.browser = BrowserSheet(now: self.start) }
+        await store.send(.browse(.handBack))
+        await store.receive(\.browse.screen)
+        await store.send(.browse(.done))
+        #expect(calls.all == ["back coder "])
     }
 }

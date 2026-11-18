@@ -18,6 +18,10 @@ extension Client {
         try await call("POST", "/personas/\(persona)/screen/back", ["note": note])
     }
 
+    public func resumeHandoff(_ id: String, note: String, randomID: String = UUID().uuidString) async throws {
+        try await post("/threads/\(id)/handback", ["text": note, "random_id": randomID])
+    }
+
     public func input(_ persona: String, _ input: BrowserInput) async throws {
         try await post("/personas/\(persona)/screen/input", input)
     }

@@ -91,3 +91,26 @@ public enum LiveEvent: Sendable, Equatable {
     case frame(LiveFrame)
     case gone(String)
 }
+
+/// A browser item in chat (#166): a frame the agent asked for, as a `screen` block, or a handoff to the owner (W5).
+public enum ScreenItem: Sendable, Equatable {
+    case shot(frame: String, address: String, time: Date)
+    case handoff(what: String, waiting: Bool, note: String)
+
+    public init?(_ item: APIItem) {
+        switch item.kind {
+        case "frame":
+            guard let name = item.name else { return nil }
+            self = .shot(frame: name, address: item.text ?? "", time: item.date)
+        case "handoff":
+            self = .handoff(what: item.text ?? "", waiting: item.outcome == "waiting", note: item.note ?? "")
+        default:
+            return nil
+        }
+    }
+}
+
+extension APIItem {
+    /// When it happened.
+    public var date: Date { Date(timeIntervalSince1970: Double(time) / 1000) }
+}

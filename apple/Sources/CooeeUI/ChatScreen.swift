@@ -46,6 +46,10 @@ internal struct ChatScreen: View {
         guard !store.persona.api.id.isEmpty else { return actions }
         actions.persona = { store.send(.profile) }
         if case .thread = store.target { actions.screen = { store.send(.browse(.show(true))) } }
+        actions.waits = store.handoff?.date
+        actions.screenActs = ScreenActs(
+            name: store.persona.name, open: { store.send(.browse(.open($0))) },
+            take: { store.send(.browse(.takeOver)) }, done: { store.send(.browse(.done)) })
         actions.choices = PersonaChoices(agents: store.agents, models: store.models, efforts: store.efforts)
         actions.agent = { store.send(.pick(.agent($0))) }
         actions.model = { store.send(.pick(.model($0, $1))) }

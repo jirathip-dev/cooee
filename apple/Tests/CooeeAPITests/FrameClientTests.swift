@@ -51,6 +51,13 @@ internal struct ScreenClientTests {
         #expect(other.body("/personas/ann/screen/input") == "{\"text\":\"hunter2\"}")
     }
 
+    @Test internal func handingBackAThreadPostsTheNoteOnce() async throws {
+        let server = CannedServer(["/threads/a1/handback": [Answer(headers: json, chunks: ["{}"])]])
+        try await server.client().resumeHandoff("a1", note: "signed in", randomID: "r1")
+        let body = try server.decoded("/threads/a1/handback", as: [String: String].self)
+        #expect(body == ["text": "signed in", "random_id": "r1"])
+    }
+
     @Test internal func theLiveViewStreamsFramesAndGoneUntilRefused() async throws {
         let stream =
             "event: frame\ndata: {\"url\":\"https://a.com/\",\"title\":\"A\",\"jpeg\":\"anBlZw==\"}\n\n"

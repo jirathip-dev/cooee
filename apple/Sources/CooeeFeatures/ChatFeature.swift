@@ -69,9 +69,8 @@ public struct ChatFeature: Sendable {
             }
         }
 
-        public var filmstrip: [ToolRow] {
-            items.filter { $0.kind == "frame" }.map { ToolRow($0.text ?? "", "done", frame: $0.name) }
-        }
+        public var filmstrip: [APIItem] { items.filter { $0.kind == "frame" && $0.name != nil } }
+        public var handoff: APIItem? { items.last { $0.kind == "handoff" && $0.outcome == "waiting" } }
 
         public var step: String? { persona.api.style == .chat ? ChatItems.step(items) : nil }
 

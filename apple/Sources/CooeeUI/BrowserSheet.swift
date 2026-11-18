@@ -7,7 +7,7 @@ internal struct BrowserPane: View {
     @Environment(\.look) private var look
     internal let name: String
     internal let sheet: BrowserSheet
-    internal let strip: [ToolRow]
+    internal let strip: [APIItem]
     internal let send: (ChatFeature.Browse) -> Void
     internal var stop: () -> Void = {}
     internal var done: () -> Void = {}
@@ -17,7 +17,7 @@ internal struct BrowserPane: View {
         VStack(alignment: .leading, spacing: 10) {
             header
             if let left = sheet.left { LeaseBand(name: name, left: left, sheet: sheet, send: send) }
-            BrowserPage(sheet: sheet, strip: strip, send: send)
+            BrowserPage(name: name, sheet: sheet, strip: strip, send: send)
             Filmstrip(strip: strip, replay: sheet.replay, send: send)
             if let error = sheet.error { Text(error).ui(13, .regular, look).foregroundStyle(look.palette.red) }
             Spacer(minLength: 0)
@@ -92,18 +92,24 @@ internal struct LeaseBand: View {
 internal struct BrowserPage: View {
     @Environment(\.look) private var look
     @Environment(\.frames) private var frames
+    internal let name: String
     internal let sheet: BrowserSheet
-    internal let strip: [ToolRow]
+    internal let strip: [APIItem]
     internal let send: (ChatFeature.Browse) -> Void
 
-    private var replayed: ToolRow? { strip.first { $0.frame == sheet.replay && sheet.replay != nil } }
+    private var replayed: APIItem? { strip.first { $0.name == sheet.replay && sheet.replay != nil } }
+
+    private var line: String {
+        guard let replayed else { return sheet.live?.title ?? "" }
+        return replayed.asked == true ? "Sent to \(name) · it asked for this one" : replayed.text ?? ""
+    }
 
     internal var body: some View {
         VStack(alignment: .leading, spacing: 6) {
             address
             page.frame(maxWidth: .infinity).aspectRatio(1.6, contentMode: .fit)
                 .background(look.palette.card, in: .rect(cornerRadius: 10)).clipShape(.rect(cornerRadius: 10))
-            Text(replayed?.title ?? sheet.live?.title ?? "").ui(14, .semibold, look).lineLimit(2)
+            Text(line).ui(14, .semibold, look).lineLimit(2)
         }
     }
 
@@ -112,7 +118,7 @@ internal struct BrowserPage: View {
             Image(systemName: "lock.fill").foregroundStyle(look.palette.mute)
             Text(sheet.live?.url ?? "").lineLimit(1).truncationMode(.middle)
             Spacer()
-            Text(replayed == nil ? "live" : "replay").foregroundStyle(
+            Text(replayed.map { $0.date.formatted(date: .omitted, time: .standard) } ?? "live").foregroundStyle(
                 replayed == nil ? look.palette.green : look.palette.amber)
         }
         .ui(12, .regular, look).padding(.horizontal, 10).frame(height: 30)
@@ -120,7 +126,7 @@ internal struct BrowserPage: View {
     }
 
     @ViewBuilder private var page: some View {
-        let data = replayed?.frame.flatMap { frames.images[$0] } ?? sheet.live?.jpeg
+        let data = replayed?.name.flatMap { frames.images[$0] } ?? sheet.live?.jpeg
         if let image = FrameThumb.image(data) {
             Image(decorative: image, scale: 1).resizable().scaledToFit()
                 .overlay { GeometryReader { geometry in tappable(image, geometry.size) } }
@@ -144,7 +150,7 @@ internal struct BrowserPage: View {
 internal struct Filmstrip: View {
     @Environment(\.look) private var look
     @Environment(\.frames) private var frames
-    internal let strip: [ToolRow]
+    internal let strip: [APIItem]
     internal let replay: String?
     internal let send: (ChatFeature.Browse) -> Void
 
@@ -152,11 +158,11 @@ internal struct Filmstrip: View {
         HStack(spacing: 8) {
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 6) {
-                    ForEach(strip.compactMap(\.frame), id: \.self) { name in
+                    ForEach(strip) { item in
                         Button {
-                            send(.replay(name))
+                            send(.replay(item.name))
                         } label: {
-                            thumb(name)
+                            thumb(item.name ?? "", asked: item.asked == true)
                         }.buttonStyle(.plain)
                     }
                 }
@@ -168,7 +174,7 @@ internal struct Filmstrip: View {
         }
     }
 
-    private func thumb(_ name: String) -> some View {
+    private func thumb(_ name: String, asked: Bool) -> some View {
         Group {
             if let image = FrameThumb.image(frames.images[name]) {
                 Image(decorative: image, scale: 1).resizable().scaledToFill()
@@ -180,7 +186,10 @@ internal struct Filmstrip: View {
         .overlay {
             RoundedRectangle(cornerRadius: 6).stroke(name == replay ? look.palette.amber : .clear, lineWidth: 2)
         }
-        .accessibilityLabel("Frame")
+        .overlay(alignment: .topTrailing) {
+            if asked { Text("◉").ui(10, .bold, look).foregroundStyle(look.palette.amber).padding(2) }
+        }
+        .accessibilityLabel(asked ? "Frame sent to the agent" : "Frame")
     }
 }
 

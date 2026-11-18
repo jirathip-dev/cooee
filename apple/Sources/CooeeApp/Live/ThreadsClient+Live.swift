@@ -15,6 +15,7 @@ extension ThreadsClient: DependencyKey {
         screen: { server, persona in try await Client(server).screen(persona) },
         takeControl: { server, persona in try await Client(server).takeControl(persona) },
         handBack: { server, persona, note in try await Client(server).handBack(persona, note: note) },
+        resume: { server, thread, note in try await Client(server).resumeHandoff(thread, note: note) },
         input: { server, persona, input in try await Client(server).input(persona, input) },
         live: { server, persona in Client(server).live(persona) },
         events: { server, thread, since in Client(server).events(thread, since: since) },

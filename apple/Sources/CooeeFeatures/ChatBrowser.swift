@@ -21,6 +21,9 @@ extension ChatFeature {
     @CasePathable
     public enum Browse: Sendable, Equatable {
         case show(Bool)
+        case open(String)
+        case takeOver
+        case done
         case watch
         case screen(BrowserScreen)
         case live(LiveEvent)
@@ -40,20 +43,41 @@ extension ChatFeature {
         switch action {
         case .show(let open):
             state.browser = open ? BrowserSheet(now: now) : nil
+        case .open(let frame):
+            state.browser = BrowserSheet(replay: frame, now: now)
+        case .takeOver:
+            state.browser = BrowserSheet(now: now)
+            return lease { try await threads.takeControl(server, persona) }
         case .watch:
             return watch(server, persona)
+        default:
+            return drive(&state, action)
+        }
+        return .none
+    }
+
+    private func drive(_ state: inout State, _ action: Browse) -> Effect<Action> {
+        let (threads, server, persona) = (threads, state.server, state.persona.api.id)
+        switch action {
         case .take:
             return lease { try await threads.takeControl(server, persona) }
         case .handBack:
             let note = state.browser?.note ?? ""
             state.browser?.note = ""
-            return lease { try await threads.handBack(server, persona, note) }
+            return .merge(lease { try await threads.handBack(server, persona, note) }, resume(state, note))
+        case .done:
+            return resume(state, "")
         case .send(let input):
             return type(&state, input)
         default:
             if state.browser != nil { apply(&state, action) }
+            return .none
         }
-        return .none
+    }
+
+    private func resume(_ state: State, _ note: String) -> Effect<Action> {
+        guard state.handoff != nil else { return .none }
+        return act(state) { threads, server, thread in try await threads.resume(server, thread, note) }
     }
 
     private func apply(_ state: inout State, _ action: Browse) {

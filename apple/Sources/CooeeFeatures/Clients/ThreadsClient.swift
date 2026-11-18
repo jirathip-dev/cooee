@@ -15,6 +15,7 @@ public struct ThreadsClient: Sendable {
     public var screen: @Sendable (_ server: Server, _ persona: String) async throws -> BrowserScreen
     public var takeControl: @Sendable (_ server: Server, _ persona: String) async throws -> BrowserScreen
     public var handBack: @Sendable (_ server: Server, _ persona: String, _ note: String) async throws -> BrowserScreen
+    public var resume: @Sendable (_ server: Server, _ thread: String, _ note: String) async throws -> Void
     public var input: @Sendable (_ server: Server, _ persona: String, _ input: BrowserInput) async throws -> Void
     public var live: @Sendable (_ server: Server, _ persona: String) -> AsyncThrowingStream<LiveEvent, any Error> =
         { _, _ in .finished() }
