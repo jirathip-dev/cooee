@@ -28,6 +28,7 @@ use super::Input;
 #[derive(Default)]
 pub(super) struct Shared {
     seq: u64,
+    floor: u64,
     ring: Vec<Event>,
     subs: Vec<Sender<Event>>,
     reported: BTreeMap<String, Reported>,
@@ -163,6 +164,16 @@ impl FakeShed {
             }
         });
         shed
+    }
+
+    /// Drops every kept event and skips `lost` seqs, as a shed whose ring moved on does; a later `events` with an
+    /// older `since` gets shed's `reset` first. The new floor.
+    pub fn forget(&self, lost: u64) -> u64 {
+        let mut s = self.shared.lock().unwrap();
+        s.seq += lost;
+        s.floor = s.seq;
+        s.ring.clear();
+        s.floor
     }
 
     /// How many connections it accepted.
@@ -675,17 +686,20 @@ impl FakeShed {
                 "events" => {
                     let since = req.params["since"].as_u64();
                     let (tx, rx) = mpsc::channel();
-                    let replay: Vec<Event> = {
+                    let (floor, replay): (u64, Vec<Event>) = {
                         let mut s = self.shared.lock().unwrap();
                         s.subs.push(tx);
-                        s.ring
-                            .iter()
-                            .filter(|e| since.is_some_and(|n| e.seq > n))
-                            .cloned()
-                            .collect()
+                        let kept = s.ring.iter().filter(|e| since.is_some_and(|n| e.seq > n));
+                        (s.floor, kept.cloned().collect())
                     };
                     let ok = Response::ok(id, json!({}));
                     writeln!(writer, "{}", json!(ok)).unwrap();
+                    if since.is_some_and(|n| n < floor) {
+                        let reset = format!(
+                            r#"{{"jsonrpc":"2.0","method":"reset","params":{{"seq":{floor}}}}}"#
+                        );
+                        writeln!(writer, "{reset}").unwrap();
+                    }
                     for event in replay.into_iter().chain(rx) {
                         if writeln!(writer, "{}", json!(event)).is_err() {
                             return;
