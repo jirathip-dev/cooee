@@ -40,7 +40,7 @@ internal struct ClientTests {
         let home = try await client.home()
         let rows = home.threads
         #expect(home.screen.title == "cooee" && home.screen.blocks.map(\.type) == ["pinned", "chats"])
-        #expect(home.personas == [.coder])
+        #expect(home.personas == [.coder] && home.counts == ["coder": TopicCount(topics: 1, unread: 2)])
         #expect(rows.map(\.id) == ["a1b2", "old"])
         #expect(rows[0].persona == "coder" && rows[0].unseen == 2 && rows[0].state == "working" && rows[1].archived)
         #expect(rows[0].workflow == nil && rows[1].workflow?.source == "drover" && rows[1].workflow?.stage == "impl 1")

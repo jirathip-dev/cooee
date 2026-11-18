@@ -139,6 +139,8 @@ public struct ListedChat: Identifiable, Sendable, Equatable {
     public let members: [Persona]
     public let asker: Persona?
     public let from: String
+    public var topics = 0
+    public var folder: String?
 
     public var id: String { row.id }
 

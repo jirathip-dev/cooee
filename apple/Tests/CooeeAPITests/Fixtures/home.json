@@ -78,7 +78,9 @@
       ],
       "pinned": true,
       "profile": "coder",
-      "version": "v1"
+      "version": "v1",
+      "topics": 1,
+      "unread": 2
     }
   ]
 }

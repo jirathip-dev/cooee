@@ -70,6 +70,8 @@ internal struct ChatRow: View {
     internal var members: [Persona] = []
     internal var selected = false
     internal var word = false
+    internal var topics = 0
+    internal var folder: String?
 
     internal var body: some View {
         let palette = look.palette
@@ -94,8 +96,7 @@ internal struct ChatRow: View {
             VStack(alignment: .leading, spacing: 3) {
                 HStack(spacing: 6) {
                     Text(room ? row.title : persona.name).ui(16, .semibold, look).lineLimit(1)
-                    Text(room ? "\(members.count) members" : row.title).ui(14, .regular, look)
-                        .foregroundStyle(palette.mute).lineLimit(1)
+                    subtitle(room)
                     Spacer(minLength: 4)
                     Text(row.ago).ui(13, .regular, look).foregroundStyle(row.unseen > 0 ? palette.link : palette.mute)
                 }
@@ -103,6 +104,16 @@ internal struct ChatRow: View {
             }
         }
         .padding(.horizontal, 16).padding(.vertical, 10)
+    }
+
+    @ViewBuilder
+    private func subtitle(_ room: Bool) -> some View {
+        if topics > 1 {
+            TopicCountChip(topics: topics)
+        } else {
+            Text(room ? "\(members.count) members" : row.title).ui(14, .regular, look)
+                .foregroundStyle(look.palette.mute).lineLimit(1)
+        }
     }
 
     private var detail: some View {
@@ -120,10 +131,27 @@ internal struct ChatRow: View {
                 Image(systemName: "ellipsis").font(.system(size: 13, weight: .bold)).foregroundStyle(palette.cyan)
             }
             if word { Text("\(row.state.word) ·").ui(14, .regular, look).foregroundStyle(palette.state(row.state)) }
-            Text(row.last).ui(14, .regular, look).foregroundStyle(palette.mute).lineLimit(1)
+            if topics > 1 {
+                FolderGlyph(folder: folder, size: 11, slash: true).foregroundStyle(palette.mute)
+                Text("\(Text(row.title).fontWeight(.semibold)) · \(row.last)").ui(14, .regular, look)
+                    .foregroundStyle(palette.mute).lineLimit(1)
+            } else {
+                Text(row.last).ui(14, .regular, look).foregroundStyle(palette.mute).lineLimit(1)
+            }
             Spacer(minLength: 4)
             if row.unseen > 0 { Badge(count: row.unseen) }
         }
+    }
+}
+
+private struct TopicCountChip: View {
+    @Environment(\.look) private var look
+    fileprivate let topics: Int
+
+    fileprivate var body: some View {
+        Text(look.mono ? "[\(topics) topics]" : "\(topics) topics").ui(12, .medium, look)
+            .foregroundStyle(look.palette.mute).padding(.horizontal, look.mono ? 0 : 7).frame(height: 20)
+            .background(look.mono ? Color.clear : look.palette.edge.opacity(0.35), in: .capsule)
     }
 }
 

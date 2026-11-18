@@ -179,14 +179,14 @@ internal struct ChatList: View {
             }
             ForEach(Array(chats.enumerated()), id: \.element.id) { index, chat in
                 Button {
-                    open(chat.id)
+                    if chat.topics > 0, let actions { actions.pin(chat.persona.id) } else { open(chat.id) }
                 } label: {
                     if let asker = chat.asker {
                         LinkedRow(chat: chat, asker: asker, selected: chat.id == selected)
                     } else {
                         ChatRow(
                             row: chat.row, persona: chat.persona, members: chat.members, selected: chat.id == selected,
-                            word: chat.workflow != nil)
+                            word: chat.workflow != nil, topics: chat.topics, folder: chat.folder)
                     }
                 }
                 .buttonStyle(.plain)

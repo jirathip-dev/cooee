@@ -45,6 +45,7 @@ public struct AppRoot: View {
             }
         }
         .task { await store.send(.retire).finish() }
+        .task { await store.send(.taps).finish() }
         .sheet(item: $store.scope(state: \.persona, action: \.persona)) { persona in
             PersonaScreen(store: persona) { store.send(.menu(.sprite(persona.draft.id, $0))) }
         }
