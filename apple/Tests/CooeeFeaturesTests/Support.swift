@@ -56,3 +56,14 @@ internal func layout(_ json: String, etag: String = "") -> Layout {
 internal let homeScreen = HomeScreen(title: "cooee", blocks: [.object(["type": .string("chats")])])
 
 internal let testLayout = layout(#"{"format":1,"root":{"type":"nav"}}"#)
+
+internal let packStyles: [String: ServedStyle] = ["terminal", "scene"].reduce(into: [:]) { styles, name in
+    let file = URL(filePath: #filePath).deletingLastPathComponent().appending(path: "../../../packs/\(name)/style.json")
+    styles[name] = try? JSONDecoder().decode(ServedStyle.self, from: Data(contentsOf: file.standardized))
+}
+
+internal func served(_ looks: Looks) -> Looks {
+    var looks = looks
+    looks.styles = packStyles
+    return looks
+}

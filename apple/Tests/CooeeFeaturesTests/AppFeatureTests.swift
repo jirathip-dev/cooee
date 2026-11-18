@@ -134,7 +134,7 @@ internal struct AppFeatureTests {
     }
 
     @Test internal func theLookOutlivesPairingAgain() async {
-        let dark = Settings(scheme: .dark, style: .terminal)
+        let dark = Settings(scheme: .dark, style: .pack(name: "terminal", kept: nil))
         let store = store(AppFeature.State(layout: testLayout, server: mini, settings: dark))
         await store.send(.home(.delegate(.unauthorized))) {
             $0 = AppFeature.State(layout: testLayout, server: nil, settings: dark)

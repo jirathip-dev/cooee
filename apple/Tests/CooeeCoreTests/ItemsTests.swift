@@ -1,4 +1,5 @@
 @testable import CooeeCore
+import Foundation
 import Testing
 
 internal struct ItemsTests {
@@ -141,5 +142,29 @@ internal struct ItemsTests {
                 .note(id: 5, text: "The agent stopped."),
             ]
         )
+    }
+}
+
+extension ItemsTests {
+    @Test internal func aFrameTheAgentAskedForIsAScreenBlockAndAHandoffACard() throws {
+        let json = """
+            [{"id":2,"at":2000,"kind":"frame","text":"https://a.com/x","name":"f2","asked":true},
+             {"id":3,"at":3000,"kind":"frame","text":"click","name":"f3"},
+             {"id":4,"at":4000,"kind":"handoff","text":"Sign in to a.com","outcome":"waiting"},
+             {"id":5,"at":5000,"kind":"handoff","text":"2FA","outcome":"handed_back","note":"done it"}]
+            """
+        let items = try JSONDecoder().decode([APIItem].self, from: Data(json.utf8))
+        let shot = Item.screen(
+            id: 2, .shot(frame: "f2", address: "https://a.com/x", time: Date(timeIntervalSince1970: 2)))
+        let waiting = Item.screen(id: 4, .handoff(what: "Sign in to a.com", waiting: true, note: ""))
+        let back = Item.screen(id: 5, .handoff(what: "2FA", waiting: false, note: "done it"))
+        let row = ToolRow("click", "done", frame: "f3")
+        #expect(ChatItems.build(items, live: "") == [shot, .tools(id: 3, rows: [row]), waiting, back])
+        #expect(
+            ChatItems.build(items, live: "", style: .chat) == [
+                shot, waiting, back, .trace(id: 3, steps: [row], seconds: 0),
+            ])
+        #expect(shot.plainText == nil && shot.id == 2)
+        #expect(ScreenItem(APIItem(id: 6, time: 0, kind: "frame")) == nil)
     }
 }

@@ -8,15 +8,16 @@ internal struct Stage<Content: View>: View {
     @ViewBuilder internal let content: Content
 
     internal var body: some View {
-        if look.style.stage != nil {
+        if look.stage != nil {
             ZStack(alignment: .bottom) {
                 backdrop
                 content
             }
             .frame(height: height)
-        } else if let title, look.mono {
+        } else if let title, look.quiet {
             VStack(alignment: .leading, spacing: 8) {
-                Text("# \(title)").ui(12, .regular, look).foregroundStyle(look.palette.mute).padding(.horizontal, 16)
+                Text(look.label(.section, title)).ui(12, .regular, look).foregroundStyle(look.palette.mute)
+                    .padding(.horizontal, 16)
                 content
             }
         } else {
@@ -42,7 +43,7 @@ internal struct LaneStage: View {
     internal let block: JSONValue
 
     internal var body: some View {
-        if let stage = look.style.stage {
+        if let stage = look.stage {
             Stage(height: 180) {
                 Scroller(axis: .horizontal) {
                     HStack(alignment: .bottom, spacing: 2) {

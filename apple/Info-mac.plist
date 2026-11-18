@@ -3,6 +3,12 @@
 <plist version="1.0">
 <!-- #143: as Info.plist (ATS lets local networking through). -->
 <dict>
+	<key>LSApplicationCategoryType</key>
+	<string>public.app-category.developer-tools</string>
+	<key>NSBonjourServices</key>
+	<array>
+		<string>_cooee._tcp</string>
+	</array>
 	<key>NSAppTransportSecurity</key>
 	<dict>
 		<key>NSAllowsLocalNetworking</key>

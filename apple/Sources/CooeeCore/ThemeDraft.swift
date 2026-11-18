@@ -7,7 +7,7 @@ public struct ThemeDraft: Codable, Sendable, Equatable {
 
     public var from: String
     public var label: String
-    public var style: LookStyle
+    public var style: String
     public var dark: [String: String]
     public var light: [String: String]
     /// Drawn figures, by symbol id: each replaces its `<symbol>` in the copied `sprites.svg`.
@@ -24,7 +24,7 @@ public struct ThemeDraft: Codable, Sendable, Equatable {
 
 extension ThemeDraft {
     /// A draft of `theme` as it is: the pack itself when `own`, else a copy, or a new pack from the starter.
-    public init(looks: Looks, theme: String, style: LookStyle, own: Bool, new: Bool) {
+    public init(looks: Looks, theme: String, style: String, own: Bool, new: Bool) {
         let (pack, tokens) = (looks.themes[theme], { looks.tokens(theme, dark: $0) ?? [:] })
         let label = pack?.label.capitalized ?? theme
         self.init(

@@ -3,11 +3,7 @@ use std::{
     path::{Path, PathBuf},
 };
 
-use cooee_core::{Config, SHED_CARGO};
-
-pub(crate) fn shed_install() -> String {
-    format!("{} && shed serve", SHED_CARGO.join(" "))
-}
+use cooee_core::Config;
 
 pub(crate) fn tailnet_name() -> Option<String> {
     let out = cooee_core::runner::command("tailscale")

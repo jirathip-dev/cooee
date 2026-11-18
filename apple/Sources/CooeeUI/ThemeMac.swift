@@ -46,7 +46,7 @@ internal struct ThemeMac: View {
                     .foregroundStyle(palette.mute).lineLimit(1)
             }
             .frame(width: 220, alignment: .leading)
-            ThemeChips(values: LookStyle.allCases, picked: [store.draft.style], fill: false) { store.send(.style($0)) }
+            ThemeChips(values: store.offered, picked: [store.draft.style], fill: false) { store.send(.style($0)) }
             Spacer()
             Button {
                 store.send(.colours(store.reports["dark"]?.fails.isEmpty == false))

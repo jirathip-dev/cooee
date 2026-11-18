@@ -86,9 +86,7 @@ public struct Look: Sendable {
     public var vectors: [String: String] = [:]
     public var tokens: [String: String] = [:]
 
-    internal var mono: Bool { style.type == .mono }
-
-    public init(palette: Palette = .farmDark, style: Style = .bundled(.modern), still: Bool = false, art: URL? = nil) {
+    public init(palette: Palette = .farmDark, style: Style = .bundled, still: Bool = false, art: URL? = nil) {
         self.palette = palette
         self.style = style
         self.still = still
@@ -108,80 +106,5 @@ extension EnvironmentValues {
     public var look: Look {
         get { self[LookKey.self] }
         set { self[LookKey.self] = newValue }
-    }
-}
-
-extension View {
-    internal func ui(_ size: CGFloat, _ weight: Font.Weight = .regular, _ look: Look) -> some View {
-        font(.system(size: size, weight: weight, design: look.mono ? .monospaced : .default))
-    }
-
-    internal func surface(_ look: Look, radius: CGFloat = 22, interactive: Bool = false) -> some View {
-        modifier(Surface(look: look, radius: radius, interactive: interactive))
-    }
-}
-
-internal struct Surface: ViewModifier {
-    internal let look: Look
-    internal let radius: CGFloat
-    internal let interactive: Bool
-
-    internal func body(content: Content) -> some View {
-        let palette = look.palette
-        switch look.style.surface {
-        case .dashed:
-            content.background(palette.card.opacity(0.6))
-                .overlay(Rectangle().strokeBorder(palette.edge, style: StrokeStyle(lineWidth: 1, dash: [3, 2])))
-        case .solid:
-            content.background(palette.card, in: .rect(cornerRadius: radius * 0.6))
-                .overlay(RoundedRectangle(cornerRadius: radius * 0.6).strokeBorder(palette.edge, lineWidth: 1.5))
-        case .glass where look.still:
-            content.background(stillGlass(palette)).overlay(stillRim(palette))
-        case .glass:
-            content.glassEffect(interactive ? .regular.interactive() : .regular, in: .rect(cornerRadius: radius))
-        }
-    }
-
-    private func stillGlass(_ palette: Palette) -> some View {
-        RoundedRectangle(cornerRadius: radius)
-            .fill(palette.dark ? Color.white.opacity(0.09) : Color.white.opacity(0.62))
-            .shadow(color: .black.opacity(palette.dark ? 0.35 : 0.10), radius: 10, y: 4)
-    }
-
-    private func stillRim(_ palette: Palette) -> some View {
-        RoundedRectangle(cornerRadius: radius).strokeBorder(
-            LinearGradient(
-                colors: [.white.opacity(palette.dark ? 0.28 : 0.9), .white.opacity(0.04)],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            ),
-            lineWidth: 1
-        )
-    }
-}
-
-internal struct Backdrop: View {
-    @Environment(\.look) private var look
-
-    internal var body: some View {
-        let palette = look.palette
-        ZStack {
-            palette.background
-            if look.style.surface == .glass {
-                RadialGradient(
-                    colors: [palette.lead.opacity(palette.dark ? 0.10 : 0.22), .clear],
-                    center: .topLeading,
-                    startRadius: 10,
-                    endRadius: 420
-                )
-                RadialGradient(
-                    colors: [palette.cyan.opacity(palette.dark ? 0.08 : 0.12), .clear],
-                    center: .bottomTrailing,
-                    startRadius: 10,
-                    endRadius: 520
-                )
-            }
-        }
-        .ignoresSafeArea()
     }
 }

@@ -54,8 +54,8 @@ internal struct SwipeRow<Content: View>: View {
                 Glyph(symbol: action.symbol, ascii: "[\(action.title.prefix(1).lowercased())]", size: 15)
                 Text(action.title).ui(11, .semibold, look)
             }
-            .foregroundStyle(look.mono ? tint : (look.palette.dark ? Color.black : .white))
-            .frame(width: 75, height: 58).background(look.mono ? Color.clear : tint)
+            .foregroundStyle(look.outline ? tint : (look.palette.dark ? Color.black : .white))
+            .frame(width: 75, height: 58).background(look.outline ? Color.clear : tint)
         }
         .buttonStyle(.plain)
     }

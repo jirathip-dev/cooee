@@ -3,7 +3,7 @@
 
 ## Today
 
-- **Setup:** one command installs shed, the services, the config, Tailscale serve and prints a pairing code (#45).
+- **Setup:** one command installs CI's signed release, the services, the config, Tailscale serve and prints a pairing code (#45, #584).
 - **Perf:** requests, shed calls and first token timed; `cooee perf` prints the table (#69).
 
 ## How it works
@@ -15,7 +15,7 @@ One TOML file per instance, `$XDG_CONFIG_HOME/cooee/<instance>/config.toml` (els
 push key) and pairing, so two instances never share state; both use the one shed server. Plugins are per instance, so
 one instance's tabs never touch another's. `cooee install --instance <name> --port <p>` writes
 `~/Library/LaunchAgents/dev.cooee.<name>.plist` (KeepAlive, log in the data folder) and the config's `port` if it has
-no config yet, then prints the `launchctl bootstrap`, `tailscale serve` and (if shed isn't running) shed install lines
+no config yet, then prints the `launchctl bootstrap`, `tailscale serve` and (if shed isn't running) the shed fix
 for the owner to run. `cooee doctor` checks the service, port, shed, APNs, push key and tailnet URL.
 
 | Key | Default | Meaning |

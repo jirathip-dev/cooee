@@ -35,7 +35,7 @@ public struct BlockAdditions: View {
         }
         .ui(15, .regular, look).buttonStyle(.plain).padding(16).frame(width: 220, alignment: .leading)
         .surface(look, radius: 14)
-        .background(look.palette.background, in: .rect(cornerRadius: look.mono ? 0 : 14)).padding(.top, 214)
+        .background(look.palette.background, in: .rect(cornerRadius: look.radius(14))).padding(.top, 214)
         .padding(.leading, 40)
         .frame(maxWidth: .infinity, alignment: .leading)
     }

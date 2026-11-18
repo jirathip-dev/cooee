@@ -29,7 +29,7 @@ internal struct LaneHeadView: View {
         let palette = look.palette
         HStack(spacing: 12) {
             if let lane = head.lane {
-                Figure(figure: lane.source, title: lane.title).scaleEffect(look.style.figures == .sprite ? 1.6 : 1)
+                Figure(figure: lane.source, title: lane.title).scaleEffect(look.figures == .sprite ? 1.6 : 1)
                     .frame(width: 64)
                 VStack(alignment: .leading, spacing: 3) {
                     HStack(spacing: 0) {

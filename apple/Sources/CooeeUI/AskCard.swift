@@ -62,9 +62,9 @@ internal struct AskCard: View {
             outcome(from)
         }
         .padding(.horizontal, 12).padding(.vertical, 10)
-        .background(look.mono ? .clear : palette.card.opacity(0.7), in: .rect(cornerRadius: 16))
+        .background(look.outline ? .clear : palette.card.opacity(0.7), in: .rect(cornerRadius: 16))
         .overlay {
-            if look.mono {
+            if look.outline {
                 Rectangle().fill(palette.link).frame(width: 3).frame(maxWidth: .infinity, alignment: .leading)
             } else {
                 RoundedRectangle(cornerRadius: 16).strokeBorder(edge, lineWidth: 1)
@@ -89,10 +89,7 @@ internal struct AskCard: View {
         return Text("\(Text("Your note").fontWeight(.semibold).foregroundStyle(palette.mute))  \(ask.note)")
             .ui(14, .regular, look).lineLimit(2).padding(.horizontal, 10).padding(.vertical, 6)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(look.mono ? .clear : palette.link.opacity(0.1), in: .rect(cornerRadius: 12))
-            .overlay(alignment: .leading) {
-                if look.mono { Rectangle().fill(palette.link).frame(width: 3) }
-            }
+            .accent(look, palette.link, fill: palette.link.opacity(0.1), radius: 12)
     }
 
     private func outcome(_ from: Persona) -> some View {

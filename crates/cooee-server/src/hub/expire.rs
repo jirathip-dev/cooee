@@ -30,7 +30,7 @@ impl Hub {
 fn unattended(live: &Live, card: &Item) -> bool {
     let open = matches!(
         &card.body,
-        Body::Approval { tapped: None, chosen: None, plugin: None, card, .. } if card.form.is_none()
+        Body::Approval { tapped: None, chosen: None, plugin: None, card, .. } if matches!(card.form.as_deref(), None | Some("tool"))
     );
     if !open {
         return false;
@@ -54,6 +54,7 @@ fn deny(card: &Item) -> Option<String> {
     let reject = |kind: &str| options.iter().find(|o| o.kind == kind);
     reject("reject_once")
         .or_else(|| reject("reject_always"))
+        .or_else(|| options.iter().find(|o| o.id == "decline"))
         .map(|o| o.id.clone())
 }
 
@@ -188,6 +189,52 @@ mod tests {
         assert!(matches!(
             card(&hub, "early").body,
             Body::Approval { tapped: Some(t), card, .. } if t == "allow" && card.by.as_deref() == Some("phone")
+        ));
+    }
+
+    #[test]
+    fn a_connectors_write_card_in_a_routines_run_expires_as_deny_and_the_owners_waits() {
+        let dir = scratch("expire-tool");
+        fake_shed(&dir);
+        let t0 = super::super::now();
+        let mark = json!({ "id": "r-1", "name": "nightly" });
+        seed(
+            &dir,
+            "run",
+            &json!({ "routine": mark, "random_id": "r1" }),
+            None,
+            t0,
+        );
+        seed(&dir, "mine", &json!({}), None, t0);
+        let hub = hub(&dir);
+        let mut waiting = Vec::new();
+        for id in ["run", "mine"] {
+            let (tx, rx) = std::sync::mpsc::channel::<()>();
+            let allowed = Box::new(move || {
+                tx.send(()).ok();
+                Ok("allowed".to_owned())
+            });
+            let what = ("Web · web: b {}".to_owned(), "{}".to_owned());
+            hub.ask_card(id, what, allowed).unwrap();
+            waiting.push(rx);
+        }
+        for _ in 0..3 {
+            hub.watch(t0 + 2 * EXPIRY);
+        }
+        assert_eq!(
+            waiting[0].try_recv(),
+            Err(std::sync::mpsc::TryRecvError::Disconnected)
+        );
+        let block = card(&hub, "run").block().unwrap();
+        let line = block["blocks"].as_array().unwrap().last().unwrap()["markdown"].clone();
+        assert_eq!(line, "declined");
+        assert_eq!(
+            waiting[1].try_recv(),
+            Err(std::sync::mpsc::TryRecvError::Empty)
+        );
+        assert!(matches!(
+            card(&hub, "mine").body,
+            Body::Approval { tapped: None, .. }
         ));
     }
 }

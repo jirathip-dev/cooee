@@ -46,8 +46,12 @@
     }
 
     public struct LocalConfig: Sendable {
-        public static let standard = LocalConfig(
-            file: URL.homeDirectory.appending(path: ".config/cooee/cooee/config.toml"))
+        public static let standard = LocalConfig(file: home.appending(path: ".config/cooee/cooee/config.toml"))
+
+        private static var home: URL {
+            guard let user = getpwuid(getuid()), let dir = user.pointee.pw_dir else { return URL.homeDirectory }
+            return URL(filePath: String(cString: dir), directoryHint: .isDirectory)
+        }
 
         public let file: URL
 

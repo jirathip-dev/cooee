@@ -1,3 +1,4 @@
+mod calls;
 #[cfg(test)]
 mod tests;
 mod tokens;
@@ -95,6 +96,7 @@ pub(crate) struct Connectors {
     flows: Mutex<Vec<Flow>>,
     refreshing: Mutex<()>,
     sessions: Mutex<HashMap<(String, String), Arc<upstream::Session>>>,
+    permits: calls::Permits,
 }
 
 fn lock<T>(m: &Mutex<T>) -> MutexGuard<'_, T> {
@@ -187,6 +189,7 @@ impl Connectors {
             flows: Mutex::new(Vec::new()),
             refreshing: Mutex::new(()),
             sessions: Mutex::default(),
+            permits: calls::Permits::default(),
         }
     }
 
@@ -674,7 +677,7 @@ impl Connectors {
             .collect();
         let mut connectors = Vec::new();
         for s in servers {
-            let (label, publisher, reviewed, url, auth, leaves, tools) = match s.source() {
+            let (label, publisher, reviewed, url, auth, leaves) = match s.source() {
                 Ok(Source::Catalogue(e)) => {
                     let url = match &e.target {
                         Target::Url { url, .. } => url.as_str().to_owned(),
@@ -687,26 +690,16 @@ impl Connectors {
                         url,
                         kind(&e.auth),
                         e.leaves.as_str(),
-                        e.tools.clone(),
                     )
                 }
-                Ok(Source::Typed {
-                    url, auth, read, ..
-                }) => {
-                    let tools = core::Tools {
-                        read: read.to_vec(),
-                        ..core::Tools::default()
-                    };
-                    (
-                        s.name.as_str(),
-                        "",
-                        false,
-                        url.as_str().to_owned(),
-                        kind(&auth),
-                        "",
-                        tools,
-                    )
-                }
+                Ok(Source::Typed { url, auth, .. }) => (
+                    s.name.as_str(),
+                    "",
+                    false,
+                    url.as_str().to_owned(),
+                    kind(&auth),
+                    "",
+                ),
                 Ok(Source::Command { .. }) | Err(_) => (
                     s.name.as_str(),
                     "this Mac",
@@ -714,9 +707,9 @@ impl Connectors {
                     String::new(),
                     "none",
                     "",
-                    core::Tools::default(),
                 ),
             };
+            let tools = calls::tools(s);
             let host = url
                 .split_once("://")
                 .map_or("", |(_, r)| r.split('/').next().unwrap_or_default());

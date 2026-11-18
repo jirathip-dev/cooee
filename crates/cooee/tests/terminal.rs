@@ -187,7 +187,7 @@ fn no_passkey_is_403_a_passkey_unlocks_and_the_token_alone_is_not_enough() {
 fn a_shed_of_another_protocol_fails_the_list_naming_both_sides() {
     let theirs = Hello {
         build: "fffffff".to_owned(),
-        protocol: 2,
+        protocol: 3,
         ..version()
     };
     let m = mac_on("term-version", theirs);
@@ -196,7 +196,7 @@ fn a_shed_of_another_protocol_fails_the_list_naming_both_sides() {
     assert_eq!(status, 502, "{body}");
     let (v, b) = (&version().version, &version().build);
     let said = format!(
-        "SHED_VERSION: cooee speaks shed {v} ({b}) protocol 1; the server refused it: client {b} / server fffffff: protocol 1 vs 2"
+        "SHED_VERSION: cooee speaks shed {v} ({b}) protocol 1; the server refused it: client {b} / server fffffff: protocol 1 vs 3"
     );
     assert!(body.contains(&said), "{body}\nwanted: {said}");
 }

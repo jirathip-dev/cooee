@@ -10,17 +10,13 @@ internal struct Group2<Content: View>: View {
         let palette = look.palette
         VStack(alignment: .leading, spacing: 6) {
             if !header.isEmpty {
-                Text(look.mono ? "# \(header.lowercased())" : header.uppercased()).ui(12, .medium, look)
+                Text(look.label(.group, header)).ui(12, .medium, look)
                     .foregroundStyle(palette.mute).padding(.leading, 16)
             }
             VStack(alignment: .leading, spacing: 0) { content }
-                .background(
-                    palette.card.opacity(look.style.surface == .glass ? 0.75 : 1),
-                    in: .rect(cornerRadius: look.mono ? 0 : 16)
-                )
-                .overlay {
-                    if look.mono { Rectangle().strokeBorder(palette.edge, lineWidth: 1) }
-                }
+                .chip(
+                    look, fill: palette.card.opacity(look.glass ? 0.75 : 1), edge: palette.edge, radius: 16,
+                    paper: palette.card)
         }
     }
 }
@@ -39,7 +35,7 @@ internal struct SettingRow: View {
         HStack(spacing: 12) {
             if let icon {
                 IconImage(icon: icon, size: 30)
-            } else if !look.mono {
+            } else if !look.textMarks {
                 Image(systemName: symbol).font(.system(size: 14, weight: .semibold)).foregroundStyle(.white)
                     .frame(width: 30, height: 30).background(tint ?? palette.link, in: .rect(cornerRadius: 8))
             }
@@ -52,7 +48,7 @@ internal struct SettingRow: View {
         .padding(.horizontal, 14).frame(height: 48)
         .overlay(alignment: .bottom) {
             if divider {
-                Rectangle().fill(palette.line).frame(height: 0.5).padding(.leading, look.mono ? 0 : 56)
+                Rectangle().fill(palette.line).frame(height: 0.5).padding(.leading, look.textMarks ? 0 : 56)
             }
         }
     }

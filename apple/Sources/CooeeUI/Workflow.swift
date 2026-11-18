@@ -11,7 +11,7 @@ internal struct OthersRow: View {
         Button(action: open) {
             HStack(spacing: 12) {
                 Image(systemName: "tray.full").font(.system(size: 20)).foregroundStyle(palette.mute)
-                    .frame(width: 48, height: 48).modifier(RoundSurface(look: look))
+                    .frame(width: 48, height: 48).chip(look)
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Others").ui(16, .semibold, look)
                     Text(titles.joined(separator: ", ")).ui(14, .regular, look).foregroundStyle(palette.mute)
@@ -214,10 +214,10 @@ internal struct WorkflowChip: View {
             HStack(spacing: 6) {
                 Image(systemName: "arrow.triangle.branch").font(.system(size: 12, weight: .semibold))
                     .foregroundStyle(look.palette.green)
-                Text(look.mono ? "[workflow]" : "Workflow").ui(13, .semibold, look).foregroundStyle(look.palette.green)
+                Text(look.label(.chip, "Workflow")).ui(13, .semibold, look).foregroundStyle(look.palette.green)
                 if count > 0 { Badge(count: count, tint: look.palette.red) }
             }
-            .padding(.horizontal, 12).frame(height: 30).modifier(RoundSurface(look: look))
+            .padding(.horizontal, 12).frame(height: 30).chip(look)
             .overlay(Capsule().strokeBorder(look.palette.link, lineWidth: lit ? 1.5 : 0))
         }
         .buttonStyle(.plain).accessibilityLabel("Workflow")

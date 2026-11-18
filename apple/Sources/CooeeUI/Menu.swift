@@ -59,7 +59,7 @@ internal struct MenuScreen: View {
 
     private var values: [String: String] {
         let settings = store.settings
-        let look = "\(settings.style.rawValue.capitalized) · \(settings.scheme.rawValue.capitalized)"
+        let look = "\(settings.style.label) · \(settings.scheme.rawValue.capitalized)"
         return ["look": look, "notifications": settings.push == nil ? "Off" : "On"]
     }
 }
@@ -122,10 +122,11 @@ internal struct MenuPage: View {
             }
         }
         Group2(header: "Style") {
-            ForEach(LookStyle.allCases, id: \.self) { style in
-                pick(style.rawValue.capitalized, selected: store.settings.style == style) { store.send(.style(style)) }
+            ForEach(store.offered, id: \.name) { style in
+                pick(style.label, selected: store.settings.style.name == style.name) { store.send(.style(style.name)) }
             }
         }
+        if let notice = store.notice { Text(notice).ui(13, .regular, look).foregroundStyle(look.palette.amber) }
         Group2 {
             Toggle("Motion", isOn: Binding(get: { store.settings.motion != false }, set: { store.send(.motion($0)) }))
                 .ui(16, .regular, look).padding(.horizontal, 14).frame(height: 48)
