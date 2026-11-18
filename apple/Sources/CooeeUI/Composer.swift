@@ -80,7 +80,7 @@ internal struct Composer: View {
             }
             .foregroundStyle(palette.dark ? Color.black : .white)
             .frame(width: 42, height: 42)
-            .background(palette.link, in: look.mono ? AnyShape(Rectangle()) : AnyShape(Circle()))
+            .background(palette.link, in: look.square ? AnyShape(Rectangle()) : AnyShape(Circle()))
         }
         .buttonStyle(.plain).accessibilityLabel("Send")
     }

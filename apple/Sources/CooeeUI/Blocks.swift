@@ -192,7 +192,7 @@ internal struct GroupBlock: View {
         let palette = look.palette
         return VStack(alignment: .leading, spacing: 6) {
             if let header = block.string("header") {
-                Text(look.mono ? "## \(header)" : header.uppercased()).ui(12, .semibold, look)
+                Text(look.label(.header, header)).ui(12, .semibold, look)
                     .foregroundStyle(palette.mute)
             }
             BlockStack(blocks: block.list("blocks"))

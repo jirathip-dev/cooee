@@ -58,15 +58,14 @@ internal struct TraceSheet: View {
         let tint = step.running ? palette.cyan : failed ? palette.red : palette.green
         return HStack(spacing: 10) {
             Text("\(index + 1)").ui(13, .medium, look).foregroundStyle(palette.mute).frame(width: 20)
-            if look.mono {
-                Text(step.running ? "o>_" : failed ? "[x]" : "[ok]").ui(13, .bold, look).foregroundStyle(tint)
-            } else {
+            Mark(text: step.running ? "o>_" : failed ? "[x]" : "[ok]") {
                 Image(
                     systemName: step.running
                         ? "gearshape.2.fill" : failed ? "xmark.circle.fill" : "checkmark.circle.fill"
                 )
-                .font(.system(size: 13)).foregroundStyle(tint)
+                .font(.system(size: 13))
             }
+            .foregroundStyle(tint)
             VStack(alignment: .leading, spacing: 6) {
                 Text(step.title).ui(14, .regular, look).lineLimit(2).truncationMode(.middle)
                 if let frame = step.frame { FrameThumb(name: frame) }

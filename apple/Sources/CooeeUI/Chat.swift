@@ -204,14 +204,14 @@ internal struct PluginChips: View {
                     actions.open(index)
                 } label: {
                     HStack(spacing: 6) {
-                        Text(look.mono ? "[\(plugin.lowercased())]" : plugin)
+                        Text(look.label(.chip, plugin))
                         if let count = actions.counts.indices.contains(index) ? actions.counts[index] : nil {
                             Badge(count: count, tint: look.palette.red)
                         }
                     }
                     .ui(13, .semibold, look).foregroundStyle(look.palette.green)
                     .padding(.horizontal, 12).frame(height: 30)
-                    .modifier(RoundSurface(look: look))
+                    .chip(look)
                 }
                 .buttonStyle(.plain)
             }

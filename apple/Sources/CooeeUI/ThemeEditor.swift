@@ -199,7 +199,7 @@ internal struct ThemePreview: View {
                     pose.map { pose in [all.first { $0.row.state.pose == pose } ?? all.first].compactMap(\.self) }
                     ?? Array(all.prefix(3))
                 VStack(spacing: 0) {
-                    if shown.style.stage != nil, pose == nil { scene(chats, shown) }
+                    if shown.stage != nil, pose == nil { scene(chats, shown) }
                     ChatList(chats: chats, title: pose == nil ? "Chats" : nil).padding(.vertical, pose == nil ? 0 : 4)
                         .padding(.top, 14)
                 }
@@ -207,8 +207,8 @@ internal struct ThemePreview: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading).foregroundStyle(shown.palette.foreground)
         .background(shown.palette.background)
-        .clipShape(.rect(cornerRadius: shown.mono ? 0 : 22))
-        .overlay { RoundedRectangle(cornerRadius: shown.mono ? 0 : 22).stroke(shown.palette.edge) }
+        .clipShape(.rect(cornerRadius: shown.radius(22)))
+        .overlay { RoundedRectangle(cornerRadius: shown.radius(22)).stroke(shown.palette.edge) }
         .environment(\.look, shown).environment(\.colorScheme, dark ? .dark : .light)
         .allowsHitTesting(false).accessibilityElement(children: .ignore).accessibilityLabel("Preview")
     }

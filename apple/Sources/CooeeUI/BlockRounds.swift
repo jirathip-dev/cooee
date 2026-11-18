@@ -33,7 +33,7 @@ internal struct RoundsView: View {
         }
         .padding(.leading, 22).padding(.trailing, 12).padding(.bottom, 12)
         .background(alignment: .leading) {
-            Rail().stroke(look.palette.edge, style: StrokeStyle(lineWidth: 1.5, dash: look.mono ? [4, 3] : []))
+            Rail().stroke(look.palette.edge, style: StrokeStyle(lineWidth: 1.5, dash: look.outline ? [4, 3] : []))
                 .frame(width: 20).padding(.leading, 22).padding(.vertical, 12)
         }
     }
@@ -58,12 +58,11 @@ internal struct RoundView: View {
 
     @ViewBuilder private var marker: some View {
         let tint = look.palette.round(state)
-        if look.mono {
-            let glyphs: [LaneState: String] = [.done: "+", .fail: "x", .working: ">", .needs: "!"]
-            Text(glyphs[state] ?? "-").ui(15, .bold, look).foregroundStyle(tint)
-        } else {
+        let glyphs: [LaneState: String] = [.done: "+", .fail: "x", .working: ">", .needs: "!"]
+        Mark(text: glyphs[state] ?? "-", size: 15) {
             Circle().fill(tint).frame(width: current ? 14 : 10, height: current ? 14 : 10)
         }
+        .foregroundStyle(tint)
     }
 
     private var line: some View {
@@ -98,7 +97,7 @@ internal struct RoundBody: View {
         }
         .padding(12).frame(maxWidth: .infinity, alignment: .leading)
         .overlay(
-            RoundedRectangle(cornerRadius: look.mono ? 4 : 14)
+            RoundedRectangle(cornerRadius: look.radius(14, least: 4))
                 .stroke(state == .needs ? palette.red.opacity(0.7) : palette.edge, lineWidth: 1)
         )
     }
@@ -139,6 +138,6 @@ internal struct OutlineChip: ViewModifier {
 
     internal func body(content: Content) -> some View {
         content.ui(14, .medium, look).foregroundStyle(look.palette.link).padding(.horizontal, 12).frame(height: 32)
-            .overlay(RoundedRectangle(cornerRadius: look.mono ? 4 : 16).stroke(look.palette.edge, lineWidth: 1))
+            .overlay(RoundedRectangle(cornerRadius: look.radius(16, least: 4)).stroke(look.palette.edge, lineWidth: 1))
     }
 }

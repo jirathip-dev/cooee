@@ -24,7 +24,7 @@ internal struct MentionBar: View {
 
     private func popover(_ mention: MentionDraft) -> some View {
         let palette = look.palette
-        let card = RoundedRectangle(cornerRadius: look.mono ? 0 : 22)
+        let card = RoundedRectangle(cornerRadius: look.radius(22))
         let rows =
             scene.members.filter { $0.id == mention.match }
             + scene.members.filter { $0.id != mention.match && !mention.named.contains($0.id) }

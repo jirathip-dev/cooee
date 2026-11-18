@@ -6,7 +6,7 @@ internal struct MemberStrip: View {
     internal let scene: RoomScene
     internal var inspect: (String?) -> Void = { _ in }
 
-    private var stage: CooeeCore.Stage? { look.style.stage }
+    private var stage: CooeeCore.Stage? { look.stage }
 
     internal var body: some View {
         Stage(height: 150) {

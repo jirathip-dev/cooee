@@ -40,7 +40,7 @@ internal struct PersonaBlocks: View {
     }
 
     @ViewBuilder private var mapToggle: some View {
-        if look.mono {
+        if look.textMarks {
             Text("[list] map").ui(11, .semibold, look).foregroundStyle(look.palette.mute)
         } else {
             HStack(spacing: 0) {
@@ -76,7 +76,7 @@ extension PersonaBlocks {
                 Button {
                     routine?()
                 } label: {
-                    Text(look.mono ? "[+ add]" : "+ Add").ui(14, .semibold, look).foregroundStyle(look.palette.link)
+                    Text(look.label(.chip, "+ Add")).ui(14, .semibold, look).foregroundStyle(look.palette.link)
                 }
                 .buttonStyle(.plain).accessibilityLabel("Add routine")
             }
@@ -101,12 +101,11 @@ extension PersonaBlocks {
                     .ui(12, .regular, look).foregroundStyle(isOn ? palette.mute : palette.amber).lineLimit(1)
             }
             Spacer(minLength: 4)
-            if look.mono {
-                Text(isOn ? "[on ]" : "[off]").ui(13, .bold, look).foregroundStyle(palette.mute)
-            } else {
+            Mark(text: isOn ? "[on ]" : "[off]") {
                 Capsule().fill(isOn ? palette.green : palette.edge.opacity(0.6)).frame(width: 46, height: 28)
                     .overlay(alignment: isOn ? .trailing : .leading) { Circle().fill(.white).padding(2) }
             }
+            .foregroundStyle(palette.mute)
         }
         .padding(.horizontal, 14).padding(.vertical, 9)
         .overlay(alignment: .bottom) { rule(divider) }
@@ -146,7 +145,7 @@ extension PersonaBlocks {
 
     private func heading(_ title: String, @ViewBuilder trailing: () -> some View) -> some View {
         HStack {
-            Text(look.mono ? "# \(title.lowercased())" : title.uppercased()).ui(12, .medium, look)
+            Text(look.label(.group, title)).ui(12, .medium, look)
                 .foregroundStyle(look.palette.mute)
             Spacer()
             trailing()

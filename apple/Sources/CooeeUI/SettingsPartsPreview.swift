@@ -11,13 +11,13 @@ internal struct SettingsPage<Content: View>: View {
         VStack(spacing: 0) {
             if phone {
                 HStack {
-                    Text(look.mono ? "< settings" : "‹ Settings").ui(16, .regular, look).foregroundStyle(palette.link)
+                    Text(look.label(.back, "Settings")).ui(16, .regular, look).foregroundStyle(palette.link)
                     Spacer()
                 }
-                .overlay { Text(look.mono ? "# \(title.lowercased())" : title).ui(17, .semibold, look) }
+                .overlay { Text(look.label(.section, title)).ui(17, .semibold, look) }
                 .padding(.horizontal, 16).frame(height: 44)
             } else {
-                Text(look.mono ? "# \(title.lowercased())" : title).ui(26, .bold, look)
+                Text(look.label(.section, title)).ui(26, .bold, look)
                     .frame(maxWidth: .infinity, alignment: .leading).padding(.horizontal, 28).padding(.top, 24)
             }
             Scroller {
@@ -40,14 +40,11 @@ internal struct ActionPill: View {
     internal var body: some View {
         let palette = look.palette
         let tint = tint ?? palette.link
-        Text(look.mono ? "[\(title.lowercased())]" : title).ui(13, primary ? .semibold : .medium, look)
-            .foregroundStyle(primary && !look.mono ? (palette.dark ? Color.black : .white) : tint)
+        Text(look.label(.chip, title)).ui(13, primary ? .semibold : .medium, look)
+            .foregroundStyle(primary && !look.outline ? (palette.dark ? Color.black : .white) : tint)
             .lineLimit(1).fixedSize()
-            .padding(.horizontal, look.mono ? 0 : 12).frame(height: 28)
-            .background(
-                look.mono ? Color.clear : (primary ? tint : tint.opacity(0.14)),
-                in: Capsule()
-            )
+            .padding(.horizontal, look.outline ? 0 : 12).frame(height: 28)
+            .background(look.outline ? Color.clear : (primary ? tint : tint.opacity(0.14)), in: Capsule())
     }
 }
 
@@ -58,7 +55,7 @@ internal struct StateWord: View {
 
     internal var body: some View {
         HStack(spacing: 5) {
-            Text(look.mono ? "*" : "●").font(.system(size: look.mono ? 12 : 8))
+            Text(look.textMarks ? "*" : "●").font(.system(size: look.textMarks ? 12 : 8))
             Text(text)
         }
         .ui(13, .medium, look).foregroundStyle(tint).lineLimit(1).fixedSize()
@@ -77,7 +74,8 @@ internal struct Line<Content: View>: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             .overlay(alignment: .bottom) {
                 if divider {
-                    Rectangle().fill(look.palette.line).frame(height: 0.5).padding(.leading, look.mono ? 0 : inset)
+                    Rectangle().fill(look.palette.line).frame(height: 0.5).padding(
+                        .leading, look.textMarks ? 0 : inset)
                 }
             }
     }
@@ -132,7 +130,7 @@ internal struct MacSettings<Page: View>: View {
         let palette = look.palette
         HStack(spacing: 0) {
             VStack(alignment: .leading, spacing: 2) {
-                Text(look.mono ? "# settings" : "Settings").ui(13, .semibold, look).foregroundStyle(palette.mute)
+                Text(look.label(.section, "Settings")).ui(13, .semibold, look).foregroundStyle(palette.mute)
                     .padding(.leading, 10).padding(.bottom, 6)
                 ForEach(Self.rows, id: \.page) { row in
                     sideRow(row.page, row.symbol, row.title, row.color(palette))
@@ -140,7 +138,7 @@ internal struct MacSettings<Page: View>: View {
                 Spacer()
             }
             .padding(.top, 48).padding(.horizontal, 10).frame(width: 230)
-            .background(palette.card.opacity(look.style.surface == .glass ? 0.45 : 0.8))
+            .background(palette.card.opacity(look.glass ? 0.45 : 0.8))
             .overlay(alignment: .trailing) { Rectangle().fill(palette.line).frame(width: 1) }
             page.frame(maxWidth: .infinity)
         }
@@ -162,15 +160,15 @@ internal struct MacSettings<Page: View>: View {
     private func sideRow(_ page: SettingsFrame, _ symbol: String, _ title: String, _ tint: Color) -> some View {
         let active = page == selected
         return HStack(spacing: 10) {
-            if !look.mono {
+            if !look.textMarks {
                 Image(systemName: symbol).font(.system(size: 11, weight: .semibold)).foregroundStyle(.white)
                     .frame(width: 22, height: 22).background(tint, in: .rect(cornerRadius: 6))
             }
-            Text(look.mono && active ? "> \(title.lowercased())" : title).ui(14, active ? .semibold : .regular, look)
+            Text(active ? look.label(.picked, title) : title).ui(14, active ? .semibold : .regular, look)
             Spacer()
         }
         .padding(.horizontal, 10).frame(height: 34)
-        .background(active ? look.palette.link.opacity(0.18) : .clear, in: .rect(cornerRadius: look.mono ? 0 : 8))
+        .background(active ? look.palette.link.opacity(0.18) : .clear, in: .rect(cornerRadius: look.radius(8)))
     }
 }
 

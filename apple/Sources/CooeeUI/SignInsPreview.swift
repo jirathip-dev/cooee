@@ -107,8 +107,8 @@ public struct SignInsView: View {
     private var add: some View {
         Line(divider: false) {
             HStack(spacing: 8) {
-                if !look.mono { Image(systemName: "plus.circle.fill").foregroundStyle(look.palette.link) }
-                Text(look.mono ? "+ account" : "Add an account").ui(15, .regular, look)
+                if !look.textMarks { Image(systemName: "plus.circle.fill").foregroundStyle(look.palette.link) }
+                Text(look.label(.button, "Add an account")).ui(15, .regular, look)
                     .foregroundStyle(look.palette.link)
             }
         }
@@ -144,12 +144,12 @@ internal struct LoginTerminal: View {
             }
             .font(.system(size: 12, design: .monospaced)).foregroundStyle(palette.foreground)
             .frame(maxWidth: .infinity, alignment: .leading).padding(10)
-            .background(Color.black.opacity(palette.dark ? 0.35 : 0.08), in: .rect(cornerRadius: look.mono ? 0 : 8))
+            .background(Color.black.opacity(palette.dark ? 0.35 : 0.08), in: .rect(cornerRadius: look.radius(8)))
             HStack(spacing: 8) {
                 Text("Paste the code").ui(14, .regular, look).foregroundStyle(palette.mute)
                     .padding(.horizontal, 10).frame(maxWidth: .infinity, minHeight: 32, alignment: .leading)
                     .overlay(
-                        RoundedRectangle(cornerRadius: look.mono ? 0 : 8).strokeBorder(palette.edge, lineWidth: 1))
+                        RoundedRectangle(cornerRadius: look.radius(8)).strokeBorder(palette.edge, lineWidth: 1))
                 ActionPill(title: "Send", primary: true)
                 ActionPill(title: "Cancel", tint: palette.mute)
             }

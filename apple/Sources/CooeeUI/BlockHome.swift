@@ -91,9 +91,7 @@ internal struct AccountAvatar: View {
 
     internal var body: some View {
         let palette = look.palette
-        if look.mono {
-            Text("[g]").ui(15, .bold, look).foregroundStyle(palette.lead).frame(height: size)
-        } else {
+        Mark(text: "[g]", size: 15) {
             Circle().fill(palette.amber.opacity(0.9)).frame(width: size, height: size)
                 .overlay(
                     Text("G").font(.system(size: size * 0.45, weight: .bold))
@@ -101,6 +99,7 @@ internal struct AccountAvatar: View {
                 )
                 .overlay(Circle().strokeBorder(.white.opacity(0.35), lineWidth: 1))
         }
+        .foregroundStyle(palette.lead).frame(height: size)
     }
 }
 
@@ -121,7 +120,7 @@ internal struct HomeBlocks: View {
                     .scaleEffect(wide ? 0.9 : 1, anchor: .leading).padding(.top, wide ? 4 : 6)
             case "chats":
                 ChatList(chats: chats, selected: selected, open: actions.open, actions: actions)
-                    .padding(.top, wide ? 8 : look.style.stage != nil ? 0 : 14)
+                    .padding(.top, wide ? 8 : look.stage != nil ? 0 : 14)
             default:
                 EmptyView()
             }
@@ -137,10 +136,10 @@ internal struct TopBar: View {
 
     internal var body: some View {
         HStack {
-            Button(action: actions.menu) { AccountAvatar().padding(4).modifier(RoundSurface(look: look)) }
+            Button(action: actions.menu) { AccountAvatar().padding(4).chip(look) }
                 .buttonStyle(.plain).accessibilityLabel("Account")
             Spacer()
-            Text(look.mono ? "~/\(title)" : title).ui(19, .bold, look)
+            Text(look.label(.title, title)).ui(19, .bold, look)
             Spacer()
             Menu {
                 Button("New room", systemImage: "person.3", action: actions.room)
@@ -171,11 +170,9 @@ internal struct ChatList: View {
         let palette = look.palette
         VStack(alignment: .leading, spacing: 0) {
             if let title {
-                Text(look.mono ? "# \(title.lowercased())" : title).ui(
-                    look.mono ? 12 : 20, look.mono ? .regular : .bold, look
-                )
-                .foregroundStyle(look.mono ? palette.mute : palette.foreground).padding(.horizontal, 16)
-                .padding(.bottom, 6).padding(.top, look.style.stage != nil ? 12 : 0)
+                Text(look.label(.section, title)).ui(look.quiet ? 12 : 20, look.quiet ? .regular : .bold, look)
+                    .foregroundStyle(look.quiet ? palette.mute : palette.foreground).padding(.horizontal, 16)
+                    .padding(.bottom, 6).padding(.top, look.stage != nil ? 12 : 0)
             }
             ForEach(Array(chats.enumerated()), id: \.element.id) { index, chat in
                 Button {
@@ -199,7 +196,7 @@ internal struct ChatList: View {
                     }
                 }
                 if index + 1 < chats.count, chats[index + 1].asker == nil {
-                    Rectangle().fill(palette.line).frame(height: look.mono ? 0 : 0.5).padding(.leading, 76)
+                    Rectangle().fill(palette.line).frame(height: look.quiet ? 0 : 0.5).padding(.leading, 76)
                 }
             }
         }
