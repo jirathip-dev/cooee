@@ -1,0 +1,12 @@
+Decided: a tool row is `action` (kind) plus a subject in the wire's `title`, read by the thread's provider through `Provider::action`, defaulting to ACP's own fields.
+Because: "Tool rows drawn from the kind of action (read, edit, run, search, fetch), never a harness's tool names"
+Decided: Claude reads `mcp__<server>__<tool>` titles and Codex `mcp.<server>.<tool>` titles as Tool; Codex's Run subject is its title (codex-acp strips the shell prefix there).
+Because: crates/cooee-core/src/providers/codex.rs:23
+Decided: an update with no locations or raw input keeps the row's subject, since shed passes those facts only on the update that carries them.
+Because: crates/cooee-core/src/chat.rs:374
+Decided: shed-proto pinned at 3672ee2 (shed#151's merge, PR #152); cooee's serde_json now declares preserve_order itself, which shed-proto had been switching on through schemars.
+Because: "Bumps cooee's `shed-proto` rev to jirathip-dev/shed#'s"
+Rejected: a Gemini MCP reading — no Gemini adapter is installed here to read its tool titles from; Gemini uses the default reading.
+Decided: the 9 tool-rows PNGs are now the app's render of ToolRowsPage (the app's real header and bubbles around the designed rows); v1 frames that show tool rows were re-recorded.
+Check: apple/design/tool-rows/*.png against the design commit c1f6e9a0c: the rows match, the header and the you-bubble are the app's own.
+Owner: tool rows now say what the agent did (Read, Edit, Run, Search, Fetch, Tool) and to what, the same whichever harness runs the persona.
