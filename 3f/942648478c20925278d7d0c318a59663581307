@@ -1,0 +1,10 @@
+Decided: cooee serve binds the terminal backend before the hub and before "listening"; the bound address is written back into the plugin url, so port 0 picks a free port with no window
+Because: crates/cooee/src/cmd/serve.rs:29
+Because: crates/cooee-terminal/src/lib.rs:376
+Because: "find the race between the fake shed lane being registered and the watch stream's first frame"
+Decided: the terminal tests use port 0 and read the backend address from the plugin terminal on note
+Because: crates/cooee/tests/terminal.rs:53
+Rejected: a retry or sleep around the watch — the spec forbids it and the port can belong to another server for the whole test
+Rejected: picking a port below the ephemeral range in the test — still a window, only less likely
+Check: a logged failing run showed "plugin terminal at http://127.0.0.1:57607: Address already in use"; at the head 50 runs of cargo test -p cooee --test terminal all exit 0 (macOS; Linux is CI's)
+Owner: A flaky terminal test came from the test picking a port someone else could grab; cooee now picks it itself.
