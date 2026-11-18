@@ -69,13 +69,22 @@ internal struct MenuFeatureTests {
         #expect(calls.all.contains("icon TerminalPrompt") && calls.all.first == "screen core/screens/menu")
     }
 
-    @Test internal func aServerRowOpensCoresScreenAndClosingTheMenuDropsIt() async {
-        let store = store()
+    @Test internal func aServerRowOpensCoresScreenAndClosingTheMenuKeepsAndDropsIt() async {
+        let (store, calls) = (store(), calls)
+        store.dependencies.date = .constant(epoch)
+        store.dependencies.continuousClock = TestClock()
+        store.dependencies.screenCache.save = { key, kept in calls.record("keep \(key) \(kept.kept == epoch)") }
         await store.send(.show("/screens/settings/devices", label: "Devices")) {
             $0.page = ScreenFeature.State(
                 server: mini, source: .core, path: "/screens/settings/devices", label: "Devices")
         }
+        await store.send(.page(.presented(.loaded(Self.menu)))) {
+            $0.page?.screen = LiveScreen(Self.menu)
+            $0.page?.asOf = epoch
+        }
         await store.send(.open(false)) { $0.page = nil }
+        await store.finish()
+        #expect(calls.all == ["keep https://mini.local|core|/screens/settings/devices true"])
         await store.send(.show("/screens/queue", label: "Queue", source: .plugin("drover"))) {
             $0.page = ScreenFeature.State(
                 server: mini, source: .plugin("drover"), path: "/screens/queue", label: "Queue")

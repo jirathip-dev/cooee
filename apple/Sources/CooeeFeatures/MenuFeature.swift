@@ -89,6 +89,7 @@ public struct MenuFeature: Sendable {
         }
         .ifLet(\.$page, action: \.page) { ScreenFeature() }
         .ifLet(\.editor, action: \.editor) { ThemeEditorFeature() }
+        .keepsLeftScreens { $0.page.map { [$0] } ?? [] }
     }
 
     private func navigate(_ state: inout State, _ action: Action) -> Effect<Action> {

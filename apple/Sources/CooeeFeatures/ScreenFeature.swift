@@ -46,6 +46,7 @@ public struct ScreenFeature: Sendable {
     public enum Action: Sendable {
         case task
         case retry
+        case background
         case loaded(JSONValue)
         case event(JSONValue)
         case failed(String, KeptScreen?)
@@ -65,7 +66,7 @@ public struct ScreenFeature: Sendable {
         }
     }
 
-    private enum CancelID { case follow, beside, keep }
+    private enum CancelID { case follow, beside, keep, background }
 
     @Dependency(\.plugins) private var plugins
     @Dependency(\.screenCache) private var cache
@@ -77,8 +78,12 @@ public struct ScreenFeature: Sendable {
     public var body: some ReducerOf<Self> {
         Reduce { state, action in
             switch action {
-            case .task, .retry:
+            case .task:
+                return .merge(follow(state), backgrounds())
+            case .retry:
                 return follow(state)
+            case .background:
+                return flush(state)
             case .loaded(let screen):
                 state.screen = LiveScreen(screen)
                 return keep(&state)
@@ -163,15 +168,36 @@ extension ScreenFeature {
         .cancellable(id: CancelID.keep, cancelInFlight: true)
     }
 
+    private func backgrounds() -> Effect<Action> {
+        let cache = cache
+        return .run { send in
+            for await _ in cache.backgrounds() { await send(.background) }
+        }
+        .cancellable(id: CancelID.background, cancelInFlight: true)
+    }
+
     private func flush(_ state: State) -> Effect<Action> {
-        let save = save(state)
-        return .merge(.cancel(id: CancelID.keep), .run { _ in save() })
+        .merge(.cancel(id: CancelID.keep), Self.flush([state]))
     }
 
     private func save(_ state: State) -> @Sendable () -> Void {
-        let (cache, key) = (cache, state.key)
-        guard let screen = state.screen?.root, let asOf = state.asOf else { return {} }
-        return { cache.save(key, KeptScreen(screen: screen, kept: asOf)) }
+        let (cache, kept) = (cache, Self.kept(state))
+        return { kept.map { cache.save($0.key, $0.screen) } }
+    }
+
+    private static func kept(_ state: State) -> (key: String, screen: KeptScreen)? {
+        guard let screen = state.screen?.root, let asOf = state.asOf else { return nil }
+        return (state.key, KeptScreen(screen: screen, kept: asOf))
+    }
+
+    /// Saves `screens` at once, off the main actor, so leaving them loses no pending save.
+    public static func flush<Action>(_ screens: [State]) -> Effect<Action> {
+        @Dependency(\.screenCache) var cache
+        let kept = screens.compactMap(kept)
+        guard !kept.isEmpty else { return .none }
+        return .run { [cache] _ in
+            for (key, screen) in kept { cache.save(key, screen) }
+        }
     }
 
     private func unreachable(_ state: inout State, _ who: String, _ kept: KeptScreen?) {

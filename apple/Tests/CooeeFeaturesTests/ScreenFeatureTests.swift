@@ -34,6 +34,7 @@ internal struct ScreenFeatureTests {
             $0.date.now = epoch
             $0.continuousClock = clock
             $0.screenCache.save = { key, kept in calls.record("keep \(key) \(kept.kept == epoch)") }
+            $0.screenCache.backgrounds = { .finished }
             dependencies(&$0)
         }
     }
@@ -196,6 +197,24 @@ extension ScreenFeatureTests {
                 "keep https://mini.local|drover|/screens/queue true",
                 "keep https://mini.local|drover|/screens/global true",
             ])
+    }
+
+    @Test internal func goingToTheBackgroundKeepsTheScreenAtOnce() async {
+        let (backgrounds, background) = AsyncStream.makeStream(of: Void.self)
+        let store = store {
+            $0.screenCache.backgrounds = { backgrounds }
+            $0.plugins.screen = { _, _, _ in .object(["title": .string("Queue")]) }
+        }
+        let task = await store.send(.task)
+        await store.receive(\.loaded) {
+            $0.screen = LiveScreen(.object(["title": .string("Queue")]))
+            $0.asOf = epoch
+        }
+        background.yield()
+        await store.receive(\.background)
+        await task.cancel()
+        await clock.advance(by: .seconds(2))
+        #expect(calls.all == ["keep https://mini.local|drover|/screens/queue true"])
     }
 
     @Test internal func aCoreScreenIsFetchedFromCoreAndKeptUnderCore() async {
