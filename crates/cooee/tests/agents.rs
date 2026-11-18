@@ -49,8 +49,10 @@ fn a_folder_written_by_hand_is_listed_and_starts_a_chat() {
     assert!(line.contains(" --acp fake-acp "), "{line}");
     let sent = shed.sent(&format!("cooee-{id}"));
     let prompt: Value = serde_json::from_str(sent[0].trim_start_matches('\x1e')).unwrap();
-    let brief = format!("Answer in one paragraph.\n\n{PLAIN}\n\nhi");
-    assert_eq!(prompt["prompt"], brief);
+    let prompt = prompt["prompt"].as_str().unwrap();
+    let brief = format!("/scratch/{id}).\n\nAnswer in one paragraph.\n\n{PLAIN}\n\nhi");
+    assert!(prompt.starts_with("This topic: hi (folder "), "{prompt}");
+    assert!(prompt.ends_with(&brief), "{prompt}");
 }
 
 #[test]

@@ -1,0 +1,9 @@
+# cooee's curated skill index (#496): `cooee skill add <persona> <name>` and the persona panel's Skills rows list these.
+# Each source is a git repo holding `skills/<name>/SKILL.md` files (front matter and a body, nothing that runs), pinned
+# to a reviewed commit; adding or moving one is a normal reviewed PR. `first_party = true`: the starter set in
+# `plugins/skills/`, built into cooee, so it is pinned by cooee's own version.
+
+[[source]]
+url = "https://github.com/jirathip-dev/cooee"
+first_party = true
+skills = ["bills", "decide", "edit", "inbox", "meal-plan", "meeting-notes", "packing", "research", "travel", "weekly-review"]

@@ -23,7 +23,7 @@ use topcoat::{
 use crate::{
     http::{Data, plain},
     hub::lock,
-    look::Looks,
+    look::{Looks, STYLES},
 };
 
 fn other(why: impl Into<String>) -> io::Error {
@@ -125,7 +125,7 @@ fn valid(name: &str) -> io::Result<()> {
 }
 
 fn gate(dir: &Path) -> io::Result<()> {
-    crate::look::check(dir).map_err(|fails| {
+    crate::look::check(dir).map(drop).map_err(|fails| {
         other(format!(
             "it fails the theme gate:\n  {}",
             fails.join("\n  ")
@@ -154,10 +154,13 @@ impl Themes {
         })
     }
 
-    /// The first-party packs' names.
+    /// The first-party packs' names: swag's and the built-in styles, in name order.
     #[must_use]
     pub fn first_party(&self) -> Vec<&str> {
-        self.swag.names()
+        let mut names = self.swag.names();
+        names.extend(STYLES.map(|(n, _)| n));
+        names.sort_unstable();
+        names
     }
 
     fn installed_dir(&self, name: &str) -> PathBuf {
@@ -198,8 +201,17 @@ impl Themes {
         if rev.is_some_and(|r| r.starts_with('-')) || source.starts_with('-') {
             return Err(other("a source or --rev can't start with -"));
         }
-        let first = self.swag.names();
-        let pack = if first.contains(&source) {
+        let first = self.first_party();
+        let pack = if STYLES.iter().any(|(n, _)| *n == source) {
+            Pack {
+                name: source.to_owned(),
+                source: "built in".to_owned(),
+                path: String::new(),
+                rev: format!("cooee {}", env!("CARGO_PKG_VERSION")),
+                listed: true,
+                text: String::new(),
+            }
+        } else if first.contains(&source) {
             Pack {
                 name: source.to_owned(),
                 source: self.swag.url.clone(),
@@ -292,6 +304,10 @@ impl Themes {
 
     fn vendored(&self, name: &str, stage: &Path) -> io::Result<String> {
         fs::create_dir_all(stage)?;
+        if let Some((_, json)) = STYLES.iter().find(|(n, _)| *n == name) {
+            fs::write(stage.join("style.json"), json)?;
+            return Ok(String::new());
+        }
         for (file, bytes) in self.swag.files(name)? {
             fs::write(stage.join(file), bytes)?;
         }
@@ -392,7 +408,61 @@ impl Themes {
             return Err(other(format!("{name} isn't installed")));
         }
         fs::remove_dir_all(dir)?;
+        fs::remove_dir_all(crate::look::last_good(&self.dir, name)).ok();
         self.pin(name, None)
+    }
+
+    /// Saves pack `name` as `files` (path in the pack, bytes): written to a staging folder, through the theme gate,
+    /// then moved over `themes/<name>/` and kept as its last good copy; `false` when it is the same already.
+    ///
+    /// # Errors
+    /// When the name is a built-in or first-party pack's, or the pack fails the gate.
+    pub fn make(&self, name: &str, files: &[(String, Vec<u8>)]) -> io::Result<bool> {
+        let _one = lock(&self.ops);
+        valid(name)?;
+        if name == "plain" || name == "starter" || self.swag.names().contains(&name) {
+            return Err(other(format!(
+                "{name} is a built-in theme's name: pick another"
+            )));
+        }
+        let to = self.installed_dir(name);
+        let same = files
+            .iter()
+            .all(|(f, b)| fs::read(to.join(f)).is_ok_and(|on| on == *b));
+        if same && read_all(&to).len() == files.len() {
+            return Ok(false);
+        }
+        let stage = self.dir.join(".themes-stage").join(name);
+        fs::remove_dir_all(&stage).ok();
+        for (file, bytes) in files {
+            let path = stage.join(file);
+            fs::create_dir_all(path.parent().unwrap_or(&stage))?;
+            fs::write(path, bytes)?;
+        }
+        let old = self.dir.join(".themes-stage").join(format!("{name}.old"));
+        fs::remove_dir_all(&old).ok();
+        let done = gate(&stage).and_then(|()| {
+            fs::create_dir_all(self.dir.join("themes"))?;
+            if to.exists() {
+                fs::rename(&to, &old)?;
+            }
+            fs::rename(&stage, &to)
+        });
+        fs::remove_dir_all(&stage).ok();
+        fs::remove_dir_all(&old).ok();
+        done?;
+        let good = crate::look::last_good(&self.dir, name);
+        fs::remove_dir_all(&good).ok();
+        copy(&to, &good)?;
+        self.pin(
+            name,
+            Some(Pinned {
+                name: name.to_owned(),
+                source: "made here".to_owned(),
+                ..Pinned::default()
+            }),
+        )?;
+        Ok(true)
     }
 
     /// The installed packs by folder, with their pin (an own folder has none).
@@ -418,6 +488,21 @@ impl Themes {
         rows.sort_by(|a, b| a.name.cmp(&b.name));
         Ok(rows)
     }
+}
+
+fn read_all(dir: &Path) -> Vec<PathBuf> {
+    fs::read_dir(dir)
+        .into_iter()
+        .flatten()
+        .flatten()
+        .flat_map(|e| {
+            if e.path().is_dir() {
+                read_all(&e.path())
+            } else {
+                vec![e.path()]
+            }
+        })
+        .collect()
 }
 
 fn size(dir: &Path) -> u64 {

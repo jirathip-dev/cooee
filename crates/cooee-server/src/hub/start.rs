@@ -10,6 +10,8 @@ use cooee_core::{Agent, Body, Change, Chat, Thread, shed_proto};
 
 use super::{AGENTS_FOR, Hub, HubError, LABEL, Live, Recipe, lock, now, on_machine, refused};
 
+const TITLE: usize = 28;
+
 impl Hub {
     /// The installed ACP agents, as last checked.
     ///
@@ -186,14 +188,7 @@ impl Hub {
             return Err(HubError::Refused("the first message is empty".to_owned()));
         }
         self.offers(agent, &recipe.account, &recipe.model)?;
-        let title: String = text
-            .trim()
-            .lines()
-            .next()
-            .unwrap_or("")
-            .chars()
-            .take(60)
-            .collect();
+        let title = opening(text);
         let (id, fresh) = self.mint(random_id, |id| Thread {
             terminal: on_machine(&recipe.machine, &format!("cooee-{id}")),
             id,
@@ -323,7 +318,13 @@ impl Hub {
             cooee_core::note!("cooee: {id}: model: {e}");
         }
         let note = self.unconnected(recipe)?;
-        let before = [recipe.instructions.trim_end(), &note].map(str::trim);
+        let topic = if recipe.profile.is_empty() || !recipe.room.is_empty() {
+            String::new()
+        } else {
+            let title = lock(&live).meta.title.clone();
+            format!("This topic: {title} (folder {}).", folder.display())
+        };
+        let before = [&topic, recipe.instructions.trim_end(), &note].map(str::trim);
         let before = before
             .into_iter()
             .filter(|s| !s.is_empty())
@@ -331,4 +332,15 @@ impl Hub {
         self.send_after(id, text, random_id, &[], &before.join("\n\n"))?;
         Ok(())
     }
+}
+
+fn opening(text: &str) -> String {
+    let line = text.trim().lines().next().unwrap_or_default().trim();
+    let cut: String = line.chars().take(TITLE + 1).collect();
+    if cut.chars().count() <= TITLE {
+        return cut;
+    }
+    let words = cut.rsplit_once(char::is_whitespace).map(|w| w.0);
+    let words = words.map_or_else(|| cut.chars().take(TITLE).collect(), str::to_owned);
+    words.trim_end().to_owned()
 }

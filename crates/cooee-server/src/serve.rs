@@ -11,7 +11,7 @@ use cooee_machines::Machines;
 use topcoat::router::{BodyLimit, Router};
 
 use crate::{
-    Hub, Layouts, Logins, Manager,
+    Hub, Layouts, Logins, Manager, connectors, editor,
     gate::{Gate, Timing, names},
     http::{Data, profiles, provider_name, recipe},
     hub, layout, look, pairing,
@@ -43,10 +43,15 @@ fn runner(
     hub: &Arc<Hub>,
     logins: Arc<Logins>,
     data: &std::path::Path,
-    config: Option<&std::path::Path>,
+    (config, hooks): (
+        Option<&std::path::Path>,
+        Option<cooee_core::routines::Hooks>,
+    ),
 ) -> Arc<routines::Runner> {
     let (dir, config) = (data.to_owned(), config.map(ToOwned::to_owned));
     let (data, settings) = (dir.clone(), config.clone());
+    let cheap = Arc::clone(&logins);
+    let cheapest: routines::Cheapest = Box::new(move |agent| cheap.cheapest(agent));
     let start: routines::Start = Box::new(move |hub, who| {
         let list = profiles(hub, (&data, config.as_deref()));
         let (agent, folder, mut recipe) = recipe(
@@ -65,7 +70,8 @@ fn runner(
     Arc::new(routines::Runner::new(
         Arc::clone(hub),
         (settings.as_deref(), &dir),
-        start,
+        (start, cheapest),
+        hooks,
     ))
 }
 
@@ -91,12 +97,12 @@ pub fn router(
         devices: Devices::new(data),
         hub: Arc::clone(&hub),
     };
-    screens::routes(themes::routes(routes::routes(
+    screens::routes(editor::routes(themes::routes(routes::routes(
         Router::builder()
             .layer(Timing)
             .layer(gate)
             .layer(BodyLimit::max(64 << 20).at("/threads")),
-    )))
+    ))))
     .route(layout::get)
     .route(layout::events)
     .route(layout::reset)
@@ -104,6 +110,10 @@ pub fn router(
     .app_context(hub)
     .app_context(runner)
     .app_context(Arc::new(Unlocks::default()))
+    .app_context(Arc::new(connectors::Connectors::new(
+        data,
+        connectors::KEYCHAIN,
+    )))
     .app_context(logins)
     .app_context(manager)
     .app_context(machines)
@@ -184,6 +194,7 @@ pub fn serve(config: &Config, ready: impl FnOnce(SocketAddr)) -> io::Result<()> 
         theme,
         manager.tabs(),
         config.apns.clone(),
+        config.approval_expiry_minutes.saturating_mul(60_000),
     )?;
     let (daily, signins) = (Arc::clone(&hub), Arc::clone(&logins));
     std::thread::spawn(move || {
@@ -198,7 +209,12 @@ pub fn serve(config: &Config, ready: impl FnOnce(SocketAddr)) -> io::Result<()> 
             cooee_core::clock::sleep(Duration::from_hours(1));
         }
     });
-    let runner = runner(&hub, Arc::clone(&logins), &data, config.dir.as_deref());
+    let runner = runner(
+        &hub,
+        Arc::clone(&logins),
+        &data,
+        (config.dir.as_deref(), config.hooks.clone()),
+    );
     let router = router(
         (Arc::clone(&hub), Arc::clone(&runner)),
         (
@@ -224,7 +240,7 @@ pub fn serve(config: &Config, ready: impl FnOnce(SocketAddr)) -> io::Result<()> 
             let addr = listener.local_addr()?;
             hub.listening(format!("http://127.0.0.1:{}", addr.port()));
             manager.supervise(hub, format!("http://127.0.0.1:{}", addr.port()));
-            routines::Runner::every(runner, Duration::from_secs(30));
+            routines::Runner::every(runner, Duration::from_secs(30))?;
             ready(addr);
             topcoat::serve(listener, router).await
         });

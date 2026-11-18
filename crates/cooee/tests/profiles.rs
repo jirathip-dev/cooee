@@ -70,6 +70,11 @@ impl Setup {
         self.cooee.post("/threads", &new)
     }
 
+    fn topic(&self, title: &str) -> String {
+        let folder = fs::canonicalize(self.dir.join("root")).unwrap();
+        format!("This topic: {title} (folder {}).\n\n", folder.display())
+    }
+
     fn thread(&self, profile: &str, text: &str) -> (String, String) {
         let until = Instant::now() + Duration::from_secs(20);
         let (mut status, mut body) = self.start(profile, text);
@@ -180,7 +185,7 @@ fn plain_adds_nothing_a_file_profile_is_applied_at_spawn_a_guard_that_cant_run_i
         s.shed.sent(&terminal),
         [format!(
             "\x1e{}\n",
-            json!({ "prompt": format!("Follow the house rules.\n\n{PLAIN}\n\nhi") })
+            json!({ "prompt": format!("{}Follow the house rules.\n\n{PLAIN}\n\nhi", s.topic("hi")) })
         )]
     );
     let items = s.cooee.json(&format!("/threads/{id}/messages"));
@@ -267,7 +272,10 @@ fn a_plugins_profile_starts_while_it_is_installed_and_its_add_confirm_names_it()
     let (id, _) = s.thread("plug/conductor", "go");
     assert_eq!(
         s.shed.sent(&format!("cooee-{id}")),
-        ["\x1e{\"prompt\":\"You are the conductor.\\n\\ngo\"}\n"]
+        [format!(
+            "\x1e{}\n",
+            json!({ "prompt": format!("{}You are the conductor.\n\ngo", s.topic("go")) })
+        )]
     );
     assert_eq!(s.row(&id)["profile"], "plug/conductor");
 

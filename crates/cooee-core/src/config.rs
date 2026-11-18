@@ -50,6 +50,9 @@ pub struct Config {
     /// The plugin index Settings › Plugins and `cooee plugin add <name>` list; default the built-in one
     /// (`plugins/index.toml` in cooee's repo).
     pub plugin_index: Option<PathBuf>,
+    /// The skill index `cooee skill add` and the persona panel list (#496); default the built-in one
+    /// (`plugins/skills.toml` in cooee's repo).
+    pub skill_index: Option<PathBuf>,
     /// The instance's name (`cooee serve --instance`, default `cooee`): its own config, data folder and pairing.
     #[serde(skip)]
     pub instance: String,
@@ -59,10 +62,16 @@ pub struct Config {
     pub logs: crate::logs::Logs,
     /// The MCP servers profiles pick from (`[[mcp]]`, #56).
     pub mcp: Vec<crate::mcp::Server>,
+    /// The Chromium each persona's browser runs (#160; default [`crate::browser::CHROMIUM`]).
+    pub chromium: PathBuf,
     /// Apple push for the native app (`[apns]`, #130); its key is `<data>/apns.p8`.
     pub apns: Option<Apns>,
+    /// GitHub webhooks for routines (`[hooks]`, #261); off when unset.
+    pub hooks: Option<crate::routines::Hooks>,
     /// Whether `cooee update` (its timer, every 15 minutes) installs main's newest green build (default on, #332).
     pub auto_update: bool,
+    /// How many minutes an approval a routine's run raised waits before it counts as Deny (default 30, #505).
+    pub approval_expiry_minutes: u64,
 }
 
 /// `[apns]`: the owner's APNs key's ids and the app it pushes to; none of it is secret.
@@ -136,6 +145,7 @@ impl Default for Config {
             providers: provider::defaults(),
             plugins: Vec::new(),
             plugin_index: None,
+            skill_index: None,
             theme: None,
             dir: None,
             path: None,
@@ -143,8 +153,11 @@ impl Default for Config {
             perf: Perf::default(),
             logs: crate::logs::Logs::default(),
             mcp: Vec::new(),
+            chromium: PathBuf::from(crate::browser::CHROMIUM),
             apns: None,
+            hooks: None,
             auto_update: true,
+            approval_expiry_minutes: 30,
         }
     }
 }

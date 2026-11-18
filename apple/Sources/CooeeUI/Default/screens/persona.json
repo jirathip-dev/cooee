@@ -8,6 +8,7 @@
     { "type": "workflow", "id": "workflow", "issues": [], "more": 0 },
     { "type": "routines", "id": "routines", "rows": [] },
     { "type": "places", "id": "places", "rows": [] },
+    { "type": "skills", "id": "skills", "rows": [], "library": [] },
     { "type": "memory", "id": "memory", "count": 0, "notes": [] },
     { "type": "edit", "id": "edit" }
   ]

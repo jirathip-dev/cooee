@@ -1,3 +1,4 @@
+mod connectors;
 mod devices;
 mod folders;
 mod logins;
@@ -10,12 +11,14 @@ mod relaunch;
 mod report;
 mod rooms;
 mod routines;
+mod screen;
 mod skills;
 mod threads;
 
 use topcoat::router::RouterBuilder;
 
 pub(crate) fn routes(b: RouterBuilder) -> RouterBuilder {
+    let b = connectors::routes(b);
     let b = devices::routes(b);
     let b = folders::routes(b);
     let b = logins::routes(b);
@@ -28,6 +31,7 @@ pub(crate) fn routes(b: RouterBuilder) -> RouterBuilder {
     let b = report::routes(b);
     let b = rooms::routes(b);
     let b = routines::routes(b);
+    let b = screen::routes(b);
     let b = skills::routes(b);
     threads::routes(b)
 }

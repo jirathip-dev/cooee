@@ -1,15 +1,17 @@
-use std::{collections::BTreeMap, io, path::Path};
+use std::{io, path::Path};
 
 use cooee_core::{
     Body, Card, Change, Config, Item, Launch, Thread,
-    agents::{self, Home},
-    mcp::{self, COOEE, Pick, Server},
+    agents::{self, Agent, Home},
+    browser, history,
+    library::{self, Source, Update},
+    mcp::{self, COOEE, Server},
     memory,
     shed_proto::ApprovalOption,
     skills::{self, Skill},
 };
 use serde::Deserialize;
-use serde_json::json;
+use serde_json::{Value, json};
 
 use crate::mcp::Grant;
 
@@ -44,6 +46,8 @@ pub(super) enum Proposed {
         skill: Skill,
         replaces: Option<String>,
     },
+    Later(Box<dyn FnOnce() -> Result<String, String> + Send>),
+    Secret(super::secret::Asked),
 }
 
 /// An agent's `skill` proposal (#218): the skill, and the one it edits.
@@ -67,9 +71,8 @@ impl Proposal {
             command: self.command,
             args: self.args,
             url: self.url,
-            env: BTreeMap::new(),
-            headers: BTreeMap::new(),
             enabled: false,
+            ..Server::default()
         }
     }
 }
@@ -118,11 +121,26 @@ impl Hub {
         self.config.as_deref().and_then(Path::parent)
     }
 
-    fn picks(&self, id: &str) -> Vec<Pick> {
+    pub(super) fn persona(&self, id: &str) -> Agent {
         let list = agents::all(self.config_dir(), &self.data, |_| None);
-        list.into_iter()
-            .find(|a| a.id == id)
-            .map_or_else(Vec::new, |a| a.mcp)
+        list.into_iter().find(|a| a.id == id).unwrap_or_default()
+    }
+
+    fn servers(&self) -> Result<Vec<Server>, HubError> {
+        let mut list = self.mcp()?;
+        if !list.iter().any(|s| s.name == browser::SERVER) {
+            list.push(browser::server());
+        }
+        Ok(list)
+    }
+
+    fn chromium(&self) -> Result<std::path::PathBuf, HubError> {
+        let Some(c) = &self.config else {
+            return Ok(browser::CHROMIUM.into());
+        };
+        Config::load(c)
+            .map(|c| c.chromium)
+            .map_err(|e| HubError::Refused(e.to_string()))
     }
 
     fn grant_of(&self, s: Server, tools: Option<Vec<String>>) -> Result<Grant, String> {
@@ -143,7 +161,7 @@ impl Hub {
         let (Some(url), Ok(exe)) = (self.url.get(), std::env::current_exe()) else {
             return Ok(launch);
         };
-        let servers = self.mcp()?;
+        let servers = self.servers()?;
         let picked: Vec<&Server> = servers
             .iter()
             .filter(|s| recipe.mcp.contains(&s.name))
@@ -175,7 +193,7 @@ impl Hub {
     }
 
     pub(super) fn unconnected(&self, recipe: &Recipe) -> Result<String, HubError> {
-        let servers = self.mcp()?;
+        let servers = self.servers()?;
         let missing: Vec<&str> = recipe
             .mcp
             .iter()
@@ -221,32 +239,105 @@ impl Hub {
     /// [`HubError::Refused`] for a wrong token, a closed thread, a server it doesn't pick, one off, or a reference
     /// that doesn't resolve.
     pub fn grant(&self, id: &str, token: &str, server: &str) -> Result<Grant, HubError> {
+        let (persona, pick, s) = self.granted(id, token, server)?;
+        let mut g = self.grant_of(s, pick.tools).map_err(HubError::Refused)?;
+        if server == browser::SERVER {
+            let profile = browser::profile(&self.data, &persona.id);
+            let cdp = browser::endpoint(&self.chromium()?, &profile)
+                .map_err(|e| HubError::Refused(format!("{}'s browser: {e}", persona.id)))?;
+            g.args.extend(["--cdp-endpoint".to_owned(), cdp]);
+        }
+        Ok(g)
+    }
+
+    fn granted(
+        &self,
+        id: &str,
+        token: &str,
+        server: &str,
+    ) -> Result<(Agent, mcp::Pick, Server), HubError> {
         let meta = self.token_of(id, token)?;
-        let pick = self
-            .picks(&meta.profile)
-            .into_iter()
-            .find(|p| p.server == server);
+        let persona = self.persona(&meta.profile);
+        let pick = persona.mcp.iter().find(|p| p.server == server).cloned();
         let pick = pick.ok_or_else(|| {
             HubError::Refused(format!(
                 "thread {id}'s profile doesn't pick MCP server {server}"
             ))
         })?;
         let s = self
-            .mcp()?
+            .servers()?
             .into_iter()
             .find(|s| s.name == server && s.enabled);
         let s =
             s.ok_or_else(|| HubError::Refused(format!("MCP server {server} is off or gone")))?;
-        self.grant_of(s, pick.tools).map_err(HubError::Refused)
+        Ok((persona, pick, s))
+    }
+
+    /// Thread `id`'s proxy's `tools/call` of `tool` on `server` with `args`, checked again: the grant still holds, the
+    /// tool is allowed and, on the browser, a `url` is on the persona's site allowlist; each browser call waits while
+    /// the owner holds control, is logged, and answers the owner's hand-back note.
+    ///
+    /// # Errors
+    /// [`HubError::Refused`] as [`Hub::grant`], for a tool not allowed, or a site not on the allowlist.
+    pub fn call(
+        &self,
+        (id, token): (&str, &str),
+        (server, tool): (&str, &str),
+        args: &Value,
+    ) -> Result<Option<String>, HubError> {
+        let (persona, pick, _) = self.granted(id, token, server)?;
+        if !pick.allows(tool) {
+            return Err(HubError::Refused(format!(
+                "tool {tool} isn't allowed in this thread (its profile's tools for {server})"
+            )));
+        }
+        if server != browser::SERVER {
+            return Ok(None);
+        }
+        let note = self.wait_turn(&persona.id);
+        let url = args.get("url").and_then(Value::as_str);
+        let off = url.filter(|u| !browser::allows(&persona.sites, u));
+        let line = json!({ "at": now(), "thread": id, "tool": tool, "arguments": args, "refused": off.is_some() });
+        let profile = browser::profile(&self.data, &persona.id);
+        browser::log(&profile, &line).map_err(|e| refused(&profile, &e))?;
+        match off {
+            Some(u) => Err(HubError::Refused(format!(
+                "{u} isn't on {}'s site allowlist",
+                persona.id
+            ))),
+            None => Ok(note),
+        }
     }
 
     /// An agent's `remember` in thread `id` (#126, #216): an edit of its persona's notes, for its next sessions; the
-    /// answer names the note's id and the characters used.
+    /// answer names the note's id and the characters used. In a routine's run (#219) it only raises a card, and the
+    /// edit is made when the owner approves it.
     ///
     /// # Errors
     /// [`HubError::Refused`] for a wrong token, a closed thread, one with no persona, or an edit refused.
     pub fn remember(&self, id: &str, token: &str, e: &memory::Edit) -> Result<String, HubError> {
         let home = self.home_of(id, token)?;
+        let meta = self.token_of(id, token)?;
+        if meta.routine.is_some() {
+            let what = match (&e.text, &e.replaces) {
+                (Some(_), Some(r)) => format!("replace {}'s note [{r}]", meta.profile),
+                (Some(_), None) => format!("add a note to {}'s memory", meta.profile),
+                (None, _) => format!("forget {}'s notes {}", meta.profile, e.forget.join(", ")),
+            };
+            let (detail, e) = (e.text.clone().unwrap_or_default(), e.clone());
+            let then = Box::new(move || {
+                memory::remember(&home, "persona", &e, now())
+                    .map(|n| {
+                        n.map_or_else(|| "forgotten".to_owned(), |n| format!("kept as [{}]", n.id))
+                    })
+                    .map_err(|e| e.to_string())
+            });
+            self.raise(id, (what, "memory", detail), Proposed::Later(then))?;
+            return Ok(
+                "Proposed. The owner sees a card; nothing is saved until they approve it."
+                    .to_owned(),
+            );
+        }
         let kept = memory::remember(&home, "persona", e, now())
             .map_err(|e| HubError::Refused(e.to_string()))?;
         let used = memory::used(&memory::notes(&home));
@@ -255,6 +346,33 @@ impl Hub {
             "{what}; {used} of {} characters used.",
             memory::CAP
         ))
+    }
+
+    /// What persona `persona`'s threads said after line `mark` (#219), routine runs left out: none when the owner
+    /// said nothing since. For its `heartbeat` (#498) routines' results count and only its own runs are left out:
+    /// none when nothing was said since.
+    ///
+    /// # Errors
+    /// [`HubError::Refused`] when a thread can't be read.
+    pub fn news(
+        &self,
+        persona: &str,
+        (mark, heartbeat): (u64, bool),
+    ) -> Result<Option<(String, u64)>, HubError> {
+        let mine: Vec<String> = self
+            .all()
+            .iter()
+            .map(|l| lock(l).meta.clone())
+            .filter(|m| {
+                m.profile == persona
+                    && m.routine
+                        .as_ref()
+                        .is_none_or(|r| heartbeat && r.id != agents::HEARTBEAT)
+            })
+            .map(|m| m.id)
+            .collect();
+        history::since(&self.store, &mine, (mark, !heartbeat))
+            .map_err(|e| HubError::Refused(e.to_string()))
     }
 
     /// An agent's `history` in thread `id` (#217): a search of its persona's threads (`query`, at most `limit`
@@ -273,6 +391,28 @@ impl Hub {
         let persona = agents::find(self.config_dir(), &self.data, &meta.profile)
             .map_err(|_| HubError::Refused(format!("thread {id} has no persona")))?;
         let refused = |e: cooee_core::StoreError| HubError::Refused(e.to_string());
+        let run = meta
+            .routine
+            .as_ref()
+            .is_some_and(|r| r.id == agents::CONSOLIDATE);
+        if run && thread.is_empty() && query.trim().is_empty() {
+            let key = format!("{}-{}", agents::CONSOLIDATE, persona.id);
+            let read = history::watermark(&self.data, &key, |w| {
+                let news = self.news(&persona.id, (w.line, false));
+                if let Ok(Some((_, newest))) = &news {
+                    w.line = *newest;
+                }
+                news
+            });
+            return read
+                .map_err(|e| HubError::Refused(e.to_string()))?
+                .map(|n| {
+                    n.map_or_else(
+                        || "nothing new since the last run".to_owned(),
+                        |(text, _)| text,
+                    )
+                });
+        }
         if thread.is_empty() && query.trim().is_empty() {
             return Err(HubError::Refused("give a query or a thread".to_owned()));
         }
@@ -346,6 +486,49 @@ impl Hub {
         self.raise(id, (tool, "skill", detail), pending)
     }
 
+    /// Brings thread `id`'s persona's library skills up to `sources` (#496), fetching in `work`: an unedited one is
+    /// replaced, an edited one kept and its update raised as a `skill` diff card in the thread. Says what it did.
+    ///
+    /// # Errors
+    /// [`HubError::NoThread`]; [`HubError::Refused`] for a thread with no persona or an update that fails.
+    pub fn update_skills(
+        &self,
+        id: &str,
+        sources: &[Source],
+        work: &Path,
+    ) -> Result<Vec<String>, HubError> {
+        let thread = self.list().into_iter().find(|t| t.id == id);
+        let persona = thread
+            .ok_or_else(|| HubError::NoThread(id.to_owned()))?
+            .persona;
+        let home = self
+            .config_dir()
+            .ok_or_else(|| io::Error::other("no config folder"))
+            .and_then(|c| agents::home(c, &persona))
+            .map_err(|_| HubError::Refused(format!("thread {id} has no persona")))?;
+        let done =
+            library::update(&home, sources, work).map_err(|e| HubError::Refused(e.to_string()))?;
+        let mut said = Vec::new();
+        for (name, u) in done {
+            said.push(match u {
+                Update::Current => format!("{name}: up to date"),
+                Update::Updated => format!("{name}: updated"),
+                Update::Kept { new, old } => {
+                    let tool = format!("update {persona}'s skill {name}: you edited it, so it stays until you approve");
+                    let detail = skills::diff(&old, &new.file());
+                    let pending = Proposed::Skill {
+                        persona: persona.clone(),
+                        skill: new,
+                        replaces: Some(name.clone()),
+                    };
+                    self.raise(id, (tool, "skill", detail), pending)?;
+                    format!("{name}: you edited it, so it is kept; the card shows the update")
+                }
+            });
+        }
+        Ok(said)
+    }
+
     /// An agent's `skill` read in thread `id` (#218): its persona's skill `name`'s body, at most 8,000 characters.
     ///
     /// # Errors
@@ -372,7 +555,7 @@ impl Hub {
             .map_err(|_| HubError::Refused(format!("thread {id} has no persona")))
     }
 
-    fn raise(
+    pub(super) fn raise(
         &self,
         id: &str,
         (tool, form, detail): (String, &str, String),
@@ -403,7 +586,21 @@ impl Hub {
         Ok(item)
     }
 
-    /// Whether item `item` of thread `id` is an MCP proposal's card (approving it needs Face ID).
+    /// A card in thread `id` saying `tool` and `detail`; approving it (with Face ID) runs `then` (#261).
+    ///
+    /// # Errors
+    /// [`HubError::NoThread`] for no such thread.
+    pub fn propose_later(
+        &self,
+        id: &str,
+        (tool, detail): (String, String),
+        then: Box<dyn FnOnce() -> Result<String, String> + Send>,
+    ) -> Result<Item, HubError> {
+        self.raise(id, (tool, "routine", detail), Proposed::Later(then))
+    }
+
+    /// Whether item `item` of thread `id` is an MCP server's, a routine's or a secret's card of cooee's (approving
+    /// it needs Face ID).
     #[must_use]
     pub fn is_proposal(&self, id: &str, item: u64) -> bool {
         let Ok(live) = self.live(id) else {
@@ -411,7 +608,7 @@ impl Hub {
         };
         let live = lock(&live);
         live.chat.items.iter().any(|i| {
-            i.id == item && matches!(&i.body, Body::Approval { card, .. } if card.form.as_deref() == Some("mcp"))
+            i.id == item && matches!(&i.body, Body::Approval { card, plugin: None, .. } if matches!(card.form.as_deref(), Some("mcp" | "routine" | "secret")))
         })
     }
 
@@ -420,6 +617,7 @@ impl Hub {
         id: &str,
         item: u64,
         option: &str,
+        value: Option<&str>,
     ) -> Result<Option<String>, String> {
         let p = lock(&self.proposals).remove(&(id.to_owned(), item));
         if option != "approve" {
@@ -438,6 +636,8 @@ impl Hub {
                 .and_then(|h| skills::save(&h, skill, replaces.as_deref()))
                 .map(|s| Some(format!("saved skill {}", s.name)))
                 .map_err(|e| e.to_string()),
+            Proposed::Later(then) => then().map(Some),
+            Proposed::Secret(a) => self.drop_secret((id, item), &a, value).map(Some),
         }
     }
 

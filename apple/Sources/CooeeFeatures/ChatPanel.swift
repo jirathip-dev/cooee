@@ -9,6 +9,7 @@ public enum PanelPick: Sendable, Equatable {
     case workflow
     case routine
     case stop
+    case teach(String)
 }
 
 extension ChatFeature.Action {
@@ -43,12 +44,24 @@ extension ChatFeature {
         let persona = state.persona.api.id
         switch pick {
         case .edit: return .send(.delegate(.persona(persona)))
-        case .newChat: return .send(.delegate(.start(persona)))
+        case .newChat: return .send(state.bar == nil ? .delegate(.start(persona)) : .topics(.open(nil)))
         case .open(let place): return .send(.plugins(.open(place)))
         case .attach(let plugin): return .send(.plugins(.attach(plugin)))
         case .workflow: return .send(.workflow(.show(true)))
         case .stop: return .send(.compose(.stop))
         case .routine: return .send(.compose(.draftChanged("Make a routine: ")))
+        case .teach(let action): return teach(state, action)
+        }
+    }
+
+    private func teach(_ state: State, _ action: String) -> Effect<Action> {
+        guard case .thread(let thread) = state.target else { return .none }
+        let (plugins, server, path) = (pluginAPI, state.server, "/screens/persona/\(state.persona.api.id)")
+        let act = BlockAction(action: action, values: ["thread": .string(thread)])
+        return .run { _ in
+            _ = try await plugins.act(server, .core, path, act)
+        } catch: { error, send in
+            await send(.failed(error.localizedDescription))
         }
     }
 }

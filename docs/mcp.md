@@ -15,7 +15,7 @@ exact command or URL and needs Face ID; it is added off), saves a secret to the 
 profiles' servers and tools. A command or URL changes on the Mac only: the server refuses it from the phone.
 
 Every thread's agent gets, through shed's `--mcp` file (0600, removed once shed read it): `cooee` (`cooee mcp serve
---thread <id>`), whose tools are `propose_server {name, type, command|url, args, why}`, `remember`, `ask_persona` and `history` ([API](#api)); and for each server its
+--thread <id>`), whose tools are `propose_server {name, type, command|url, args, why}`, `remember`, `ask_persona`, `handoff` and `history` ([API](#api)); and for each server its
 profile picks (on, its references resolving), `cooee mcp proxy <server> --thread <id>`. Each carries `COOEE_MCP`
 (cooee's URL and the thread's token, `sha256(<data>/mcp.key:<thread>)`), good while the thread is open. The proxy asks
 `POST /mcp/agent/grant` for its server, its references resolved in memory then and never written, starts it (stdio) or
@@ -24,13 +24,28 @@ allowed tools and refuses a call to any other (asking again each call, so a clos
 raises an approval card in the thread with the exact command or URL; approving it needs the device's passkey (Face
 ID) and adds the server off. Nothing runs before the owner turns it on and a profile picks it.
 
+`browser` (#160) is built in unless the registry has a server of that name: the pinned Playwright MCP
+(`npx -y @playwright/mcp@0.0.85`). A persona that picks it gets its own headless Chromium (`chromium = "…"` in the
+config, default `/Applications/Chromium.app/Contents/MacOS/Chromium`, `chromium` on Linux) on its profile folder
+`<data>/browsers/<persona>/`, started at the proxy's grant or reused while it listens; the grant adds
+`--cdp-endpoint` to Playwright MCP's args. Each call goes through `POST /mcp/agent/call`, which also checks a `url`
+argument against the persona's `[[sites]]` in `agent.toml` (`site`, its subdomains too; `account` and `no_frames`
+marks) and appends the call to `<data>/browsers/<persona>.log`, a refused one too. Only a hand edit changes `sites`.
+
+The Screen (#162): `GET /personas/{id}/screen/live` streams the persona's current tab over SSE, a `frame {url,
+title, jpeg}` every half second (or `gone {why}` while its browser isn't running). `POST /personas/{id}/screen/control`
+gives the owner a 10-minute lease: the agent's browser calls wait until `POST …/screen/back {note}` (the waiting call
+then goes on and its result carries the note) or the lease ends. While it runs, `POST …/screen/input` takes
+`{"click": {"x", "y"}}` or `{"text": "…"}` on the current tab. `GET /personas/{id}/screen` answers who drives it
+(`agent`, `owner` with `until` in ms, or `back` with the note) and how many agent calls wait.
+
 ## API
 
 The registry is the Mac's: `cooee mcp add|rm|enable|disable`.
 
 | Call | Body | Answer |
 |---|---|---|
-| `POST /threads/<id>/approve` | on an MCP proposal's card, `approve` needs `passkey` | as any card; 403 without Face ID |
+| `POST /threads/<id>/approve` | on an MCP proposal's or a GitHub routine's card (`form: "routine"`), `approve` needs `passkey` | as any card; 403 without Face ID |
 
 A thread's MCP proxy and `cooee mcp serve` call with `Authorization: Bearer <the thread's token>`, no cookie:
 `POST /mcp/agent/grant` `{thread, server}` → the server resolved and its allowed `tools`; `POST /mcp/agent/propose`
@@ -43,13 +58,21 @@ can't start). Each ask is an `ask` item in the asker's thread (#177), `asking` u
 question is a `you` item whose `speaker` is the asker's persona. The owner's message there reaches the asked persona
 marked as the owner's note, and the reply goes back with it (the card's `note`; the exchange ends with the `note`
 item `returned to <asker> [with your note] · <secs>s`).
+`POST /mcp/agent/handoff` `{thread, server: {what}}` (#164, W5) → `handoff`'s answer: the agent hands a log-in, a 2FA
+code or a CLI login to the owner and ends its turn. Its thread gets a `handoff` item (`waiting`); until the owner's
+`POST /threads/<id>/handback` `{text, random_id}` (once per `random_id`; none open: a 400 `NO_HANDOFF`) a send,
+queue or steer there is a 400 `HANDOFF`, and messages queued before wait. Hand back sets the item `handed_back` with
+its `note` and sends the agent `[The owner handed back: <what>; their note]:` and the note (`Done.` when empty).
 `POST /mcp/agent/history` `{thread, server: {query?, thread?, before?, limit?}}` (#217) → `history`'s text: with
 `query`, at most 5 (and `limit`) of the persona's threads, newest first, `<thread> <date>: <snippet>` (200 characters
 at most); with `thread`, its owner messages and final replies (no tool rows), at most 4,000 characters, ending
 `older: before=<item>` when more are left. Another persona's thread is a 400.
-`POST /mcp/agent/routine` `{thread, server: {name, when, prompt, place?}}` (#75) → `create_routine`'s item, the
-`routine` line it adds to the thread. A refusal is a 400 starting `BAD_SCHEDULE`, `BAD_NAME`, `BAD_PROMPT`,
-`BAD_PLACE`, `TOO_MANY` or `NOT_HERE` (a Workflow session or a routine's own run).
+`POST /mcp/agent/routine` `{thread, server: {name, when | github: {repo, events, match?} | webhook: {secret}, prompt,
+place?}}` (#75, #261, #499) → `create_routine`'s text. A schedule (`when`) is saved at once and adds a `routine` line to the thread; a
+GitHub or webhook one only adds a card (`form: "routine"`, `detail` the prompt) and is saved when the owner approves it with Face
+ID (`decline`: never). A refusal is a 400 starting `BAD_SCHEDULE`, `BAD_GITHUB`, `BAD_WEBHOOK`, `BAD_TRIGGER` (not
+one of `when`, `github` and `webhook`), `BAD_NAME`, `BAD_PROMPT`, `BAD_PLACE`, `TOO_MANY`, `NO_HOOKS` (no `[hooks]`) or `NOT_HERE` (a
+Workflow session or a routine's own run).
 `POST /mcp/agent/skill` `{thread, server: {read} | {propose: {name, description, body, replaces?}}}` (#218) → `skill`'s
 text: with `read`, the persona's skill's body (8,000 characters at most; another persona's is a 400); with `propose`,
 a card (`form: "skill"`, `detail` the new file, or for `replaces` its diff) whose `approve` saves it, `decline` or no

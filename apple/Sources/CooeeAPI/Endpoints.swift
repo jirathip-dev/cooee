@@ -15,7 +15,7 @@ extension Client {
 
     private struct NewThread: Encodable {
         private enum CodingKeys: String, CodingKey {
-            case agent, profile, model, effort, machine, text, background, setup
+            case agent, profile, model, effort, machine, folder, text, background, setup
             case randomID = "random_id"
         }
 
@@ -24,6 +24,7 @@ extension Client {
         fileprivate let model: String?
         fileprivate let effort: String?
         fileprivate let machine: String
+        fileprivate let folder: String
         fileprivate let text: String
         fileprivate let randomID: String
         fileprivate let setup: Bool
@@ -110,6 +111,18 @@ extension Client {
 
     public func looks() async throws -> Looks { try await call("GET", "/api/v1/looks") }
 
+    public func checkTheme(dark: [String: String], light: [String: String]) async throws -> [String: GateReport] {
+        try await call("POST", "/api/v1/themes/check", ["dark": dark, "light": light])
+    }
+
+    public func saveTheme(_ name: String, _ draft: ThemeDraft) async throws {
+        _ = try await send(request("PUT", "/api/v1/themes/\(name)", json: draft))
+    }
+
+    public func themeArt(_ theme: String, _ file: String) async throws -> String {
+        String(bytes: try await send(request("GET", "/look/\(theme)/\(file)")).0, encoding: .utf8) ?? ""
+    }
+
     public func messages(_ id: String, before: Int = 50) async throws -> Slice {
         try await call("GET", "/threads/\(id)/messages?before=\(before)")
     }
@@ -162,8 +175,8 @@ extension Client {
     ) async throws -> String {
         let body = NewThread(
             agent: persona.agent, profile: persona.id, model: persona.model.isEmpty ? nil : persona.model,
-            effort: persona.effort.isEmpty ? nil : persona.effort, machine: machine, text: text, randomID: randomID,
-            setup: setup
+            effort: persona.effort.isEmpty ? nil : persona.effort, machine: machine, folder: persona.folder, text: text,
+            randomID: randomID, setup: setup
         )
         let created: Created = try await call("POST", "/threads", body)
         return created.id

@@ -286,7 +286,7 @@ impl Setup {
         let t = match cooee_server::Themes::new(config) {
             Err(_) if self.dry_run => {
                 cooee_core::say!(
-                    "themes:\n  would install farm and ask which other themes to install"
+                    "themes:\n  would install farm, scene and terminal and ask which other themes to install"
                 );
                 return Ok(());
             }
@@ -301,7 +301,9 @@ impl Setup {
         if step("themes", first.is_empty()) {
             return Ok(());
         }
-        let (farm, rest): (Vec<&str>, Vec<&str>) = first.into_iter().partition(|n| *n == "farm");
+        let (farm, rest): (Vec<&str>, Vec<&str>) = first
+            .into_iter()
+            .partition(|n| *n == "farm" || cooee_server::STYLES.iter().any(|(s, _)| s == n));
         let all = rest.join(" ");
         let want = if rest.is_empty() {
             String::new()

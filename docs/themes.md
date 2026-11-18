@@ -14,7 +14,7 @@ A theme is one coherent pack: a folder, or a folder of a git repo. Only `plain` 
 
 | File | Required | What it is |
 |---|---|---|
-| `theme.json` | yes | `label`, `scheme: {dark, light}` (the default scheme per mode), `sprites` (bool), `moments` (bool), `words`, and `scene` (the Scene's layers: element ids in `scene.svg`) |
+| `theme.json` | yes | `label`, `scheme: {dark, light}` (the default scheme per mode), `sprites` (bool), `moments` (bool), `words`, `scene` (the Scene's layers: element ids in `scene.svg`), and optional `style` (`modern`, `terminal` or `scene`: the Style a device takes once when it picks the theme; without it the device keeps its own) |
 | `sprites.svg` | when `sprites` | `<symbol>`s `s-edit s-read s-run s-idle s-done s-needs s-merged s-fail` (24 px) and `s-loading s-empty` (132 × 100), optionally Scene's 132 × 100 poses `s-scene-edit s-scene-idle s-scene-done s-scene-needs s-scene-merged s-scene-fail` (#115: farm and kitchen carry vector figures; without them Scene draws `s-<state>`); two-frame loops use `.kf1/.kf2` or `.f1/.f2`; pages `<use>` it by URL, so it loads only once a sprite shows |
 | `scene.svg` | when `sprites` or `scene` | Scene's backdrop (#34): the strip on top of each page, drawn at the page's width (`object-fit: cover`, bottom-aligned), its `viewBox` at most 400 × 320 (the first-party packs' scenes are 390 × 320 or 392 × 188), holding each layer `scene` names. A `#night` element styled by `:target` gives the night look (`scene.svg#night`, 19:00 to 07:00 on the device's clock); herdsman's load layers (`.h-busy .h-held .l-overcast .l-rain`) stay hidden, as cooee has no host load |
 | `schemes/<name>.json` | no | the pack's own colour schemes (below); its `theme.json` may name them |
@@ -57,6 +57,25 @@ that swag commit and put each changed file's `shasum -a 256` beside it. A new pa
 
 An own folder in `themes/` (not added by `cooee theme add`) loads too; one with a built-in's name replaces it. `plain` was `terminal` before #35: a
 saved `terminal` pick or `theme = "terminal"` shows `plain`. A theme naming an unknown scheme, or a scheme of the wrong mode, is refused.
+
+## Making a theme in the app (#307)
+
+Look has **Edit ‹theme›…** and **New theme…**. They open the theme editor: a live preview of the real Home and chat
+screens in the draft's colours and style, Style (Modern, Terminal or Scene), the pack's figures, and Dark and Light
+colours. A new theme starts from `packs/starter`'s figures; editing a built-in or first-party pack makes a copy
+(`Farm copy`), as `themes/<built-in name>/` would replace it. The Colours screen runs the theme gate on every change
+(`POST /api/v1/themes/check`: each token's worst check, and the nearest darker or lighter shade that passes) and
+offers that shade as a one-tap fix. Save stays off until both modes pass.
+
+Save sends the draft to the Mac (`PUT /api/v1/themes/<name>`). The server writes `theme.json`, `schemes/<name>-dark.json`,
+`schemes/<name>-light.json` and the copied pack's `sprites.svg`, `scene.svg` and `icon.png` to a staging folder, runs
+the gate, then moves it into `themes/<name>/` and pins it in the lock as `made here`. Saving an unchanged pack writes
+nothing. The app reloads `GET /api/v1/looks` and applies the pack, with no restart. Its files are plain: edit them by
+hand afterwards.
+
+Each save keeps a last good copy in `<config dir>/.themes-stage/.good/<name>/`. If a hand edit later breaks the pack,
+every load serves that copy instead, and `GET /api/v1/looks` names the pack and its first failure in `broken`, which
+Look shows as one amber line.
 
 ## A scheme: `schemes/<name>.json`
 

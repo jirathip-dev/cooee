@@ -90,9 +90,23 @@ async fn events(cx: &Cx) -> Result<Sse<impl Stream<Item = Result<Event>> + use<>
     Ok(Sse::new(stream::iter(first.into_iter().map(Ok)).chain(rest)).keep_alive(KeepAlive::new()))
 }
 
+#[derive(Deserialize)]
+struct Of {
+    persona: Option<String>,
+}
+
 #[route(GET "/threads")]
 async fn thread_list(cx: &Cx) -> Result<Answer<Vec<cooee_core::Summary>>> {
-    Ok(Answer(blocking(cx, |hub| Ok(hub.list())).await))
+    let of: Option<Of> = parse_query_params(cx).ok();
+    let persona = of.and_then(|o| o.persona);
+    Ok(Answer(
+        blocking(cx, move |hub| {
+            let mut rows = hub.list();
+            rows.retain(|r| persona.as_ref().is_none_or(|p| &r.persona == p));
+            Ok(rows)
+        })
+        .await,
+    ))
 }
 
 #[derive(Deserialize)]
@@ -127,6 +141,7 @@ async fn create(cx: &Cx, Json(new): Json<New>) -> Result<Answer<Created>> {
         let profile = new.profile.as_deref().unwrap_or_default();
         let list = profiles(&hub, (&data, config.as_deref()));
         let picked = (new.model, new.effort);
+        let asked = new.folder.clone();
         let (agent, folder, mut recipe) = recipe(
             &logins,
             (&data, config.as_deref(), &list),
@@ -134,6 +149,7 @@ async fn create(cx: &Cx, Json(new): Json<New>) -> Result<Answer<Created>> {
             new.folder,
             (picked, new.setup),
         )?;
+        let folder = topic_folder(asked, folder);
         if let Some(m) = new.machine {
             recipe.machine = m;
         }
@@ -225,6 +241,17 @@ async fn send(cx: &Cx, Json(m): Json<Message>) -> Result<Answer<cooee_core::Item
     ))
 }
 
+#[route(POST "/threads/{id}/handback")]
+async fn hand_back(cx: &Cx, Json(m): Json<Message>) -> Result<Answer<cooee_core::Item>> {
+    let id = thread_id(cx);
+    Ok(Answer(
+        blocking(cx, move |hub| {
+            hub.resume_handoff(&id, &m.text, &m.random_id)
+        })
+        .await,
+    ))
+}
+
 #[route(POST "/threads/{id}/queue")]
 async fn queue(cx: &Cx, Json(m): Json<Message>) -> Result<Answer<Vec<cooee_core::Queued>>> {
     let id = thread_id(cx);
@@ -255,6 +282,16 @@ async fn steer(cx: &Cx, Json(q): Json<Queued>) -> Result<Answer<Vec<cooee_core::
     Ok(Answer(
         blocking(cx, move |hub| hub.unqueue(&id, &q.random_id, true)).await,
     ))
+}
+
+fn topic_folder(asked: PathBuf, default: PathBuf) -> PathBuf {
+    if asked.as_os_str() == "scratch" {
+        PathBuf::new()
+    } else if asked.as_os_str().is_empty() {
+        default
+    } else {
+        asked
+    }
 }
 
 #[derive(Deserialize)]
@@ -332,7 +369,7 @@ async fn approve(cx: &Cx, Json(a): Json<Approve>) -> Result<Response> {
     let id = thread_id(cx);
     if a.option == "approve" && hub(cx).is_proposal(&id, a.item) {
         let Some(p) = a.passkey else {
-            return plain(403, "Approving an MCP server needs Face ID.");
+            return plain(403, "Approving this needs Face ID.");
         };
         if let Err(why) = pairing::assert(cx, p).await? {
             return plain(403, why);
@@ -399,6 +436,7 @@ pub(super) fn routes(b: RouterBuilder) -> RouterBuilder {
         .route(create)
         .route(retry)
         .route(send)
+        .route(hand_back)
         .route(queue)
         .route(unqueue)
         .route(steer)

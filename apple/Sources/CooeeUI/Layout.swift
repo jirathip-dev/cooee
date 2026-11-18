@@ -26,7 +26,12 @@ internal struct Sprite: View {
     internal var pack: String?
 
     internal var body: some View {
-        if let pack, let art = look.art {
+        let id = pack?.split(separator: "#").last.map(String.init) ?? ""
+        if let figure = look.drawn[id] {
+            FigureArt(figure: figure)
+        } else if let svg = look.vectors[id] {
+            PackArt(art: look.art ?? URL(filePath: "/"), path: "", markup: svg)
+        } else if let pack, let art = look.art {
             PackArt(art: art, path: pack)
         } else if let url = Bundle.module.url(forResource: name, withExtension: "png", subdirectory: "Sprites"),
             let image = PlatformImage(contentsOfFile: url.path)
@@ -42,12 +47,14 @@ internal struct PackArt: View {
     @State private var page = WebPage()
     internal let art: URL
     internal let path: String
+    internal var markup: String?
 
     private var html: String {
         let url = URL(string: path, relativeTo: art)?.absoluteString ?? ""
         let shown =
-            path.contains("#")
-            ? "<svg><use href=\"\(url)\" width=\"100%\" height=\"100%\"/></svg>" : "<img src=\"\(url)\">"
+            markup
+            ?? (path.contains("#")
+                ? "<svg><use href=\"\(url)\" width=\"100%\" height=\"100%\"/></svg>" : "<img src=\"\(url)\">")
         return "<meta name=\"viewport\" content=\"width=device-width\"><style>*{margin:0}"
             + "html,body,svg,img{width:100%;height:100%;display:block;overflow:hidden;background:none}"
             + "img{object-fit:cover;object-position:bottom}</style>\(shown)"

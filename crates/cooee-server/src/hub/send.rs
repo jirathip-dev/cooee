@@ -64,6 +64,7 @@ impl Hub {
         random_id: &str,
         files: &[Upload],
     ) -> Result<Queued, HubError> {
+        handing_off(live)?;
         if live.meta.closed || (text.trim().is_empty() && files.is_empty()) {
             return Err(HubError::Refused(
                 "the thread is closed or the message empty".to_owned(),
@@ -274,6 +275,9 @@ impl Hub {
     pub fn unqueue(&self, id: &str, random_id: &str, now: bool) -> Result<Vec<Queued>, HubError> {
         let live = self.live(id)?;
         let mut l = lock(&live);
+        if now {
+            handing_off(&l)?;
+        }
         let Some(at) = l.meta.queue.iter().position(|q| q.random_id == random_id) else {
             return Err(HubError::Refused(
                 "that message isn't queued any more".to_owned(),
@@ -285,4 +289,13 @@ impl Hub {
         self.send_next(&live, now.then_some(q))?;
         Ok(lock(&live).meta.queue.clone())
     }
+}
+
+fn handing_off(live: &Live) -> Result<(), HubError> {
+    if live.meta.handoff == 0 {
+        return Ok(());
+    }
+    Err(HubError::Refused(
+        "HANDOFF: the agent waits for you to hand back; your note goes with it".to_owned(),
+    ))
 }

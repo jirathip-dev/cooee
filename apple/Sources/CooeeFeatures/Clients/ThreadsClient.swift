@@ -6,6 +6,9 @@ public struct ThreadsClient: Sendable {
     public var home: @Sendable (_ server: Server) async throws -> HomeAnswer
     public var personas: @Sendable (_ server: Server) async throws -> [APIPersona]
     public var looks: @Sendable (_ server: Server) async throws -> Looks
+    public var checkTheme: @Sendable (_ server: Server, _ draft: ThemeDraft) async throws -> [String: GateReport]
+    public var saveTheme: @Sendable (_ server: Server, _ name: String, _ draft: ThemeDraft) async throws -> Void
+    public var themeArt: @Sendable (_ server: Server, _ theme: String, _ file: String) async throws -> String
     public var messages: @Sendable (_ server: Server, _ thread: String) async throws -> Slice
     public var events:
         @Sendable (_ server: Server, _ thread: String, _ since: String) -> AsyncThrowingStream<StreamEvent, any Error> =
@@ -28,6 +31,9 @@ public struct ThreadsClient: Sendable {
             -> String
     public var move: @Sendable (_ server: Server, _ thread: String, _ machine: String) async throws -> Void
     public var retry: @Sendable (_ server: Server, _ thread: String) async throws -> Void
+    public var topics: @Sendable (_ server: Server, _ persona: String) async throws -> [ThreadRow]
+    public var retitle: @Sendable (_ server: Server, _ thread: String, _ title: String) async throws -> Void
+    public var archive: @Sendable (_ server: Server, _ thread: String, _ archived: Bool) async throws -> Void
     public var room: @Sendable (_ server: Server, _ title: String, _ members: [String]) async throws -> String
     public var seat:
         @Sendable (_ server: Server, _ room: String, _ persona: String, _ place: Int?, _ remove: Bool) async throws
