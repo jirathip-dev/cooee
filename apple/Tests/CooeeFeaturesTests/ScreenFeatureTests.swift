@@ -47,6 +47,7 @@ internal struct ScreenFeatureTests {
 
     @Test internal func aScreenLoadsFollowsItsStreamAndIsKept() async {
         let store = store {
+            $0.screenCache.load = { _ in nil }
             $0.plugins.screen = { _, plugin, path in
                 #expect(plugin == .plugin("drover") && path == "/screens/queue")
                 return Self.screen
@@ -65,12 +66,10 @@ internal struct ScreenFeatureTests {
         await store.receive(\.failed) { $0.unreachable = "drover isn't answering" }
         #expect(store.state.offline && store.state.title == "Queue")
         #expect(store.state.screen?.root["blocks"]?.items.first?.string("value") == "6")
+        #expect(calls.all.isEmpty)
+        await clock.advance(by: .seconds(2))
         await task.cancel()
-        #expect(
-            calls.all == [
-                "keep https://mini.local|drover|/screens/queue true",
-                "keep https://mini.local|drover|/screens/queue true",
-            ])
+        #expect(calls.all == ["keep https://mini.local|drover|/screens/queue true"])
     }
 
     @Test internal func anUnreachableMacShowsTheKeptAnswerWithItsAgeThenRetries() async {
@@ -96,6 +95,7 @@ internal struct ScreenFeatureTests {
             $0.asOf = epoch
             $0.unreachable = nil
         }
+        await clock.advance(by: .seconds(2))
         await task.cancel()
     }
 
@@ -107,6 +107,7 @@ internal struct ScreenFeatureTests {
             ScreenFeature()
         } withDependencies: {
             $0.date.now = epoch
+            $0.continuousClock = clock
             $0.screenCache.save = { _, _ in }
             $0.plugins.act = { _, plugin, screen, action in
                 #expect(plugin == .plugin("drover") && screen == "queue" && action.action == "drive")
@@ -120,6 +121,7 @@ internal struct ScreenFeatureTests {
             $0.screen?.apply(event: answer)
             $0.asOf = epoch
         }
+        await clock.advance(by: .seconds(2))
     }
 
     @Test internal func aRefusedActionSaysWhy() async {
@@ -138,6 +140,7 @@ internal struct ScreenFeatureTests {
             $0.screen = LiveScreen(.object(["title": .string("Hi")]))
             $0.asOf = epoch
         }
+        await clock.advance(by: .seconds(2))
         #expect(store.state.title == "Hi")
     }
 
@@ -146,14 +149,63 @@ internal struct ScreenFeatureTests {
         await store.send(.open("herdsman-impl-641"))
         await store.receive(\.delegate.open, "herdsman-impl-641")
     }
+}
+
+extension ScreenFeatureTests {
+    nonisolated private static func event(_ seq: Int) -> JSONValue {
+        .object([
+            "seq": .number(Double(seq)),
+            "ops": .array([
+                .object([
+                    "op": .string("merge"), "id": .string("lanes"), "fields": .object(["value": .string("\(seq)")]),
+                ])
+            ]),
+        ])
+    }
+
+    @Test internal func aHundredEventsInASecondAreKeptOnceTwoSecondsAfterTheLast() async {
+        let store = store()
+        await store.send(.loaded(Self.screen)) {
+            $0.screen = LiveScreen(Self.screen)
+            $0.asOf = epoch
+        }
+        for seq in 1...100 {
+            await clock.advance(by: .milliseconds(10))
+            await store.send(.event(Self.event(seq))) { $0.screen?.apply(event: Self.event(seq)) }
+        }
+        await clock.advance(by: .milliseconds(1_999))
+        #expect(calls.all.isEmpty)
+        await clock.advance(by: .milliseconds(1))
+        #expect(calls.all == ["keep https://mini.local|drover|/screens/queue true"])
+    }
+
+    @Test internal func leavingAScreenKeepsItAtOnce() async {
+        let store = store { $0.plugins.screen = { _, _, path in .object(["title": .string(path)]) } }
+        await store.send(.loaded(Self.screen)) {
+            $0.screen = LiveScreen(Self.screen)
+            $0.asOf = epoch
+        }
+        await store.send(.navigate("/screens/global")) {
+            $0.path = ["/screens/global"]
+            $0.screen = nil
+        }
+        await store.receive(\.loaded) { $0.screen = LiveScreen(.object(["title": .string("/screens/global")])) }
+        await clock.advance(by: .seconds(2))
+        #expect(
+            calls.all == [
+                "keep https://mini.local|drover|/screens/queue true",
+                "keep https://mini.local|drover|/screens/global true",
+            ])
+    }
 
     @Test internal func aCoreScreenIsFetchedFromCoreAndKeptUnderCore() async {
         let home = ScreenFeature.State(server: mini, source: .core, path: "/screens/home", label: "Home")
-        let calls = calls
+        let (calls, clock) = (calls, clock)
         let store = TestStore(initialState: home) {
             ScreenFeature()
         } withDependencies: {
             $0.date.now = epoch
+            $0.continuousClock = clock
             $0.screenCache.save = { key, _ in calls.record("keep \(key)") }
             $0.plugins.screen = { _, source, path in
                 #expect(source == .core && path == "/screens/home")
@@ -165,6 +217,7 @@ internal struct ScreenFeatureTests {
             $0.screen = LiveScreen(.object(["title": .string("cooee")]))
             $0.asOf = epoch
         }
+        await clock.advance(by: .seconds(2))
         #expect(calls.all == ["keep https://mini.local|core|/screens/home"])
     }
 }
