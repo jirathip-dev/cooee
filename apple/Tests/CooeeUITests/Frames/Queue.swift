@@ -2,11 +2,14 @@ import CooeeCore
 import CooeeUI
 import Foundation
 import SwiftUI
+import Testing
 
-internal enum QueueFrames {
+@Suite(.serialized)
+internal struct QueueFrames {
     private static let file = URL(fileURLWithPath: #filePath)
         .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
-        .deletingLastPathComponent().appendingPathComponent("docs/design/queue-scene/fixtures/queue.json")
+        .deletingLastPathComponent().deletingLastPathComponent().appendingPathComponent(
+            "docs/design/queue-scene/fixtures/queue.json")
     private static let drawnAt = Date(timeIntervalSince1970: 1_794_217_260)
 
     private static let screen: JSONValue = {
@@ -38,41 +41,36 @@ internal enum QueueFrames {
         return (try? JSONDecoder().decode(JSONValue.self, from: Data(json.utf8))) ?? .null
     }()
 
-    @MainActor private static func sheet() -> some View {
+    @MainActor internal static func sheet() -> some View {
         Color.clear.overlay(alignment: .top) { BlocksView(screen, source: .plugin("drover")).padding(BlocksView.inset) }
             .clipped()
     }
 
-    @MainActor private static func panel() -> some View {
+    @MainActor internal static func panel() -> some View {
         Color.clear.overlay(alignment: .top) {
             BlocksView(screen, source: .plugin("drover")).padding(BlocksView.inset).frame(width: 760).padding(.top, 36)
         }
         .clipped()
     }
 
+    internal static func sheets(_ look: String) -> [Frame] {
+        [("dark", Palette.farmDark), ("light", .farmLight)].map { mode, palette in
+            Frame.phone("queue-\(look)-\(mode)", palette) { sheet() }
+        } + [.mac("queue-mac-\(look)-dark", 1440, 900, .farmDark) { panel() }]
+    }
+
     internal static var all: [Frame] {
-        let modes: [(String, Palette)] = [("dark", .farmDark), ("light", .farmLight)]
-        let phones = modes.flatMap { mode, palette in
-            [LookStyle.scene, .modern, .terminal].map { style in
-                Frame(
-                    name: "queue-\(style.rawValue)-\(mode)", width: 402, height: 874, palette: palette, style: style,
-                    phone: true, view: { AnyView(sheet()) })
-            }
-        }
-        let macs = [LookStyle.scene, .modern, .terminal].map { style in
-            Frame(
-                name: "queue-mac-\(style.rawValue)-dark", width: 1440, height: 900, palette: .farmDark, style: style,
-                phone: false, view: { AnyView(panel()) })
-        }
         let lanes = Frame(
-            name: "queue-figures-modern-dark", width: 64, height: 360, palette: .farmDark, style: .modern,
-            phone: false,
+            name: "queue-figures-modern-dark", width: 64, height: 360, palette: .farmDark, phone: false,
             view: {
                 AnyView(
                     Color.clear.overlay(alignment: .top) {
                         BlocksView(figures, source: .plugin("drover")).padding(.top, 36)
                     })
             })
-        return phones + macs + [lanes]
+        return sheets("modern") + [lanes]
     }
+
+    @MainActor @Test(arguments: all)
+    internal func matchesTheDesign(_ frame: Frame) throws { try frame.matchesItsDesign() }
 }

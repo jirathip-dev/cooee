@@ -4,11 +4,13 @@ import CooeeFeatures
 @testable import CooeeUI
 import Foundation
 import SwiftUI
+import Testing
 
-internal enum ThemeFrames {
+@Suite(.serialized)
+internal struct ThemeFrames {
     private static let schemes = URL(fileURLWithPath: #filePath)
         .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
-        .deletingLastPathComponent().appendingPathComponent("design-system/schemes")
+        .deletingLastPathComponent().deletingLastPathComponent().appendingPathComponent("design-system/schemes")
     private static let server = Server(url: URL(string: "https://mini.local") ?? URL(filePath: "/"), token: "t")
 
     private static func scheme(_ name: String) -> String {
@@ -50,18 +52,20 @@ internal enum ThemeFrames {
         return figure
     }
 
-    private static func looks(_ style: LookStyle) -> Looks {
+    private static func looks(_ style: String) -> Looks {
         let json =
             #"{"themes": {"tidepool": {"label": "Tidepool", "scheme": {"dark": "farm", "light": "farm-light"}, "#
-            + #""sprites": true, "style": "\#(style.rawValue)", "scene": ["sky", "sea", "rocks", "sand"], "#
+            + #""sprites": true, "style": "\#(style)", "scene": ["sky", "sea", "rocks", "sand"], "#
             + #""words": {"needs": "waving", "idle": "basking", "working": "scuttling"}}, "#
             + #""farm": {"label": "farm", "scheme": {"dark": "farm", "light": "farm-light"}, "sprites": true}}, "#
             + #""schemes": {"farm": \#(scheme("farm")), "farm-light": \#(scheme("farm-light")), "#
             + #""paper": \#(scheme("paper"))}}"#
-        return decode(json) ?? Looks()
+        var looks: Looks = decode(json) ?? Looks()
+        looks.styles = Style.served
+        return looks
     }
 
-    private static func state(_ style: LookStyle, colours: Bool) -> ThemeEditorFeature.State {
+    private static func state(_ style: String, colours: Bool) -> ThemeEditorFeature.State {
         var state = ThemeEditorFeature.State(
             server: server, looks: looks(style), theme: "tidepool", style: style, new: false)
         state.draft.light["--a"] = "#a88a2a"
@@ -76,26 +80,22 @@ internal enum ThemeFrames {
     }
 
     private static func frame(
-        _ name: String, _ style: LookStyle, phone: Bool = true,
-        _ view: @escaping @MainActor @Sendable () -> some View
-    )
-        -> Frame
-    {
-        let light = style == .scene
-        return Frame(
-            name: "theme-\(name)-\(style.rawValue)", width: phone ? 402 : 1440, height: phone ? 874 : 900,
-            palette: light ? .farmLight : .farmDark, style: light ? .modern : style, phone: phone,
-            folder: "v4-theme-editor", view: { AnyView(view()) }
+        _ name: String, _ style: String, phone: Bool = true, _ view: @escaping @MainActor @Sendable () -> some View
+    ) -> Frame {
+        Frame(
+            name: "theme-\(name)-\(style)", width: phone ? 402 : 1440, height: phone ? 874 : 900,
+            palette: style == "scene" ? .farmLight : .farmDark, phone: phone, folder: "v4-theme-editor",
+            view: { AnyView(view()) }
         )
     }
 
     @MainActor
-    private static func store(_ style: LookStyle, colours: Bool) -> StoreOf<ThemeEditorFeature> {
+    private static func store(_ style: String, colours: Bool) -> StoreOf<ThemeEditorFeature> {
         Store(initialState: state(style, colours: colours)) { EmptyReducer() }
     }
 
     @MainActor
-    private static func draw(_ style: LookStyle, passing: Bool = false) -> StoreOf<ThemeEditorFeature> {
+    private static func draw(_ style: String, passing: Bool = false) -> StoreOf<ThemeEditorFeature> {
         var state = state(style, colours: false)
         state.dark = true
         if passing { state.reports["light"] = GateReport() }
@@ -109,9 +109,11 @@ internal enum ThemeFrames {
     }
 
     @MainActor
-    private static func menu(_ style: LookStyle, broken: Bool) -> StoreOf<MenuFeature> {
-        var state = MenuFeature.State(server: server, settings: Settings(style: style, theme: "tidepool"))
-        state.looks = looks(style)
+    private static func menu(_ style: String, broken: Bool) -> StoreOf<MenuFeature> {
+        let looks = looks(style)
+        let settings = Settings(style: StylePick(style, kept: looks.style(style)), theme: "tidepool")
+        var state = MenuFeature.State(server: server, settings: settings)
+        state.looks = looks
         state.looks.broken = broken ? ["tidepool": "sprites.svg: no s-fail"] : nil
         state.saved = "Tidepool"
         return Store(initialState: state) { EmptyReducer() }
@@ -123,15 +125,20 @@ internal enum ThemeFrames {
             .frame(maxHeight: .infinity, alignment: .top)
     }
 
-    internal static var all: [Frame] {
-        LookStyle.allCases.flatMap { style in
-            [
-                frame("look", style) { look(menu(style, broken: false)) },
-                frame("pack", style) { ThemeEditor(store: store(style, colours: false)) },
-                frame("colours", style) { ThemeColours(store: store(style, colours: true)) },
-                frame("draw", style) { ThemeDraw(store: draw(style)).padding(.top, 54) },
-                frame("mac", style, phone: false) { ThemeMac(store: draw(style, passing: true), renames: false) },
-            ]
-        } + [frame("look-broken", .modern) { look(menu(.modern, broken: true)) }]
+    internal static func editor(_ style: String) -> [Frame] {
+        [
+            frame("look", style) { look(menu(style, broken: false)) },
+            frame("pack", style) { ThemeEditor(store: store(style, colours: false)) },
+            frame("colours", style) { ThemeColours(store: store(style, colours: true)) },
+            frame("draw", style) { ThemeDraw(store: draw(style)).padding(.top, 54) },
+            frame("mac", style, phone: false) { ThemeMac(store: draw(style, passing: true), renames: false) },
+        ]
     }
+
+    internal static var all: [Frame] {
+        editor("modern") + editor("scene") + [frame("look-broken", "modern") { look(menu("modern", broken: true)) }]
+    }
+
+    @MainActor @Test(arguments: all)
+    internal func matchesTheDesign(_ frame: Frame) throws { try frame.matchesItsDesign() }
 }

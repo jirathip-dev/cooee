@@ -23,4 +23,4 @@ source line is on every secret, run, confirm and permissions block.
 
 ## What stays Swift, on purpose
 
-`ChatView`'s transcript and `Composer`, `QRScanner`, the three `LookStyle` renderers, and `SwipeBack`. Each is a component block or part of one, never a screen.
+`ChatView`'s transcript and `Composer`, `QRScanner`, the one style renderer (#488: `docs/architecture/styles-as-packs/`; Terminal and Scene are packs), and `SwipeBack`. Each is a component block or part of one, never a screen.

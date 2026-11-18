@@ -21,8 +21,8 @@ internal struct BlockRenderTests {
                 .appendingPathComponent("fleets-config/fixtures"))
     }
 
-    private static func height(_ block: JSONValue, _ style: LookStyle = .modern) -> Int {
-        let look = Look(palette: .farmLight, style: .bundled(style), still: true)
+    private static func height(_ block: JSONValue, _ style: Style = .bundled) -> Int {
+        let look = Look(palette: .farmLight, style: style, still: true)
         let view = BlocksView(block, source: .plugin("edgar")).frame(width: 402).environment(\.look, look)
         return ImageRenderer(content: view).cgImage?.height ?? 0
     }
@@ -68,7 +68,7 @@ internal struct BlockRenderTests {
         let scene = try #require(Self.sceneQueue().list("blocks").first)
         #expect(scene.type == "scene")
         #expect(Self.height(scene, .scene) == 180)
-        #expect(Self.height(scene, .modern) == 0 && Self.height(scene, .terminal) == 0)
+        #expect(Self.height(scene, .bundled) == 0 && Self.height(scene, .terminal) == 0)
     }
 
     @Test internal func aRowWhoseCurrentRoundNeedsYouOpensItsRoundsOthersStayFolded() {
@@ -79,8 +79,8 @@ internal struct BlockRenderTests {
             Self.height(Self.row(current: "working"), .terminal) < Self.height(Self.row(current: "needs"), .terminal))
     }
 
-    @Test(arguments: [LookStyle.modern, .terminal, .scene])
-    internal func theQueueInSceneDrawsInEveryLook(_ style: LookStyle) throws {
+    @Test(arguments: [Style.bundled] + Style.packs)
+    internal func theQueueInSceneDrawsInEveryLook(_ style: Style) throws {
         #expect(Self.height(try Self.sceneQueue(), style) > 1000)
     }
 

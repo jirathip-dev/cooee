@@ -19,7 +19,7 @@ internal struct AppIconPicker: View {
 
     internal var body: some View {
         let settings = store.settings
-        let followed = AppIcon.following(settings.style)
+        let followed = settings.style.followed
         Group2 {
             Button {
                 store.send(.icon(nil))

@@ -86,7 +86,7 @@ public struct Look: Sendable {
     public var vectors: [String: String] = [:]
     public var tokens: [String: String] = [:]
 
-    public init(palette: Palette = .farmDark, style: Style = .bundled(.modern), still: Bool = false, art: URL? = nil) {
+    public init(palette: Palette = .farmDark, style: Style = .bundled, still: Bool = false, art: URL? = nil) {
         self.palette = palette
         self.style = style
         self.still = still

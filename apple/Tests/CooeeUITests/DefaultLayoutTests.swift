@@ -35,23 +35,14 @@ internal struct DefaultLayoutTests {
         #expect(HomeScreen.bundled.blocks.map(\.type) == ["pinned", "chats"])
     }
 
-    @Test internal func everyBundledStyleDecodesToItsTokens() {
-        let styles = LookStyle.allCases.map(Style.bundled)
+    @Test internal func theBundledStyleAndBothPacksDecodeToTheirTokens() {
+        let styles = [Style.bundled] + Style.packs
         #expect(styles.map(\.label) == ["Modern", "Terminal", "Scene"])
         #expect(styles.map(\.surface) == [.glass, .dashed, .solid])
         #expect(styles.map(\.figures) == [.avatar, .ascii, .sprite])
         #expect(styles.map(\.type) == [.default, .mono, .default])
         #expect(styles.map(\.icon) == [.modern, .terminal, .farm])
         #expect(styles.map { $0.stage?.alertPaper } == [nil, nil, "#f8dede"])
-    }
-
-    @Test(arguments: ["terminal", "scene"])
-    internal func theBundledPackStyleIsThePacksFileByteForByte(_ pack: String) throws {
-        let root = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent()
-            .deletingLastPathComponent()
-        let bundled = root.appendingPathComponent("Sources/CooeeUI/Default/styles/\(pack).json")
-        let packed = root.deletingLastPathComponent().appendingPathComponent("packs/\(pack)/style.json")
-        #expect(try Data(contentsOf: bundled) == Data(contentsOf: packed))
     }
 
     private static let fixtures = URL(fileURLWithPath: #filePath).deletingLastPathComponent()
@@ -75,6 +66,6 @@ internal struct DefaultLayoutTests {
             #expect(label.apply(text).lowercased().contains(text.lowercased()))
         }
         #expect(worst.labels[.kind]?.apply(text) == "[## SECRET · FROM KESTREL ##]")
-        #expect(try Self.style("ok-modern.json") == Style.bundled(.modern))
+        #expect(try Self.style("ok-modern.json") == Style.bundled)
     }
 }

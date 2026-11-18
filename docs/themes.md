@@ -5,7 +5,7 @@ cooee's look follows herdsman's data-only theme contract (herdsman `docs/themes.
 
 ## Today
 
-- **Looks:** Modern, Terminal and Scene styles; farm, kitchen and garden theme packs (#65, #66, #67).
+- **Looks:** Modern built in, Terminal and Scene as style packs ([docs/styles.md](docs/styles.md), #488); farm, kitchen and garden theme packs (#65, #66, #67).
 
 ## A theme pack: `themes/<name>/`
 
@@ -14,7 +14,7 @@ A theme is one coherent pack: a folder, or a folder of a git repo. Only `plain` 
 
 | File | Required | What it is |
 |---|---|---|
-| `theme.json` | yes | `label`, `scheme: {dark, light}` (the default scheme per mode), `sprites` (bool), `moments` (bool), `words`, `scene` (the Scene's layers: element ids in `scene.svg`), and optional `style` (`modern`, `terminal` or `scene`: the Style a device takes once when it picks the theme; without it the device keeps its own) |
+| `theme.json` | yes | `label`, `scheme: {dark, light}` (the default scheme per mode), `sprites` (bool), `moments` (bool), `words`, `scene` (the Scene's layers: element ids in `scene.svg`), and optional `style` (`modern` or a style pack's name: the Style a device takes once when it picks the theme; without it the device keeps its own) |
 | `sprites.svg` | when `sprites` | `<symbol>`s `s-edit s-read s-run s-idle s-done s-needs s-merged s-fail` (24 px) and `s-loading s-empty` (132 × 100), optionally Scene's 132 × 100 poses `s-scene-edit s-scene-idle s-scene-done s-scene-needs s-scene-merged s-scene-fail` (#115: farm and kitchen carry vector figures; without them Scene draws `s-<state>`); two-frame loops use `.kf1/.kf2` or `.f1/.f2`; pages `<use>` it by URL, so it loads only once a sprite shows |
 | `scene.svg` | when `sprites` or `scene` | Scene's backdrop (#34): the strip on top of each page, drawn at the page's width (`object-fit: cover`, bottom-aligned), its `viewBox` at most 400 × 320 (the first-party packs' scenes are 390 × 320 or 392 × 188), holding each layer `scene` names. A `#night` element styled by `:target` gives the night look (`scene.svg#night`, 19:00 to 07:00 on the device's clock); herdsman's load layers (`.h-busy .h-held .l-overcast .l-rain`) stay hidden, as cooee has no host load |
 | `schemes/<name>.json` | no | the pack's own colour schemes (below); its `theme.json` may name them |
@@ -89,7 +89,7 @@ group tints, and the state colours at least ΔE2000 20 apart. A scheme that fail
 
 The server holds only the default theme (`theme` in `config.toml`; default `farm` when it is installed, else
 `plain`). Each device keeps its own pick
-in the native app, four choices (#35): Style (`modern`, `terminal` or `scene`), Theme, Figures
+in the native app, four choices (#35): Style (Modern, or an installed style pack: `docs/styles.md`), Theme, Figures
 (`sprite`, `ascii` or `none`) and Colours (Appearance `system`, `light` or `dark`, System following the phone live,
 and a scheme per mode). Both styles read the same tokens: a style sets only shape, radius, type and buttons.
 
@@ -97,8 +97,8 @@ and a scheme per mode). Both styles read the same tokens: a style sets only shap
   drawing per state, two frames), the same in every theme, monospaced and in the scheme's colours; `none` is a
   coloured dot and the plain word (`working`, `needs you`, `done`). A theme without sprites (plain) offers `ascii`
   or `none`, and starts on `ascii`.
-- **Scene** is offered only with `sprite`. With `ascii` or `none` the look sheet doesn't list it, and a device on
-  Scene shows its last Modern or Terminal pick.
+- **Scene** is offered only with a theme that has sprites and a scene. With one that lacks them the look sheet
+  doesn't list it, and a device on Scene draws Modern (`docs/styles.md`).
 
 Scene (#34) draws the agents sidebar (#86) as the theme's scene, on one page: each agent a 132 × 100 sprite acting
 out its ongoing chat's state (`working` `s-edit`, `needs`, `done`, `fail`, ended `s-merged`, else `s-idle`; each as its `s-scene-` pose when the sheet has one) over its
