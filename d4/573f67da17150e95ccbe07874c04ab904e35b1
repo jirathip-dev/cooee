@@ -1,0 +1,10 @@
+Decided: shed's `rate-limited` becomes the turn state `limited`, its reset time kept in the turn's note; context use rides on the turn as `context` from ACP's usage_update.
+Because: "One neutral limit state and context-use figure for every provider"
+Decided: the mapping lives in one place, `Turn::report`, used by the live event path and the re-attach after a restart.
+Because: crates/cooee-core/src/chat/summary.rs:22
+Rejected: matching each provider's limit line in cooee — shed already turns every provider's line into one `rate-limited` state, so cooee maps that one state.
+Because: "Gemini's limit line is a data entry in shed"
+Decided: step 7 says nothing; on the fake the suite has the fake shed report the limit line, and on a real harness it checks only context use.
+Because: crates/cooee/tests/conformance.rs:87
+Check: conformance step 7 fails on the base (no limit state within 180s) and passes at the head.
+Owner: Threads now show "limited" with the reset time when a provider's limit is hit, and how full the context window is.
