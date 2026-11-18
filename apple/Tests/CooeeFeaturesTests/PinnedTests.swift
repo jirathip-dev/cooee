@@ -9,11 +9,19 @@ internal struct PinnedTests {
     private let calls = Calls()
     private let clock = TestClock()
 
-    private func thread(_ id: String, updated: Int64, members: [String] = []) -> ThreadRow {
+    private func thread(_ id: String, updated: Int64, unseen: Int = 4, members: [String] = []) -> ThreadRow {
         ThreadRow(
             id: id, title: id, agent: "codex", persona: "coder", state: "done", last: "", updated: updated,
-            unseen: 4, archived: false, members: members
+            unseen: unseen, archived: false, members: members
         )
+    }
+
+    private func opened(_ id: String) -> (inout AppFeature.State) -> Void {
+        { state in
+            state.path = [id]
+            state.chat = ChatFeature.State(server: mini, target: .thread(id), persona: Persona(coder, state: .done))
+            state.home?.opened["coder"] = id
+        }
     }
 
     private func store(_ rows: [ThreadRow]) -> TestStoreOf<AppFeature> {
@@ -44,10 +52,7 @@ internal struct PinnedTests {
             thread("old", updated: 1), thread("new", updated: 3), thread("room", updated: 9, members: ["coder"]),
         ]
         let store = store(rows)
-        await store.send(.pin("coder")) {
-            $0.path = ["new"]
-            $0.chat = ChatFeature.State(server: mini, target: .thread("new"), persona: Persona(coder, state: .done))
-        }
+        await store.send(.pin("coder"), assert: opened("new"))
         let task = await store.send(.chat(.task))
         await store.receive(\.chat.loaded) {
             $0.chat?.loading = false
@@ -66,5 +71,32 @@ internal struct PinnedTests {
             $0.path = ["new:coder"]
             $0.chat = ChatFeature.State(server: mini, target: .new(coder), persona: Persona(coder))
         }
+    }
+
+    @Test internal func unreadInAnOlderTopicWinsOverANewerReadOne() async {
+        let store = store([thread("older", updated: 1, unseen: 2), thread("newer", updated: 3, unseen: 0)])
+        await store.send(.pin("coder"), assert: opened("older"))
+    }
+
+    @Test internal func withNothingUnreadThePinOpensTheTopicLastOpenNotTheNewest() async {
+        let store = store([thread("older", updated: 1, unseen: 0), thread("newer", updated: 3, unseen: 0)])
+        await store.send(.open("older"), assert: opened("older"))
+        await store.send(.back) {
+            $0.path = []
+            $0.chat = nil
+        }
+        await store.send(.pin("coder"), assert: opened("older"))
+    }
+
+    @Test internal func aPushOpensItsOwnTopicOverAnUnreadOne() async {
+        let store = store([thread("pushed", updated: 1, unseen: 0), thread("unread", updated: 3, unseen: 2)])
+        store.dependencies.push.opened = {
+            AsyncStream {
+                $0.yield("pushed")
+                $0.finish()
+            }
+        }
+        await store.send(.taps)
+        await store.receive(\.open, assert: opened("pushed"))
     }
 }

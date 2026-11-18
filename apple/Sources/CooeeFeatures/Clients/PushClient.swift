@@ -5,6 +5,8 @@ import CooeeCore
 public struct PushClient: Sendable {
     public var token: @Sendable () async throws -> String
     public var register: @Sendable (_ server: Server, _ token: String, _ enabled: Bool) async throws -> Void
+    /// The thread of each notification the owner taps (#516).
+    public var opened: @Sendable () async -> AsyncStream<String> = { .finished }
 }
 
 extension PushClient: TestDependencyKey {

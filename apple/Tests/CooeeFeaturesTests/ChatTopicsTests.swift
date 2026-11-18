@@ -143,6 +143,7 @@ internal struct TopicSwitchTests {
         await store.send(.open("t1")) {
             $0.path = ["t1"]
             $0.chat = ChatFeature.State(server: mini, target: .thread("t1"), persona: Persona(coder, state: .done))
+            $0.home?.opened["coder"] = "t1"
         }
         await store.send(.chat(.topics(.loaded(rows)))) { $0.chat?.bar?.topics = Topics(rows) }
         await store.send(.chat(.topics(.open("t1"))))
@@ -150,6 +151,7 @@ internal struct TopicSwitchTests {
         await store.receive(\.chat.delegate.topic) {
             $0.path = ["t2"]
             $0.chat = ChatFeature.State(server: mini, target: .thread("t2"), persona: Persona(coder, state: .done))
+            $0.home?.opened["coder"] = "t2"
             $0.chat?.bar?.topics = Topics(rows)
         }
         await store.send(.chat(.topics(.open(nil))))

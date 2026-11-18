@@ -13,6 +13,37 @@ public enum Listing {
         }
     }
 
+    /// The topic a tap on `persona` opens (#516): the one with the newest unread message, else `last`, else the newest.
+    public static func opens(_ persona: String, rows: [ThreadRow], last: String?) -> ThreadRow? {
+        let topics = rows.filter { $0.persona == persona && $0.members.isEmpty && $0.askedBy.isEmpty }
+        let newest = { (rows: [ThreadRow]) in rows.max { $0.updated < $1.updated } }
+        return newest(topics.filter { $0.unseen > 0 }) ?? topics.first { $0.id == last } ?? newest(topics)
+    }
+
+    /// One row per counted persona, where its newest topic was, drawing the topic a tap opens.
+    public static func collapsed(
+        _ chats: [ListedChat], rows: [ThreadRow], counts: [String: TopicCount], opened: [String: String]
+    )
+        -> [ListedChat]
+    {
+        var seen: Set<String> = []
+        return chats.compactMap { chat in
+            let id = chat.persona.id
+            guard chat.members.isEmpty, chat.from.isEmpty, let count = counts[id] else { return chat }
+            guard seen.insert(id).inserted, let topic = opens(id, rows: rows, last: opened[id]),
+                let opens = chats.first(where: { $0.id == topic.id })
+            else { return nil }
+            let row = opens.row
+            var listed = ListedChat(
+                row: Row(
+                    id: row.id, persona: id, title: row.title, last: row.last, ago: row.ago, unseen: count.unread,
+                    state: row.state),
+                persona: opens.persona)
+            (listed.topics, listed.folder) = (count.topics, topic.folder)
+            return listed
+        }
+    }
+
     public static func chats(rows: [ThreadRow], personas: [APIPersona], now: Date) -> [ListedChat] {
         nested(rows.map { listed($0, rows: rows, personas: personas, now: now) })
     }

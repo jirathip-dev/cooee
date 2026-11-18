@@ -128,7 +128,7 @@ private struct HomeSlot<Detail: View>: View {
     fileprivate var body: some View {
         if let home = store.scope(state: \.home, action: \.home) {
             let (screen, lists) = (home.screen ?? .bundled, home.state.lists(now: Date()))
-            let (chats, actions) = (lists.chats, actions(others: lists.othersTitles))
+            let (chats, actions) = (home.state.shown(lists), actions(others: lists.othersTitles))
             let pins = lists.pins(home.pinned, rooms: actions.rooms)
             Group {
                 if wide {

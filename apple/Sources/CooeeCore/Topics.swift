@@ -58,3 +58,14 @@ public struct Topics: Equatable, Sendable {
         return (["~"] + parts.dropFirst(2)).joined(separator: "/")
     }
 }
+
+/// A persona's open topics and their summed unread, as `GET /screens/home` counts them (#516).
+public struct TopicCount: Sendable, Equatable {
+    public let topics: Int
+    public let unread: Int
+
+    public init(topics: Int, unread: Int) {
+        self.topics = topics
+        self.unread = unread
+    }
+}
