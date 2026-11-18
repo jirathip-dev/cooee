@@ -1,0 +1,41 @@
+Decided: Style carries type a slice early so Look.mono reads a token, not a style name
+Because: docs/architecture/styles-as-packs/migration.md:40
+Decided: Avatar is renamed FigureView and every caller moved, so there is one figure view
+Because: docs/architecture/styles-as-packs/callers.md:41
+Decided: the scene block keeps drawing nothing without a stage (LaneStage guards it)
+Because: apple/Tests/CooeeUITests/BlockRenderTests.swift:67
+Rejected: one Stage that also pads and sizes each strip — the three layouts differ, and sharing them would change pixels
+Check: every frame in base vs head renders identical except for clock text (same frames differ base vs base)
+Owner: Nothing on screen changes; the three looks now come from style files, ready to become packs.
+
+Decided: the app target's previews build a Style with .bundled, as the package's callers do
+Because: apple/Tests/CooeeUITests/Frames.swift:28
+Rejected: a Look init that still takes the old style name — two ways to pick a style, against the ADR
+Check: xcodebuild of the Cooee scheme for macOS and iOS Simulator succeeds at the head
+Owner: The app build that CI makes the installer from works again; nothing on screen changes.
+
+Decided: the theme editor's preview builds a Style with .bundled and asks for a stage, not the scene name
+Because: apple/Sources/CooeeUI/Theme.swift:91
+Decided: the staging conflict in the preview keeps staging's vectors line on top of the .bundled style
+Because: apple/Sources/CooeeUI/ThemeEditor.swift:183
+Rejected: a Look init that still takes the old style name — two ways to pick a style, against the ADR
+Check: apple-check and the xcodebuild for macOS and iOS Simulator succeed at the head merged with staging
+Owner: The theme editor that just landed builds again with the new style files; nothing on screen changes.
+
+Decided: no code change this round; merged staging, whose #557 fixed the failing mcp secrets test
+Because: crates/cooee-core/src/secrets.rs:94
+Rejected: touching the Rust secrets code here — this branch changes no Rust, and staging already fixed it
+Check: CI gates and apple are green at the head merged with staging
+Owner: The failing check was another change's, already fixed upstream; this branch picks up the fix.
+
+Decided: no code change this round; merged staging so CI runs again at a new head
+Because: apple/Tests/CooeeUITests/SnapshotTests.swift:60
+Rejected: raising the pixel tolerance or re-recording theme-colours — staging's e624714 fails the same three frames identically on the air-cooee runner, so it is not this branch's
+Check: theme-colours frames render byte-identical at staging 95c3cb2 and this branch; apple-check exits 0 on Xcode 27.2
+Owner: The red check comes from one CI machine that already fails on staging; this branch changes nothing there.
+
+Decided: no code change this round; merged staging d056cb6 so CI runs again at a new head
+Because: apple/Tests/CooeeUITests/SnapshotTests.swift:76
+Rejected: raising the pixel tolerance or re-recording theme-colours — staging e624714 and issue-504 fail the same three frames with identical ratios on the air-cooee runner, so it is not this branch's
+Check: apple-check exits 0 at 119dbaa locally; air-cooee runs fail theme-colours on any branch, mini-cooee runs pass
+Owner: The red check comes from one CI machine that fails the same way on staging; this branch changes nothing there.
