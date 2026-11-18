@@ -14,3 +14,4 @@ mod upstream;
 pub use grant::*;
 pub use own::*;
 pub use proxy::*;
+pub use rpc::*;
