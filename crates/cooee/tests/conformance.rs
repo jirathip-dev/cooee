@@ -32,7 +32,7 @@ struct Step {
     check: fn(&Run, &Value) -> Result<(), String>,
 }
 
-const SCENARIO: [Step; 4] = [
+const SCENARIO: [Step; 5] = [
     Step {
         n: 1,
         name: "The brief is honoured",
@@ -83,7 +83,35 @@ const SCENARIO: [Step; 4] = [
             })
         },
     },
+    Step {
+        n: 8,
+        name: "Built-ins are off",
+        says: "List the names of every tool you have, one per line.",
+        stop: false,
+        check: |run, reply| {
+            let text = reply["text"].as_str().unwrap_or_default();
+            let names: Vec<&str> = text
+                .split(|c: char| !c.is_alphanumeric() && c != '_')
+                .collect();
+            let off = OFF.iter().find(|(p, _)| *p == run.provider);
+            let off = off.ok_or(format!("no names turned off for {}", run.provider))?;
+            let on: Vec<_> = off.1.iter().filter(|t| names.contains(t)).collect();
+            on.is_empty()
+                .then_some(())
+                .ok_or(format!("still on: {on:?} in {text:?}"))
+        },
+    },
 ];
+
+const OFF: [(&str, &[&str]); 4] = [
+    ("fake", &["Agent", "Workflow", "Skill"]),
+    ("claude", &["Agent", "Workflow", "Skill"]),
+    ("codex", &["spawn_agent"]),
+    ("gemini", &["save_memory"]),
+];
+
+const FAKE: &str = "[[providers]]\nname = \"fake\"\nbase = \"claude\"\nagent = \"fake-acp\"\nhome = \"FAKE_HOME\"\n\
+                    login = [\"true\"]\nstatus = [\"true\"]\n";
 
 fn under(root: u32) -> Vec<(u32, String)> {
     let ps = Command::new("ps")
@@ -122,6 +150,7 @@ struct Run {
     home: std::path::PathBuf,
     folder: std::path::PathBuf,
     agent: String,
+    provider: String,
     model: Option<String>,
     thread: Option<String>,
     prompts: usize,
@@ -129,11 +158,16 @@ struct Run {
 }
 
 impl Run {
-    fn start(dir: &Path, shed: &Path, (agent_id, model): (&str, Option<&str>), tree: u32) -> Self {
+    fn start(
+        dir: &Path,
+        (shed, extra): (&Path, &str),
+        (agent_id, provider, model): (&str, &str, Option<&str>),
+        tree: u32,
+    ) -> Self {
         let toml = format!("name = \"Scout\"\nagent = \"{agent_id}\"\n");
         let home = agent(dir, "scout", &toml, "");
         fs::write(home.join("CHARACTER.md"), BRIEF).unwrap();
-        let cooee = Cooee::start(dir, shed);
+        let cooee = Cooee::start_with(dir, shed, extra);
         let skill = json!({ "name": "conformance", "description": "The suite's check.",
                             "body": "Reply with the single word HERON." });
         let (status, body) = cooee.post("/personas/scout/skills", &skill);
@@ -143,6 +177,7 @@ impl Run {
             home,
             folder: dir.join("root/project"),
             agent: agent_id.to_owned(),
+            provider: provider.to_owned(),
             model: model.map(str::to_owned),
             thread: None,
             prompts: 0,
@@ -284,16 +319,25 @@ fn report(provider: &str, results: &[(&Step, String)]) -> String {
 fn the_scenario_passes_on_the_fake_shed() {
     let dir = scratch("conformance");
     let shed = FakeShed::start(&dir.join("shed"), version());
-    let mut run = Run::start(&dir, &shed.dir, ("fake-acp", None), std::process::id());
+    let fake = ("fake-acp", "fake", None);
+    let mut run = Run::start(&dir, (&shed.dir, FAKE), fake, std::process::id());
     let results = scenario(&mut run);
     let table = report("fake", &results);
     assert!(results.iter().all(|(_, r)| r == "pass"), "{table}");
-    let sent = shed.sent(&format!("cooee-{}", run.thread.as_deref().unwrap()));
-    assert!(sent.iter().any(|s| s.contains(BRIEF)), "{sent:?}");
+    let terminal = format!("cooee-{}", run.thread.as_deref().unwrap());
+    let sent = shed.sent(&terminal);
+    let system = shed.meta(&terminal).unwrap()["systemPrompt"]["append"].clone();
+    let system = system.as_str().unwrap().to_owned();
     assert!(
-        sent.iter().all(|s| !s.contains("HERON")),
-        "the skill's body is never briefed: {sent:?}"
+        system.contains(BRIEF),
+        "the brief is in the system channel: {system}"
     );
+    assert!(
+        sent.iter()
+            .all(|s| !s.contains(BRIEF) && !s.contains("HERON")),
+        "the brief is not sent again, and the skill's body never: {sent:?}"
+    );
+    assert!(!system.contains("HERON"), "{system}");
     drop(run);
     fs::remove_dir_all(&dir).ok();
 }
@@ -306,14 +350,15 @@ fn the_scenario_on_a_real_harness() {
     let shed = Path::new(&var("CONFORMANCE_SHED")).to_owned();
     let model = var("CONFORMANCE_MODEL");
     let serve = var("CONFORMANCE_SHED_PID").parse().unwrap();
+    let provider = var("CONFORMANCE_PROVIDER");
     let mut run = Run::start(
         &dir,
-        &shed,
-        (&var("CONFORMANCE_AGENT"), Some(&model)),
+        (&shed, ""),
+        (&var("CONFORMANCE_AGENT"), &provider, Some(&model)),
         serve,
     );
     let results = scenario(&mut run);
-    let table = report(&var("CONFORMANCE_PROVIDER"), &results);
+    let table = report(&provider, &results);
     drop(run);
     fs::remove_dir_all(&dir).ok();
     assert!(results.iter().all(|(_, r)| r == "pass"), "{table}");

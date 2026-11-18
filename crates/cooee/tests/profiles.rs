@@ -1,7 +1,7 @@
 //! Agent profiles end to end with the fake shed (tests/support), whose CLI runs the adapter command a start gives
 //! it: Plain starts the agent with nothing added; a file profile's account, settings, env (its secret through the
-//! adapter's shell), policy, its provider's "no personal setup" options and instructions are applied at spawn; a
-//! plugin's profile starts while the plugin is installed and is refused once it is removed; a guard its agent can't
+//! adapter's shell), policy, its provider's session setup (#503) and instructions are applied at spawn; a plugin's
+//! profile starts while the plugin is installed and is refused once it is removed; a guard its agent can't
 //! run refuses the start; no secret reaches cooee's config, files or log, or what it tells shed.
 
 mod support;
@@ -144,18 +144,9 @@ fn plain_adds_nothing_a_file_profile_is_applied_at_spawn_a_guard_that_cant_run_i
     let work = data.join("accounts/fake/work");
     let settings = s.dir.join("agents/coder/settings.json");
     assert!(line.contains(" --policy allow "), "{line}");
-    let meta = line
-        .split(" --meta ")
-        .nth(1)
-        .and_then(|m| m.split(' ').next());
-    let meta: Value = serde_json::from_str(meta.expect("#320: no personal setup")).unwrap();
-    let options = json!({ "settingSources": ["project", "local"], "strictMcpConfig": true,
-        "settings": { "claudeMdExcludes": ["{/Users/*,/home/*,/root}/.claude/{CLAUDE.md,rules/**}"] } });
-    assert_eq!(
-        meta,
-        json!({ "claudeCode": { "options": options } }),
-        "{line}"
-    );
+    let terminal = format!("cooee-{id}");
+    let meta = s.shed.meta(&terminal).expect("#320: no personal setup");
+    claude_switches(&meta, &format!("Follow the house rules.\n\n{PLAIN}"));
     let head = format!(
         " -- env FAKE_HOME={} FAKE_SETTINGS={} MODE=review sh -c ",
         work.display(),
@@ -180,12 +171,11 @@ fn plain_adds_nothing_a_file_profile_is_applied_at_spawn_a_guard_that_cant_run_i
         .map(|e| e.file_name())
         .collect();
     assert_eq!(left, ["API_KEY"], "the secrets' file is gone");
-    let terminal = format!("cooee-{id}");
     assert_eq!(
         s.shed.sent(&terminal),
         [format!(
             "\x1e{}\n",
-            json!({ "prompt": format!("{}Follow the house rules.\n\n{PLAIN}\n\nhi", s.topic("hi")) })
+            json!({ "prompt": format!("{}hi", s.topic("hi")) })
         )]
     );
     let items = s.cooee.json(&format!("/threads/{id}/messages"));
@@ -270,12 +260,18 @@ fn a_plugins_profile_starts_while_it_is_installed_and_its_add_confirm_names_it()
     );
     s.backend_up("plug");
     let (id, _) = s.thread("plug/conductor", "go");
+    let terminal = format!("cooee-{id}");
     assert_eq!(
-        s.shed.sent(&format!("cooee-{id}")),
+        s.shed.sent(&terminal),
         [format!(
             "\x1e{}\n",
-            json!({ "prompt": format!("{}You are the conductor.\n\ngo", s.topic("go")) })
+            json!({ "prompt": format!("{}go", s.topic("go")) })
         )]
+    );
+    let system = &s.shed.meta(&terminal).unwrap()["systemPrompt"]["append"];
+    assert_eq!(
+        system, "You are the conductor.",
+        "#503: the brief is in the system channel"
     );
     assert_eq!(s.row(&id)["profile"], "plug/conductor");
 
@@ -503,10 +499,9 @@ fn a_claude_profiles_settings_folder_is_its_config_folder_and_its_hook_refuses_a
     assert_eq!(out, "REFUSED MAIN_TARGET\nexit 2\n");
 }
 
-fn options(line: &str) -> Option<Value> {
-    let meta = line.split(" --meta ").nth(1)?.split(' ').next()?;
-    let meta: Value = serde_json::from_str(meta).unwrap();
-    Some(meta["claudeCode"]["options"].clone())
+fn options(shed: &FakeShed, line: &str) -> Option<Value> {
+    let name = line.split(" --name ").nth(1)?.split(' ').next()?;
+    Some(shed.meta(name)?["claudeCode"]["options"].clone())
 }
 
 #[test]
@@ -514,7 +509,7 @@ fn a_persona_with_no_profile_and_a_room_member_start_without_personal_setup_plai
     let s = setup("persona-no-personal");
     agent(&s.dir, "ada", "name = \"Ada\"\nagent = \"fake-acp\"\n", "");
     let personal = |line: &str| {
-        let o = options(line).unwrap_or_else(|| panic!("#416: no options in {line}"));
+        let o = options(&s.shed, line).unwrap_or_else(|| panic!("#416: no options in {line}"));
         assert_eq!(o["strictMcpConfig"], true, "{line}");
         assert_eq!(o["settingSources"], json!(["project", "local"]), "{line}");
     };
@@ -522,7 +517,7 @@ fn a_persona_with_no_profile_and_a_room_member_start_without_personal_setup_plai
     let (_, line) = s.thread("ada", "hi");
     personal(&line);
     let (_, line) = s.thread("", "hi");
-    assert_eq!(options(&line), None, "{line}");
+    assert_eq!(options(&s.shed, &line), None, "{line}");
 
     let room = json!({ "members": ["ada", "coder"], "random_id": "room" });
     let (status, body) = s.cooee.post("/rooms", &room);
@@ -545,5 +540,119 @@ fn a_persona_with_no_profile_and_a_room_member_start_without_personal_setup_plai
             })
         });
         personal(&line.unwrap_or_else(|| panic!("{member}'s room session never started")));
+    }
+}
+
+#[test]
+fn a_persona_on_codex_or_geminis_default_login_starts_with_one_line_an_added_account_without() {
+    for base in ["codex", "gemini"] {
+        let dir = scratch(&format!("profiles-{base}"));
+        fs::create_dir_all(dir.join("data/accounts/fake/work")).unwrap();
+        fs::create_dir_all(dir.join("root")).unwrap();
+        agent(
+            &dir,
+            "ada",
+            "name = \"Ada\"\nagent = \"fake-acp\"\n",
+            "Be brief.",
+        );
+        let work = "name = \"Wes\"\nagent = \"fake-acp\"\naccount = \"work\"\n";
+        agent(&dir, "wes", work, "");
+        let shed = FakeShed::start(&dir.join("shed"), version());
+        let extra = format!(
+            "[[providers]]\nname = \"fake\"\nbase = \"{base}\"\nagent = \"fake-acp\"\nhome = \"FAKE_HOME\"\n\
+             login = [\"true\"]\nstatus = [\"true\"]\n"
+        );
+        let cooee = Cooee::start_with(&dir, &shed.dir, &extra);
+        let start = |profile: &str| {
+            let new = json!({ "agent": "fake-acp", "profile": profile, "folder": dir.join("root"),
+                              "text": "hi", "random_id": profile });
+            let (status, body) = cooee.post("/threads", &new);
+            assert_eq!(status, 200, "{base}: {body}");
+            let id = serde_json::from_str::<Value>(&body).unwrap()["id"].clone();
+            let id = id.as_str().unwrap().to_owned();
+            let items = cooee.json(&format!("/threads/{id}/messages"))["items"].clone();
+            let notes: Vec<Value> = (items.as_array().unwrap().iter())
+                .filter(|i| i["kind"] == "note")
+                .map(|i| i["text"].clone())
+                .collect();
+            (id, notes)
+        };
+        let personal = cooee_core::provider::Gap::PersonalFiles.words();
+
+        let (id, notes) = start("ada");
+        assert_eq!(notes, [json!(personal)], "{base}");
+        let sent = shed.sent(&format!("cooee-{id}")).concat();
+        switches(base, &dir, &shed.adapter_env(), &sent);
+
+        let (_, notes) = start("wes");
+        assert_eq!(
+            notes,
+            Vec::<Value>::new(),
+            "{base}: an added account has a clean folder"
+        );
+        drop(cooee);
+        fs::remove_dir_all(&dir).ok();
+    }
+}
+
+fn switches(base: &str, dir: &Path, env: &str, sent: &str) {
+    if base == "codex" {
+        let config = env.lines().find_map(|l| l.strip_prefix("CODEX_CONFIG="));
+        let config: Value = serde_json::from_str(config.expect(env)).unwrap();
+        assert!(
+            config["developer_instructions"]
+                .as_str()
+                .unwrap()
+                .starts_with("Be brief.")
+        );
+        assert_eq!(
+            config["features"],
+            json!({ "multi_agent": false, "memories": false })
+        );
+        assert_eq!(
+            config["tools"]["web_search"], true,
+            "web stays until a connector"
+        );
+        assert!(
+            !sent.contains("Be brief."),
+            "the brief is in the system channel: {sent}"
+        );
+    } else {
+        let file = env
+            .lines()
+            .find_map(|l| l.strip_prefix("GEMINI_CLI_SYSTEM_SETTINGS_PATH="));
+        let file = Path::new(file.expect(env));
+        assert_eq!(file, dir.join("data/run/ada/gemini-settings.json"));
+        let settings: Value = serde_json::from_str(&fs::read_to_string(file).unwrap()).unwrap();
+        let core = settings["tools"]["core"].as_array().unwrap();
+        assert!(core.contains(&json!("web_fetch")) && !core.contains(&json!("save_memory")));
+        assert_eq!(settings["experimental"]["enableAgents"], false);
+        assert!(
+            sent.contains("Be brief."),
+            "the brief is the first prompt: {sent}"
+        );
+    }
+}
+
+fn claude_switches(meta: &Value, brief: &str) {
+    assert_eq!(
+        meta["systemPrompt"],
+        json!({ "append": brief, "excludeDynamicSections": true }),
+        "#503: the brief in the system channel, the vendor's prompt kept"
+    );
+    let options = &meta["claudeCode"]["options"];
+    assert_eq!(
+        (&options["settingSources"], &options["strictMcpConfig"]),
+        (&json!(["project", "local"]), &json!(true)),
+        "{meta}"
+    );
+    assert_eq!(options["settings"]["autoMemoryEnabled"], false, "{meta}");
+    let tools = options["tools"].as_array().unwrap();
+    for off in ["Agent", "Skill", "WebSearch"] {
+        assert_eq!(
+            tools.contains(&json!(off)),
+            off == "WebSearch",
+            "{off}: {meta}"
+        );
     }
 }
