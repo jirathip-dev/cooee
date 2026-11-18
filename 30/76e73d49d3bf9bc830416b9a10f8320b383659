@@ -1,0 +1,51 @@
+Decided: a new Trigger::Webhook with a per-routine secret name; POST /hooks/in/<id> on the #261 listener shares seen, admit and the run worker with GitHub deliveries
+Because: "HMAC-SHA256 against a per-routine `secret:` reference, body at most 2 MiB, deduped by a delivery header or a body hash, answered before the run starts"
+Decided: the body follows the prompt as one JSON string capped at 8,000 characters and marked untrusted, never templated into it
+Because: "The payload reaches the run as data, marked untrusted and capped, never as instructions."
+Decided: Settings is the persona screen's row url plus a test action; no Swift button
+Because: apple/Sources/CooeeUI/ChatPanel.swift:22
+Rejected: a Swift Test button now — the app renders no live routine rows, so it would be dead code Periphery fails
+Rejected: a separate base URL key in [hooks] — the inbound URL is [hooks] url with /github as /in/<id>, and doctor's funnel now publishes /hooks
+Check: tests/routines.rs a_signed_post_to_a_webhook_routine_starts_one_thread_per_delivery_under_the_rate covers 401, 202, the repeat and the rate
+Owner: webhooks from anything can now start a routine; the app's visible test button waits for live routine rows
+
+Decided: merged origin/staging; in persona.rs kept the webhook test action and url rows next to staging's add_skill action and skill library rows
+Because: crates/cooee-server/src/screens/persona.rs:72
+Rejected: none
+Owner: the branch is current with staging; both the webhook test and the skill library work on the persona screen
+
+Decided: merged origin/staging (#495); in persona.rs the only conflicts were the module and action doc comments, now naming both the webhook test action and the skill and routine actions
+Because: crates/cooee-server/src/screens/persona.rs:2
+Rejected: none
+Owner: the branch is current with staging again; webhook test and Save as skill both live on the persona screen
+
+Decided: merged origin/staging (#219); the one conflict was the routines import list in the server, now naming both Inbound (webhook) and Mark (consolidation)
+Because: crates/cooee-server/src/routines.rs:13
+Rejected: none
+Owner: the branch is current with staging again; the webhook trigger and the consolidation routine both build and pass their tests
+
+Decided: cut crates/cooee-core/src/routines.rs to 800 lines by trimming this branch's own additions; the POST body is appended through Fields::data
+Because: crates/cooee-core/src/routines/github.rs:202
+Rejected: moving the unit tests into routines/tests.rs — scripts/line-cap.sh counts that file toward the cap
+Check: drover arch-check reports 0 violations, and the routines tests pass unchanged
+Owner: no behaviour change; the routines file is back under the repo's size limit, so the architecture check passes
+
+Decided: merged origin/staging (e624714) and kept routines.rs at 800 lines by dropping the no-op serde(default) on Ask's when and github Options
+Because: crates/cooee-core/src/routines.rs:177
+Rejected: trimming the webhook doc lines — public fields need their one /// line
+Decided: the routines test helper waits until the MCP file parses, not just until it exists
+Because: crates/cooee/tests/routines.rs:37
+Check: CI msrv no longer races on an empty mcp-cooee file; arch-check reports 0 violations
+Owner: the branch is current with staging again, under the file size limit, and a flaky routines test is fixed
+
+Decided: merged origin/staging (95c3cb2, #557), which fixes the red Linux mcp test this branch never touched
+Because: crates/cooee-core/src/secrets.rs:94
+Rejected: a separate staging build fix here — #557 already makes of_persona read every saved name
+Check: Linux CI's mcp a_saved_secret_is_typed_again_without_asking_and_reaches_the_personas_environment_only passes at this head
+Owner: the branch is current with staging again; the failing secret test was a staging bug that staging has since fixed
+
+Decided: merged origin/staging with #559's cap raise; moved the /hooks/in route and Runner::inbound and test into a child module routines/webhook.rs
+Because: crates/cooee-server/src/routines/webhook.rs:19
+Rejected: trimming lines inside routines.rs — 15 lines out of compact code would mean dropping the test action or the URL row
+Check: drover arch-check reports 0 violations; cap is 27595 / 28390; the routines tests pass unchanged
+Owner: no behaviour change; the branch is current with staging and fits the raised line cap and the file size limit
