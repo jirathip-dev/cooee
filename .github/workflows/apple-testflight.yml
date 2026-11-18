@@ -3,8 +3,9 @@
 # Uploads run only on a merge to `main` (#180). The ASC_* secrets live in the `testflight` environment, which only
 # `main` and `staging` may deploy from: pull_request and fork runs can't read them.
 # docs/testflight.md has the owner's one-time steps.
-# #365: runs on our own runners (mini-cooee, air-cooee). Any signing identity Xcode makes goes into a keychain of the
-# job's own, deleted when the job ends. A `workflow_dispatch` without `upload` archives and signs but uploads nothing.
+# #365, #565: runs on our own runner (mini-cooee), or on GitHub-hosted xcode-27 with `vars.MAC_RUNNER_TESTFLIGHT=hosted`
+# (docs/ci-runners.md). Any signing identity Xcode makes goes into a keychain of the job's own, deleted when the job ends.
+# A `workflow_dispatch` without `upload` archives and signs but uploads nothing.
 name: apple-testflight
 on:
   push:
@@ -27,7 +28,7 @@ defaults:
 jobs:
   testflight:
     if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/staging'
-    runs-on: [self-hosted, macOS, ARM64, cooee-mac]
+    runs-on: ${{ vars.MAC_RUNNER_TESTFLIGHT == 'hosted' && 'xcode-27' || fromJSON('["self-hosted","macOS","ARM64","cooee-mac"]') }}
     environment: testflight
     timeout-minutes: 60
     env:

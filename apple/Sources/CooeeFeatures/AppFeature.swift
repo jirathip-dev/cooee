@@ -196,6 +196,8 @@ extension AppFeature {
             state.path.append(thread)
             state.chat = chat(state, thread)
             return .none
+        case .topic(let thread):
+            return topic(&state, thread)
         case .started(let thread):
             state.path = state.path.dropLast() + [thread]
             state.chat = state.chat.map { Self.moved($0, to: .thread(thread), persona: $0.persona) }
@@ -207,11 +209,20 @@ extension AppFeature {
         }
     }
 
+    private func topic(_ state: inout State, _ thread: String) -> Effect<Action> {
+        let bar = state.chat?.bar
+        state.path = state.path.dropLast() + [thread]
+        state.chat = chat(state, thread)
+        state.chat?.bar = bar
+        return .none
+    }
+
     private static func moved(
         _ chat: ChatFeature.State, to target: ChatFeature.Target, persona: Persona
     ) -> ChatFeature.State {
         var moved = ChatFeature.State(server: chat.server, target: target, persona: persona)
         moved.machine = chat.machine
+        moved.bar = chat.bar ?? moved.bar
         return moved
     }
 }
