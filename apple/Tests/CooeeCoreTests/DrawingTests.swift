@@ -97,7 +97,7 @@ internal struct DrawingTests {
     }
 
     @Test internal func aDraftTakesTheDrawnStatesAsSymbolsAndTheLayersAsItsScene() {
-        var draft = ThemeDraft(from: "farm", label: "T", style: .modern, dark: Self.tokens, light: [:])
+        var draft = ThemeDraft(from: "farm", label: "T", style: "modern", dark: Self.tokens, light: [:])
         let drawn = drawing(.touch(col: 0, row: 0, began: true))
         let figure = drawn.figure ?? PixelFigure(blank: "s-needs")
         draft.draw(drawn)
@@ -126,7 +126,7 @@ internal struct DrawingTests {
         var drawn = drawing(.touch(col: 0, row: 0, began: true), .vector(vector))
         drawn.apply(.open("sky"))
         drawn.apply(.vector(vector))
-        var draft = ThemeDraft(from: "farm", label: "T", style: .modern, dark: Self.tokens, light: [:])
+        var draft = ThemeDraft(from: "farm", label: "T", style: "modern", dark: Self.tokens, light: [:])
         draft.draw(drawn)
         #expect(draft.sprites == ["s-needs": Self.symbol] && drawn.figures.isEmpty)
         #expect(draft.scene?.contains("<g id=\"sky\">\(vector)</g><g id=\"sea\"></g>") == true)

@@ -87,7 +87,9 @@ or **components** (native pieces the layout places and configures). Every block 
    or `permissions` with no poster is not drawn (a `MissingPoster` placeholder, so a bug shows rather than
    hides). Only `core` may post `permissions`.
 
-6. **Styles and themes.** `LookStyle` stays Swift (Modern, Terminal, Scene). A theme pack picks a style and
+6. **Styles and themes.** Changed by #488 (`docs/architecture/styles-as-packs/adr.md`): Modern is the app's one
+   built-in style; Terminal and Scene are first-party packs, a `style.json` the one renderer reads. Was: `LookStyle`
+   stays Swift (Modern, Terminal, Scene). A theme pack picks a style and
    brings colours, figures and sprites, as `docs/themes.md`; a layout may not set colour, font or size (the
    schema has no such field). Nothing changes here but one new `theme` key on the root for the default pack.
 

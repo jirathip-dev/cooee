@@ -22,10 +22,12 @@ public struct MenuFeature: Sendable {
         public var saved: String?
         public var busy = false
         public var error: String?
+        public var notice: String?
 
         public init(server: Server?, settings: Settings) {
             self.server = server
             self.settings = settings
+            if case .pack(let name, nil) = settings.style { notice = "\(name) is a pack now: cooee theme add \(name)" }
         }
     }
 
@@ -40,7 +42,7 @@ public struct MenuFeature: Sendable {
         case load
         case looks(Looks)
         case scheme(LookScheme)
-        case style(LookStyle)
+        case style(String)
         case theme(String)
         case icon(AppIcon?)
         case motion(Bool)
@@ -70,8 +72,8 @@ public struct MenuFeature: Sendable {
                 return opened ? load(state) : .none
             case .load:
                 return load(state)
-            case .style(let style):
-                return look(&state) { $0.style = style }
+            case .style, .looks:
+                return styled(&state, action)
             case .icon(let icon):
                 return look(&state) { $0.icon = icon }
             case .motion(let motion):
@@ -125,14 +127,13 @@ public struct MenuFeature: Sendable {
 
     private func pick(_ state: inout State, _ action: Action) {
         switch action {
-        case .looks(let looks):
-            state.looks = looks
-            return
         case .scheme(let scheme):
             state.settings.scheme = scheme
         case .theme(let theme):
             state.settings.theme = theme
-            state.settings.style = state.looks.themes[theme]?.style ?? state.settings.style
+            let looks = state.looks
+            state.settings.style =
+                looks.themes[theme]?.style.map { StylePick($0, kept: looks.style($0)) } ?? state.settings.style
         case .pinRoom(let room):
             state.settings.pin(room: room)
         default:
@@ -161,14 +162,14 @@ extension MenuFeature {
         switch action {
         case .edit(let pack):
             guard let server = state.server else { return .none }
-            let (theme, style) = (pack ?? state.settings.theme, state.settings.style)
+            let (theme, style) = (pack ?? state.settings.theme, state.settings.style.name)
             state.editor = .init(server: server, looks: state.looks, theme: theme, style: style, new: pack == nil)
             state.saved = nil
             state.path.append(.themeEditor)
             return .send(.editor(.task))
         case .editor(.saved(let name, let style)):
             state.settings.theme = name
-            state.settings.style = style
+            state.settings.style = StylePick(style, kept: state.looks.style(style))
             settingsStore.save(state.settings)
             state.saved = state.editor?.draft.label
             state.editor = nil
@@ -177,6 +178,21 @@ extension MenuFeature {
         default:
             return .none
         }
+    }
+
+    private func styled(_ state: inout State, _ action: Action) -> Effect<Action> {
+        var picked = state.settings.style
+        switch action {
+        case .style(let name):
+            picked = StylePick(name, kept: state.looks.style(name))
+            state.notice = nil
+        case .looks(let looks):
+            state.looks = looks
+            state.notice = picked.reconcile(with: looks, on: state.server?.url.host() ?? "the server")
+        default:
+            break
+        }
+        return picked == state.settings.style ? .none : look(&state) { $0.style = picked }
     }
 
     private func look(_ state: inout State, _ change: (inout Settings) -> Void) -> Effect<Action> {
@@ -204,5 +220,22 @@ extension MenuFeature {
         } catch: { error, send in
             await send(.failed(error.localizedDescription))
         }
+    }
+}
+
+extension MenuFeature.State {
+    /// The picked pack's kept tokens while `theme` has what they draw; nil: the bundled Modern.
+    public func style(for theme: String) -> Style? {
+        settings.style.kept.flatMap { looks.draws($0, in: theme) ? $0 : nil }
+    }
+
+    /// The look sheet's rows: Modern, then each pack whose style this app reads and the picked theme draws.
+    public var offered: [StylePick] {
+        [.modern]
+            + (looks.styles ?? [:]).keys.sorted().compactMap { name in
+                looks.style(name).flatMap {
+                    looks.draws($0, in: settings.theme) ? .pack(name: name, kept: $0) : nil
+                }
+            }
     }
 }

@@ -2,13 +2,15 @@ import CooeeCore
 import CooeeUI
 import Foundation
 import SwiftUI
+import Testing
 
-internal enum DiagramFrames {
+@Suite(.serialized)
+internal struct DiagramFrames {
     private static let docs = URL(fileURLWithPath: #filePath)
         .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
-        .deletingLastPathComponent().appendingPathComponent("docs/design")
+        .deletingLastPathComponent().deletingLastPathComponent().appendingPathComponent("docs/design")
 
-    private static func fixture(_ path: String) -> JSONValue {
+    internal static func fixture(_ path: String) -> JSONValue {
         let data = (try? Data(contentsOf: docs.appendingPathComponent(path))) ?? Data()
         return (try? JSONDecoder().decode(JSONValue.self, from: data)) ?? .null
     }
@@ -19,7 +21,7 @@ internal enum DiagramFrames {
         return screen.root
     }
 
-    @MainActor private static func sheet(
+    @MainActor internal static func sheet(
         _ screen: JSONValue, focus: String? = nil, width: CGFloat? = nil, beside: (String, JSONValue)? = nil
     ) -> some View {
         Color.clear.overlay(alignment: .top) {
@@ -33,13 +35,13 @@ internal enum DiagramFrames {
         .clipped()
     }
 
-    private static func frame(
-        _ name: String, _ palette: Palette = .farmDark, style: LookStyle = .modern, phone: Bool = true,
+    internal static func frame(
+        _ name: String, _ palette: Palette = .farmDark, phone: Bool = true,
         _ view: @escaping @MainActor @Sendable () -> some View
     ) -> Frame {
         Frame(
             name: "workflow-\(name)", width: phone ? 402 : 1440, height: phone ? 874 : 900, palette: palette,
-            style: style, phone: phone, view: { AnyView(view()) })
+            phone: phone, view: { AnyView(view()) })
     }
 
     internal static var all: [Frame] {
@@ -48,15 +50,15 @@ internal enum DiagramFrames {
         let global = fixture("fleets-config/fixtures/global.json")
         return [
             frame("map-dark") { sheet(map) }, frame("map-light", .farmLight) { sheet(map) },
-            frame("map-terminal-dark", style: .terminal) { sheet(map) },
-            frame("map-scene-light", .farmLight, style: .scene) { sheet(map) },
             frame("map-mac-dark", phone: false) { sheet(map, width: 760) },
             frame("map-mac-split-dark", phone: false) {
                 sheet(map, width: 1090, beside: ("/screens/queue?state=fix", fix))
             },
-            frame("map-mac-terminal-dark", style: .terminal, phone: false) { sheet(map, width: 760) },
             frame("live-dark") { sheet(live) }, frame("state-dark") { sheet(fix) },
             frame("timer-dark") { sheet(global, focus: "limits.stall_minutes") },
         ]
     }
+
+    @MainActor @Test(arguments: all)
+    internal func matchesTheDesign(_ frame: Frame) throws { try frame.matchesItsDesign() }
 }

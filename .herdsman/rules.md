@@ -13,7 +13,7 @@
 - Don't drop CooeeCore or CooeeAPI under 95% line coverage — scripts/apple-coverage.swift
 - Don't drop CooeeFeatures under 95% line coverage — scripts/apple-coverage.swift (nightly, not the PR)
 - Don't leave unused Swift code — Periphery (nightly, not the PR)
-- Don't change a design frame without its snapshot (apple/design/v1) — CooeeUITests SnapshotTests
+- Don't change a design frame without its snapshot: Modern's in apple/design/ (CooeeUITests/Frames/), a pack's in apple/design/packs/<pack>/ (CooeeUITests/Packs/), each drawn from its own style.json — CooeeUITests Frames and Packs suites
 - Don't name a provider (claude, anthropic, codex, openai, gemini, hermes) outside crates/cooee-core/src/providers/ and tests — scripts/neutral-core.sh
 - don't push a PR body without a For humans section, with a placeholder, or with evidence at an older sha than the head (enforced by: pr-body `scripts/pr-body.sh`, shadow since 2026-11-13)
 - Don't break .drover/arch.toml's bans, size baselines, frozen or generated files — CI arch-check (drover arch-check, ci/drover-checks-test.sh)

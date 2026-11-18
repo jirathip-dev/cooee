@@ -5,8 +5,8 @@ import Testing
 
 @MainActor
 internal struct TrustRenderTests {
-    private static func pixels(_ view: some View) throws -> Pixels {
-        let framed = view.frame(width: 402).environment(\.look, Look(palette: .farmDark, still: true))
+    private static func pixels(_ view: some View, _ style: Style = .bundled) throws -> Pixels {
+        let framed = view.frame(width: 402).environment(\.look, Look(palette: .farmDark, style: style, still: true))
         let image = try #require(ImageRenderer(content: framed).cgImage)
         return try #require(Pixels(image))
     }
@@ -20,13 +20,13 @@ internal struct TrustRenderTests {
         return JSONValue(json: #"{"type": "card", "id": "c", "kind": "\#(kind)", "title": "KEY"\#(fake)}"#)
     }
 
-    @Test(arguments: CardTrust.guarded.sorted())
-    internal func theJSONCanNeitherSetNorFakeTheSourceLine(_ kind: String) throws {
-        let missing = try Self.pixels(MissingPoster(kind: kind))
-        #expect(Self.same(try Self.pixels(BlocksView(Self.card(kind, faking: true), source: nil)), missing))
-        #expect(Self.same(try Self.pixels(BlocksView(Self.card(kind), source: nil)), missing))
-        let core = try Self.pixels(BlocksView(Self.card(kind), source: .core))
-        #expect(Self.same(try Self.pixels(BlocksView(Self.card(kind, faking: true), source: .core)), core))
+    @Test(arguments: CardTrust.guarded.sorted(), [Style.bundled, .worstCase] + Style.packs)
+    internal func theJSONCanNeitherSetNorFakeTheSourceLineInAnyStyle(_ kind: String, _ style: Style) throws {
+        let missing = try Self.pixels(MissingPoster(kind: kind), style)
+        #expect(Self.same(try Self.pixels(BlocksView(Self.card(kind, faking: true), source: nil), style), missing))
+        #expect(Self.same(try Self.pixels(BlocksView(Self.card(kind), source: nil), style), missing))
+        let core = try Self.pixels(BlocksView(Self.card(kind), source: .core), style)
+        #expect(Self.same(try Self.pixels(BlocksView(Self.card(kind, faking: true), source: .core), style), core))
         #expect(!Self.same(core, missing))
     }
 

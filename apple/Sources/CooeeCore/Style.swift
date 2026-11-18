@@ -14,6 +14,15 @@ public struct Style: Codable, Sendable, Equatable {
     public let stage: Stage?
 }
 
+extension Style {
+    /// What the picked theme must have for this style to be offered.
+    public var needs: Set<Need> {
+        Set([figures == .sprite ? Need.sprites : nil, stage == nil ? nil : .scene].compactMap(\.self))
+    }
+}
+
+public enum Need: Sendable { case sprites, scene }
+
 public enum TypeDesign: String, Codable, Sendable { case `default`, mono }
 public enum Surface: String, Codable, Sendable { case glass, dashed, solid }
 public enum Fills: String, Codable, Sendable { case tint, outline }

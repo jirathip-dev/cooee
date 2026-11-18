@@ -2,8 +2,10 @@ import CooeeCore
 @testable import CooeeUI
 import Foundation
 import SwiftUI
+import Testing
 
-internal enum TopicFrames {
+@Suite(.serialized)
+internal struct TopicFrames {
     private static let now = Date(timeIntervalSince1970: 1_000_000_000)
     private static let conductor = Fixtures.persona("cond")
 
@@ -53,7 +55,7 @@ internal enum TopicFrames {
     }
 
     @MainActor
-    private static func chat(plugins: Bool = true, scrolled: Bool = false, pressed: String? = nil) -> ChatView {
+    internal static func chat(plugins: Bool = true, scrolled: Bool = false, pressed: String? = nil) -> ChatView {
         var actions = ChatActions()
         if plugins { (actions.places, actions.counts, actions.workflow) = (["Queue", "Events"], [6, 12], 1) }
         actions.topics = strip("c1", pressed: pressed)
@@ -130,30 +132,26 @@ internal enum TopicFrames {
         }
     }
 
-    private static let every: [(LookStyle, Palette)] = [
-        (.modern, .farmDark), (.modern, .farmLight), (.terminal, .farmDark), (.scene, .farmLight),
-    ]
-
-    private static func frame(
-        _ name: String, _ style: LookStyle, _ palette: Palette, _ view: @escaping @MainActor @Sendable () -> some View
+    internal static func frame(
+        _ name: String, _ style: String, _ palette: Palette, _ view: @escaping @MainActor @Sendable () -> some View
     ) -> Frame {
-        Frame(
-            name: "\(name)-\(style.rawValue)-\(palette.dark ? "dark" : "light")", width: 402, height: 874,
-            palette: palette, style: style, phone: true, folder: "topics", view: { AnyView(view()) }
-        )
+        Frame.phone("\(name)-\(style)-\(palette.dark ? "dark" : "light")", palette, view).filed("topics")
+    }
+
+    internal static func topics(_ style: String, _ palette: Palette) -> [Frame] {
+        [
+            frame("chat", style, palette) { chat() }, frame("new", style, palette) { new() },
+            frame("list", style, palette) { list() }, frame("home-persona", style, palette) { home() },
+        ]
     }
 
     internal static var all: [Frame] {
-        every.flatMap { style, palette in
-            [
-                frame("chat", style, palette) { chat() }, frame("new", style, palette) { new() },
-                frame("list", style, palette) { list() },
-                frame("home-persona", style, palette) { home() },
-            ]
-        } + [
-            frame("scrolled", .modern, .farmDark) { chat(plugins: false, scrolled: true) },
-            frame("press", .modern, .farmDark) { chat(pressed: "c2") },
-            frame("press", .terminal, .farmLight) { chat(pressed: "c2") },
+        topics("modern", .farmDark) + topics("modern", .farmLight) + [
+            frame("scrolled", "modern", .farmDark) { chat(plugins: false, scrolled: true) },
+            frame("press", "modern", .farmDark) { chat(pressed: "c2") },
         ]
     }
+
+    @MainActor @Test(arguments: all)
+    internal func matchesTheDesign(_ frame: Frame) throws { try frame.matchesItsDesign() }
 }
