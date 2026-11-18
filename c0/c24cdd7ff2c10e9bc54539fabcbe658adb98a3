@@ -1,0 +1,8 @@
+Decided: add the ten mac idiom sizes scaled from modern-laughing.png and set the macOS standalone icon behavior to all
+Because: "Use the existing cooee icon art; don't make a new design."
+Rejected: only the build setting — with the single universal 1024 entry actool writes no AppIcon.icns at all
+Rejected: only the mac sizes — Xcode 27's default ICNS keeps 16, 16@2x, 128 and 128@2x and drops 512@2x
+Decided: apple-testflight runs on a staging push (still a dry run) with a macOS ICNS size check after the archive
+Because: "The staging dry run runs the same export check, so a missing icon fails on staging before main."
+Check: .github/workflows/apple-testflight.yml:101 fails when any of the ten iconset files is missing
+Owner: The Mac icon now has every size the App Store needs, and staging catches a missing one before main.
