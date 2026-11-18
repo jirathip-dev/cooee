@@ -5,11 +5,11 @@ import Testing
 
 @Suite(.serialized)
 internal struct AdditionFrames {
-    internal static func additions(_ suffix: String = "") -> [Frame] {
+    internal static func additions() -> [Frame] {
         BlockAdditions.Addition.allCases.map { addition in
             let wide = addition == .refresh
             return Frame(
-                name: "additions-\(addition.rawValue)\(suffix)", width: wide ? 960 : Frame.phoneWidth,
+                name: "additions-\(addition.rawValue)", width: wide ? 960 : Frame.phoneWidth,
                 height: wide ? 640 : Frame.phoneHeight, palette: .farmDark, phone: !wide, folder: "v3-additions",
                 view: { AnyView(BlockAdditions(addition)) }
             )
