@@ -1,0 +1,11 @@
+Decided: build the strip, New folder row, chip menu and list sheet as native CooeeUI views ported from apple/design/topics, with the state in ChatFeature's TopicBar
+Because: "The strip is part of the native chat component, not a served block (design decision)."
+Because: q1891
+Decided: a non-empty folder sent to POST /threads beats the persona's own folder; "scratch" means scratch
+Because: "none picked means a scratch folder. The first message starts the thread."
+Rejected: client-only change — the server's persona folder overrode any picked folder (crates/cooee-server/src/http.rs:159)
+Decided: archive posts at once; undo within 5 s posts restore and cancels the toast timer
+Rejected: delay the archive post until the toast ends — leaving the chat inside 5 s would drop it
+Because: q1931
+Check: apple/design/topics frames match via Tests/CooeeUITests/TopicFrames.swift; the +2 badge differs by the q1891 rule
+Owner: A persona's chat now has a topics strip with New, rename, archive with undo, restore and a folder pick.
