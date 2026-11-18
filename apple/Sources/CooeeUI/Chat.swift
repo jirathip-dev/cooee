@@ -135,7 +135,7 @@ internal struct ChatHeader: View {
                     Button(action: actions.back) { RoundButton(symbol: "chevron.left", ascii: "<", size: 40) }
                         .buttonStyle(.plain).accessibilityLabel("Back")
                 }
-                sheet { Avatar(persona: persona, size: 38) }
+                sheet { FigureView(persona: persona, size: 38) }
                 VStack(alignment: .leading, spacing: 3) {
                     sheet { Text(persona.name).ui(16, .semibold, look) }
                     HStack(spacing: 6) {

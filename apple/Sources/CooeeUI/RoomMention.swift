@@ -50,7 +50,7 @@ internal struct MentionBar: View {
             draft?.wrappedValue = Mentions.pick(member.name, in: scene.draft)
         } label: {
             HStack(spacing: 10) {
-                Avatar(persona: member.with(state: .done), size: 30)
+                FigureView(persona: member.with(state: .done), size: 30)
                 Text(member.name).ui(15, .regular, look).lineLimit(1)
                 Spacer(minLength: 8)
                 Text(note).ui(12, .regular, look).foregroundStyle(palette.mute).lineLimit(1)

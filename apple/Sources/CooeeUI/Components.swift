@@ -1,14 +1,14 @@
 import CooeeCore
 import SwiftUI
 
-internal struct Avatar: View {
+internal struct FigureView: View {
     @Environment(\.look) private var look
     internal let persona: Persona
     internal var size: CGFloat = 44
     internal var frame = 0
 
     internal var body: some View {
-        if persona.id.isEmpty && look.style != .terminal {
+        if persona.id.isEmpty && look.style.figures != .ascii {
             NeutralAvatar(persona: persona, size: size)
         } else {
             styled
@@ -18,8 +18,8 @@ internal struct Avatar: View {
     @ViewBuilder private var styled: some View {
         let palette = look.palette
         let tint = palette.tint(persona.look.tint)
-        switch look.style {
-        case .modern:
+        switch look.style.figures {
+        case .avatar:
             Circle()
                 .fill(
                     LinearGradient(
@@ -28,13 +28,13 @@ internal struct Avatar: View {
                 .overlay { face.foregroundStyle(palette.dark ? Color.black.opacity(0.75) : .white) }
                 .clipShape(Circle())
                 .frame(width: size, height: size)
-        case .terminal:
+        case .ascii:
             Text(persona.state.figure(frame: frame)).font(
                 .system(size: size * 0.30, weight: .bold, design: .monospaced)
             )
             .foregroundStyle(tint).frame(width: size, height: size)
             .overlay(Rectangle().strokeBorder(tint.opacity(0.7), lineWidth: 1))
-        case .scene:
+        case .sprite:
             StateSprite(persona: persona, frame: frame, size: size)
         }
     }
