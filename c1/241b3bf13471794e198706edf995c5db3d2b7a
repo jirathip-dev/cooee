@@ -1,0 +1,5 @@
+Decided: took staging's split store.rs plus mod archive; the archive field and table moved into store/files.rs, the archive-aware page, bodies and said into store/items.rs
+Because: crates/cooee-core/src/store/items.rs:74
+Rejected: none
+Check: store:: tests pass at the head; no behaviour change beyond the merge
+Owner: No behaviour change this round: the retention work now sits on the store's new file layout.
