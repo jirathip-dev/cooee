@@ -309,3 +309,32 @@ fn an_idle_threads_chat_unloads_and_reloads_intact() {
     assert_eq!(replayed(&hub, &before.cursor), None);
     assert_eq!(replayed(&hub, &after.cursor), Some(vec![]));
 }
+
+#[test]
+fn a_reply_ends_the_rows_turn() {
+    let dir = scratch("reply-ends");
+    seed(&dir, "t", "");
+    let hub = hub(&dir);
+    let working = Reported {
+        state: "working".to_owned(),
+        ..Reported::default()
+    };
+    hub.apply(event("t", 1, EventKind::State(Box::new(working))));
+    assert_eq!(hub.list()[0].state, "working");
+    let reply = EventKind::Reply {
+        text: "Done.".to_owned(),
+        stop_reason: "end_turn".to_owned(),
+    };
+    hub.apply(event("t", 2, reply));
+    assert_eq!(hub.list()[0].state, "done");
+}
+
+#[test]
+fn a_thread_with_no_messages_sends_no_age() {
+    let dir = scratch("no-age");
+    seed(&dir, "empty", "");
+    let hub = hub(&dir);
+    let rows = json!(hub.list());
+    assert_eq!(rows[0]["id"], "empty");
+    assert!(rows[0].get("at").is_none(), "{rows}");
+}
