@@ -849,8 +849,10 @@ fn plugin_check_passes_the_fixtures_and_names_a_broken_field() {
     assert_eq!(
         said.lines().skip(1).map(str::trim).collect::<Vec<_>>(),
         [
+            "$.blocks[0].rows[0].id: is required",
             "$.blocks[0].rows[0].badge.tone: \"red\" is not one of \"ok\", \"warn\", \"bad\", \"info\", \"mute\", \"accent\", \"working\", \"needs\", \"done\", \"fail\", \"idle\"",
             "$.blocks[1].value: must not be sent",
+            "$.blocks[2].id: is required",
             "$.blocks[2].action: is required",
             "$.blocks[4].lanes[0].state: \"lost\" is not one of \"working\", \"needs\", \"done\", \"idle\", \"fail\", \"merged\"",
             "$.blocks[5].rounds[0].name: is required",
@@ -864,7 +866,7 @@ fn plugin_check_knows_swipe_menu_and_refresh() {
     let act = json!({ "label": "Archive", "action": "archive", "tone": "bad" });
     let good = json!({ "type": "screen", "title": "Queue", "refresh": true,
         "actions": [{ "label": "More", "icon": "more", "menu": [act] }], "blocks": [
-        { "type": "list", "rows": [{ "type": "row", "title": "#1", "swipe": [act], "menu": [act] }] },
+        { "type": "list", "rows": [{ "type": "row", "id": "1", "title": "#1", "swipe": [act], "menu": [act] }] },
         { "type": "card", "title": "Merge?", "menu": [act] } ] });
     let (ok, said) = checked(&s, &good);
     assert!(ok, "{said}");

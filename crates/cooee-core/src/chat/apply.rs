@@ -87,16 +87,7 @@ impl Chat {
                 });
                 item.map(Change::Item).into_iter().collect()
             }
-            EventKind::Reply { text, stop_reason } => {
-                let status = (stop_reason == "cancelled").then_some("cancelled");
-                let mut changes = self.end(at, seq, status);
-                changes.push(Change::Item(self.push(
-                    at,
-                    seq,
-                    Body::Agent { text, stop_reason },
-                )));
-                changes
-            }
+            EventKind::Reply { text, stop_reason } => self.replied(at, seq, text, stop_reason),
             EventKind::Exited { code } => {
                 let text = code.map_or("The agent stopped.".to_owned(), |c| {
                     format!("The agent exited ({c}).")
@@ -105,6 +96,23 @@ impl Chat {
             }
             EventKind::Killed => self.ended(at, seq, "The thread was closed.".to_owned()),
         }
+    }
+
+    fn replied(&mut self, at: u64, seq: u64, text: String, stop_reason: String) -> Vec<Change> {
+        let status = (stop_reason == "cancelled").then_some("cancelled");
+        let mut changes = self.end(at, seq, status);
+        changes.push(Change::Item(self.push(
+            at,
+            seq,
+            Body::Agent { text, stop_reason },
+        )));
+        if matches!(
+            self.turn.state.as_str(),
+            "working" | "connecting" | "blocked"
+        ) {
+            changes.push(self.state("done", None));
+        }
+        changes
     }
 
     /// The session is over: the turn ends and an `ended` row says why.

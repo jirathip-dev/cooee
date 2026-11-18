@@ -30,6 +30,7 @@ internal struct SidebarRenderTests {
         } withDependencies: {
             $0.plugins.screen = { _, _, _ in Self.queue }
             $0.screenCache.save = { _, _ in }
+            $0.screenCache.backgrounds = { .finished }
             $0.continuousClock = TestClock()
             $0.date.now = Date(timeIntervalSince1970: 0)
         }

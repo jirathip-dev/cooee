@@ -16,6 +16,7 @@ internal struct RoomFeatureTests {
     }
 
     private func dependencies(_ values: inout DependencyValues) {
+        values.date.now = epoch
         let calls = calls
         values.threads.room = { _, title, members in
             calls.record("room \(title) \(members.joined(separator: ","))")

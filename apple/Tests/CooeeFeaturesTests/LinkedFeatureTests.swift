@@ -50,6 +50,7 @@ internal struct LinkedFeatureTests {
             ChatFeature()
         } withDependencies: {
             $0.date.now = epoch
+            $0.continuousClock = ImmediateClock()
             $0.threads.send = { _, thread, text, _, queue in calls.record("send \(thread) \(text) queue=\(queue)") }
         }
         await store.send(.event(.state(Turn(state: "working")))) {
