@@ -56,7 +56,9 @@ extension ChatFeature {
     }
 
     private func deliver(_ state: State, _ message: Outgoing) -> Effect<Action> {
-        let (threads, server, persona) = (threads, state.server, state.persona.api)
+        var topic = state.persona.api
+        if let bar = state.bar { topic.folder = bar.folder ?? "scratch" }
+        let (threads, server, persona) = (threads, state.server, topic)
         let queue = state.working && state.exchange == nil
         let (target, machine) = (state.target, state.machine.current)
         return .run { send in

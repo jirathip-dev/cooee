@@ -44,7 +44,7 @@ extension ChatFeature {
         let persona = state.persona.api.id
         switch pick {
         case .edit: return .send(.delegate(.persona(persona)))
-        case .newChat: return .send(.delegate(.start(persona)))
+        case .newChat: return .send(state.bar == nil ? .delegate(.start(persona)) : .topics(.open(nil)))
         case .open(let place): return .send(.plugins(.open(place)))
         case .attach(let plugin): return .send(.plugins(.attach(plugin)))
         case .workflow: return .send(.workflow(.show(true)))
