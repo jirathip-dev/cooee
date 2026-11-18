@@ -254,11 +254,15 @@ pub enum Gate {
 }
 
 impl Control {
-    /// The owner takes control at `now` (ms) for [`LEASE_MS`].
+    /// The owner takes control at `now` (ms) for [`LEASE_MS`], or a lease they still hold runs [`LEASE_MS`] longer.
     #[must_use]
-    pub fn take(now: u64) -> Self {
+    pub fn take(&self, now: u64) -> Self {
+        let from = match self {
+            Self::Owner { until } if *until > now => *until,
+            _ => now,
+        };
         Self::Owner {
-            until: now.saturating_add(LEASE_MS),
+            until: from.saturating_add(LEASE_MS),
         }
     }
 
@@ -489,8 +493,15 @@ mod tests {
     #[test]
     fn the_owners_lease_holds_the_agent_until_hand_back_or_ten_minutes() {
         let t0 = 1_000_000;
-        let mut c = Control::take(t0);
+        let mut c = Control::Agent.take(t0);
         assert_eq!(c.gate(t0), Gate::Wait(Duration::from_secs(600)));
+        assert_eq!(c.take(t0 + 1).gate(t0), Gate::Wait(Duration::from_mins(20)));
+        assert_eq!(
+            Control::Owner { until: t0 }.take(t0 + 5),
+            Control::Owner {
+                until: t0 + 5 + LEASE_MS
+            }
+        );
         assert_eq!(
             c.gate(t0 + LEASE_MS - 1),
             Gate::Wait(Duration::from_millis(1))

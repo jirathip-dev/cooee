@@ -35,14 +35,13 @@ public struct TerminalView: View {
         VStack(spacing: 0) {
             HStack {
                 Button(action: actions.back) {
-                    Text(look.mono ? "< \(back.lowercased())" : "‹ \(back)").ui(16, .regular, look)
+                    Text(look.label(.back, back)).ui(16, .regular, look)
                         .foregroundStyle(palette.link)
                 }
                 .buttonStyle(.plain)
                 Spacer()
                 if let newShell = actions.newShell {
-                    Button(action: newShell) { ActionPill(title: look.mono ? "+ shell" : "New shell") }.buttonStyle(
-                        .plain)
+                    Button(action: newShell) { ActionPill(title: "New shell") }.buttonStyle(.plain)
                 }
             }
             .overlay { Text(title).ui(17, .semibold, look) }
@@ -115,7 +114,7 @@ public struct TerminalView: View {
                         .frame(maxWidth: .infinity, minHeight: 36)
                         .background(
                             key.name == nil && ctrl ? look.palette.link.opacity(0.4) : look.palette.card,
-                            in: .rect(cornerRadius: look.mono ? 0 : 8))
+                            in: .rect(cornerRadius: look.radius(8)))
                 }
                 .buttonStyle(.plain)
             }

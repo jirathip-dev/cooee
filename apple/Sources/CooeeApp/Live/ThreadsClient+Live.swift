@@ -12,6 +12,12 @@ extension ThreadsClient: DependencyKey {
         themeArt: { server, theme, file in try await Client(server).themeArt(theme, file) },
         messages: { server, thread in try await Client(server).messages(thread) },
         frame: { server, thread, name in try await Client(server).frame(thread, name) },
+        screen: { server, persona in try await Client(server).screen(persona) },
+        takeControl: { server, persona in try await Client(server).takeControl(persona) },
+        handBack: { server, persona, note in try await Client(server).handBack(persona, note: note) },
+        resume: { server, thread, note in try await Client(server).resumeHandoff(thread, note: note) },
+        input: { server, persona, input in try await Client(server).input(persona, input) },
+        live: { server, persona in Client(server).live(persona) },
         events: { server, thread, since in Client(server).events(thread, since: since) },
         send: { server, thread, text, files, queue in
             try await Client(server).send(thread, text: text, files: files, queue: queue)

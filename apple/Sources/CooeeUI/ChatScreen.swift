@@ -45,6 +45,11 @@ internal struct ChatScreen: View {
         actions.frames = FrameImages(images: store.frames) { store.send(.frame($0)) }
         guard !store.persona.api.id.isEmpty else { return actions }
         actions.persona = { store.send(.profile) }
+        if case .thread = store.target { actions.screen = { store.send(.browse(.show(true))) } }
+        actions.waits = store.handoff?.date
+        actions.screenActs = ScreenActs(
+            name: store.persona.name, open: { store.send(.browse(.open($0))) },
+            take: { store.send(.browse(.takeOver)) }, done: { store.send(.browse(.done)) })
         actions.choices = PersonaChoices(agents: store.agents, models: store.models, efforts: store.efforts)
         actions.agent = { store.send(.pick(.agent($0))) }
         actions.model = { store.send(.pick(.model($0, $1))) }
@@ -88,6 +93,7 @@ internal struct ChatScreen: View {
         .task { await store.send(.machine(.load)).finish() }
         .task { await store.send(.topics(.load)).finish() }
         .modifier(TopicSheets(store: store))
+        .modifier(BrowserPresenting(store: store, wide: !back && store.browser != nil))
         .sheet(item: $store.scope(state: \.screen, action: \.screen)) { PluginScreenSheet(store: $0) }
         .sheet(item: $store.scope(state: \.attaching, action: \.attaching)) { AttachScreen(store: $0) }
         .sheet(isPresented: Binding(get: { store.workflowOpen }, set: { store.send(.workflow(.show($0))) })) {

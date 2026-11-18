@@ -39,12 +39,13 @@ agent gets the action's answer, and sends the image to `POST /mcp/agent/frame` i
 sees a screenshot it asked for. cooee keeps the frame only while every page open in the persona's Chromium (its CDP
 `/json/list`) is on the allowlist and on no `no_frames` site, encrypted (AES-256-GCM, key `FRAMES_KEY` in the
 keychain, a 0600 file on Linux) at `<data>/frames/<thread>/<at>-<hash>`, and adds a `frame` item (`text`: the caption,
-`name`) to the thread; `GET /threads/<id>/frames/<name>` serves it decrypted. Frames are deleted 14 days after they
+`name`) to the thread; a screenshot the agent took itself is kept too, as a frame with `asked: true` captioned with
+the page's address, which the app shows as a `screen` block (#166); `GET /threads/<id>/frames/<name>` serves it decrypted. Frames are deleted 14 days after they
 were taken. The app shows each as a step with its caption and picture, in the thread and the trace sheet.
 
 The Screen (#162): `GET /personas/{id}/screen/live` streams the persona's current tab over SSE, a `frame {url,
 title, jpeg}` every half second (or `gone {why}` while its browser isn't running). `POST /personas/{id}/screen/control`
-gives the owner a 10-minute lease: the agent's browser calls wait until `POST …/screen/back {note}` (the waiting call
+gives the owner a 10-minute lease (again while they hold it: 10 minutes more): the agent's browser calls wait until `POST …/screen/back {note}` (the waiting call
 then goes on and its result carries the note) or the lease ends. With `{note, "skill": true}` (#500) the note also carries the
 lease's steps, each the page's origin, title and the label of what the owner clicked or typed into (never what they
 typed; a `no_frames` or `account` site gives its origin only), and asks the persona to propose them with `skill`. While it runs, `POST …/screen/input` takes

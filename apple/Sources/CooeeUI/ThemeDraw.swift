@@ -194,8 +194,8 @@ extension ThemeDraw {
     private func tool(_ label: String, picked: Bool, tap: @escaping () -> Void) -> some View {
         Button(action: tap) {
             VStack(spacing: 4) {
-                if !look.mono { Image(systemName: Self.icons[label] ?? "").font(.system(size: 18)) }
-                Text(label).ui(look.mono ? 14 : 12, .regular, look).lineLimit(1).minimumScaleFactor(0.7)
+                if !look.textMarks { Image(systemName: Self.icons[label] ?? "").font(.system(size: 18)) }
+                Text(label).ui(look.textMarks ? 14 : 12, .regular, look).lineLimit(1).minimumScaleFactor(0.7)
             }
             .frame(maxWidth: .infinity, minHeight: 48)
             .background(picked ? look.palette.lead : .clear, in: .rect(cornerRadius: 12))

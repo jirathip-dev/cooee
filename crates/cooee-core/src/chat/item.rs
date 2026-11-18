@@ -141,6 +141,9 @@ pub enum Body {
         text: String,
         /// The frame's name.
         name: String,
+        /// The agent took this screenshot itself, so it saw it (D3): the chat shows it as a `screen` block (#166).
+        #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+        asked: bool,
     },
     /// A line from cooee itself (`model sonnet · effort low from the next start`).
     Note {

@@ -5,7 +5,7 @@ extension PersonaBlocks {
     internal func live(_ block: JSONValue) -> some View {
         let sites = Int(block["sites"]?.number ?? 0)
         return Group2(header: "Screen") {
-            page(block.string("url") ?? "").overlay(alignment: .topTrailing) { badge(look.mono ? "live" : "● LIVE") }
+            page(block.string("url") ?? "").overlay(alignment: .topTrailing) { badge("● LIVE", "live") }
                 .padding(8)
             if sites > 0 {
                 more("Sites · \(sites)").overlay(alignment: .top) { rule(true) }
@@ -23,8 +23,8 @@ extension PersonaBlocks {
             }
             .foregroundStyle(Palette.farmDark.green).padding(12)
             .frame(maxWidth: .infinity, alignment: .topLeading)
-            .background(.black.opacity(look.palette.dark ? 0.55 : 0.85), in: .rect(cornerRadius: look.mono ? 0 : 10))
-            .overlay(alignment: .bottomTrailing) { badge(look.mono ? "open" : "⤢") }
+            .background(.black.opacity(look.palette.dark ? 0.55 : 0.85), in: .rect(cornerRadius: look.radius(10)))
+            .overlay(alignment: .bottomTrailing) { badge("⤢", "open") }
             .padding(8)
         }
     }
@@ -44,17 +44,16 @@ extension PersonaBlocks {
             }
         }
         .padding(10).frame(maxWidth: .infinity, minHeight: 116, alignment: .topLeading)
-        .background(palette.background, in: .rect(cornerRadius: look.mono ? 0 : 10))
+        .background(palette.background, in: .rect(cornerRadius: look.radius(10)))
     }
 
     private func bar(_ color: Color, height: CGFloat) -> some View {
-        RoundedRectangle(cornerRadius: look.mono ? 0 : 2).fill(color.opacity(0.6)).frame(height: height)
+        RoundedRectangle(cornerRadius: look.radius(2)).fill(color.opacity(0.6)).frame(height: height)
     }
 
-    private func badge(_ text: String) -> some View {
-        Text(text).ui(10, .bold, look).foregroundStyle(.white).padding(.horizontal, 7).frame(
-            minWidth: 24, minHeight: 20
-        )
-        .background(.black.opacity(0.5), in: .rect(cornerRadius: look.mono ? 0 : 6)).padding(8)
+    private func badge(_ symbol: String, _ text: String) -> some View {
+        Mark(text: text, size: 10) { Text(symbol).ui(10, .bold, look) }.foregroundStyle(.white)
+            .padding(.horizontal, 7).frame(minWidth: 24, minHeight: 20)
+            .background(.black.opacity(0.5), in: .rect(cornerRadius: look.radius(6))).padding(8)
     }
 }

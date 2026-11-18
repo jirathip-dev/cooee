@@ -42,6 +42,7 @@ public struct ChatFeature: Sendable {
         public var unfolded: String?
         public var machine = MachineChip()
         public var bar: TopicBar?
+        public var browser: BrowserSheet?
         @Presents public var screen: ScreenFeature.State?
         @Presents public var attaching: AttachFeature.State?
 
@@ -67,6 +68,9 @@ public struct ChatFeature: Sendable {
             case .new(let persona), .setup(let persona): "new:\(persona.id)"
             }
         }
+
+        public var filmstrip: [APIItem] { items.filter { $0.kind == "frame" && $0.name != nil } }
+        public var handoff: APIItem? { items.last { $0.kind == "handoff" && $0.outcome == "waiting" } }
 
         public var step: String? { persona.api.style == .chat ? ChatItems.step(items) : nil }
 
@@ -105,6 +109,7 @@ public struct ChatFeature: Sendable {
         case frame(String)
         case framed(String, Data)
         case topics(TopicAction)
+        case browse(Browse)
 
         @CasePathable
         public enum Delegate: Sendable, Equatable {
@@ -122,7 +127,7 @@ public struct ChatFeature: Sendable {
     @Dependency(\.personas) internal var personas
     @Dependency(\.ownerCheck) internal var ownerCheck
     @Dependency(\.continuousClock) internal var clock
-    @Dependency(\.date.now) private var now
+    @Dependency(\.date.now) internal var now
 
     public init() {}
 
@@ -149,6 +154,7 @@ public struct ChatFeature: Sendable {
         }
         Reduce { state, action in agent(&state, action) }
         Reduce { state, action in frames(&state, action) }
+        Reduce { state, action in browser(&state, action) }
         Reduce { state, action in plugins(&state, action) }
             .ifLet(\.$screen, action: \.screen) { ScreenFeature() }
             .ifLet(\.$attaching, action: \.attaching) { AttachFeature() }

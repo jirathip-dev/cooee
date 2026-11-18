@@ -32,7 +32,7 @@ internal struct StateSprite: View {
     internal var size: CGFloat = 24
 
     internal var body: some View {
-        if look.mono {
+        if look.figures == .ascii {
             Text(persona.state.figure(frame: frame)).ui(size * 0.55, .bold, look)
                 .foregroundStyle(look.palette.tint(persona.look.tint)).fixedSize()
         } else {
