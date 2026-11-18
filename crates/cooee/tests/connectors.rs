@@ -293,6 +293,15 @@ fn the_phone_lists_adds_and_attaches_a_connector_and_the_menu_says_what_needs_si
         json!([{ "server": "linear", "account": "work" }])
     );
 
+    let (status, body) = cooee.request("DELETE", "/connectors/linear", None);
+    assert_eq!(status, 200, "{body}");
+    let mut kept = cooee.json("/personas/coder");
+    kept["character"] = json!("Terse, kind.");
+    assert_eq!(
+        save(kept).0,
+        200,
+        "a pick of a removed connector stays and saves"
+    );
     coder["version"] = json!("");
     coder["mcp"] = json!([{ "server": "nowhere", "account": "main" }]);
     let (status, body) = save(coder.clone());

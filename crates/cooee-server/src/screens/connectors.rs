@@ -1,6 +1,3 @@
-//! `GET /screens/settings/connectors` (#524): one row per connector from `GET /connectors`, its accounts' state as
-//! the subtitle; the avatar menu's Connectors value counts them, or the accounts that need sign-in.
-
 use std::sync::Arc;
 
 use serde_json::{Value, json};
@@ -42,7 +39,6 @@ pub(super) async fn connector_rows(cx: &Cx) -> Result<Vec<Value>, HubError> {
     .await
 }
 
-/// The menu row's value and whether it warns: `1 needs sign-in` while a connector does, else the count.
 pub(super) fn menu_value(rows: &[Value]) -> (String, bool) {
     let warn = |r: &&Value| r.pointer("/subtitle/tone").is_some_and(|t| t == "warn");
     match rows.iter().filter(warn).count() {

@@ -1,29 +1,29 @@
 import CooeeCore
-@testable import CooeeUI
 import SwiftUI
 
-internal struct Mark: View {
+internal struct ConnectorMark: View {
     @Environment(\.look) private var look
     internal let connector: Connector
     internal var size: CGFloat = 34
 
     internal var body: some View {
-        let palette = look.palette
-        let tint = tint(palette)
-        if look.mono {
-            Text("[\(connector.mark)]").ui(size * 0.42, .bold, look).foregroundStyle(tint).frame(width: size)
-        } else {
-            Text(connector.mark).font(.system(size: size * 0.5, weight: .bold, design: .rounded))
+        let letter = String(connector.label.prefix(1))
+        Mark(text: "[\(letter)]", size: size * 0.42) {
+            Text(letter).font(.system(size: size * 0.5, weight: .bold, design: .rounded))
                 .foregroundStyle(.white).frame(width: size, height: size)
                 .background(tint.gradient, in: .rect(cornerRadius: size * 0.26))
         }
+        .foregroundStyle(tint).frame(width: size)
     }
 
-    private func tint(_ palette: Palette) -> Color {
+    private var tint: Color {
+        let palette = look.palette
         switch connector.source {
-        case .command: palette.mute
-        case .typed: palette.amber
-        case .catalogue: connector.name == "linear" || connector.name == "github" ? palette.purple : palette.cyan
+        case .command: return palette.mute
+        case .typed: return palette.amber
+        case .catalogue:
+            let tints = [palette.link, palette.green, palette.cyan, palette.purple, palette.lead, palette.link]
+            return (tints + [palette.green, palette.cyan])[PersonaLook.seed(connector.name) % 8]
         }
     }
 }
@@ -54,7 +54,7 @@ internal struct Provenance: View {
 
 internal struct AccountWord: View {
     @Environment(\.look) private var look
-    internal let account: Account
+    internal let account: Connector.Account
 
     internal var body: some View {
         let palette = look.palette
@@ -68,14 +68,14 @@ internal struct AccountWord: View {
 
 internal struct ToolCounts: View {
     @Environment(\.look) private var look
-    internal let connector: Connector
+    internal let tools: Connector.Tools
 
     internal var body: some View {
         let palette = look.palette
         HStack(spacing: 10) {
-            count(connector.read.count, "run", palette.green)
-            if !connector.write.isEmpty { count(connector.write.count, "ask first", palette.amber) }
-            if !connector.never.isEmpty { count(connector.never.count, "never", palette.red) }
+            count(tools.read.count, "run", palette.green)
+            if !tools.write.isEmpty { count(tools.write.count, "ask first", palette.amber) }
+            if !tools.never.isEmpty { count(tools.never.count, "never", palette.red) }
         }
     }
 
@@ -95,15 +95,7 @@ internal struct Chevron: View {
     }
 }
 
-internal struct Dim: View {
-    @Environment(\.look) private var look
-
-    internal var body: some View {
-        Color.black.opacity(look.palette.dark ? 0.5 : 0.28).padding(.top, -54)
-    }
-}
-
-internal struct Primary: View {
+internal struct PrimaryLabel: View {
     @Environment(\.look) private var look
     internal let title: String
     internal var symbol = ""
@@ -111,12 +103,31 @@ internal struct Primary: View {
     internal var body: some View {
         let palette = look.palette
         HStack(spacing: 8) {
-            if !symbol.isEmpty && !look.mono { Image(systemName: symbol).font(.system(size: 15, weight: .semibold)) }
-            Text(look.mono ? "[\(title.lowercased())]" : title).ui(16, .semibold, look)
+            if !symbol.isEmpty && !look.textMarks {
+                Image(systemName: symbol).font(.system(size: 15, weight: .semibold))
+            }
+            Text(look.label(.chip, title)).ui(16, .semibold, look)
         }
-        .foregroundStyle(look.mono ? palette.link : (palette.dark ? Color.black : .white))
+        .foregroundStyle(look.outline ? palette.link : (palette.dark ? Color.black : .white))
         .frame(maxWidth: .infinity).frame(height: 48)
-        .background(look.mono ? Color.clear : palette.link, in: .rect(cornerRadius: 14))
-        .overlay { if look.mono { Rectangle().strokeBorder(palette.link, lineWidth: 1) } }
+        .chip(look, fill: palette.link, edge: palette.link, radius: 14)
     }
+}
+
+extension Connector {
+    internal static func day(_ style: Date.FormatStyle = .init(timeZone: .current)) -> Date.FormatStyle {
+        var style = style
+        style.locale = Locale(identifier: "en_GB")
+        style.calendar = Calendar(identifier: .gregorian)
+        return style.day().month(.abbreviated)
+    }
+
+    internal var checkedDay: String {
+        let day = (try? Date(checked ?? "", strategy: .iso8601.year().month().day()))
+        return day?.formatted(Self.day(Date.FormatStyle(timeZone: .gmt)).year()) ?? ""
+    }
+}
+
+extension Connector.Account {
+    internal var day: String { Date(timeIntervalSince1970: Double(since) / 1000).formatted(Connector.day()) }
 }

@@ -1,5 +1,3 @@
-//! `GET /screens/home` (#311): the app's bundled home, its blocks filled with the threads and personas they draw.
-
 use cooee_core::agents;
 use serde_json::{Value, json};
 use topcoat::{

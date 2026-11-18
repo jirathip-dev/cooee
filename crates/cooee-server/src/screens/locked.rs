@@ -1,6 +1,3 @@
-//! The two locked screens (#316): `GET /screens/pairing`, the app's bundled pairing steps, and
-//! `GET /screens/reset-layout`, the one button that puts the default `layout.json` back.
-
 use serde_json::{Value, json};
 use topcoat::{
     Result,

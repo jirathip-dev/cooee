@@ -1,6 +1,3 @@
-//! `GET /screens/plugins/{name}/attach?persona=` (#312): the attach sheet as data, one `permissions` card of what
-//! installed plugin `name` may do for the persona. Only core serves this card kind.
-
 use cooee_core::{agents, plugins::PlaceKind};
 use serde::Deserialize;
 use serde_json::{Value, json};

@@ -1,8 +1,3 @@
-//! `GET /screens/persona/{id}` (#314): the persona panel and its edit sheet as data, the #244 sections filled
-//! with what core holds for the persona (its routines, places and memory); `POST /screens/action` saves it,
-//! clears its memory or tests a webhook routine, and its `actions` (#495) ask a thread's persona to keep how it did
-//! the thread as a skill or a routine.
-
 use std::sync::Arc;
 
 use cooee_core::{
@@ -193,12 +188,17 @@ async fn add_skill(cx: &Cx, id: String, name: String) -> Result<Value, HubError>
 }
 
 async fn save(cx: &Cx, p: Agent, named: bool) -> Result<Value, HubError> {
-    let picks = p.mcp.clone();
-    let known = picks.clone();
+    let (data, config) = data(cx);
+    let (id, picks) = (p.id.clone(), p.mcp.clone());
+    let known = (data.clone(), config.clone(), picks.clone());
     blocking(cx, move |hub| {
+        let (data, config, picks) = known;
         let servers = hub.mcp().map_err(refused)?;
-        match known
-            .iter()
+        let had =
+            agents::find(config.as_deref(), &data, &id).map_or_else(|_| Vec::new(), |a| a.mcp);
+        let new = picks.iter().filter(|p| !had.contains(p));
+        match new
+            .into_iter()
             .find(|p| !servers.iter().any(|s| s.name == p.server))
         {
             Some(p) => Err(refused(format!("there is no connector {}", p.server))),
@@ -210,7 +210,6 @@ async fn save(cx: &Cx, p: Agent, named: bool) -> Result<Value, HubError> {
     if !named {
         return Ok(json!(saved));
     }
-    let (data, config) = data(cx);
     blocking(cx, move |_| {
         let config = config.ok_or_else(|| refused("no config folder"))?;
         let picked = agents::pick(&config, &data, &saved.id, picks).map_err(refused)?;

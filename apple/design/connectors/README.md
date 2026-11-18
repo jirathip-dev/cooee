@@ -4,7 +4,14 @@ Decision: Settings gets a **Connectors** page (what's connected, then the review
 Screens: the Settings row, the catalogue, an entry, the sign-in sheet (plus "connected, attach it" and the pasted-token case), a persona's connectors, and the Mac window. Every frame in Modern, Terminal and Scene, each dark and light (48 images).
 Open questions: (1) Should signing in end on the "attach it to a persona" prompt (drawn), or go back to the entry? (2) The Settings row shows "1 needs sign-in" in amber when an account needs it: OK to surface it there?
 
-## How these were made
+## Built (#524)
+
+The scratch package below is gone: its views are the app's own now (`CooeeUI/Connector*.swift`,
+`PersonaConnectors.swift`), and `apple/Tests/CooeeUITests/Frames/Connectors.swift` draws every frame from them
+(`CooeeUI/Fixtures/ConnectorFrames*.swift` holds the parts that stay drawn: the system sign-in sheet, the open attach
+menu, the Mac window's sidebar) and compares it with its PNG here. `COOEE_RECORD=1` rewrites a PNG.
+
+## How these were first made
 
 A scratch package that depends on `apple/` by path and draws with CooeeUI's own `SettingsPage`, `Group2`, `Line`,
 `SettingRow`, `ActionPill`, `StateWord`, `RoundButton`, `FigureView`, `PhoneChrome` and `MacChrome`. Only the new pieces

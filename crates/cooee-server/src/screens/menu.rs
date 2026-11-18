@@ -1,6 +1,3 @@
-//! `GET /screens/menu` (#312): the app's bundled avatar menu, the rows that open a server screen given a `value`
-//! from the same data that screen lists; the device-local rows as bundled.
-
 use serde_json::{Value, json};
 use topcoat::{
     Result,

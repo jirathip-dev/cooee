@@ -1,6 +1,3 @@
-//! `GET /screens/settings/{devices,signins,machines,plugins}` (#312): each one list of rows from the data its JSON
-//! route reads (`GET /devices`, the sign-ins sheet, `GET /machines`, `GET /plugins`).
-
 use std::sync::Arc;
 
 use cooee_machines::Machines;
