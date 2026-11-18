@@ -1,0 +1,4 @@
+Decided: staging's #164 additions to chat.rs and store.rs go into chat/item.rs (Body::Handoff) and store/thread.rs (Thread::handoff); the two paths stay the generated lists
+Because: crates/cooee-core/src/chat/item.rs:117
+Rejected: none
+Owner: the branch now includes the 2FA/log-in handoff change from staging; nothing else changed
