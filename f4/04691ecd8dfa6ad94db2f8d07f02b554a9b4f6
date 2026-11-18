@@ -1,0 +1,7 @@
+Decided: staging build fix: create_routine's schema moved to routine_tool(), like secret_tool(), so own_tools is under clippy's 100 lines
+Because: crates/cooee-server/src/mcp.rs:387
+Decided: the chat.rs note-count failure is a flake outside this diff; merged staging for a fresh CI run
+Because: crates/cooee-server/src/hub/send.rs:146
+Rejected: changing the shed-version test or the send path — this issue doesn't touch either
+Check: CI at the head is green, including stable (macos-latest)
+Owner: No behaviour change this round: a fix to keep the shared build passing, and a fresh test run.
