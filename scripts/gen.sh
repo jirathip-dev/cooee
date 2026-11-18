@@ -29,6 +29,20 @@ crate() {
   mv "$dir/lib.rs.gen" "$dir/lib.rs"
 }
 
+# module DIR: DIR.rs, its leading `//!` lines kept, a `mod` line per file of DIR and a `pub use` of each with a `pub ` item.
+module() {
+  dir=$1
+  {
+    awk '!/^\/\/!/ { exit } { print }' "$dir.rs"
+    for m in $(modules "$dir"); do printf 'mod %s;\n' "$m"; done
+    printf '\n'
+    for m in $(modules "$dir"); do
+      if grep -q '^pub ' "$dir/$m.rs" 2>/dev/null || grep -q '^pub ' "$dir/$m/mod.rs" 2>/dev/null; then printf 'pub use %s::*;\n' "$m"; fi
+    done
+  } | rustfmt --edition 2024 >"$dir.rs.gen"
+  mv "$dir.rs.gen" "$dir.rs"
+}
+
 # routes DIR: DIR/mod.rs, a `mod` line per area and one `routes` that chains every area's `routes`.
 routes() {
   dir=$1
@@ -71,6 +85,9 @@ cmds() {
 
 crate crates/cooee-core/src "cooee's core: the model and its files. No HTTP." \
   accounts blocks chat config devices login providers root shed store
+module crates/cooee-core/src/chat
+module crates/cooee-core/src/shed
+module crates/cooee-core/src/store
 routes crates/cooee-server/src/routes
 crate crates/cooee-server/src "cooee's HTTP server: the native app's JSON API (docs/README.md)." \
   connectors contrast editor gate http hub layout login look manage pairing passkey net plugin push root routes routines screens serve themes

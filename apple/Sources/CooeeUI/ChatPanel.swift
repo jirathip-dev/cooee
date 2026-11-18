@@ -10,6 +10,7 @@ extension ChatScreen {
             close: { store.send(.panel(.show(false))) },
             edit: known ? { pick(.edit) } : nil,
             newChat: known ? { pick(.newChat) } : nil,
+            topic: store.bar != nil,
             stop: store.working ? { pick(.stop) } : nil,
             open: { $0 < places.count ? pick(.open(places[$0])) : pick(.attach(attachable[$0 - places.count])) },
             workflow: { pick(.workflow) },

@@ -8,7 +8,11 @@ use std::{
 use rusqlite::{TransactionBehavior, params};
 use serde::{Deserialize, Serialize};
 
-use super::{Store, StoreError, db_err, int, io_err};
+use super::{
+    Store, StoreError,
+    error::{db_err, io_err},
+    items::int,
+};
 use crate::{Body, Item, config::History, history};
 
 const DAY: u64 = 86_400_000;
@@ -305,7 +309,8 @@ fn unpack(mut bytes: &[u8]) -> io::Result<Vec<u8>> {
 mod tests {
     use super::super::{
         Page, Thread,
-        tests::{ids, item, sample, scratch},
+        files::tests::{item, sample, scratch},
+        items::tests::ids,
     };
     use super::*;
 
