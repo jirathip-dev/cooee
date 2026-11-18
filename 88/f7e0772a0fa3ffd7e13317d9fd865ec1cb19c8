@@ -1,0 +1,11 @@
+Decided: the index pins drover at jirathip-dev/drover 8e7536e, whose manifest has attach = http://127.0.0.1:7777
+Because: "The index entry points at `https://github.com/jirathip-dev/drover`"
+Decided: tick treats any backend stop while the manifest's attach port is up as attached, with no crash counted
+Because: crates/cooee-server/src/manage.rs:927
+Rejected: matching "Address already in use" in plugin.log — brittle; the port being up is the actual condition
+Decided: moved manage.rs's tests to manage/tests.rs, as hub/tests.rs does
+Because: .drover/arch.toml:9
+Rejected: trimming unrelated production code to fit the 1125-line baseline — out of scope
+Check: the new test fails with the attach branch disabled (state "crashed (exit status: 1), restarting")
+Check: live plugin add with drover serve on 7777 spawned no backend (no start line in plugin.log)
+Owner: adding drover on a Mac already running it now connects instead of crashing five times and turning off
