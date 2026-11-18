@@ -1,0 +1,6 @@
+Decided: line_cap 32000 and apple_cap 18000, sized for the whole queue
+Because: q1958
+Because: "ci/cap.toml line_cap = 32000 and apple_cap = 18000"
+Rejected: line_cap 29141 with apple_cap unchanged — amendment q1958 replaces that AC
+Check: sh scripts/line-cap.sh exits 0 with 28262 / 32000 and 16104 / 18000
+Owner: The code line limits go up to 32,000 and 18,000 so the whole queue can merge.
