@@ -1,0 +1,34 @@
+Decided: the proxy takes each frame itself with Playwright MCP's browser_take_screenshot after the action and holds the action's answer until cooee has the frame, so the agent never gets the image and frames stay in action order
+Because: "never sent to the model unless the agent asked for that screenshot"
+Decided: cooee keeps a frame only while every page open in the persona's Chromium (CDP /json/list) is on the allowlist and on no no_frames site; a link click onto a bank page is caught too, and an unknown page means no frame
+Because: "none for 'no frames' sites"
+Rejected: tracking the last browser_navigate URL — a click can leave it, and it fails open after a restart
+Decided: AES-256-GCM with a random 32-byte key kept as secret FRAMES_KEY (keychain on macOS, 0600 file on Linux), a fresh nonce per frame stored before the ciphertext
+Because: "Storage per D3: on the Mini, encrypted at rest, 14 days"
+Decided: password typing is masked when the element or field name contains "pass"; it is masked in the caption and in the browser log, while the browser still gets the real text
+Because: "password typing masked"
+Decided: frames are swept in the hub's existing expire pass (watch), by the time in the frame's name, so tests drive it with a fake now
+Decided: the app shows a frame as a done step with its caption and picture, in the tool fold and in the trace sheet, loaded through the threads client
+Because: "Frames show in the thread and the trace sheet (#79)"
+Check: crates/cooee/tests/mcp.rs drives the real proxy and server: three frames for three actions, none for a snapshot or on bank.com, served decrypted, not plain on disk
+Owner: Each browser step now leaves a captioned, encrypted picture on the Mini for 14 days, never for 'no frames' sites
+
+Decided: resolve the secrets.rs conflict by taking staging's version unchanged
+Because: crates/cooee-core/src/secrets.rs:94
+Rejected: none
+Owner: Merged the latest staging; its own fix for saved persona secrets replaces this branch's duplicate.
+
+Decided: a checked browser call answers one Called value with both the owner's hand-back note (#162) and the frame caption, so the proxy keeps both after the merge
+Because: crates/cooee-server/src/hub/mcp.rs:82
+Rejected: two calls to the hub per action — a second round trip for every browser step
+Decided: this branch's frame route calls Hub::keep_frame, since staging's live screen took the name Hub::frame
+Because: crates/cooee-server/src/hub/screen.rs:144
+Decided: staging build fix: the handoff tool moves into handoff_tool() so own_tools stays under clippy's 100 lines, and TopicList's Avatar call becomes FigureView after the style tokens rename
+Because: apple/Sources/CooeeUI/TopicList.swift:41
+Check: crates/cooee/tests/mcp.rs runs staging's take-control test through the frame step too: the hand-back note still reaches the agent
+Owner: Merged the latest staging; browser steps keep their pictures and still carry your hand-back note.
+
+Decided: resolve the mcp.rs conflict by keeping this branch's handoff_tool() and staging's routine_tool() side by side
+Because: crates/cooee-server/src/mcp.rs:465
+Rejected: none
+Owner: Merged the latest staging; browser steps keep their pictures and the new routine tool stays.
