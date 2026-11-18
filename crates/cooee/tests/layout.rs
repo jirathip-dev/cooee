@@ -221,6 +221,23 @@ fn a_plugins_places_are_merged_and_a_place_its_manifest_lacks_is_skipped() {
         ])
     );
     assert_ne!(answer["etag"], first["etag"]);
+
+    fs::remove_file(build.join("cooee-plugin.toml")).unwrap();
+    for _ in 0..100 {
+        assert_eq!(served(&c), answer);
+    }
+    let off = lock
+        .to_string()
+        .replace("\"enabled\":true", "\"enabled\":false");
+    fs::write(dir.join("data/plugins.lock"), off).unwrap();
+    let off = served(&c);
+    assert_eq!(
+        off["skipped"],
+        serde_json::json!([
+            r#"root.slots.side[0].slots.top[0]: no enabled plugin "drover""#,
+            r#"root.slots.main[1].slots.cards[0]: no enabled plugin "drover""#
+        ])
+    );
 }
 
 const PAIRING: &str = include_str!("../../../apple/Sources/CooeeUI/Default/screens/pairing.json");

@@ -371,10 +371,11 @@ pub async fn get(cx: &Cx) -> Result<Response> {
 
 fn manifests(cx: &Cx) -> Vec<Manifest> {
     let data = &app_context::<Data>(cx).0;
-    let installed = plugins::read_lock(data).unwrap_or_default();
-    let enabled = installed.iter().filter(|l| l.enabled);
-    enabled
-        .filter_map(|l| plugins::manifest(data, l).ok())
+    let installed = plugins::installed(data).unwrap_or_default();
+    installed
+        .iter()
+        .filter(|(l, _)| l.enabled)
+        .map(|(_, m)| m.clone())
         .collect()
 }
 

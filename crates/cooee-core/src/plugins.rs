@@ -3,9 +3,12 @@
 //! `<data>/plugins/plugins.toml`, read beside the config's own. The curated index, `plugins/index.toml`, is built in.
 
 use std::{
+    collections::HashMap,
     fmt::Write as _,
     fs, io,
     path::{Path, PathBuf},
+    sync::{Arc, LazyLock, Mutex, PoisonError},
+    time::SystemTime,
 };
 
 use serde::{Deserialize, Serialize};
@@ -293,6 +296,35 @@ pub fn build_dir(data: &Path, name: &str, commit: &str) -> PathBuf {
 pub fn manifest(data: &Path, l: &Locked) -> io::Result<Manifest> {
     let file = build_dir(data, &l.name, &l.commit).join("cooee-plugin.toml");
     Manifest::parse(&fs::read_to_string(file)?)
+}
+
+type Stamp = Option<(SystemTime, u64)>;
+
+static READ: LazyLock<Mutex<HashMap<PathBuf, (Stamp, Arc<[(Locked, Manifest)]>)>>> =
+    LazyLock::new(Mutex::default);
+
+/// The lock's plugins whose manifest reads, each with it; read again only once the lock file changes.
+///
+/// # Errors
+/// When the lock can't be read or parsed.
+pub fn installed(data: &Path) -> io::Result<Arc<[(Locked, Manifest)]>> {
+    let stamp = match fs::metadata(lock_path(data)) {
+        Ok(m) => Some((m.modified()?, m.len())),
+        Err(e) if e.kind() == io::ErrorKind::NotFound => None,
+        Err(e) => return Err(e),
+    };
+    let mut read = READ.lock().unwrap_or_else(PoisonError::into_inner);
+    if let Some((at, all)) = read.get(data)
+        && *at == stamp
+    {
+        return Ok(Arc::clone(all));
+    }
+    let all: Arc<[_]> = read_lock(data)?
+        .into_iter()
+        .filter_map(|l| manifest(data, &l).ok().map(|m| (l, m)))
+        .collect();
+    read.insert(data.to_owned(), (stamp, Arc::clone(&all)));
+    Ok(all)
 }
 
 /// `<data>/plugins/plugins.toml`, the installed plugins' `[[plugins]]` entries.
