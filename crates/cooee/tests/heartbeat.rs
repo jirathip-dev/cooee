@@ -66,7 +66,7 @@ impl Setup {
         fs::create_dir_all(&bin).unwrap();
         fs::create_dir_all(&log).unwrap();
         let curl = format!(
-            "#!/bin/sh\ncat >\"{}/$$.json\"\nprintf '\\n200'\n",
+            "#!/bin/sh\nperl -ne 'print $1 =~ s/\\\\(.)/$1/gr if /^data-raw = \"(.*)\"$/' >\"{}/$$.json\"\nprintf '\\n200'\n",
             log.display()
         );
         fs::write(bin.join("curl"), curl).unwrap();

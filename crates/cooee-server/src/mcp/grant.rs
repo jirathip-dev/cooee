@@ -8,21 +8,25 @@ use cooee_core::mcp::Vars;
 use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
 
-/// What a thread's proxy runs: the server, resolved, and the tools it may offer (none: all).
+/// What a thread's proxy does with a server: run a command on the Mac, or pipe the agent's lines to cooee.
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum Grant {
+    /// A command server, run as the proxy's child.
+    Run(Child),
+    /// A URL server: cooee makes every call (`POST /mcp/agent/rpc`); the proxy holds no URL, header or token.
+    Pipe,
+}
+
+/// A command server, resolved, and the tools it may offer (none: all).
 #[derive(Debug, Default, Serialize, Deserialize)]
-pub struct Grant {
-    /// `stdio`, `http` or `sse`.
-    pub kind: String,
-    /// A stdio server's program and arguments.
+pub struct Child {
+    /// Its program.
     pub command: String,
     /// Its arguments.
     pub args: Vec<String>,
-    /// An http server's URL.
-    pub url: String,
-    /// The variables, resolved.
+    /// Its variables, resolved.
     pub env: Vars,
-    /// The headers, resolved.
-    pub headers: Vars,
     /// The allowed tools; none: all.
     pub tools: Option<Vec<String>>,
 }
@@ -37,6 +41,10 @@ pub fn token(key: &str, thread: &str) -> String {
 }
 
 pub(super) fn ask(path: &str, body: &Value) -> Result<Value, String> {
+    serde_json::from_str(&said(path, body)?).map_err(|e| e.to_string())
+}
+
+pub(super) fn said(path: &str, body: &Value) -> Result<String, String> {
     let var = cooee_core::env_var(VAR)
         .and_then(|v| v.into_string().ok())
         .ok_or_else(|| format!("{VAR} isn't set: run me as a thread's MCP server"))?;
@@ -60,7 +68,7 @@ pub(super) fn ask(path: &str, body: &Value) -> Result<Value, String> {
     s.read_to_string(&mut out).map_err(|e| e.to_string())?;
     let (head, text) = out.split_once("\r\n\r\n").unwrap_or((&out, ""));
     if head.split(' ').nth(1).is_some_and(|c| c.starts_with('2')) {
-        serde_json::from_str(text).map_err(|e| e.to_string())
+        Ok(text.to_owned())
     } else {
         Err(text.trim().to_owned())
     }

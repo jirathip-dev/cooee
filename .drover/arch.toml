@@ -105,3 +105,9 @@ glob = "*.sh"
 [[collect]]
 dir = "connectors"
 glob = "*.toml"
+
+[[ban]]
+pattern = "\"curl\""
+paths = ["crates/cooee-server/src/**"]
+except = ["crates/cooee-server/src/net.rs"]
+reason = "#497: only net.rs starts curl: use net::fetch or net::stream, which follow no redirect and take headers on stdin"
