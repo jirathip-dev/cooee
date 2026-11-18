@@ -1,0 +1,11 @@
+Decided: a room's topics are the room threads seating the same member set as the asked room; no new stored field
+Because: crates/cooee-server/src/routes/threads.rs:99
+Rejected: a stored room-group id on Thread — a store and schema change for the same listing
+Decided: New in a room posts a room with the same members at once, and the first message titles it as #507 titles a persona topic
+Because: crates/cooee-server/src/hub/rooms.rs:287
+Rejected: a blank room chat that creates the room on first send — a second send path for rooms
+Decided: a topic switch to a room not yet in Home's rows keeps the current room's members and title
+Because: apple/Sources/CooeeFeatures/AppFeature.swift:214
+Check: GET /threads?room=<id> lists both member orders, not a room of other members, and [] for an unknown id
+Check: the push test's titles now read the first message (hi all) instead of the members' ids
+Owner: Rooms get the topics strip with New and the list; Others chats still have none.
