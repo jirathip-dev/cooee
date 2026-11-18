@@ -1,0 +1,10 @@
+Decided: archive with CODE_SIGNING_ALLOWED=NO, then ad-hoc codesign the app with Cooee.entitlements; only the export cloud-signs
+Because: "Archive without signing (`CODE_SIGNING_ALLOWED=NO`, or the equivalent that still produces an exportable archive)"
+Rejected: CODE_SIGN_IDENTITY=- in the archive step — Xcode demands a provisioning profile when entitlements exist
+Rejected: plain unsigned archive alone — it carries no entitlements, so export would drop aps-environment
+Decided: the dry run exports with destination export instead of skipping the export step
+Because: "The dry run (no `upload`) still proves signing: it exports with `destination export` instead of `upload`."
+Decided: staging build fix, Avatar renamed to FigureView in TopicList.swift
+Because: apple/Sources/CooeeUI/TopicList.swift:41
+Check: the dispatched dry run on the Mini signs at export and mints no "Created via API" Development cert
+Owner: TestFlight runs stop making a throwaway Development certificate; please dispatch two dry runs to confirm.
