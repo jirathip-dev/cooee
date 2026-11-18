@@ -25,6 +25,7 @@ internal struct PluginNavigationTests {
             ScreenFeature()
         } withDependencies: {
             $0.date.now = epoch
+            $0.continuousClock = ImmediateClock()
             $0.screenCache.save = { _, _ in }
             dependencies(&$0)
         }

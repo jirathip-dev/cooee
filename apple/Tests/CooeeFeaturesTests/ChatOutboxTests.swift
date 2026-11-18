@@ -15,6 +15,7 @@ internal struct ChatOutboxTests {
             ChatFeature()
         } withDependencies: {
             $0.date.now = epoch
+            $0.continuousClock = ImmediateClock()
             $0.threads.send = { _, _, text, _, _ in
                 if let refused = refusals.next() { throw refused }
                 calls.record("send \(text)")

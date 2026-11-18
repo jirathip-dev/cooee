@@ -66,11 +66,7 @@ internal struct ScreenFeatureTests {
         #expect(store.state.offline && store.state.title == "Queue")
         #expect(store.state.screen?.root["blocks"]?.items.first?.string("value") == "6")
         await task.cancel()
-        #expect(
-            calls.all == [
-                "keep https://mini.local|drover|/screens/queue true",
-                "keep https://mini.local|drover|/screens/queue true",
-            ])
+        #expect(calls.all == Array(repeating: "keep https://mini.local|drover|/screens/queue true", count: 2))
     }
 
     @Test internal func anUnreachableMacShowsTheKeptAnswerWithItsAgeThenRetries() async {
@@ -107,6 +103,7 @@ internal struct ScreenFeatureTests {
             ScreenFeature()
         } withDependencies: {
             $0.date.now = epoch
+            $0.continuousClock = ImmediateClock()
             $0.screenCache.save = { _, _ in }
             $0.plugins.act = { _, plugin, screen, action in
                 #expect(plugin == .plugin("drover") && screen == "queue" && action.action == "drive")
