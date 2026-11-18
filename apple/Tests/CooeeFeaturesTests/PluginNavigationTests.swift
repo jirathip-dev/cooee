@@ -84,9 +84,11 @@ internal struct PluginNavigationTests {
             $0.plugins.act = { _, _, _, _ in .object(["open": .string("/screens/fleets/review")]) }
             $0.plugins.screen = { _, _, path in .object(["title": .string(path)]) }
         }
-        await store.send(.act(BlockAction(action: "review", values: [:]))) { $0.acting = true }
+        await store.send(.act(BlockAction(action: "review", values: [:]))) {
+            $0.pending = [BlockAction(action: "review", values: [:])]
+        }
         await store.receive(\.acted) {
-            $0.acting = false
+            $0.pending = []
             $0.path = ["/screens/fleets/review"]
             $0.screen = nil
             $0.asOf = epoch

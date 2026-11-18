@@ -95,7 +95,7 @@ internal struct PluginScreenSheet: View {
                 }
                 .environment(\.openBeside, beside)
                 .environment(\.refresh, wide ? refresh : nil)
-                .disabled(store.offline || store.acting).opacity(store.offline ? 0.6 : 1)
+                .environment(\.acting, store.pending).disabled(store.offline).opacity(store.offline ? 0.6 : 1)
             } else if store.offline {
                 Text("Nothing kept from \(store.label) yet.").foregroundStyle(palette.mute)
             } else {
