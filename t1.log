@@ -1,0 +1,14 @@
+   Compiling cooee v0.1.0 (/Users/jkmacmini/.local/share/drover/work/cooee/issue-500/crates/cooee)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.42s
+     Running tests/mcp.rs (/Users/jkmacmini/.local/share/herdsman/work/.build/cooee-impl-500/debug/deps/mcp-4b8699678bcd57cf)
+
+running 2 tests
+cooee: a replay frame: /var/folders/51/tp633f_n3tj561q8rqwrqtxw0000gn/T/cooee-mcp-screen-32959/data/frames/t1a1ecb6b612: this cooee isn't signed with Apple Development, so its next build couldn't read the secret: install it with scripts/install.sh
+cooee: a replay frame: /var/folders/51/tp633f_n3tj561q8rqwrqtxw0000gn/T/cooee-mcp-screen-skill-32959/data/frames/t1a1ecb6b612: this cooee isn't signed with Apple Development, so its next build couldn't read the secret: install it with scripts/install.sh
+test a_lease_saved_as_a_skill_hands_the_persona_its_steps_and_no_typed_value_and_a_declined_card_saves_nothing ... ok
+cooee: a replay frame: /var/folders/51/tp633f_n3tj561q8rqwrqtxw0000gn/T/cooee-mcp-screen-32959/data/frames/t1a1ecb6b612: this cooee isn't signed with Apple Development, so its next build couldn't read the secret: install it with scripts/install.sh
+cooee: a replay frame: /var/folders/51/tp633f_n3tj561q8rqwrqtxw0000gn/T/cooee-mcp-screen-32959/data/frames/t1a1ecb6b612: this cooee isn't signed with Apple Development, so its next build couldn't read the secret: install it with scripts/install.sh
+test the_owner_watches_takes_control_and_hands_back_with_a_note_the_waiting_call_carries ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 7 filtered out; finished in 2.12s
+
