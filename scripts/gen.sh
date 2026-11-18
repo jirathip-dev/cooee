@@ -88,6 +88,9 @@ crate crates/cooee-core/src "cooee's core: the model and its files. No HTTP." \
 module crates/cooee-core/src/chat
 module crates/cooee-core/src/shed
 module crates/cooee-core/src/store
+module crates/cooee-server/src/login
+module crates/cooee-server/src/mcp
+module crates/cooee-server/src/push
 routes crates/cooee-server/src/routes
 crate crates/cooee-server/src "cooee's HTTP server: the native app's JSON API (docs/README.md)." \
   connectors contrast editor gate http hub layout login look manage pairing passkey net plugin push root routes routines screens serve themes
