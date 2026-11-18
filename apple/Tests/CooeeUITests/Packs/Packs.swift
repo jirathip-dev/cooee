@@ -42,52 +42,17 @@ internal struct PackFrame: Sendable, CustomTestStringConvertible {
 
 @Suite(.serialized)
 internal struct PackFrames {
-    private static var terminal: [Frame] {
+    private static func sheet(_ pack: String, _ mode: String, _ palette: Palette) -> [Frame] {
         [
-            .phone("style-terminal-home-dark", .farmDark) { HomeView() },
-            .phone("style-terminal-chat-dark", .farmDark) { ChatView.streaming() },
-            .phone("style-terminal-card-dark", .farmDark) { ChatView.cards() },
-            .phone("style-terminal-persona-dark", .farmDark) { PersonaEditBlocks() },
-            .phone("persona-panel-terminal-dark", .farmDark) { PersonaPanelBlocks() },
-            .phone("you-terminal-terminal-dark", .farmDark) { TerminalView.own() },
-            .phone("sign-ins-terminal-dark", .farmDark) { SignInsView() },
-            .phone("room-pinned-terminal-dark", .farmDark) {
-                HomeView(pins: Fixtures.roomPins, chats: Fixtures.roomChats)
-            },
-            .phone("room-terminal-dark", .farmDark) { RoomView.kestrel() },
-            .phone("room-mention-terminal-dark", .farmDark) { RoomView.mentioning() },
-            .phone("room-ask-terminal-dark", .farmDark) { RoomView.asking() },
-            .phone("linked-terminal-dark", .farmDark) { LinkedView.researcher() },
-            .mac("room-terminal-wide", 1440, 900, .farmDark) { Sidebar.kestrel() },
-            DiagramFrames.frame("map-terminal-dark") { DiagramFrames.sheet(map) },
-            DiagramFrames.frame("map-mac-terminal-dark", phone: false) { DiagramFrames.sheet(map, width: 760) },
-            TopicFrames.frame("press", "terminal", .farmLight) { TopicFrames.chat(pressed: "c2") },
-        ] + shared("terminal", .farmDark) + ThemeFrames.editor("terminal")
+            .phone("style-\(pack)-home-\(mode)", palette) { HomeView() },
+            .phone("style-\(pack)-chat-\(mode)", palette) { ChatView.streaming() },
+            .phone("style-\(pack)-card-\(mode)", palette) { ChatView.cards() },
+            .phone("persona-panel-\(pack)-\(mode)", palette) { PersonaPanelBlocks() },
+        ] + TrustFrames.posters(pack)
     }
 
-    private static var scene: [Frame] {
-        [
-            .phone("style-scene-home-light", .farmLight) { HomeView() },
-            .phone("style-scene-chat-light", .farmLight) { ChatView.streaming() },
-            .phone("style-scene-card-light", .farmLight) { ChatView.cards() },
-            .phone("persona-panel-scene-light", .farmLight) { PersonaPanelBlocks() },
-            .phone("you-terminal-scene-light", .farmLight) { TerminalView.own() },
-            .phone("machines-scene-light", .farmLight) { MachinesView() },
-            .phone("room-pinned-scene-light", .farmLight) {
-                HomeView(pins: Fixtures.roomPins, chats: Fixtures.roomChats)
-            },
-            .phone("room-scene-light", .farmLight) { RoomView.kestrel() },
-            .phone("room-ask-scene-light", .farmLight) { RoomView.asking() },
-            DiagramFrames.frame("map-scene-light", .farmLight) { DiagramFrames.sheet(map) },
-        ] + shared("scene", .farmLight)
-    }
-
-    private static var map: JSONValue { DiagramFrames.fixture("workflow-diagram/fixtures/map.json") }
-
-    private static func shared(_ pack: String, _ palette: Palette) -> [Frame] {
-        TrustFrames.posters(pack) + AdditionFrames.additions("@\(pack)") + QueueFrames.sheets(pack)
-            + TopicFrames.topics(pack, palette)
-    }
+    private static let terminal = sheet("terminal", "dark", .farmDark)
+    private static let scene = sheet("scene", "light", .farmLight)
 
     internal static let all =
         terminal.map { PackFrame(pack: "terminal", frame: $0) } + scene.map { PackFrame(pack: "scene", frame: $0) }
