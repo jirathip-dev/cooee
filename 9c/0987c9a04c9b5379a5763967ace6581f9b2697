@@ -1,0 +1,8 @@
+Decided: a Reply event moves a running turn (working, connecting, blocked) to done, after the reply item is published.
+Because: "The row's \"…\" shows only while a turn is actually running, and clears on reply, stop or the agent being gone."
+Rejected: setting done on every Reply — it would wipe shed's limited or error state and its reset note.
+Rejected: publishing done before the reply item — page clients that wait for done would miss the reply (crates/cooee/tests/chat.rs:214).
+Decided: the row's at is Option and omitted when the thread has no items; the app shows an empty age for it.
+Because: "A row with no messages shows no age, never one counted from 1970."
+Check: cancel (a cancelled reply) and Exited/Killed (ended) still finish in the right state; ended is never overwritten.
+Owner: Home rows stop showing typing dots once the agent replies, and an empty chat shows no age.
