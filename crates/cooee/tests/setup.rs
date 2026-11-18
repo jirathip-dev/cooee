@@ -52,7 +52,9 @@ esac"#,
 */releases/download/*/SHA256SUMS) cat "$HOME/SHA256SUMS" ;;
 */releases/download/*) for a; do [ "$prev" = -o ] && out=$a; prev=$a; done; cp "$HOME/new-cooee" "$out" ;;
 *127.0.0.1*) "$HOME/serving" ;;
-*) test ! -e "$HOME/curl-fails" ;;
+*) [ -e "$HOME/tailnet" ] || exit 0
+   for a; do shift; case $a in https://*) a="http://$(cat "$HOME/tailnet")/${a#https://*/}" ;; esac; set -- "$@" "$a"; done
+   exec /usr/bin/curl "$@" ;;
 esac"#,
     ),
 ];
@@ -331,9 +333,45 @@ fn dry_run_writes_nothing_and_prints_every_command() {
 }
 
 #[test]
+fn a_tailnet_url_answering_405_on_get_pair_passes_doctor() {
+    let mac = Mac::new("su-405", true);
+    let server = TcpListener::bind("127.0.0.1:0").unwrap();
+    fs::write(
+        mac.home.join("tailnet"),
+        server.local_addr().unwrap().to_string(),
+    )
+    .unwrap();
+    std::thread::spawn(move || {
+        for mut conn in server.incoming().flatten() {
+            let mut buf = [0; 4096];
+            std::io::Read::read(&mut conn, &mut buf).unwrap();
+            std::io::Write::write_all(
+                &mut conn,
+                b"HTTP/1.1 405 Method Not Allowed\r\nallow: POST\r\ncontent-length: 0\r\nconnection: close\r\n\r\n",
+            )
+            .unwrap();
+        }
+    });
+    let out = mac.setup(&["--yes"]);
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(out.status.success(), "{out:?}");
+    let port = mac.port;
+    assert!(
+        stdout.contains(&format!(
+            "ok   https://mac.tailnet.example:{port}/ (else: tailscale serve --bg --https={port} http://127.0.0.1:{port})"
+        )),
+        "{stdout}"
+    );
+}
+
+#[test]
 fn a_doctor_failure_stops_with_its_fix() {
     let mac = Mac::new("su-doctor", true);
-    fs::write(mac.home.join("curl-fails"), "").unwrap();
+    let unused = TcpListener::bind("127.0.0.1:0")
+        .unwrap()
+        .local_addr()
+        .unwrap();
+    fs::write(mac.home.join("tailnet"), unused.to_string()).unwrap();
     let out = mac.setup(&["--yes"]);
     let (stdout, stderr) = (
         String::from_utf8_lossy(&out.stdout),
