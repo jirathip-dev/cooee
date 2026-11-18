@@ -1,0 +1,5 @@
+Decided: no code change this round; merged origin/staging so CI runs again on a fresh head
+Because: apple/Sources/CooeeUI/BlockHome.swift:53
+Rejected: waiting on the old run — its apple job sat queued with no macOS runner, not failing
+Check: apple CI job at da4cfae is green; the PR diff is still only BlockHome.swift and HeaderRenderTests.swift
+Owner: Nothing new in the fix; this round only brought the branch up to date so the Apple checks run again.
