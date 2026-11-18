@@ -1,5 +1,6 @@
 import CooeeCore
 import CooeeUI
+import Foundation
 import Testing
 
 internal struct DefaultLayoutTests {
@@ -32,5 +33,24 @@ internal struct DefaultLayoutTests {
     @Test internal func theBundledHomeDrawsItsPinnedRowThenItsChats() {
         #expect(HomeScreen.bundled.title == "cooee")
         #expect(HomeScreen.bundled.blocks.map(\.type) == ["pinned", "chats"])
+    }
+
+    @Test internal func everyBundledStyleDecodesToItsTokens() {
+        let styles = LookStyle.allCases.map(Style.bundled)
+        #expect(styles.map(\.label) == ["Modern", "Terminal", "Scene"])
+        #expect(styles.map(\.surface) == [.glass, .dashed, .solid])
+        #expect(styles.map(\.figures) == [.avatar, .ascii, .sprite])
+        #expect(styles.map(\.type) == [.default, .mono, .default])
+        #expect(styles.map(\.icon) == [.modern, .terminal, .farm])
+        #expect(styles.map { $0.stage?.alertPaper } == [nil, nil, "#f8dede"])
+    }
+
+    @Test(arguments: ["terminal", "scene"])
+    internal func theBundledPackStyleIsThePacksFileByteForByte(_ pack: String) throws {
+        let root = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent()
+            .deletingLastPathComponent()
+        let bundled = root.appendingPathComponent("Sources/CooeeUI/Default/styles/\(pack).json")
+        let packed = root.deletingLastPathComponent().appendingPathComponent("packs/\(pack)/style.json")
+        #expect(try Data(contentsOf: bundled) == Data(contentsOf: packed))
     }
 }

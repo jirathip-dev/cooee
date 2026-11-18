@@ -15,7 +15,7 @@ internal struct Group2<Content: View>: View {
             }
             VStack(alignment: .leading, spacing: 0) { content }
                 .background(
-                    palette.card.opacity(look.style == .modern ? 0.75 : 1),
+                    palette.card.opacity(look.style.surface == .glass ? 0.75 : 1),
                     in: .rect(cornerRadius: look.mono ? 0 : 16)
                 )
                 .overlay {

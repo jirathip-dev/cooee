@@ -213,7 +213,7 @@ internal struct DiagramNode: View {
         }
         .lineLimit(1).minimumScaleFactor(0.8).padding(.horizontal, 10)
         .frame(maxWidth: .infinity, minHeight: height, maxHeight: height, alignment: .leading)
-        .overlay(alignment: .bottomTrailing) { if look.style == .scene, count > 0 { horse.padding(4) } }
+        .overlay(alignment: .bottomTrailing) { if look.style.figures == .sprite, count > 0 { horse.padding(4) } }
         .background(palette.background, in: .rect(cornerRadius: look.mono ? 0 : 12))
         .overlay(
             outline(

@@ -100,7 +100,7 @@ internal struct PluginLine: View {
         HStack(spacing: 6) {
             ForEach(Fixtures.personas) { persona in
                 let active = plugin.personas.contains(persona.id)
-                Avatar(persona: persona, size: 26)
+                FigureView(persona: persona, size: 26)
                     .overlay(alignment: .bottomTrailing) {
                         if active && !look.mono {
                             Image(systemName: "checkmark.circle.fill").font(.system(size: 11))

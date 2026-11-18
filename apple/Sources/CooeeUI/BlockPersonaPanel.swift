@@ -65,7 +65,7 @@ public struct PersonaPanelBlocks: View {
 extension PersonaPanelBlocks {
     private var header: some View {
         HStack(spacing: 10) {
-            Avatar(persona: persona, size: column ? 36 : 44)
+            FigureView(persona: persona, size: column ? 36 : 44)
             VStack(alignment: .leading, spacing: 3) {
                 Text(persona.name).ui(column ? 16 : 18, .semibold, look)
                 AgentChip(persona: persona)
@@ -111,7 +111,8 @@ extension PersonaPanelBlocks {
             }
             .foregroundStyle(palette.link).frame(maxWidth: .infinity).frame(height: 64)
             .background(
-                palette.card.opacity(look.style == .modern ? 0.75 : 1), in: .rect(cornerRadius: look.mono ? 0 : 16)
+                palette.card.opacity(look.style.surface == .glass ? 0.75 : 1),
+                in: .rect(cornerRadius: look.mono ? 0 : 16)
             )
             .overlay {
                 if look.mono { Rectangle().strokeBorder(palette.edge, lineWidth: 1) }
