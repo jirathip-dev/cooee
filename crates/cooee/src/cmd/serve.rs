@@ -21,12 +21,19 @@ fn serve(config: &Config) -> Result<(), String> {
     if let Err(e) = crate::cli::migrate(config, false) {
         cooee_core::note!("cooee: {e}");
     }
+    let mut config = config.clone();
+    let (data, shed) = (config.data_dir(), config.shed.clone());
+    let shed = Shed::new(shed, config.shed_dir.clone());
+    let terminal = (config.plugins.iter_mut()).find(|p| p.name == cooee_terminal::NAME);
+    if let (Some(p), Some(data)) = (terminal, &data) {
+        match cooee_terminal::start(p, shed, data) {
+            Ok(()) => cooee_core::note!("cooee: plugin terminal on {}", p.url),
+            Err(e) => cooee_core::note!("cooee: plugin terminal at {}: {e}", p.url),
+        }
+    }
+    let config = &config;
     let machines = config.plugins.iter().find(|p| p.name == "machines");
-    let terminal = config
-        .plugins
-        .iter()
-        .find(|p| p.name == cooee_terminal::NAME);
-    if let Some(data) = config.data_dir() {
+    if let Some(data) = data {
         std::thread::spawn(move || {
             match keychain::migrate(&data) {
                 Ok(Some(done)) => cooee_core::note!("cooee: {done}"),
@@ -44,12 +51,6 @@ fn serve(config: &Config) -> Result<(), String> {
     }
     cooee_server::serve(config, |addr| {
         cooee_core::say!("cooee: listening on http://{addr}");
-        if let (Some(p), Some(data)) = (terminal, config.data_dir()) {
-            let shed = Shed::new(config.shed.clone(), config.shed_dir.clone());
-            if let Err(e) = cooee_terminal::start(p, shed, &data) {
-                cooee_core::note!("cooee: plugin terminal at {}: {e}", p.url);
-            }
-        }
         let Some(p) = machines else { return };
         let ip = if addr.ip().is_unspecified() {
             Ipv4Addr::LOCALHOST.into()
