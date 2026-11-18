@@ -1,4 +1,4 @@
-use rusqlite::{Transaction, params};
+use rusqlite::{Connection, Transaction, params};
 
 use super::{Store, StoreError, error::db_err};
 use crate::{Item, history};
@@ -73,19 +73,47 @@ impl Store {
     /// Returns [`StoreError`] if the id is invalid or the items can't be read.
     pub fn page(&self, id: &str, from: Page, n: usize) -> Result<Vec<Item>, StoreError> {
         self.path(id)?;
+        let db = self.db();
+        if let Some(mut all) = self.moved(&db, id)? {
+            for item in self.bodies(&db, "thread = ?1", params![id])? {
+                all.insert(item.id, item);
+            }
+            let mut items: Vec<Item> = match from {
+                Page::Last => all.into_values().rev().take(n).collect(),
+                Page::Before(b) => all.range(..b).rev().take(n).map(|i| i.1.clone()).collect(),
+                Page::After(a) => all.into_values().filter(|i| i.id > a).take(n).collect(),
+            };
+            if !matches!(from, Page::After(_)) {
+                items.reverse();
+            }
+            return Ok(items);
+        }
         let (sql, at) = match from {
             Page::Last => ("id < ?3 ORDER BY id DESC", i64::MAX),
             Page::Before(b) => ("id < ?3 ORDER BY id DESC", int(b)),
             Page::After(a) => ("id > ?3 ORDER BY id", int(a)),
         };
         let n = u64::try_from(n).map_or(i64::MAX, int);
-        let db = self.db();
-        let mut items = db
-            .prepare_cached(&format!(
-                "SELECT body FROM items WHERE thread = ?1 AND {sql} LIMIT ?2"
-            ))
+        let mut items = self.bodies(
+            &db,
+            &format!("thread = ?1 AND {sql} LIMIT ?2"),
+            params![id, n, at],
+        )?;
+        if !matches!(from, Page::After(_)) {
+            items.reverse();
+        }
+        Ok(items)
+    }
+
+    pub(super) fn bodies<P: rusqlite::Params>(
+        &self,
+        db: &Connection,
+        filter: &str,
+        params: P,
+    ) -> Result<Vec<Item>, StoreError> {
+        db.prepare_cached(&format!("SELECT body FROM items WHERE {filter}"))
             .and_then(|mut q| {
-                q.query_map(params![id, n, at], |r| r.get::<_, String>(0))?
+                q.query_map(params, |r| r.get::<_, String>(0))?
                     .collect::<Result<Vec<_>, _>>()
             })
             .map_err(db_err(&self.path))?
@@ -95,15 +123,11 @@ impl Store {
             .map_err(|source| StoreError::Parse {
                 path: self.path.clone(),
                 source,
-            })?;
-        if !matches!(from, Page::After(_)) {
-            items.reverse();
-        }
-        Ok(items)
+            })
     }
 
-    /// The items whose message text holds every one of `words` (lowercase), newest first, with their thread, until
-    /// `each` says stop. A word is looked up in the trigram index; `each` sees a superset (a `%` or `_` in a word
+    /// The items whose message text holds every one of `words` (lowercase), newest first and then the archive's, with
+    /// their thread, until `each` says stop. A word is looked up in the trigram index; `each` sees a superset (a `%` or `_` in a word
     /// matches any text there), so it checks the text itself.
     ///
     /// # Errors
@@ -133,6 +157,14 @@ impl Store {
             if let Ok(item) = serde_json::from_str(&body)
                 && !each(&thread, &item)
             {
+                return Ok(());
+            }
+        }
+        drop(rows);
+        drop(q);
+        drop(db);
+        for (thread, item) in self.archived_said(words)? {
+            if !each(&thread, &item) {
                 break;
             }
         }
@@ -140,16 +172,16 @@ impl Store {
     }
 }
 
-fn int(n: u64) -> i64 {
+pub(super) fn int(n: u64) -> i64 {
     i64::try_from(n).unwrap_or(i64::MAX)
 }
 
 #[cfg(test)]
-mod tests {
+pub(super) mod tests {
     use super::*;
     use crate::store::files::tests::{crash, crash_dir, item, scratch};
 
-    fn ids(items: &[Item]) -> Vec<u64> {
+    pub(in crate::store) fn ids(items: &[Item]) -> Vec<u64> {
         items.iter().map(|i| i.id).collect()
     }
 
