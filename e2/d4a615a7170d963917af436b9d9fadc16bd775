@@ -1,0 +1,9 @@
+Decided: keep returns a 2 s debounced cancellable effect on the injected clock; navigate flushes the current screen at once
+Because: "Write in the background, debounced (e.g. 2 s after the last event, and on leaving the screen)."
+Decided: cache.load moved into follow's failure path and rides on .failed, so the reducer does no file I/O
+Because: "No file I/O inside the reducer."
+Rejected: debouncing inside the live ScreenCache client — untestable with TestClock and lives in CooeeApp, outside the TestStore
+Rejected: writing on effect cancellation — a newer event's cancelInFlight would also write, defeating the debounce
+Check: apple/Tests/CooeeFeaturesTests/ScreenFeatureTests.swift aHundredEvents test sees 0 writes until 2 s after the last event, then 1
+Check: a sheet dismissed within 2 s of its last event loses that save (ifLet cancels child effects); the cache is only an offline fallback
+Owner: busy plugin screens now save their offline copy once, in the background, instead of on every update
