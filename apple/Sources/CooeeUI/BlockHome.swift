@@ -47,7 +47,10 @@ public struct HomeView: View {
             Backdrop()
             VStack(spacing: 0) {
                 TopBar(title: screen.title, personas: all, actions: actions)
-                    .overlay(alignment: .bottom) { if loading { LoadingBar() } }
+                    .overlay(alignment: .bottom) {
+                        if loading { LoadingBar().frame(height: 2, alignment: .top) }
+                    }
+                    .zIndex(1)
                 Scroller {
                     HomeBlocks(screen: screen, pins: pins, chats: chats, selected: selected, actions: actions)
                     if chats.isEmpty { BigSprite(loading: loading) }

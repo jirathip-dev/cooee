@@ -35,4 +35,20 @@ internal struct HeaderRenderTests {
         actions.new = {}
         #expect(try Self.pixels(actions).differing(from: plain, by: 16) > 0.001)
     }
+
+    private static func home(loading: Bool) throws -> Pixels {
+        let view = HomeView(loading: loading).frame(width: 402, height: 200)
+            .environment(\.look, Look(palette: .farmLight, still: true))
+        let image = try #require(ImageRenderer(content: view).cgImage)
+        return try #require(Pixels(image))
+    }
+
+    @Test internal func theHomeLoadingLineSitsOnTheHeaderBottomEdge() throws {
+        let idle = try Self.home(loading: false)
+        let loading = try Self.home(loading: true)
+        let row = idle.width * 4
+        #expect(loading.bytes[..<(54 * row)] == idle.bytes[..<(54 * row)])
+        #expect(loading.bytes[(54 * row)..<(56 * row)] != idle.bytes[(54 * row)..<(56 * row)])
+        #expect(loading.bytes[(56 * row)..<(75 * row)] != idle.bytes[(56 * row)..<(75 * row)])
+    }
 }
