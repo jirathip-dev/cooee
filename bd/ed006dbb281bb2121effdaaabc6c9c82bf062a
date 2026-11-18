@@ -1,0 +1,14 @@
+Decided: Looks.styles holds ServedStyle (a lenient Style decode), not JSONValue: JSONValue decodes 1 and 0 as Bool on Darwin, so re-decoding a style through it always failed
+Because: apple/Sources/CooeeCore/JSONValue.swift:14
+Decided: the look sheet and the theme editor list Modern, then the server's packs sorted by name; every theme frame still matches
+Because: "the look sheet's list and notice"
+Decided: a theme without sprites or a scene draws Modern and hides the style's row; the pick stays; an unanswered or farm theme draws the kept tokens
+Because: apple/Sources/CooeeCore/Looks.swift:60
+Decided: theme-*-scene frames stay in v4-theme-editor: they were always drawn in Modern, the scene there is the theme's suggested style name
+Because: apple/Tests/CooeeUITests/Frames/Theme.swift:79
+Decided: apple/e2e/serve.sh copies packs/terminal and packs/scene; its packs/themes/* cp pointed at a folder gone since #318
+Because: "live UI test picks a pack's style from a server"
+Rejected: keeping the Rust Theme.style a closed LookStyle in sync here — the slice is apple-only; a third-party pack name in a theme's style is refused by the server's PUT until a Rust follow-up
+Check: PackFrames has 61 cases, one per PNG in apple/design/packs/*/, each byte-identical to its old file (git shows pure renames)
+Check: apple net +89 against the ADR's 0 (16995 of 18000); the PR body breaks it down
+Owner: The app ships only Modern; Terminal and Scene come from the server as packs, and a phone keeps its last good copy or falls back to Modern with one line.
