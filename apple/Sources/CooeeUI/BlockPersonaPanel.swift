@@ -5,6 +5,7 @@ internal struct PanelActions {
     internal var close: () -> Void = {}
     internal var edit: (() -> Void)?
     internal var newChat: (() -> Void)?
+    internal var topic = false
     internal var memory: (() -> Void)?
     internal var stop: (() -> Void)?
     internal var open: (Int) -> Void = { _ in }
@@ -89,7 +90,8 @@ extension PersonaPanelBlocks {
         return HStack(spacing: 10) {
             if let edit = actions.edit { action("pencil", "Edit", "Edit \(persona.name)", edit) }
             if let newChat = actions.newChat {
-                action("square.and.pencil", "New chat", "New chat with \(persona.name)", newChat)
+                let new = actions.topic ? "New topic" : "New chat"
+                action("square.and.pencil", new, "\(new) with \(persona.name)", newChat)
             }
             if let open = actions.memory { action("brain.head.profile", memory, memory, open) }
             if let stop = actions.stop { action("stop.fill", "Stop", "Stop \(persona.name)", stop) }
