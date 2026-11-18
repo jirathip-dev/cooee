@@ -126,17 +126,18 @@ jobs:
       - name: test
         run: ${{ runner.os == 'Linux' && 'setsid --wait' || '' }} cargo test --workspace --locked
 
-  # #365, #565: the macOS leg runs on GitHub-hosted xcode-27 for a pull request, and on our own Mac (mini-cooee) for
-  # pushes and when `vars.MAC_PR_RUNNER` is `self-hosted`, then never for a fork's pull request: that skips it. The check name stays as the staging ruleset requires it. A newer run of the same ref cancels this leg; a
+  # #365, #565: `vars.MAC_RUNNER_CI` picks the Mac (docs/ci-runners.md): unset, a pull request runs on GitHub-hosted
+  # xcode-27 and a push on our own Mac (mini-cooee); on our Mac never for a fork's pull request: that skips it. The
+  # check name stays as the staging ruleset requires it. A newer run of the same ref cancels this leg; a
   # run that skips it (another label) gets a group of its own, so it cancels nothing.
   stable-mac:
     name: stable (macos-latest)
     needs: scope
     if: >-
       needs.scope.outputs.run == 'true' && needs.scope.outputs.mac == 'true' &&
-      (github.event_name != 'pull_request' || vars.MAC_PR_RUNNER != 'self-hosted' ||
+      (github.event_name != 'pull_request' || vars.MAC_RUNNER_CI != 'self-hosted' ||
       github.event.pull_request.head.repo.full_name == github.repository)
-    runs-on: ${{ (github.event_name != 'pull_request' || vars.MAC_PR_RUNNER == 'self-hosted') && fromJSON('["self-hosted","macOS","ARM64","cooee-mac"]') || 'xcode-27' }}
+    runs-on: ${{ (vars.MAC_RUNNER_CI == 'self-hosted' || (vars.MAC_RUNNER_CI != 'hosted' && github.event_name != 'pull_request')) && fromJSON('["self-hosted","macOS","ARM64","cooee-mac"]') || 'xcode-27' }}
     timeout-minutes: 30
     env:
       RUSTUP_TOOLCHAIN: stable

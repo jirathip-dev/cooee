@@ -3,9 +3,9 @@
 # notarized, stapled and checked with `spctl -a -vv`; without them the .dmg is unsigned and the job says which secrets
 # are missing. The secrets go in the `mac-release` environment (staging and main only, set up by the owner);
 # apple/README.md lists them. #329: on a pull request the .dmg is built only on the merge-ready run of a change that
-# reaches the Apple surface (scripts/ci-scope.sh); otherwise `dmg` reports skipped, under the same name. #365, #565: a pull
-# request's `dmg` runs on GitHub-hosted xcode-27; pushes and `vars.MAC_PR_RUNNER=self-hosted` take our own Mac (mini-cooee),
-# never for a fork's pull request; its keychain lives and dies with the job.
+# reaches the Apple surface (scripts/ci-scope.sh); otherwise `dmg` reports skipped, under the same name. #365, #565:
+# `vars.MAC_RUNNER_APPLE_MAC` picks the Mac (docs/ci-runners.md): unset, a pull request runs on GitHub-hosted xcode-27
+# and a push on our own Mac (mini-cooee); on our Mac never for a fork's pull request; its keychain lives and dies with the job.
 name: apple-mac
 on:
   push:
@@ -52,9 +52,9 @@ jobs:
     needs: scope
     if: >-
       needs.scope.outputs.run == 'true' && needs.scope.outputs.mac == 'true' &&
-      (github.event_name != 'pull_request' || vars.MAC_PR_RUNNER != 'self-hosted' ||
+      (github.event_name != 'pull_request' || vars.MAC_RUNNER_APPLE_MAC != 'self-hosted' ||
       github.event.pull_request.head.repo.full_name == github.repository)
-    runs-on: ${{ (github.event_name != 'pull_request' || vars.MAC_PR_RUNNER == 'self-hosted') && fromJSON('["self-hosted","macOS","ARM64","cooee-mac"]') || 'xcode-27' }}
+    runs-on: ${{ (vars.MAC_RUNNER_APPLE_MAC == 'self-hosted' || (vars.MAC_RUNNER_APPLE_MAC != 'hosted' && github.event_name != 'pull_request')) && fromJSON('["self-hosted","macOS","ARM64","cooee-mac"]') || 'xcode-27' }}
     timeout-minutes: 60
     # Pull requests get no environment and no secrets: they build the unsigned .dmg. (`a && '' || b` is always b, as
     # '' is falsy, so the environment name is the truthy branch.)

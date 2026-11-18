@@ -5,44 +5,51 @@
 Our one self-hosted runner is `mini-cooee` (labels `self-hosted, macOS, ARM64, cooee-mac`). The Air (`air-cooee`) is
 no longer a cooee runner (#565, q1940). The macOS jobs:
 
-| Job | Pull request | Push (staging, main), schedule, manual |
-| --- | --- | --- |
-| `ci.yml`: `stable (macos-latest)` (the check name stays as the staging ruleset requires) | GitHub-hosted `xcode-27` | mini-cooee |
-| `apple.yml`: `apple` (#277: the builds, `just apple-check` and the simulator e2e in one job; #328: a PR push runs only the builds, the `merge-ready` run all of it) | GitHub-hosted `xcode-27` | mini-cooee |
-| `apple-mac.yml`: `dmg` (signed only on a push) | GitHub-hosted `xcode-27` | mini-cooee |
-| `apple-testflight.yml`: `testflight` | — | mini-cooee |
-| `conformance.yml` | — | mini-cooee |
+| Job | Variable | Pull request | Push (staging, main), schedule, manual |
+| --- | --- | --- | --- |
+| `ci.yml`: `stable (macos-latest)` (the check name stays as the staging ruleset requires) | `MAC_RUNNER_CI` | GitHub-hosted `xcode-27` | mini-cooee |
+| `apple.yml`: `apple` (#277: the builds, `just apple-check` and the simulator e2e in one job; #328: a PR push runs only the builds, the `merge-ready` run all of it) | `MAC_RUNNER_APPLE` | GitHub-hosted `xcode-27` | mini-cooee |
+| `apple-mac.yml`: `dmg` (signed only on a push) | `MAC_RUNNER_APPLE_MAC` | GitHub-hosted `xcode-27` | mini-cooee |
+| `apple-testflight.yml`: `testflight` | `MAC_RUNNER_TESTFLIGHT` | — | mini-cooee |
+| `conformance.yml` | — | — | mini-cooee |
 
-On `xcode-27` (public preview, actions/runner-images#14404) `.github/actions/mac-runner` selects
-`/Applications/Xcode_27.2.app` by path. Every other job runs on GitHub's ubuntu runners. No job installs cooee as a
+The table shows the defaults, with the variable unset. On `xcode-27` (public preview, actions/runner-images#14404)
+`.github/actions/mac-runner` selects `/Applications/Xcode_27.2.app` by path; on mini-cooee it selects
+`/Applications/Xcode.app` (Xcode 27.2). Every other job runs on GitHub's ubuntu runners. No job installs cooee as a
 login item or binds port 4747 on our runner: the Mac app is a client only (#484), and the e2e's `cooee serve` runs on
 its own port.
 
-## The switch: `MAC_PR_RUNNER`
+## The switches: one repo variable per workflow (q1942)
 
-The repo variable `MAC_PR_RUNNER` picks where the pull-request macOS jobs run: unset (or anything else) is
-GitHub-hosted, `self-hosted` is mini-cooee. Flip it to `self-hosted` when hosted macOS jobs queue for long, and back
-once they start again:
+Each variable in the table picks where that workflow's macOS job runs, for pull requests and pushes alike:
+`hosted` is GitHub-hosted `xcode-27`, `self-hosted` is mini-cooee, unset (or anything else) is the default above.
+Flip one when hosted macOS jobs queue for long (to `self-hosted`) or the Mini is busy or down (to `hosted`), and
+delete it to go back to the default:
 
 ```sh
-gh variable set MAC_PR_RUNNER --repo jirathip-dev/cooee --body self-hosted   # PR macOS jobs on mini-cooee
-gh variable delete MAC_PR_RUNNER --repo jirathip-dev/cooee                   # back to GitHub-hosted
+gh variable set MAC_RUNNER_CI --repo jirathip-dev/cooee --body self-hosted          # ci's stable-mac on mini-cooee
+gh variable set MAC_RUNNER_APPLE --repo jirathip-dev/cooee --body self-hosted       # apple on mini-cooee
+gh variable set MAC_RUNNER_APPLE_MAC --repo jirathip-dev/cooee --body self-hosted   # dmg on mini-cooee
+gh variable set MAC_RUNNER_TESTFLIGHT --repo jirathip-dev/cooee --body hosted       # testflight on xcode-27
+gh variable delete MAC_RUNNER_CI --repo jirathip-dev/cooee                          # back to the default
 ```
 
-A run picks the value when it starts: re-run (or push) to move a queued job.
+Any variable takes `hosted` or `self-hosted` the same way. A run picks the value when it starts: re-run (or push) to
+move a queued job.
 
 ## Why forks never run on them
 
 A pull request from a fork runs code anyone can write. On our Mac, that code would run as the owner's account, next to
 the live cooee and the owner's keychain. So every job that can land on our runner carries this guard (GitHub-hosted
-runners need none):
+runners need none), with its own workflow's variable:
 
 ```yaml
-if: github.event_name != 'pull_request' || vars.MAC_PR_RUNNER != 'self-hosted' ||
+if: github.event_name != 'pull_request' || vars.MAC_RUNNER_CI != 'self-hosted' ||
   github.event.pull_request.head.repo.full_name == github.repository
 ```
 
-With the switch on `self-hosted`, a fork's pull request shows these jobs as skipped, not passed. No workflow uses `pull_request_target`.
+A pull request lands on our runner only when the variable is `self-hosted`; then a fork's pull request shows these
+jobs as skipped, not passed. TestFlight never runs for a pull request. No workflow uses `pull_request_target`.
 
 ## Hygiene
 
