@@ -81,7 +81,7 @@ pub(crate) fn doctor(config: &Config) -> Result<(), String> {
                 check(false, format!("{url}: add {name:?} to allowed_hosts"));
             }
             let reached = cooee_core::runner::command("curl")
-                .args(["-sf", "-o", "/dev/null", "--max-time", "5"])
+                .args(["-s", "-o", "/dev/null", "--max-time", "5"])
                 .arg(format!("{url}pair"))
                 .status()
                 .is_ok_and(|s| s.success());
