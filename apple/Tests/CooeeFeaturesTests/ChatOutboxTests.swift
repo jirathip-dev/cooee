@@ -130,4 +130,15 @@ internal struct ChatOutboxTests {
         await store.send(.outbox(.retry(0)))
         await store.receive(\.failed) { $0.error = "Shed is still down." }
     }
+
+    @Test internal func restartOnTheGoneLineStartsTheAgentAgain() async {
+        let store = store(.thread("a1"), refusing: APIError(status: 502, text: "Shed is down."))
+        let calls = calls
+        store.dependencies.threads.restart = { _, thread in calls.record("restart \(thread)") }
+        await store.send(.outbox(.restart))
+        #expect(calls.all == ["restart a1"])
+        store.dependencies.threads.restart = { _, _ in throw APIError(status: 400, text: "The thread is closed.") }
+        await store.send(.outbox(.restart))
+        await store.receive(\.failed) { $0.error = "The thread is closed." }
+    }
 }

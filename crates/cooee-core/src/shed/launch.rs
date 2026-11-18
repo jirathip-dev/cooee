@@ -35,6 +35,8 @@ pub struct Launch {
     pub mcp: Option<(PathBuf, Vec<Value>)>,
     /// `--meta`: the session's options, sent as ACP `_meta` (a persona's provider's session setup, #503).
     pub meta: Option<Value>,
+    /// `--resume`: the agent session to load instead of a new one (#613).
+    pub resume: Option<String>,
 }
 
 impl Launch {

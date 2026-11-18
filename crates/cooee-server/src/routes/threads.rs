@@ -191,27 +191,68 @@ async fn create(cx: &Cx, Json(new): Json<New>) -> Result<Answer<Created>> {
     Ok(Answer(id.map(|id| Created { id })))
 }
 
-#[route(POST "/threads/{id}/retry")]
-async fn retry(cx: &Cx) -> Result<Answer<()>> {
-    let (id, hub, logins) = (thread_id(cx), hub(cx), logins(cx));
-    let data = app_context::<Data>(cx);
-    let (data, config) = (data.0.clone(), data.1.clone());
-    let done = tokio::task::spawn_blocking(move || {
-        let (t, _) = hub.thread(&id)?;
-        let list = profiles(&hub, (&data, config.as_deref()));
+struct Again {
+    id: String,
+    hub: Arc<Hub>,
+    logins: Arc<crate::Logins>,
+    data: PathBuf,
+    config: Option<PathBuf>,
+}
+
+impl Again {
+    fn of(cx: &Cx) -> Self {
+        let data = app_context::<Data>(cx);
+        let (id, hub, logins) = (thread_id(cx), hub(cx), logins(cx));
+        let (data, config) = (data.0.clone(), data.1.clone());
+        Self {
+            id,
+            hub,
+            logins,
+            data,
+            config,
+        }
+    }
+
+    fn recipe(&self) -> Result<(crate::hub::Recipe, String), HubError> {
+        let (t, _) = self.hub.thread(&self.id)?;
+        let config = self.config.as_deref();
+        let list = profiles(&self.hub, (&self.data, config));
         let (_, _, recipe) = recipe(
-            &logins,
-            (&data, config.as_deref(), &list),
+            &self.logins,
+            (&self.data, config, &list),
             (&t.agent, Some(&t.account), &t.profile),
             PathBuf::new(),
             ((t.model, t.effort), t.setup),
         )?;
-        let name = provider_name(&t.agent, &logins.statuses());
-        hub.retry(&id, recipe, &name)
-    });
-    Ok(Answer(
-        done.await.map_err(|e| HubError::Refused(e.to_string()))?,
-    ))
+        Ok((recipe, provider_name(&t.agent, &self.logins.statuses())))
+    }
+
+    fn restart(&self) -> Result<(), HubError> {
+        self.hub.restart(&self.id, &self.recipe()?.0)
+    }
+}
+
+async fn off<T: Send + 'static>(
+    f: impl FnOnce() -> Result<T, HubError> + Send + 'static,
+) -> Result<Answer<T>> {
+    let done = tokio::task::spawn_blocking(f).await;
+    Ok(Answer(done.map_err(|e| HubError::Refused(e.to_string()))?))
+}
+
+#[route(POST "/threads/{id}/retry")]
+async fn retry(cx: &Cx) -> Result<Answer<()>> {
+    let a = Again::of(cx);
+    off(move || {
+        let (recipe, name) = a.recipe()?;
+        a.hub.retry(&a.id, recipe, &name)
+    })
+    .await
+}
+
+#[route(POST "/threads/{id}/restart")]
+async fn restart(cx: &Cx) -> Result<Answer<()>> {
+    let a = Again::of(cx);
+    off(move || a.restart()).await
 }
 
 #[derive(Deserialize)]
@@ -243,13 +284,20 @@ impl Message {
 
 #[route(POST "/threads/{id}/send")]
 async fn send(cx: &Cx, Json(m): Json<Message>) -> Result<Answer<cooee_core::Item>> {
-    let id = thread_id(cx);
-    Ok(Answer(
-        blocking(cx, move |hub| {
-            hub.send(&id, &m.text, &m.random_id, &m.uploads()?)
-        })
-        .await,
-    ))
+    let a = Again::of(cx);
+    off(move || {
+        let (send, files) = (
+            |f: &[_]| a.hub.send(&a.id, &m.text, &m.random_id, f),
+            m.uploads()?,
+        );
+        match send(&files) {
+            Err(HubError::Shed(e)) if e.no_such_terminal() => {
+                a.restart().and_then(|()| send(&files))
+            }
+            done => done,
+        }
+    })
+    .await
 }
 
 #[route(POST "/threads/{id}/handback")]
@@ -464,6 +512,7 @@ pub(super) fn routes(b: RouterBuilder) -> RouterBuilder {
         .route(events)
         .route(create)
         .route(retry)
+        .route(restart)
         .route(send)
         .route(hand_back)
         .route(queue)

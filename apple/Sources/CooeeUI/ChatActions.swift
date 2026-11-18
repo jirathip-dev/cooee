@@ -16,6 +16,7 @@ public struct ChatActions {
     public var back: () -> Void
     public var retry: (Int) -> Void = { _ in }
     public var view: () -> Void = {}
+    public var restart: (() -> Void)?
     public var places: [String] = []
     public var counts: [Int?] = []
     public var new: (() -> Void)?

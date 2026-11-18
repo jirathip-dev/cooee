@@ -178,6 +178,9 @@ impl Shed {
             })?;
             args.extend(["--mcp", path]);
         }
+        if let Some(session) = &launch.resume {
+            args.extend(["--resume", session]);
+        }
         let meta = launch.meta.as_ref().map(Value::to_string);
         if let Some(meta) = &meta {
             args.extend(["--meta", meta]);

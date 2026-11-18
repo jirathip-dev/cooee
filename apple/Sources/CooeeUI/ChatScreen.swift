@@ -25,6 +25,7 @@ internal struct ChatScreen: View {
             back: onBack
         )
         actions.retry = { store.send(.outbox(.retry($0))) }
+        actions.restart = store.turn.state == "ended" ? { store.send(.outbox(.restart)) } : nil
         actions.sending = store.sending
         actions.view = { store.send(.delegate(.persona(store.persona.id))) }
         let places = store.places

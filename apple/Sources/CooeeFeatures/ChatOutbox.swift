@@ -8,6 +8,7 @@ extension ChatFeature {
         case delivered(Int)
         case undelivered(Int, String)
         case retry(Int)
+        case restart
     }
 
     internal func send(_ state: inout State) -> Effect<Action> {
@@ -41,15 +42,23 @@ extension ChatFeature {
                 state.files = []
             }
             return deliver(state, message)
+        case .restart:
+            return again(state, threads.restart)
         }
         return .none
     }
 
     private func restart(_ state: State) -> Effect<Action> {
-        guard case .thread(let thread) = state.target, state.pending != nil else { return .none }
-        let (threads, server) = (threads, state.server)
+        state.pending == nil ? .none : again(state, threads.retry)
+    }
+
+    private func again(
+        _ state: State, _ call: @escaping @Sendable (Server, String) async throws -> Void
+    ) -> Effect<Action> {
+        guard case .thread(let thread) = state.target else { return .none }
+        let server = state.server
         return .run { _ in
-            try await threads.retry(server, thread)
+            try await call(server, thread)
         } catch: { error, send in
             await send(.failed(error.localizedDescription))
         }

@@ -54,6 +54,10 @@ impl Hub {
     pub(super) fn settle(&self, id: &str, terminal: &str, s: &AcpSession) -> Result<(), HubError> {
         let live = self.live(id)?;
         let mut live = lock(&live);
+        if !s.id.is_empty() && live.meta.session != s.id {
+            s.id.clone_into(&mut live.meta.session);
+            self.store.save(&live.meta)?;
+        }
         let meta = &live.meta;
         let (agent, account, pick) = (meta.agent.clone(), meta.account.clone(), meta.model.clone());
         self.seen(&agent, &account, &s.models);

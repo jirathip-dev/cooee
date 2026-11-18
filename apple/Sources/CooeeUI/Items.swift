@@ -6,6 +6,7 @@ internal struct ItemView: View {
     internal let item: Item
     internal var retry: () -> Void = {}
     internal var view: () -> Void = {}
+    internal var restart: (() -> Void)?
 
     internal var body: some View {
         switch item {
@@ -31,6 +32,9 @@ internal struct ItemView: View {
                 Text(text).foregroundStyle(look.palette.mute)
                 if text.hasPrefix("Updated ") {
                     Button("View", action: view).buttonStyle(.plain).foregroundStyle(look.palette.link)
+                }
+                if text.hasPrefix("The agent is gone"), let restart {
+                    Button("Restart", action: restart).buttonStyle(.plain).foregroundStyle(look.palette.link)
                 }
             }
             .ui(13, .regular, look).frame(maxWidth: .infinity)
