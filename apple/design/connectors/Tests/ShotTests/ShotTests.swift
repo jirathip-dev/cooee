@@ -18,7 +18,7 @@ internal struct Shot: Sendable, CustomTestStringConvertible {
 
     private static let modes: [(String, Palette)] = [("dark", .farmDark), ("light", .farmLight)]
     private static let every: [(LookStyle, [String])] = [
-        (.modern, ["dark", "light"]), (.terminal, ["dark"]), (.scene, ["light"]),
+        (.modern, ["dark", "light"]), (.terminal, ["dark", "light"]), (.scene, ["dark", "light"]),
     ]
 
     private static let phone: [(String, [(LookStyle, [String])], Frame)] = [
@@ -26,8 +26,8 @@ internal struct Shot: Sendable, CustomTestStringConvertible {
         ("catalogue", every, { AnyView(CataloguePage()) }),
         ("entry", every, { AnyView(EntryPage()) }),
         ("signin", every, { AnyView(SignInSheet()) }),
-        ("signed-in", [(.modern, ["dark", "light"])], { AnyView(SignedIn()) }),
-        ("token", [(.modern, ["dark"]), (.terminal, ["dark"])], { AnyView(TokenSheet()) }),
+        ("signed-in", every, { AnyView(SignedIn()) }),
+        ("token", every, { AnyView(TokenSheet()) }),
         ("persona", every, { AnyView(PersonaConnectors()) }),
     ]
 
