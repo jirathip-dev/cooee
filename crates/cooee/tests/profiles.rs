@@ -533,7 +533,10 @@ fn a_persona_with_no_profile_and_a_room_member_start_without_personal_setup_plai
         let label = format!("cooee.member={member}");
         let line = (0..200).find_map(|_| {
             let log = s.shed.cli_log();
-            let line = log.lines().find(|l| l.contains(&label)).map(str::to_owned);
+            let line = log
+                .lines()
+                .find(|l| l.contains(&label) && options(&s.shed, l).is_some())
+                .map(str::to_owned);
             line.or_else(|| {
                 std::thread::sleep(std::time::Duration::from_millis(50));
                 None
