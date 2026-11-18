@@ -1,0 +1,135 @@
+Building for debugging...
+[Computing dependencies]
+[Pre-planning 1 / 1304]
+[Planning deferred tasks]
+[Writing build description]
+[1 / 220] swift-sharing_Sharing
+[50 / 204]
+[76 / 121] CooeeUITests-product
+[77 / 121] CooeeAPITests-product
+[78 / 149] CooeeFeaturesTests-product
+[81 / 178]
+[94 / 178]
+[96 / 178] CooeeCoreTests-product
+[108 / 178] CooeeUITests-product
+[111 / 178] CooeeUITests-product
+[118 / 178] CooeeFeaturesTests-product
+[124 / 178] CooeeUITests-product
+[126 / 178] CooeeUITests-product
+[130 / 178] CooeeFeaturesTests-product
+[133 / 178] CooeeCoreTests-product
+[134 / 178] CooeeCoreTests-product
+[138 / 178] CooeeCoreTests-product
+[140 / 178] CooeeCoreTests-product
+[141 / 178] CooeeCoreTests-product
+[144 / 178] CooeeFeaturesTests-product
+[146 / 178] CooeeAPITests-product
+[147 / 178] CooeeAPITests-product
+[150 / 178] CooeeAPITests-product
+[152 / 178] CooeeAPITests-product
+[158 / 178] CooeeUITests-product
+[160 / 178] CooeeCoreTests-product
+[162 / 178] CooeeCoreTests-product
+[164 / 178] CooeeCoreTests-product
+[168 / 178] CooeeAPITests-product
+[171 / 178] CooeeFeaturesTests-product
+[172 / 178] CooeeAPITests-product
+[174 / 178] CooeeAPITests-product
+Build complete! (7.58 secs)
+◇ Test run started.
+↳ Testing Library Version: 2403
+↳ Target Platform: arm64e-apple-macos14.0
+◇ Suite PinnedTests started.
+◇ Suite HomeFeatureTests started.
+◇ Suite WorkflowNavigationTests started.
+◇ Test aPushOpensItsOwnTopicOverAnUnreadOne() started.
+◇ Test withNothingUnreadThePinOpensTheTopicLastOpenNotTheNewest() started.
+◇ Test homeReadsItsChatsEveryFewSecondsUntilTheServerForgetsThisDevice() started.
+◇ Test aPinOpensThePersonasNewestThreadAndReadsIt() started.
+◇ Test offlineHomeHoldsNoScreenSoTheBundledOneDraws() started.
+◇ Test homeListsPersonasChatsOnlyAndALaneFallsIntoOthersUntilAPluginClaimsIt() started.
+◇ Test aPinWithNoThreadStartsANewChat() started.
+◇ Test unreadInAnOlderTopicWinsOverANewerReadOne() started.
+◇ Test othersOpensAsAListAndItsChatsOpenAboveIt() started.
+◇ Test conductorsChatCarriesItsWorkflowAndARoundOpensAsAChat() started.
+◇ Test aRefreshLoadsOnceAndClearsTheError() started.
+◇ Test aRoundOpensAsANamedChatAndBackReturnsToTheOpenWorkflowSheet() started.
+◇ Test aPersonasRowCountsAndSumsAsTheServerDoesAndNamesTheTopicATapOpens() started.
+✔ Test unreadInAnOlderTopicWinsOverANewerReadOne() passed after 0.039 seconds.
+✔ Test aPinWithNoThreadStartsANewChat() passed after 0.039 seconds.
+✔ Test offlineHomeHoldsNoScreenSoTheBundledOneDraws() passed after 0.039 seconds.
+✔ Test aPushOpensItsOwnTopicOverAnUnreadOne() passed after 0.039 seconds.
+✔ Test aPersonasRowCountsAndSumsAsTheServerDoesAndNamesTheTopicATapOpens() passed after 0.039 seconds.
+✔ Test homeListsPersonasChatsOnlyAndALaneFallsIntoOthersUntilAPluginClaimsIt() passed after 0.042 seconds.
+✔ Test withNothingUnreadThePinOpensTheTopicLastOpenNotTheNewest() passed after 0.043 seconds.
+✔ Test othersOpensAsAListAndItsChatsOpenAboveIt() passed after 0.043 seconds.
+✔ Test aRoundOpensAsANamedChatAndBackReturnsToTheOpenWorkflowSheet() passed after 0.043 seconds.
+✔ Test aRefreshLoadsOnceAndClearsTheError() passed after 0.043 seconds.
+✔ Test conductorsChatCarriesItsWorkflowAndARoundOpensAsAChat() passed after 0.045 seconds.
+✔ Suite WorkflowNavigationTests passed after 0.045 seconds.
+✔ Test aPinOpensThePersonasNewestThreadAndReadsIt() passed after 0.046 seconds.
+✔ Suite PinnedTests passed after 0.046 seconds.
+✔ Test homeReadsItsChatsEveryFewSecondsUntilTheServerForgetsThisDevice() passed after 0.051 seconds.
+✔ Suite HomeFeatureTests passed after 0.051 seconds.
+✔ Test run with 13 tests in 3 suites passed after 0.051 seconds.
+◇ Test run started.
+↳ Testing Library Version: 2403
+↳ Target Platform: arm64e-apple-macos14.0
+◇ Suite CardClientTests started.
+◇ Suite RoomClientTests started.
+◇ Suite LooksClientTests started.
+◇ Test aCardComesAsItsBlockAndItsAnswerPostsTheItemsChoice() started.
+◇ Test aMembersAskIsARoomEvent() started.
+◇ Test aRoomsTurnsAndItsEndAreEvents() started.
+◇ Suite TerminalClientTests started.
+◇ Test aRoomIsMadeOfItsMembersInRoomOrder() started.
+◇ Test theEditorChecksColoursAndSavesAPackByName() started.
+◇ Suite FrameClientTests started.
+◇ Test theLooksReadEachPacksSchemesAndSprites() started.
+◇ Suite ClientTests started.
+◇ Test aMemberMovesInRoomOrder() started.
+◇ Test theEditorReadsAPacksArtAsText() started.
+◇ Test listsStartsAndTypesThroughTheTerminalPlugin() started.
+◇ Test watchingYieldsScreenUpdatesUntilTheShellCloses() started.
+◇ Test aReplayFrameIsItsBytesWithTheCookie() started.
+◇ Test aNewThreadStartsForAPersonaOnTheMachinePicked() started.
+◇ Test aPersonasTopicsListRetitleArchiveAndStartInAFolder() started.
+◇ Test aClientForAServerCarriesItsCookie() started.
+◇ Test homePersonasAndASliceDecodeAsDocumented() started.
+◇ Test aDeclinedOrGoneClaimSaysWhy() started.
+◇ Test sendQueueAndTheTurnsCallsPostTheirBodies() started.
+◇ Test aRefusedCodeSaysWhy(_:_:) started.
+◇ Test cooeesOwnSentenceIsTheError() started.
+◇ Test aCodePairsAndAClaimWaitsThenPairs() started.
+◇ Test aSetupChatSaysSo() started.
+◇ Test case passing 2 arguments location → "/pair?bad=wrong&left=4", why → "That code is wrong." to aRefusedCodeSaysWhy(_:_:) started.
+◇ Test case passing 2 arguments location → "/pair?bad=expired", why → "That code ran out: get a new one." to aRefusedCodeSaysWhy(_:_:) started.
+◇ Test case passing 2 arguments location → "/pair?bad=limit&wait=30", why → "Too many wrong codes: wait a minute." to aRefusedCodeSaysWhy(_:_:) started.
+✔ Test aClientForAServerCarriesItsCookie() passed after 0.011 seconds.
+✔ Test theEditorReadsAPacksArtAsText() passed after 0.013 seconds.
+✔ Test aMemberMovesInRoomOrder() passed after 0.013 seconds.
+✔ Test aRefusedCodeSaysWhy(_:_:) with 3 test cases passed after 0.012 seconds.
+✔ Test aMembersAskIsARoomEvent() passed after 0.013 seconds.
+✔ Test watchingYieldsScreenUpdatesUntilTheShellCloses() passed after 0.013 seconds.
+✔ Test aNewThreadStartsForAPersonaOnTheMachinePicked() passed after 0.013 seconds.
+✔ Test aRoomsTurnsAndItsEndAreEvents() passed after 0.013 seconds.
+✔ Test aReplayFrameIsItsBytesWithTheCookie() passed after 0.013 seconds.
+✔ Suite FrameClientTests passed after 0.013 seconds.
+✔ Test aSetupChatSaysSo() passed after 0.012 seconds.
+✔ Test aRoomIsMadeOfItsMembersInRoomOrder() passed after 0.014 seconds.
+✔ Test cooeesOwnSentenceIsTheError() passed after 0.012 seconds.
+✔ Suite RoomClientTests passed after 0.014 seconds.
+✔ Test theLooksReadEachPacksSchemesAndSprites() passed after 0.014 seconds.
+✔ Test aCardComesAsItsBlockAndItsAnswerPostsTheItemsChoice() passed after 0.014 seconds.
+✔ Suite CardClientTests passed after 0.014 seconds.
+✔ Test theEditorChecksColoursAndSavesAPackByName() passed after 0.014 seconds.
+✔ Suite LooksClientTests passed after 0.014 seconds.
+✔ Test homePersonasAndASliceDecodeAsDocumented() passed after 0.014 seconds.
+✔ Test aDeclinedOrGoneClaimSaysWhy() passed after 0.014 seconds.
+✔ Test aPersonasTopicsListRetitleArchiveAndStartInAFolder() passed after 0.014 seconds.
+✔ Test listsStartsAndTypesThroughTheTerminalPlugin() passed after 0.014 seconds.
+✔ Suite TerminalClientTests passed after 0.015 seconds.
+✔ Test aCodePairsAndAClaimWaitsThenPairs() passed after 0.014 seconds.
+✔ Test sendQueueAndTheTurnsCallsPostTheirBodies() passed after 0.014 seconds.
+✔ Suite ClientTests passed after 0.015 seconds.
+✔ Test run with 21 tests in 6 suites passed after 0.015 seconds.
