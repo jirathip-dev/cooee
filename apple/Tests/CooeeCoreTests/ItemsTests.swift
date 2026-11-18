@@ -71,6 +71,18 @@ internal struct ItemsTests {
         )
     }
 
+    @Test internal func aBrowserFrameIsADoneStepWithItsCaptionInTheThreadAndTheTrace() {
+        var frame = APIItem(id: 2, time: 2000, kind: "frame", text: #"click "Sign in""#)
+        frame.name = "f1"
+        let you = APIItem(id: 1, time: 1000, kind: "you", text: "Go")
+        let items = [you, frame, APIItem(id: 3, time: 3000, kind: "agent", text: "Done.")]
+        let row = ToolRow(#"click "Sign in""#, "done", frame: "f1")
+        let (asked, done) = (Item.you(id: 1, text: "Go", files: []), Item.agent(id: 3, markdown: [.text("Done.")]))
+        #expect(ChatItems.build(items, live: "") == [asked, .tools(id: 2, rows: [row]), done])
+        #expect(
+            ChatItems.build(items, live: "", style: .chat) == [asked, done, .trace(id: 2, steps: [row], seconds: 1)])
+    }
+
     @Test internal func aWorkingChatStyleTurnHidesItsStepsAndNamesTheCurrentOne() {
         let working = Array(Self.turn.dropLast(2))
         #expect(

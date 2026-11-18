@@ -354,6 +354,24 @@ async fn thread_file(cx: &Cx) -> Result<Response> {
     Ok(r.body(Body::from(bytes))?)
 }
 
+#[route(GET "/threads/{id}/frames/{name}")]
+async fn thread_frame(cx: &Cx) -> Result<Response> {
+    let (id, name) = (thread_id(cx), path_param::<Name>(cx).to_owned());
+    let Ok(bytes) = blocking(cx, move |hub| hub.frame_image(&id, &name)).await else {
+        return plain(404, "No such frame.");
+    };
+    let kind = if bytes.starts_with(&[0xff, 0xd8]) {
+        "image/jpeg"
+    } else {
+        "image/png"
+    };
+    Ok(Response::builder()
+        .header("Content-Type", kind)
+        .header("X-Content-Type-Options", "nosniff")
+        .header("Cache-Control", "private, no-store")
+        .body(Body::from(bytes))?)
+}
+
 #[derive(Deserialize)]
 struct Approve {
     item: u64,
@@ -443,6 +461,7 @@ pub(super) fn routes(b: RouterBuilder) -> RouterBuilder {
         .route(retitle)
         .route(archive)
         .route(thread_file)
+        .route(thread_frame)
         .route(approve)
         .route(cancel)
         .route(model)

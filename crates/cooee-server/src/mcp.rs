@@ -241,27 +241,83 @@ fn only(mut msg: Value, tools: Option<&[String]>) -> Value {
     msg
 }
 
+#[derive(Default)]
+struct Frames {
+    acts: HashMap<String, String>,
+    shots: HashMap<String, (String, Value)>,
+    next: u64,
+}
+
+fn held<T>(m: &Mutex<T>) -> std::sync::MutexGuard<'_, T> {
+    m.lock().unwrap_or_else(PoisonError::into_inner)
+}
+
+fn keep(thread: &str, caption: &str, shot: &Value) {
+    let list = shot.pointer("/result/content").and_then(Value::as_array);
+    let image = list
+        .into_iter()
+        .flatten()
+        .find(|c| c.get("type").and_then(Value::as_str) == Some("image"))
+        .and_then(|c| c.get("data"))
+        .cloned();
+    if let Some(image) = image {
+        let frame = json!({ "thread": thread, "server": { "caption": caption, "image": image } });
+        if let Err(e) = ask("/mcp/agent/frame", &frame) {
+            cooee_core::note!("cooee: a replay frame: {e}");
+        }
+    }
+}
+
+fn shoot(
+    pending: &Mutex<Frames>,
+    up: &Mutex<Upstream>,
+    out: &Mutex<io::Stdout>,
+    caption: String,
+    reply: Value,
+) {
+    let mut fr = held(pending);
+    fr.next += 1;
+    let shot = json!(format!("cooee-frame-{}", fr.next));
+    let call = json!({ "jsonrpc": "2.0", "id": shot, "method": "tools/call",
+                       "params": { "name": "browser_take_screenshot", "arguments": { "type": "jpeg" } } });
+    fr.shots.insert(shot.to_string(), (caption, reply));
+    drop(fr);
+    if held(up).send(&call).is_err()
+        && let Some((_, reply)) = held(pending).shots.remove(&shot.to_string())
+    {
+        put(out, &reply);
+    }
+}
+
 /// `cooee mcp proxy <server> --thread <id>`: forwards the agent's stdio to the server and back, with only the
 /// thread's allowed tools; cooee checks each `tools/call` again (a closed thread's token stops working) and logs a
-/// browser's, which waits while the owner holds control and then carries their hand-back note in its result.
+/// browser's, which waits while the owner holds control and then carries their hand-back note in its result. After a
+/// browser action cooee captions, the proxy takes a screenshot for cooee's replay frame (#161) before the agent gets
+/// the answer; the agent never sees it.
 ///
 /// # Errors
 /// When the grant is refused or the server can't start.
 pub fn proxy(server: &str, thread: &str) -> Result<(), String> {
     let g = grant(server, thread)?;
     let (tx, rx): (Sender<Value>, Receiver<Value>) = mpsc::channel();
-    let mut up = open(&g, tx)?;
+    let up = Arc::new(Mutex::new(open(&g, tx)?));
     let out = Arc::new(Mutex::new(io::stdout()));
     let lists: Arc<Mutex<HashSet<String>>> = Arc::default();
+    let frames: Arc<Mutex<Frames>> = Arc::default();
     let notes: Arc<Mutex<HashMap<String, String>>> = Arc::default();
-    let (o, l, n) = (Arc::clone(&out), Arc::clone(&lists), Arc::clone(&notes));
-    let tools = g.tools.clone();
+    let (o, l, pending, n, upstream) = (
+        Arc::clone(&out),
+        Arc::clone(&lists),
+        Arc::clone(&frames),
+        Arc::clone(&notes),
+        Arc::clone(&up),
+    );
+    let (tools, me) = (g.tools.clone(), thread.to_owned());
     std::thread::spawn(move || {
         for mut msg in rx {
             let id = msg.get("id").map(Value::to_string).unwrap_or_default();
             let answer = msg.get("method").is_none();
-            let listed = answer && l.lock().unwrap_or_else(PoisonError::into_inner).remove(&id);
-            let note = n.lock().unwrap_or_else(PoisonError::into_inner).remove(&id);
+            let note = held(&n).remove(&id);
             if let (true, Some(note), Some(content)) = (
                 answer,
                 note,
@@ -271,6 +327,18 @@ pub fn proxy(server: &str, thread: &str) -> Result<(), String> {
                 let text = format!("The owner had the browser and handed it back: {note}");
                 content.push(json!({ "type": "text", "text": text }));
             }
+            if let Some((caption, reply)) =
+                answer.then(|| held(&pending).shots.remove(&id)).flatten()
+            {
+                keep(&me, &caption, &msg);
+                put(&o, &reply);
+                continue;
+            }
+            if let Some(caption) = answer.then(|| held(&pending).acts.remove(&id)).flatten() {
+                shoot(&pending, &upstream, &o, caption, msg);
+                continue;
+            }
+            let listed = answer && held(&l).remove(&id);
             put(
                 &o,
                 &if listed {
@@ -288,10 +356,7 @@ pub fn proxy(server: &str, thread: &str) -> Result<(), String> {
         let id = msg.get("id").cloned().unwrap_or(Value::Null);
         match msg.get("method").and_then(Value::as_str) {
             Some("tools/list") => {
-                lists
-                    .lock()
-                    .unwrap_or_else(PoisonError::into_inner)
-                    .insert(id.to_string());
+                held(&lists).insert(id.to_string());
             }
             Some("tools/call") => {
                 let name = msg
@@ -308,20 +373,23 @@ pub fn proxy(server: &str, thread: &str) -> Result<(), String> {
                         put(&out, &error(&id, -32602, &why));
                         continue;
                     }
-                    Ok(Value::String(note)) => {
-                        notes
-                            .lock()
-                            .unwrap_or_else(PoisonError::into_inner)
-                            .insert(id.to_string(), note);
+                    Ok(called) => {
+                        let field =
+                            |k: &str| called.get(k).and_then(Value::as_str).map(str::to_owned);
+                        if let Some(caption) = field("caption") {
+                            held(&frames).acts.insert(id.to_string(), caption);
+                        }
+                        if let Some(note) = field("note") {
+                            held(&notes).insert(id.to_string(), note);
+                        }
                     }
-                    Ok(_) => {}
                 }
             }
             _ => {}
         }
-        up.send(&msg)?;
+        held(&up).send(&msg)?;
     }
-    if let Upstream::Stdio(mut child, _) = up {
+    if let Upstream::Stdio(child, _) = &mut *held(&up) {
         child.kill().ok();
         child.wait().ok();
     }
@@ -384,6 +452,16 @@ fn secret_tool() -> Value {
     })
 }
 
+fn handoff_tool() -> Value {
+    json!({
+        "name": "handoff",
+        "description": "Hand a log-in, a 2FA code or a CLI login to the owner: they do it themselves, in your browser or their terminal, and you never see what they type. Then end your turn; when they hand back, their note is your next message.",
+        "inputSchema": { "type": "object", "required": ["what"], "properties": {
+            "what": { "type": "string", "description": "what the owner is to do, like Sign in to linkedin.com or Run gh auth login" }
+        } }
+    })
+}
+
 fn routine_tool() -> Value {
     json!({
         "name": "create_routine",
@@ -441,13 +519,6 @@ fn own_tools() -> Value {
             "timeout": { "type": "integer", "description": "seconds to wait, at most 600 (default 300)" }
         } }
     });
-    let handoff = json!({
-        "name": "handoff",
-        "description": "Hand a log-in, a 2FA code or a CLI login to the owner: they do it themselves, in your browser or their terminal, and you never see what they type. Then end your turn; when they hand back, their note is your next message.",
-        "inputSchema": { "type": "object", "required": ["what"], "properties": {
-            "what": { "type": "string", "description": "what the owner is to do, like Sign in to linkedin.com or Run gh auth login" }
-        } }
-    });
     let history = json!({
         "name": "history",
         "description": "Search your persona's past threads (query: words; at most 5 hits, each a thread ref, date and snippet), or read one (thread: its ref; paged with before); in a consolidation run, neither gives what is new since the last run.",
@@ -483,7 +554,7 @@ fn own_tools() -> Value {
         tool,
         remember,
         ask_persona,
-        handoff,
+        handoff_tool(),
         history,
         update,
         routine_tool(),

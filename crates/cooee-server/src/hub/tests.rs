@@ -31,7 +31,7 @@ pub(super) fn scratch(name: &str) -> PathBuf {
     dir
 }
 
-fn seed(dir: &Path, id: &str, lines: &str) {
+pub(super) fn seed(dir: &Path, id: &str, lines: &str) {
     let threads = dir.join("data/threads");
     let meta = json!({ "format": 1, "thread": { "id": id, "title": id, "messages": [], "terminal": format!("cooee-{id}") } });
     fs::write(threads.join(format!("{id}.json")), meta.to_string()).unwrap();
