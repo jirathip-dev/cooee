@@ -22,7 +22,7 @@ internal struct BlockRenderTests {
     }
 
     private static func height(_ block: JSONValue, _ style: LookStyle = .modern) -> Int {
-        let look = Look(palette: .farmLight, style: style, still: true)
+        let look = Look(palette: .farmLight, style: .bundled(style), still: true)
         let view = BlocksView(block, source: .plugin("edgar")).frame(width: 402).environment(\.look, look)
         return ImageRenderer(content: view).cgImage?.height ?? 0
     }

@@ -7,33 +7,15 @@ internal struct PinnedRow: View {
     internal let rows: [Row]
     internal var actions = HomeActions()
 
-    private var scene: Bool { look.style == .scene }
+    private var stage: CooeeCore.Stage? { look.style.stage }
 
     internal var body: some View {
-        switch look.style {
-        case .scene:
-            ZStack(alignment: .bottom) {
-                if let art = look.art {
-                    PackArt(art: art, path: "scene.svg").frame(height: 180)
-                } else {
-                    Sprite(name: "scene-strip").scaledToFill().frame(height: 180).clipped()
-                }
-                strip.padding(.bottom, 8)
-            }
-            .frame(height: 180)
-        case .terminal:
-            VStack(alignment: .leading, spacing: 8) {
-                Text("# pinned").ui(12, .regular, look).foregroundStyle(look.palette.mute).padding(.horizontal, 16)
-                strip
-            }
-        case .modern:
-            strip
-        }
+        Stage(height: 180, title: "pinned") { strip.padding(.bottom, stage == nil ? 0 : 8) }
     }
 
     private var strip: some View {
         Scroller(axis: .horizontal) {
-            HStack(alignment: .bottom, spacing: scene ? 4 : 14) {
+            HStack(alignment: .bottom, spacing: stage == nil ? 14 : 4) {
                 ForEach(pins) { pin in
                     switch pin {
                     case .persona(let persona):
@@ -54,31 +36,30 @@ internal struct PinnedRow: View {
             }
             .padding(.horizontal, 16)
         }
-        .frame(height: look.style == .modern ? 96 : 116)
+        .frame(height: look.style.figures == .avatar ? 96 : 116)
     }
 
     private func pin(_ persona: Persona) -> some View {
         let palette = look.palette
-        let ink = scene ? Color.hex(0x29251a) : palette.foreground
+        let ink = stage?.color(\.ink) ?? palette.foreground
         return VStack(spacing: 6) {
             ZStack(alignment: .topTrailing) {
                 Acting(motion: Motion(persona.state)) { pose in
-                    Avatar(persona: persona, size: scene ? 58 : 62, frame: pose.frame).acting(pose)
+                    FigureView(persona: persona, size: stage == nil ? 62 : 58, frame: pose.frame).acting(pose)
                 }
                 if let row = rows.first(where: { $0.persona == persona.id && $0.unseen > 0 }) {
                     Badge(count: row.unseen).offset(x: 4, y: -2)
                 }
             }
             Text(persona.name).ui(12, .medium, look).lineLimit(1).foregroundStyle(ink)
-                .padding(.horizontal, scene ? 6 : 0).padding(.vertical, scene ? 2 : 0)
-                .background(scene ? Color.hex(0xf5efda).opacity(0.85) : .clear, in: .capsule)
-            if look.style != .modern {
+                .padding(.horizontal, stage == nil ? 0 : 6).padding(.vertical, stage == nil ? 0 : 2)
+                .background(stage?.color(\.paper).opacity(0.85) ?? .clear, in: .capsule)
+            if look.style.figures != .avatar {
                 Text(persona.word).ui(10, .regular, look)
-                    .foregroundStyle(
-                        persona.state == .needs ? palette.red : (scene ? Color.hex(0x29251a) : palette.mute))
+                    .foregroundStyle(persona.state == .needs ? palette.red : stage == nil ? palette.mute : ink)
             }
         }
-        .frame(width: scene ? 78 : 70)
+        .frame(width: stage == nil ? 70 : 78)
     }
 }
 
@@ -106,7 +87,7 @@ internal struct ChatRow: View {
                 if room {
                     RoomStack(members: members, size: 26, grid: false, most: 3).frame(minWidth: 48, minHeight: 48)
                 } else {
-                    Avatar(persona: persona.with(state: row.state), size: 48, frame: pose.frame)
+                    FigureView(persona: persona.with(state: row.state), size: 48, frame: pose.frame)
                 }
             }
             .acting(pose)

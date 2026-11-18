@@ -156,7 +156,7 @@ internal struct IssueRow: View {
         let (palette, row) = (look.palette, issue.latest.row)
         let tint = palette.state(row.state)
         return HStack(alignment: .center, spacing: 12) {
-            Avatar(persona: issue.latest.persona, size: 40, frame: pose.frame).acting(pose)
+            FigureView(persona: issue.latest.persona, size: 40, frame: pose.frame).acting(pose)
             VStack(alignment: .leading, spacing: 3) {
                 HStack(spacing: 0) {
                     Text("\(issue.id) · ")

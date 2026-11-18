@@ -105,7 +105,7 @@ extension PersonaEditBlocks {
     private var sections: some View {
         VStack(spacing: 18) {
             VStack(spacing: 8) {
-                Avatar(persona: Persona(api: draft, look: avatarLook, state: persona.state), size: 92)
+                FigureView(persona: Persona(api: draft, look: avatarLook, state: persona.state), size: 92)
                 AvatarEditor(avatar: $draft.avatar, photo: actions.photo)
             }
             Group2 {
