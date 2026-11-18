@@ -1,0 +1,9 @@
+Decided: the tailnet probe drops curl's -f, so any HTTP status from the URL is a pass and only curl's own connect, TLS or timeout errors fail
+Because: "fails only when the URL can't be reached (connection, TLS or timeout error)"
+Because: crates/cooee/src/doctor.rs:84
+Rejected: probing / instead of /pair — / answers 401, so -f would still fail; the status code is not the question
+Rejected: parsing --write-out http_code — curl -s already exits 0 only after it got an HTTP answer
+Decided: setup.rs's fake curl hands the doctor's probe to the real /usr/bin/curl at $HOME/tailnet's address, so the tests run the real flags against a real socket
+Because: crates/cooee/tests/setup.rs:55
+Check: a_tailnet_url_answering_405_on_get_pair_passes_doctor fails on 283c6ee17 and passes at head; a_doctor_failure_stops_with_its_fix keeps the tailscale serve hint with nothing listening
+Owner: Doctor and setup stop failing on a working Tailscale address; only an unreachable one is reported.
