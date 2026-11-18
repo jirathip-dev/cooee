@@ -9,8 +9,7 @@ no longer a cooee runner (#565, q1940). The macOS jobs:
 | --- | --- | --- | --- |
 | `ci.yml`: `stable (macos-latest)` (the check name stays as the staging ruleset requires) | `MAC_RUNNER_CI` | GitHub-hosted `xcode-27` | mini-cooee |
 | `apple.yml`: `apple` (#277: the builds, `just apple-check` and the simulator e2e in one job; #328: a PR push runs only the builds, the `merge-ready` run all of it) | `MAC_RUNNER_APPLE` | GitHub-hosted `xcode-27` | mini-cooee |
-| `apple-mac.yml`: `dmg` (signed only on a push) | `MAC_RUNNER_APPLE_MAC` | GitHub-hosted `xcode-27` | mini-cooee |
-| `apple-testflight.yml`: `testflight` | `MAC_RUNNER_TESTFLIGHT` | — | mini-cooee |
+| `apple-testflight.yml`: `testflight (iOS)`, `testflight (macOS)` | `MAC_RUNNER_TESTFLIGHT` | — | mini-cooee |
 | `conformance.yml` | — | — | mini-cooee |
 
 The table shows the defaults, with the variable unset. On `xcode-27` (public preview, actions/runner-images#14404)
@@ -29,7 +28,6 @@ delete it to go back to the default:
 ```sh
 gh variable set MAC_RUNNER_CI --repo jirathip-dev/cooee --body self-hosted          # ci's stable-mac on mini-cooee
 gh variable set MAC_RUNNER_APPLE --repo jirathip-dev/cooee --body self-hosted       # apple on mini-cooee
-gh variable set MAC_RUNNER_APPLE_MAC --repo jirathip-dev/cooee --body self-hosted   # dmg on mini-cooee
 gh variable set MAC_RUNNER_TESTFLIGHT --repo jirathip-dev/cooee --body hosted       # testflight on xcode-27
 gh variable delete MAC_RUNNER_CI --repo jirathip-dev/cooee                          # back to the default
 ```
@@ -60,7 +58,7 @@ jobs as skipped, not passed. TestFlight never runs for a pull request. No workfl
   prints its version in the job summary.
 - The repo pins one Xcode: `pin` in `.github/actions/mac-runner/action.yml` (27.2). A runner with another version
   fails the job in that first step, naming both versions.
-- Signing (`dmg`, `testflight`) uses a keychain the job creates in `RUNNER_TEMP`. It is deleted at the job's end, even
+- Signing (`testflight`) uses a keychain the job creates in `RUNNER_TEMP`. It is deleted at the job's end, even
   on failure, and the user's keychain list and default keychain are restored. No signing identity stays on the runner.
 - `apple` stops its `cooee serve` and deletes its simulator at the end, even on failure.
 - A newer push to a pull request cancels its older run (#277). A staging push runs to the end; TestFlight never
