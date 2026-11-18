@@ -221,8 +221,6 @@ impl super::Connectors {
         Ok(all)
     }
 
-    /// Thread `thread`'s piped `msg` to `server`: admitted as the proxy was, a `tools/call` checked again, sent with
-    /// the pick's credential on the thread's session; the answer's messages, a `tools/list` cut to the pick's tools.
     pub(crate) fn rpc(
         &self,
         hub: &Hub,
