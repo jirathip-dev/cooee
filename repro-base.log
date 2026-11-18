@@ -1,0 +1,835 @@
+Fetching https://github.com/pointfreeco/swift-clocks from cache
+Fetching https://github.com/pointfreeco/combine-schedulers from cache
+Fetching https://github.com/pointfreeco/swift-custom-dump from cache
+Fetching https://github.com/pointfreeco/swift-identified-collections from cache
+Fetching https://github.com/pointfreeco/swift-case-paths from cache
+Fetching https://github.com/pointfreeco/swift-issue-reporting from cache
+Fetching https://github.com/pointfreeco/swift-concurrency-extras from cache
+Fetching https://github.com/pointfreeco/swift-sharing from cache
+Fetching https://github.com/pointfreeco/swift-perception from cache
+Fetched https://github.com/pointfreeco/swift-clocks from cache (0.72s)
+Fetched https://github.com/pointfreeco/combine-schedulers from cache (0.72s)
+Fetched https://github.com/pointfreeco/swift-identified-collections from cache (0.72s)
+Fetched https://github.com/pointfreeco/swift-custom-dump from cache (0.73s)
+Fetching https://github.com/pointfreeco/swift-dependencies from cache
+Fetching https://github.com/apple/swift-collections from cache
+Fetching https://github.com/swiftlang/swift-syntax from cache
+Fetching https://github.com/pointfreeco/swift-navigation from cache
+Fetched https://github.com/pointfreeco/swift-concurrency-extras from cache (0.86s)
+Fetched https://github.com/pointfreeco/swift-sharing from cache (0.86s)
+Fetched https://github.com/pointfreeco/swift-perception from cache (0.87s)
+Fetched https://github.com/pointfreeco/swift-case-paths from cache (0.87s)
+Fetched https://github.com/pointfreeco/swift-issue-reporting from cache (0.87s)
+Fetching https://github.com/pointfreeco/swift-composable-architecture from cache
+Fetched https://github.com/pointfreeco/swift-dependencies from cache (0.83s)
+Fetched https://github.com/pointfreeco/swift-navigation from cache (1.07s)
+Fetched https://github.com/swiftlang/swift-syntax from cache (1.13s)
+Fetched https://github.com/apple/swift-collections from cache (1.15s)
+Fetched https://github.com/pointfreeco/swift-composable-architecture from cache (1.05s)
+Computing version for https://github.com/pointfreeco/swift-composable-architecture
+Computed https://github.com/pointfreeco/swift-composable-architecture at 1.26.2 (2.33s)
+Computing version for https://github.com/swiftlang/swift-syntax
+Computed https://github.com/swiftlang/swift-syntax at 604.0.0 (0.37s)
+Computing version for https://github.com/pointfreeco/swift-sharing
+Computed https://github.com/pointfreeco/swift-sharing at 2.10.1 (0.32s)
+Computing version for https://github.com/pointfreeco/swift-perception
+Computed https://github.com/pointfreeco/swift-perception at 2.0.12 (0.32s)
+Computing version for https://github.com/pointfreeco/swift-navigation
+Computed https://github.com/pointfreeco/swift-navigation at 2.11.2 (0.40s)
+Computing version for https://github.com/pointfreeco/swift-issue-reporting
+Computed https://github.com/pointfreeco/swift-issue-reporting at 2.1.2 (0.56s)
+Computing version for https://github.com/pointfreeco/swift-identified-collections
+Computed https://github.com/pointfreeco/swift-identified-collections at 1.1.1 (0.39s)
+Computing version for https://github.com/pointfreeco/swift-dependencies
+Computed https://github.com/pointfreeco/swift-dependencies at 1.17.2 (0.32s)
+Computing version for https://github.com/pointfreeco/swift-custom-dump
+Computed https://github.com/pointfreeco/swift-custom-dump at 1.7.3 (0.32s)
+Computing version for https://github.com/pointfreeco/swift-concurrency-extras
+Computed https://github.com/pointfreeco/swift-concurrency-extras at 1.4.3 (0.31s)
+Computing version for https://github.com/pointfreeco/swift-clocks
+Computed https://github.com/pointfreeco/swift-clocks at 1.1.1 (0.33s)
+Computing version for https://github.com/pointfreeco/swift-case-paths
+Computed https://github.com/pointfreeco/swift-case-paths at 1.10.0 (0.38s)
+Computing version for https://github.com/pointfreeco/combine-schedulers
+Computed https://github.com/pointfreeco/combine-schedulers at 1.2.2 (0.39s)
+Computing version for https://github.com/apple/swift-collections
+Computed https://github.com/apple/swift-collections at 1.7.5 (0.51s)
+Creating working copy for https://github.com/pointfreeco/swift-perception
+Working copy of https://github.com/pointfreeco/swift-perception resolved at 2.0.12
+Creating working copy for https://github.com/pointfreeco/swift-composable-architecture
+Working copy of https://github.com/pointfreeco/swift-composable-architecture resolved at 1.26.2
+Creating working copy for https://github.com/pointfreeco/swift-identified-collections
+Working copy of https://github.com/pointfreeco/swift-identified-collections resolved at 1.1.1
+Creating working copy for https://github.com/pointfreeco/swift-sharing
+Working copy of https://github.com/pointfreeco/swift-sharing resolved at 2.10.1
+Creating working copy for https://github.com/pointfreeco/swift-custom-dump
+Working copy of https://github.com/pointfreeco/swift-custom-dump resolved at 1.7.3
+Creating working copy for https://github.com/pointfreeco/swift-case-paths
+Working copy of https://github.com/pointfreeco/swift-case-paths resolved at 1.10.0
+Creating working copy for https://github.com/pointfreeco/swift-dependencies
+Working copy of https://github.com/pointfreeco/swift-dependencies resolved at 1.17.2
+Creating working copy for https://github.com/swiftlang/swift-syntax
+Working copy of https://github.com/swiftlang/swift-syntax resolved at 604.0.0
+Creating working copy for https://github.com/pointfreeco/combine-schedulers
+Working copy of https://github.com/pointfreeco/combine-schedulers resolved at 1.2.2
+Creating working copy for https://github.com/pointfreeco/swift-concurrency-extras
+Working copy of https://github.com/pointfreeco/swift-concurrency-extras resolved at 1.4.3
+Creating working copy for https://github.com/pointfreeco/swift-issue-reporting
+Working copy of https://github.com/pointfreeco/swift-issue-reporting resolved at 2.1.2
+Creating working copy for https://github.com/apple/swift-collections
+Working copy of https://github.com/apple/swift-collections resolved at 1.7.5
+Creating working copy for https://github.com/pointfreeco/swift-navigation
+Working copy of https://github.com/pointfreeco/swift-navigation resolved at 2.11.2
+Creating working copy for https://github.com/pointfreeco/swift-clocks
+Working copy of https://github.com/pointfreeco/swift-clocks resolved at 1.1.1
+Building for debugging...
+[Computing dependencies]
+[Pre-planning 1 / 1333]
+[Planning 1237 / 1333]
+[Planning deferred tasks]
+[Constructing 1193 / 3034]
+[77 / 662] PerceptionMacros
+[302 / 662]
+[317 / 662]
+[331 / 676]
+[340 / 682] UIKitNavigationShim
+[346 / 682] Sharing2
+[352 / 682] CasePathsMacrosSupport
+[358 / 752]
+[368 / 821]
+[379 / 835] InternalCollectionsUtilities
+[384 / 872]
+[388 / 872]
+[393 / 872]
+[398 / 872] InternalCollectionsUtilities
+[409 / 872]
+[420 / 872]
+[428 / 872]
+[438 / 873] InternalCollectionsUtilities
+[440 / 886] OrderedCollections
+[446 / 886] OrderedCollections
+[448 / 886] OrderedCollections
+[449 / 886] OrderedCollections
+[451 / 886]
+[456 / 886]
+[462 / 886]
+[466 / 886]
+[473 / 886] OrderedCollections
+[479 / 886]
+[482 / 886] OrderedCollections
+[488 / 886]
+[493 / 886]
+[497 / 886]
+[500 / 886]
+[506 / 886] PerceptionMacros
+[515 / 886] PerceptionMacros
+[516 / 886] DependenciesMacrosPlugin
+[521 / 886] DependenciesMacrosPlugin
+[524 / 886] CasePathsMacrosSupport-product
+[526 / 886]
+[536 / 887] PerceptionMacros
+[542 / 887] IdentifiedCollections
+[542 / 900]
+[545 / 900] DependenciesMacrosPlugin
+[549 / 900] CasePathsMacrosSupport
+[565 / 902]
+[573 / 902] ComposableArchitectureMacros
+[576 / 902] CooeeCore
+[578 / 910] SwiftNavigationMacros
+[582 / 910] ConcurrencyExtras
+[587 / 910] SwiftNavigationMacros
+[590 / 910] IssueReporting
+[592 / 910] ConcurrencyExtras
+[606 / 910] SwiftNavigationMacros
+[608 / 910] SwiftNavigationMacros
+[616 / 910] IssueReporting
+[619 / 910] IssueReporting
+[625 / 910] IssueReporting
+[626 / 910] SwiftNavigationMacros
+[629 / 910] PerceptionCore
+[632 / 910] IdentifiedCollections-product
+[634 / 910] IdentifiedCollections
+[636 / 910] IdentifiedCollections
+[637 / 910] IdentifiedCollections
+[639 / 910] DependenciesMacros
+[641 / 910] IssueReporting
+[648 / 910] CooeeCore
+[650 / 910] ConcurrencyExtras
+[653 / 910] ComposableArchitectureMacros
+[658 / 910] ConcurrencyExtras
+[661 / 910] ConcurrencyExtras
+[670 / 910] CasePathsMacros
+[677 / 916] CooeeAPI
+[680 / 920] Clocks
+[682 / 920] CasePathsMacros
+[683 / 920] CasePathsMacros
+[684 / 921]
+[688 / 921] DependenciesMacros
+[698 / 923] PerceptionCore
+[707 / 975]
+[709 / 975] CooeeCore
+[720 / 991]
+[725 / 1006] Clocks
+[730 / 1083] CombineSchedulers
+[743 / 1089]
+[749 / 1104]
+[753 / 1104]
+[762 / 1104]
+[765 / 1104]
+[770 / 1104]
+[776 / 1104]
+[783 / 1104] CooeeAPI
+[790 / 1104]
+[792 / 1104]
+[796 / 1104]
+[797 / 1104]
+[801 / 1104] CooeeCoreTests-product
+[807 / 1104] CooeeCoreTests-product
+[808 / 1104]
+[811 / 1104] CooeeCoreTests-product
+[812 / 1104]
+[815 / 1104]
+[817 / 1104]
+[820 / 1104]
+[821 / 1104]
+[825 / 1104]
+[828 / 1104]
+[837 / 1104] CooeeCoreTests-product
+[837 / 1104]
+[840 / 1104]
+[844 / 1104] Clocks
+[845 / 1104] CombineSchedulers
+[861 / 1104]
+[864 / 1104] CustomDump
+[866 / 1104] CooeeCoreTests-product
+[868 / 1104] CustomDump
+[870 / 1104] CustomDump
+[873 / 1104] CustomDump
+[875 / 1104] CustomDump
+[887 / 1104] PerceptionCore
+[890 / 1104] PerceptionCore
+[894 / 1104] PerceptionCore
+[895 / 1104] PerceptionCore
+[899 / 1104] CustomDump-product
+[903 / 1104] PerceptionCore
+[909 / 1104] PerceptionCore-product
+[911 / 1104] CooeeCoreTests-product
+[913 / 1104] CombineSchedulers
+[915 / 1104] CombineSchedulers
+[917 / 1104] Clocks
+[920 / 1104] Clocks-product
+[921 / 1104] Dependencies
+[922 / 1104] Dependencies
+[925 / 1104] Clocks
+[930 / 1104] CasePathsCore
+[937 / 1106]
+[941 / 1107]
+[944 / 1108] CasePaths
+[948 / 1118] Perception
+[950 / 1144] CombineSchedulers
+[954 / 1144] Dependencies
+[971 / 1144] Perception-product
+[977 / 1144] Dependencies
+[989 / 1144] CooeeAPITests-product
+[993 / 1144] Dependencies
+[997 / 1144] CooeeAPITests-product
+[1001 / 1144] CooeeAPITests-product
+[1001 / 1144] PerceptionCore
+[1006 / 1144] CombineSchedulers
+[1008 / 1144] CombineSchedulers
+[1011 / 1144] CasePaths-product
+[1012 / 1144] CasePaths
+[1014 / 1144]
+[1017 / 1146]
+[1019 / 1146]
+[1019 / 1146] CooeeAPITests-product
+[1019 / 1146] CasePaths
+[1021 / 1146] Sharing
+[1029 / 1172] CooeeAPITests-product
+[1033 / 1172] SwiftNavigation
+[1036 / 1172] Sharing
+[1036 / 1172] SwiftNavigation
+[1039 / 1172] Sharing
+[1041 / 1172] Sharing
+[1044 / 1172] Sharing
+[1057 / 1172] SwiftNavigation
+[1058 / 1172] UIKitNavigation
+[1061 / 1174]
+[1067 / 1187] UIKitNavigation
+[1076 / 1187] UIKitNavigation
+[1080 / 1187] Sharing
+[1082 / 1187] UIKitNavigation
+[1084 / 1187] UIKitNavigation
+[1084 / 1187] SwiftUINavigation
+[1093 / 1200] SwiftUINavigation
+[1097 / 1200] SwiftUINavigation
+[1099 / 1200] SwiftUINavigation
+[1106 / 1201] Sharing
+[1108 / 1201] SwiftUINavigation
+[1110 / 1201] SwiftUINavigation
+[1114 / 1201] ComposableArchitecture
+[1127 / 1214] ComposableArchitecture
+[1134 / 1215] ComposableArchitecture
+[1134 / 1215] CooeeFeatures
+[1145 / 1228] CooeeFeatures
+[1146 / 1228] CooeeFeatures
+[1147 / 1228] CooeeFeatures
+[1147 / 1228] ComposableArchitecture
+[1149 / 1228] CooeeFeatures
+/Users/jkmacmini/.local/share/drover/work/cooee/issue-595/apple/Sources/CooeeFeatures/AppFeature.swift:55:41: [1;33mwarning: [1;39mcannot use struct 'Date' in a property declaration member of a type not marked '@_implementationOnly'; 'Foundation' was not imported by this file[0;0m
+ [0;36m53 |[0;0m     @Dependency(\.loginItems) private var loginItems
+ [0;36m54 |[0;0m     @Dependency(\.push) private var push
+ [0;36m55 |[0;0m     @Dependency(\.date.now) private var now
+    [0;36m|[0;0m                                         `- [1;33mwarning: [1;39mcannot use struct 'Date' in a property declaration member of a type not marked '@_implementationOnly'; 'Foundation' was not imported by this file[0;0m
+ [0;36m56 |[0;0m 
+ [0;36m57 |[0;0m     public init() {}
+
+Foundation.Date:2:15: [1;39mnote: [1;39mstruct declared here[0;0m
+ [0;36m1 |[0;0m @available(macOS 10.10, iOS 8.0, watchOS 2.0, tvOS 9.0, *)
+ [0;36m2 |[0;0m public struct Date : Comparable, Hashable, Equatable, Sendable {
+   [0;36m|[0;0m               `- [1;39mnote: [1;39mstruct declared here[0;0m
+ [0;36m3 |[0;0m     public static let timeIntervalBetween1970AndReferenceDate: Double
+ [0;36m4 |[0;0m     public static var timeIntervalSinceReferenceDate: TimeInterval { get }
+[1158 / 1229] CooeeFeatures
+[1158 / 1229] CooeeUI
+[1161 / 1246]
+[1162 / 1246]
+/Users/jkmacmini/.local/share/drover/work/cooee/issue-595/apple/Sources/CooeeFeatures/AppFeature.swift:55:41: [1;33mwarning: [1;39mcannot use struct 'Date' in a property declaration member of a type not marked '@_implementationOnly'; 'Foundation' was not imported by this file[0;0m
+ [0;36m53 |[0;0m     @Dependency(\.loginItems) private var loginItems
+ [0;36m54 |[0;0m     @Dependency(\.push) private var push
+ [0;36m55 |[0;0m     @Dependency(\.date.now) private var now
+    [0;36m|[0;0m                                         `- [1;33mwarning: [1;39mcannot use struct 'Date' in a property declaration member of a type not marked '@_implementationOnly'; 'Foundation' was not imported by this file[0;0m
+ [0;36m56 |[0;0m 
+ [0;36m57 |[0;0m     public init() {}
+
+Foundation.Date:2:15: [1;39mnote: [1;39mstruct declared here[0;0m
+ [0;36m1 |[0;0m @available(macOS 10.10, iOS 8.0, watchOS 2.0, tvOS 9.0, *)
+ [0;36m2 |[0;0m public struct Date : Comparable, Hashable, Equatable, Sendable {
+   [0;36m|[0;0m               `- [1;39mnote: [1;39mstruct declared here[0;0m
+ [0;36m3 |[0;0m     public static let timeIntervalBetween1970AndReferenceDate: Double
+ [0;36m4 |[0;0m     public static var timeIntervalSinceReferenceDate: TimeInterval { get }
+[1174 / 1246] CooeeUI
+[1175 / 1246] CooeeUI
+[1183 / 1246] CooeeUI
+[1186 / 1247]
+[1192 / 1262] CooeeFeaturesTests-product
+[1195 / 1262] CooeeApp
+[1196 / 1262] CooeeApp
+[1197 / 1262] CooeeApp
+[1200 / 1275] CooeeApp
+[1208 / 1275] CooeeFeaturesTests-product
+[1209 / 1275] CooeeFeaturesTests-product
+[1210 / 1275] CooeeFeaturesTests-product
+[1211 / 1275] CooeeFeaturesTests-product
+[1212 / 1275] CooeeFeaturesTests-product
+[1213 / 1275] CooeeFeaturesTests-product
+[1215 / 1275] CooeeFeaturesTests-product
+[1221 / 1275] CooeeFeaturesTests-product
+[1222 / 1275] CooeeUI
+[1223 / 1275] CooeeApp
+[1225 / 1275] CooeeAppTests-product
+[1228 / 1275] CooeeApp
+[1229 / 1275]
+[1232 / 1275] CooeeUI
+[1232 / 1275] CooeeFeaturesTests-product
+[1232 / 1275] CooeeUI
+[1232 / 1275] CooeeFeaturesTests-product
+[1232 / 1275] CooeeUI
+[1234 / 1275] CooeeUI
+[1249 / 1277] CooeeAppTests-product
+[1251 / 1277] CooeeAppTests-product
+[1256 / 1296]
+[1260 / 1296] CooeeFeaturesTests-product
+[1277 / 1296] CooeeUITests-product
+[1280 / 1296] CooeeFeaturesTests-product
+[1281 / 1296] CooeeUITests-product
+[1286 / 1296] CooeeUITests-product
+[1286 / 1296] CooeeAppTests-product
+[1290 / 1296] CooeeUITests-product
+[1292 / 1296] CooeeUITests-product
+[1295 / 1296] CooeeUITests-product
+Build complete! (52.54 secs)
+◇ Test run started.
+↳ Testing Library Version: 2403
+↳ Target Platform: arm64e-apple-macos14.0
+◇ Suite CooeeRootTests started.
+◇ Test rebuildingTheRootKeepsItsStore() started.
+✘ Test rebuildingTheRootKeepsItsStore() recorded an issue at CooeeRootTests.swift:15:9: Expectation failed: first === rebuilt
+↳ first === rebuilt → false
+↳   first → StoreOf<AppFeature>
+↳     children → [:]
+↳     parent → nil
+↳     scopeID → nil
+↳     core → ComposableArchitecture.RootCore<ComposableArchitecture._DependencyKeyWritingReducer<CooeeFeatures.AppFeature>>
+↳       state → State(_home: nil, _pairing: Optional(CooeeFeatures.PairingFeature.State(_step: CooeeFeatures.PhoneStep.welcome, _address: "", _word: "", _until: 0001-01-01 00:00:00 +0000, _error: nil, _host: "", _url: nil, _claim: nil, _server: nil, _personas: [], _nearby: [], _browsing: false, _$observationRegistrar: ComposableArchitecture.ObservationStateRegistrar(id: ComposableArchitecture.ObservableStateID(storage: ComposableArchitecture.ObservableStateID.(unknown context at $10b3c0ae8).Storage), registrar: PerceptionCore.PerceptionRegistrar(rawValue: Observation.ObservationRegistrar(extent: Observation.ObservationRegistrar.(unknown context at $1b0057c0c).Extent), _isPerceptionCheckingEnabled: true, perceptionChecks: PerceptionCore._ManagedCriticalState<Swift.Dictionary<Swift.Int, Swift.Bool>>(buffer: PerceptionCore._ManagedCriticalState<Swift.Dictionary<Swift.Int, Swift.Bool>>.(unknown context at $10b3c4de8).LockedBuffer))))), _chat: nil, _newRoom: nil, _path: [], _menu: CooeeFeatures.MenuFeature.State(_server: nil, _settings: CooeeCore.Settings(scheme: CooeeCore.LookScheme.system, style: CooeeCore.StylePick.modern, theme: "farm", push: nil, icon: nil, motion: nil, sprites: nil, rooms: nil), _looks: CooeeCore.Looks(themes: [:], schemes: [:], broken: nil, styles: nil), _open: false, _path: [], _screen: nil, _page: "nil", _editor: nil, _saved: nil, _busy: false, _error: nil, _notice: nil, _$observationRegistrar: ComposableArchitecture.ObservationStateRegistrar(id: ComposableArchitecture.ObservableStateID(storage: ComposableArchitecture.ObservableStateID.(unknown context at $10b3c0ae8).Storage), registrar: PerceptionCore.PerceptionRegistrar(rawValue: Observation.ObservationRegistrar(extent: Observation.ObservationRegistrar.(unknown context at $1b0057c0c).Extent), _isPerceptionCheckingEnabled: true, perceptionChecks: PerceptionCore._ManagedCriticalState<Swift.Dictionary<Swift.Int, Swift.Bool>>(buffer: PerceptionCore._ManagedCriticalState<Swift.Dictionary<Swift.Int, Swift.Bool>>.(unknown context at $10b3c4de8).LockedBuffer)))), _terminal: CooeeFeatures.TerminalFeature.State(_server: nil, _size: nil, _shells: [], _current: nil, _screen: CooeeCore.TerminalScreen(rows: [], cursor: (row: 0, column: 0)), _ctrl: false, _note: nil, _sending: false, _pending: [], _$observationRegistrar: ComposableArchitecture.ObservationStateRegistrar(id: ComposableArchitecture.ObservableStateID(storage: ComposableArchitecture.ObservableStateID.(unknown context at $10b3c0ae8).Storage), registrar: PerceptionCore.PerceptionRegistrar(rawValue: Observation.ObservationRegistrar(extent: Observation.ObservationRegistrar.(unknown context at $1b0057c0c).Extent), _isPerceptionCheckingEnabled: true, perceptionChecks: PerceptionCore._ManagedCriticalState<Swift.Dictionary<Swift.Int, Swift.Bool>>(buffer: PerceptionCore._ManagedCriticalState<Swift.Dictionary<Swift.Int, Swift.Bool>>.(unknown context at $10b3c4de8).LockedBuffer)))), _layout: CooeeFeatures.LayoutFeature.State(_server: nil, _layout: CooeeCore.Layout(format: 1, theme: nil, root: CooeeCore.LayoutNode<CooeeCore.Placement>(id: "nav", content: CooeeCore.LayoutContent.component(CooeeCore.ComponentKind.nav), label: nil, place: CooeeCore.Placement(compact: CooeeCore.LayoutPlace.inline, wide: CooeeCore.LayoutPlace.inline), transition: CooeeCore.LayoutTransition.push, config: [:], slots: ["main": [CooeeCore.LayoutNode<CooeeCore.Placement>(id: "home", content: CooeeCore.LayoutContent.screen(CooeeCore.LayoutSource.core, path: "/screens/home"), label: nil, place: CooeeCore.Placement(compact: CooeeCore.LayoutPlace.push, wide: CooeeCore.LayoutPlace.panel), transition: CooeeCore.LayoutTransition.push, config: [:], slots: [:], locked: false), CooeeCore.LayoutNode<CooeeCore.Placement>(id: "chat", content: CooeeCore.LayoutContent.component(CooeeCore.ComponentKind.chat), label: nil, place: CooeeCore.Placement(compact: CooeeCore.LayoutPlace.push, wide: CooeeCore.LayoutPlace.push), transition: CooeeCore.LayoutTransition.push, config: ["stop": CooeeCore.JSONValue.bool(true), "composer": CooeeCore.JSONValue.bool(true)], slots: [:], locked: false), CooeeCore.LayoutNode<CooeeCore.Placement>(id: "pairing", content: CooeeCore.LayoutContent.screen(CooeeCore.LayoutSource.core, path: "/screens/pairing"), label: nil, place: CooeeCore.Placement(compact: CooeeCore.LayoutPlace.push, wide: CooeeCore.LayoutPlace.push), transition: CooeeCore.LayoutTransition.push, config: [:], slots: [:], locked: true)], "side": [CooeeCore.LayoutNode<CooeeCore.Placement>(id: "sidebar", content: CooeeCore.LayoutContent.component(CooeeCore.ComponentKind.sidebar), label: nil, place: CooeeCore.Placement(compact: CooeeCore.LayoutPlace.menu, wide: CooeeCore.LayoutPlace.column), transition: CooeeCore.LayoutTransition.push, config: [:], slots: [:], locked: false)], "menu": [CooeeCore.LayoutNode<CooeeCore.Placement>(id: "menu", content: CooeeCore.LayoutContent.screen(CooeeCore.LayoutSource.core, path: "/screens/menu"), label: nil, place: CooeeCore.Placement(compact: CooeeCore.LayoutPlace.sheet, wide: CooeeCore.LayoutPlace.sheet), transition: CooeeCore.LayoutTransition.push, config: [:], slots: [:], locked: false), CooeeCore.LayoutNode<CooeeCore.Placement>(id: "settings", content: CooeeCore.LayoutContent.component(CooeeCore.ComponentKind.settings), label: nil, place: CooeeCore.Placement(compact: CooeeCore.LayoutPlace.sheet, wide: CooeeCore.LayoutPlace.sheet), transition: CooeeCore.LayoutTransition.push, config: ["pages": CooeeCore.JSONValue.array([CooeeCore.JSONValue.string("look"), CooeeCore.JSONValue.string("notifications"), CooeeCore.JSONValue.string("appIcon"), CooeeCore.JSONValue.string("themeEditor")])], slots: [:], locked: false), CooeeCore.LayoutNode<CooeeCore.Placement>(id: "terminal", content: CooeeCore.LayoutContent.component(CooeeCore.ComponentKind.terminal), label: nil, place: CooeeCore.Placement(compact: CooeeCore.LayoutPlace.menu, wide: CooeeCore.LayoutPlace.menu), transition: CooeeCore.LayoutTransition.push, config: [:], slots: [:], locked: false), CooeeCore.LayoutNode<CooeeCore.Placement>(id: "reset-layout", content: CooeeCore.LayoutContent.screen(CooeeCore.LayoutSource.core, path: "/screens/reset-layout"), label: nil, place: CooeeCore.Placement(compact: CooeeCore.LayoutPlace.menu, wide: CooeeCore.LayoutPlace.menu), transition: CooeeCore.LayoutTransition.push, config: [:], slots: [:], locked: true)]], locked: false), etag: ""), _broken: nil, _screens: IdentifiedArray<State>([]), _$observationRegistrar: ComposableArchitecture.ObservationStateRegistrar(id: ComposableArchitecture.ObservableStateID(storage: ComposableArchitecture.ObservableStateID.(unknown context at $10b3c0ae8).Storage), registrar: PerceptionCore.PerceptionRegistrar(rawValue: Observation.ObservationRegistrar(extent: Observation.ObservationRegistrar.(unknown context at $1b0057c0c).Extent), _isPerceptionCheckingEnabled: true, perceptionChecks: PerceptionCore._ManagedCriticalState<Swift.Dictionary<Swift.Int, Swift.Bool>>(buffer: PerceptionCore._ManagedCriticalState<Swift.Dictionary<Swift.Int, Swift.Bool>>.(unknown context at $10b3c4de8).LockedBuffer)))), _persona: "nil", _notice: nil, _$observationRegistrar: ComposableArchitecture.ObservationStateRegistrar(id: ComposableArchitecture.ObservableStateID(storage: ComposableArchitecture.ObservableStateID.(unknown context at $10b3c0ae8).Storage), registrar: PerceptionCore.PerceptionRegistrar(rawValue: Observation.ObservationRegistrar(extent: Observation.ObservationRegistrar.(unknown context at $1b0057c0c).Extent), _isPerceptionCheckingEnabled: true, perceptionChecks: PerceptionCore._ManagedCriticalState<Swift.Dictionary<Swift.Int, Swift.Bool>>(buffer: PerceptionCore._ManagedCriticalState<Swift.Dictionary<Swift.Int, Swift.Bool>>.(unknown context at $10b3c4de8).LockedBuffer))))
+↳         _home → nil
+↳         _pairing → State(_step: CooeeFeatures.PhoneStep.welcome, _address: "", _word: "", _until: 0001-01-01 00:00:00 +0000, _error: nil, _host: "", _url: nil, _claim: nil, _server: nil, _personas: [], _nearby: [], _browsing: false, _$observationRegistrar: ComposableArchitecture.ObservationStateRegistrar(id: ComposableArchitecture.ObservableStateID(storage: ComposableArchitecture.ObservableStateID.(unknown context at $10b3c0ae8).Storage), registrar: PerceptionCore.PerceptionRegistrar(rawValue: Observation.ObservationRegistrar(extent: Observation.ObservationRegistrar.(unknown context at $1b0057c0c).Extent), _isPerceptionCheckingEnabled: true, perceptionChecks: PerceptionCore._ManagedCriticalState<Swift.Dictionary<Swift.Int, Swift.Bool>>(buffer: PerceptionCore._ManagedCriticalState<Swift.Dictionary<Swift.Int, Swift.Bool>>.(unknown context at $10b3c4de8).LockedBuffer))))
+↳           some → State(_step: CooeeFeatures.PhoneStep.welcome, _address: "", _word: "", _until: 0001-01-01 00:00:00 +0000, _error: nil, _host: "", _url: nil, _claim: nil, _server: nil, _personas: [], _nearby: [], _browsing: false, _$observationRegistrar: ComposableArchitecture.ObservationStateRegistrar(id: ComposableArchitecture.ObservableStateID(storage: ComposableArchitecture.ObservableStateID.(unknown context at $10b3c0ae8).Storage), registrar: PerceptionCore.PerceptionRegistrar(rawValue: Observation.ObservationRegistrar(extent: Observation.ObservationRegistrar.(unknown context at $1b0057c0c).Extent), _isPerceptionCheckingEnabled: true, perceptionChecks: PerceptionCore._ManagedCriticalState<Swift.Dictionary<Swift.Int, Swift.Bool>>(buffer: PerceptionCore._ManagedCriticalState<Swift.Dictionary<Swift.Int, Swift.Bool>>.(unknown context at $10b3c4de8).LockedBuffer))))
+↳             _step → .welcome
+↳             _address → ""
+↳             _word → ""
+↳             _until → 0001-01-01 00:00:00 +0000
+↳               timeIntervalSinceReferenceDate → -63114076800.0
+↳             _error → nil
+↳             _host → ""
+↳             _url → nil
+↳             _claim → nil
+↳             _server → nil
+↳             _personas → []
+↳             _nearby → []
+↳             _browsing → false
+↳             _$observationRegistrar → ObservationStateRegistrar(id: ComposableArchitecture.ObservableStateID(storage: ComposableArchitecture.ObservableStateID.(unknown context at $10b3c0ae8).Storage), registrar: PerceptionCore.PerceptionRegistrar(rawValue: Observation.ObservationRegistrar(extent: Observation.ObservationRegistrar.(unknown context at $1b0057c0c).Extent), _isPerceptionCheckingEnabled: true, perceptionChecks: PerceptionCore._ManagedCriticalState<Swift.Dictionary<Swift.Int, Swift.Bool>>(buffer: PerceptionCore._ManagedCriticalState<Swift.Dictionary<Swift.Int, Swift.Bool>>.(unknown context at $10b3c4de8).LockedBuffer)))
+↳               id → ObservableStateID(storage: ComposableArchitecture.ObservableStateID.(unknown context at $10b3c0ae8).Storage)
+↳                 storage → ComposableArchitecture.ObservableStateID.(unknown context at $10b3c0ae8).Storage
+↳                   id → .location(0AE57FC6-EA61-4158-B60A-2DA19638A565)
+↳                     location → 0AE57FC6-EA61-4158-B60A-2DA19638A565
+↳               registrar → PerceptionRegistrar(rawValue: Observation.ObservationRegistrar(extent: Observation.ObservationRegistrar.(unknown context at $1b0057c0c).Extent), _isPerceptionCheckingEnabled: true, perceptionChecks: PerceptionCore._ManagedCriticalState<Swift.Dictionary<Swift.Int, Swift.Bool>>(buffer: PerceptionCore._ManagedCriticalState<Swift.Dictionary<Swift.Int, Swift.Bool>>.(unknown context at $10b3c4de8).LockedBuffer))
+↳                 rawValue → ObservationRegistrar(extent: Observation.ObservationRegistrar.(unknown context at $1b0057c0c).Extent)
+↳                   extent → Observation.ObservationRegistrar.(unknown context at $1b0057c0c).Extent
+↳                     context → Context(state: Observation._ManagedCriticalState<Observation.ObservationRegistrar.(unknown context at $1b0057c50).State>(buffer: Observation._ManagedCriticalState<Observation.ObservationRegistrar.(unknown context at $1b0057c50).State>.(unknown context at $1b0057aec).LockedBuffer))
+↳                 _isPerceptionCheckingEnabled → true
+↳                 perceptionChecks → _ManagedCriticalState<Dictionary<Int, Bool>>(buffer: PerceptionCore._ManagedCriticalState<Swift.Dictionary<Swift.Int, Swift.Bool>>.(unknown context at $10b3c4de8).LockedBuffer)
+↳                   buffer → PerceptionCore._ManagedCriticalState<Swift.Dictionary<Swift.Int, Swift.Bool>>.(unknown context at $10b3c4de8).LockedBuffer
+↳         _chat → nil
+↳         _newRoom → nil
+↳         _path → []
+↳         _menu → State(_server: nil, _settings: CooeeCore.Settings(scheme: CooeeCore.LookScheme.system, style: CooeeCore.StylePick.modern, theme: "farm", push: nil, icon: nil, motion: nil, sprites: nil, rooms: nil), _looks: CooeeCore.Looks(themes: [:], schemes: [:], broken: nil, styles: nil), _open: false, _path: [], _screen: nil, _page: "nil", _editor: nil, _saved: nil, _busy: false, _error: nil, _notice: nil, _$observationRegistrar: ComposableArchitecture.ObservationStateRegistrar(id: ComposableArchitecture.ObservableStateID(storage: ComposableArchitecture.ObservableStateID.(unknown context at $10b3c0ae8).Storage), registrar: PerceptionCore.PerceptionRegistrar(rawValue: Observation.ObservationRegistrar(extent: Observation.ObservationRegistrar.(unknown context at $1b0057c0c).Extent), _isPerceptionCheckingEnabled: true, perceptionChecks: PerceptionCore._ManagedCriticalState<Swift.Dictionary<Swift.Int, Swift.Bool>>(buffer: PerceptionCore._ManagedCriticalState<Swift.Dictionary<Swift.Int, Swift.Bool>>.(unknown context at $10b3c4de8).LockedBuffer))))
+↳           _server → nil
+↳           _settings → Settings(scheme: CooeeCore.LookScheme.system, style: CooeeCore.StylePick.modern, theme: "farm", push: nil, icon: nil, motion: nil, sprites: nil, rooms: nil)
+↳             scheme → .system
+↳             style → .modern
+↳             theme → "farm"
+↳             push → nil
+↳             icon → nil
+↳             motion → nil
+↳             sprites → nil
+↳             rooms → nil
+↳           _looks → Looks(themes: [:], schemes: [:], broken: nil, styles: nil)
+↳             themes → [:]
+↳             schemes → [:]
+↳             broken → nil
+↳             styles → nil
+↳           _open → false
+↳           _path → []
+↳           _screen → nil
+↳           _page → "nil"
+↳           _editor → nil
+↳           _saved → nil
+↳           _busy → false
+↳           _error → nil
+↳           _notice → nil
+↳           _$observationRegistrar → ObservationStateRegistrar(id: ComposableArchitecture.ObservableStateID(storage: ComposableArchitecture.ObservableStateID.(unknown context at $10b3c0ae8).Storage), registrar: PerceptionCore.PerceptionRegistrar(rawValue: Observation.ObservationRegistrar(extent: Observation.ObservationRegistrar.(unknown context at $1b0057c0c).Extent), _isPerceptionCheckingEnabled: true, perceptionChecks: PerceptionCore._ManagedCriticalState<Swift.Dictionary<Swift.Int, Swift.Bool>>(buffer: PerceptionCore._ManagedCriticalState<Swift.Dictionary<Swift.Int, Swift.Bool>>.(unknown context at $10b3c4de8).LockedBuffer)))
+↳             id → ObservableStateID(storage: ComposableArchitecture.ObservableStateID.(unknown context at $10b3c0ae8).Storage)
+↳               storage → ComposableArchitecture.ObservableStateID.(unknown context at $10b3c0ae8).Storage
+↳                 id → .location(B1F26BDB-6016-44F3-A015-0E55F1CA948D)
+↳                   location → B1F26BDB-6016-44F3-A015-0E55F1CA948D
+↳             registrar → PerceptionRegistrar(rawValue: Observation.ObservationRegistrar(extent: Observation.ObservationRegistrar.(unknown context at $1b0057c0c).Extent), _isPerceptionCheckingEnabled: true, perceptionChecks: PerceptionCore._ManagedCriticalState<Swift.Dictionary<Swift.Int, Swift.Bool>>(buffer: PerceptionCore._ManagedCriticalState<Swift.Dictionary<Swift.Int, Swift.Bool>>.(unknown context at $10b3c4de8).LockedBuffer))
+↳               rawValue → ObservationRegistrar(extent: Observation.ObservationRegistrar.(unknown context at $1b0057c0c).Extent)
+↳                 extent → Observation.ObservationRegistrar.(unknown context at $1b0057c0c).Extent
+↳                   context → Context(state: Observation._ManagedCriticalState<Observation.ObservationRegistrar.(unknown context at $1b0057c50).State>(buffer: Observation._ManagedCriticalState<Observation.ObservationRegistrar.(unknown context at $1b0057c50).State>.(unknown context at $1b0057aec).LockedBuffer))
+↳                     state → _ManagedCriticalState<State>(buffer: Observation._ManagedCriticalState<Observation.ObservationRegistrar.(unknown context at $1b0057c50).State>.(unknown context at $1b0057aec).LockedBuffer)
+↳               _isPerceptionCheckingEnabled → true
+↳               perceptionChecks → _ManagedCriticalState<Dictionary<Int, Bool>>(buffer: PerceptionCore._ManagedCriticalState<Swift.Dictionary<Swift.Int, Swift.Bool>>.(unknown context at $10b3c4de8).LockedBuffer)
+↳                 buffer → PerceptionCore._ManagedCriticalState<Swift.Dictionary<Swift.Int, Swift.Bool>>.(unknown context at $10b3c4de8).LockedBuffer
+↳         _terminal → State(_server: nil, _size: nil, _shells: [], _current: nil, _screen: CooeeCore.TerminalScreen(rows: [], cursor: (row: 0, column: 0)), _ctrl: false, _note: nil, _sending: false, _pending: [], _$observationRegistrar: ComposableArchitecture.ObservationStateRegistrar(id: ComposableArchitecture.ObservableStateID(storage: ComposableArchitecture.ObservableStateID.(unknown context at $10b3c0ae8).Storage), registrar: PerceptionCore.PerceptionRegistrar(rawValue: Observation.ObservationRegistrar(extent: Observation.ObservationRegistrar.(unknown context at $1b0057c0c).Extent), _isPerceptionCheckingEnabled: true, perceptionChecks: PerceptionCore._ManagedCriticalState<Swift.Dictionary<Swift.Int, Swift.Bool>>(buffer: PerceptionCore._ManagedCriticalState<Swift.Dictionary<Swift.Int, Swift.Bool>>.(unknown context at $10b3c4de8).LockedBuffer))))
+↳           _server → nil
+↳           _size → nil
+↳           _shells → []
+↳           _current → nil
+↳           _screen → TerminalScreen(rows: [], cursor: (row: 0, column: 0))
+↳             rows → []
+↳             cursor → (row: 0, column: 0)
+↳               row → 0
+↳               column → 0
+↳           _ctrl → false
+↳           _note → nil
+↳           _sending → false
+↳           _pending → []
+↳           _$observationRegistrar → ObservationStateRegistrar(id: ComposableArchitecture.ObservableStateID(storage: ComposableArchitecture.ObservableStateID.(unknown context at $10b3c0ae8).Storage), registrar: PerceptionCore.PerceptionRegistrar(rawValue: Observation.ObservationRegistrar(extent: Observation.ObservationRegistrar.(unknown context at $1b0057c0c).Extent), _isPerceptionCheckingEnabled: true, perceptionChecks: PerceptionCore._ManagedCriticalState<Swift.Dictionary<Swift.Int, Swift.Bool>>(buffer: PerceptionCore._ManagedCriticalState<Swift.Dictionary<Swift.Int, Swift.Bool>>.(unknown context at $10b3c4de8).LockedBuffer)))
+↳             id → ObservableStateID(storage: ComposableArchitecture.ObservableStateID.(unknown context at $10b3c0ae8).Storage)
+↳               storage → ComposableArchitecture.ObservableStateID.(unknown context at $10b3c0ae8).Storage
+↳                 id → .location(E6E39A22-4411-4EEE-9154-B3F0578E6AF3)
+↳                   location → E6E39A22-4411-4EEE-9154-B3F0578E6AF3
+↳             registrar → PerceptionRegistrar(rawValue: Observation.ObservationRegistrar(extent: Observation.ObservationRegistrar.(unknown context at $1b0057c0c).Extent), _isPerceptionCheckingEnabled: true, perceptionChecks: PerceptionCore._ManagedCriticalState<Swift.Dictionary<Swift.Int, Swift.Bool>>(buffer: PerceptionCore._ManagedCriticalState<Swift.Dictionary<Swift.Int, Swift.Bool>>.(unknown context at $10b3c4de8).LockedBuffer))
+↳               rawValue → ObservationRegistrar(extent: Observation.ObservationRegistrar.(unknown context at $1b0057c0c).Extent)
+↳                 extent → Observation.ObservationRegistrar.(unknown context at $1b0057c0c).Extent
+↳                   context → Context(state: Observation._ManagedCriticalState<Observation.ObservationRegistrar.(unknown context at $1b0057c50).State>(buffer: Observation._ManagedCriticalState<Observation.ObservationRegistrar.(unknown context at $1b0057c50).State>.(unknown context at $1b0057aec).LockedBuffer))
+↳                     state → _ManagedCriticalState<State>(buffer: Observation._ManagedCriticalState<Observation.ObservationRegistrar.(unknown context at $1b0057c50).State>.(unknown context at $1b0057aec).LockedBuffer)
+↳               _isPerceptionCheckingEnabled → true
+↳               perceptionChecks → _ManagedCriticalState<Dictionary<Int, Bool>>(buffer: PerceptionCore._ManagedCriticalState<Swift.Dictionary<Swift.Int, Swift.Bool>>.(unknown context at $10b3c4de8).LockedBuffer)
+↳                 buffer → PerceptionCore._ManagedCriticalState<Swift.Dictionary<Swift.Int, Swift.Bool>>.(unknown context at $10b3c4de8).LockedBuffer
+↳         _layout → State(_server: nil, _layout: CooeeCore.Layout(format: 1, theme: nil, root: CooeeCore.LayoutNode<CooeeCore.Placement>(id: "nav", content: CooeeCore.LayoutContent.component(CooeeCore.ComponentKind.nav), label: nil, place: CooeeCore.Placement(compact: CooeeCore.LayoutPlace.inline, wide: CooeeCore.LayoutPlace.inline), transition: CooeeCore.LayoutTransition.push, config: [:], slots: ["main": [CooeeCore.LayoutNode<CooeeCore.Placement>(id: "home", content: CooeeCore.LayoutContent.screen(CooeeCore.LayoutSource.core, path: "/screens/home"), label: nil, place: CooeeCore.Placement(compact: CooeeCore.LayoutPlace.push, wide: CooeeCore.LayoutPlace.panel), transition: CooeeCore.LayoutTransition.push, config: [:], slots: [:], locked: false), CooeeCore.LayoutNode<CooeeCore.Placement>(id: "chat", content: CooeeCore.LayoutContent.component(CooeeCore.ComponentKind.chat), label: nil, place: CooeeCore.Placement(compact: CooeeCore.LayoutPlace.push, wide: CooeeCore.LayoutPlace.push), transition: CooeeCore.LayoutTransition.push, config: ["stop": CooeeCore.JSONValue.bool(true), "composer": CooeeCore.JSONValue.bool(true)], slots: [:], locked: false), CooeeCore.LayoutNode<CooeeCore.Placement>(id: "pairing", content: CooeeCore.LayoutContent.screen(CooeeCore.LayoutSource.core, path: "/screens/pairing"), label: nil, place: CooeeCore.Placement(compact: CooeeCore.LayoutPlace.push, wide: CooeeCore.LayoutPlace.push), transition: CooeeCore.LayoutTransition.push, config: [:], slots: [:], locked: true)], "side": [CooeeCore.LayoutNode<CooeeCore.Placement>(id: "sidebar", content: CooeeCore.LayoutContent.component(CooeeCore.ComponentKind.sidebar), label: nil, place: CooeeCore.Placement(compact: CooeeCore.LayoutPlace.menu, wide: CooeeCore.LayoutPlace.column), transition: CooeeCore.LayoutTransition.push, config: [:], slots: [:], locked: false)], "menu": [CooeeCore.LayoutNode<CooeeCore.Placement>(id: "menu", content: CooeeCore.LayoutContent.screen(CooeeCore.LayoutSource.core, path: "/screens/menu"), label: nil, place: CooeeCore.Placement(compact: CooeeCore.LayoutPlace.sheet, wide: CooeeCore.LayoutPlace.sheet), transition: CooeeCore.LayoutTransition.push, config: [:], slots: [:], locked: false), CooeeCore.LayoutNode<CooeeCore.Placement>(id: "settings", content: CooeeCore.LayoutContent.component(CooeeCore.ComponentKind.settings), label: nil, place: CooeeCore.Placement(compact: CooeeCore.LayoutPlace.sheet, wide: CooeeCore.LayoutPlace.sheet), transition: CooeeCore.LayoutTransition.push, config: ["pages": CooeeCore.JSONValue.array([CooeeCore.JSONValue.string("look"), CooeeCore.JSONValue.string("notifications"), CooeeCore.JSONValue.string("appIcon"), CooeeCore.JSONValue.string("themeEditor")])], slots: [:], locked: false), CooeeCore.LayoutNode<CooeeCore.Placement>(id: "terminal", content: CooeeCore.LayoutContent.component(CooeeCore.ComponentKind.terminal), label: nil, place: CooeeCore.Placement(compact: CooeeCore.LayoutPlace.menu, wide: CooeeCore.LayoutPlace.menu), transition: CooeeCore.LayoutTransition.push, config: [:], slots: [:], locked: false), CooeeCore.LayoutNode<CooeeCore.Placement>(id: "reset-layout", content: CooeeCore.LayoutContent.screen(CooeeCore.LayoutSource.core, path: "/screens/reset-layout"), label: nil, place: CooeeCore.Placement(compact: CooeeCore.LayoutPlace.menu, wide: CooeeCore.LayoutPlace.menu), transition: CooeeCore.LayoutTransition.push, config: [:], slots: [:], locked: true)]], locked: false), etag: ""), _broken: nil, _screens: IdentifiedArray<State>([]), _$observationRegistrar: ComposableArchitecture.ObservationStateRegistrar(id: ComposableArchitecture.ObservableStateID(storage: ComposableArchitecture.ObservableStateID.(unknown context at $10b3c0ae8).Storage), registrar: PerceptionCore.PerceptionRegistrar(rawValue: Observation.ObservationRegistrar(extent: Observation.ObservationRegistrar.(unknown context at $1b0057c0c).Extent), _isPerceptionCheckingEnabled: true, perceptionChecks: PerceptionCore._ManagedCriticalState<Swift.Dictionary<Swift.Int, Swift.Bool>>(buffer: PerceptionCore._ManagedCriticalState<Swift.Dictionary<Swift.Int, Swift.Bool>>.(unknown context at $10b3c4de8).LockedBuffer))))
+↳           _server → nil
+↳           _layout → Layout(format: 1, theme: nil, root: CooeeCore.LayoutNode<CooeeCore.Placement>(id: "nav", content: CooeeCore.LayoutContent.component(CooeeCore.ComponentKind.nav), label: nil, place: CooeeCore.Placement(compact: CooeeCore.LayoutPlace.inline, wide: CooeeCore.LayoutPlace.inline), transition: CooeeCore.LayoutTransition.push, config: [:], slots: ["main": [CooeeCore.LayoutNode<CooeeCore.Placement>(id: "home", content: CooeeCore.LayoutContent.screen(CooeeCore.LayoutSource.core, path: "/screens/home"), label: nil, place: CooeeCore.Placement(compact: CooeeCore.LayoutPlace.push, wide: CooeeCore.LayoutPlace.panel), transition: CooeeCore.LayoutTransition.push, config: [:], slots: [:], locked: false), CooeeCore.LayoutNode<CooeeCore.Placement>(id: "chat", content: CooeeCore.LayoutContent.component(CooeeCore.ComponentKind.chat), label: nil, place: CooeeCore.Placement(compact: CooeeCore.LayoutPlace.push, wide: CooeeCore.LayoutPlace.push), transition: CooeeCore.LayoutTransition.push, config: ["stop": CooeeCore.JSONValue.bool(true), "composer": CooeeCore.JSONValue.bool(true)], slots: [:], locked: false), CooeeCore.LayoutNode<CooeeCore.Placement>(id: "pairing", content: CooeeCore.LayoutContent.screen(CooeeCore.LayoutSource.core, path: "/screens/pairing"), label: nil, place: CooeeCore.Placement(compact: CooeeCore.LayoutPlace.push, wide: CooeeCore.LayoutPlace.push), transition: CooeeCore.LayoutTransition.push, config: [:], slots: [:], locked: true)], "side": [CooeeCore.LayoutNode<CooeeCore.Placement>(id: "sidebar", content: CooeeCore.LayoutContent.component(CooeeCore.ComponentKind.sidebar), label: nil, place: CooeeCore.Placement(compact: CooeeCore.LayoutPlace.menu, wide: CooeeCore.LayoutPlace.column), transition: CooeeCore.LayoutTransition.push, config: [:], slots: [:], locked: false)], "menu": [CooeeCore.LayoutNode<CooeeCore.Placement>(id: "menu", content: CooeeCore.LayoutContent.screen(CooeeCore.LayoutSource.core, path: "/screens/menu"), label: nil, place: CooeeCore.Placement(compact: CooeeCore.LayoutPlace.sheet, wide: CooeeCore.LayoutPlace.sheet), transition: CooeeCore.LayoutTransition.push, config: [:], slots: [:], locked: false), CooeeCore.LayoutNode<CooeeCore.Placement>(id: "settings", content: CooeeCore.LayoutContent.component(CooeeCore.ComponentKind.settings), label: nil, place: CooeeCore.Placement(compact: CooeeCore.LayoutPlace.sheet, wide: CooeeCore.LayoutPlace.sheet), transition: CooeeCore.LayoutTransition.push, config: ["pages": CooeeCore.JSONValue.array([CooeeCore.JSONValue.string("look"), CooeeCore.JSONValue.string("notifications"), CooeeCore.JSONValue.string("appIcon"), CooeeCore.JSONValue.string("themeEditor")])], slots: [:], locked: false), CooeeCore.LayoutNode<CooeeCore.Placement>(id: "terminal", content: CooeeCore.LayoutContent.component(CooeeCore.ComponentKind.terminal), label: nil, place: CooeeCore.Placement(compact: CooeeCore.LayoutPlace.menu, wide: CooeeCore.LayoutPlace.menu), transition: CooeeCore.LayoutTransition.push, config: [:], slots: [:], locked: false), CooeeCore.LayoutNode<CooeeCore.Placement>(id: "reset-layout", content: CooeeCore.LayoutContent.screen(CooeeCore.LayoutSource.core, path: "/screens/reset-layout"), label: nil, place: CooeeCore.Placement(compact: CooeeCore.LayoutPlace.menu, wide: CooeeCore.LayoutPlace.menu), transition: CooeeCore.LayoutTransition.push, config: [:], slots: [:], locked: true)]], locked: false), etag: "")
+↳             format → 1
+↳             theme → nil
+↳             root → LayoutNode<Placement>(id: "nav", content: CooeeCore.LayoutContent.component(CooeeCore.ComponentKind.nav), label: nil, place: CooeeCore.Placement(compact: CooeeCore.LayoutPlace.inline, wide: CooeeCore.LayoutPlace.inline), transition: CooeeCore.LayoutTransition.push, config: [:], slots: ["main": [CooeeCore.LayoutNode<CooeeCore.Placement>(id: "home", content: CooeeCore.LayoutContent.screen(CooeeCore.LayoutSource.core, path: "/screens/home"), label: nil, place: CooeeCore.Placement(compact: CooeeCore.LayoutPlace.push, wide: CooeeCore.LayoutPlace.panel), transition: CooeeCore.LayoutTransition.push, config: [:], slots: [:], locked: false), CooeeCore.LayoutNode<CooeeCore.Placement>(id: "chat", content: CooeeCore.LayoutContent.component(CooeeCore.ComponentKind.chat), label: nil, place: CooeeCore.Placement(compact: CooeeCore.LayoutPlace.push, wide: CooeeCore.LayoutPlace.push), transition: CooeeCore.LayoutTransition.push, config: ["stop": CooeeCore.JSONValue.bool(true), "composer": CooeeCore.JSONValue.bool(true)], slots: [:], locked: false), CooeeCore.LayoutNode<CooeeCore.Placement>(id: "pairing", content: CooeeCore.LayoutContent.screen(CooeeCore.LayoutSource.core, path: "/screens/pairing"), label: nil, place: CooeeCore.Placement(compact: CooeeCore.LayoutPlace.push, wide: CooeeCore.LayoutPlace.push), transition: CooeeCore.LayoutTransition.push, config: [:], slots: [:], locked: true)], "side": [CooeeCore.LayoutNode<CooeeCore.Placement>(id: "sidebar", content: CooeeCore.LayoutContent.component(CooeeCore.ComponentKind.sidebar), label: nil, place: CooeeCore.Placement(compact: CooeeCore.LayoutPlace.menu, wide: CooeeCore.LayoutPlace.column), transition: CooeeCore.LayoutTransition.push, config: [:], slots: [:], locked: false)], "menu": [CooeeCore.LayoutNode<CooeeCore.Placement>(id: "menu", content: CooeeCore.LayoutContent.screen(CooeeCore.LayoutSource.core, path: "/screens/menu"), label: nil, place: CooeeCore.Placement(compact: CooeeCore.LayoutPlace.sheet, wide: CooeeCore.LayoutPlace.sheet), transition: CooeeCore.LayoutTransition.push, config: [:], slots: [:], locked: false), CooeeCore.LayoutNode<CooeeCore.Placement>(id: "settings", content: CooeeCore.LayoutContent.component(CooeeCore.ComponentKind.settings), label: nil, place: CooeeCore.Placement(compact: CooeeCore.LayoutPlace.sheet, wide: CooeeCore.LayoutPlace.sheet), transition: CooeeCore.LayoutTransition.push, config: ["pages": CooeeCore.JSONValue.array([CooeeCore.JSONValue.string("look"), CooeeCore.JSONValue.string("notifications"), CooeeCore.JSONValue.string("appIcon"), CooeeCore.JSONValue.string("themeEditor")])], slots: [:], locked: false), CooeeCore.LayoutNode<CooeeCore.Placement>(id: "terminal", content: CooeeCore.LayoutContent.component(CooeeCore.ComponentKind.terminal), label: nil, place: CooeeCore.Placement(compact: CooeeCore.LayoutPlace.menu, wide: CooeeCore.LayoutPlace.menu), transition: CooeeCore.LayoutTransition.push, config: [:], slots: [:], locked: false), CooeeCore.LayoutNode<CooeeCore.Placement>(id: "reset-layout", content: CooeeCore.LayoutContent.screen(CooeeCore.LayoutSource.core, path: "/screens/reset-layout"), label: nil, place: CooeeCore.Placement(compact: CooeeCore.LayoutPlace.menu, wide: CooeeCore.LayoutPlace.menu), transition: CooeeCore.LayoutTransition.push, config: [:], slots: [:], locked: true)]], locked: false)
+↳               id → "nav"
+↳               content → .component(CooeeCore.ComponentKind.nav)
+↳                 component → .nav
+↳               label → nil
+↳               place → Placement(compact: CooeeCore.LayoutPlace.inline, wide: CooeeCore.LayoutPlace.inline)
+↳                 compact → .inline
+↳                 wide → .inline
+↳               transition → .push
+↳               config → [:]
+↳               slots → ["main": [CooeeCore.LayoutNode<CooeeCore.Placement>(id: "home", content: CooeeCore.LayoutContent.screen(CooeeCore.LayoutSource.core, path: "/screens/home"), label: nil, place: CooeeCore.Placement(compact: CooeeCore.LayoutPlace.push, wide: CooeeCore.LayoutPlace.panel), transition: CooeeCore.LayoutTransition.push, config: [:], slots: [:], locked: false), CooeeCore.LayoutNode<CooeeCore.Placement>(id: "chat", content: CooeeCore.LayoutContent.component(CooeeCore.ComponentKind.chat), label: nil, place: CooeeCore.Placement(compact: CooeeCore.LayoutPlace.push, wide: CooeeCore.LayoutPlace.push), transition: CooeeCore.LayoutTransition.push, config: ["stop": CooeeCore.JSONValue.bool(true), "composer": CooeeCore.JSONValue.bool(true)], slots: [:], locked: false), CooeeCore.LayoutNode<CooeeCore.Placement>(id: "pairing", content: CooeeCore.LayoutContent.screen(CooeeCore.LayoutSource.core, path: "/screens/pairing"), label: nil, place: CooeeCore.Placement(compact: CooeeCore.LayoutPlace.push, wide: CooeeCore.LayoutPlace.push), transition: CooeeCore.LayoutTransition.push, config: [:], slots: [:], locked: true)], "side": [CooeeCore.LayoutNode<CooeeCore.Placement>(id: "sidebar", content: CooeeCore.LayoutContent.component(CooeeCore.ComponentKind.sidebar), label: nil, place: CooeeCore.Placement(compact: CooeeCore.LayoutPlace.menu, wide: CooeeCore.LayoutPlace.column), transition: CooeeCore.LayoutTransition.push, config: [:], slots: [:], locked: false)], "menu": [CooeeCore.LayoutNode<CooeeCore.Placement>(id: "menu", content: CooeeCore.LayoutContent.screen(CooeeCore.LayoutSource.core, path: "/screens/menu"), label: nil, place: CooeeCore.Placement(compact: CooeeCore.LayoutPlace.sheet, wide: CooeeCore.LayoutPlace.sheet), transition: CooeeCore.LayoutTransition.push, config: [:], slots: [:], locked: false), CooeeCore.LayoutNode<CooeeCore.Placement>(id: "settings", content: CooeeCore.LayoutContent.component(CooeeCore.ComponentKind.settings), label: nil, place: CooeeCore.Placement(compact: CooeeCore.LayoutPlace.sheet, wide: CooeeCore.LayoutPlace.sheet), transition: CooeeCore.LayoutTransition.push, config: ["pages": CooeeCore.JSONValue.array([CooeeCore.JSONValue.string("look"), CooeeCore.JSONValue.string("notifications"), CooeeCore.JSONValue.string("appIcon"), CooeeCore.JSONValue.string("themeEditor")])], slots: [:], locked: false), CooeeCore.LayoutNode<CooeeCore.Placement>(id: "terminal", content: CooeeCore.LayoutContent.component(CooeeCore.ComponentKind.terminal), label: nil, place: CooeeCore.Placement(compact: CooeeCore.LayoutPlace.menu, wide: CooeeCore.LayoutPlace.menu), transition: CooeeCore.LayoutTransition.push, config: [:], slots: [:], locked: false), CooeeCore.LayoutNode<CooeeCore.Placement>(id: "reset-layout", content: CooeeCore.LayoutContent.screen(CooeeCore.LayoutSource.core, path: "/screens/reset-layout"), label: nil, place: CooeeCore.Placement(compact: CooeeCore.LayoutPlace.menu, wide: CooeeCore.LayoutPlace.menu), transition: CooeeCore.LayoutTransition.push, config: [:], slots: [:], locked: true)]]
+↳               locked → false
+↳             etag → ""
+↳           _broken → nil
+↳           _screens → []
+↳           _$observationRegistrar → ObservationStateRegistrar(id: ComposableArchitecture.ObservableStateID(storage: ComposableArchitecture.ObservableStateID.(unknown context at $10b3c0ae8).Storage), registrar: PerceptionCore.PerceptionRegistrar(rawValue: Observation.ObservationRegistrar(extent: Observation.ObservationRegistrar.(unknown context at $1b0057c0c).Extent), _isPerceptionCheckingEnabled: true, perceptionChecks: PerceptionCore._ManagedCriticalState<Swift.Dictionary<Swift.Int, Swift.Bool>>(buffer: PerceptionCore._ManagedCriticalState<Swift.Dictionary<Swift.Int, Swift.Bool>>.(unknown context at $10b3c4de8).LockedBuffer)))
+↳             id → ObservableStateID(storage: ComposableArchitecture.ObservableStateID.(unknown context at $10b3c0ae8).Storage)
+↳               storage → ComposableArchitecture.ObservableStateID.(unknown context at $10b3c0ae8).Storage
+↳                 id → .location(7F3B6BF9-EF61-4B3D-80A3-5DDF6CF57F13)
+↳                   location → 7F3B6BF9-EF61-4B3D-80A3-5DDF6CF57F13
+↳             registrar → PerceptionRegistrar(rawValue: Observation.ObservationRegistrar(extent: Observation.ObservationRegistrar.(unknown context at $1b0057c0c).Extent), _isPerceptionCheckingEnabled: true, perceptionChecks: PerceptionCore._ManagedCriticalState<Swift.Dictionary<Swift.Int, Swift.Bool>>(buffer: PerceptionCore._ManagedCriticalState<Swift.Dictionary<Swift.Int, Swift.Bool>>.(unknown context at $10b3c4de8).LockedBuffer))
+↳               rawValue → ObservationRegistrar(extent: Observation.ObservationRegistrar.(unknown context at $1b0057c0c).Extent)
+↳                 extent → Observation.ObservationRegistrar.(unknown context at $1b0057c0c).Extent
+↳                   context → Context(state: Observation._ManagedCriticalState<Observation.ObservationRegistrar.(unknown context at $1b0057c50).State>(buffer: Observation._ManagedCriticalState<Observation.ObservationRegistrar.(unknown context at $1b0057c50).State>.(unknown context at $1b0057aec).LockedBuffer))
+↳                     state → _ManagedCriticalState<State>(buffer: Observation._ManagedCriticalState<Observation.ObservationRegistrar.(unknown context at $1b0057c50).State>.(unknown context at $1b0057aec).LockedBuffer)
+↳               _isPerceptionCheckingEnabled → true
+↳               perceptionChecks → _ManagedCriticalState<Dictionary<Int, Bool>>(buffer: PerceptionCore._ManagedCriticalState<Swift.Dictionary<Swift.Int, Swift.Bool>>.(unknown context at $10b3c4de8).LockedBuffer)
+↳                 buffer → PerceptionCore._ManagedCriticalState<Swift.Dictionary<Swift.Int, Swift.Bool>>.(unknown context at $10b3c4de8).LockedBuffer
+↳         _persona → "nil"
+↳         _notice → nil
+↳         _$observationRegistrar → ObservationStateRegistrar(id: ComposableArchitecture.ObservableStateID(storage: ComposableArchitecture.ObservableStateID.(unknown context at $10b3c0ae8).Storage), registrar: PerceptionCore.PerceptionRegistrar(rawValue: Observation.ObservationRegistrar(extent: Observation.ObservationRegistrar.(unknown context at $1b0057c0c).Extent), _isPerceptionCheckingEnabled: true, perceptionChecks: PerceptionCore._ManagedCriticalState<Swift.Dictionary<Swift.Int, Swift.Bool>>(buffer: PerceptionCore._ManagedCriticalState<Swift.Dictionary<Swift.Int, Swift.Bool>>.(unknown context at $10b3c4de8).LockedBuffer)))
+↳           id → ObservableStateID(storage: ComposableArchitecture.ObservableStateID.(unknown context at $10b3c0ae8).Storage)
+↳             storage → ComposableArchitecture.ObservableStateID.(unknown context at $10b3c0ae8).Storage
+↳               id → .location(82D4D4B5-D2E9-4F5C-99F8-2BB6B84EF6BD)
+↳                 location → 82D4D4B5-D2E9-4F5C-99F8-2BB6B84EF6BD
+↳           registrar → PerceptionRegistrar(rawValue: Observation.ObservationRegistrar(extent: Observation.ObservationRegistrar.(unknown context at $1b0057c0c).Extent), _isPerceptionCheckingEnabled: true, perceptionChecks: PerceptionCore._ManagedCriticalState<Swift.Dictionary<Swift.Int, Swift.Bool>>(buffer: PerceptionCore._ManagedCriticalState<Swift.Dictionary<Swift.Int, Swift.Bool>>.(unknown context at $10b3c4de8).LockedBuffer))
+↳             rawValue → ObservationRegistrar(extent: Observation.ObservationRegistrar.(unknown context at $1b0057c0c).Extent)
+↳               extent → Observation.ObservationRegistrar.(unknown context at $1b0057c0c).Extent
+↳                 context → Context(state: Observation._ManagedCriticalState<Observation.ObservationRegistrar.(unknown context at $1b0057c50).State>(buffer: Observation._ManagedCriticalState<Observation.ObservationRegistrar.(unknown context at $1b0057c50).State>.(unknown context at $1b0057aec).LockedBuffer))
+↳                   state → _ManagedCriticalState<State>(buffer: Observation._ManagedCriticalState<Observation.ObservationRegistrar.(unknown context at $1b0057c50).State>.(unknown context at $1b0057aec).LockedBuffer)
+↳                     buffer → Observation._ManagedCriticalState<Observation.ObservationRegistrar.(unknown context at $1b0057c50).State>.(unknown context at $1b0057aec).LockedBuffer
+↳             _isPerceptionCheckingEnabled → true
+↳             perceptionChecks → _ManagedCriticalState<Dictionary<Int, Bool>>(buffer: PerceptionCore._ManagedCriticalState<Swift.Dictionary<Swift.Int, Swift.Bool>>.(unknown context at $10b3c4de8).LockedBuffer)
+↳               buffer → PerceptionCore._ManagedCriticalState<Swift.Dictionary<Swift.Int, Swift.Bool>>.(unknown context at $10b3c4de8).LockedBuffer
+↳       reducer → _DependencyKeyWritingReducer<AppFeature>(base: CooeeFeatures.AppFeature(_serverStore: Dependencies.Dependency<CooeeFeatures.ServerStore>(initialValues: Dependencies.DependencyValues(cachedValues: Dependencies.CachedValues, storage: [:]), installValues: nil, _environmentValues: SwiftUI.Environment<Dependencies.DependencyValues>(content: SwiftUI.Environment<Dependencies.DependencyValues>.Content.keyPath(\EnvironmentValues.dependencies)), keyPath: \DependencyValues.serverStore, filePath: "/Users/jkmacmini/.local/share/drover/work/cooee/issue-595/apple/Sources/CooeeFeatures/AppFeature.swift", fileID: "CooeeFeatures/AppFeature.swift", line: 52, column: 16), _loginItems: Dependencies.Dependency<CooeeFeatures.LoginItemsClient>(initialValues: Dependencies.DependencyValues(cachedValues: Dependencies.CachedValues, storage: [:]), installValues: nil, _environmentValues: SwiftUI.Environment<Dependencies.DependencyValues>(content: SwiftUI.Environment<Dependencies.DependencyValues>.Content.keyPath(\EnvironmentValues.dependencies)), keyPath: \DependencyValues.loginItems, filePath: "/Users/jkmacmini/.local/share/drover/work/cooee/issue-595/apple/Sources/CooeeFeatures/AppFeature.swift", fileID: "CooeeFeatures/AppFeature.swift", line: 53, column: 16), _push: Dependencies.Dependency<CooeeFeatures.PushClient>(initialValues: Dependencies.DependencyValues(cachedValues: Dependencies.CachedValues, storage: [:]), installValues: nil, _environmentValues: SwiftUI.Environment<Dependencies.DependencyValues>(content: SwiftUI.Environment<Dependencies.DependencyValues>.Content.keyPath(\EnvironmentValues.dependencies)), keyPath: \DependencyValues.push, filePath: "/Users/jkmacmini/.local/share/drover/work/cooee/issue-595/apple/Sources/CooeeFeatures/AppFeature.swift", fileID: "CooeeFeatures/AppFeature.swift", line: 54, column: 16), _now: Dependencies.Dependency<Foundation.Date>(initialValues: Dependencies.DependencyValues(cachedValues: Dependencies.CachedValues, storage: [:]), installValues: nil, _environmentValues: SwiftUI.Environment<Dependencies.DependencyValues>(content: SwiftUI.Environment<Dependencies.DependencyValues>.Content.keyPath(\EnvironmentValues.dependencies)), keyPath: \DependencyValues.date.now, filePath: "/Users/jkmacmini/.local/share/drover/work/cooee/issue-595/apple/Sources/CooeeFeatures/AppFeature.swift", fileID: "CooeeFeatures/AppFeature.swift", line: 55, column: 16)), update: (Function))
+↳         base → AppFeature(_serverStore: Dependencies.Dependency<CooeeFeatures.ServerStore>(initialValues: Dependencies.DependencyValues(cachedValues: Dependencies.CachedValues, storage: [:]), installValues: nil, _environmentValues: SwiftUI.Environment<Dependencies.DependencyValues>(content: SwiftUI.Environment<Dependencies.DependencyValues>.Content.keyPath(\EnvironmentValues.dependencies)), keyPath: \DependencyValues.serverStore, filePath: "/Users/jkmacmini/.local/share/drover/work/cooee/issue-595/apple/Sources/CooeeFeatures/AppFeature.swift", fileID: "CooeeFeatures/AppFeature.swift", line: 52, column: 16), _loginItems: Dependencies.Dependency<CooeeFeatures.LoginItemsClient>(initialValues: Dependencies.DependencyValues(cachedValues: Dependencies.CachedValues, storage: [:]), installValues: nil, _environmentValues: SwiftUI.Environment<Dependencies.DependencyValues>(content: SwiftUI.Environment<Dependencies.DependencyValues>.Content.keyPath(\EnvironmentValues.dependencies)), keyPath: \DependencyValues.loginItems, filePath: "/Users/jkmacmini/.local/share/drover/work/cooee/issue-595/apple/Sources/CooeeFeatures/AppFeature.swift", fileID: "CooeeFeatures/AppFeature.swift", line: 53, column: 16), _push: Dependencies.Dependency<CooeeFeatures.PushClient>(initialValues: Dependencies.DependencyValues(cachedValues: Dependencies.CachedValues, storage: [:]), installValues: nil, _environmentValues: SwiftUI.Environment<Dependencies.DependencyValues>(content: SwiftUI.Environment<Dependencies.DependencyValues>.Content.keyPath(\EnvironmentValues.dependencies)), keyPath: \DependencyValues.push, filePath: "/Users/jkmacmini/.local/share/drover/work/cooee/issue-595/apple/Sources/CooeeFeatures/AppFeature.swift", fileID: "CooeeFeatures/AppFeature.swift", line: 54, column: 16), _now: Dependencies.Dependency<Foundation.Date>(initialValues: Dependencies.DependencyValues(cachedValues: Dependencies.CachedValues, storage: [:]), installValues: nil, _environmentValues: SwiftUI.Environment<Dependencies.DependencyValues>(content: SwiftUI.Environment<Dependencies.DependencyValues>.Content.keyPath(\EnvironmentValues.dependencies)), keyPath: \DependencyValues.date.now, filePath: "/Users/jkmacmini/.local/share/drover/work/cooee/issue-595/apple/Sources/CooeeFeatures/AppFeature.swift", fileID: "CooeeFeatures/AppFeature.swift", line: 55, column: 16))
+↳           _serverStore → Dependency<ServerStore>(initialValues: Dependencies.DependencyValues(cachedValues: Dependencies.CachedValues, storage: [:]), installValues: nil, _environmentValues: SwiftUI.Environment<Dependencies.DependencyValues>(content: SwiftUI.Environment<Dependencies.DependencyValues>.Content.keyPath(\EnvironmentValues.dependencies)), keyPath: \DependencyValues.serverStore, filePath: "/Users/jkmacmini/.local/share/drover/work/cooee/issue-595/apple/Sources/CooeeFeatures/AppFeature.swift", fileID: "CooeeFeatures/AppFeature.swift", line: 52, column: 16)
+↳             initialValues → DependencyValues(cachedValues: Dependencies.CachedValues, storage: [:])
+↳               cachedValues → Dependencies.CachedValues
+↳                 lock → <NSRecursiveLock: 0x1031f0080>{recursion count = 0, name = nil}
+↳                 cached → [Dependencies.CachedValues.CacheKey(id: Dependencies.TypeIdentifier(id: ObjectIdentifier(0x000000010b44d290), base: Dependencies.DependencyContextKey), context: Dependencies.DependencyContext.test, testIdentifier: Optional(IssueReporting.TestContext.Testing.Test.ID(rawValue: AnyHashable(IssueReporting.Test.(unknown context at $10b3c2850).ID(moduleName: "CooeeAppTests", nameComponents: ["CooeeRootTests", "rebuildingTheRootKeepsItsStore()"], sourceLocation: Optional(IssueReporting.(unknown context at $10b3c2708).SourceLocation(fileID: "CooeeAppTests/CooeeRootTests.swift", _filePath: "/Users/jkmacmini/.local/share/drover/work/cooee/issue-595/apple/Tests/CooeeAppTests/CooeeRootTests.swift", line: 12, column: 6))))))): Dependencies.CachedValues.CachedValue(base: Dependencies.DependencyContext.test, preparationID: nil), Dependencies.CachedValues.CacheKey(id: Dependencies.TypeIdentifier(id: ObjectIdentifier(0x000000010b441fe8), base: ComposableArchitecture.(unknown context at $10b3c0404).NavigationIDPathKey), context: Dependencies.DependencyContext.test, testIdentifier: Optional(IssueReporting.TestContext.Testing.Test.ID(rawValue: AnyHashable(IssueReporting.Test.(unknown context at $10b3c2850).ID(moduleName: "CooeeAppTests", nameComponents: ["CooeeRootTests", "rebuildingTheRootKeepsItsStore()"], sourceLocation: Optional(IssueReporting.(unknown context at $10b3c2708).SourceLocation(fileID: "CooeeAppTests/CooeeRootTests.swift", _filePath: "/Users/jkmacmini/.local/share/drover/work/cooee/issue-595/apple/Tests/CooeeAppTests/CooeeRootTests.swift", line: 12, column: 6))))))): Dependencies.CachedValues.CachedValue(base: ComposableArchitecture.NavigationIDPath(path: []), preparationID: nil)]
+↳               storage → [:]
+↳             installValues → nil
+↳             _environmentValues → Environment<DependencyValues>(content: SwiftUI.Environment<Dependencies.DependencyValues>.Content.keyPath(\EnvironmentValues.dependencies))
+↳               content → keyPath(\EnvironmentValues.dependencies)
+↳                 keyPath → \EnvironmentValues.dependencies
+↳             keyPath → \DependencyValues.serverStore
+↳             filePath → /Users/jkmacmini/.local/share/drover/work/cooee/issue-595/apple/Sources/CooeeFeatures/AppFeature.swift
+↳             fileID → CooeeFeatures/AppFeature.swift
+↳             line → 52
+↳             column → 16
+↳           _loginItems → Dependency<LoginItemsClient>(initialValues: Dependencies.DependencyValues(cachedValues: Dependencies.CachedValues, storage: [:]), installValues: nil, _environmentValues: SwiftUI.Environment<Dependencies.DependencyValues>(content: SwiftUI.Environment<Dependencies.DependencyValues>.Content.keyPath(\EnvironmentValues.dependencies)), keyPath: \DependencyValues.loginItems, filePath: "/Users/jkmacmini/.local/share/drover/work/cooee/issue-595/apple/Sources/CooeeFeatures/AppFeature.swift", fileID: "CooeeFeatures/AppFeature.swift", line: 53, column: 16)
+↳             initialValues → DependencyValues(cachedValues: Dependencies.CachedValues, storage: [:])
+↳               cachedValues → Dependencies.CachedValues
+↳                 lock → <NSRecursiveLock: 0x1031f0080>{recursion count = 0, name = nil}
+↳                 cached → [Dependencies.CachedValues.CacheKey(id: Dependencies.TypeIdentifier(id: ObjectIdentifier(0x000000010b44d290), base: Dependencies.DependencyContextKey), context: Dependencies.DependencyContext.test, testIdentifier: Optional(IssueReporting.TestContext.Testing.Test.ID(rawValue: AnyHashable(IssueReporting.Test.(unknown context at $10b3c2850).ID(moduleName: "CooeeAppTests", nameComponents: ["CooeeRootTests", "rebuildingTheRootKeepsItsStore()"], sourceLocation: Optional(IssueReporting.(unknown context at $10b3c2708).SourceLocation(fileID: "CooeeAppTests/CooeeRootTests.swift", _filePath: "/Users/jkmacmini/.local/share/drover/work/cooee/issue-595/apple/Tests/CooeeAppTests/CooeeRootTests.swift", line: 12, column: 6))))))): Dependencies.CachedValues.CachedValue(base: Dependencies.DependencyContext.test, preparationID: nil), Dependencies.CachedValues.CacheKey(id: Dependencies.TypeIdentifier(id: ObjectIdentifier(0x000000010b441fe8), base: ComposableArchitecture.(unknown context at $10b3c0404).NavigationIDPathKey), context: Dependencies.DependencyContext.test, testIdentifier: Optional(IssueReporting.TestContext.Testing.Test.ID(rawValue: AnyHashable(IssueReporting.Test.(unknown context at $10b3c2850).ID(moduleName: "CooeeAppTests", nameComponents: ["CooeeRootTests", "rebuildingTheRootKeepsItsStore()"], sourceLocation: Optional(IssueReporting.(unknown context at $10b3c2708).SourceLocation(fileID: "CooeeAppTests/CooeeRootTests.swift", _filePath: "/Users/jkmacmini/.local/share/drover/work/cooee/issue-595/apple/Tests/CooeeAppTests/CooeeRootTests.swift", line: 12, column: 6))))))): Dependencies.CachedValues.CachedValue(base: ComposableArchitecture.NavigationIDPath(path: []), preparationID: nil)]
+↳               storage → [:]
+↳             installValues → nil
+↳             _environmentValues → Environment<DependencyValues>(content: SwiftUI.Environment<Dependencies.DependencyValues>.Content.keyPath(\EnvironmentValues.dependencies))
+↳               content → keyPath(\EnvironmentValues.dependencies)
+↳                 keyPath → \EnvironmentValues.dependencies
+↳             keyPath → \DependencyValues.loginItems
+↳             filePath → /Users/jkmacmini/.local/share/drover/work/cooee/issue-595/apple/Sources/CooeeFeatures/AppFeature.swift
+↳             fileID → CooeeFeatures/AppFeature.swift
+↳             line → 53
+↳             column → 16
+↳           _push → Dependency<PushClient>(initialValues: Dependencies.DependencyValues(cachedValues: Dependencies.CachedValues, storage: [:]), installValues: nil, _environmentValues: SwiftUI.Environment<Dependencies.DependencyValues>(content: SwiftUI.Environment<Dependencies.DependencyValues>.Content.keyPath(\EnvironmentValues.dependencies)), keyPath: \DependencyValues.push, filePath: "/Users/jkmacmini/.local/share/drover/work/cooee/issue-595/apple/Sources/CooeeFeatures/AppFeature.swift", fileID: "CooeeFeatures/AppFeature.swift", line: 54, column: 16)
+↳             initialValues → DependencyValues(cachedValues: Dependencies.CachedValues, storage: [:])
+↳               cachedValues → Dependencies.CachedValues
+↳                 lock → <NSRecursiveLock: 0x1031f0080>{recursion count = 0, name = nil}
+↳                 cached → [Dependencies.CachedValues.CacheKey(id: Dependencies.TypeIdentifier(id: ObjectIdentifier(0x000000010b44d290), base: Dependencies.DependencyContextKey), context: Dependencies.DependencyContext.test, testIdentifier: Optional(IssueReporting.TestContext.Testing.Test.ID(rawValue: AnyHashable(IssueReporting.Test.(unknown context at $10b3c2850).ID(moduleName: "CooeeAppTests", nameComponents: ["CooeeRootTests", "rebuildingTheRootKeepsItsStore()"], sourceLocation: Optional(IssueReporting.(unknown context at $10b3c2708).SourceLocation(fileID: "CooeeAppTests/CooeeRootTests.swift", _filePath: "/Users/jkmacmini/.local/share/drover/work/cooee/issue-595/apple/Tests/CooeeAppTests/CooeeRootTests.swift", line: 12, column: 6))))))): Dependencies.CachedValues.CachedValue(base: Dependencies.DependencyContext.test, preparationID: nil), Dependencies.CachedValues.CacheKey(id: Dependencies.TypeIdentifier(id: ObjectIdentifier(0x000000010b441fe8), base: ComposableArchitecture.(unknown context at $10b3c0404).NavigationIDPathKey), context: Dependencies.DependencyContext.test, testIdentifier: Optional(IssueReporting.TestContext.Testing.Test.ID(rawValue: AnyHashable(IssueReporting.Test.(unknown context at $10b3c2850).ID(moduleName: "CooeeAppTests", nameComponents: ["CooeeRootTests", "rebuildingTheRootKeepsItsStore()"], sourceLocation: Optional(IssueReporting.(unknown context at $10b3c2708).SourceLocation(fileID: "CooeeAppTests/CooeeRootTests.swift", _filePath: "/Users/jkmacmini/.local/share/drover/work/cooee/issue-595/apple/Tests/CooeeAppTests/CooeeRootTests.swift", line: 12, column: 6))))))): Dependencies.CachedValues.CachedValue(base: ComposableArchitecture.NavigationIDPath(path: []), preparationID: nil)]
+↳               storage → [:]
+↳             installValues → nil
+↳             _environmentValues → Environment<DependencyValues>(content: SwiftUI.Environment<Dependencies.DependencyValues>.Content.keyPath(\EnvironmentValues.dependencies))
+↳               content → keyPath(\EnvironmentValues.dependencies)
+↳                 keyPath → \EnvironmentValues.dependencies
+↳             keyPath → \DependencyValues.push
+↳             filePath → /Users/jkmacmini/.local/share/drover/work/cooee/issue-595/apple/Sources/CooeeFeatures/AppFeature.swift
+↳             fileID → CooeeFeatures/AppFeature.swift
+↳             line → 54
+↳             column → 16
+↳           _now → Dependency<Date>(initialValues: Dependencies.DependencyValues(cachedValues: Dependencies.CachedValues, storage: [:]), installValues: nil, _environmentValues: SwiftUI.Environment<Dependencies.DependencyValues>(content: SwiftUI.Environment<Dependencies.DependencyValues>.Content.keyPath(\EnvironmentValues.dependencies)), keyPath: \DependencyValues.date.now, filePath: "/Users/jkmacmini/.local/share/drover/work/cooee/issue-595/apple/Sources/CooeeFeatures/AppFeature.swift", fileID: "CooeeFeatures/AppFeature.swift", line: 55, column: 16)
+↳             initialValues → DependencyValues(cachedValues: Dependencies.CachedValues, storage: [:])
+↳               cachedValues → Dependencies.CachedValues
+↳                 lock → <NSRecursiveLock: 0x1031f0080>{recursion count = 0, name = nil}
+↳                 cached → [Dependencies.CachedValues.CacheKey(id: Dependencies.TypeIdentifier(id: ObjectIdentifier(0x000000010b44d290), base: Dependencies.DependencyContextKey), context: Dependencies.DependencyContext.test, testIdentifier: Optional(IssueReporting.TestContext.Testing.Test.ID(rawValue: AnyHashable(IssueReporting.Test.(unknown context at $10b3c2850).ID(moduleName: "CooeeAppTests", nameComponents: ["CooeeRootTests", "rebuildingTheRootKeepsItsStore()"], sourceLocation: Optional(IssueReporting.(unknown context at $10b3c2708).SourceLocation(fileID: "CooeeAppTests/CooeeRootTests.swift", _filePath: "/Users/jkmacmini/.local/share/drover/work/cooee/issue-595/apple/Tests/CooeeAppTests/CooeeRootTests.swift", line: 12, column: 6))))))): Dependencies.CachedValues.CachedValue(base: Dependencies.DependencyContext.test, preparationID: nil), Dependencies.CachedValues.CacheKey(id: Dependencies.TypeIdentifier(id: ObjectIdentifier(0x000000010b441fe8), base: ComposableArchitecture.(unknown context at $10b3c0404).NavigationIDPathKey), context: Dependencies.DependencyContext.test, testIdentifier: Optional(IssueReporting.TestContext.Testing.Test.ID(rawValue: AnyHashable(IssueReporting.Test.(unknown context at $10b3c2850).ID(moduleName: "CooeeAppTests", nameComponents: ["CooeeRootTests", "rebuildingTheRootKeepsItsStore()"], sourceLocation: Optional(IssueReporting.(unknown context at $10b3c2708).SourceLocation(fileID: "CooeeAppTests/CooeeRootTests.swift", _filePath: "/Users/jkmacmini/.local/share/drover/work/cooee/issue-595/apple/Tests/CooeeAppTests/CooeeRootTests.swift", line: 12, column: 6))))))): Dependencies.CachedValues.CachedValue(base: ComposableArchitecture.NavigationIDPath(path: []), preparationID: nil)]
+↳               storage → [:]
+↳             installValues → nil
+↳             _environmentValues → Environment<DependencyValues>(content: SwiftUI.Environment<Dependencies.DependencyValues>.Content.keyPath(\EnvironmentValues.dependencies))
+↳               content → keyPath(\EnvironmentValues.dependencies)
+↳                 keyPath → \EnvironmentValues.dependencies
+↳             keyPath → \DependencyValues.date.now
+↳             filePath → /Users/jkmacmini/.local/share/drover/work/cooee/issue-595/apple/Sources/CooeeFeatures/AppFeature.swift
+↳             fileID → CooeeFeatures/AppFeature.swift
+↳             line → 55
+↳             column → 16
+↳       didSet → ComposableArchitecture.CurrentValueRelay<()>
+↳         currentValue → ()
+↳         lock → 0x0000007b00c20300
+↳           pointerValue → 528293692160
+↳         subscriptions → [ComposableArchitecture.CurrentValueRelay<()>.(unknown context at $10b3be800).Subscription]
+↳       bufferedActions → []
+↳       effectCancellables → [:]
+↳       isSending → false
+↳     _$observationRegistrar → PerceptionRegistrar(rawValue: Observation.ObservationRegistrar(extent: Observation.ObservationRegistrar.(unknown context at $1b0057c0c).Extent), _isPerceptionCheckingEnabled: false, perceptionChecks: PerceptionCore._ManagedCriticalState<Swift.Dictionary<Swift.Int, Swift.Bool>>(buffer: PerceptionCore._ManagedCriticalState<Swift.Dictionary<Swift.Int, Swift.Bool>>.(unknown context at $10b3c4de8).LockedBuffer))
+↳       rawValue → ObservationRegistrar(extent: Observation.ObservationRegistrar.(unknown context at $1b0057c0c).Extent)
+↳         extent → Observation.ObservationRegistrar.(unknown context at $1b0057c0c).Extent
+↳           context → Context(state: Observation._ManagedCriticalState<Observation.ObservationRegistrar.(unknown context at $1b0057c50).State>(buffer: Observation._ManagedCriticalState<Observation.ObservationRegistrar.(unknown context at $1b0057c50).State>.(unknown context at $1b0057aec).LockedBuffer))
+↳             state → _ManagedCriticalState<State>(buffer: Observation._ManagedCriticalState<Observation.ObservationRegistrar.(unknown context at $1b0057c50).State>.(unknown context at $1b0057aec).LockedBuffer)
+↳               buffer → Observation._ManagedCriticalState<Observation.ObservationRegistrar.(unknown context at $1b0057c50).State>.(unknown context at $1b0057aec).LockedBuffer
+↳       _isPerceptionCheckingEnabled → false
+↳       perceptionChecks → _ManagedCriticalState<Dictionary<Int, Bool>>(buffer: PerceptionCore._ManagedCriticalState<Swift.Dictionary<Swift.Int, Swift.Bool>>.(unknown context at $10b3c4de8).LockedBuffer)
+↳         buffer → PerceptionCore._ManagedCriticalState<Swift.Dictionary<Swift.Int, Swift.Bool>>.(unknown context at $10b3c4de8).LockedBuffer
+↳     parentCancellable → Combine.AnyCancellable
+↳       some → Combine.AnyCancellable
+↳         storage → .cancellable(Sink)
+↳           cancellable → Sink
+↳         lock → 0x0000007b00c20510
+↳           pointerValue → 528293692688
+↳   rebuilt → StoreOf<AppFeature>
+↳     children → [:]
+↳     parent → nil
+↳     scopeID → nil
+↳     core → ComposableArchitecture.RootCore<ComposableArchitecture._DependencyKeyWritingReducer<CooeeFeatures.AppFeature>>
+↳       state → State(_home: nil, _pairing: Optional(CooeeFeatures.PairingFeature.State(_step: CooeeFeatures.PhoneStep.welcome, _address: "", _word: "", _until: 0001-01-01 00:00:00 +0000, _error: nil, _host: "", _url: nil, _claim: nil, _server: nil, _personas: [], _nearby: [], _browsing: false, _$observationRegistrar: ComposableArchitecture.ObservationStateRegistrar(id: ComposableArchitecture.ObservableStateID(storage: ComposableArchitecture.ObservableStateID.(unknown context at $10b3c0ae8).Storage), registrar: PerceptionCore.PerceptionRegistrar(rawValue: Observation.ObservationRegistrar(extent: Observation.ObservationRegistrar.(unknown context at $1b0057c0c).Extent), _isPerceptionCheckingEnabled: true, perceptionChecks: PerceptionCore._ManagedCriticalState<Swift.Dictionary<Swift.Int, Swift.Bool>>(buffer: PerceptionCore._ManagedCriticalState<Swift.Dictionary<Swift.Int, Swift.Bool>>.(unknown context at $10b3c4de8).LockedBuffer))))), _chat: nil, _newRoom: nil, _path: [], _menu: CooeeFeatures.MenuFeature.State(_server: nil, _settings: CooeeCore.Settings(scheme: CooeeCore.LookScheme.system, style: CooeeCore.StylePick.modern, theme: "farm", push: nil, icon: nil, motion: nil, sprites: nil, rooms: nil), _looks: CooeeCore.Looks(themes: [:], schemes: [:], broken: nil, styles: nil), _open: false, _path: [], _screen: nil, _page: "nil", _editor: nil, _saved: nil, _busy: false, _error: nil, _notice: nil, _$observationRegistrar: ComposableArchitecture.ObservationStateRegistrar(id: ComposableArchitecture.ObservableStateID(storage: ComposableArchitecture.ObservableStateID.(unknown context at $10b3c0ae8).Storage), registrar: PerceptionCore.PerceptionRegistrar(rawValue: Observation.ObservationRegistrar(extent: Observation.ObservationRegistrar.(unknown context at $1b0057c0c).Extent), _isPerceptionCheckingEnabled: true, perceptionChecks: PerceptionCore._ManagedCriticalState<Swift.Dictionary<Swift.Int, Swift.Bool>>(buffer: PerceptionCore._ManagedCriticalState<Swift.Dictionary<Swift.Int, Swift.Bool>>.(unknown context at $10b3c4de8).LockedBuffer)))), _terminal: CooeeFeatures.TerminalFeature.State(_server: nil, _size: nil, _shells: [], _current: nil, _screen: CooeeCore.TerminalScreen(rows: [], cursor: (row: 0, column: 0)), _ctrl: false, _note: nil, _sending: false, _pending: [], _$observationRegistrar: ComposableArchitecture.ObservationStateRegistrar(id: ComposableArchitecture.ObservableStateID(storage: ComposableArchitecture.ObservableStateID.(unknown context at $10b3c0ae8).Storage), registrar: PerceptionCore.PerceptionRegistrar(rawValue: Observation.ObservationRegistrar(extent: Observation.ObservationRegistrar.(unknown context at $1b0057c0c).Extent), _isPerceptionCheckingEnabled: true, perceptionChecks: PerceptionCore._ManagedCriticalState<Swift.Dictionary<Swift.Int, Swift.Bool>>(buffer: PerceptionCore._ManagedCriticalState<Swift.Dictionary<Swift.Int, Swift.Bool>>.(unknown context at $10b3c4de8).LockedBuffer)))), _layout: CooeeFeatures.LayoutFeature.State(_server: nil, _layout: CooeeCore.Layout(format: 1, theme: nil, root: CooeeCore.LayoutNode<CooeeCore.Placement>(id: "nav", content: CooeeCore.LayoutContent.component(CooeeCore.ComponentKind.nav), label: nil, place: CooeeCore.Placement(compact: CooeeCore.LayoutPlace.inline, wide: CooeeCore.LayoutPlace.inline), transition: CooeeCore.LayoutTransition.push, config: [:], slots: ["main": [CooeeCore.LayoutNode<CooeeCore.Placement>(id: "home", content: CooeeCore.LayoutContent.screen(CooeeCore.LayoutSource.core, path: "/screens/home"), label: nil, place: CooeeCore.Placement(compact: CooeeCore.LayoutPlace.push, wide: CooeeCore.LayoutPlace.panel), transition: CooeeCore.LayoutTransition.push, config: [:], slots: [:], locked: false), CooeeCore.LayoutNode<CooeeCore.Placement>(id: "chat", content: CooeeCore.LayoutContent.component(CooeeCore.ComponentKind.chat), label: nil, place: CooeeCore.Placement(compact: CooeeCore.LayoutPlace.push, wide: CooeeCore.LayoutPlace.push), transition: CooeeCore.LayoutTransition.push, config: ["stop": CooeeCore.JSONValue.bool(true), "composer": CooeeCore.JSONValue.bool(true)], slots: [:], locked: false), CooeeCore.LayoutNode<CooeeCore.Placement>(id: "pairing", content: CooeeCore.LayoutContent.screen(CooeeCore.LayoutSource.core, path: "/screens/pairing"), label: nil, place: CooeeCore.Placement(compact: CooeeCore.LayoutPlace.push, wide: CooeeCore.LayoutPlace.push), transition: CooeeCore.LayoutTransition.push, config: [:], slots: [:], locked: true)], "side": [CooeeCore.LayoutNode<CooeeCore.Placement>(id: "sidebar", content: CooeeCore.LayoutContent.component(CooeeCore.ComponentKind.sidebar), label: nil, place: CooeeCore.Placement(compact: CooeeCore.LayoutPlace.menu, wide: CooeeCore.LayoutPlace.column), transition: CooeeCore.LayoutTransition.push, config: [:], slots: [:], locked: false)], "menu": [CooeeCore.LayoutNode<CooeeCore.Placement>(id: "menu", content: CooeeCore.LayoutContent.screen(CooeeCore.LayoutSource.core, path: "/screens/menu"), label: nil, place: CooeeCore.Placement(compact: CooeeCore.LayoutPlace.sheet, wide: CooeeCore.LayoutPlace.sheet), transition: CooeeCore.LayoutTransition.push, config: [:], slots: [:], locked: false), CooeeCore.LayoutNode<CooeeCore.Placement>(id: "settings", content: CooeeCore.LayoutContent.component(CooeeCore.ComponentKind.settings), label: nil, place: CooeeCore.Placement(compact: CooeeCore.LayoutPlace.sheet, wide: CooeeCore.LayoutPlace.sheet), transition: CooeeCore.LayoutTransition.push, config: ["pages": CooeeCore.JSONValue.array([CooeeCore.JSONValue.string("look"), CooeeCore.JSONValue.string("notifications"), CooeeCore.JSONValue.string("appIcon"), CooeeCore.JSONValue.string("themeEditor")])], slots: [:], locked: false), CooeeCore.LayoutNode<CooeeCore.Placement>(id: "terminal", content: CooeeCore.LayoutContent.component(CooeeCore.ComponentKind.terminal), label: nil, place: CooeeCore.Placement(compact: CooeeCore.LayoutPlace.menu, wide: CooeeCore.LayoutPlace.menu), transition: CooeeCore.LayoutTransition.push, config: [:], slots: [:], locked: false), CooeeCore.LayoutNode<CooeeCore.Placement>(id: "reset-layout", content: CooeeCore.LayoutContent.screen(CooeeCore.LayoutSource.core, path: "/screens/reset-layout"), label: nil, place: CooeeCore.Placement(compact: CooeeCore.LayoutPlace.menu, wide: CooeeCore.LayoutPlace.menu), transition: CooeeCore.LayoutTransition.push, config: [:], slots: [:], locked: true)]], locked: false), etag: ""), _broken: nil, _screens: IdentifiedArray<State>([]), _$observationRegistrar: ComposableArchitecture.ObservationStateRegistrar(id: ComposableArchitecture.ObservableStateID(storage: ComposableArchitecture.ObservableStateID.(unknown context at $10b3c0ae8).Storage), registrar: PerceptionCore.PerceptionRegistrar(rawValue: Observation.ObservationRegistrar(extent: Observation.ObservationRegistrar.(unknown context at $1b0057c0c).Extent), _isPerceptionCheckingEnabled: true, perceptionChecks: PerceptionCore._ManagedCriticalState<Swift.Dictionary<Swift.Int, Swift.Bool>>(buffer: PerceptionCore._ManagedCriticalState<Swift.Dictionary<Swift.Int, Swift.Bool>>.(unknown context at $10b3c4de8).LockedBuffer)))), _persona: "nil", _notice: nil, _$observationRegistrar: ComposableArchitecture.ObservationStateRegistrar(id: ComposableArchitecture.ObservableStateID(storage: ComposableArchitecture.ObservableStateID.(unknown context at $10b3c0ae8).Storage), registrar: PerceptionCore.PerceptionRegistrar(rawValue: Observation.ObservationRegistrar(extent: Observation.ObservationRegistrar.(unknown context at $1b0057c0c).Extent), _isPerceptionCheckingEnabled: true, perceptionChecks: PerceptionCore._ManagedCriticalState<Swift.Dictionary<Swift.Int, Swift.Bool>>(buffer: PerceptionCore._ManagedCriticalState<Swift.Dictionary<Swift.Int, Swift.Bool>>.(unknown context at $10b3c4de8).LockedBuffer))))
+↳         _home → nil
+↳         _pairing → State(_step: CooeeFeatures.PhoneStep.welcome, _address: "", _word: "", _until: 0001-01-01 00:00:00 +0000, _error: nil, _host: "", _url: nil, _claim: nil, _server: nil, _personas: [], _nearby: [], _browsing: false, _$observationRegistrar: ComposableArchitecture.ObservationStateRegistrar(id: ComposableArchitecture.ObservableStateID(storage: ComposableArchitecture.ObservableStateID.(unknown context at $10b3c0ae8).Storage), registrar: PerceptionCore.PerceptionRegistrar(rawValue: Observation.ObservationRegistrar(extent: Observation.ObservationRegistrar.(unknown context at $1b0057c0c).Extent), _isPerceptionCheckingEnabled: true, perceptionChecks: PerceptionCore._ManagedCriticalState<Swift.Dictionary<Swift.Int, Swift.Bool>>(buffer: PerceptionCore._ManagedCriticalState<Swift.Dictionary<Swift.Int, Swift.Bool>>.(unknown context at $10b3c4de8).LockedBuffer))))
+↳           some → State(_step: CooeeFeatures.PhoneStep.welcome, _address: "", _word: "", _until: 0001-01-01 00:00:00 +0000, _error: nil, _host: "", _url: nil, _claim: nil, _server: nil, _personas: [], _nearby: [], _browsing: false, _$observationRegistrar: ComposableArchitecture.ObservationStateRegistrar(id: ComposableArchitecture.ObservableStateID(storage: ComposableArchitecture.ObservableStateID.(unknown context at $10b3c0ae8).Storage), registrar: PerceptionCore.PerceptionRegistrar(rawValue: Observation.ObservationRegistrar(extent: Observation.ObservationRegistrar.(unknown context at $1b0057c0c).Extent), _isPerceptionCheckingEnabled: true, perceptionChecks: PerceptionCore._ManagedCriticalState<Swift.Dictionary<Swift.Int, Swift.Bool>>(buffer: PerceptionCore._ManagedCriticalState<Swift.Dictionary<Swift.Int, Swift.Bool>>.(unknown context at $10b3c4de8).LockedBuffer))))
+↳             _step → .welcome
+↳             _address → ""
+↳             _word → ""
+↳             _until → 0001-01-01 00:00:00 +0000
+↳               timeIntervalSinceReferenceDate → -63114076800.0
+↳             _error → nil
+↳             _host → ""
+↳             _url → nil
+↳             _claim → nil
+↳             _server → nil
+↳             _personas → []
+↳             _nearby → []
+↳             _browsing → false
+↳             _$observationRegistrar → ObservationStateRegistrar(id: ComposableArchitecture.ObservableStateID(storage: ComposableArchitecture.ObservableStateID.(unknown context at $10b3c0ae8).Storage), registrar: PerceptionCore.PerceptionRegistrar(rawValue: Observation.ObservationRegistrar(extent: Observation.ObservationRegistrar.(unknown context at $1b0057c0c).Extent), _isPerceptionCheckingEnabled: true, perceptionChecks: PerceptionCore._ManagedCriticalState<Swift.Dictionary<Swift.Int, Swift.Bool>>(buffer: PerceptionCore._ManagedCriticalState<Swift.Dictionary<Swift.Int, Swift.Bool>>.(unknown context at $10b3c4de8).LockedBuffer)))
+↳               id → ObservableStateID(storage: ComposableArchitecture.ObservableStateID.(unknown context at $10b3c0ae8).Storage)
+↳                 storage → ComposableArchitecture.ObservableStateID.(unknown context at $10b3c0ae8).Storage
+↳                   id → .location(F379B785-BE7A-459A-B97C-5AD24E1E0DC6)
+↳                     location → F379B785-BE7A-459A-B97C-5AD24E1E0DC6
+↳               registrar → PerceptionRegistrar(rawValue: Observation.ObservationRegistrar(extent: Observation.ObservationRegistrar.(unknown context at $1b0057c0c).Extent), _isPerceptionCheckingEnabled: true, perceptionChecks: PerceptionCore._ManagedCriticalState<Swift.Dictionary<Swift.Int, Swift.Bool>>(buffer: PerceptionCore._ManagedCriticalState<Swift.Dictionary<Swift.Int, Swift.Bool>>.(unknown context at $10b3c4de8).LockedBuffer))
+↳                 rawValue → ObservationRegistrar(extent: Observation.ObservationRegistrar.(unknown context at $1b0057c0c).Extent)
+↳                   extent → Observation.ObservationRegistrar.(unknown context at $1b0057c0c).Extent
+↳                     context → Context(state: Observation._ManagedCriticalState<Observation.ObservationRegistrar.(unknown context at $1b0057c50).State>(buffer: Observation._ManagedCriticalState<Observation.ObservationRegistrar.(unknown context at $1b0057c50).State>.(unknown context at $1b0057aec).LockedBuffer))
+↳                 _isPerceptionCheckingEnabled → true
+↳                 perceptionChecks → _ManagedCriticalState<Dictionary<Int, Bool>>(buffer: PerceptionCore._ManagedCriticalState<Swift.Dictionary<Swift.Int, Swift.Bool>>.(unknown context at $10b3c4de8).LockedBuffer)
+↳                   buffer → PerceptionCore._ManagedCriticalState<Swift.Dictionary<Swift.Int, Swift.Bool>>.(unknown context at $10b3c4de8).LockedBuffer
+↳         _chat → nil
+↳         _newRoom → nil
+↳         _path → []
+↳         _menu → State(_server: nil, _settings: CooeeCore.Settings(scheme: CooeeCore.LookScheme.system, style: CooeeCore.StylePick.modern, theme: "farm", push: nil, icon: nil, motion: nil, sprites: nil, rooms: nil), _looks: CooeeCore.Looks(themes: [:], schemes: [:], broken: nil, styles: nil), _open: false, _path: [], _screen: nil, _page: "nil", _editor: nil, _saved: nil, _busy: false, _error: nil, _notice: nil, _$observationRegistrar: ComposableArchitecture.ObservationStateRegistrar(id: ComposableArchitecture.ObservableStateID(storage: ComposableArchitecture.ObservableStateID.(unknown context at $10b3c0ae8).Storage), registrar: PerceptionCore.PerceptionRegistrar(rawValue: Observation.ObservationRegistrar(extent: Observation.ObservationRegistrar.(unknown context at $1b0057c0c).Extent), _isPerceptionCheckingEnabled: true, perceptionChecks: PerceptionCore._ManagedCriticalState<Swift.Dictionary<Swift.Int, Swift.Bool>>(buffer: PerceptionCore._ManagedCriticalState<Swift.Dictionary<Swift.Int, Swift.Bool>>.(unknown context at $10b3c4de8).LockedBuffer))))
+↳           _server → nil
+↳           _settings → Settings(scheme: CooeeCore.LookScheme.system, style: CooeeCore.StylePick.modern, theme: "farm", push: nil, icon: nil, motion: nil, sprites: nil, rooms: nil)
+↳             scheme → .system
+↳             style → .modern
+↳             theme → "farm"
+↳             push → nil
+↳             icon → nil
+↳             motion → nil
+↳             sprites → nil
+↳             rooms → nil
+↳           _looks → Looks(themes: [:], schemes: [:], broken: nil, styles: nil)
+↳             themes → [:]
+↳             schemes → [:]
+↳             broken → nil
+↳             styles → nil
+↳           _open → false
+↳           _path → []
+↳           _screen → nil
+↳           _page → "nil"
+↳           _editor → nil
+↳           _saved → nil
+↳           _busy → false
+↳           _error → nil
+↳           _notice → nil
+↳           _$observationRegistrar → ObservationStateRegistrar(id: ComposableArchitecture.ObservableStateID(storage: ComposableArchitecture.ObservableStateID.(unknown context at $10b3c0ae8).Storage), registrar: PerceptionCore.PerceptionRegistrar(rawValue: Observation.ObservationRegistrar(extent: Observation.ObservationRegistrar.(unknown context at $1b0057c0c).Extent), _isPerceptionCheckingEnabled: true, perceptionChecks: PerceptionCore._ManagedCriticalState<Swift.Dictionary<Swift.Int, Swift.Bool>>(buffer: PerceptionCore._ManagedCriticalState<Swift.Dictionary<Swift.Int, Swift.Bool>>.(unknown context at $10b3c4de8).LockedBuffer)))
+↳             id → ObservableStateID(storage: ComposableArchitecture.ObservableStateID.(unknown context at $10b3c0ae8).Storage)
+↳               storage → ComposableArchitecture.ObservableStateID.(unknown context at $10b3c0ae8).Storage
+↳                 id → .location(3AE04FE2-78BA-4804-8135-D3A5FC06F5D4)
+↳                   location → 3AE04FE2-78BA-4804-8135-D3A5FC06F5D4
+↳             registrar → PerceptionRegistrar(rawValue: Observation.ObservationRegistrar(extent: Observation.ObservationRegistrar.(unknown context at $1b0057c0c).Extent), _isPerceptionCheckingEnabled: true, perceptionChecks: PerceptionCore._ManagedCriticalState<Swift.Dictionary<Swift.Int, Swift.Bool>>(buffer: PerceptionCore._ManagedCriticalState<Swift.Dictionary<Swift.Int, Swift.Bool>>.(unknown context at $10b3c4de8).LockedBuffer))
+↳               rawValue → ObservationRegistrar(extent: Observation.ObservationRegistrar.(unknown context at $1b0057c0c).Extent)
+↳                 extent → Observation.ObservationRegistrar.(unknown context at $1b0057c0c).Extent
+↳                   context → Context(state: Observation._ManagedCriticalState<Observation.ObservationRegistrar.(unknown context at $1b0057c50).State>(buffer: Observation._ManagedCriticalState<Observation.ObservationRegistrar.(unknown context at $1b0057c50).State>.(unknown context at $1b0057aec).LockedBuffer))
+↳                     state → _ManagedCriticalState<State>(buffer: Observation._ManagedCriticalState<Observation.ObservationRegistrar.(unknown context at $1b0057c50).State>.(unknown context at $1b0057aec).LockedBuffer)
+↳               _isPerceptionCheckingEnabled → true
+↳               perceptionChecks → _ManagedCriticalState<Dictionary<Int, Bool>>(buffer: PerceptionCore._ManagedCriticalState<Swift.Dictionary<Swift.Int, Swift.Bool>>.(unknown context at $10b3c4de8).LockedBuffer)
+↳                 buffer → PerceptionCore._ManagedCriticalState<Swift.Dictionary<Swift.Int, Swift.Bool>>.(unknown context at $10b3c4de8).LockedBuffer
+↳         _terminal → State(_server: nil, _size: nil, _shells: [], _current: nil, _screen: CooeeCore.TerminalScreen(rows: [], cursor: (row: 0, column: 0)), _ctrl: false, _note: nil, _sending: false, _pending: [], _$observationRegistrar: ComposableArchitecture.ObservationStateRegistrar(id: ComposableArchitecture.ObservableStateID(storage: ComposableArchitecture.ObservableStateID.(unknown context at $10b3c0ae8).Storage), registrar: PerceptionCore.PerceptionRegistrar(rawValue: Observation.ObservationRegistrar(extent: Observation.ObservationRegistrar.(unknown context at $1b0057c0c).Extent), _isPerceptionCheckingEnabled: true, perceptionChecks: PerceptionCore._ManagedCriticalState<Swift.Dictionary<Swift.Int, Swift.Bool>>(buffer: PerceptionCore._ManagedCriticalState<Swift.Dictionary<Swift.Int, Swift.Bool>>.(unknown context at $10b3c4de8).LockedBuffer))))
+↳           _server → nil
+↳           _size → nil
+↳           _shells → []
+↳           _current → nil
+↳           _screen → TerminalScreen(rows: [], cursor: (row: 0, column: 0))
+↳             rows → []
+↳             cursor → (row: 0, column: 0)
+↳               row → 0
+↳               column → 0
+↳           _ctrl → false
+↳           _note → nil
+↳           _sending → false
+↳           _pending → []
+↳           _$observationRegistrar → ObservationStateRegistrar(id: ComposableArchitecture.ObservableStateID(storage: ComposableArchitecture.ObservableStateID.(unknown context at $10b3c0ae8).Storage), registrar: PerceptionCore.PerceptionRegistrar(rawValue: Observation.ObservationRegistrar(extent: Observation.ObservationRegistrar.(unknown context at $1b0057c0c).Extent), _isPerceptionCheckingEnabled: true, perceptionChecks: PerceptionCore._ManagedCriticalState<Swift.Dictionary<Swift.Int, Swift.Bool>>(buffer: PerceptionCore._ManagedCriticalState<Swift.Dictionary<Swift.Int, Swift.Bool>>.(unknown context at $10b3c4de8).LockedBuffer)))
+↳             id → ObservableStateID(storage: ComposableArchitecture.ObservableStateID.(unknown context at $10b3c0ae8).Storage)
+↳               storage → ComposableArchitecture.ObservableStateID.(unknown context at $10b3c0ae8).Storage
+↳                 id → .location(14892B55-F0E0-46BC-8ED1-711F7CF39B7A)
+↳                   location → 14892B55-F0E0-46BC-8ED1-711F7CF39B7A
+↳             registrar → PerceptionRegistrar(rawValue: Observation.ObservationRegistrar(extent: Observation.ObservationRegistrar.(unknown context at $1b0057c0c).Extent), _isPerceptionCheckingEnabled: true, perceptionChecks: PerceptionCore._ManagedCriticalState<Swift.Dictionary<Swift.Int, Swift.Bool>>(buffer: PerceptionCore._ManagedCriticalState<Swift.Dictionary<Swift.Int, Swift.Bool>>.(unknown context at $10b3c4de8).LockedBuffer))
+↳               rawValue → ObservationRegistrar(extent: Observation.ObservationRegistrar.(unknown context at $1b0057c0c).Extent)
+↳                 extent → Observation.ObservationRegistrar.(unknown context at $1b0057c0c).Extent
+↳                   context → Context(state: Observation._ManagedCriticalState<Observation.ObservationRegistrar.(unknown context at $1b0057c50).State>(buffer: Observation._ManagedCriticalState<Observation.ObservationRegistrar.(unknown context at $1b0057c50).State>.(unknown context at $1b0057aec).LockedBuffer))
+↳                     state → _ManagedCriticalState<State>(buffer: Observation._ManagedCriticalState<Observation.ObservationRegistrar.(unknown context at $1b0057c50).State>.(unknown context at $1b0057aec).LockedBuffer)
+↳               _isPerceptionCheckingEnabled → true
+↳               perceptionChecks → _ManagedCriticalState<Dictionary<Int, Bool>>(buffer: PerceptionCore._ManagedCriticalState<Swift.Dictionary<Swift.Int, Swift.Bool>>.(unknown context at $10b3c4de8).LockedBuffer)
+↳                 buffer → PerceptionCore._ManagedCriticalState<Swift.Dictionary<Swift.Int, Swift.Bool>>.(unknown context at $10b3c4de8).LockedBuffer
+↳         _layout → State(_server: nil, _layout: CooeeCore.Layout(format: 1, theme: nil, root: CooeeCore.LayoutNode<CooeeCore.Placement>(id: "nav", content: CooeeCore.LayoutContent.component(CooeeCore.ComponentKind.nav), label: nil, place: CooeeCore.Placement(compact: CooeeCore.LayoutPlace.inline, wide: CooeeCore.LayoutPlace.inline), transition: CooeeCore.LayoutTransition.push, config: [:], slots: ["main": [CooeeCore.LayoutNode<CooeeCore.Placement>(id: "home", content: CooeeCore.LayoutContent.screen(CooeeCore.LayoutSource.core, path: "/screens/home"), label: nil, place: CooeeCore.Placement(compact: CooeeCore.LayoutPlace.push, wide: CooeeCore.LayoutPlace.panel), transition: CooeeCore.LayoutTransition.push, config: [:], slots: [:], locked: false), CooeeCore.LayoutNode<CooeeCore.Placement>(id: "chat", content: CooeeCore.LayoutContent.component(CooeeCore.ComponentKind.chat), label: nil, place: CooeeCore.Placement(compact: CooeeCore.LayoutPlace.push, wide: CooeeCore.LayoutPlace.push), transition: CooeeCore.LayoutTransition.push, config: ["stop": CooeeCore.JSONValue.bool(true), "composer": CooeeCore.JSONValue.bool(true)], slots: [:], locked: false), CooeeCore.LayoutNode<CooeeCore.Placement>(id: "pairing", content: CooeeCore.LayoutContent.screen(CooeeCore.LayoutSource.core, path: "/screens/pairing"), label: nil, place: CooeeCore.Placement(compact: CooeeCore.LayoutPlace.push, wide: CooeeCore.LayoutPlace.push), transition: CooeeCore.LayoutTransition.push, config: [:], slots: [:], locked: true)], "side": [CooeeCore.LayoutNode<CooeeCore.Placement>(id: "sidebar", content: CooeeCore.LayoutContent.component(CooeeCore.ComponentKind.sidebar), label: nil, place: CooeeCore.Placement(compact: CooeeCore.LayoutPlace.menu, wide: CooeeCore.LayoutPlace.column), transition: CooeeCore.LayoutTransition.push, config: [:], slots: [:], locked: false)], "menu": [CooeeCore.LayoutNode<CooeeCore.Placement>(id: "menu", content: CooeeCore.LayoutContent.screen(CooeeCore.LayoutSource.core, path: "/screens/menu"), label: nil, place: CooeeCore.Placement(compact: CooeeCore.LayoutPlace.sheet, wide: CooeeCore.LayoutPlace.sheet), transition: CooeeCore.LayoutTransition.push, config: [:], slots: [:], locked: false), CooeeCore.LayoutNode<CooeeCore.Placement>(id: "settings", content: CooeeCore.LayoutContent.component(CooeeCore.ComponentKind.settings), label: nil, place: CooeeCore.Placement(compact: CooeeCore.LayoutPlace.sheet, wide: CooeeCore.LayoutPlace.sheet), transition: CooeeCore.LayoutTransition.push, config: ["pages": CooeeCore.JSONValue.array([CooeeCore.JSONValue.string("look"), CooeeCore.JSONValue.string("notifications"), CooeeCore.JSONValue.string("appIcon"), CooeeCore.JSONValue.string("themeEditor")])], slots: [:], locked: false), CooeeCore.LayoutNode<CooeeCore.Placement>(id: "terminal", content: CooeeCore.LayoutContent.component(CooeeCore.ComponentKind.terminal), label: nil, place: CooeeCore.Placement(compact: CooeeCore.LayoutPlace.menu, wide: CooeeCore.LayoutPlace.menu), transition: CooeeCore.LayoutTransition.push, config: [:], slots: [:], locked: false), CooeeCore.LayoutNode<CooeeCore.Placement>(id: "reset-layout", content: CooeeCore.LayoutContent.screen(CooeeCore.LayoutSource.core, path: "/screens/reset-layout"), label: nil, place: CooeeCore.Placement(compact: CooeeCore.LayoutPlace.menu, wide: CooeeCore.LayoutPlace.menu), transition: CooeeCore.LayoutTransition.push, config: [:], slots: [:], locked: true)]], locked: false), etag: ""), _broken: nil, _screens: IdentifiedArray<State>([]), _$observationRegistrar: ComposableArchitecture.ObservationStateRegistrar(id: ComposableArchitecture.ObservableStateID(storage: ComposableArchitecture.ObservableStateID.(unknown context at $10b3c0ae8).Storage), registrar: PerceptionCore.PerceptionRegistrar(rawValue: Observation.ObservationRegistrar(extent: Observation.ObservationRegistrar.(unknown context at $1b0057c0c).Extent), _isPerceptionCheckingEnabled: true, perceptionChecks: PerceptionCore._ManagedCriticalState<Swift.Dictionary<Swift.Int, Swift.Bool>>(buffer: PerceptionCore._ManagedCriticalState<Swift.Dictionary<Swift.Int, Swift.Bool>>.(unknown context at $10b3c4de8).LockedBuffer))))
+↳           _server → nil
+↳           _layout → Layout(format: 1, theme: nil, root: CooeeCore.LayoutNode<CooeeCore.Placement>(id: "nav", content: CooeeCore.LayoutContent.component(CooeeCore.ComponentKind.nav), label: nil, place: CooeeCore.Placement(compact: CooeeCore.LayoutPlace.inline, wide: CooeeCore.LayoutPlace.inline), transition: CooeeCore.LayoutTransition.push, config: [:], slots: ["main": [CooeeCore.LayoutNode<CooeeCore.Placement>(id: "home", content: CooeeCore.LayoutContent.screen(CooeeCore.LayoutSource.core, path: "/screens/home"), label: nil, place: CooeeCore.Placement(compact: CooeeCore.LayoutPlace.push, wide: CooeeCore.LayoutPlace.panel), transition: CooeeCore.LayoutTransition.push, config: [:], slots: [:], locked: false), CooeeCore.LayoutNode<CooeeCore.Placement>(id: "chat", content: CooeeCore.LayoutContent.component(CooeeCore.ComponentKind.chat), label: nil, place: CooeeCore.Placement(compact: CooeeCore.LayoutPlace.push, wide: CooeeCore.LayoutPlace.push), transition: CooeeCore.LayoutTransition.push, config: ["stop": CooeeCore.JSONValue.bool(true), "composer": CooeeCore.JSONValue.bool(true)], slots: [:], locked: false), CooeeCore.LayoutNode<CooeeCore.Placement>(id: "pairing", content: CooeeCore.LayoutContent.screen(CooeeCore.LayoutSource.core, path: "/screens/pairing"), label: nil, place: CooeeCore.Placement(compact: CooeeCore.LayoutPlace.push, wide: CooeeCore.LayoutPlace.push), transition: CooeeCore.LayoutTransition.push, config: [:], slots: [:], locked: true)], "side": [CooeeCore.LayoutNode<CooeeCore.Placement>(id: "sidebar", content: CooeeCore.LayoutContent.component(CooeeCore.ComponentKind.sidebar), label: nil, place: CooeeCore.Placement(compact: CooeeCore.LayoutPlace.menu, wide: CooeeCore.LayoutPlace.column), transition: CooeeCore.LayoutTransition.push, config: [:], slots: [:], locked: false)], "menu": [CooeeCore.LayoutNode<CooeeCore.Placement>(id: "menu", content: CooeeCore.LayoutContent.screen(CooeeCore.LayoutSource.core, path: "/screens/menu"), label: nil, place: CooeeCore.Placement(compact: CooeeCore.LayoutPlace.sheet, wide: CooeeCore.LayoutPlace.sheet), transition: CooeeCore.LayoutTransition.push, config: [:], slots: [:], locked: false), CooeeCore.LayoutNode<CooeeCore.Placement>(id: "settings", content: CooeeCore.LayoutContent.component(CooeeCore.ComponentKind.settings), label: nil, place: CooeeCore.Placement(compact: CooeeCore.LayoutPlace.sheet, wide: CooeeCore.LayoutPlace.sheet), transition: CooeeCore.LayoutTransition.push, config: ["pages": CooeeCore.JSONValue.array([CooeeCore.JSONValue.string("look"), CooeeCore.JSONValue.string("notifications"), CooeeCore.JSONValue.string("appIcon"), CooeeCore.JSONValue.string("themeEditor")])], slots: [:], locked: false), CooeeCore.LayoutNode<CooeeCore.Placement>(id: "terminal", content: CooeeCore.LayoutContent.component(CooeeCore.ComponentKind.terminal), label: nil, place: CooeeCore.Placement(compact: CooeeCore.LayoutPlace.menu, wide: CooeeCore.LayoutPlace.menu), transition: CooeeCore.LayoutTransition.push, config: [:], slots: [:], locked: false), CooeeCore.LayoutNode<CooeeCore.Placement>(id: "reset-layout", content: CooeeCore.LayoutContent.screen(CooeeCore.LayoutSource.core, path: "/screens/reset-layout"), label: nil, place: CooeeCore.Placement(compact: CooeeCore.LayoutPlace.menu, wide: CooeeCore.LayoutPlace.menu), transition: CooeeCore.LayoutTransition.push, config: [:], slots: [:], locked: true)]], locked: false), etag: "")
+↳             format → 1
+↳             theme → nil
+↳             root → LayoutNode<Placement>(id: "nav", content: CooeeCore.LayoutContent.component(CooeeCore.ComponentKind.nav), label: nil, place: CooeeCore.Placement(compact: CooeeCore.LayoutPlace.inline, wide: CooeeCore.LayoutPlace.inline), transition: CooeeCore.LayoutTransition.push, config: [:], slots: ["main": [CooeeCore.LayoutNode<CooeeCore.Placement>(id: "home", content: CooeeCore.LayoutContent.screen(CooeeCore.LayoutSource.core, path: "/screens/home"), label: nil, place: CooeeCore.Placement(compact: CooeeCore.LayoutPlace.push, wide: CooeeCore.LayoutPlace.panel), transition: CooeeCore.LayoutTransition.push, config: [:], slots: [:], locked: false), CooeeCore.LayoutNode<CooeeCore.Placement>(id: "chat", content: CooeeCore.LayoutContent.component(CooeeCore.ComponentKind.chat), label: nil, place: CooeeCore.Placement(compact: CooeeCore.LayoutPlace.push, wide: CooeeCore.LayoutPlace.push), transition: CooeeCore.LayoutTransition.push, config: ["stop": CooeeCore.JSONValue.bool(true), "composer": CooeeCore.JSONValue.bool(true)], slots: [:], locked: false), CooeeCore.LayoutNode<CooeeCore.Placement>(id: "pairing", content: CooeeCore.LayoutContent.screen(CooeeCore.LayoutSource.core, path: "/screens/pairing"), label: nil, place: CooeeCore.Placement(compact: CooeeCore.LayoutPlace.push, wide: CooeeCore.LayoutPlace.push), transition: CooeeCore.LayoutTransition.push, config: [:], slots: [:], locked: true)], "side": [CooeeCore.LayoutNode<CooeeCore.Placement>(id: "sidebar", content: CooeeCore.LayoutContent.component(CooeeCore.ComponentKind.sidebar), label: nil, place: CooeeCore.Placement(compact: CooeeCore.LayoutPlace.menu, wide: CooeeCore.LayoutPlace.column), transition: CooeeCore.LayoutTransition.push, config: [:], slots: [:], locked: false)], "menu": [CooeeCore.LayoutNode<CooeeCore.Placement>(id: "menu", content: CooeeCore.LayoutContent.screen(CooeeCore.LayoutSource.core, path: "/screens/menu"), label: nil, place: CooeeCore.Placement(compact: CooeeCore.LayoutPlace.sheet, wide: CooeeCore.LayoutPlace.sheet), transition: CooeeCore.LayoutTransition.push, config: [:], slots: [:], locked: false), CooeeCore.LayoutNode<CooeeCore.Placement>(id: "settings", content: CooeeCore.LayoutContent.component(CooeeCore.ComponentKind.settings), label: nil, place: CooeeCore.Placement(compact: CooeeCore.LayoutPlace.sheet, wide: CooeeCore.LayoutPlace.sheet), transition: CooeeCore.LayoutTransition.push, config: ["pages": CooeeCore.JSONValue.array([CooeeCore.JSONValue.string("look"), CooeeCore.JSONValue.string("notifications"), CooeeCore.JSONValue.string("appIcon"), CooeeCore.JSONValue.string("themeEditor")])], slots: [:], locked: false), CooeeCore.LayoutNode<CooeeCore.Placement>(id: "terminal", content: CooeeCore.LayoutContent.component(CooeeCore.ComponentKind.terminal), label: nil, place: CooeeCore.Placement(compact: CooeeCore.LayoutPlace.menu, wide: CooeeCore.LayoutPlace.menu), transition: CooeeCore.LayoutTransition.push, config: [:], slots: [:], locked: false), CooeeCore.LayoutNode<CooeeCore.Placement>(id: "reset-layout", content: CooeeCore.LayoutContent.screen(CooeeCore.LayoutSource.core, path: "/screens/reset-layout"), label: nil, place: CooeeCore.Placement(compact: CooeeCore.LayoutPlace.menu, wide: CooeeCore.LayoutPlace.menu), transition: CooeeCore.LayoutTransition.push, config: [:], slots: [:], locked: true)]], locked: false)
+↳               id → "nav"
+↳               content → .component(CooeeCore.ComponentKind.nav)
+↳                 component → .nav
+↳               label → nil
+↳               place → Placement(compact: CooeeCore.LayoutPlace.inline, wide: CooeeCore.LayoutPlace.inline)
+↳                 compact → .inline
+↳                 wide → .inline
+↳               transition → .push
+↳               config → [:]
+↳               slots → ["main": [CooeeCore.LayoutNode<CooeeCore.Placement>(id: "home", content: CooeeCore.LayoutContent.screen(CooeeCore.LayoutSource.core, path: "/screens/home"), label: nil, place: CooeeCore.Placement(compact: CooeeCore.LayoutPlace.push, wide: CooeeCore.LayoutPlace.panel), transition: CooeeCore.LayoutTransition.push, config: [:], slots: [:], locked: false), CooeeCore.LayoutNode<CooeeCore.Placement>(id: "chat", content: CooeeCore.LayoutContent.component(CooeeCore.ComponentKind.chat), label: nil, place: CooeeCore.Placement(compact: CooeeCore.LayoutPlace.push, wide: CooeeCore.LayoutPlace.push), transition: CooeeCore.LayoutTransition.push, config: ["stop": CooeeCore.JSONValue.bool(true), "composer": CooeeCore.JSONValue.bool(true)], slots: [:], locked: false), CooeeCore.LayoutNode<CooeeCore.Placement>(id: "pairing", content: CooeeCore.LayoutContent.screen(CooeeCore.LayoutSource.core, path: "/screens/pairing"), label: nil, place: CooeeCore.Placement(compact: CooeeCore.LayoutPlace.push, wide: CooeeCore.LayoutPlace.push), transition: CooeeCore.LayoutTransition.push, config: [:], slots: [:], locked: true)], "side": [CooeeCore.LayoutNode<CooeeCore.Placement>(id: "sidebar", content: CooeeCore.LayoutContent.component(CooeeCore.ComponentKind.sidebar), label: nil, place: CooeeCore.Placement(compact: CooeeCore.LayoutPlace.menu, wide: CooeeCore.LayoutPlace.column), transition: CooeeCore.LayoutTransition.push, config: [:], slots: [:], locked: false)], "menu": [CooeeCore.LayoutNode<CooeeCore.Placement>(id: "menu", content: CooeeCore.LayoutContent.screen(CooeeCore.LayoutSource.core, path: "/screens/menu"), label: nil, place: CooeeCore.Placement(compact: CooeeCore.LayoutPlace.sheet, wide: CooeeCore.LayoutPlace.sheet), transition: CooeeCore.LayoutTransition.push, config: [:], slots: [:], locked: false), CooeeCore.LayoutNode<CooeeCore.Placement>(id: "settings", content: CooeeCore.LayoutContent.component(CooeeCore.ComponentKind.settings), label: nil, place: CooeeCore.Placement(compact: CooeeCore.LayoutPlace.sheet, wide: CooeeCore.LayoutPlace.sheet), transition: CooeeCore.LayoutTransition.push, config: ["pages": CooeeCore.JSONValue.array([CooeeCore.JSONValue.string("look"), CooeeCore.JSONValue.string("notifications"), CooeeCore.JSONValue.string("appIcon"), CooeeCore.JSONValue.string("themeEditor")])], slots: [:], locked: false), CooeeCore.LayoutNode<CooeeCore.Placement>(id: "terminal", content: CooeeCore.LayoutContent.component(CooeeCore.ComponentKind.terminal), label: nil, place: CooeeCore.Placement(compact: CooeeCore.LayoutPlace.menu, wide: CooeeCore.LayoutPlace.menu), transition: CooeeCore.LayoutTransition.push, config: [:], slots: [:], locked: false), CooeeCore.LayoutNode<CooeeCore.Placement>(id: "reset-layout", content: CooeeCore.LayoutContent.screen(CooeeCore.LayoutSource.core, path: "/screens/reset-layout"), label: nil, place: CooeeCore.Placement(compact: CooeeCore.LayoutPlace.menu, wide: CooeeCore.LayoutPlace.menu), transition: CooeeCore.LayoutTransition.push, config: [:], slots: [:], locked: true)]]
+↳               locked → false
+↳             etag → ""
+↳           _broken → nil
+↳           _screens → []
+↳           _$observationRegistrar → ObservationStateRegistrar(id: ComposableArchitecture.ObservableStateID(storage: ComposableArchitecture.ObservableStateID.(unknown context at $10b3c0ae8).Storage), registrar: PerceptionCore.PerceptionRegistrar(rawValue: Observation.ObservationRegistrar(extent: Observation.ObservationRegistrar.(unknown context at $1b0057c0c).Extent), _isPerceptionCheckingEnabled: true, perceptionChecks: PerceptionCore._ManagedCriticalState<Swift.Dictionary<Swift.Int, Swift.Bool>>(buffer: PerceptionCore._ManagedCriticalState<Swift.Dictionary<Swift.Int, Swift.Bool>>.(unknown context at $10b3c4de8).LockedBuffer)))
+↳             id → ObservableStateID(storage: ComposableArchitecture.ObservableStateID.(unknown context at $10b3c0ae8).Storage)
+↳               storage → ComposableArchitecture.ObservableStateID.(unknown context at $10b3c0ae8).Storage
+↳                 id → .location(2C846CB6-FAA4-45B8-9979-EE853A0CA27A)
+↳                   location → 2C846CB6-FAA4-45B8-9979-EE853A0CA27A
+↳             registrar → PerceptionRegistrar(rawValue: Observation.ObservationRegistrar(extent: Observation.ObservationRegistrar.(unknown context at $1b0057c0c).Extent), _isPerceptionCheckingEnabled: true, perceptionChecks: PerceptionCore._ManagedCriticalState<Swift.Dictionary<Swift.Int, Swift.Bool>>(buffer: PerceptionCore._ManagedCriticalState<Swift.Dictionary<Swift.Int, Swift.Bool>>.(unknown context at $10b3c4de8).LockedBuffer))
+↳               rawValue → ObservationRegistrar(extent: Observation.ObservationRegistrar.(unknown context at $1b0057c0c).Extent)
+↳                 extent → Observation.ObservationRegistrar.(unknown context at $1b0057c0c).Extent
+↳                   context → Context(state: Observation._ManagedCriticalState<Observation.ObservationRegistrar.(unknown context at $1b0057c50).State>(buffer: Observation._ManagedCriticalState<Observation.ObservationRegistrar.(unknown context at $1b0057c50).State>.(unknown context at $1b0057aec).LockedBuffer))
+↳                     state → _ManagedCriticalState<State>(buffer: Observation._ManagedCriticalState<Observation.ObservationRegistrar.(unknown context at $1b0057c50).State>.(unknown context at $1b0057aec).LockedBuffer)
+↳               _isPerceptionCheckingEnabled → true
+↳               perceptionChecks → _ManagedCriticalState<Dictionary<Int, Bool>>(buffer: PerceptionCore._ManagedCriticalState<Swift.Dictionary<Swift.Int, Swift.Bool>>.(unknown context at $10b3c4de8).LockedBuffer)
+↳                 buffer → PerceptionCore._ManagedCriticalState<Swift.Dictionary<Swift.Int, Swift.Bool>>.(unknown context at $10b3c4de8).LockedBuffer
+↳         _persona → "nil"
+↳         _notice → nil
+↳         _$observationRegistrar → ObservationStateRegistrar(id: ComposableArchitecture.ObservableStateID(storage: ComposableArchitecture.ObservableStateID.(unknown context at $10b3c0ae8).Storage), registrar: PerceptionCore.PerceptionRegistrar(rawValue: Observation.ObservationRegistrar(extent: Observation.ObservationRegistrar.(unknown context at $1b0057c0c).Extent), _isPerceptionCheckingEnabled: true, perceptionChecks: PerceptionCore._ManagedCriticalState<Swift.Dictionary<Swift.Int, Swift.Bool>>(buffer: PerceptionCore._ManagedCriticalState<Swift.Dictionary<Swift.Int, Swift.Bool>>.(unknown context at $10b3c4de8).LockedBuffer)))
+↳           id → ObservableStateID(storage: ComposableArchitecture.ObservableStateID.(unknown context at $10b3c0ae8).Storage)
+↳             storage → ComposableArchitecture.ObservableStateID.(unknown context at $10b3c0ae8).Storage
+↳               id → .location(92BC879D-E624-4A03-B9C7-40E7687F1370)
+↳                 location → 92BC879D-E624-4A03-B9C7-40E7687F1370
+↳           registrar → PerceptionRegistrar(rawValue: Observation.ObservationRegistrar(extent: Observation.ObservationRegistrar.(unknown context at $1b0057c0c).Extent), _isPerceptionCheckingEnabled: true, perceptionChecks: PerceptionCore._ManagedCriticalState<Swift.Dictionary<Swift.Int, Swift.Bool>>(buffer: PerceptionCore._ManagedCriticalState<Swift.Dictionary<Swift.Int, Swift.Bool>>.(unknown context at $10b3c4de8).LockedBuffer))
+↳             rawValue → ObservationRegistrar(extent: Observation.ObservationRegistrar.(unknown context at $1b0057c0c).Extent)
+↳               extent → Observation.ObservationRegistrar.(unknown context at $1b0057c0c).Extent
+↳                 context → Context(state: Observation._ManagedCriticalState<Observation.ObservationRegistrar.(unknown context at $1b0057c50).State>(buffer: Observation._ManagedCriticalState<Observation.ObservationRegistrar.(unknown context at $1b0057c50).State>.(unknown context at $1b0057aec).LockedBuffer))
+↳                   state → _ManagedCriticalState<State>(buffer: Observation._ManagedCriticalState<Observation.ObservationRegistrar.(unknown context at $1b0057c50).State>.(unknown context at $1b0057aec).LockedBuffer)
+↳                     buffer → Observation._ManagedCriticalState<Observation.ObservationRegistrar.(unknown context at $1b0057c50).State>.(unknown context at $1b0057aec).LockedBuffer
+↳             _isPerceptionCheckingEnabled → true
+↳             perceptionChecks → _ManagedCriticalState<Dictionary<Int, Bool>>(buffer: PerceptionCore._ManagedCriticalState<Swift.Dictionary<Swift.Int, Swift.Bool>>.(unknown context at $10b3c4de8).LockedBuffer)
+↳               buffer → PerceptionCore._ManagedCriticalState<Swift.Dictionary<Swift.Int, Swift.Bool>>.(unknown context at $10b3c4de8).LockedBuffer
+↳       reducer → _DependencyKeyWritingReducer<AppFeature>(base: CooeeFeatures.AppFeature(_serverStore: Dependencies.Dependency<CooeeFeatures.ServerStore>(initialValues: Dependencies.DependencyValues(cachedValues: Dependencies.CachedValues, storage: [:]), installValues: nil, _environmentValues: SwiftUI.Environment<Dependencies.DependencyValues>(content: SwiftUI.Environment<Dependencies.DependencyValues>.Content.keyPath(\EnvironmentValues.dependencies)), keyPath: \DependencyValues.serverStore, filePath: "/Users/jkmacmini/.local/share/drover/work/cooee/issue-595/apple/Sources/CooeeFeatures/AppFeature.swift", fileID: "CooeeFeatures/AppFeature.swift", line: 52, column: 16), _loginItems: Dependencies.Dependency<CooeeFeatures.LoginItemsClient>(initialValues: Dependencies.DependencyValues(cachedValues: Dependencies.CachedValues, storage: [:]), installValues: nil, _environmentValues: SwiftUI.Environment<Dependencies.DependencyValues>(content: SwiftUI.Environment<Dependencies.DependencyValues>.Content.keyPath(\EnvironmentValues.dependencies)), keyPath: \DependencyValues.loginItems, filePath: "/Users/jkmacmini/.local/share/drover/work/cooee/issue-595/apple/Sources/CooeeFeatures/AppFeature.swift", fileID: "CooeeFeatures/AppFeature.swift", line: 53, column: 16), _push: Dependencies.Dependency<CooeeFeatures.PushClient>(initialValues: Dependencies.DependencyValues(cachedValues: Dependencies.CachedValues, storage: [:]), installValues: nil, _environmentValues: SwiftUI.Environment<Dependencies.DependencyValues>(content: SwiftUI.Environment<Dependencies.DependencyValues>.Content.keyPath(\EnvironmentValues.dependencies)), keyPath: \DependencyValues.push, filePath: "/Users/jkmacmini/.local/share/drover/work/cooee/issue-595/apple/Sources/CooeeFeatures/AppFeature.swift", fileID: "CooeeFeatures/AppFeature.swift", line: 54, column: 16), _now: Dependencies.Dependency<Foundation.Date>(initialValues: Dependencies.DependencyValues(cachedValues: Dependencies.CachedValues, storage: [:]), installValues: nil, _environmentValues: SwiftUI.Environment<Dependencies.DependencyValues>(content: SwiftUI.Environment<Dependencies.DependencyValues>.Content.keyPath(\EnvironmentValues.dependencies)), keyPath: \DependencyValues.date.now, filePath: "/Users/jkmacmini/.local/share/drover/work/cooee/issue-595/apple/Sources/CooeeFeatures/AppFeature.swift", fileID: "CooeeFeatures/AppFeature.swift", line: 55, column: 16)), update: (Function))
+↳         base → AppFeature(_serverStore: Dependencies.Dependency<CooeeFeatures.ServerStore>(initialValues: Dependencies.DependencyValues(cachedValues: Dependencies.CachedValues, storage: [:]), installValues: nil, _environmentValues: SwiftUI.Environment<Dependencies.DependencyValues>(content: SwiftUI.Environment<Dependencies.DependencyValues>.Content.keyPath(\EnvironmentValues.dependencies)), keyPath: \DependencyValues.serverStore, filePath: "/Users/jkmacmini/.local/share/drover/work/cooee/issue-595/apple/Sources/CooeeFeatures/AppFeature.swift", fileID: "CooeeFeatures/AppFeature.swift", line: 52, column: 16), _loginItems: Dependencies.Dependency<CooeeFeatures.LoginItemsClient>(initialValues: Dependencies.DependencyValues(cachedValues: Dependencies.CachedValues, storage: [:]), installValues: nil, _environmentValues: SwiftUI.Environment<Dependencies.DependencyValues>(content: SwiftUI.Environment<Dependencies.DependencyValues>.Content.keyPath(\EnvironmentValues.dependencies)), keyPath: \DependencyValues.loginItems, filePath: "/Users/jkmacmini/.local/share/drover/work/cooee/issue-595/apple/Sources/CooeeFeatures/AppFeature.swift", fileID: "CooeeFeatures/AppFeature.swift", line: 53, column: 16), _push: Dependencies.Dependency<CooeeFeatures.PushClient>(initialValues: Dependencies.DependencyValues(cachedValues: Dependencies.CachedValues, storage: [:]), installValues: nil, _environmentValues: SwiftUI.Environment<Dependencies.DependencyValues>(content: SwiftUI.Environment<Dependencies.DependencyValues>.Content.keyPath(\EnvironmentValues.dependencies)), keyPath: \DependencyValues.push, filePath: "/Users/jkmacmini/.local/share/drover/work/cooee/issue-595/apple/Sources/CooeeFeatures/AppFeature.swift", fileID: "CooeeFeatures/AppFeature.swift", line: 54, column: 16), _now: Dependencies.Dependency<Foundation.Date>(initialValues: Dependencies.DependencyValues(cachedValues: Dependencies.CachedValues, storage: [:]), installValues: nil, _environmentValues: SwiftUI.Environment<Dependencies.DependencyValues>(content: SwiftUI.Environment<Dependencies.DependencyValues>.Content.keyPath(\EnvironmentValues.dependencies)), keyPath: \DependencyValues.date.now, filePath: "/Users/jkmacmini/.local/share/drover/work/cooee/issue-595/apple/Sources/CooeeFeatures/AppFeature.swift", fileID: "CooeeFeatures/AppFeature.swift", line: 55, column: 16))
+↳           _serverStore → Dependency<ServerStore>(initialValues: Dependencies.DependencyValues(cachedValues: Dependencies.CachedValues, storage: [:]), installValues: nil, _environmentValues: SwiftUI.Environment<Dependencies.DependencyValues>(content: SwiftUI.Environment<Dependencies.DependencyValues>.Content.keyPath(\EnvironmentValues.dependencies)), keyPath: \DependencyValues.serverStore, filePath: "/Users/jkmacmini/.local/share/drover/work/cooee/issue-595/apple/Sources/CooeeFeatures/AppFeature.swift", fileID: "CooeeFeatures/AppFeature.swift", line: 52, column: 16)
+↳             initialValues → DependencyValues(cachedValues: Dependencies.CachedValues, storage: [:])
+↳               cachedValues → Dependencies.CachedValues
+↳                 lock → <NSRecursiveLock: 0x1031f0080>{recursion count = 0, name = nil}
+↳                 cached → [Dependencies.CachedValues.CacheKey(id: Dependencies.TypeIdentifier(id: ObjectIdentifier(0x000000010b44d290), base: Dependencies.DependencyContextKey), context: Dependencies.DependencyContext.test, testIdentifier: Optional(IssueReporting.TestContext.Testing.Test.ID(rawValue: AnyHashable(IssueReporting.Test.(unknown context at $10b3c2850).ID(moduleName: "CooeeAppTests", nameComponents: ["CooeeRootTests", "rebuildingTheRootKeepsItsStore()"], sourceLocation: Optional(IssueReporting.(unknown context at $10b3c2708).SourceLocation(fileID: "CooeeAppTests/CooeeRootTests.swift", _filePath: "/Users/jkmacmini/.local/share/drover/work/cooee/issue-595/apple/Tests/CooeeAppTests/CooeeRootTests.swift", line: 12, column: 6))))))): Dependencies.CachedValues.CachedValue(base: Dependencies.DependencyContext.test, preparationID: nil), Dependencies.CachedValues.CacheKey(id: Dependencies.TypeIdentifier(id: ObjectIdentifier(0x000000010b441fe8), base: ComposableArchitecture.(unknown context at $10b3c0404).NavigationIDPathKey), context: Dependencies.DependencyContext.test, testIdentifier: Optional(IssueReporting.TestContext.Testing.Test.ID(rawValue: AnyHashable(IssueReporting.Test.(unknown context at $10b3c2850).ID(moduleName: "CooeeAppTests", nameComponents: ["CooeeRootTests", "rebuildingTheRootKeepsItsStore()"], sourceLocation: Optional(IssueReporting.(unknown context at $10b3c2708).SourceLocation(fileID: "CooeeAppTests/CooeeRootTests.swift", _filePath: "/Users/jkmacmini/.local/share/drover/work/cooee/issue-595/apple/Tests/CooeeAppTests/CooeeRootTests.swift", line: 12, column: 6))))))): Dependencies.CachedValues.CachedValue(base: ComposableArchitecture.NavigationIDPath(path: []), preparationID: nil)]
+↳               storage → [:]
+↳             installValues → nil
+↳             _environmentValues → Environment<DependencyValues>(content: SwiftUI.Environment<Dependencies.DependencyValues>.Content.keyPath(\EnvironmentValues.dependencies))
+↳               content → keyPath(\EnvironmentValues.dependencies)
+↳                 keyPath → \EnvironmentValues.dependencies
+↳             keyPath → \DependencyValues.serverStore
+↳             filePath → /Users/jkmacmini/.local/share/drover/work/cooee/issue-595/apple/Sources/CooeeFeatures/AppFeature.swift
+↳             fileID → CooeeFeatures/AppFeature.swift
+↳             line → 52
+↳             column → 16
+↳           _loginItems → Dependency<LoginItemsClient>(initialValues: Dependencies.DependencyValues(cachedValues: Dependencies.CachedValues, storage: [:]), installValues: nil, _environmentValues: SwiftUI.Environment<Dependencies.DependencyValues>(content: SwiftUI.Environment<Dependencies.DependencyValues>.Content.keyPath(\EnvironmentValues.dependencies)), keyPath: \DependencyValues.loginItems, filePath: "/Users/jkmacmini/.local/share/drover/work/cooee/issue-595/apple/Sources/CooeeFeatures/AppFeature.swift", fileID: "CooeeFeatures/AppFeature.swift", line: 53, column: 16)
+↳             initialValues → DependencyValues(cachedValues: Dependencies.CachedValues, storage: [:])
+↳               cachedValues → Dependencies.CachedValues
+↳                 lock → <NSRecursiveLock: 0x1031f0080>{recursion count = 0, name = nil}
+↳                 cached → [Dependencies.CachedValues.CacheKey(id: Dependencies.TypeIdentifier(id: ObjectIdentifier(0x000000010b44d290), base: Dependencies.DependencyContextKey), context: Dependencies.DependencyContext.test, testIdentifier: Optional(IssueReporting.TestContext.Testing.Test.ID(rawValue: AnyHashable(IssueReporting.Test.(unknown context at $10b3c2850).ID(moduleName: "CooeeAppTests", nameComponents: ["CooeeRootTests", "rebuildingTheRootKeepsItsStore()"], sourceLocation: Optional(IssueReporting.(unknown context at $10b3c2708).SourceLocation(fileID: "CooeeAppTests/CooeeRootTests.swift", _filePath: "/Users/jkmacmini/.local/share/drover/work/cooee/issue-595/apple/Tests/CooeeAppTests/CooeeRootTests.swift", line: 12, column: 6))))))): Dependencies.CachedValues.CachedValue(base: Dependencies.DependencyContext.test, preparationID: nil), Dependencies.CachedValues.CacheKey(id: Dependencies.TypeIdentifier(id: ObjectIdentifier(0x000000010b441fe8), base: ComposableArchitecture.(unknown context at $10b3c0404).NavigationIDPathKey), context: Dependencies.DependencyContext.test, testIdentifier: Optional(IssueReporting.TestContext.Testing.Test.ID(rawValue: AnyHashable(IssueReporting.Test.(unknown context at $10b3c2850).ID(moduleName: "CooeeAppTests", nameComponents: ["CooeeRootTests", "rebuildingTheRootKeepsItsStore()"], sourceLocation: Optional(IssueReporting.(unknown context at $10b3c2708).SourceLocation(fileID: "CooeeAppTests/CooeeRootTests.swift", _filePath: "/Users/jkmacmini/.local/share/drover/work/cooee/issue-595/apple/Tests/CooeeAppTests/CooeeRootTests.swift", line: 12, column: 6))))))): Dependencies.CachedValues.CachedValue(base: ComposableArchitecture.NavigationIDPath(path: []), preparationID: nil)]
+↳               storage → [:]
+↳             installValues → nil
+↳             _environmentValues → Environment<DependencyValues>(content: SwiftUI.Environment<Dependencies.DependencyValues>.Content.keyPath(\EnvironmentValues.dependencies))
+↳               content → keyPath(\EnvironmentValues.dependencies)
+↳                 keyPath → \EnvironmentValues.dependencies
+↳             keyPath → \DependencyValues.loginItems
+↳             filePath → /Users/jkmacmini/.local/share/drover/work/cooee/issue-595/apple/Sources/CooeeFeatures/AppFeature.swift
+↳             fileID → CooeeFeatures/AppFeature.swift
+↳             line → 53
+↳             column → 16
+↳           _push → Dependency<PushClient>(initialValues: Dependencies.DependencyValues(cachedValues: Dependencies.CachedValues, storage: [:]), installValues: nil, _environmentValues: SwiftUI.Environment<Dependencies.DependencyValues>(content: SwiftUI.Environment<Dependencies.DependencyValues>.Content.keyPath(\EnvironmentValues.dependencies)), keyPath: \DependencyValues.push, filePath: "/Users/jkmacmini/.local/share/drover/work/cooee/issue-595/apple/Sources/CooeeFeatures/AppFeature.swift", fileID: "CooeeFeatures/AppFeature.swift", line: 54, column: 16)
+↳             initialValues → DependencyValues(cachedValues: Dependencies.CachedValues, storage: [:])
+↳               cachedValues → Dependencies.CachedValues
+↳                 lock → <NSRecursiveLock: 0x1031f0080>{recursion count = 0, name = nil}
+↳                 cached → [Dependencies.CachedValues.CacheKey(id: Dependencies.TypeIdentifier(id: ObjectIdentifier(0x000000010b44d290), base: Dependencies.DependencyContextKey), context: Dependencies.DependencyContext.test, testIdentifier: Optional(IssueReporting.TestContext.Testing.Test.ID(rawValue: AnyHashable(IssueReporting.Test.(unknown context at $10b3c2850).ID(moduleName: "CooeeAppTests", nameComponents: ["CooeeRootTests", "rebuildingTheRootKeepsItsStore()"], sourceLocation: Optional(IssueReporting.(unknown context at $10b3c2708).SourceLocation(fileID: "CooeeAppTests/CooeeRootTests.swift", _filePath: "/Users/jkmacmini/.local/share/drover/work/cooee/issue-595/apple/Tests/CooeeAppTests/CooeeRootTests.swift", line: 12, column: 6))))))): Dependencies.CachedValues.CachedValue(base: Dependencies.DependencyContext.test, preparationID: nil), Dependencies.CachedValues.CacheKey(id: Dependencies.TypeIdentifier(id: ObjectIdentifier(0x000000010b441fe8), base: ComposableArchitecture.(unknown context at $10b3c0404).NavigationIDPathKey), context: Dependencies.DependencyContext.test, testIdentifier: Optional(IssueReporting.TestContext.Testing.Test.ID(rawValue: AnyHashable(IssueReporting.Test.(unknown context at $10b3c2850).ID(moduleName: "CooeeAppTests", nameComponents: ["CooeeRootTests", "rebuildingTheRootKeepsItsStore()"], sourceLocation: Optional(IssueReporting.(unknown context at $10b3c2708).SourceLocation(fileID: "CooeeAppTests/CooeeRootTests.swift", _filePath: "/Users/jkmacmini/.local/share/drover/work/cooee/issue-595/apple/Tests/CooeeAppTests/CooeeRootTests.swift", line: 12, column: 6))))))): Dependencies.CachedValues.CachedValue(base: ComposableArchitecture.NavigationIDPath(path: []), preparationID: nil)]
+↳               storage → [:]
+↳             installValues → nil
+↳             _environmentValues → Environment<DependencyValues>(content: SwiftUI.Environment<Dependencies.DependencyValues>.Content.keyPath(\EnvironmentValues.dependencies))
+↳               content → keyPath(\EnvironmentValues.dependencies)
+↳                 keyPath → \EnvironmentValues.dependencies
+↳             keyPath → \DependencyValues.push
+↳             filePath → /Users/jkmacmini/.local/share/drover/work/cooee/issue-595/apple/Sources/CooeeFeatures/AppFeature.swift
+↳             fileID → CooeeFeatures/AppFeature.swift
+↳             line → 54
+↳             column → 16
+↳           _now → Dependency<Date>(initialValues: Dependencies.DependencyValues(cachedValues: Dependencies.CachedValues, storage: [:]), installValues: nil, _environmentValues: SwiftUI.Environment<Dependencies.DependencyValues>(content: SwiftUI.Environment<Dependencies.DependencyValues>.Content.keyPath(\EnvironmentValues.dependencies)), keyPath: \DependencyValues.date.now, filePath: "/Users/jkmacmini/.local/share/drover/work/cooee/issue-595/apple/Sources/CooeeFeatures/AppFeature.swift", fileID: "CooeeFeatures/AppFeature.swift", line: 55, column: 16)
+↳             initialValues → DependencyValues(cachedValues: Dependencies.CachedValues, storage: [:])
+↳               cachedValues → Dependencies.CachedValues
+↳                 lock → <NSRecursiveLock: 0x1031f0080>{recursion count = 0, name = nil}
+↳                 cached → [Dependencies.CachedValues.CacheKey(id: Dependencies.TypeIdentifier(id: ObjectIdentifier(0x000000010b44d290), base: Dependencies.DependencyContextKey), context: Dependencies.DependencyContext.test, testIdentifier: Optional(IssueReporting.TestContext.Testing.Test.ID(rawValue: AnyHashable(IssueReporting.Test.(unknown context at $10b3c2850).ID(moduleName: "CooeeAppTests", nameComponents: ["CooeeRootTests", "rebuildingTheRootKeepsItsStore()"], sourceLocation: Optional(IssueReporting.(unknown context at $10b3c2708).SourceLocation(fileID: "CooeeAppTests/CooeeRootTests.swift", _filePath: "/Users/jkmacmini/.local/share/drover/work/cooee/issue-595/apple/Tests/CooeeAppTests/CooeeRootTests.swift", line: 12, column: 6))))))): Dependencies.CachedValues.CachedValue(base: Dependencies.DependencyContext.test, preparationID: nil), Dependencies.CachedValues.CacheKey(id: Dependencies.TypeIdentifier(id: ObjectIdentifier(0x000000010b441fe8), base: ComposableArchitecture.(unknown context at $10b3c0404).NavigationIDPathKey), context: Dependencies.DependencyContext.test, testIdentifier: Optional(IssueReporting.TestContext.Testing.Test.ID(rawValue: AnyHashable(IssueReporting.Test.(unknown context at $10b3c2850).ID(moduleName: "CooeeAppTests", nameComponents: ["CooeeRootTests", "rebuildingTheRootKeepsItsStore()"], sourceLocation: Optional(IssueReporting.(unknown context at $10b3c2708).SourceLocation(fileID: "CooeeAppTests/CooeeRootTests.swift", _filePath: "/Users/jkmacmini/.local/share/drover/work/cooee/issue-595/apple/Tests/CooeeAppTests/CooeeRootTests.swift", line: 12, column: 6))))))): Dependencies.CachedValues.CachedValue(base: ComposableArchitecture.NavigationIDPath(path: []), preparationID: nil)]
+↳               storage → [:]
+↳             installValues → nil
+↳             _environmentValues → Environment<DependencyValues>(content: SwiftUI.Environment<Dependencies.DependencyValues>.Content.keyPath(\EnvironmentValues.dependencies))
+↳               content → keyPath(\EnvironmentValues.dependencies)
+↳                 keyPath → \EnvironmentValues.dependencies
+↳             keyPath → \DependencyValues.date.now
+↳             filePath → /Users/jkmacmini/.local/share/drover/work/cooee/issue-595/apple/Sources/CooeeFeatures/AppFeature.swift
+↳             fileID → CooeeFeatures/AppFeature.swift
+↳             line → 55
+↳             column → 16
+↳       didSet → ComposableArchitecture.CurrentValueRelay<()>
+↳         currentValue → ()
+↳         lock → 0x0000007b00c20560
+↳           pointerValue → 528293692768
+↳         subscriptions → [ComposableArchitecture.CurrentValueRelay<()>.(unknown context at $10b3be800).Subscription]
+↳       bufferedActions → []
+↳       effectCancellables → [:]
+↳       isSending → false
+↳     _$observationRegistrar → PerceptionRegistrar(rawValue: Observation.ObservationRegistrar(extent: Observation.ObservationRegistrar.(unknown context at $1b0057c0c).Extent), _isPerceptionCheckingEnabled: false, perceptionChecks: PerceptionCore._ManagedCriticalState<Swift.Dictionary<Swift.Int, Swift.Bool>>(buffer: PerceptionCore._ManagedCriticalState<Swift.Dictionary<Swift.Int, Swift.Bool>>.(unknown context at $10b3c4de8).LockedBuffer))
+↳       rawValue → ObservationRegistrar(extent: Observation.ObservationRegistrar.(unknown context at $1b0057c0c).Extent)
+↳         extent → Observation.ObservationRegistrar.(unknown context at $1b0057c0c).Extent
+↳           context → Context(state: Observation._ManagedCriticalState<Observation.ObservationRegistrar.(unknown context at $1b0057c50).State>(buffer: Observation._ManagedCriticalState<Observation.ObservationRegistrar.(unknown context at $1b0057c50).State>.(unknown context at $1b0057aec).LockedBuffer))
+↳             state → _ManagedCriticalState<State>(buffer: Observation._ManagedCriticalState<Observation.ObservationRegistrar.(unknown context at $1b0057c50).State>.(unknown context at $1b0057aec).LockedBuffer)
+↳               buffer → Observation._ManagedCriticalState<Observation.ObservationRegistrar.(unknown context at $1b0057c50).State>.(unknown context at $1b0057aec).LockedBuffer
+↳       _isPerceptionCheckingEnabled → false
+↳       perceptionChecks → _ManagedCriticalState<Dictionary<Int, Bool>>(buffer: PerceptionCore._ManagedCriticalState<Swift.Dictionary<Swift.Int, Swift.Bool>>.(unknown context at $10b3c4de8).LockedBuffer)
+↳         buffer → PerceptionCore._ManagedCriticalState<Swift.Dictionary<Swift.Int, Swift.Bool>>.(unknown context at $10b3c4de8).LockedBuffer
+↳     parentCancellable → Combine.AnyCancellable
+↳       some → Combine.AnyCancellable
+↳         storage → .cancellable(Sink)
+↳           cancellable → Sink
+↳         lock → 0x0000007b00c205c0
+↳           pointerValue → 528293692864
+✘ Test rebuildingTheRootKeepsItsStore() failed after 0.159 seconds with 1 issue.
+✘ Suite CooeeRootTests failed after 0.160 seconds with 1 issue.
+✘ Test run with 1 test in 1 suite failed after 0.160 seconds with 1 issue.
+Note: Some test targets reported failures:
+  - CooeeAppTests (Swift Testing)
