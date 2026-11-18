@@ -1,0 +1,6 @@
+Decided: merge origin/staging db3335c for the cap raise to 28390 and the hosted macOS runner; the apple FAIL was a lost self-hosted runner
+Because: crates/cooee-server/src/mcp.rs:387
+Decided: staging build fix: create_routine's schema moves into routine_tool(), as secret_tool() does, so own_tools is under clippy's 100 lines
+Rejected: an allow on too_many_lines — the repo caps allows at 10, each with a reason, and a split is smaller
+Check: the apple and ci checks are green at the head, and conformance step 8 still passes on the fake
+Owner: Brings the branch up to date with staging, including the raised line limit, and fixes a style check staging was failing; no behaviour change.
