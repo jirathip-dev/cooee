@@ -1,8 +1,9 @@
-//! Routines (#75, #261): a schedule or a GitHub event that posts a prompt to an agent, made by the agent in chat.
+//! Routines (#75, #261, #499): a schedule, a GitHub event or a signed POST that posts a prompt to an agent, made by the agent in chat.
 //! Each one's settings are `<config>/routines.toml`, its run state and the deliveries seen `<data>/routine-runs.json`
 //! (#359). Pure: the server's runner gives `now`, the Mac's UTC offset and each delivery.
 mod cron;
 mod github;
+mod webhook;
 
 use std::{
     collections::BTreeMap,
@@ -14,6 +15,7 @@ use serde::{Deserialize, Serialize};
 
 pub use cron::{Schedule, local};
 pub use github::{Delivery, Fields, Github, Hooks, Rejected, Skip};
+pub use webhook::{Inbound, Webhook};
 
 use crate::Thread;
 
@@ -78,6 +80,8 @@ pub enum Trigger {
     Schedule(Schedule),
     /// A GitHub webhook event.
     Github(Github),
+    /// A signed POST to `/hooks/in/<id>`.
+    Webhook(Webhook),
 }
 
 /// Where a routine's runs post.
@@ -163,18 +167,18 @@ pub enum Outcome {
     },
 }
 
-/// `create_routine`'s arguments: `when` or `github`.
+/// `create_routine`'s arguments: `when`, `github` or `webhook`.
 #[derive(Debug, Clone, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct Ask {
     /// The name.
     pub name: String,
     /// The cron.
-    #[serde(default)]
     pub when: Option<String>,
     /// The GitHub events.
-    #[serde(default)]
     pub github: Option<Github>,
+    /// The signed POST.
+    pub webhook: Option<Webhook>,
     /// The prompt.
     pub prompt: String,
     /// `chat` (default) or `new_thread`.
@@ -199,7 +203,7 @@ impl Routine {
     /// The routine `ask` says, made by thread `from`'s agent at `now`, among `list`.
     ///
     /// # Errors
-    /// `BAD_SCHEDULE`, `BAD_GITHUB`, `BAD_TRIGGER`, `BAD_NAME`, `BAD_PROMPT`, `BAD_PLACE` or `TOO_MANY`, said for
+    /// `BAD_SCHEDULE`, `BAD_GITHUB`, `BAD_WEBHOOK`, `BAD_TRIGGER`, `BAD_NAME`, `BAD_PROMPT`, `BAD_PLACE` or `TOO_MANY`, said for
     /// the agent.
     pub fn make(list: &[Self], ask: Ask, from: &Thread, now: u64) -> Result<Self, String> {
         if list.len() >= MAX {
@@ -222,12 +226,11 @@ impl Routine {
             },
             p => return Err(format!("BAD_PLACE: {p:?} is neither chat nor new_thread")),
         };
-        let trigger = match (ask.when, ask.github) {
-            (Some(w), None) => Trigger::Schedule(Schedule::parse(&w)?),
-            (None, Some(g)) => Trigger::Github(g.checked()?),
-            _ => {
-                return Err("BAD_TRIGGER: give when (a schedule) or github, one of them".to_owned());
-            }
+        let trigger = match (ask.when, ask.github, ask.webhook) {
+            (Some(w), None, None) => Trigger::Schedule(Schedule::parse(&w)?),
+            (None, Some(g), None) => Trigger::Github(g.checked()?),
+            (None, None, Some(h)) => Trigger::Webhook(h.checked()?),
+            _ => return Err("BAD_TRIGGER: give one of when, github or webhook".to_owned()),
         };
         let mut stamp = now;
         while list.iter().any(|r| r.id == format!("r-{stamp}")) {
@@ -307,6 +310,7 @@ impl Routine {
         match &self.trigger {
             Trigger::Schedule(s) => s.describe(),
             Trigger::Github(g) => format!("on {} in {}", g.events.join(", "), g.repo),
+            Trigger::Webhook(h) => format!("on a POST signed with secret:{}", h.secret),
         }
     }
 
@@ -328,7 +332,7 @@ impl Routine {
     }
 
     /// The prompt, each `{{path}}` filled: `due` (local `YYYY-MM-DD HH:MM`), `event`, `repo`, or a dotted path into
-    /// the event's payload (`pull_request.title`); each value at most 2,000 characters, a missing one empty.
+    /// the event's payload (`pull_request.title`), each at most 2,000 characters; then a POST's untrusted body.
     #[must_use]
     pub fn text(&self, f: &Fields) -> String {
         let (mut out, mut rest) = (String::new(), self.prompt.as_str());
@@ -344,7 +348,7 @@ impl Routine {
             }
             rest = tail;
         }
-        out + rest
+        out + rest + &f.data()
     }
 
     /// Whether delivery `d` is one of its events: its repo, one of its events and every `match`.
@@ -413,6 +417,8 @@ struct Def {
     when: Option<Schedule>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     github: Option<Github>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    webhook: Option<Webhook>,
     prompt: String,
     #[serde(default)]
     paused: bool,
@@ -450,9 +456,10 @@ pub(crate) fn files(routines: &[Routine], seen: &[(String, u64)]) -> (String, Ve
         seen: seen.to_vec(),
     };
     for r in routines {
-        let (when, github) = match r.trigger.clone() {
-            Trigger::Schedule(s) => (Some(s), None),
-            Trigger::Github(g) => (None, Some(g)),
+        let (when, github, webhook) = match r.trigger.clone() {
+            Trigger::Schedule(s) => (Some(s), None, None),
+            Trigger::Github(g) => (None, Some(g), None),
+            Trigger::Webhook(h) => (None, None, Some(h)),
         };
         let chat_gone = match &r.paused {
             Some(Paused::ChatGone { thread }) => Some(thread.clone()),
@@ -463,6 +470,7 @@ pub(crate) fn files(routines: &[Routine], seen: &[(String, u64)]) -> (String, Ve
             name: r.name.clone(),
             when,
             github,
+            webhook,
             prompt: r.prompt.clone(),
             paused: r.paused == Some(Paused::Owner),
             place: r.place.clone(),
@@ -535,12 +543,13 @@ impl Routines {
         for d in settings.routine {
             let s = runs.runs.get(&d.id).cloned().unwrap_or_default();
             let gone = s.chat_gone.map(|thread| Paused::ChatGone { thread });
-            let trigger = match (d.when, d.github) {
-                (Some(w), None) => Trigger::Schedule(w),
-                (None, Some(g)) => Trigger::Github(g),
+            let trigger = match (d.when, d.github, d.webhook) {
+                (Some(w), None, None) => Trigger::Schedule(w),
+                (None, Some(g), None) => Trigger::Github(g),
+                (None, None, Some(h)) => Trigger::Webhook(h),
                 _ => {
                     return Err(io::Error::other(format!(
-                        "{}: routine {} needs when or github, one of them",
+                        "{}: routine {} needs when, github or webhook, one of them",
                         self.settings.display(),
                         d.id
                     )));
@@ -599,6 +608,7 @@ mod tests {
             name: " Monday renewals ".to_owned(),
             when: Some(when.to_owned()),
             github: None,
+            webhook: None,
             prompt: "Renewals due {{due}}?".to_owned(),
             place: place.to_owned(),
         }

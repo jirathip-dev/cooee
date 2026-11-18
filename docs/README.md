@@ -52,6 +52,7 @@ type Item = { id: number; at: number; seq?: number } & (
   | { kind: "link"; text: string; thread: string; title: string; out?: boolean }
   | { kind: "ask"; persona: string; name: string; text: string; thread: string;  // #177: an ask_persona card
       outcome: "asking" | "replied" | "not_allowed" | "depth" | "timeout" | "offline"; secs: number; note?: string }
+  | { kind: "handoff"; text: string; outcome: "waiting" | "handed_back"; note?: string }  // #164: a handoff ask
   | { kind: "plan"; entries: { content: string; status: string; priority?: string }[] }
   | { kind: "note"; text: string }
   | { kind: "ended"; text: string }

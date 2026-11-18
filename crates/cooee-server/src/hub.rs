@@ -25,6 +25,7 @@ mod cards;
 mod events;
 mod expire;
 mod folders;
+mod handoff;
 mod heartbeat;
 mod mcp;
 mod models;
@@ -142,6 +143,7 @@ fn glance(live: &Live) -> Glance {
         | Body::Note { text }
         | Body::Link { text, .. }
         | Body::Ask { text, .. }
+        | Body::Handoff { text, .. }
         | Body::Ended { text } => text,
         Body::Tool { title, .. } => title,
         Body::Approval { tool, .. } => tool,
