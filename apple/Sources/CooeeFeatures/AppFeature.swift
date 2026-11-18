@@ -210,9 +210,10 @@ extension AppFeature {
     }
 
     private func topic(_ state: inout State, _ thread: String) -> Effect<Action> {
-        let bar = state.chat?.bar
+        let (bar, room) = (state.chat?.bar, state.chat?.room)
+        let fresh = room != nil && state.home?.rows.contains { $0.id == thread } == false
         state.path = state.path.dropLast() + [thread]
-        state.chat = chat(state, thread)
+        state.chat = chat(state, thread, room: fresh ? room.map { ($0.title, $0.members) } : nil)
         state.chat?.bar = bar
         return .none
     }

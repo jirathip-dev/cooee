@@ -188,11 +188,14 @@ extension ClientTests {
             + #""last":"","at":5,"unseen":1,"archived":false,"folder":"/home/user/src/cooee"}]"#
         let empty = Answer(headers: json, chunks: ["null"])
         let server = CannedServer([
-            "/threads": [Answer(headers: json, chunks: [row]), Answer(headers: json, chunks: [#"{"id":"n3"}"#])],
+            "/threads": [
+                Answer(headers: json, chunks: [row]), Answer(headers: json, chunks: [#"{"id":"n3"}"#]),
+                Answer(headers: json, chunks: [row]),
+            ],
             "/threads/t1/title": [empty], "/threads/t1/archive": [empty],
         ])
         let client = server.client()
-        let topics = try await client.topics(of: "coder")
+        let topics = try await client.topics(of: .persona("coder"))
         #expect(topics.map(\.folder) == ["/home/user/src/cooee"] && topics.map(\.title) == ["cooee queue"])
         #expect(server.requests("/threads").first?.url?.query == "persona=coder")
         try await client.retitle("t1", "Queue")
@@ -203,5 +206,7 @@ extension ClientTests {
         _ = try await client.newThread(persona: persona, machine: "", text: "hi", randomID: "r7")
         let started = server.requests("/threads").last?.httpBody.flatMap { String(bytes: $0, encoding: .utf8) }
         #expect(started?.contains(#""folder":"scratch""#) == true)
+        #expect(try await client.topics(of: .room("t1")).map(\.id) == ["t1"])
+        #expect(server.requests("/threads").last?.url?.query == "room=t1")
     }
 }

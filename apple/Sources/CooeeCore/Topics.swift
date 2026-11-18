@@ -1,5 +1,11 @@
 import Foundation
 
+/// Whose topics a strip lists (#517): a persona's threads, or the rooms seating one room's members.
+public enum TopicsOf: Equatable, Sendable {
+    case persona(String)
+    case room(String)
+}
+
 /// A persona's topics (#515): its threads, in the order taken when its chat opened.
 public struct Topics: Equatable, Sendable {
     public static let chips = 6

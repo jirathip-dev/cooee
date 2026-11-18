@@ -93,16 +93,27 @@ async fn events(cx: &Cx) -> Result<Sse<impl Stream<Item = Result<Event>> + use<>
 #[derive(Deserialize)]
 struct Of {
     persona: Option<String>,
+    room: Option<String>,
 }
 
 #[route(GET "/threads")]
 async fn thread_list(cx: &Cx) -> Result<Answer<Vec<cooee_core::Summary>>> {
     let of: Option<Of> = parse_query_params(cx).ok();
-    let persona = of.and_then(|o| o.persona);
+    let (persona, room) = of.map_or((None, None), |o| (o.persona, o.room));
+    let seats = |r: &cooee_core::Summary| {
+        let mut seats = r.members.clone();
+        seats.sort();
+        seats
+    };
     Ok(Answer(
         blocking(cx, move |hub| {
             let mut rows = hub.list();
+            let room = room.map(|id| rows.iter().find(|r| r.id == id).map(seats));
             rows.retain(|r| persona.as_ref().is_none_or(|p| &r.persona == p));
+            rows.retain(|r| {
+                room.as_ref()
+                    .is_none_or(|m| m.as_ref().is_some_and(|m| !m.is_empty() && &seats(r) == m))
+            });
             Ok(rows)
         })
         .await,

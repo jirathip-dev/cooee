@@ -23,8 +23,8 @@ internal struct ChatTopicsTests {
             ChatFeature()
         } withDependencies: {
             $0.continuousClock = clock
-            $0.threads.topics = { _, persona in
-                calls.record("topics \(persona)")
+            $0.threads.topics = { _, owner in
+                if case .persona(let id) = owner { calls.record("topics \(id)") }
                 return Self.seven
             }
             $0.threads.retitle = { _, id, title in calls.record("title \(id) \(title)") }
@@ -158,5 +158,69 @@ internal struct TopicSwitchTests {
             $0.chat = ChatFeature.State(server: mini, target: .new(coder), persona: Persona(coder))
             $0.chat?.bar?.topics = Topics(rows)
         }
+    }
+}
+
+@MainActor
+internal struct RoomTopicsTests {
+    private let calls = Calls()
+
+    nonisolated private static func room(_ id: String) -> ThreadRow {
+        ThreadRow(
+            id: id, title: "R \(id)", agent: "", persona: "", state: "", last: "", updated: 999_000_000, unseen: 0,
+            archived: false, members: ["coder", "cond"]
+        )
+    }
+
+    nonisolated private static let rooms = [room("r1"), room("r2")]
+
+    private func store() -> TestStoreOf<AppFeature> {
+        var state = AppFeature.State(layout: testLayout, server: mini)
+        state.home?.rows = Self.rooms + [row("o1", persona: "")]
+        state.home?.personas = [coder, conductor]
+        let calls = calls
+        let store = TestStore(initialState: state) {
+            AppFeature()
+        } withDependencies: {
+            $0.date.now = epoch
+            $0.threads.topics = { _, owner in
+                calls.record("topics \(owner)")
+                return Self.rooms
+            }
+            $0.threads.room = { _, title, members in
+                calls.record("room \(title)\(members)")
+                return "r3"
+            }
+        }
+        store.exhaustivity = .off
+        return store
+    }
+
+    @Test internal func aRoomListsItsTopicsAndSwitchesAndNewSeatsTheSameMembers() async {
+        let store = store()
+        await store.send(.open("r1"))
+        await store.send(.chat(.topics(.load)))
+        await store.receive(\.chat.topics.loaded)
+        #expect(store.state.chat?.bar?.topics.shown.map(\.id) == ["r1", "r2"])
+        await store.send(.chat(.topics(.open("r2"))))
+        await store.receive(\.chat.delegate.topic)
+        #expect(store.state.path == ["r2"] && store.state.chat?.current == "r2")
+        #expect(store.state.chat?.room?.members == ["coder", "cond"])
+        #expect(store.state.chat?.bar?.topics.shown.map(\.id) == ["r1", "r2"])
+        await store.send(.chat(.topics(.open(nil))))
+        await store.receive(\.chat.delegate.topic)
+        #expect(store.state.path == ["r3"] && store.state.chat?.current == "r3")
+        #expect(store.state.chat?.room?.members == ["coder", "cond"])
+        #expect(store.state.chat?.bar != nil)
+        #expect(calls.all == ["topics room(\"r1\")", "room [\"coder\", \"cond\"]"])
+    }
+
+    @Test internal func anOthersChatHasNoStrip() async {
+        let store = store()
+        await store.send(.open("o1"))
+        #expect(store.state.chat?.current == "o1")
+        #expect(store.state.chat?.bar == nil)
+        await store.send(.chat(.topics(.load)))
+        #expect(calls.all.isEmpty)
     }
 }
