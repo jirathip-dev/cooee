@@ -20,6 +20,7 @@ internal struct ChatPanelTests {
         state.home?.personas = [coder]
         state.path = ["t1"]
         state.chat = ChatFeature.State(server: mini, target: .thread("t1"), persona: Persona(coder))
+        state.home?.opened = ["coder": "t1"]
         let calls = calls
         return TestStore(initialState: state) {
             AppFeature()

@@ -45,6 +45,7 @@ internal struct PersonaControlsTests {
         await store.send(.open("t1")) {
             $0.path = ["t1"]
             $0.chat = ChatFeature.State(server: mini, target: .thread("t1"), persona: Persona(coder, state: .working))
+            $0.home?.opened["coder"] = "t1"
         }
         await store.send(.chat(.new))
         await store.receive(\.chat.delegate.start)
@@ -59,6 +60,7 @@ internal struct PersonaControlsTests {
         await store.send(.open("t1")) {
             $0.path = ["t1"]
             $0.chat = ChatFeature.State(server: mini, target: .thread("t1"), persona: Persona(coder, state: .working))
+            $0.home?.opened["coder"] = "t1"
         }
         await store.send(.chat(.profile))
         await store.receive(\.chat.delegate.persona)
@@ -70,6 +72,7 @@ internal struct PersonaControlsTests {
         await store.send(.open("t1")) {
             $0.path = ["t1"]
             $0.chat = ChatFeature.State(server: mini, target: .thread("t1"), persona: Persona(coder, state: .working))
+            $0.home?.opened["coder"] = "t1"
         }
         var other = coder
         other.agent = "fake-acp"

@@ -33,6 +33,7 @@ public struct AppFeature: Sendable {
         case pairing(PairingFeature.Action)
         case retire
         case retired
+        case taps
         case chat(ChatFeature.Action)
         case newRoom(NewRoomFeature.Action)
         case room
@@ -50,6 +51,7 @@ public struct AppFeature: Sendable {
 
     @Dependency(\.serverStore) private var serverStore
     @Dependency(\.loginItems) private var loginItems
+    @Dependency(\.push) private var push
     @Dependency(\.date.now) private var now
 
     public init() {}
@@ -73,6 +75,9 @@ public struct AppFeature: Sendable {
             case .retired:
                 state.notice = Self.retired
                 return .none
+            case .taps:
+                let push = push
+                return .run { send in for await thread in await push.opened() { await send(.open(thread)) } }
             case .persona(.presented(.delegate(.saved))), .persona(.presented(.delegate(.deleted))):
                 state.persona = nil
                 return .send(.home(.refresh))
@@ -110,6 +115,12 @@ public struct AppFeature: Sendable {
         .ifLet(\.chat, action: \.chat) { ChatFeature() }
         .ifLet(\.newRoom, action: \.newRoom) { NewRoomFeature() }
         .ifLet(\.$persona, action: \.persona) { PersonaFeature() }
+        Reduce { state, _ in
+            if let chat = state.chat, case .thread(let id) = chat.target, chat.bar != nil {
+                state.home?.opened[chat.persona.id] = id
+            }
+            return .none
+        }
     }
 
     private func navigate(_ state: inout State, _ action: Action) -> Effect<Action> {
@@ -118,10 +129,7 @@ public struct AppFeature: Sendable {
             state.path = (state.path.first == Self.others && thread != Self.others ? [Self.others] : []) + [thread]
             state.chat = chat(state, thread)
         case .pin(let persona):
-            let newest = state.home?.rows.filter { $0.persona == persona && $0.members.isEmpty }.max {
-                $0.updated < $1.updated
-            }
-            return navigate(&state, newest.map { .open($0.id) } ?? .start(persona))
+            return navigate(&state, state.home?.opens(persona).map { .open($0.id) } ?? .start(persona))
         case .start(let persona):
             return navigate(&state, .open("new:\(persona)"))
         case .back:

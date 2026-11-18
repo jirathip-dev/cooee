@@ -88,6 +88,48 @@ internal enum TopicFrames {
         }
     }
 
+    private static func personaRows() -> [ListedChat] {
+        func topics(_ persona: String, _ count: Int, _ row: Row, folder: String?) -> ListedChat {
+            var chat = ListedChat(row: row, persona: Fixtures.persona(persona))
+            (chat.topics, chat.folder) = (count, folder)
+            return chat
+        }
+        let conductor = Row(
+            id: "c2", persona: "cond", title: "herdsman release", last: "v0.31 tagged; notes in CHANGELOG.md",
+            ago: "14m", unseen: 3, state: .done
+        )
+        let researcher = Row(
+            id: "r1", persona: "res", title: "Kestrel filings", last: "Allow fetch sec.gov?", ago: "12m", unseen: 1,
+            state: .done
+        )
+        let chats = Fixtures.chats
+        return [
+            chats[0], topics("cond", 5, conductor, folder: "/home/user/src/herdsman"),
+            topics("res", 2, researcher, folder: ""), chats[3], chats[4],
+        ]
+    }
+
+    @MainActor
+    private static func rows() -> some View {
+        VStack(spacing: 0) {
+            ForEach(personaRows()) { ChatRow(row: $0.row, persona: $0.persona, topics: $0.topics, folder: $0.folder) }
+        }
+    }
+
+    @MainActor
+    private static func home() -> some View {
+        ZStack(alignment: .top) {
+            Backdrop()
+            VStack(spacing: 0) {
+                TopBar(title: HomeScreen.bundled.title, personas: Fixtures.personas, actions: HomeActions())
+                Scroller {
+                    PinnedRow(pins: Fixtures.personas.map(Pin.persona), rows: Fixtures.rows).padding(.top, 6)
+                    rows().padding(.top, 14)
+                }
+            }
+        }
+    }
+
     private static let every: [(LookStyle, Palette)] = [
         (.modern, .farmDark), (.modern, .farmLight), (.terminal, .farmDark), (.scene, .farmLight),
     ]
@@ -106,6 +148,7 @@ internal enum TopicFrames {
             [
                 frame("chat", style, palette) { chat() }, frame("new", style, palette) { new() },
                 frame("list", style, palette) { list() },
+                frame("home-persona", style, palette) { home() },
             ]
         } + [
             frame("scrolled", .modern, .farmDark) { chat(plugins: false, scrolled: true) },

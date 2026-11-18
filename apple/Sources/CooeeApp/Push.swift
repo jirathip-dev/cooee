@@ -14,8 +14,35 @@ import UserNotifications
 #endif
 
 @MainActor
-public final class PushDelegate: NSObject, PlatformDelegate {
+public final class PushDelegate: NSObject, PlatformDelegate, UNUserNotificationCenterDelegate {
     private static var waiting: CheckedContinuation<String, any Error>?
+    private static var tapped: AsyncStream<String>.Continuation?
+    private static var held: [String] = []
+
+    override public init() {
+        super.init()
+        UNUserNotificationCenter.current().delegate = self
+    }
+
+    nonisolated public func userNotificationCenter(
+        _ center: UNUserNotificationCenter, didReceive response: UNNotificationResponse
+    ) async {
+        let thread = response.notification.request.content.threadIdentifier
+        guard !thread.isEmpty else { return }
+        await Self.open(thread)
+    }
+
+    internal static func taps() -> AsyncStream<String> {
+        let (stream, continuation) = AsyncStream.makeStream(of: String.self)
+        tapped = continuation
+        for thread in held { continuation.yield(thread) }
+        held = []
+        return stream
+    }
+
+    private static func open(_ thread: String) {
+        if let tapped { tapped.yield(thread) } else { held.append(thread) }
+    }
 
     public func application(_ application: Platform, didRegisterForRemoteNotificationsWithDeviceToken token: Data) {
         Self.waiting?.resume(returning: token.map { String(format: "%02x", $0) }.joined())
