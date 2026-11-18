@@ -17,10 +17,7 @@ internal struct TopicStart: View {
         }
         .ui(12, .regular, look).foregroundStyle(palette.foreground)
         .padding(.horizontal, 12).frame(height: 26)
-        .background(look.mono ? Color.clear : palette.green.opacity(0.18), in: .capsule)
-        .overlay {
-            if look.mono { Rectangle().strokeBorder(palette.edge, style: StrokeStyle(lineWidth: 1, dash: [3, 2])) }
-        }
+        .chip(look, fill: palette.green.opacity(0.18), edge: palette.edge, dash: [3, 2])
         .frame(maxWidth: .infinity)
         .background { Rectangle().fill(palette.edge.opacity(0.6)).frame(height: 1) }
         .accessibilityElement(children: .combine)
@@ -37,7 +34,7 @@ internal struct FolderRow: View {
             HStack(spacing: 8) {
                 Button(action: actions.browse) {
                     pill(
-                        symbol: "folder.badge.plus", title: look.mono ? "[use a folder…]" : "Use a folder…",
+                        symbol: "folder.badge.plus", title: look.label(.chip, "Use a folder…"),
                         tint: palette.link
                     )
                 }
@@ -65,7 +62,7 @@ internal struct FolderRow: View {
             Text(title).ui(13, lit ? .semibold : .medium, look)
         }
         .foregroundStyle(tint).padding(.horizontal, 12).frame(height: 32)
-        .modifier(RoundSurface(look: look))
+        .chip(look)
         .overlay {
             if lit { Capsule().strokeBorder(look.palette.link, lineWidth: 1.5) }
         }
@@ -98,8 +95,7 @@ internal struct ChipMenu: View {
             .buttonStyle(.plain)
         }
         .frame(width: 230)
-        .background(look.mono ? palette.background : palette.card, in: .rect(cornerRadius: look.mono ? 0 : 16))
-        .overlay { if look.mono { Rectangle().strokeBorder(palette.edge, lineWidth: 1) } }
+        .chip(look, fill: palette.card, edge: palette.edge, radius: 16, paper: palette.background)
         .shadow(color: .black.opacity(0.25), radius: 18, y: 6)
     }
 
@@ -129,14 +125,13 @@ internal struct UndoToast: View {
     internal var body: some View {
         let palette = look.palette
         HStack(spacing: 12) {
-            Text(look.mono ? "archived \(title)" : "Archived \(title)").ui(14, .medium, look).lineLimit(1)
+            Text(look.quiet ? "archived \(title)" : "Archived \(title)").ui(14, .medium, look).lineLimit(1)
             Spacer(minLength: 4)
-            Button(action: undo) { Text(look.mono ? "[undo]" : "Undo").ui(14, .semibold, look) }
+            Button(action: undo) { Text(look.label(.chip, "Undo")).ui(14, .semibold, look) }
                 .buttonStyle(.plain).foregroundStyle(palette.link)
         }
         .padding(.horizontal, 16).frame(height: 44)
-        .background(look.mono ? palette.background : palette.card, in: .rect(cornerRadius: look.mono ? 0 : 22))
-        .overlay { if look.mono { Rectangle().strokeBorder(palette.edge, lineWidth: 1) } }
+        .chip(look, fill: palette.card, edge: palette.edge, radius: 22, paper: palette.background)
         .shadow(color: .black.opacity(0.2), radius: 12, y: 4)
     }
 }
@@ -153,7 +148,7 @@ internal struct StripRow: View {
             HStack(spacing: 12) {
                 TopicStrip(actions: topics)
                 PluginChips(chips: chips, actions: actions).fixedSize().padding(.trailing, 16)
-                    .padding(.top, look.mono ? 0 : 6)
+                    .padding(.top, look.outline ? 0 : 6)
             }
         } else {
             TopicStrip(actions: topics)

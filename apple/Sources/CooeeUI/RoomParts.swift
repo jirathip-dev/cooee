@@ -87,11 +87,11 @@ internal struct RoomStack: View {
                 GridRow { avatars(shown.dropFirst(2)) }
             }
         } else {
-            HStack(spacing: grid ? 4 : look.mono ? 2 : -size * 0.45) {
+            HStack(spacing: grid ? 4 : look.figures == .ascii ? 2 : -size * 0.45) {
                 avatars(shown[...])
                 if members.count > most {
                     Text("+\(members.count - most)").ui(size * 0.45, .semibold, look).foregroundStyle(look.palette.mute)
-                        .padding(.leading, look.mono ? 0 : size * 0.5)
+                        .padding(.leading, look.figures == .ascii ? 0 : size * 0.5)
                 }
             }
         }
@@ -107,8 +107,8 @@ internal struct StateDot: View {
     internal let state: MemberState
 
     internal var body: some View {
-        RoundedRectangle(cornerRadius: look.mono ? 0 : 6).fill(state.color(look.palette)).frame(width: 12, height: 12)
-            .padding(2).background(look.palette.background, in: .rect(cornerRadius: look.mono ? 0 : 8))
+        RoundedRectangle(cornerRadius: look.radius(6)).fill(state.color(look.palette)).frame(width: 12, height: 12)
+            .padding(2).background(look.palette.background, in: .rect(cornerRadius: look.radius(8)))
     }
 }
 
@@ -124,8 +124,8 @@ internal struct CostNote: View {
             Text("\(lead)\(tail)").ui(14, .regular, look)
         }
         .padding(.horizontal, 14).padding(.vertical, 11).frame(maxWidth: .infinity, alignment: .leading)
-        .background(palette.card.opacity(0.6), in: .rect(cornerRadius: look.mono ? 0 : 12))
-        .overlay(RoundedRectangle(cornerRadius: look.mono ? 0 : 12).strokeBorder(palette.line, lineWidth: 1))
+        .background(palette.card.opacity(0.6), in: .rect(cornerRadius: look.radius(12)))
+        .overlay(RoundedRectangle(cornerRadius: look.radius(12)).strokeBorder(palette.line, lineWidth: 1))
     }
 }
 
@@ -154,14 +154,14 @@ internal struct RoundPill: View {
             }
             Spacer()
             Button(action: stop) {
-                HStack(spacing: look.mono ? 0 : 4) {
-                    if look.mono { Text("[") }
+                HStack(spacing: look.outline ? 0 : 4) {
+                    if look.outline { Text("[") }
                     Image(systemName: "stop.fill").font(.system(size: 10))
-                    Text(look.mono ? " Stop]" : "Stop")
+                    Text(look.outline ? " Stop]" : "Stop")
                 }
                 .ui(14, .semibold, look).foregroundStyle(palette.red)
                 .padding(.horizontal, 12).frame(height: 30)
-                .background(look.mono ? .clear : palette.red.opacity(0.16), in: .capsule)
+                .background(look.outline ? .clear : palette.red.opacity(0.16), in: .capsule)
             }
             .buttonStyle(.plain).accessibilityLabel("Stop")
         }

@@ -67,28 +67,25 @@ internal struct YouBubble: View {
                     .background(palette.card, in: .rect(cornerRadius: 10))
             }
             if members.isEmpty {
-                Text(look.mono ? "> \(text)" : text).ui(16, .regular, look)
+                Text(look.label(.said, text)).ui(16, .regular, look)
                     .padding(.horizontal, 14).padding(.vertical, 10)
-                    .background(look.mono ? Color.clear : palette.link.opacity(0.22), in: .rect(cornerRadius: 20))
-                    .foregroundStyle(look.mono ? palette.lead : palette.foreground)
+                    .background(look.outline ? Color.clear : palette.link.opacity(0.22), in: .rect(cornerRadius: 20))
+                    .foregroundStyle(look.outline ? palette.lead : palette.foreground)
             } else {
                 roomBubble
             }
         }
-        .frame(maxWidth: .infinity, alignment: .trailing).padding(.leading, look.mono ? 0 : 48)
+        .frame(maxWidth: .infinity, alignment: .trailing).padding(.leading, look.outline ? 0 : 48)
     }
 
     private var roomBubble: some View {
         let palette = look.palette
         return Text(BlockView.mentioned(AttributedString(text), members, palette.link)).ui(16, .regular, look)
             .foregroundStyle(palette.foreground).padding(.horizontal, 14).padding(.vertical, 10)
-            .frame(maxWidth: look.mono ? .infinity : nil, alignment: .leading)
-            .background(
-                look.mono ? palette.card : palette.amber.opacity(0.2), in: .rect(cornerRadius: look.mono ? 6 : 20)
-            )
-            .overlay(alignment: .leading) {
-                if look.mono { Rectangle().fill(palette.lead).frame(width: 3) }
-            }
+            .frame(maxWidth: look.outline ? .infinity : nil, alignment: .leading)
+            .accent(
+                look, palette.lead, fill: palette.amber.opacity(0.2), radius: look.radius(20, least: 6),
+                paper: palette.card)
     }
 }
 
@@ -181,8 +178,8 @@ internal struct CodeBlock: View {
                 .padding(12).frame(maxWidth: .infinity, alignment: .leading)
                 .fixedSize(horizontal: false, vertical: true)
         }
-        .background(palette.card, in: .rect(cornerRadius: look.mono ? 0 : 12))
-        .overlay(RoundedRectangle(cornerRadius: look.mono ? 0 : 12).strokeBorder(palette.edge, lineWidth: 1))
+        .background(palette.card, in: .rect(cornerRadius: look.radius(12)))
+        .overlay(RoundedRectangle(cornerRadius: look.radius(12)).strokeBorder(palette.edge, lineWidth: 1))
     }
 }
 
@@ -229,20 +226,14 @@ internal struct ToolFold: View {
         }
         .contentShape(.rect)
         .padding(.horizontal, 12).frame(height: 34)
-        .background(palette.card.opacity(look.mono ? 0 : 0.7), in: .rect(cornerRadius: look.mono ? 0 : 10))
-        .overlay {
-            if look.mono { Rectangle().strokeBorder(palette.line, lineWidth: 1) }
-        }
+        .chip(look, fill: palette.card.opacity(0.7), edge: palette.line, radius: 10)
     }
 
     @ViewBuilder private func mark(_ last: ToolRow) -> some View {
         let tint = last.running ? look.palette.cyan : look.palette.green
-        if look.mono {
-            Text(last.running ? "o>_" : members.isEmpty ? "[ok]" : "✓").ui(13, .bold, look).foregroundStyle(tint)
-                .fixedSize()
-        } else {
-            Image(systemName: last.running ? "gearshape.2.fill" : "checkmark.circle.fill")
-                .font(.system(size: 13)).foregroundStyle(tint)
+        Mark(text: last.running ? "o>_" : members.isEmpty ? "[ok]" : "✓") {
+            Image(systemName: last.running ? "gearshape.2.fill" : "checkmark.circle.fill").font(.system(size: 13))
         }
+        .foregroundStyle(tint).fixedSize()
     }
 }

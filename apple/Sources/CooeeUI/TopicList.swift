@@ -39,8 +39,7 @@ public struct TopicList: View {
     private var head: some View {
         HStack(spacing: 10) {
             FigureView(persona: persona, size: 30)
-            Text(look.mono ? "# \(persona.name.lowercased()) · topics" : "\(persona.name) · Topics").ui(
-                17, .semibold, look)
+            Text(look.label(.section, "\(persona.name) · Topics")).ui(17, .semibold, look)
             Spacer()
             Button {
                 topics.open(nil)
@@ -78,7 +77,7 @@ internal struct SheetBackground: View {
 
     internal var body: some View {
         let palette = look.palette
-        if look.mono {
+        if look.square {
             Rectangle().fill(palette.background).overlay(Rectangle().strokeBorder(palette.edge, lineWidth: 1))
         } else {
             UnevenRoundedRectangle(topLeadingRadius: 30, topTrailingRadius: 30)
@@ -94,7 +93,7 @@ internal struct SearchField: View {
 
     internal var body: some View {
         let palette = look.palette
-        let hint = look.mono ? "search topics" : "Search topics"
+        let hint = look.quiet ? "search topics" : "Search topics"
         HStack(spacing: 8) {
             Glyph(symbol: "magnifyingglass", ascii: "/", size: 14)
             if let text {
@@ -106,8 +105,7 @@ internal struct SearchField: View {
             Spacer()
         }
         .foregroundStyle(palette.mute).padding(.horizontal, 12).frame(height: 38)
-        .background(look.mono ? Color.clear : palette.edge.opacity(0.3), in: .rect(cornerRadius: 12))
-        .overlay { if look.mono { Rectangle().strokeBorder(palette.edge, lineWidth: 1) } }
+        .chip(look, fill: palette.edge.opacity(0.3), edge: palette.edge, radius: 12)
         .padding(.horizontal, 16)
     }
 }
@@ -139,7 +137,7 @@ internal struct TopicRow: View {
                 HStack(spacing: 6) {
                     Text(topic.last).ui(13, .regular, look).foregroundStyle(palette.mute).lineLimit(1)
                     Spacer(minLength: 4)
-                    if topic.state == "working" { Mark(topic: topic) }
+                    if topic.state == "working" { TopicMark(topic: topic) }
                     if topic.unseen > 0 { Badge(count: topic.unseen) }
                 }
             }
@@ -171,12 +169,12 @@ internal struct RenameField: View {
             }
             Spacer()
             Button(action: done) {
-                Text(look.mono ? "[done]" : "Done").ui(14, .semibold, look).foregroundStyle(palette.link)
+                Text(look.label(.chip, "Done")).ui(14, .semibold, look).foregroundStyle(palette.link)
             }
             .buttonStyle(.plain)
         }
         .padding(.horizontal, 8).frame(height: 30)
-        .background(look.mono ? Color.clear : palette.background.opacity(0.7), in: .rect(cornerRadius: 8))
-        .overlay { RoundedRectangle(cornerRadius: look.mono ? 0 : 8).strokeBorder(palette.link, lineWidth: 1) }
+        .background(look.outline ? Color.clear : palette.background.opacity(0.7), in: .rect(cornerRadius: 8))
+        .overlay { RoundedRectangle(cornerRadius: look.radius(8)).strokeBorder(palette.link, lineWidth: 1) }
     }
 }

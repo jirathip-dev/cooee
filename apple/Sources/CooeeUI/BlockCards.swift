@@ -119,7 +119,7 @@ internal struct CardBlock: View {
         .padding(14)
         .surface(look, radius: 20)
         .overlay(alignment: .leading) {
-            if look.style.surface == .glass {
+            if look.glass {
                 RoundedRectangle(cornerRadius: 2).fill(tint).frame(width: 3).padding(.vertical, 16)
             }
         }
@@ -138,8 +138,8 @@ internal struct CardBlock: View {
         if kind != nil || meta != nil || badge != nil || member != nil {
             HStack(spacing: 6) {
                 if let kind {
-                    if !look.mono { Image(systemName: kind.symbol).font(.system(size: 12, weight: .bold)) }
-                    Text(look.mono ? "## \(kind.label)" : kind.label.uppercased()).ui(11, .bold, look)
+                    if !look.textMarks { Image(systemName: kind.symbol).font(.system(size: 12, weight: .bold)) }
+                    Text(look.label(.kind, kind.label)).ui(11, .bold, look)
                 }
                 if let member {
                     FigureView(persona: member, size: 22)
@@ -160,7 +160,7 @@ internal struct MissingPoster: View {
 
     internal var body: some View {
         let label = "\(kind) · source unknown · not drawn"
-        Label(look.mono ? "## \(label)" : label.uppercased(), systemImage: "exclamationmark.octagon.fill")
+        Label(look.label(.kind, label), systemImage: "exclamationmark.octagon.fill")
             .labelStyle(.titleAndIcon).ui(11, .bold, look).foregroundStyle(look.palette.red)
             .frame(maxWidth: .infinity, alignment: .leading).padding(14).surface(look, radius: 20)
     }
@@ -174,7 +174,7 @@ internal struct Pill: View {
         let tint = look.palette.tone(badge.string("tone")) ?? look.palette.mute
         Text(badge.string("text") ?? "").ui(11, .bold, look).foregroundStyle(tint)
             .padding(.horizontal, 8).padding(.vertical, 3)
-            .background(tint.opacity(0.15), in: look.mono ? AnyShape(Rectangle()) : AnyShape(Capsule()))
+            .background(tint.opacity(0.15), in: look.pill)
     }
 }
 
@@ -228,7 +228,7 @@ internal struct ChoiceBlock: View {
 
     private func title(_ option: JSONValue) -> String {
         let label = option.string("label") ?? ""
-        let recommended = option.string("value") == block.string("recommended") && !look.mono
+        let recommended = option.string("value") == block.string("recommended") && !look.textMarks
         return recommended ? "\(label) · recommended" : label
     }
 

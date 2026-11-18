@@ -26,7 +26,7 @@ public struct Sidebar<Column: View, Detail: View>: View {
                     column
                 }
             }
-            .frame(width: 360).background(palette.card.opacity(look.style.surface == .glass ? 0.45 : 0.8))
+            .frame(width: 360).background(palette.card.opacity(look.glass ? 0.45 : 0.8))
             .overlay(alignment: .trailing) { Rectangle().fill(palette.line).frame(width: 1) }
             detail.padding(.top, 12).frame(maxWidth: .infinity)
         }

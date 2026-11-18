@@ -95,9 +95,9 @@ internal struct Figure: View {
     @ViewBuilder private func drawn(_ frame: Int) -> some View {
         let palette = look.palette
         let lane = figure.string("state").flatMap(LaneState.init(rawValue:))
-        if let lane, look.style.figures == .ascii {
+        if let lane, look.figures == .ascii {
             Text(lane.figure(frame: frame)).ui(13, .bold, look).foregroundStyle(palette.round(lane)).frame(width: 40)
-        } else if look.style.figures == .sprite,
+        } else if look.figures == .sprite,
             let coat = figure.string("coat") ?? lane.map({ _ in SceneLane.coat(title) })
         {
             let pose = lane?.pose ?? "idle"
@@ -132,7 +132,7 @@ internal struct RowButton: View {
         ActButton(source: button) {
             Text(button.string("label") ?? "").ui(13, .semibold, look).foregroundStyle(tint)
                 .padding(.horizontal, 12).frame(minHeight: 30)
-                .background(look.mono ? Color.clear : tint.opacity(0.16), in: .capsule)
+                .background(look.outline ? Color.clear : tint.opacity(0.16), in: .capsule)
         }
     }
 }

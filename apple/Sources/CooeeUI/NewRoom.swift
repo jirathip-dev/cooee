@@ -42,7 +42,7 @@ public struct NewRoomSheet: View {
             bar
             name
             HStack {
-                Text(look.mono ? "# members" : "MEMBERS").ui(13, .semibold, look)
+                Text(look.label(.group, "Members")).ui(13, .semibold, look)
                 Spacer()
                 Text("\(picked.count) of \(RoomRound.seats.upperBound)").ui(13, .regular, look)
             }
@@ -81,7 +81,7 @@ public struct NewRoomSheet: View {
             }
         }
         .ui(17, .regular, look).padding(.horizontal, 16).frame(maxWidth: .infinity, minHeight: 48, alignment: .leading)
-        .background(look.palette.card.opacity(0.75), in: .rect(cornerRadius: look.mono ? 0 : 14))
+        .background(look.palette.card.opacity(0.75), in: .rect(cornerRadius: look.radius(14)))
     }
 
     private func row(_ persona: Persona) -> some View {

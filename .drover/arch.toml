@@ -111,3 +111,9 @@ pattern = "\"curl\""
 paths = ["crates/cooee-server/src/**"]
 except = ["crates/cooee-server/src/net.rs"]
 reason = "#497: only net.rs starts curl: use net::fetch or net::stream, which follow no redirect and take headers on stdin"
+
+[[ban]]
+pattern = "look.style"
+paths = ["apple/Sources/CooeeUI/**"]
+except = ["apple/Sources/CooeeUI/Look+Style.swift"]
+reason = "#488: a view never reads the style: use Look+Style (label, radius, pill, surface, chip, Mark, FigureView, Stage)"

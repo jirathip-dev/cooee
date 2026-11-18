@@ -12,8 +12,8 @@ internal struct RoomPin: View {
             group.overlay(alignment: .topTrailing) {
                 if room.row.unseen > 0 { Badge(count: room.row.unseen).offset(x: 4, y: -2) }
             }
-            if look.style.stage == nil { Text(room.row.title).ui(12, .medium, look).lineLimit(1) }
-            if look.mono {
+            if look.stage == nil { Text(room.row.title).ui(12, .medium, look).lineLimit(1) }
+            if look.textMarks {
                 Text(state.word).ui(10, .regular, look).foregroundStyle(state == .needs ? palette.red : palette.mute)
             }
         }
@@ -22,9 +22,9 @@ internal struct RoomPin: View {
 
     @ViewBuilder private var group: some View {
         let ring = look.palette.state(room.row.state)
-        if let stage = look.style.stage {
+        if let stage = look.stage {
             fenced(stage)
-        } else if look.mono {
+        } else if look.outline {
             RoomStack(members: room.members, size: 34, grid: false, most: 3).padding(4)
                 .overlay(Rectangle().strokeBorder(ring.opacity(0.7), lineWidth: 1))
         } else {

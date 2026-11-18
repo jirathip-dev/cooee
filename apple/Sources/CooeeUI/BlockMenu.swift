@@ -16,7 +16,7 @@ internal struct MenuBlocks: View {
                 case "account": account
                 case "group": group(block)
                 case "note":
-                    Text((look.mono ? block.string("mono") : nil) ?? block.string("text") ?? "")
+                    Text((look.textMarks ? block.string("mono") : nil) ?? block.string("text") ?? "")
                         .ui(12, .regular, look).foregroundStyle(look.palette.mute).padding(.leading, 6)
                 default: EmptyView()
                 }

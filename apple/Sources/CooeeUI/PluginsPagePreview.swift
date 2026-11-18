@@ -55,7 +55,7 @@ public struct PluginsView: View {
                     }
                 }
                 Line(divider: false) {
-                    Text(look.mono ? "+ git url" : "Add from a git URL…").ui(15, .regular, look)
+                    Text(look.label(.button, "Add from a git URL…")).ui(15, .regular, look)
                         .foregroundStyle(look.palette.link)
                 }
             }
@@ -102,7 +102,7 @@ internal struct PluginLine: View {
                 let active = plugin.personas.contains(persona.id)
                 FigureView(persona: persona, size: 26)
                     .overlay(alignment: .bottomTrailing) {
-                        if active && !look.mono {
+                        if active && !look.textMarks {
                             Image(systemName: "checkmark.circle.fill").font(.system(size: 11))
                                 .foregroundStyle(look.palette.green).background(look.palette.card, in: Circle())
                         }
@@ -119,7 +119,7 @@ internal struct PluginLine: View {
     }
 
     private func action(_ title: String, _ tint: Color) -> some View {
-        Text(look.mono ? "[\(title.lowercased())]" : title).ui(13, .medium, look).foregroundStyle(tint)
+        Text(look.label(.chip, title)).ui(13, .medium, look).foregroundStyle(tint)
     }
 }
 
@@ -129,14 +129,12 @@ internal struct OnOff: View {
 
     internal var body: some View {
         let palette = look.palette
-        if look.mono {
-            Text(active ? "[on]" : "[off]").ui(13, .semibold, look).foregroundStyle(
-                active ? palette.green : palette.mute)
-        } else {
+        Mark(text: active ? "[on]" : "[off]", weight: .semibold) {
             Capsule().fill(active ? palette.green : palette.edge).frame(width: 46, height: 28)
                 .overlay(alignment: active ? .trailing : .leading) {
                     Circle().fill(.white).padding(2.5).shadow(color: .black.opacity(0.2), radius: 2, y: 1)
                 }
         }
+        .foregroundStyle(active ? palette.green : palette.mute)
     }
 }
