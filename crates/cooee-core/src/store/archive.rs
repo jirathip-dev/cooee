@@ -259,7 +259,7 @@ fn month(ms: u64) -> String {
 }
 
 fn trim(item: &Item, over: usize) -> Option<Item> {
-    let Body::Tool { title, .. } = &item.body else {
+    let Body::Tool { subject: title, .. } = &item.body else {
         return None;
     };
     let keep = over / 4;
@@ -270,7 +270,7 @@ fn trim(item: &Item, over: usize) -> Option<Item> {
         return None;
     }
     let mut item = item.clone();
-    if let Body::Tool { title, .. } = &mut item.body {
+    if let Body::Tool { subject: title, .. } = &mut item.body {
         *title = short;
     }
     Some(item)
@@ -404,7 +404,7 @@ mod tests {
         assert_eq!(store.retain(9 * DAY, &keys("")).unwrap(), 0);
         let items = store.items("t").unwrap();
         let Some(Item {
-            body: crate::Body::Tool { title, .. },
+            body: crate::Body::Tool { subject: title, .. },
             ..
         }) = items.first()
         else {

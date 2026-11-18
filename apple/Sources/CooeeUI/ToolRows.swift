@@ -54,14 +54,14 @@ internal struct ToolRowView: View {
         .overlay {
             if look.mono {
                 Rectangle().strokeBorder(failed ? palette.red.opacity(0.6) : palette.line, lineWidth: 1)
-            } else if failed || look.style == .scene {
+            } else if failed || look.style.stage != nil {
                 RoundedRectangle(cornerRadius: radius).strokeBorder(
-                    failed ? palette.red.opacity(0.55) : palette.edge, lineWidth: look.style == .scene ? 1.5 : 1)
+                    failed ? palette.red.opacity(0.55) : palette.edge, lineWidth: look.style.stage != nil ? 1.5 : 1)
             }
         }
     }
 
-    private var radius: CGFloat { look.mono ? 0 : look.style == .scene ? 8 : 10 }
+    private var radius: CGFloat { look.mono ? 0 : look.style.stage != nil ? 8 : 10 }
 
     private var fill: Color {
         let palette = look.palette
