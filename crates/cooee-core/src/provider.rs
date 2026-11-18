@@ -215,7 +215,10 @@ impl Providers {
     /// Every provider: the registered defaults under shed's records, under `rows` by name (see [`specs`]).
     #[must_use]
     pub fn load(rows: Option<&[Table]>, shed: &Shed) -> Self {
-        let records = shed.records().unwrap_or_default();
+        let records = match rows {
+            Some([]) => Vec::new(),
+            _ => shed.records().unwrap_or_default(),
+        };
         Self::new(&specs(rows, &records).unwrap_or_default())
     }
 
