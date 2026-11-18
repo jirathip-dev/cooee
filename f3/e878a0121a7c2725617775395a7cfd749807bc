@@ -1,0 +1,5 @@
+Decided: merge origin/staging 10c3e7f, which raises line_cap to 32000, and refresh the PR body's evidence at the new head
+Because: q1956
+Rejected: none
+Check: the PR body's Evidence names f3e878a and the cap gate prints 28641 / 32000
+Owner: Brings the branch up to date with staging's raised line limit and refreshes the test evidence; no behaviour change.
