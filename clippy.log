@@ -1,0 +1,10 @@
+    Checking cooee-server v0.1.0 (/Users/jkmacmini/.local/share/drover/work/cooee/issue-164/crates/cooee-server)
+    Checking cooee v0.1.0 (/Users/jkmacmini/.local/share/drover/work/cooee/issue-164/crates/cooee)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 3.86s
+   Compiling cooee-core v0.1.0 (/Users/jkmacmini/.local/share/drover/work/cooee/issue-164/crates/cooee-core)
+    Checking topcoat v0.11.0
+    Checking cooee-machines v0.1.0 (/Users/jkmacmini/.local/share/drover/work/cooee/issue-164/crates/cooee-machines)
+    Checking cooee-terminal v0.1.0 (/Users/jkmacmini/.local/share/drover/work/cooee/issue-164/crates/cooee-terminal)
+    Checking cooee-server v0.1.0 (/Users/jkmacmini/.local/share/drover/work/cooee/issue-164/crates/cooee-server)
+    Checking cooee v0.1.0 (/Users/jkmacmini/.local/share/drover/work/cooee/issue-164/crates/cooee)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 17.71s
