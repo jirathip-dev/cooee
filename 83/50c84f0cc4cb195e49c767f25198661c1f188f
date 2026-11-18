@@ -1,0 +1,9 @@
+Decided: PR macOS jobs run on xcode-27 unless vars.MAC_PR_RUNNER is self-hosted; all other events stay on the Mini
+Because: "Push runs on staging and main (signed dmg, mac-setup), and `apple-testflight.yml`, stay on"
+Decided: the fork guard and runs-on share one condition, so the guard bites exactly when the job could land on our runner
+Because: "the fork guard still applies whenever it points at our runners"
+Decided: mac-runner on github-hosted only sets DEVELOPER_DIR to Xcode_27.2.app; RUNNER_NAME there has spaces, so no tmp link
+Because: "selecting Xcode 27.2 by explicit path"
+Rejected: relying on a hosted default Xcode — the spec asks for an explicit path
+Check: AC1 shows only on the merge-ready run (ci-scope runs macOS legs only then); AC2 needs a repo variable write the lane may not make
+Owner: Flip PR Mac jobs to the Mini with `gh variable set MAC_PR_RUNNER --body self-hosted`; delete it to go back.
