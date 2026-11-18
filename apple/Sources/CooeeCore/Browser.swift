@@ -1,4 +1,3 @@
-import CoreGraphics
 import Foundation
 
 /// A persona's browser as the Screen shows it (#162): who drives it and how many agent calls wait.
@@ -54,19 +53,19 @@ public struct LiveFrame: Sendable, Equatable, Decodable {
         title = try keys.decode(String.self, forKey: .title)
         jpeg = Data(base64Encoded: try keys.decode(String.self, forKey: .jpeg)) ?? Data()
     }
-
-    /// The point on the page, in its CSS pixels, of a tap at `tap` in a view of `view` size that shows it fit.
-    public static func page(_ tap: CGPoint, view: CGSize, page: CGSize) -> CGPoint {
-        guard view.width > 0 else { return CGPoint(x: 0, y: 0) }
-        let scale = page.width / view.width
-        return CGPoint(x: (tap.x * scale).rounded(), y: (tap.y * scale).rounded())
-    }
 }
 
 /// The owner's input while they hold control.
 public enum BrowserInput: Sendable, Equatable, Encodable {
     case click(left: Double, top: Double)
     case text(String)
+
+    /// The click, in the page's CSS pixels, of a tap at (`left`, `top`) in a view `view` wide that shows a page `page` wide fit.
+    public static func tap(left: Double, top: Double, view: Double, page: Double) -> Self {
+        guard view > 0 else { return .click(left: 0, top: 0) }
+        let scale = page / view
+        return .click(left: (left * scale).rounded(), top: (top * scale).rounded())
+    }
 
     private enum CodingKeys: String, CodingKey {
         case click, text

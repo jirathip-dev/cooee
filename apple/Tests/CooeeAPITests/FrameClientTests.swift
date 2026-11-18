@@ -34,11 +34,8 @@ internal struct ScreenClientTests {
     }
 
     @Test internal func aTapOnTheFitPageIsItsCSSPoint() {
-        let page = CGSize(width: 1280, height: 800)
-        let point = LiveFrame.page(CGPoint(x: 195, y: 61), view: CGSize(width: 390, height: 244), page: page)
-        #expect(point.x == 640 && point.y == 200)
-        let none = LiveFrame.page(CGPoint(x: 5, y: 5), view: CGSize(width: 0, height: 0), page: page)
-        #expect(none.x == 0 && none.y == 0)
+        #expect(BrowserInput.tap(left: 195, top: 61, view: 390, page: 1280) == .click(left: 640, top: 200))
+        #expect(BrowserInput.tap(left: 5, top: 5, view: 0, page: 1280) == .click(left: 0, top: 0))
     }
 
     @Test internal func aTapAndTextGoAsTheServersInput() async throws {

@@ -139,9 +139,7 @@ internal struct BrowserPage: View {
     @ViewBuilder private func tappable(_ image: CGImage, _ size: CGSize) -> some View {
         if sheet.held && replayed == nil {
             Color.clear.contentShape(.rect).onTapGesture { tap in
-                let page = CGSize(width: image.width, height: image.height)
-                let point = LiveFrame.page(tap, view: size, page: page)
-                send(.send(.click(left: point.x, top: point.y)))
+                send(.send(.tap(left: tap.x, top: tap.y, view: size.width, page: Double(image.width))))
             }
         }
     }
