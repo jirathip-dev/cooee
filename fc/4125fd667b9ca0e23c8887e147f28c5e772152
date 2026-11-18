@@ -1,0 +1,23 @@
+Decided: push, login and mcp split per the addendum's entries; each old path is the generated module list, so callers keep crate::push::Push, crate::login::Logins, crate::mcp::Grant
+Because: "Each becomes a folder by the addendum's recipe, its path kept as the generated list"
+Decided: helpers and fields shared across sibling files became pub(super); shared test helpers sit in pub(super) mod tests as pub(in crate::push), as store/files.rs does
+Because: crates/cooee-core/src/store/files.rs:238
+Decided: Login, LABEL, provider and account live in login/logins.rs beside Logins::new, which cleans the labelled terminals; Check and its timing constants in login/checks.rs
+Because: crates/cooee-server/src/login/logins.rs:10
+Decided: arch-check --write-baseline also drops look.rs, already 794 lines on staging
+Because: crates/cooee-server/src/look.rs:794
+Rejected: keeping push's tests in one file — unit tests must end the file whose code they test
+Check: the test list is identical at base and head (410 lines); no test body changed
+Owner: No behaviour change: three big server files are now folders of small ones, so parallel work conflicts less.
+
+Decided: push, login and mcp split per the addendum's entries; each old path is the generated module list, so callers keep crate::push::Push, crate::login::Logins, crate::mcp::Grant
+Because: "Each becomes a folder by the addendum's recipe, its path kept as the generated list"
+Decided: staging's #550 change to login.rs (session replaces no_personal_setup, launch.meta dropped) applied in login/launch.rs, where those items moved
+Because: crates/cooee-server/src/login/launch.rs:35
+Decided: the msrv terminal-test FAIL (401 on pairing) is a flake, not this change: the test passed 4 of 4 runs locally and nothing it exercises moved
+Because: crates/cooee/tests/terminal.rs:205
+Decided: helpers and fields shared across sibling files became pub(super); shared test helpers sit in pub(super) mod tests as pub(in crate::push), as store/files.rs does
+Because: crates/cooee-core/src/store/files.rs:238
+Rejected: keeping push's tests in one file — unit tests must end the file whose code they test
+Check: the test list is identical at base and head (411 lines); no test body changed
+Owner: No behaviour change: three big server files are now folders of small ones, so parallel work conflicts less.
