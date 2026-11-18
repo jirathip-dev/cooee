@@ -5,7 +5,7 @@ use std::{
 };
 
 use cooee_core::{
-    Body, Change, Queued, ShedError, Workflow,
+    Body, Change, Queued, ShedError, Streamed, Workflow,
     shed_proto::{self, Event},
 };
 use serde_json::json;
@@ -26,9 +26,17 @@ impl Hub {
                 Ok(events) => {
                     self.shed_seen(None);
                     said.clear();
-                    for event in events {
-                        last = Some(event.seq);
-                        self.apply(event);
+                    for item in events {
+                        match item {
+                            Streamed::Event(event) => {
+                                last = Some(event.seq);
+                                self.apply(event);
+                            }
+                            Streamed::Reset(seq) => {
+                                last = Some(seq);
+                                break;
+                            }
+                        }
                     }
                 }
                 Err(e) if e.to_string() != said => {

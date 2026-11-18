@@ -614,6 +614,28 @@ impl FakeShed {
         json!({})
     }
 
+    fn subscribe(&self, id: Value, since: Option<u64>, writer: &mut UnixStream) {
+        let (tx, rx) = mpsc::channel();
+        let (floor, replay): (u64, Vec<Event>) = {
+            let mut s = self.shared.lock().unwrap();
+            s.subs.push(tx);
+            let kept = s.ring.iter().filter(|e| since.is_some_and(|n| e.seq > n));
+            (s.floor, kept.cloned().collect())
+        };
+        let ok = Response::ok(id, json!({}));
+        writeln!(writer, "{}", json!(ok)).unwrap();
+        if since.is_some_and(|n| n < floor) {
+            let reset =
+                format!(r#"{{"jsonrpc":"2.0","method":"reset","params":{{"seq":{floor}}}}}"#);
+            writeln!(writer, "{reset}").unwrap();
+        }
+        for event in replay.into_iter().chain(rx) {
+            if writeln!(writer, "{}", json!(event)).is_err() {
+                return;
+            }
+        }
+    }
+
     fn serve(&self, conn: UnixStream) {
         let mut writer = conn.try_clone().unwrap();
         let mut lines = BufReader::new(conn).lines();
@@ -683,30 +705,7 @@ impl FakeShed {
                     self.shared.lock().unwrap().gone.insert(name);
                     t
                 }
-                "events" => {
-                    let since = req.params["since"].as_u64();
-                    let (tx, rx) = mpsc::channel();
-                    let (floor, replay): (u64, Vec<Event>) = {
-                        let mut s = self.shared.lock().unwrap();
-                        s.subs.push(tx);
-                        let kept = s.ring.iter().filter(|e| since.is_some_and(|n| e.seq > n));
-                        (s.floor, kept.cloned().collect())
-                    };
-                    let ok = Response::ok(id, json!({}));
-                    writeln!(writer, "{}", json!(ok)).unwrap();
-                    if since.is_some_and(|n| n < floor) {
-                        let reset = format!(
-                            r#"{{"jsonrpc":"2.0","method":"reset","params":{{"seq":{floor}}}}}"#
-                        );
-                        writeln!(writer, "{reset}").unwrap();
-                    }
-                    for event in replay.into_iter().chain(rx) {
-                        if writeln!(writer, "{}", json!(event)).is_err() {
-                            return;
-                        }
-                    }
-                    return;
-                }
+                "events" => return self.subscribe(id, req.params["since"].as_u64(), &mut writer),
                 other => Err(RpcError::new(ErrorCode::MethodNotFound, other)),
             };
             let response = match result {
