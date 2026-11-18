@@ -1,0 +1,9 @@
+Decided: the gate is one function, calls::decide, run after the grant check in Connectors::rpc for every tools/call
+Because: "read tools run, write tools raise an approval card, per persona and account"
+Decided: a tool card is cooee's own raise() card with form tool, so decline and #505 expiry both drop the waiter's sender
+Because: "a background card expires as Deny (#505)"
+Decided: an allow always records a permit; the waiter consumes it, so an allow after the agent stopped waiting still works
+Because: docs/architecture/connectors/boundaries.md:76
+Rejected: sending only when the waiter is gone — a race between the timeout and dropping the receiver loses the permit
+Check: crates/cooee/tests/mcp.rs new gate test sees no request for b or c at the fake server before the owner answers
+Owner: write tools of a connector now wait for your Allow card; reads run as before
