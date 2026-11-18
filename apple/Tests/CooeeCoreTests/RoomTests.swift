@@ -51,7 +51,7 @@ internal struct RoomTests {
             id: 2, speaker: "chief", time: Clock.time(60_000), markdown: [.text("It's in kickoff.md.")])
         #expect(built.count == 6 && built[1] == said)
         #expect(built[2] == .divider(id: -3, text: "round ended · 1 turn"))
-        #expect(built[4] == .tools(id: 4, rows: [ToolRow(.fetch, "sec.gov", "done")]))
+        #expect(built[4] == .tools(id: 4, rows: [ToolRow(.other, "fetch sec.gov", "done")]))
         #expect(built[5] == .divider(id: Int.min, text: "round ended · 1 turn · Coder passed"))
         #expect(RoomItems.ended(4, passed: []) == "round ended · 4 turns")
     }
