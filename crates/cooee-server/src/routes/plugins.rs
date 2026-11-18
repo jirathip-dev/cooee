@@ -127,8 +127,9 @@ async fn pass_on(
 fn with_screens(cx: &Cx) -> Option<(Plugin, cooee_core::plugins::Manifest)> {
     let name = path_param::<Name>(cx);
     let data = &app_context::<Data>(cx).0;
-    let lock = cooee_core::plugins::read_lock(data).ok()?;
-    let m = cooee_core::plugins::manifest(data, lock.iter().find(|l| l.name == name)?).ok()?;
+    let installed = cooee_core::plugins::installed(data).ok()?;
+    let (_, m) = installed.iter().find(|(l, _)| l.name == name)?;
+    let m = m.clone();
     let p = app_context::<Arc<Hub>>(cx).backend(name)?;
     (!m.places.is_empty()).then_some((p, m))
 }
