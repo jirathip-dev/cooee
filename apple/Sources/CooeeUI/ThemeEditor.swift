@@ -16,7 +16,7 @@ internal struct ThemeEditor: View {
                 gateLine
                 if let error = store.error { Text(error).ui(13, .regular, look).foregroundStyle(palette.red) }
                 Group2(header: "Style") {
-                    ThemeChips(values: LookStyle.allCases, picked: [store.draft.style]) { store.send(.style($0)) }
+                    ThemeChips(values: store.offered, picked: [store.draft.style]) { store.send(.style($0)) }
                 }
                 figures
                 Group2(header: "Scene, colours, words") {
@@ -175,18 +175,23 @@ internal struct ThemePreview: View {
     internal var pose: String?
 
     internal static func look(
-        _ state: ThemeEditorFeature.State, _ look: Look, dark: Bool, style: LookStyle? = nil
+        _ state: ThemeEditorFeature.State, _ look: Look, dark: Bool, sprites: Bool = false
     ) -> Look {
         let palette = Palette(tokens: state.tokens(dark: dark), dark: dark) ?? look.palette
         var shown = Look(
-            palette: palette, style: .bundled(style ?? state.draft.style), still: look.still, art: state.art)
+            palette: palette, style: style(state, sprites: sprites), still: look.still, art: state.art)
         (shown.drawn, shown.vectors) = (state.drawing.figures, state.drawing.vectors)
         shown.tokens = state.tokens(dark: dark)
         return shown
     }
 
+    private static func style(_ state: ThemeEditorFeature.State, sprites: Bool) -> Style {
+        let names = sprites ? state.offered : [state.draft.style]
+        return names.compactMap { state.styles[$0] }.first { !sprites || $0.figures == .sprite } ?? .bundled
+    }
+
     internal var body: some View {
-        let shown = Self.look(state, look, dark: dark, style: pose == nil ? nil : .scene)
+        let shown = Self.look(state, look, dark: dark, sprites: pose != nil)
         Group {
             if chat {
                 VStack(alignment: .leading, spacing: 14) {
@@ -199,7 +204,7 @@ internal struct ThemePreview: View {
                     pose.map { pose in [all.first { $0.row.state.pose == pose } ?? all.first].compactMap(\.self) }
                     ?? Array(all.prefix(3))
                 VStack(spacing: 0) {
-                    if shown.style.stage != nil, pose == nil { scene(chats, shown) }
+                    if shown.stage != nil, pose == nil { scene(chats, shown) }
                     ChatList(chats: chats, title: pose == nil ? "Chats" : nil).padding(.vertical, pose == nil ? 0 : 4)
                         .padding(.top, 14)
                 }
@@ -207,8 +212,8 @@ internal struct ThemePreview: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading).foregroundStyle(shown.palette.foreground)
         .background(shown.palette.background)
-        .clipShape(.rect(cornerRadius: shown.mono ? 0 : 22))
-        .overlay { RoundedRectangle(cornerRadius: shown.mono ? 0 : 22).stroke(shown.palette.edge) }
+        .clipShape(.rect(cornerRadius: shown.radius(22)))
+        .overlay { RoundedRectangle(cornerRadius: shown.radius(22)).stroke(shown.palette.edge) }
         .environment(\.look, shown).environment(\.colorScheme, dark ? .dark : .light)
         .allowsHitTesting(false).accessibilityElement(children: .ignore).accessibilityLabel("Preview")
     }

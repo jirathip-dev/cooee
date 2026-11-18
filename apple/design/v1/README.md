@@ -35,9 +35,11 @@ Look: farm scheme (`design-system/schemes/farm.json`, `farm-light.json`). Scene 
 
 ## Styles (q947, #141)
 
-Every frame above also renders in all three styles: `CooeeUITests`' `frameFitsInEveryStyle` draws each one in Modern,
-Terminal and Scene and fails if anything spills outside the frame (CI keeps the renders as the `snapshots` artifact).
-These are the style frames kept as designs:
+Every frame above is drawn in Modern, the one built-in style; `fitsInEveryPack` also draws each one under the
+Terminal and Scene packs and fails if anything spills outside the frame (CI keeps the renders as the `snapshots`
+artifact). The pack frames below now live in `apple/design/packs/<pack>/`, drawn by the `Packs` suite (#488, #513).
+Since #514 each pack keeps one sheet: home, chat, a card, the persona panel and the four trust cards; the other
+rows below and in the area READMEs name frames that are no longer recorded:
 
 | PNG | shows |
 |---|---|

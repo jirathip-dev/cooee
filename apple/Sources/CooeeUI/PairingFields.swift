@@ -194,7 +194,7 @@ private struct Avatars: View {
             ForEach(personas) { persona in
                 FigureView(persona: persona, size: 48)
                     .overlay(
-                        Circle().strokeBorder(look.palette.background, lineWidth: look.style.figures == .avatar ? 3 : 0)
+                        Circle().strokeBorder(look.palette.background, lineWidth: look.figures == .avatar ? 3 : 0)
                     )
             }
         }

@@ -72,7 +72,7 @@ public struct LinkedView: View {
             HStack(spacing: 8) {
                 HStack(spacing: 3) {
                     ForEach(0..<Exchange.depth, id: \.self) { step in
-                        RoundedRectangle(cornerRadius: look.mono ? 0 : 3)
+                        RoundedRectangle(cornerRadius: look.radius(3))
                             .fill(step < exchange.depth ? palette.link : palette.edge).frame(width: 18, height: 6)
                     }
                 }

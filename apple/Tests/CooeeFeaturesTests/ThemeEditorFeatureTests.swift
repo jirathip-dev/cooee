@@ -5,21 +5,22 @@ import Foundation
 import Testing
 
 // SAFETY: a JSON literal that decodes.
-private let looks = try! JSONDecoder().decode(
-    Looks.self,
-    from: Data(
-        #"""
-        {"themes": {
-          "farm": {"label": "farm", "scheme": {"dark": "farm", "light": "farm-light"}, "sprites": true},
-          "tidepool": {"label": "Tidepool", "scheme": {"dark": "tp", "light": "tp-light"}, "sprites": true,
-                       "style": "scene"}},
-         "schemes": {
-          "farm": {"label": "Farm", "color-scheme": "dark", "tokens": {"--bg": "#0f1a13", "--a": "#f29b4b"}},
-          "farm-light": {"label": "Farm light", "color-scheme": "light", "tokens": {"--bg": "#f5efda"}},
-          "tp": {"label": "Tidepool", "color-scheme": "dark", "tokens": {"--bg": "#10202a"}},
-          "tp-light": {"label": "Tidepool light", "color-scheme": "light", "tokens": {"--a": "#a88a2a"}}}}
-        """#.utf8)
-)
+private let looks = try! served(
+    JSONDecoder().decode(
+        Looks.self,
+        from: Data(
+            #"""
+            {"themes": {
+              "farm": {"label": "farm", "scheme": {"dark": "farm", "light": "farm-light"}, "sprites": true},
+              "tidepool": {"label": "Tidepool", "scheme": {"dark": "tp", "light": "tp-light"}, "sprites": true,
+                           "style": "scene"}},
+             "schemes": {
+              "farm": {"label": "Farm", "color-scheme": "dark", "tokens": {"--bg": "#0f1a13", "--a": "#f29b4b"}},
+              "farm-light": {"label": "Farm light", "color-scheme": "light", "tokens": {"--bg": "#f5efda"}},
+              "tp": {"label": "Tidepool", "color-scheme": "dark", "tokens": {"--bg": "#10202a"}},
+              "tp-light": {"label": "Tidepool light", "color-scheme": "light", "tokens": {"--a": "#a88a2a"}}}}
+            """#.utf8)
+    ))
 
 // SAFETY: a JSON literal that decodes.
 private let failing = try! JSONDecoder().decode(
@@ -41,7 +42,7 @@ internal struct ThemeEditorFeatureTests {
 
     private func store(_ theme: String, new: Bool = false) -> TestStoreOf<ThemeEditorFeature> {
         let calls = calls
-        let state = ThemeEditorFeature.State(server: mini, looks: looks, theme: theme, style: .modern, new: new)
+        let state = ThemeEditorFeature.State(server: mini, looks: looks, theme: theme, style: "modern", new: new)
         return TestStore(initialState: state) {
             ThemeEditorFeature()
         } withDependencies: {
@@ -60,13 +61,13 @@ internal struct ThemeEditorFeatureTests {
     }
 
     @Test internal func anOwnPackIsEditedInPlaceAndABuiltInIsCopied() {
-        let own = ThemeEditorFeature.State(server: mini, looks: looks, theme: "tidepool", style: .modern, new: false)
-        #expect(own.name == "tidepool" && own.draft.label == "Tidepool" && own.draft.style == .scene)
+        let own = ThemeEditorFeature.State(server: mini, looks: looks, theme: "tidepool", style: "modern", new: false)
+        #expect(own.name == "tidepool" && own.draft.label == "Tidepool" && own.draft.style == "scene")
         #expect(own.draft.light == ["--a": "#a88a2a"] && own.draft.from == "tidepool")
-        let copy = ThemeEditorFeature.State(server: mini, looks: looks, theme: "farm", style: .terminal, new: false)
-        #expect(copy.name == "farm-copy" && copy.draft.label == "Farm copy" && copy.draft.style == .terminal)
+        let copy = ThemeEditorFeature.State(server: mini, looks: looks, theme: "farm", style: "terminal", new: false)
+        #expect(copy.name == "farm-copy" && copy.draft.label == "Farm copy" && copy.draft.style == "terminal")
         #expect(copy.art == nil && own.art?.absoluteString == "https://mini.local/look/tidepool/")
-        let new = ThemeEditorFeature.State(server: mini, looks: looks, theme: "farm", style: .modern, new: true)
+        let new = ThemeEditorFeature.State(server: mini, looks: looks, theme: "farm", style: "modern", new: true)
         #expect(new.draft.from == "starter" && new.name == "new-theme" && new.art == nil)
         #expect(new.draft.dark["--a"] == "#f29b4b")
     }
@@ -127,7 +128,7 @@ internal struct ThemeEditorFeatureTests {
         await store.send(.start("tp")) { $0.draft.dark = ["--bg": "#10202a"] }
         await store.receive(\.checked) { $0.reports = ["dark": GateReport(), "light": failing] }
         await store.send(.label("Rock pool")) { $0.draft.label = "Rock pool" }
-        await store.send(.style(.terminal)) { $0.draft.style = .terminal }
+        await store.send(.style("terminal")) { $0.draft.style = "terminal" }
         await store.send(.preview(chat: true, dark: false)) {
             $0.chat = true
             $0.dark = false
@@ -138,7 +139,7 @@ internal struct ThemeEditorFeatureTests {
     @Test internal func aRefusedSaveShowsWhy() async {
         let store = TestStore(
             initialState: ThemeEditorFeature.State(
-                server: mini, looks: looks, theme: "tidepool", style: .modern, new: false)
+                server: mini, looks: looks, theme: "tidepool", style: "modern", new: false)
         ) {
             ThemeEditorFeature()
         } withDependencies: {
@@ -176,7 +177,7 @@ internal struct ThemeEditorMenuTests {
         return TestStore(initialState: state) {
             MenuFeature()
         } withDependencies: {
-            $0.settingsStore.save = { calls.record("save \($0.theme) \($0.style)") }
+            $0.settingsStore.save = { calls.record("save \($0.theme) \($0.style.name)") }
             $0.threads.looks = { _ in looks }
             $0.threads.checkTheme = { _, _ in [:] }
             $0.threads.themeArt = { _, _, _ in "" }
@@ -187,18 +188,18 @@ internal struct ThemeEditorMenuTests {
         let store = store()
         await store.send(.theme("tidepool")) {
             $0.settings.theme = "tidepool"
-            $0.settings.style = .scene
+            $0.settings.style = StylePick("scene", kept: looks.style("scene"))
         }
         await store.send(.edit("tidepool")) {
             $0.editor = ThemeEditorFeature.State(
-                server: mini, looks: looks, theme: "tidepool", style: .scene, new: false)
+                server: mini, looks: looks, theme: "tidepool", style: "scene", new: false)
             $0.path = [.themeEditor]
         }
         await store.receive(\.editor.task)
         await store.receive(\.editor.art)
         await store.receive(\.editor.checked)
-        await store.send(.editor(.saved("tidepool", .terminal))) {
-            $0.settings.style = .terminal
+        await store.send(.editor(.saved("tidepool", "terminal"))) {
+            $0.settings.style = StylePick("terminal", kept: looks.style("terminal"))
             $0.saved = "Tidepool"
             $0.editor = nil
             $0.path = []

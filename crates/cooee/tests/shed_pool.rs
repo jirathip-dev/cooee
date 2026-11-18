@@ -5,7 +5,7 @@ mod support;
 
 use std::path::Path;
 
-use cooee_core::{Shed, ShedError, shed_proto::Hello};
+use cooee_core::{SHED_MIN_PROTOCOL, Shed, ShedError, shed_proto::Hello};
 use support::{FakeShed, scratch, version};
 
 fn client(dir: &Path) -> Shed {
@@ -59,7 +59,7 @@ fn a_request_that_was_sent_is_never_resent() {
 }
 
 #[test]
-fn another_protocol_after_a_restart_is_a_version_error() {
+fn a_protocol_below_the_minimum_after_a_restart_is_a_version_error() {
     let dir = scratch("pool-version").join("shed");
     let old = FakeShed::start(&dir, version());
     let shed = client(&dir);
@@ -68,13 +68,28 @@ fn another_protocol_after_a_restart_is_a_version_error() {
     let new = FakeShed::start(
         &dir,
         Hello {
-            protocol: 2,
+            protocol: SHED_MIN_PROTOCOL - 1,
             ..version()
         },
     );
     let err = shed.get("t1").unwrap_err();
     assert!(matches!(err, ShedError::Version { .. }), "{err}");
     assert_eq!(count(&new, "get"), 0);
+}
+
+#[test]
+fn a_shed_on_a_newer_protocol_than_the_minimum_is_accepted() {
+    let dir = scratch("pool-newer").join("shed");
+    let fake = FakeShed::start(
+        &dir,
+        Hello {
+            protocol: SHED_MIN_PROTOCOL + 1,
+            ..version()
+        },
+    );
+    let shed = client(&dir);
+    assert_eq!(shed.get("t1").unwrap().name, "t1");
+    assert_eq!(count(&fake, "get"), 1);
 }
 
 #[test]

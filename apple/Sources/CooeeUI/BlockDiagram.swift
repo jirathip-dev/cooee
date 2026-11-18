@@ -21,7 +21,7 @@ internal struct DiagramBlock: View {
         }
         .frame(maxWidth: .infinity).padding(.vertical, 6)
         .background(
-            look.mono ? look.palette.background : look.palette.card, in: .rect(cornerRadius: look.mono ? 0 : 16)
+            look.outline ? look.palette.background : look.palette.card, in: .rect(cornerRadius: look.radius(16))
         )
         .onChange(of: counts) { old, _ in was = old }
         .accessibilityElement(children: .contain).accessibilityLabel(block.string("title") ?? "Workflow")
@@ -181,7 +181,7 @@ internal struct DiagramNode: View {
     private var timer: some View {
         let palette = look.palette
         return HStack(spacing: 4) {
-            Text(look.mono ? "⧗" : "⏱").ui(14, .regular, look)
+            Mark(text: "⧗", size: 14, weight: .regular) { Text("⏱").ui(14, .regular, look) }
             VStack(alignment: .leading, spacing: 1) {
                 Text(node.string("label") ?? name).ui(10.5, .regular, look).foregroundStyle(palette.mute)
                 Text(node.string("value") ?? "").ui(13, .semibold, look)
@@ -190,8 +190,8 @@ internal struct DiagramNode: View {
         }
         .lineLimit(1).minimumScaleFactor(0.8).foregroundStyle(palette.link).padding(.horizontal, 10)
         .frame(height: height)
-        .background(look.mono ? .clear : palette.link.opacity(0.1), in: .rect(cornerRadius: look.mono ? 0 : height / 2))
-        .overlay(outline(look.mono ? 0 : height / 2, palette.link, dash: [3, 2]))
+        .background(look.outline ? .clear : palette.link.opacity(0.1), in: .rect(cornerRadius: look.radius(height / 2)))
+        .overlay(outline(look.radius(height / 2), palette.link, dash: [3, 2]))
         .accessibilityLabel("\(node.string("label") ?? name) \(node.string("value") ?? ""), opens its setting")
     }
 
@@ -203,21 +203,22 @@ internal struct DiagramNode: View {
         return VStack(alignment: .leading, spacing: 0) {
             Text(name).ui(12.5, .medium, look).foregroundStyle(palette.mute)
             HStack(alignment: .firstTextBaseline, spacing: 4) {
-                Text(look.mono ? "[\(count)]" : "\(count)").ui(look.mono ? 16 : 20, count == 0 ? .medium : .bold, look)
+                Text(look.label(.chip, "\(count)")).ui(look.type == .mono ? 16 : 20, count == 0 ? .medium : .bold, look)
                     .foregroundStyle(count == 0 ? palette.mute : tint)
                 if moved, let was { Text("was \(was)").ui(10.5, .semibold, look).foregroundStyle(tint) }
                 if !moved, optional {
-                    Text("optional").ui(10.5, .regular, look).italic(!look.mono).foregroundStyle(palette.mute)
+                    Text("optional").ui(10.5, .regular, look).italic(look.type == .default)
+                        .foregroundStyle(palette.mute)
                 }
             }
         }
         .lineLimit(1).minimumScaleFactor(0.8).padding(.horizontal, 10)
         .frame(maxWidth: .infinity, minHeight: height, maxHeight: height, alignment: .leading)
-        .overlay(alignment: .bottomTrailing) { if look.style.figures == .sprite, count > 0 { horse.padding(4) } }
-        .background(palette.background, in: .rect(cornerRadius: look.mono ? 0 : 12))
+        .overlay(alignment: .bottomTrailing) { if look.figures == .sprite, count > 0 { horse.padding(4) } }
+        .background(palette.background, in: .rect(cornerRadius: look.radius(12)))
         .overlay(
             outline(
-                look.mono ? 0 : 12, moved ? tint : ring ? palette.lead : look.mono ? palette.foreground : palette.edge,
+                look.radius(12), moved ? tint : ring ? palette.lead : look.outline ? palette.foreground : palette.edge,
                 width: ring ? 2 : 1)
         )
         .accessibilityLabel("\(name), \(count) issue\(count == 1 ? "" : "s")\(optional ? ", optional" : "")")

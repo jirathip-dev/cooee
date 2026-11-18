@@ -295,7 +295,7 @@ fn closing_a_thread_kills_and_removes_its_terminal() {
 
 #[test]
 fn a_shed_of_another_protocol_is_refused_naming_both_sides() {
-    for protocol in [0, 2] {
+    for protocol in [0, 3] {
         let dir = scratch(&format!("version-{protocol}"));
         let theirs = Hello {
             build: "fffffff".to_owned(),
@@ -309,10 +309,10 @@ fn a_shed_of_another_protocol_is_refused_naming_both_sides() {
         assert_eq!(status, 502, "{body}");
         let (v, b) = (&version().version, &version().build);
         let theirs = if protocol == 0 {
-            format!("the server runs {v} (fffffff) protocol 0, an older shed; restart shed serve")
+            format!("the server runs {v} (fffffff) protocol 0, older than protocol 1")
         } else {
             format!(
-                "the server refused it: client {b} / server fffffff: protocol 1 vs 2; restart shed serve"
+                "the server refused it: client {b} / server fffffff: protocol 1 vs 3; restart shed serve"
             )
         };
         let said = format!("SHED_VERSION: cooee speaks shed {v} ({b}) protocol 1; {theirs}");
@@ -340,10 +340,9 @@ fn a_send_to_a_shed_on_another_protocol_says_why_in_the_chat_then_goes_through_o
         assert_eq!(status, 502, "{body}");
     }
     let (v, b) = (&version().version, &version().build);
-    let rev = "4ac443dbbcb51227dc9df2fb55e2f0834d6a91eb";
     let needs = format!(
-        "SHED_VERSION: cooee speaks shed {v} ({b}) protocol 1; the server runs {v} (fffffff) protocol 0, an older shed; restart shed serve; \
-         fix: cargo install --locked --git https://github.com/jirathip-dev/shed --rev {rev} shed && "
+        "SHED_VERSION: cooee speaks shed {v} ({b}) protocol 1; the server runs {v} (fffffff) protocol 0, older than protocol 1; \
+         fix: install or update shed to protocol 1 or newer from https://github.com/jirathip-dev/shed/releases, and start its serve"
     );
     let notes: Vec<String> = s
         .items(&id)

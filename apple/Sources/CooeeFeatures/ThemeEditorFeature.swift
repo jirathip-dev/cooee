@@ -11,6 +11,7 @@ public struct ThemeEditorFeature: Sendable {
         public var kept: String?
         public var art: URL?
         public var schemes: [String: ThemeScheme]
+        public var styles: [String: Style]
         public var words: [String: String]
         public var layers: Int
         public var reports: [String: GateReport] = [:]
@@ -22,17 +23,21 @@ public struct ThemeEditorFeature: Sendable {
         public var saving = false
         public var error: String?
 
-        public init(server: Server, looks: Looks, theme: String, style: LookStyle, new: Bool) {
+        public init(server: Server, looks: Looks, theme: String, style: String, new: Bool) {
             let own = !new && !ThemeDraft.builtIn.contains(theme) && looks.themes[theme] != nil
             draft = ThemeDraft(looks: looks, theme: theme, style: style, own: own, new: new)
             self.server = server
             kept = own ? theme : nil
             art = new ? nil : looks.art(theme, on: server.url)
             schemes = looks.schemes
+            styles = (looks.styles ?? [:]).keys.reduce(into: [:]) { $0[$1] = looks.style($1) }
             let pack = new ? nil : looks.themes[theme]
             words = pack?.words ?? [:]
             layers = pack?.scene?.count ?? 0
         }
+
+        /// The styles a theme can name: Modern, then each pack's the server sent.
+        public var offered: [String] { ["modern"] + styles.keys.sorted() }
 
         public var name: String { kept ?? ThemeDraft.folder(draft.label) }
 
@@ -48,7 +53,7 @@ public struct ThemeEditorFeature: Sendable {
     public enum Action: Sendable {
         case task
         case label(String)
-        case style(LookStyle)
+        case style(String)
         case colours(Bool?)
         case open(String?)
         case preview(chat: Bool, dark: Bool)
@@ -59,7 +64,7 @@ public struct ThemeEditorFeature: Sendable {
         case checked([String: GateReport])
         case save
         case failed(String)
-        case saved(String, LookStyle)
+        case saved(String, String)
     }
 
     @Dependency(\.threads) private var threads

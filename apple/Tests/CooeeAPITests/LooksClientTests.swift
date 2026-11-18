@@ -30,7 +30,7 @@ internal struct LooksClientTests {
         #expect(reports["light"]?.fails == ["x"] && reports["dark"] == GateReport())
         let sent = try server.decoded("/api/v1/themes/check", as: [String: [String: String]].self)
         #expect(sent == ["dark": ["--bg": "#000000"], "light": [:]])
-        let draft = ThemeDraft(from: "farm", label: "Tidepool", style: .scene, dark: [:], light: [:])
+        let draft = ThemeDraft(from: "farm", label: "Tidepool", style: "scene", dark: [:], light: [:])
         try await client.saveTheme("tidepool", draft)
         #expect(server.requests("/api/v1/themes/tidepool").map(\.httpMethod) == ["PUT"])
         #expect(try server.decoded("/api/v1/themes/tidepool", as: ThemeDraft.self) == draft)

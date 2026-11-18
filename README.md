@@ -20,7 +20,7 @@ On `staging`, each line with the PR or file that proves it:
 - **Chat-first:** a new chat needs no folder; the sidebar lists agents with their chats (#88, #63).
 - **Messages are kept:** a send the agent never got stays on its bubble, and a stopped agent refuses sends (#256).
 - **Models:** each agent's live model list; short names track the newest model (#194).
-- **Setup:** one command installs shed, the services, the config, Tailscale serve and prints a pairing code (#45).
+- **Setup:** one command installs CI's signed release, the services, the config, Tailscale serve and prints a pairing code (#45, #584).
 - **Perf:** requests, shed calls and first token timed; `cooee perf` prints the table (#69).
 - **MCP:** a registry of MCP servers per persona through cooee's proxy; agents propose new ones for Face ID approval (#108).
 - **Pairing:** QR or a short code, approved from a paired device with its passkey (#68) or with `cooee pair approve` on the server (#484).
@@ -34,19 +34,20 @@ On `staging`, each line with the PR or file that proves it:
 - **Secrets:** kept in the macOS keychain, readable only by the signed cooee (#212).
 - **Samples:** twelve ready agents in [examples/agents/](examples/agents/), built in: `cooee agent add --list` lists them, `cooee agent add --from <sample> [--id <id>]` copies one in (never over a taken id). One whose MCP server isn't in the config says in its first reply what to connect (#362).
 - **Sign-ins and accounts:** the provider's own login runs from the phone; several accounts per provider, each with usage (#18, #46, #191).
-- **Looks:** Modern, Terminal and Scene styles; farm, kitchen and garden theme packs (#65, #66, #67).
+- **Looks:** Modern built in, Terminal and Scene as style packs ([docs/styles.md](docs/styles.md), #488); farm, kitchen and garden theme packs (#65, #66, #67).
 - **Workflow:** sessions other tools start in shed list beside your chats and open as chats (#61).
 <!-- /today -->
 
 ## Setup
 
-On a Mac with [Rust](https://rustup.rs) and [Tailscale](https://tailscale.com/download) (signed in):
+On a Mac with [shed](https://github.com/jirathip-dev/shed) and [Tailscale](https://tailscale.com/download) (signed in):
 
 ```sh
 curl -fsSL https://raw.githubusercontent.com/jirathip-dev/cooee/main/scripts/install.sh | sh
 ```
 
-It installs cooee, then `cooee setup` installs shed, writes the config, adds the agents, starts the service, runs
+It downloads main's latest release ([docs/releases.md](docs/releases.md)), then `cooee setup` checks shed's protocol
+(cooee never installs or updates shed), writes the config, adds the agents, starts the service, runs
 `tailscale serve`, checks it all with `cooee doctor` and prints a pairing code. Open that code on your phone. Run it
 again any time; `--dry-run` writes nothing.
 

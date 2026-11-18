@@ -44,8 +44,9 @@ public struct ChatView: View {
                 }
                 .frame(maxHeight: .infinity, alignment: .top)
                 .environment(\.asker, persona)
-                .environment(\.frames, actions.frames)
+                .environment(\.frames, actions.frames).environment(\.screenActs, actions.screenActs)
                 VStack(spacing: 8) {
+                    if let waits = actions.waits { WaitsPill(name: persona.name, since: waits) }
                     if working { WorkingPill(persona: persona, since: since, step: actions.step, stop: actions.stop) }
                     if let topics = actions.topics, topics.newing { FolderRow(actions: topics).padding(.bottom, 2) }
                     Composer(
@@ -152,6 +153,10 @@ internal struct ChatHeader: View {
                     Button(action: new) { RoundButton(symbol: "plus", ascii: "+", size: 40) }
                         .buttonStyle(.plain).accessibilityLabel("New chat")
                 }
+                if let screen = actions.screen {
+                    Button(action: screen) { RoundButton(symbol: "display", ascii: "scr", size: 40) }
+                        .buttonStyle(.plain).accessibilityLabel("Screen")
+                }
                 more
             }
             if plugged && (!chips.isEmpty || actions.workflow != nil) { plugins }
@@ -199,14 +204,14 @@ internal struct PluginChips: View {
                     actions.open(index)
                 } label: {
                     HStack(spacing: 6) {
-                        Text(look.mono ? "[\(plugin.lowercased())]" : plugin)
+                        Text(look.label(.chip, plugin))
                         if let count = actions.counts.indices.contains(index) ? actions.counts[index] : nil {
                             Badge(count: count, tint: look.palette.red)
                         }
                     }
                     .ui(13, .semibold, look).foregroundStyle(look.palette.green)
                     .padding(.horizontal, 12).frame(height: 30)
-                    .modifier(RoundSurface(look: look))
+                    .chip(look)
                 }
                 .buttonStyle(.plain)
             }

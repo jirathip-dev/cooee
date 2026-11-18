@@ -624,7 +624,9 @@ impl FakeShed {
                 "hello" => {
                     let theirs: Hello = serde_json::from_value(req.params.clone()).unwrap();
                     let ours = &self.hello;
-                    let protocol = ours.protocol == 0 || theirs.protocol == ours.protocol;
+                    let protocol = ours.protocol == 0
+                        || theirs.protocol == ours.protocol
+                        || theirs.protocol + 1 == ours.protocol;
                     if theirs.product == ours.product && theirs.version == ours.version && protocol
                     {
                         Ok(json!(ours))

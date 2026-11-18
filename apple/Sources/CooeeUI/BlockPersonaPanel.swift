@@ -102,21 +102,15 @@ extension PersonaPanelBlocks {
         let palette = look.palette
         return Button(action: run) {
             VStack(spacing: 6) {
-                if look.mono {
-                    Text("[\(title.lowercased())]").ui(13, .semibold, look)
-                } else {
+                Mark(text: look.label(.chip, title), weight: .semibold) {
                     Image(systemName: symbol).font(.system(size: 17, weight: .semibold))
                     Text(title).ui(12, .medium, look).lineLimit(1)
                 }
             }
             .foregroundStyle(palette.link).frame(maxWidth: .infinity).frame(height: 64)
-            .background(
-                palette.card.opacity(look.style.surface == .glass ? 0.75 : 1),
-                in: .rect(cornerRadius: look.mono ? 0 : 16)
-            )
-            .overlay {
-                if look.mono { Rectangle().strokeBorder(palette.edge, lineWidth: 1) }
-            }
+            .chip(
+                look, fill: palette.card.opacity(look.glass ? 0.75 : 1), edge: palette.edge, radius: 16,
+                paper: palette.card)
         }
         .buttonStyle(.plain).accessibilityLabel(label)
     }

@@ -48,7 +48,7 @@ internal struct MembersPane: View {
                 }
                 add
             }
-            .background(palette.card.opacity(0.75), in: .rect(cornerRadius: look.mono ? 0 : 12))
+            .background(palette.card.opacity(0.75), in: .rect(cornerRadius: look.radius(12)))
             CostNote()
             Spacer()
         }

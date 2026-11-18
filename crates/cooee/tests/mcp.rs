@@ -883,6 +883,8 @@ fn each_browser_action_leaves_one_captioned_encrypted_frame_and_a_no_frames_site
     for (tool, args) in &shown {
         assert_eq!(ann.run(tool, args), Ok("done".to_owned()), "{tool}");
     }
+    let shot = ann.run("browser_take_screenshot", &json!({ "type": "jpeg" }));
+    assert_eq!(shot, Ok("shot".to_owned()));
     *pages.lock().unwrap() = vec!["https://bank.com/acct".to_owned()];
     for (tool, args) in &banked {
         assert_eq!(ann.run(tool, args), Ok("done".to_owned()), "{tool}");
@@ -898,14 +900,23 @@ fn each_browser_action_leaves_one_captioned_encrypted_frame_and_a_no_frames_site
         .map(|i| (i["text"].as_str().unwrap(), i["name"].as_str().unwrap()))
         .collect();
     let captions: Vec<&str> = frames.iter().map(|f| f.0).collect();
+    let asked: Vec<bool> = items
+        .as_array()
+        .unwrap()
+        .iter()
+        .filter(|i| i["kind"] == "frame")
+        .map(|i| i["asked"] == true)
+        .collect();
+    assert_eq!(asked, [false, false, false, true]);
     let want = [
         r#"navigate "https://www.example.com/a""#,
         r#"click "Sign in""#,
         r#"type "••••••••" into "Password""#,
+        "https://www.example.com/a",
     ];
     assert_eq!(captions, want, "{items}");
     let stored = dir.join("data/frames").join(&id);
-    assert_eq!(fs::read_dir(&stored).unwrap().count(), 3);
+    assert_eq!(fs::read_dir(&stored).unwrap().count(), 4);
     for (_, name) in &frames {
         let served = s.cooee.get(&format!("/threads/{id}/frames/{name}"));
         assert_eq!(served, (200, "frame-pixels".to_owned()));
@@ -917,7 +928,7 @@ fn each_browser_action_leaves_one_captioned_encrypted_frame_and_a_no_frames_site
     }
     let bin = dir.join("bin");
     let shots = fs::read_to_string(bin.join("shots.log")).unwrap();
-    assert_eq!(shots.lines().count(), 5, "{shots}");
+    assert_eq!(shots.lines().count(), 6, "{shots}");
     assert!(
         fs::read_to_string(bin.join("calls.log"))
             .unwrap()
@@ -1151,6 +1162,9 @@ fn a_lease_saved_as_a_skill_hands_the_persona_its_steps_and_no_typed_value_and_a
         let (status, body) = s.cooee.post("/personas/ann/screen/input", &input);
         assert_eq!(status, 200, "{body}");
     }
+    let until = |b: &str| serde_json::from_str::<Value>(b).unwrap()["control"]["until"].as_u64();
+    let (_, more) = s.cooee.post("/personas/ann/screen/control", &json!({}));
+    assert_eq!(until(&more), until(&body).map(|u| u + 600_000), "{more}");
     let back = json!({ "note": "done it", "skill": true });
     let (status, body) = s.cooee.post("/personas/ann/screen/back", &back);
     assert_eq!(status, 200, "{body}");
