@@ -1,0 +1,11 @@
+Decided: one repo variable per workflow (MAC_RUNNER_CI, _APPLE, _APPLE_MAC, _TESTFLIGHT), `hosted` or `self-hosted`, for PR and push alike
+Because: q1942
+Decided: unset means the default: pull requests on xcode-27, pushes and TestFlight on the Mini
+Because: "Defaults: PR jobs hosted; push runs (staging, main) and TestFlight on the Mini"
+Decided: the fork guard skips a fork PR exactly when the job's variable is `self-hosted`, the only way a PR lands on the Mini
+Because: "The fork guard applies whenever a job points at our runners"
+Decided: mac-runner sets DEVELOPER_DIR to Xcode_27.2.app on hosted and Xcode.app on the Mini
+Because: "Xcode 27.2 is selected by explicit path on both"
+Rejected: keeping MAC_PR_RUNNER — q1942 replaced the single PR-only switch
+Check: AC1/AC2 need the merge-ready run and an owner variable write; the lane may not set repo variables
+Owner: Switch any Mac job with `gh variable set MAC_RUNNER_<CI|APPLE|APPLE_MAC|TESTFLIGHT> --body hosted|self-hosted`; delete it for the default.
