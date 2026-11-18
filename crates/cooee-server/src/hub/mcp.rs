@@ -13,7 +13,7 @@ use cooee_core::{
 use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
 
-use crate::mcp::Grant;
+use crate::mcp::{Child, Grant};
 
 use super::{Hub, HubError, Recipe, lock, now, refused};
 
@@ -153,16 +153,16 @@ impl Hub {
     }
 
     fn grant_of(&self, s: Server, tools: Option<Vec<String>>) -> Result<Grant, String> {
-        let (env, headers) = s.resolved(&self.data)?;
-        Ok(Grant {
-            kind: s.kind,
+        let (env, _) = s.resolved(&self.data)?;
+        if !matches!(s.source()?, mcp::Source::Command { .. }) {
+            return Ok(Grant::Pipe);
+        }
+        Ok(Grant::Run(Child {
             command: s.command,
             args: s.args,
-            url: s.url,
             env,
-            headers,
             tools,
-        })
+        }))
     }
 
     pub(super) fn mcp_launch(&self, id: &str, recipe: &Recipe) -> Result<Launch, HubError> {
@@ -250,16 +250,16 @@ impl Hub {
     pub fn grant(&self, id: &str, token: &str, server: &str) -> Result<Grant, HubError> {
         let (persona, pick, s) = self.granted(id, token, server)?;
         let mut g = self.grant_of(s, pick.tools).map_err(HubError::Refused)?;
-        if server == browser::SERVER {
+        if let (true, Grant::Run(c)) = (server == browser::SERVER, &mut g) {
             let profile = browser::profile(&self.data, &persona.id);
             let cdp = browser::endpoint(&self.chromium()?, &profile)
                 .map_err(|e| HubError::Refused(format!("{}'s browser: {e}", persona.id)))?;
-            g.args.extend(["--cdp-endpoint".to_owned(), cdp]);
+            c.args.extend(["--cdp-endpoint".to_owned(), cdp]);
         }
         Ok(g)
     }
 
-    fn granted(
+    pub(crate) fn granted(
         &self,
         id: &str,
         token: &str,
@@ -610,6 +610,15 @@ impl Hub {
         then: Box<dyn FnOnce() -> Result<String, String> + Send>,
     ) -> Result<Item, HubError> {
         self.raise(id, (tool, "routine", detail), Proposed::Later(then))
+    }
+
+    pub(crate) fn ask_card(
+        &self,
+        id: &str,
+        (what, detail): (String, String),
+        allowed: Box<dyn FnOnce() -> Result<String, String> + Send>,
+    ) -> Result<Item, HubError> {
+        self.raise(id, (what, "tool", detail), Proposed::Later(allowed))
     }
 
     /// Whether item `item` of thread `id` is an MCP server's, a routine's or a secret's card of cooee's (approving

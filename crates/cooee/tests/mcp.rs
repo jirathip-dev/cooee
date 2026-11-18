@@ -22,7 +22,7 @@ use std::{
 };
 
 use serde_json::{Value, json};
-use support::{Authenticator, Cooee, FakeShed, agent, scratch, version};
+use support::{Authenticator, Cooee, FakeShed, agent, is_item, scratch, version};
 
 const SERVER: &str = r#"#!/bin/sh
 : >"$(dirname "$0")/ran"
@@ -112,7 +112,7 @@ struct Mcp {
 }
 
 impl Mcp {
-    fn start(entry: &Value, agent: Agent) -> Self {
+    fn spawn(entry: &Value, agent: Agent) -> Self {
         let mut c = Command::new(entry["command"].as_str().unwrap());
         c.args(
             entry["args"]
@@ -130,13 +130,17 @@ impl Mcp {
             .spawn()
             .unwrap();
         let (stdin, stdout) = (child.stdin.take().unwrap(), child.stdout.take().unwrap());
-        let mut m = Self {
+        Self {
             child,
             stdin,
             stdout: BufReader::new(stdout),
             agent,
             next: 0,
-        };
+        }
+    }
+
+    fn start(entry: &Value, agent: Agent) -> Self {
+        let mut m = Self::spawn(entry, agent);
         let (version, client) = match agent {
             Agent::Claude => ("2025-06-18", "claude-code"),
             Agent::Codex => ("2025-03-26", "codex-mcp-client"),
@@ -159,10 +163,15 @@ impl Mcp {
         self.next += 1;
         let msg = json!({ "jsonrpc": "2.0", "id": id, "method": method, "params": params });
         writeln!(self.stdin, "{msg}").unwrap();
-        let mut line = String::new();
-        self.stdout.read_line(&mut line).unwrap();
-        let answer: Value =
-            serde_json::from_str(&line).unwrap_or_else(|_| panic!("{method}: {line:?}"));
+        let answer = loop {
+            let mut line = String::new();
+            self.stdout.read_line(&mut line).unwrap();
+            let v: Value =
+                serde_json::from_str(&line).unwrap_or_else(|_| panic!("{method}: {line:?}"));
+            if v.get("method").is_none() {
+                break v;
+            }
+        };
         assert_eq!(answer["id"], id, "{answer}");
         match answer.get("error") {
             Some(e) => Err(e["message"].as_str().unwrap().to_owned()),
@@ -1230,4 +1239,290 @@ fn assert_sent(cdp: &Mutex<Vec<Value>>) {
             ("Input.insertText".to_owned(), json!({ "text": "hunter2" })),
         ]
     );
+}
+
+fn heard(s: &TcpStream) -> (String, Value) {
+    let mut r = BufReader::new(s.try_clone().unwrap());
+    let mut head = String::new();
+    while r.read_line(&mut head).unwrap() > 2 {}
+    let len = head.lines().find_map(|l| {
+        let l = l.to_ascii_lowercase();
+        l.strip_prefix("content-length:")
+            .map(|n| n.trim().parse().unwrap())
+    });
+    let mut body = vec![0; len.unwrap_or(0)];
+    r.read_exact(&mut body).unwrap();
+    (head, serde_json::from_slice(&body).unwrap_or_default())
+}
+
+fn answered(msg: &Value, head: &str, token: &str) -> Value {
+    let tools = json!([{ "name": "a", "inputSchema": {} }, { "name": "b", "inputSchema": {} },
+                       { "name": "c", "inputSchema": {} }]);
+    let signed = head
+        .to_ascii_lowercase()
+        .contains(&format!("authorization: bearer {token}\r\n"));
+    let k = if signed { "matches" } else { "differs" };
+    let result = match msg["method"].as_str().unwrap_or_default() {
+        "initialize" => json!({ "protocolVersion": "2025-06-18", "capabilities": { "tools": {} } }),
+        "tools/list" => json!({ "tools": tools }),
+        "tools/call" => {
+            json!({ "content": [{ "type": "text", "text": format!("{} ran; the token {k}", msg["params"]["name"].as_str().unwrap()) }] })
+        }
+        _ => json!({}),
+    };
+    json!({ "jsonrpc": "2.0", "id": msg["id"], "result": result })
+}
+
+fn fake_web(token: String) -> (u16, Arc<Mutex<Vec<String>>>) {
+    let l = TcpListener::bind("127.0.0.1:0").unwrap();
+    let port = l.local_addr().unwrap().port();
+    let seen: Arc<Mutex<Vec<String>>> = Arc::default();
+    let open: Arc<Mutex<Option<std::sync::mpsc::Sender<Value>>>> = Arc::default();
+    let log = Arc::clone(&seen);
+    thread::spawn(move || {
+        for mut s in l.incoming().map(Result::unwrap) {
+            let (log, open, token) = (Arc::clone(&log), Arc::clone(&open), token.clone());
+            thread::spawn(move || {
+                let (head, msg) = heard(&s);
+                log.lock().unwrap().push(format!("{head}{msg}"));
+                let path = head.split([' ', '?']).nth(1).unwrap().to_owned();
+                let reply = |status: &str, more: &str, body: &str| {
+                    format!(
+                        "HTTP/1.1 {status}\r\n{more}Content-Length: {}\r\nConnection: close\r\n\r\n{body}",
+                        body.len()
+                    )
+                };
+                let answer = answered(&msg, &head, &token);
+                let out = match (path.as_str(), msg["method"].as_str()) {
+                    ("/sse", _) => {
+                        let (tx, rx) = std::sync::mpsc::channel();
+                        *open.lock().unwrap() = Some(tx);
+                        write!(s, "HTTP/1.1 200 OK\r\nContent-Type: text/event-stream\r\nConnection: close\r\n\r\nevent: endpoint\ndata: /messages?s=1\n\n").unwrap();
+                        for m in rx {
+                            write!(s, "event: message\ndata: {m}\n\n").unwrap();
+                        }
+                        return;
+                    }
+                    ("/messages", _) => {
+                        if msg.get("id").is_some() {
+                            let tx = open.lock().unwrap().clone().unwrap();
+                            tx.send(answer).unwrap();
+                        }
+                        reply("202 Accepted", "", "")
+                    }
+                    ("/moved", _) => reply(
+                        "307 Temporary Redirect",
+                        &format!("Location: http://127.0.0.1:{port}/mcp?redirected\r\n"),
+                        "",
+                    ),
+                    (_, Some("tools/list")) => {
+                        let note = json!({ "jsonrpc": "2.0", "method": "notifications/message", "params": {} });
+                        let body = format!(
+                            "event: message\ndata: {note}\n\nevent: message\ndata: {answer}\n\n"
+                        );
+                        reply("200 OK", "Content-Type: text/event-stream\r\n", &body)
+                    }
+                    (_, Some("initialize")) => reply(
+                        "200 OK",
+                        "Content-Type: application/json\r\nMcp-Session-Id: s-1\r\n",
+                        &answer.to_string(),
+                    ),
+                    _ if msg.get("id").is_none() => reply("202 Accepted", "", ""),
+                    _ => reply(
+                        "200 OK",
+                        "Content-Type: application/json\r\n",
+                        &answer.to_string(),
+                    ),
+                };
+                s.write_all(out.as_bytes()).unwrap();
+            });
+        }
+    });
+    (port, seen)
+}
+
+#[test]
+fn a_streamable_http_and_an_sse_server_answer_through_the_pipe_with_headers_on_curls_stdin_and_no_redirect()
+ {
+    let dir = scratch("mcp-pipe");
+    let token = format!("tk-{}", "w3".repeat(16));
+    fs::create_dir_all(dir.join("data/secrets")).unwrap();
+    fs::write(dir.join("data/secrets/WEB"), format!("Bearer {token}\n")).unwrap();
+    let real = std::env::split_paths(&std::env::var_os("PATH").unwrap())
+        .map(|p| p.join("curl"))
+        .find(|p| p.is_file())
+        .unwrap();
+    let wrap = dir.join("wrap/curl");
+    fs::create_dir_all(wrap.parent().unwrap()).unwrap();
+    let log = dir.join("curl-argv");
+    fs::write(
+        &wrap,
+        format!("#!/bin/sh\nprintf '%s\\n' \"$*\" >>{log:?}\nexec {real:?} \"$@\"\n"),
+    )
+    .unwrap();
+    fs::set_permissions(&wrap, fs::Permissions::from_mode(0o755)).unwrap();
+    let path = format!(
+        "{}:{}",
+        wrap.parent().unwrap().display(),
+        std::env::var("PATH").unwrap()
+    );
+    let picks = "name = \"Web\"\nagent = \"fake-acp\"\n\n[[mcp]]\nserver = \"web\"\ntools = [\"a\"]\n\n[[mcp]]\nserver = \"old\"\n\n[[mcp]]\nserver = \"moved\"\n";
+    agent(&dir, "web", picks, "");
+    let (port, seen) = fake_web(token.clone());
+    let server = |name: &str, kind: &str, at: &str| {
+        format!(
+            "[[mcp]]\nname = \"{name}\"\ntype = \"{kind}\"\nurl = \"http://127.0.0.1:{port}/{at}\"\nheaders = {{ Authorization = \"secret:WEB\" }}\nread = [\"a\", \"c\"]\n\n"
+        )
+    };
+    let extra = server("web", "http", "mcp")
+        + &server("old", "sse", "sse")
+        + &server("moved", "http", "moved");
+    let shed = FakeShed::start(&dir.join("shed"), version());
+    let cooee = Cooee::start_env(&dir, &shed.dir, &extra, &[("PATH", &path)]);
+    let s = Setup {
+        dir: dir.clone(),
+        shed,
+        cooee,
+        token: token.clone(),
+    };
+    let (id, servers) = s.thread("web");
+
+    let mut web = Mcp::start(named(&servers, "web"), Agent::Claude);
+    assert_eq!(web.tools(), ["a"]);
+    assert_eq!(
+        web.run("a", &json!({})),
+        Ok("a ran; the token matches".to_owned())
+    );
+    let refused = web.run("b", &json!({})).unwrap_err();
+    assert!(refused.contains("tool b isn't allowed"), "{refused}");
+    let last = seen.lock().unwrap().last().unwrap().to_ascii_lowercase();
+    assert!(
+        last.contains("mcp-session-id: s-1\r\n")
+            && last.contains("mcp-protocol-version: 2025-06-18\r\n"),
+        "{last}"
+    );
+
+    let mut old = Mcp::start(named(&servers, "old"), Agent::Codex);
+    assert_eq!(old.tools(), ["a", "b", "c"]);
+    assert_eq!(
+        old.run("c", &json!({})),
+        Ok("c ran; the token matches".to_owned())
+    );
+
+    let mut moved = Mcp::spawn(named(&servers, "moved"), Agent::Claude);
+    let e = moved.call("initialize", &json!({})).unwrap_err();
+    assert!(e.contains("HTTP 307"), "{e}");
+    assert!(
+        !seen
+            .lock()
+            .unwrap()
+            .iter()
+            .any(|h| h.contains("redirected"))
+    );
+
+    let var = named(&servers, "web")["env"][0]["value"]
+        .as_str()
+        .unwrap()
+        .to_owned();
+    let (url, bearer) = var.split_once(' ').unwrap();
+    let mut c = TcpStream::connect(url.strip_prefix("http://").unwrap()).unwrap();
+    let body = json!({ "thread": id, "server": "web" }).to_string();
+    write!(c, "POST /mcp/agent/grant HTTP/1.0\r\nHost: 127.0.0.1\r\nAuthorization: Bearer {bearer}\r\nContent-Type: application/json\r\nContent-Length: {}\r\n\r\n{body}", body.len()).unwrap();
+    let mut grant = String::new();
+    c.read_to_string(&mut grant).unwrap();
+    assert!(grant.ends_with("\"pipe\""), "{grant}");
+    assert!(
+        !grant.contains(&s.token) && !grant.contains(&port.to_string()),
+        "{grant}"
+    );
+
+    let argv = fs::read_to_string(&log).unwrap();
+    assert!(argv.lines().count() >= 8, "{argv}");
+    assert!(argv.lines().all(|l| l == "-K -"), "{argv}");
+    let mut all = fs::read_to_string(&s.cooee.config).unwrap();
+    files(&dir.join("data"), &mut all);
+    all.push_str(&fs::read_to_string(dir.join("cooee.err")).unwrap());
+    assert!(!all.contains(&s.token), "a value was written");
+}
+
+#[test]
+fn a_read_tool_runs_with_no_card_and_a_write_tool_runs_only_once_its_card_is_allowed() {
+    let dir = scratch("mcp-gate");
+    let token = format!("tk-{}", "g5".repeat(16));
+    fs::create_dir_all(dir.join("data/secrets")).unwrap();
+    fs::write(dir.join("data/secrets/WEB"), format!("Bearer {token}\n")).unwrap();
+    let picks = "name = \"Web\"\nagent = \"fake-acp\"\n\n[[mcp]]\nserver = \"web\"\n";
+    agent(&dir, "web", picks, "");
+    let (port, seen) = fake_web(token.clone());
+    let extra = format!(
+        "[[mcp]]\nname = \"web\"\ntype = \"http\"\nurl = \"http://127.0.0.1:{port}/mcp\"\nheaders = {{ Authorization = \"secret:WEB\" }}\nread = [\"a\"]\n"
+    );
+    let shed = FakeShed::start(&dir.join("shed"), version());
+    let cooee = Cooee::start_with(&dir, &shed.dir, &extra);
+    let s = Setup {
+        dir,
+        shed,
+        cooee,
+        token,
+    };
+    let (id, servers) = s.thread("web");
+    let messages = || s.cooee.json(&format!("/threads/{id}/messages"));
+    let sent = |tool: &str| {
+        let name = format!("\"name\":\"{tool}\"");
+        seen.lock()
+            .unwrap()
+            .iter()
+            .filter(|h| h.contains(&name))
+            .count()
+    };
+    let mut web = Mcp::start(named(&servers, "web"), Agent::Claude);
+
+    assert_eq!(
+        web.run("a", &json!({})),
+        Ok("a ran; the token matches".to_owned())
+    );
+    let items = messages()["items"].clone();
+    assert!(
+        !items
+            .as_array()
+            .unwrap()
+            .iter()
+            .any(|i| i["kind"] == "approval"),
+        "{items}"
+    );
+
+    for (tool, option) in [("b", "approve"), ("c", "decline")] {
+        let cursor = messages()["cursor"].as_str().unwrap().to_owned();
+        let mut events = s.cooee.events(&id, &cursor, false);
+        let asked = thread::spawn(move || {
+            let r = web.run(tool, &json!({ "title": "Fix it" }));
+            (web, r)
+        });
+        let card = events
+            .until(|e| is_item(e, "approval") && e.data["form"] == "tool")
+            .pop()
+            .unwrap()
+            .data;
+        assert_eq!(
+            card["tool"],
+            format!("Web · web: {tool} {{\"title\":\"Fix it\"}}"),
+            "{card}"
+        );
+        assert_eq!(sent(tool), 0, "nothing is sent before the owner answers");
+        let tap = json!({ "item": card["id"], "option": option });
+        let (status, body) = s.cooee.post(&format!("/threads/{id}/approve"), &tap);
+        assert_eq!(status, 200, "{body}");
+        let (back, r) = asked.join().unwrap();
+        web = back;
+        if option == "approve" {
+            assert_eq!(r, Ok("b ran; the token matches".to_owned()));
+            assert_eq!(sent(tool), 1);
+        } else {
+            assert_eq!(
+                r,
+                Err("the owner didn't allow c: its card was declined or expired".to_owned())
+            );
+            assert_eq!(sent(tool), 0);
+        }
+    }
 }

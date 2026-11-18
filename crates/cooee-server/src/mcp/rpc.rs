@@ -9,8 +9,27 @@ pub(super) fn reply(id: &Value, result: &Value) -> Value {
     json!({ "jsonrpc": "2.0", "id": id, "result": result })
 }
 
-pub(super) fn error(id: &Value, code: i64, message: &str) -> Value {
+/// A JSON-RPC error answer to request `id`.
+#[must_use]
+pub fn error(id: &Value, code: i64, message: &str) -> Value {
     json!({ "jsonrpc": "2.0", "id": id, "error": { "code": code, "message": message } })
+}
+
+/// `msg`, a `tools/list` answer, with only the `tools` allowed (none: all).
+#[must_use]
+pub fn only(mut msg: Value, tools: Option<&[String]>) -> Value {
+    if let (Some(allow), Some(list)) = (
+        tools,
+        msg.pointer_mut("/result/tools")
+            .and_then(Value::as_array_mut),
+    ) {
+        list.retain(|t| {
+            t["name"]
+                .as_str()
+                .is_some_and(|n| allow.iter().any(|a| a == n))
+        });
+    }
+    msg
 }
 
 pub(super) fn put(out: &Mutex<io::Stdout>, msg: &Value) {

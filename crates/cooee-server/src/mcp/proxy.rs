@@ -5,32 +5,16 @@ use std::{
         Arc, Mutex, PoisonError,
         mpsc::{self, Receiver, Sender},
     },
-    time::Duration,
 };
 
 use serde_json::{Value, json};
 
 use super::{
-    Grant,
-    grant::{ask, grant},
-    rpc::{error, put},
+    Child, Grant,
+    grant::{ask, grant, said},
+    rpc::{error, only, put},
     upstream::{Upstream, open},
 };
-
-fn only(mut msg: Value, tools: Option<&[String]>) -> Value {
-    if let (Some(allow), Some(list)) = (
-        tools,
-        msg.pointer_mut("/result/tools")
-            .and_then(Value::as_array_mut),
-    ) {
-        list.retain(|t| {
-            t["name"]
-                .as_str()
-                .is_some_and(|n| allow.iter().any(|a| a == n))
-        });
-    }
-    msg
-}
 
 #[derive(Default)]
 struct Frames {
@@ -95,12 +79,52 @@ fn shoot(
 /// browser action cooee captions, the proxy takes a screenshot for cooee's replay frame (#161) before the agent gets
 /// the answer; the agent never sees it. A screenshot the agent takes itself is kept as an `asked` frame (#166).
 ///
+/// A URL server's proxy is a pipe: each line goes to cooee (`/mcp/agent/rpc`), which makes the call, and the
+/// answer's lines come back.
+///
 /// # Errors
 /// When the grant is refused or the server can't start.
 pub fn proxy(server: &str, thread: &str) -> Result<(), String> {
-    let g = grant(server, thread)?;
+    match grant(server, thread)? {
+        Grant::Run(child) => run(&child, server, thread),
+        Grant::Pipe => {
+            pipe(server, thread);
+            Ok(())
+        }
+    }
+}
+
+fn pipe(server: &str, thread: &str) {
+    let out = Arc::new(Mutex::new(io::stdout()));
+    for line in io::stdin().lock().lines().map_while(Result::ok) {
+        let Ok(message) = serde_json::from_str::<Value>(&line) else {
+            continue;
+        };
+        let long = message.get("method").and_then(Value::as_str) == Some("tools/call");
+        let (out, id) = (Arc::clone(&out), message.get("id").cloned());
+        let body = json!({ "thread": thread, "server": server, "message": message });
+        let one = move || match said("/mcp/agent/rpc", &body) {
+            Ok(lines) => lines
+                .lines()
+                .filter_map(|l| serde_json::from_str(l).ok())
+                .for_each(|m| put(&out, &m)),
+            Err(why) => {
+                if let Some(id) = id {
+                    put(&out, &error(&id, -32000, &why));
+                }
+            }
+        };
+        if long {
+            std::thread::spawn(one);
+        } else {
+            one();
+        }
+    }
+}
+
+fn run(g: &Child, server: &str, thread: &str) -> Result<(), String> {
     let (tx, rx): (Sender<Value>, Receiver<Value>) = mpsc::channel();
-    let up = Arc::new(Mutex::new(open(&g, tx)?));
+    let up = Arc::new(Mutex::new(open(g, tx)?));
     let out = Arc::new(Mutex::new(io::stdout()));
     let lists: Arc<Mutex<HashSet<String>>> = Arc::default();
     let frames: Arc<Mutex<Frames>> = Arc::default();
@@ -193,52 +217,8 @@ pub fn proxy(server: &str, thread: &str) -> Result<(), String> {
         }
         held(&up).send(&msg)?;
     }
-    if let Upstream::Stdio(child, _) = &mut *held(&up) {
-        child.kill().ok();
-        child.wait().ok();
-    }
+    let Upstream(child, _) = &mut *held(&up);
+    child.kill().ok();
+    child.wait().ok();
     Ok(())
-}
-
-/// Lists `g`'s tools (name, description) for the profile sheet: initialize, then `tools/list`, 10 s at most.
-///
-/// # Errors
-/// When the server can't start or doesn't answer.
-pub fn tools(g: &Grant) -> Result<Vec<(String, String)>, String> {
-    let (tx, rx) = mpsc::channel();
-    let mut up = open(g, tx)?;
-    let hello = json!({ "protocolVersion": "2025-06-18", "capabilities": {}, "clientInfo": { "name": "cooee", "version": env!("CARGO_PKG_VERSION") } });
-    let call = |up: &mut Upstream, id: u64, method: &str, params: Value| -> Result<Value, String> {
-        up.send(&json!({ "jsonrpc": "2.0", "id": id, "method": method, "params": params }))?;
-        loop {
-            let msg = rx
-                .recv_timeout(Duration::from_secs(10))
-                .map_err(|_| format!("no answer to {method}"))?;
-            if msg.get("id").is_some_and(|v| *v == id) {
-                return msg.get("result").cloned().ok_or_else(|| {
-                    msg.pointer("/error/message")
-                        .unwrap_or(&Value::Null)
-                        .to_string()
-                });
-            }
-        }
-    };
-    let listed = call(&mut up, 1, "initialize", hello).and_then(|_| {
-        up.send(&json!({ "jsonrpc": "2.0", "method": "notifications/initialized" }))?;
-        call(&mut up, 2, "tools/list", json!({}))
-    });
-    if let Upstream::Stdio(mut child, _) = up {
-        child.kill().ok();
-        child.wait().ok();
-    }
-    let list = listed?
-        .get("tools")
-        .and_then(Value::as_array)
-        .cloned()
-        .unwrap_or_default();
-    let text = |t: &Value, k: &str| t[k].as_str().unwrap_or_default().to_owned();
-    Ok(list
-        .iter()
-        .map(|t| (text(t, "name"), text(t, "description")))
-        .collect())
 }

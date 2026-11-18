@@ -1,10 +1,4 @@
-use std::{
-    io::{self, Write},
-    process::Stdio,
-    sync::PoisonError,
-    thread,
-    time::UNIX_EPOCH,
-};
+use std::{io, sync::PoisonError, thread, time::UNIX_EPOCH};
 
 use base64::{Engine, engine::general_purpose::URL_SAFE_NO_PAD as B64};
 use cooee_core::{Devices, random};
@@ -90,42 +84,19 @@ fn post(s: &Sub, k: &SecretKey, body: &[u8]) -> io::Result<(u16, String)> {
         jwt(k, &s.endpoint, now()),
         B64.encode(public(k))
     );
-    let args = ["-H", &auth, "-H", "Content-Encoding: aes128gcm"];
-    let args = args
-        .into_iter()
-        .chain(["-H", "Content-Type: application/octet-stream"]);
-    curl(
-        args.chain(["-H", "TTL: 86400", "-H", "Urgency: high", &s.endpoint]),
-        body,
-    )
+    let fixed = [
+        "Content-Encoding: aes128gcm",
+        "Content-Type: application/octet-stream",
+        "TTL: 86400",
+        "Urgency: high",
+    ];
+    let headers: Vec<String> = [auth].into_iter().chain(fixed.map(str::to_owned)).collect();
+    sent(&s.endpoint, &headers, body)
 }
 
-pub(super) fn curl<'a>(
-    args: impl IntoIterator<Item = &'a str>,
-    body: &[u8],
-) -> io::Result<(u16, String)> {
-    let mut c = cooee_core::runner::command("curl")
-        .args([
-            "-sS",
-            "--max-time",
-            "10",
-            "-X",
-            "POST",
-            "-w",
-            "\n%{http_code}",
-        ])
-        .args(["--data-binary", "@-"])
-        .args(args)
-        .stdin(Stdio::piped())
-        .stdout(Stdio::piped())
-        .stderr(Stdio::null())
-        .spawn()?;
-    if let Some(mut stdin) = c.stdin.take() {
-        stdin.write_all(body)?;
-    }
-    let out = String::from_utf8_lossy(&c.wait_with_output()?.stdout).into_owned();
-    let (why, code) = out.rsplit_once('\n').unwrap_or(("", &out));
-    Ok((code.trim().parse().unwrap_or(0), why.trim().to_owned()))
+pub(super) fn sent(url: &str, headers: &[String], body: &[u8]) -> io::Result<(u16, String)> {
+    let r = crate::net::fetch("POST", url, headers, Some(body)).map_err(io::Error::other)?;
+    Ok((r.status, r.body.trim().to_owned()))
 }
 
 #[cfg(test)]
