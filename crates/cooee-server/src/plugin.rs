@@ -17,6 +17,21 @@ pub const IN_FLIGHT: usize = 8;
 
 static BUSY: LazyLock<Mutex<HashMap<String, usize>>> = LazyLock::new(Mutex::default);
 
+static KEPT: LazyLock<Mutex<HashMap<String, Vec<TcpStream>>>> = LazyLock::new(Mutex::default);
+
+fn kept(url: &str) -> Option<TcpStream> {
+    let mut kept = KEPT.lock().unwrap_or_else(PoisonError::into_inner);
+    kept.get_mut(url)?.pop()
+}
+
+fn keep(url: &str, s: TcpStream) {
+    let mut kept = KEPT.lock().unwrap_or_else(PoisonError::into_inner);
+    let idle = kept.entry(url.to_owned()).or_default();
+    if idle.len() < IN_FLIGHT {
+        idle.push(s);
+    }
+}
+
 struct Permit(String);
 
 impl Permit {
@@ -111,6 +126,8 @@ pub struct Reply {
     pub status: u16,
     pub headers: Vec<(String, String)>,
     pub body: BufReader<Conn>,
+    length: Option<u64>,
+    reusable: bool,
     permit: Permit,
 }
 
@@ -123,10 +140,21 @@ impl Reply {
             .map(|(_, v)| v.as_str())
     }
 
-    /// The whole body (at most 16 MiB).
+    /// The whole body (at most 16 MiB); a kept-alive connection read to its end goes back for the next call.
     pub fn bytes(self) -> io::Result<Vec<u8>> {
+        let Self {
+            mut body,
+            length,
+            reusable,
+            permit,
+            ..
+        } = self;
         let mut out = Vec::new();
-        self.body.take(MAX_BODY).read_to_end(&mut out)?;
+        let want = length.unwrap_or(MAX_BODY).min(MAX_BODY);
+        (&mut body).take(want).read_to_end(&mut out)?;
+        if reusable && length == u64::try_from(out.len()).ok() && body.buffer().is_empty() {
+            keep(&permit.0, body.into_inner().s);
+        }
         Ok(out)
     }
 }
@@ -157,17 +185,16 @@ pub fn call(
     } else {
         format!("{authority}:80")
     };
-    let addr = with_port
-        .to_socket_addrs()?
-        .next()
-        .ok_or_else(|| io::Error::other(format!("{authority}: no address")))?;
-    let mut s = Conn {
-        s: TcpStream::connect_timeout(&addr, deadline.min(Duration::from_secs(5)))?,
-        until,
+    let connect = || {
+        let addr = with_port
+            .to_socket_addrs()?
+            .next()
+            .ok_or_else(|| io::Error::other(format!("{authority}: no address")))?;
+        TcpStream::connect_timeout(&addr, deadline.min(Duration::from_secs(5)))
     };
     let slash = if base.is_empty() { "" } else { "/" };
     let mut head = format!(
-        "{method} {slash}{base}{target} HTTP/1.0\r\nHost: {authority}\r\nAuthorization: Bearer {}\r\nContent-Length: {}\r\n",
+        "{method} {slash}{base}{target} HTTP/1.0\r\nHost: {authority}\r\nAuthorization: Bearer {}\r\nConnection: keep-alive\r\nContent-Length: {}\r\n",
         p.token,
         body.len()
     );
@@ -175,11 +202,19 @@ pub fn call(
         head.extend([k, ": ", v, "\r\n"]);
     }
     head.push_str("\r\n");
-    s.write_all(head.as_bytes())?;
-    s.write_all(body)?;
-    let mut r = BufReader::new(s);
-    let mut line = String::new();
-    r.read_line(&mut line)?;
+    let send = |s: TcpStream| -> io::Result<(BufReader<Conn>, String)> {
+        let mut s = Conn { s, until };
+        s.write_all(head.as_bytes())?;
+        s.write_all(body)?;
+        let mut r = BufReader::new(s);
+        let mut line = String::new();
+        r.read_line(&mut line)?;
+        Ok((r, line))
+    };
+    let (mut r, mut line) = match kept(&p.url).map(send) {
+        Some(Ok((r, line))) if !line.is_empty() => (r, line),
+        _ => send(connect()?)?,
+    };
     let status = line
         .split(' ')
         .nth(1)
@@ -195,12 +230,20 @@ pub fn call(
             headers.push((k.trim().to_ascii_lowercase(), v.trim().to_owned()));
         }
     }
-    let reply = Reply {
+    let mut reply = Reply {
         status,
         headers,
         body: r,
+        length: Some(0),
+        reusable: false,
         permit,
     };
+    if !matches!(status, 204 | 304) {
+        reply.length = reply.header("content-length").and_then(|n| n.parse().ok());
+    }
+    reply.reusable = reply
+        .header("connection")
+        .is_some_and(|c| c.eq_ignore_ascii_case("keep-alive"));
     if reply.header("transfer-encoding").is_some() {
         return Err(io::Error::other(
             "the backend answered HTTP/1.0 with a transfer-encoding",
@@ -440,6 +483,46 @@ mod tests {
             module: "/tab.js".to_owned(),
             token: "token-0123456789abcdef".to_owned(),
         }
+    }
+
+    #[test]
+    fn calls_reuse_a_kept_alive_connection_and_a_closed_one_is_replaced() {
+        let listener = TcpListener::bind("127.0.0.1:0").unwrap();
+        let url = format!("http://{}", listener.local_addr().unwrap());
+        let (opened, rx) = mpsc::channel();
+        thread::spawn(move || {
+            for (n, s) in listener.incoming().flatten().enumerate() {
+                opened.send(()).unwrap();
+                let mut r = BufReader::new(s);
+                for i in 0..2 {
+                    let mut line = String::new();
+                    while r.read_line(&mut line).unwrap() > 2 {
+                        line.clear();
+                    }
+                    let body = format!("{n}.{i}");
+                    let sent = format!(
+                        "HTTP/1.0 200 OK\r\nConnection: keep-alive\r\nContent-Length: {}\r\n\r\n{body}",
+                        body.len()
+                    );
+                    r.get_mut().write_all(sent.as_bytes()).unwrap();
+                }
+            }
+        });
+        let p = Plugin {
+            name: "kept".to_owned(),
+            label: String::new(),
+            url,
+            module: String::new(),
+            token: "token-0123456789abcdef".to_owned(),
+        };
+        let got: Vec<_> = (0..3)
+            .map(|_| {
+                let reply = call(&p, "GET", "/x", &[], &[], Duration::from_secs(5)).unwrap();
+                String::from_utf8(reply.bytes().unwrap()).unwrap()
+            })
+            .collect();
+        assert_eq!(got, ["0.0", "0.1", "1.0"]);
+        assert_eq!(rx.try_iter().count(), 2);
     }
 
     #[test]

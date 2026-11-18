@@ -300,14 +300,15 @@ pub fn manifest(data: &Path, l: &Locked) -> io::Result<Manifest> {
 
 type Stamp = Option<(SystemTime, u64)>;
 
-static READ: LazyLock<Mutex<HashMap<PathBuf, (Stamp, Arc<[(Locked, Manifest)]>)>>> =
-    LazyLock::new(Mutex::default);
+type Installed = Arc<[(Locked, Manifest)]>;
+
+static READ: LazyLock<Mutex<HashMap<PathBuf, (Stamp, Installed)>>> = LazyLock::new(Mutex::default);
 
 /// The lock's plugins whose manifest reads, each with it; read again only once the lock file changes.
 ///
 /// # Errors
 /// When the lock can't be read or parsed.
-pub fn installed(data: &Path) -> io::Result<Arc<[(Locked, Manifest)]>> {
+pub fn installed(data: &Path) -> io::Result<Installed> {
     let stamp = match fs::metadata(lock_path(data)) {
         Ok(m) => Some((m.modified()?, m.len())),
         Err(e) if e.kind() == io::ErrorKind::NotFound => None,
@@ -319,7 +320,7 @@ pub fn installed(data: &Path) -> io::Result<Arc<[(Locked, Manifest)]>> {
     {
         return Ok(Arc::clone(all));
     }
-    let all: Arc<[_]> = read_lock(data)?
+    let all: Installed = read_lock(data)?
         .into_iter()
         .filter_map(|l| manifest(data, &l).ok().map(|m| (l, m)))
         .collect();
