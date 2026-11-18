@@ -1,0 +1,14 @@
+Decided: tap, event and echo timings are kept on the phone (last 100) and posted to POST /perf as client lines in perf.log
+Because: q2041
+Decided: tap is ScreenFeature.act until .acted is applied, measured on the clock dependency with clock.measure
+Because: "A test that a block action records tap-to-paint."
+Decided: event is a stream item new to the chat, server at to the phone's now; negative gaps (clock skew) are skipped
+Decided: the debug view shows only once timings exist, so no design frame or snapshot changes
+Because: "a debug view shows p95 over the last 100"
+Decided: the simulator gate is apple/e2e/steps/40-budget.sh running cooee perf --budget on the e2e server's log
+Because: "a simulator CI job fails a PR whose p95 exceeds the budgets (tap feedback 100 ms, fresh data 150 ms)"
+Rejected: a new menu page for timings — needs layout.json pages and a server menu row, more lines for a debug view
+Rejected: @DependencyClient for PerfClient — its defaults report unimplemented in every existing reducer test
+Check: TimingTests drives the real reducers with a TestClock and fails without the record calls
+Check: os added to CooeeApp's anti-slop layer table only, for OSSignposter
+Owner: the phone's tap and fresh-data times now land in the Mac's perf log, show in the menu, and CI fails over budget
