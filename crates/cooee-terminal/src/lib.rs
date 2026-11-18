@@ -363,13 +363,17 @@ fn answer(stream: TcpStream, token: &str, terminal: &Terminal) -> io::Result<()>
     Ok(())
 }
 
-/// Runs the plugin for `plugin` (its backend at its `url`) over `shed`, logging to `<data>/terminal.log`.
+/// Runs the plugin for `plugin` (its backend at its `url`, port 0 any free one, written back into `url`) over `shed`,
+/// logging to `<data>/terminal.log`.
 ///
 /// # Errors
 /// When the plugin's address can't be bound.
-pub fn start(plugin: &Plugin, shed: Shed, data: &std::path::Path) -> io::Result<()> {
+pub fn start(plugin: &mut Plugin, shed: Shed, data: &std::path::Path) -> io::Result<()> {
     let rest = plugin.url.trim_start_matches("http://");
-    let listener = TcpListener::bind(rest.split('/').next().unwrap_or(rest))?;
+    let (at, path) = rest.split_once('/').unwrap_or((rest, ""));
+    let listener = TcpListener::bind(at)?;
+    let slash = if path.is_empty() { "" } else { "/" };
+    plugin.url = format!("http://{}{slash}{path}", listener.local_addr()?);
     let var = |k: &str| cooee_core::env_var(k).filter(|v| !v.is_empty());
     let home = var("HOME").map_or_else(|| PathBuf::from("/"), PathBuf::from);
     let shell = var("SHELL").map_or_else(
