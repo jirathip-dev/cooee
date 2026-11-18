@@ -1,0 +1,24 @@
+Building for debugging...
+[Computing dependencies]
+[Using on-disk description]
+[1 / 5]
+[2 / 6] CooeeUI
+[3 / 7] CooeeUI
+[7 / 11] CooeeUI
+[9 / 12] CooeeUI
+[10 / 11] CooeeUITests-product
+[12 / 12] CooeeUITests-product
+[14 / 14] CooeeUI-product
+Build complete! (5.61 secs)
+◇ Test run started.
+↳ Testing Library Version: 2403
+↳ Target Platform: arm64e-apple-macos14.0
+◇ Suite HeaderRenderTests started.
+◇ Test theHomeLoadingLineSitsOnTheHeaderBottomEdge() started.
+✘ Test theHomeLoadingLineSitsOnTheHeaderBottomEdge() recorded an issue at HeaderRenderTests.swift:51:21: Issue recorded
+↳ DBG h=200 w=402 rows=[54, 55, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72]
+✘ Test theHomeLoadingLineSitsOnTheHeaderBottomEdge() failed after 0.134 seconds with 1 issue.
+✘ Suite HeaderRenderTests failed after 0.134 seconds with 1 issue.
+✘ Test run with 1 test in 1 suite failed after 0.134 seconds with 1 issue.
+Note: Some test targets reported failures:
+  - CooeeUITests (Swift Testing)
