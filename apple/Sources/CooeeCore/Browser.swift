@@ -1,3 +1,4 @@
+import CoreGraphics
 import Foundation
 
 /// A persona's browser as the Screen shows it (#162): who drives it and how many agent calls wait.
