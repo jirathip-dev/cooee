@@ -13,7 +13,7 @@ public struct ThreadRow: Codable, Sendable, Equatable, Identifiable {
     public let machine: String?
     public let state: String
     public let last: String
-    public let updated: Int64
+    public let updated: Int64?
     public let unseen: Int
     public var archived: Bool
     public let workflow: WorkflowLabel?
@@ -31,7 +31,7 @@ public struct ThreadRow: Codable, Sendable, Equatable, Identifiable {
         persona: String,
         state: String,
         last: String,
-        updated: Int64,
+        updated: Int64?,
         unseen: Int,
         archived: Bool,
         workflow: WorkflowLabel? = nil,
