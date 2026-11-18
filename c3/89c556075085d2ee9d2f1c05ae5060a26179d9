@@ -1,0 +1,9 @@
+Decided: merged origin/staging; staging's #510 made the look's style a token struct, so the tool row reads Scene as a style with a stage, the same test staging's own views use.
+Because: apple/Sources/CooeeUI/ToolRows.swift:57
+Decided: mcp.rs takes staging's side whole; my earlier own_tools split was only a build fix, and staging split it its own way (routine_tool).
+Because: crates/cooee-server/src/mcp.rs:387
+Decided: staging's history trim (#364) reads the tool row's text as `title`; on this branch that field is `subject` (still `title` on the wire), so trim binds it by the new name.
+Because: crates/cooee-core/src/store/archive.rs:262
+Rejected: keeping my skill_tool split — two splits of one function would leave two ways to build the tool list.
+Check: the apple job builds ToolRows.swift and TopicList.swift on the merge with staging; the tool-rows snapshots still match.
+Owner: no change in behaviour; the branch is caught up with staging and the app builds again.
