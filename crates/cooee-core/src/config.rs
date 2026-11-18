@@ -86,7 +86,7 @@ pub struct Apns {
     pub team_id: String,
     /// The app's bundle id.
     pub topic: String,
-    /// `sandbox` (Xcode and test-flight builds) or `production`: a token registered without one is this.
+    /// `production` (TestFlight and App Store builds) or `sandbox` (Xcode debug builds): a token registered without one is this.
     pub env: ApnsEnv,
     /// The APNs server; default Apple's for each token's `env`.
     pub url: Option<String>,
