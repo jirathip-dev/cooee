@@ -7,7 +7,7 @@ use super::{
     Note, Push, Sub, apns_jwt,
     crypto::p8_key,
     key::read_private,
-    send::{curl, now},
+    send::{now, sent},
 };
 
 impl Push {
@@ -93,8 +93,7 @@ impl Push {
             "content-type: application/json".to_owned(),
         ];
         let url = format!("{host}/3/device/{}", s.endpoint);
-        let args = h.iter().flat_map(|h| ["-H", h]).chain(["--http2", &url]);
-        curl(args, body.to_string().as_bytes())
+        sent(&url, &h, body.to_string().as_bytes())
     }
 }
 

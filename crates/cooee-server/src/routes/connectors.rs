@@ -12,7 +12,7 @@ use topcoat::{
 use crate::{
     Hub, HubError,
     connectors::Connectors,
-    http::{Answer, Data, header, hub, now, plain, profiles, thread_id},
+    http::{Answer, Data, bearer, header, hub, now, plain, profiles, thread_id},
 };
 
 async fn on<T: Send + 'static>(
@@ -197,6 +197,30 @@ async fn connectors_callback(cx: &Cx) -> Result<Response> {
     }
 }
 
+#[derive(Deserialize)]
+struct Piped {
+    thread: String,
+    server: String,
+    message: Value,
+}
+
+#[route(POST "/mcp/agent/rpc")]
+async fn mcp_rpc(cx: &Cx, Json(p): Json<Piped>) -> Result<Response> {
+    let token = bearer(cx);
+    let got = on(cx, move |hub, c| {
+        c.rpc(hub, (&p.thread, &token), &p.server, &p.message, now())
+    })
+    .await;
+    match got.0 {
+        Ok(all) => Ok(Response::builder()
+            .header("Content-Type", "application/x-ndjson")
+            .body(Body::from(
+                all.iter().map(|m| m.to_string() + "\n").collect::<String>(),
+            ))?),
+        Err(e) => plain(400, &e.to_string()),
+    }
+}
+
 pub(super) fn routes(b: RouterBuilder) -> RouterBuilder {
     b.route(connectors_list)
         .route(connectors_add)
@@ -207,4 +231,5 @@ pub(super) fn routes(b: RouterBuilder) -> RouterBuilder {
         .route(connectors_flow)
         .route(connectors_signout)
         .route(connectors_callback)
+        .route(mcp_rpc)
 }

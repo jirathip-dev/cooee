@@ -1,7 +1,5 @@
 use std::{
-    io::Write as _,
     path::PathBuf,
-    process::Stdio,
     sync::{Arc, Mutex, PoisonError},
     time::Duration,
 };
@@ -702,29 +700,15 @@ pub fn hooks(runner: Arc<Runner>) -> Router {
 }
 
 fn github(url: &str, token: &str) -> Result<Value, String> {
-    let mut c = cooee_core::runner::command("curl")
-        .args(["-sSf", "--max-time", "20", "-K", "-"])
-        .stdin(Stdio::piped())
-        .stdout(Stdio::piped())
-        .stderr(Stdio::piped())
-        .spawn()
-        .map_err(|e| format!("curl: {e}"))?;
-    let config = format!(
-        "url = {url:?}\nheader = \"Authorization: Bearer {token}\"\nheader = \"Accept: application/vnd.github+json\"\n"
-    );
-    if let Some(mut stdin) = c.stdin.take() {
-        stdin
-            .write_all(config.as_bytes())
-            .map_err(|e| e.to_string())?;
+    let headers = [
+        format!("Authorization: Bearer {token}"),
+        "Accept: application/vnd.github+json".to_owned(),
+    ];
+    let r = crate::net::fetch("GET", url, &headers, None)?;
+    if !r.ok() {
+        return Err(format!("{url}: HTTP {}", r.status));
     }
-    let out = c.wait_with_output().map_err(|e| e.to_string())?;
-    if !out.status.success() {
-        return Err(format!(
-            "{url}: {}",
-            String::from_utf8_lossy(&out.stderr).trim()
-        ));
-    }
-    serde_json::from_slice(&out.stdout).map_err(|e| format!("{url}: {e}"))
+    serde_json::from_str(&r.body).map_err(|e| format!("{url}: {e}"))
 }
 
 const fn placed(p: &Place) -> &'static str {
