@@ -1,34 +1,37 @@
 #!/bin/sh
-# cooee's installer: `curl -fsSL https://raw.githubusercontent.com/jirathip-dev/cooee/main/scripts/install.sh | sh`,
-# or ./scripts/install.sh from a clone. It installs cooee with cargo, then runs `cooee setup` with its arguments.
-# `cooee update` (#332) runs it with COOEE_REV=<sha>: that commit is installed (its --version shows it), no setup.
+# cooee's installer: `curl -fsSL https://raw.githubusercontent.com/jirathip-dev/cooee/main/scripts/install.sh | sh`.
+# It downloads main's latest release (CI-built and signed, docs/releases.md) to ~/.local/bin/cooee, checks it against
+# its SHA256SUMS, then runs `cooee setup` with its arguments. Nothing is built here and no signing identity is needed.
 set -eu
 need() {
   command -v "$1" >/dev/null 2>&1 || { printf 'cooee: %s not found: %s\n' "$1" "$2" >&2; exit 1; }
 }
-need cargo "install Rust from https://rustup.rs"
+need curl "install curl"
 need tailscale "install Tailscale from https://tailscale.com/download, sign in, and put its CLI on PATH"
-dir=$(dirname "$0")
-if [ -n "${COOEE_REV:-}" ]; then
-  cargo install --locked --git https://github.com/jirathip-dev/cooee --rev "$COOEE_REV" cooee
-elif [ -f "$dir/../crates/cooee/Cargo.toml" ]; then
-  cargo install --locked --path "$dir/../crates/cooee"
-else
-  cargo install --locked --git https://github.com/jirathip-dev/cooee cooee
+case "$(uname -s)-$(uname -m)" in
+  Darwin-arm64) asset=cooee-aarch64-apple-darwin ;;
+  Linux-x86_64) asset=cooee-x86_64-unknown-linux-gnu ;;
+  *) echo "cooee: no release build for $(uname -s) $(uname -m)" >&2; exit 1 ;;
+esac
+repo=https://github.com/jirathip-dev/cooee
+tag=$(curl -fsSL https://api.github.com/repos/jirathip-dev/cooee/releases/latest | sed -n 's/.*"tag_name": *"\([^"]*\)".*/\1/p')
+[ -n "$tag" ] || { echo "cooee: no release found at $repo/releases" >&2; exit 1; }
+bin="$HOME/.local/bin"
+mkdir -p "$bin"
+curl -fsSL -o "$bin/cooee.new" "$repo/releases/download/$tag/$asset"
+want=$(curl -fsSL "$repo/releases/download/$tag/SHA256SUMS" | awk -v a="$asset" '$2 == a {print $1}')
+if command -v sha256sum >/dev/null 2>&1; then got=$(sha256sum "$bin/cooee.new"); else got=$(shasum -a 256 "$bin/cooee.new"); fi
+if [ -z "$want" ] || [ "${got%% *}" != "$want" ]; then
+  rm -f "$bin/cooee.new"
+  echo "cooee: $asset of $tag doesn't match its SHA256SUMS" >&2
+  exit 1
 fi
-PATH="$HOME/.cargo/bin:$PATH"
-# macOS (#167, q1261): sign with the Apple Development identity, so the keychain opens cooee's secrets to every
-# build of it with no prompt; each keychain call is killed after 10 s rather than waiting on a dialog.
-if [ "$(uname)" = Darwin ]; then
-  limit() { perl -e 'alarm shift; exec @ARGV' 10 "$@"; }
-  id=$(limit security find-identity -v -p codesigning | awk -F'"' '/"Apple Development: /{print $2; exit}')
-  [ -n "$id" ] || { echo 'cooee: no "Apple Development" signing identity in the keychain: add it in Xcode › Settings › Accounts' >&2; exit 1; }
-  limit codesign --force --sign "$id" --identifier cooee "$HOME/.cargo/bin/cooee" ||
-    { echo "cooee: codesign failed or waited on a keychain dialog: allow codesign to use the key, then run this again" >&2; exit 1; }
-fi
-[ -z "${COOEE_REV:-}" ] || exit 0
+chmod 755 "$bin/cooee.new"
+mv "$bin/cooee.new" "$bin/cooee"
+echo "cooee: installed $tag to $bin/cooee"
+case ":$PATH:" in *":$bin:"*) ;; *) echo "cooee: add $bin to your PATH" ;; esac
 # Piped into sh, stdin is the script: setup's questions read the terminal instead.
 if (: </dev/tty) 2>/dev/null; then
-  exec cooee setup "$@" </dev/tty
+  exec "$bin/cooee" setup "$@" </dev/tty
 fi
-exec cooee setup "$@"
+exec "$bin/cooee" setup "$@"

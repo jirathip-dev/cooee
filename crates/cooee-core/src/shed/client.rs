@@ -10,7 +10,7 @@ use serde::de::DeserializeOwned;
 use serde_json::{Value, json};
 use shed_proto::{ErrorCode, Hello, Method, Request, Response, SendParams};
 
-use super::ShedError;
+use super::{SHED_MIN_PROTOCOL, ShedError};
 
 fn side(hello: &Hello) -> String {
     format!(
@@ -185,9 +185,11 @@ impl Shed {
             theirs,
         };
         match conn.call::<Hello>(Method::Hello, json!(ours)) {
-            Ok(theirs) if theirs.compatible() => Ok(conn),
-            Ok(theirs) if theirs.protocol < ours.protocol => Err(version(format!(
-                "the server runs {}, an older shed; restart shed serve",
+            Ok(theirs) if theirs.product == "shed" && theirs.protocol >= SHED_MIN_PROTOCOL => {
+                Ok(conn)
+            }
+            Ok(theirs) if theirs.protocol < SHED_MIN_PROTOCOL => Err(version(format!(
+                "the server runs {}, older than protocol {SHED_MIN_PROTOCOL}",
                 side(&theirs)
             ))),
             Ok(theirs) => Err(version(format!("the server runs {}", side(&theirs)))),
