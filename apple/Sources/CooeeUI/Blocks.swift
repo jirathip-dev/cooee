@@ -125,7 +125,7 @@ internal struct BlockNode: View {
         case "choice", "secret", "run": AnswerBlock(block: block)
         case "form", "config": FieldsBlock(block: block)
         case "images": ImagesBlock(block: block)
-        case "scene": SceneBlock(block: block)
+        case "scene": LaneStage(block: block)
         case "diff": DiffBlock(block: block)
         case "editor": EditorBlock(block: block)
         case "diagram": DiagramBlock(block: block)

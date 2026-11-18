@@ -95,9 +95,11 @@ internal struct Figure: View {
     @ViewBuilder private func drawn(_ frame: Int) -> some View {
         let palette = look.palette
         let lane = figure.string("state").flatMap(LaneState.init(rawValue:))
-        if let lane, look.style == .terminal {
+        if let lane, look.style.figures == .ascii {
             Text(lane.figure(frame: frame)).ui(13, .bold, look).foregroundStyle(palette.round(lane)).frame(width: 40)
-        } else if look.style == .scene, let coat = figure.string("coat") ?? lane.map({ _ in SceneLane.coat(title) }) {
+        } else if look.style.figures == .sprite,
+            let coat = figure.string("coat") ?? lane.map({ _ in SceneLane.coat(title) })
+        {
             let pose = lane?.pose ?? "idle"
             let gait = lane == .working && look.moving ? "-gait\(frame)" : ""
             Sprite(name: "horse-\(coat)-\(pose)\(gait)", pack: "sprites.svg#s-\(pose)").frame(width: 40, height: 30)

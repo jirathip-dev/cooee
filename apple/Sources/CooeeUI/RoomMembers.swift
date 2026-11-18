@@ -61,7 +61,7 @@ internal struct MembersPane: View {
         let palette = look.palette
         let state = scene.shown.state(member.id)
         return HStack(spacing: 10) {
-            Avatar(persona: member.with(state: state.lane), size: 38)
+            FigureView(persona: member.with(state: state.lane), size: 38)
                 .overlay(alignment: .bottomTrailing) { StateDot(state: state).offset(x: 3, y: 3) }
             VStack(alignment: .leading, spacing: 2) {
                 Text("\(index + 1) · \(member.name)").ui(14, .semibold, look).lineLimit(1)
@@ -105,7 +105,7 @@ public struct MemberSheet: View {
                 Button("Done") { actions.inspect(nil) }.buttonStyle(.plain).ui(17, .semibold, look)
                     .foregroundStyle(palette.link)
             }
-            Avatar(persona: member.with(state: .idle), size: 72)
+            FigureView(persona: member.with(state: .idle), size: 72)
             Text(member.name).ui(26, .bold, look)
             AgentChip(persona: member)
             Group2 {

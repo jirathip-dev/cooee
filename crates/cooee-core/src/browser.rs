@@ -3,8 +3,9 @@
 //! through cooee's proxy, and the persona's site allowlist (`[[sites]]` in its `agent.toml`).
 
 use std::{
+    fmt::Write as _,
     fs::{self, DirBuilder, OpenOptions},
-    io::{self, Write as _},
+    io::{self, Read as _, Write as _},
     net::TcpStream,
     os::unix::fs::{DirBuilderExt as _, OpenOptionsExt as _},
     path::{Path, PathBuf},
@@ -14,7 +15,7 @@ use std::{
 };
 
 use serde::{Deserialize, Serialize};
-use serde_json::Value;
+use serde_json::{Value, json};
 
 use crate::{clock, mcp::Server, runner};
 
@@ -64,16 +65,104 @@ fn host(url: &str) -> Option<String> {
     (!host.is_empty()).then(|| host.to_ascii_lowercase())
 }
 
+fn on(site: &Site, host: &str) -> bool {
+    let s = site.site.to_ascii_lowercase();
+    !s.is_empty() && (host == s || host.ends_with(&format!(".{s}")))
+}
+
 /// Whether `sites` let the browser open `url`: `about:blank`, or an http(s) URL on a listed site or its subdomain.
 #[must_use]
 pub fn allows(sites: &[Site], url: &str) -> bool {
-    url == "about:blank"
-        || host(url).is_some_and(|h| {
-            sites.iter().any(|s| {
-                let s = s.site.to_ascii_lowercase();
-                !s.is_empty() && (h == s || h.ends_with(&format!(".{s}")))
-            })
-        })
+    url == "about:blank" || host(url).is_some_and(|h| sites.iter().any(|s| on(s, &h)))
+}
+
+/// Whether a replay frame may show a page at `url` (#161): one `sites` allow, on no `no_frames` site.
+#[must_use]
+pub fn framed(sites: &[Site], url: &str) -> bool {
+    allows(sites, url) && !host(url).is_some_and(|h| sites.iter().any(|s| s.no_frames && on(s, &h)))
+}
+
+/// What a frame's caption and the log show for typed text into a password field.
+pub const MASK: &str = "••••••••";
+
+fn mask(v: &mut Value) {
+    let secret = ["element", "name"].iter().any(|k| {
+        v.get(k)
+            .and_then(Value::as_str)
+            .is_some_and(|s| s.to_ascii_lowercase().contains("pass"))
+    });
+    for k in ["text", "value"] {
+        if let Some(t) = v.get_mut(k).filter(|_| secret) {
+            *t = json!(MASK);
+        }
+    }
+}
+
+/// A browser call's `args` with what it types into a password field (or a form's) replaced by [`MASK`].
+#[must_use]
+pub fn masked(args: &Value) -> Value {
+    let mut a = args.clone();
+    mask(&mut a);
+    if let Some(fields) = a.get_mut("fields").and_then(Value::as_array_mut) {
+        fields.iter_mut().for_each(mask);
+    }
+    a
+}
+
+const READS: [&str; 5] = [
+    "browser_snapshot",
+    "browser_take_screenshot",
+    "browser_console_messages",
+    "browser_network_requests",
+    "browser_tabs",
+];
+
+/// The replay frame's caption of browser tool `tool` with `args` (masked first), like `click "Sign in"`; none for a
+/// call that only reads.
+#[must_use]
+pub fn caption(tool: &str, args: &Value) -> Option<String> {
+    if READS.contains(&tool) {
+        return None;
+    }
+    let args = masked(args);
+    let text = |k: &str| args.get(k).and_then(Value::as_str);
+    let mut c = tool
+        .strip_prefix("browser_")
+        .unwrap_or(tool)
+        .replace('_', " ");
+    if let Some(t) = text("text") {
+        write!(c, " {t:?} into").ok();
+    }
+    if let Some(o) = text("element")
+        .or_else(|| text("url"))
+        .or_else(|| text("key"))
+    {
+        write!(c, " {o:?}").ok();
+    }
+    Some(c)
+}
+
+/// The URLs of the pages open in the Chromium at CDP `endpoint` (its `/json/list`).
+///
+/// # Errors
+/// When it doesn't answer in 5 s or the answer isn't a target list.
+pub fn pages(endpoint: &str) -> io::Result<Vec<String>> {
+    let host = endpoint
+        .strip_prefix("http://")
+        .ok_or_else(|| io::Error::other(format!("{endpoint} isn't http://host:port")))?;
+    let mut s = TcpStream::connect(host)?;
+    s.set_read_timeout(Some(Duration::from_secs(5)))?;
+    let ask = format!("GET /json/list HTTP/1.0\r\nHost: {host}\r\nConnection: close\r\n\r\n");
+    s.write_all(ask.as_bytes())?;
+    let mut out = String::new();
+    s.read_to_string(&mut out)?;
+    let body = out.split_once("\r\n\r\n").map_or("", |(_, b)| b);
+    let list: Vec<Value> = serde_json::from_str(body)?;
+    Ok(list
+        .iter()
+        .filter(|t| t.get("type").and_then(Value::as_str) == Some("page"))
+        .filter_map(|t| t.get("url").and_then(Value::as_str).map(str::to_owned))
+        .collect())
 }
 
 /// Persona `persona`'s profile folder.
@@ -263,6 +352,64 @@ mod tests {
             assert!(!allows(&sites, no), "{no}");
         }
         assert!(!allows(&[Site::default()], "https://x.com"));
+    }
+
+    #[test]
+    fn each_action_has_a_caption_password_typing_is_masked_and_reads_have_none() {
+        let caption = |tool: &str, args: Value| caption(tool, &args);
+        assert_eq!(
+            caption(
+                "browser_click",
+                json!({ "element": "Sign in", "ref": "e1" })
+            )
+            .as_deref(),
+            Some(r#"click "Sign in""#)
+        );
+        assert_eq!(
+            caption("browser_navigate", json!({ "url": "https://x.com/" })).as_deref(),
+            Some(r#"navigate "https://x.com/""#)
+        );
+        assert_eq!(
+            caption(
+                "browser_type",
+                json!({ "element": "Search", "text": "cats" })
+            )
+            .as_deref(),
+            Some(r#"type "cats" into "Search""#)
+        );
+        let typed = json!({ "element": "Password textbox", "ref": "e2", "text": "hunter2" });
+        assert_eq!(
+            caption("browser_type", typed.clone()).as_deref(),
+            Some(r#"type "••••••••" into "Password textbox""#)
+        );
+        assert_eq!(masked(&typed)["text"], MASK);
+        let form = json!({ "fields": [{ "name": "Email", "value": "a@b.c" }, { "name": "Passcode", "value": "1234" }] });
+        assert_eq!(
+            masked(&form),
+            json!({ "fields": [{ "name": "Email", "value": "a@b.c" }, { "name": "Passcode", "value": MASK }] })
+        );
+        assert_eq!(caption("browser_snapshot", json!({})), None);
+        assert_eq!(caption("browser_take_screenshot", json!({})), None);
+    }
+
+    #[test]
+    fn a_no_frames_site_and_one_off_the_list_are_never_framed() {
+        let sites = [
+            Site {
+                site: "github.com".to_owned(),
+                ..Site::default()
+            },
+            Site {
+                site: "bank.com".to_owned(),
+                no_frames: true,
+                ..Site::default()
+            },
+        ];
+        assert!(framed(&sites, "https://gist.github.com/x"));
+        assert!(framed(&sites, "about:blank"));
+        assert!(!framed(&sites, "https://bank.com/"));
+        assert!(!framed(&sites, "https://www.bank.com/acct"));
+        assert!(!framed(&sites, "https://evil.com/"));
     }
 
     #[test]

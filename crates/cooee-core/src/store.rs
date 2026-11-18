@@ -1,3 +1,4 @@
+mod archive;
 mod error;
 mod files;
 mod items;

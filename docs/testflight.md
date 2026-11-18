@@ -10,8 +10,9 @@ No Mac needs Xcode. CI archives, signs and uploads the iOS app; TestFlight puts 
    environment, so pull request and fork runs can't read the key, and the job itself refuses any other branch.
 3. It registers the bundle id `com.jirathip.cooee` if it is missing, finds the app and the latest TestFlight build, and
    sets the build number to that build + 1. Nobody bumps it by hand.
-4. `xcodebuild archive` and `-exportArchive` sign with `-allowProvisioningUpdates` and the API key. Apple manages
-   the distribution certificate and profiles (cloud signing), so there is no `.p12`, no password and no fastlane.
+4. `xcodebuild archive` builds unsigned (no Development certificate is ever made); `-exportArchive` signs with
+   `-allowProvisioningUpdates` and the API key. Apple manages the distribution certificate and profiles (cloud
+   signing), so there is no `.p12`, no password and no fastlane. A dry run exports the signed build without uploading it.
 5. The run's summary shows the version, the build number and a TestFlight link. Apple processes the build for a
    few minutes, then the TestFlight app on the phone offers it. If the run fails, its `xcodebuild-log` artifact
    holds the raw log for 7 days, with the key id, issuer id and team scrubbed out.

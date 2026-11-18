@@ -42,6 +42,7 @@ internal struct ChatScreen: View {
         actions.showWorkflow = { store.send(.workflow(.show(true))) }
         actions.workflowOpen = store.workflowOpen
         actions.step = store.step
+        actions.frames = FrameImages(images: store.frames) { store.send(.frame($0)) }
         guard !store.persona.api.id.isEmpty else { return actions }
         actions.persona = { store.send(.profile) }
         actions.choices = PersonaChoices(agents: store.agents, models: store.models, efforts: store.efforts)

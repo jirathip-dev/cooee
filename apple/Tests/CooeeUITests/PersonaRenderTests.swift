@@ -18,7 +18,7 @@ internal struct PersonaRenderTests {
     private static func avatar(_ picture: String?) throws -> Pixels {
         var persona = chief
         persona.avatar = picture
-        return try pixels(Avatar(persona: Persona(persona), size: 92))
+        return try pixels(FigureView(persona: Persona(persona), size: 92))
     }
 
     private static func png(side: CGFloat) throws -> Data {

@@ -10,7 +10,7 @@ use cooee_core::{
     shed_proto::ApprovalOption,
     skills::{self, Skill},
 };
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
 
 use crate::mcp::Grant;
@@ -77,6 +77,15 @@ impl Proposal {
     }
 }
 
+/// What a checked browser call answers the proxy.
+#[derive(Debug, Default, Serialize)]
+pub struct Called {
+    /// The owner's hand-back note (#162), if they had the browser.
+    pub note: Option<String>,
+    /// The caption of the replay frame the proxy takes after it (#161), if any.
+    pub caption: Option<String>,
+}
+
 impl Hub {
     /// Agents' MCP proxies reach cooee at `url` (`cooee serve`, once it listens).
     pub fn listening(&self, url: String) {
@@ -134,7 +143,7 @@ impl Hub {
         Ok(list)
     }
 
-    fn chromium(&self) -> Result<std::path::PathBuf, HubError> {
+    pub(super) fn chromium(&self) -> Result<std::path::PathBuf, HubError> {
         let Some(c) = &self.config else {
             return Ok(browser::CHROMIUM.into());
         };
@@ -275,7 +284,7 @@ impl Hub {
 
     /// Thread `id`'s proxy's `tools/call` of `tool` on `server` with `args`, checked again: the grant still holds, the
     /// tool is allowed and, on the browser, a `url` is on the persona's site allowlist; each browser call waits while
-    /// the owner holds control, is logged, and answers the owner's hand-back note.
+    /// the owner holds control and is logged (password typing masked).
     ///
     /// # Errors
     /// [`HubError::Refused`] as [`Hub::grant`], for a tool not allowed, or a site not on the allowlist.
@@ -284,7 +293,7 @@ impl Hub {
         (id, token): (&str, &str),
         (server, tool): (&str, &str),
         args: &Value,
-    ) -> Result<Option<String>, HubError> {
+    ) -> Result<Called, HubError> {
         let (persona, pick, _) = self.granted(id, token, server)?;
         if !pick.allows(tool) {
             return Err(HubError::Refused(format!(
@@ -292,11 +301,12 @@ impl Hub {
             )));
         }
         if server != browser::SERVER {
-            return Ok(None);
+            return Ok(Called::default());
         }
         let note = self.wait_turn(&persona.id);
         let url = args.get("url").and_then(Value::as_str);
         let off = url.filter(|u| !browser::allows(&persona.sites, u));
+        let args = browser::masked(args);
         let line = json!({ "at": now(), "thread": id, "tool": tool, "arguments": args, "refused": off.is_some() });
         let profile = browser::profile(&self.data, &persona.id);
         browser::log(&profile, &line).map_err(|e| refused(&profile, &e))?;
@@ -305,7 +315,10 @@ impl Hub {
                 "{u} isn't on {}'s site allowlist",
                 persona.id
             ))),
-            None => Ok(note),
+            None => Ok(Called {
+                note,
+                caption: browser::caption(tool, &args),
+            }),
         }
     }
 

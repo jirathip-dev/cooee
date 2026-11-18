@@ -1,5 +1,6 @@
 import ComposableArchitecture
 import CooeeCore
+import Foundation
 
 @DependencyClient
 public struct ThreadsClient: Sendable {
@@ -10,6 +11,7 @@ public struct ThreadsClient: Sendable {
     public var saveTheme: @Sendable (_ server: Server, _ name: String, _ draft: ThemeDraft) async throws -> Void
     public var themeArt: @Sendable (_ server: Server, _ theme: String, _ file: String) async throws -> String
     public var messages: @Sendable (_ server: Server, _ thread: String) async throws -> Slice
+    public var frame: @Sendable (_ server: Server, _ thread: String, _ name: String) async throws -> Data
     public var events:
         @Sendable (_ server: Server, _ thread: String, _ since: String) -> AsyncThrowingStream<StreamEvent, any Error> =
             { _, _, _ in .finished() }
