@@ -1,0 +1,6 @@
+Decided: apple_cap 18700 = 17146 staging + ~930 from #610 + 101 other open PRs, + ~500 margin; line_cap stays 32000
+Because: q2029
+Because: "Raise cooee's `apple_cap` in `ci/cap.toml` from 18,000 to 18,700 in one step"
+Rejected: 18600 — the issue fixes 18,700 to cover the projected ~18,177 plus margin
+Check: sh scripts/line-cap.sh exits 0 with 29642 / 32000 and 17225 / 18700
+Owner: The Apple app code limit goes up to 18,700 lines so the whole queue can merge.
