@@ -2,6 +2,7 @@ use std::{
     env,
     fs::{self, OpenOptions},
     io::{IsTerminal, Write},
+    os::unix::fs::PermissionsExt,
     path::{Path, PathBuf},
     process::ExitCode,
 };
@@ -10,10 +11,10 @@ use cooee_core::Config;
 
 use crate::{devices::now, service::label, setup};
 
-const INSTALL: &str = include_str!("../../../scripts/install.sh");
-
-/// The commit this binary was built at: `COOEE_REV`, set while `cargo install` builds it by `cooee update`.
+/// The commit this binary was built at: `COOEE_REV`, set by the release workflow.
 pub const REV: Option<&str> = option_env!("COOEE_REV");
+
+const RELEASES: &str = "https://github.com/jirathip-dev/cooee/releases/download";
 
 fn short(sha: &str) -> &str {
     sha.get(..7).unwrap_or(sha)
@@ -26,45 +27,53 @@ fn api(path: &str) -> Result<serde_json::Value, String> {
     serde_json::from_str(&out).map_err(|e| format!("{url}: {e}"))
 }
 
-fn ci_run(query: &str) -> Result<serde_json::Value, String> {
-    let runs = api(&format!(
-        "actions/workflows/ci.yml/runs?branch=main&event=push&per_page=1&{query}"
-    ))?;
-    Ok(runs
-        .pointer("/workflow_runs/0")
-        .cloned()
-        .unwrap_or_default())
-}
-
-fn head() -> Result<(String, Option<String>), String> {
-    let head = api("commits/main")?
+fn head() -> Result<String, String> {
+    Ok(api("commits/main")?
         .get("sha")
         .and_then(serde_json::Value::as_str)
         .ok_or("main has no sha")?
-        .to_owned();
-    let run = ci_run(&format!("head_sha={head}"))?;
-    let conclusion = run.get("conclusion").and_then(serde_json::Value::as_str);
-    Ok((head, conclusion.map(str::to_owned)))
+        .to_owned())
 }
 
-/// The commit to install, or why there is none: main's `head` once its ci run passed, unless it is installed already
-/// or failed to install before.
-pub fn decide(
-    installed: Option<&str>,
-    failed: Option<&str>,
-    head: &str,
-    ci: Option<&str>,
-) -> Result<String, String> {
+fn asset() -> String {
+    let os = if cfg!(target_os = "macos") {
+        "apple-darwin"
+    } else {
+        "unknown-linux-gnu"
+    };
+    format!("cooee-{}-{os}", env::consts::ARCH)
+}
+
+fn url(sha: &str, file: &str) -> String {
+    format!("{RELEASES}/build-{}/{file}", short(sha))
+}
+
+/// The commit to install, or why there is none: main's `head`, unless it is installed already or failed to install
+/// before.
+pub fn decide(installed: Option<&str>, failed: Option<&str>, head: &str) -> Result<String, String> {
     let at = short(head);
-    match ci {
-        _ if installed == Some(head) => Err(format!("up to date at {at}")),
-        _ if failed == Some(head) => Err(format!(
+    if installed == Some(head) {
+        Err(format!("up to date at {at}"))
+    } else if failed == Some(head) {
+        Err(format!(
             "main {at} failed to install before: it waits for a newer one"
-        )),
-        Some("success") => Ok(head.to_owned()),
-        Some(ci) => Err(format!("main {at}: ci {ci}, not installed")),
-        None => Err(format!("main {at}: ci pending, not installed")),
+        ))
+    } else {
+        Ok(head.to_owned())
     }
+}
+
+fn sum(sha: &str) -> Result<String, String> {
+    let at = short(sha);
+    let sums = setup::output(&["curl", "-sfL", "--max-time", "20", &url(sha, "SHA256SUMS")])
+        .ok_or(format!("main {at}: no release yet, not installed"))?;
+    let name = asset();
+    sums.lines()
+        .find_map(|l| l.split_once("  ").filter(|(_, f)| *f == name))
+        .map(|(sum, _)| sum.to_owned())
+        .ok_or(format!(
+            "main {at}: the release has no {name}, not installed"
+        ))
 }
 
 /// `cooee --version`: the version and the commit it was built at, if known.
@@ -91,9 +100,10 @@ fn update(config: &Config, check: bool) -> Result<(), String> {
         return Ok(());
     }
     let failed = fs::read_to_string(data.join("update.failed")).ok();
-    let (head, ci) = head()?;
-    let sha = match decide(REV, failed.as_deref(), &head, ci.as_deref()) {
-        Ok(sha) => sha,
+    let head = head()?;
+    let found = decide(REV, failed.as_deref(), &head).and_then(|sha| Ok((sum(&sha)?, sha)));
+    let (sum, sha) = match found {
+        Ok(found) => found,
         Err(why) if !check => return log(&data, &why),
         Err(why) => {
             cooee_core::say!("would do nothing: {why}");
@@ -103,12 +113,12 @@ fn update(config: &Config, check: bool) -> Result<(), String> {
     let job = label(&config.instance);
     if check {
         cooee_core::say!(
-            "would install {sha}, restart {job} and check that port {} answers",
+            "would install {sha}'s release, restart {job} and check that port {} answers",
             config.port
         );
         return Ok(());
     }
-    match install(config, &bin()?, &sha) {
+    match install(config, &bin()?, &sha, &sum) {
         Ok(()) => log(&data, &format!("installed {sha}")),
         Err(why) => {
             fs::write(data.join("update.failed"), &sha).map_err(|e| e.to_string())?;
@@ -129,24 +139,51 @@ fn update(config: &Config, check: bool) -> Result<(), String> {
 
 fn bin() -> Result<PathBuf, String> {
     let home = cooee_core::env_var("HOME").ok_or("no HOME")?;
-    Ok(Path::new(&home).join(".cargo/bin/cooee"))
+    Ok(Path::new(&home).join(".local/bin/cooee"))
 }
 
-fn install(config: &Config, bin: &Path, sha: &str) -> Result<(), String> {
+fn fetch(new: &Path, sha: &str, sum: &str) -> Result<(), String> {
+    let to = new.display().to_string();
+    let name = asset();
+    if !setup::ok(&[
+        "curl",
+        "-sfL",
+        "--max-time",
+        "300",
+        "-o",
+        &to,
+        &url(sha, &name),
+    ]) {
+        return Err(format!("downloading {name} failed"));
+    }
+    let got = cooee_core::sha256(&fs::read(new).map_err(|e| e.to_string())?);
+    if got != sum {
+        return Err(format!("{name} doesn't match SHA256SUMS"));
+    }
+    fs::set_permissions(new, fs::Permissions::from_mode(0o755)).map_err(|e| e.to_string())?;
+    let says = setup::output(&[&to, "--version"]).unwrap_or_default();
+    if !says.contains(sha) {
+        return Err(format!(
+            "its --version names another build: {}",
+            says.trim()
+        ));
+    }
+    Ok(())
+}
+
+fn install(config: &Config, bin: &Path, sha: &str, sum: &str) -> Result<(), String> {
+    let new = bin.with_extension("new");
+    if let Err(why) = fetch(&new, sha, sum) {
+        fs::remove_file(&new).ok();
+        return Err(format!("{} not installed: {why}", short(sha)));
+    }
     let old = bin.with_extension("old");
     fs::copy(bin, &old).map_err(|e| format!("keeping {}: {e}", bin.display()))?;
-    let installed = cooee_core::runner::command("sh")
-        .args(["-c", INSTALL, "install.sh"])
-        .env("COOEE_REV", sha)
-        .status()
-        .map_err(|e| e.to_string())?;
-    let why = if !installed.success() {
-        format!("install.sh {installed}")
-    } else if restart(config) {
+    fs::rename(&new, bin).map_err(|e| format!("swapping {}: {e}", bin.display()))?;
+    if restart(config) {
         return Ok(());
-    } else {
-        format!("the service doesn't answer on port {}", config.port)
-    };
+    }
+    let why = format!("the service doesn't answer on port {}", config.port);
     fs::rename(&old, bin).map_err(|e| format!("{why}; putting back {}: {e}", bin.display()))?;
     let back = if restart(config) {
         "it serves again"
@@ -179,20 +216,20 @@ fn log(data: &Path, line: &str) -> Result<(), String> {
         .map_err(|e| e.to_string())
 }
 
-/// `cooee doctor`'s line: the installed commit, main's green head, the last check and whether auto-update is on.
+/// `cooee doctor`'s line: the installed commit, main's latest release, the last check and whether auto-update is on.
 pub fn doctor(config: &Config) {
-    let green = ci_run("status=success").map(|r| {
-        r.get("head_sha")
+    let latest = api("releases/latest").map(|r| {
+        r.get("tag_name")
             .and_then(serde_json::Value::as_str)
-            .map_or("none", short)
+            .unwrap_or("none")
             .to_owned()
     });
     let log = config.data_dir().map(|d| d.join("update.log"));
     let ago = log.and_then(|l| fs::metadata(l).ok()?.modified().ok()?.elapsed().ok());
     cooee_core::say!(
-        "info update: installed {}, main's green head {}, last check {}, auto-update {}",
+        "info update: installed {}, main's latest release {}, last check {}, auto-update {}",
         REV.map_or("unknown", short),
-        green.unwrap_or_else(|e| e),
+        latest.unwrap_or_else(|e| e),
         ago.map_or("never".to_owned(), |a| format!(
             "{} min ago",
             a.as_secs() / 60
@@ -209,29 +246,15 @@ mod tests {
     const NEW: &str = "2222222222222222222222222222222222222222";
 
     #[test]
-    fn only_a_new_green_head_is_installed() {
+    fn only_a_new_head_that_never_failed_is_installed() {
+        assert_eq!(decide(Some(OLD), None, NEW), Ok(NEW.to_owned()));
+        assert_eq!(decide(None, Some(OLD), NEW), Ok(NEW.to_owned()));
         assert_eq!(
-            decide(Some(OLD), None, NEW, Some("success")),
-            Ok(NEW.to_owned())
-        );
-        assert_eq!(
-            decide(None, Some(OLD), NEW, Some("success")),
-            Ok(NEW.to_owned())
-        );
-        assert_eq!(
-            decide(Some(OLD), None, NEW, Some("failure")),
-            Err("main 2222222: ci failure, not installed".to_owned())
-        );
-        assert_eq!(
-            decide(Some(OLD), None, NEW, None),
-            Err("main 2222222: ci pending, not installed".to_owned())
-        );
-        assert_eq!(
-            decide(Some(NEW), None, NEW, Some("success")),
+            decide(Some(NEW), None, NEW),
             Err("up to date at 2222222".to_owned())
         );
         assert!(
-            decide(Some(OLD), Some(NEW), NEW, Some("success"))
+            decide(Some(OLD), Some(NEW), NEW)
                 .is_err_and(|e| e.contains("failed to install before"))
         );
     }

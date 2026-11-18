@@ -3,10 +3,10 @@ use std::{
     time::Duration,
 };
 
-use cooee_core::{Config, ROOTS_FIX, Shed, ShedError, agents_fix};
+use cooee_core::{Config, ROOTS_FIX, Shed, ShedError, agents_fix, shed_fix};
 use cooee_server::machine;
 
-use crate::service::{app_items, label, shed_install, tailnet_name};
+use crate::service::{app_items, label, tailnet_name};
 
 pub(crate) fn doctor(config: &Config) -> Result<(), String> {
     let mut failed = Vec::new();
@@ -49,10 +49,7 @@ pub(crate) fn doctor(config: &Config) -> Result<(), String> {
             }
         }
         Err(e @ ShedError::Version { .. }) => check(false, format!("shed: {e}")),
-        Err(e) => check(
-            false,
-            format!("shed: {e}\n     install: {}", shed_install()),
-        ),
+        Err(e) => check(false, format!("shed: {e}\n     fix: {}", shed_fix())),
     }
     for (ok, what) in machine::rows(config) {
         check(ok, what);

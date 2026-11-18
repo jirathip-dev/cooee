@@ -7,7 +7,7 @@ use cooee_core::Shed;
 
 use crate::{
     cli::{Failed, Flag, Invocation, load},
-    service::{plist, shed_install, tailnet_name, write_plist},
+    service::{plist, tailnet_name, write_plist},
 };
 
 pub(super) const USAGE: &str = "install --port <p>";
@@ -50,7 +50,7 @@ fn install(path: Option<PathBuf>, instance: &str, port: u16, explicit: bool) -> 
         .hello()
         .is_err()
     {
-        cooee_core::say!("  {}   # shed isn't running", shed_install());
+        cooee_core::say!("  shed isn't running: {}", cooee_core::shed_fix());
     }
     Ok(())
 }
