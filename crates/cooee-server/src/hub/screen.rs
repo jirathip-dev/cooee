@@ -1,10 +1,11 @@
 use std::{
     collections::HashMap,
+    fmt::Write as _,
     sync::{Condvar, Mutex},
 };
 
 use cooee_core::{
-    browser::{self, Control, Gate},
+    browser::{self, Control, Did, Gate},
     cdp::{self, Tab},
 };
 use serde::{Deserialize, Serialize};
@@ -16,7 +17,13 @@ use super::{Hub, HubError, lock, now};
 struct Desk {
     control: Control,
     waiting: usize,
+    steps: Vec<String>,
 }
+
+const LABEL: &str = "(e=>e?((e.labels&&e.labels[0]&&e.labels[0].innerText)||e.getAttribute('aria-label')||e.getAttribute('placeholder')||e.getAttribute('name')||(e.isContentEditable||e.matches('input,textarea,select')?'':e.innerText)||e.id||'').trim().slice(0,80):'')";
+
+const TEACH: &str = "The owner asks you to save what they just did as a skill: draft it from these steps and propose \
+                     it with your skill tool. What they typed is left out: name the field, never a value.";
 
 #[derive(Default)]
 pub(super) struct Desks {
@@ -82,25 +89,34 @@ impl Hub {
     /// [`HubError::Refused`] for an unknown persona.
     pub fn take_control(&self, persona: &str) -> Result<Screen, HubError> {
         self.known(persona)?;
-        lock(&self.desks.map)
-            .entry(persona.to_owned())
-            .or_default()
-            .control = Control::take(now());
+        *lock(&self.desks.map).entry(persona.to_owned()).or_default() = Desk {
+            control: Control::take(now()),
+            ..Desk::default()
+        };
         self.screen(persona)
     }
 
-    /// The owner hands `persona`'s browser back with `note`: its waiting call goes on and carries the note.
+    /// The owner hands `persona`'s browser back with `note`: its waiting call goes on and carries the note, and with
+    /// `skill` (#500) the lease's steps and the ask to propose them as a skill.
     ///
     /// # Errors
     /// [`HubError::Refused`] unless the owner holds control.
-    pub fn hand_back(&self, persona: &str, note: String) -> Result<Screen, HubError> {
+    pub fn hand_back(&self, persona: &str, note: String, skill: bool) -> Result<Screen, HubError> {
         {
             let mut map = lock(&self.desks.map);
             let desk = map.entry(persona.to_owned()).or_default();
+            let mut note = note;
+            if skill {
+                write!(note, "\n\n{TEACH}").ok();
+                for (n, step) in (1_u32..).zip(&desk.steps) {
+                    write!(note, "\n{n}. {step}").ok();
+                }
+            }
             desk.control = desk
                 .control
                 .hand_back(note)
                 .ok_or_else(|| HubError::Refused(format!("you don't hold {persona}'s browser")))?;
+            desk.steps.clear();
         }
         self.desks.handed.notify_all();
         self.screen(persona)
@@ -155,7 +171,8 @@ impl Hub {
         Ok(Frame { tab, jpeg })
     }
 
-    /// The owner's `input` on `persona`'s current tab, only while they hold control.
+    /// The owner's `input` on `persona`'s current tab, only while they hold control; it joins the lease's steps by the
+    /// label of what it clicked or typed into.
     ///
     /// # Errors
     /// [`HubError::Refused`] unless the owner holds control, or when the browser doesn't take it.
@@ -169,19 +186,35 @@ impl Hub {
                 "take control of {persona}'s browser first"
             )));
         }
-        let calls = match input {
-            Input::Click { x, y } => ["mousePressed", "mouseReleased"]
-                .map(|kind| {
-                    let e =
-                        json!({ "type": kind, "x": x, "y": y, "button": "left", "clickCount": 1 });
-                    ("Input.dispatchMouseEvent", e)
-                })
-                .to_vec(),
-            Input::Text(text) => vec![("Input.insertText", json!({ "text": text }))],
+        let (calls, at, did): (_, _, fn(String) -> Did) = match input {
+            Input::Click { x, y } => (
+                ["mousePressed", "mouseReleased"]
+                    .map(|kind| {
+                        let e = json!({ "type": kind, "x": x, "y": y, "button": "left", "clickCount": 1 });
+                        ("Input.dispatchMouseEvent", e)
+                    })
+                    .to_vec(),
+                format!("document.elementFromPoint({x}, {y})"),
+                Did::Click,
+            ),
+            Input::Text(text) => (
+                vec![("Input.insertText", json!({ "text": text }))],
+                "document.activeElement".to_owned(),
+                Did::Type,
+            ),
         };
         let tab = self.tab(persona)?;
+        let ask = json!({ "expression": format!("{LABEL}({at})"), "returnByValue": true });
+        let label = tab.run(&[("Runtime.evaluate", ask)]).ok();
+        let label = label.as_ref().and_then(|l| l.pointer("/result/value"));
+        let label = label.and_then(Value::as_str).unwrap_or_default().to_owned();
         tab.run(&calls)
-            .map(drop)
-            .map_err(|e| HubError::Refused(e.to_string()))
+            .map_err(|e| HubError::Refused(e.to_string()))?;
+        let sites = self.persona(persona).sites;
+        let step = browser::step(&sites, &tab.url, &tab.title, &did(label));
+        if let Some(desk) = lock(&self.desks.map).get_mut(persona) {
+            desk.steps.push(step);
+        }
+        Ok(())
     }
 }

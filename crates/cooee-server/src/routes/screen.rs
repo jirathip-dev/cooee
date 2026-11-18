@@ -26,6 +26,8 @@ const EVERY: Duration = Duration::from_millis(500);
 #[derive(Deserialize)]
 struct Back {
     note: String,
+    #[serde(default)]
+    skill: bool,
 }
 
 #[route(GET "/personas/{id}/screen")]
@@ -44,7 +46,7 @@ async fn take(cx: &Cx) -> Result<Answer<Screen>> {
 async fn back(cx: &Cx, Json(b): Json<Back>) -> Result<Answer<Screen>> {
     let id = thread_id(cx);
     Ok(Answer(
-        blocking(cx, move |hub| hub.hand_back(&id, b.note)).await,
+        blocking(cx, move |hub| hub.hand_back(&id, b.note, b.skill)).await,
     ))
 }
 
