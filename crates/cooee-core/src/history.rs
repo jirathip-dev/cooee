@@ -232,6 +232,44 @@ pub fn read(store: &Store, id: &str, before: Option<u64>) -> Result<String, Stor
     Ok(out.join("\n"))
 }
 
+/// What a session on another provider is told about `thread` so far (#503): the first owner message (500 characters
+/// at most), then the last turns, newest kept, up to `cap` characters, then `Older turns: your history tool, thread <id>`.
+///
+/// # Errors
+/// [`StoreError`] when its items can't be read.
+pub fn handoff(store: &Store, thread: &str, cap: usize) -> Result<String, StoreError> {
+    let items = store.items(thread)?;
+    let first = items.iter().find(|i| matches!(i.body, Body::You { .. }));
+    let mut out = vec!["This chat ran on another provider until now.".to_owned()];
+    if let Some((_, text)) = first.and_then(said) {
+        let text: String = text.chars().take(500).collect();
+        out.push(format!("Its first message: {text}"));
+    }
+    let (mut turns, mut left) = (Vec::new(), cap);
+    for i in items.iter().rev() {
+        if first.is_some_and(|f| f.id == i.id) {
+            break;
+        }
+        let Some((who, text)) = said(i) else { continue };
+        let line = format!("{who}: {text}");
+        let n = line.chars().count() + 1;
+        if n > left {
+            if turns.is_empty() {
+                turns.push(line.chars().take(left).collect());
+            }
+            break;
+        }
+        left -= n;
+        turns.push(line);
+    }
+    if !turns.is_empty() {
+        out.push("Its last turns:".to_owned());
+        out.extend(turns.into_iter().rev());
+    }
+    out.push(format!("Older turns: your history tool, thread {thread}"));
+    Ok(out.join("\n"))
+}
+
 #[cfg(test)]
 mod tests {
     use std::fs;
@@ -349,6 +387,36 @@ mod tests {
             all = got + "\n" + &all;
         }
         assert!(all.contains("owner: ask 0 ") && all.contains("reply: answer 0 "));
+    }
+
+    #[test]
+    fn a_handoff_keeps_the_first_message_and_the_newest_turns_in_the_cap_without_tool_rows() {
+        let s = store("handoff");
+        s.append("t1", &item(1, 1, you(&"f".repeat(900)))).unwrap();
+        for n in 0..40u64 {
+            s.append("t1", &item(2 + n * 2, 2, tool("cat secret.txt")))
+                .unwrap();
+            let reply = agent(&format!("answer {n} {}", "b".repeat(100)));
+            s.append("t1", &item(3 + n * 2, 3, reply)).unwrap();
+        }
+        let got = handoff(&s, "t1", 1000).unwrap();
+        let lines: Vec<&str> = got.lines().collect();
+        assert_eq!(lines[1], format!("Its first message: {}", "f".repeat(500)));
+        assert!(!got.contains("cat secret.txt"), "{got}");
+        let turns: Vec<&str> = lines
+            .iter()
+            .copied()
+            .filter(|l| l.starts_with("reply: "))
+            .collect();
+        let kept: usize = turns.iter().map(|l| l.chars().count() + 1).sum();
+        assert!(kept <= 1000 && turns.len() == 8, "{got}");
+        assert!(
+            turns[0].starts_with("reply: answer 32 ") && turns[7].starts_with("reply: answer 39 ")
+        );
+        assert_eq!(
+            lines.last(),
+            Some(&"Older turns: your history tool, thread t1")
+        );
     }
 
     #[test]

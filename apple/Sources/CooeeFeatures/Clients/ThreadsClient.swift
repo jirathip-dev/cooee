@@ -31,6 +31,7 @@ public struct ThreadsClient: Sendable {
     public var read: @Sendable (_ server: Server, _ thread: String, _ item: Int) async throws -> Void
     public var model:
         @Sendable (_ server: Server, _ thread: String, _ model: String, _ effort: String) async throws -> Void
+    public var switchAgent: @Sendable (_ server: Server, _ thread: String, _ agent: String) async throws -> Void
     public var answer:
         @Sendable (_ server: Server, _ thread: String, _ item: Int, _ option: String, _ value: String?) async throws
             -> Void

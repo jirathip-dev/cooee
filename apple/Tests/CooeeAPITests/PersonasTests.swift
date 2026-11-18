@@ -49,10 +49,13 @@ internal struct PersonasTests {
         let server = CannedServer([
             "/personas/coder": [Answer(headers: json, chunks: ["null"])],
             "/threads/t1/model": [Answer(headers: json, chunks: [#""switched""#])],
+            "/threads/t1/agent": [Answer(headers: json, chunks: ["{}"])],
         ])
         let client = server.client()
         try await client.remove("coder")
         try await client.model("t1", model: "opus", effort: "high")
+        try await client.switchAgent("t1", to: "codex")
+        #expect(try server.decoded("/threads/t1/agent", as: [String: String].self) == ["agent": "codex"])
         #expect(server.requests("/personas/coder").map(\.httpMethod) == ["DELETE"])
         #expect(
             try server.decoded("/threads/t1/model", as: [String: String].self) == ["model": "opus", "effort": "high"])

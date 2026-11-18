@@ -10,8 +10,11 @@ impl Chat {
             | EventKind::Resources(_)
             | EventKind::Mode { .. }
             | EventKind::Turn { .. }
-            | EventKind::Session(_)
-            | EventKind::Usage(_) => Vec::new(),
+            | EventKind::Session(_) => Vec::new(),
+            EventKind::Usage(u) => {
+                self.turn.context = Some(u);
+                vec![Change::State(self.turn.clone())]
+            }
             EventKind::State(r) => vec![self.state(&r.state, r.note)],
             EventKind::Text { text } => {
                 self.turn.text.push_str(&text);

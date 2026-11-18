@@ -117,7 +117,6 @@ public struct ChatFeature: Sendable {
             case open(String)
             case persona(String)
             case start(String)
-            case restart(APIPersona)
             case round(String)
             case topic(String)
         }

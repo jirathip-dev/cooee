@@ -218,3 +218,129 @@ fn a_move_to_a_machine_not_ready_is_refused_with_its_failed_checks_and_starts_no
     assert_eq!(kinds(&cooee, &id), ["you", "agent"]);
     assert_eq!(row(&cooee, &id)["machine"], "");
 }
+
+fn replies(cooee: &Cooee, id: &str, n: usize) -> Vec<Value> {
+    let deadline = Instant::now() + Duration::from_secs(10);
+    loop {
+        let items = cooee.json(&format!("/threads/{id}/messages"))["items"].clone();
+        let items = items.as_array().unwrap().clone();
+        let done = items.iter().filter(|i| i["kind"] == "agent").count() == n;
+        if done || Instant::now() > deadline {
+            assert!(done, "{items:?}");
+            return items;
+        }
+        thread::sleep(Duration::from_millis(20));
+    }
+}
+
+fn files(dir: &Path) -> Vec<(PathBuf, Vec<u8>)> {
+    let mut all = Vec::new();
+    for e in fs::read_dir(dir).unwrap().map(Result::unwrap) {
+        let path = e.path();
+        if path.is_dir() {
+            all.extend(files(&path));
+        } else {
+            all.push((path.clone(), fs::read(&path).unwrap()));
+        }
+    }
+    all.sort();
+    all
+}
+
+#[test]
+fn a_switch_starts_the_other_agent_with_the_brief_and_a_handoff_in_the_same_thread_and_keeps_the_persona()
+ {
+    let dir = scratch("switch-agent");
+    let home = support::agent(
+        &dir,
+        "ada",
+        "name = \"Ada\"\nagent = \"fake-acp\"\n",
+        "The code word is PLOVER-7.",
+    );
+    fs::create_dir_all(home.join("skills/greet")).unwrap();
+    fs::write(home.join("skills/greet/SKILL.md"), "Say hi.").unwrap();
+    fs::write(home.join("memory.md"), "- likes tea\n").unwrap();
+    fs::write(dir.join("routines.toml"), "").unwrap();
+    let shed = FakeShed::start(&dir.join("shed"), version());
+    let agents = json!([
+        { "id": "fake-acp", "version": "1.0.0", "distribution": "npx", "cmd": ["fake-acp"] },
+        { "id": "other-acp", "version": "1.0.0", "distribution": "npx", "cmd": ["fake-acp"] },
+    ]);
+    fs::write(shed.dir.join("agents.json"), agents.to_string()).unwrap();
+    let cooee = support::Cooee::start(&dir, &shed.dir);
+    let new = json!({ "agent": "fake-acp", "profile": "ada", "text": "echo hello", "random_id": "start" });
+    let (status, body) = cooee.post("/threads", &new);
+    assert_eq!(status, 200, "{body}");
+    let id = serde_json::from_str::<Value>(&body).unwrap()["id"]
+        .as_str()
+        .unwrap()
+        .to_owned();
+    let messages = replies(&cooee, &id, 1);
+    let reply = messages[1]["text"].as_str().unwrap().to_owned();
+    let persona = || {
+        let shared = ["config.toml", "routines.toml", "data/connectors.json"];
+        let shared = shared.map(|f| fs::read(dir.join(f)).ok());
+        (files(&dir.join("agents")), shared)
+    };
+    let kept = persona();
+    let switch =
+        |agent: &str| cooee.post(&format!("/threads/{id}/agent"), &json!({ "agent": agent }));
+
+    assert_eq!(switch("nope-acp"), (400, "no agent nope-acp".to_owned()));
+    assert_eq!(
+        switch("fake-acp"),
+        (400, "it already runs on fake-acp".to_owned())
+    );
+    let (status, body) = switch("other-acp");
+    assert_eq!(status, 200, "{body}");
+    let note: Value = serde_json::from_str(&body).unwrap();
+    assert_eq!(note["text"], "now on other-acp · later turns run there");
+    let log = shed.cli_log();
+    let runs: Vec<&str> = log
+        .lines()
+        .filter(|l| l.contains("run --acp other-acp"))
+        .collect();
+    assert_eq!(runs.len(), 1, "{log}");
+    let lane = runs[0]
+        .split("--name ")
+        .nth(1)
+        .unwrap()
+        .split(' ')
+        .next()
+        .unwrap()
+        .to_owned();
+    assert_eq!(
+        shed.calls("kill", &format!("cooee-{id}")).len(),
+        1,
+        "old session closed"
+    );
+
+    let body = json!({ "text": "echo there", "random_id": "there" });
+    assert_eq!(cooee.post(&format!("/threads/{id}/send"), &body).0, 200);
+    replies(&cooee, &id, 2);
+    let prompts = shed.sent(&lane);
+    assert_eq!(prompts.len(), 1, "{prompts:?}");
+    let first = &prompts[0];
+    assert!(
+        first.contains("The code word is PLOVER-7.")
+            && first.contains("Its first message: echo hello")
+            && first.contains(&format!("reply: {reply}"))
+            && first.contains(&format!("Older turns: your history tool, thread {id}"))
+            && first.contains("echo there"),
+        "{first}"
+    );
+    let list = cooee.json("/threads");
+    let rows: Vec<&Value> = list
+        .as_array()
+        .unwrap()
+        .iter()
+        .filter(|r| r["profile"] == "ada")
+        .collect();
+    assert_eq!(rows.len(), 1, "{list}");
+    assert_eq!(
+        (&rows[0]["id"], &rows[0]["agent"]),
+        (&json!(id), &json!("other-acp"))
+    );
+    assert_eq!(kinds(&cooee, &id), ["you", "agent", "note", "you", "agent"]);
+    assert_eq!(kept, persona());
+}

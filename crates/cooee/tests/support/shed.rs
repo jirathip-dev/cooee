@@ -66,14 +66,14 @@ pub struct FakeShed {
 }
 
 const CLI: &str = r#"#!/bin/sh
-# The fake `shed` CLI: `agents` lists one agent (it fails while the gate `agents-fails` is shut); `run` records its
+# The fake `shed` CLI: `agents` lists one agent, or agents.json's (it fails while the gate `agents-fails` is shut); `run` records its
 # arguments and prints the terminal (it waits while the gate `hold-run` is shut, and fails, as a slow start's CLI
 # would, while `run-fails` is; in a folder named <f>, it waits while `hold-in-<f>` is shut, and its session never
 # comes up while `fails-in-<f>` is); `machine ls` prints
 # machines.json; `[--on <m>] machine stats` prints stats-<m>.json (stats-local.json), exit 1 when offline; its
 # `history` only the first time, as `--since` the last sample leaves nothing new. A `run` with an adapter command
 # after `--` runs it, as the terminal would: the fake adapter `fake-acp` notes its variables in adapter.env and adapter-<name>.env. A `--mcp`
-# file is kept as mcp-<name>.json. `--on <m> run` starts on machine <m> (#149): the terminal is `<m>/<name>`.
+# file is kept as mcp-<name>.json, a `--meta` as meta-<name>.json. `--on <m> run` starts on machine <m> (#149): the terminal is `<m>/<name>`.
 gates=$(dirname "$0")
 printf '%s\n' "$*" >>"$gates/cli.log"
 case "$*" in
@@ -85,13 +85,14 @@ case "$*" in
   if [ -e "$f.sent" ]; then sed 's/,"history":\[[^]]*\]//' "$f"; else cat "$f"; : >"$f.sent"; fi
   if grep -q '"online":false' "$f"; then exit 1; fi ;;
 *" agents") [ -e "$gates/agents-fails" ] && { echo 'fake shed: agents down' >&2; exit 1; }
-  echo '[{"id":"fake-acp","version":"1.0.0","distribution":"npx","cmd":["fake-acp"]}]' ;;
+  cat "$gates/agents.json" 2>/dev/null || echo '[{"id":"fake-acp","version":"1.0.0","distribution":"npx","cmd":["fake-acp"]}]' ;;
 *" run "*)
   while [ $# -gt 0 ]; do
     [ "$1" = --on ] && on=$2/
     [ "$1" = --name ] && name=$2
     [ "$1" = --cwd ] && cwd=$2
     [ "$1" = --mcp ] && cp "$2" "$gates/mcp-$name.json"
+    [ "$1" = --meta ] && printf '%s' "$2" >"$gates/meta-$name.json"
     [ "$1" = -- ] && { shift; break; }
     shift
   done
@@ -284,6 +285,12 @@ impl FakeShed {
     /// The variables the fake adapter last ran with, as `env` printed them.
     pub fn adapter_env(&self) -> String {
         fs::read_to_string(self.dir.join("adapter.env")).unwrap_or_default()
+    }
+
+    /// The `--meta` terminal `name` last started with (ACP `_meta`), if any.
+    pub fn meta(&self, name: &str) -> Option<Value> {
+        let text = fs::read_to_string(self.dir.join(format!("meta-{name}.json"))).ok()?;
+        Some(serde_json::from_str(&text).unwrap())
     }
 
     /// The variables the fake adapter of terminal `name` ran with.
