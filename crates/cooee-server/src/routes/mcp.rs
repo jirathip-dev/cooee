@@ -94,9 +94,10 @@ async fn mcp_frame(cx: &Cx, Json(a): Json<AgentAsk>) -> Result<Answer<()>> {
             .to_owned()
     };
     let (caption, image) = (text("caption"), text("image"));
+    let asked = a.server.get("asked").and_then(serde_json::Value::as_bool) == Some(true);
     Ok(Answer(
         blocking(cx, move |hub| {
-            hub.keep_frame((&a.thread, &token), &caption, &image)
+            hub.keep_frame((&a.thread, &token), &caption, &image, asked)
         })
         .await,
     ))

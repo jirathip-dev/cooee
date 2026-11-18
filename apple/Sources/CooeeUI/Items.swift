@@ -42,6 +42,8 @@ internal struct ItemView: View {
             RoundDivider(text: text)
         case .asked(_, let ask):
             AskCard(ask: ask)
+        case .screen(_, let screen):
+            ScreenItemView(screen: screen)
         }
     }
 }

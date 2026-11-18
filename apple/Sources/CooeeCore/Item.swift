@@ -55,11 +55,12 @@ public enum Item: Identifiable, Sendable, Equatable {
     case said(id: Int, speaker: String, time: String, markdown: [Block])
     case divider(id: Int, text: String)
     case asked(id: Int, Ask)
+    case screen(id: Int, ScreenItem)
 
     public var id: Int {
         switch self {
         case .you(let id, _, _), .agent(let id, _), .tools(let id, _), .trace(let id, _, _), .card(let id, _, _),
-            .note(let id, _), .said(let id, _, _, _), .divider(let id, _), .asked(let id, _):
+            .note(let id, _), .said(let id, _, _, _), .divider(let id, _), .asked(let id, _), .screen(let id, _):
             id
         case .outgoing(let message):
             message.id
@@ -72,7 +73,7 @@ public enum Item: Identifiable, Sendable, Equatable {
         case .you(_, let text, _): text
         case .outgoing(let message): message.text
         case .agent(_, let blocks), .said(_, _, _, let blocks): blocks.map(\.plainText).joined(separator: "\n\n")
-        case .tools, .trace, .card, .note, .divider, .asked: nil
+        case .tools, .trace, .card, .note, .divider, .asked, .screen: nil
         }
     }
 }
@@ -115,15 +116,21 @@ public enum ChatItems {
             out.append(.you(id: item.id, text: item.text ?? "", files: item.files ?? []))
         case "agent":
             out.append(.agent(id: item.id, markdown: Markdown.blocks(item.text ?? "")))
-        case "tool", "frame":
+        case "tool",
+            "frame" where item.asked != true:
             fold(item, into: &out)
         case "approval", "ask":
             if let card = card(item) { out.append(card) }
         default:
-            guard let text = item.text, !text.isEmpty else { return }
-            if case .note(_, text)? = out.last { return }
-            out.append(.note(id: item.id, text: text))
+            other(item, into: &out)
         }
+    }
+
+    private static func other(_ item: APIItem, into out: inout [Item]) {
+        if let screen = ScreenItem(item) { return out.append(.screen(id: item.id, screen)) }
+        guard let text = item.text, !text.isEmpty else { return }
+        if case .note(_, text)? = out.last { return }
+        out.append(.note(id: item.id, text: text))
     }
 
     private static func card(_ item: APIItem) -> Item? {
@@ -139,7 +146,8 @@ public enum ChatItems {
         var steps: [APIItem] = []
         for item in items {
             switch item.kind {
-            case "tool", "frame":
+            case "tool",
+                "frame" where item.asked != true:
                 steps.append(item)
             case "agent":
                 append(item, to: &out)

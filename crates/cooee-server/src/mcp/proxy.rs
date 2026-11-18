@@ -20,6 +20,7 @@ use super::{
 struct Frames {
     acts: HashMap<String, String>,
     shots: HashMap<String, (String, Value)>,
+    asked: HashSet<String>,
     next: u64,
 }
 
@@ -27,7 +28,15 @@ fn held<T>(m: &Mutex<T>) -> std::sync::MutexGuard<'_, T> {
     m.lock().unwrap_or_else(PoisonError::into_inner)
 }
 
-fn keep(thread: &str, caption: &str, shot: &Value) {
+impl Frames {
+    fn asked_for(&mut self, tool: &str, id: String) {
+        if tool == "browser_take_screenshot" {
+            self.asked.insert(id);
+        }
+    }
+}
+
+fn keep(thread: &str, caption: &str, shot: &Value, asked: bool) {
     let list = shot.pointer("/result/content").and_then(Value::as_array);
     let image = list
         .into_iter()
@@ -36,7 +45,7 @@ fn keep(thread: &str, caption: &str, shot: &Value) {
         .and_then(|c| c.get("data"))
         .cloned();
     if let Some(image) = image {
-        let frame = json!({ "thread": thread, "server": { "caption": caption, "image": image } });
+        let frame = json!({ "thread": thread, "server": { "caption": caption, "image": image, "asked": asked } });
         if let Err(e) = ask("/mcp/agent/frame", &frame) {
             cooee_core::note!("cooee: a replay frame: {e}");
         }
@@ -68,7 +77,7 @@ fn shoot(
 /// thread's allowed tools; cooee checks each `tools/call` again (a closed thread's token stops working) and logs a
 /// browser's, which waits while the owner holds control and then carries their hand-back note in its result. After a
 /// browser action cooee captions, the proxy takes a screenshot for cooee's replay frame (#161) before the agent gets
-/// the answer; the agent never sees it.
+/// the answer; the agent never sees it. A screenshot the agent takes itself is kept as an `asked` frame (#166).
 ///
 /// A URL server's proxy is a pipe: each line goes to cooee (`/mcp/agent/rpc`), which makes the call, and the
 /// answer's lines come back.
@@ -145,9 +154,12 @@ fn run(g: &Child, server: &str, thread: &str) -> Result<(), String> {
             if let Some((caption, reply)) =
                 answer.then(|| held(&pending).shots.remove(&id)).flatten()
             {
-                keep(&me, &caption, &msg);
+                keep(&me, &caption, &msg, false);
                 put(&o, &reply);
                 continue;
+            }
+            if answer && held(&pending).asked.remove(&id) {
+                keep(&me, "", &msg, true);
             }
             if let Some(caption) = answer.then(|| held(&pending).acts.remove(&id)).flatten() {
                 shoot(&pending, &upstream, &o, caption, msg);
@@ -191,6 +203,7 @@ fn run(g: &Child, server: &str, thread: &str) -> Result<(), String> {
                     Ok(called) => {
                         let field =
                             |k: &str| called.get(k).and_then(Value::as_str).map(str::to_owned);
+                        held(&frames).asked_for(name, id.to_string());
                         if let Some(caption) = field("caption") {
                             held(&frames).acts.insert(id.to_string(), caption);
                         }

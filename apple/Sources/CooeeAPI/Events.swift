@@ -85,10 +85,21 @@ extension Client {
     ) async throws -> Bool {
         var request = try request("GET", "/threads/\(id)/events?since=\(last)")
         if resume { request.setValue(last, forHTTPHeaderField: "Last-Event-ID") }
+        return try await sse(request, id: last) { frame in
+            last = frame.id
+            guard let event = try Self.decode(frame.event, Data(frame.data.utf8)) else { return false }
+            continuation.yield(event)
+            guard event == .reset else { return false }
+            continuation.finish()
+            return true
+        }
+    }
+
+    internal func sse(_ request: URLRequest, id: String, _ each: (SSEFrame) throws -> Bool) async throws -> Bool {
         let (bytes, response) = try await session.bytes(for: request)
         let status = try Self.http(response).statusCode
         if status >= 400 { throw APIError(status: status, text: "") }
-        var parser = SSEParser(id: last)
+        var parser = SSEParser(id: id)
         var line: [UInt8] = []
         for try await byte in bytes {
             guard byte == UInt8(ascii: "\n") else {
@@ -97,13 +108,7 @@ extension Client {
             }
             defer { line = [] }
             guard let frame = parser.feed(Self.line(line)) else { continue }
-            last = frame.id
-            guard let event = try Self.decode(frame.event, Data(frame.data.utf8)) else { continue }
-            continuation.yield(event)
-            if event == .reset {
-                continuation.finish()
-                return true
-            }
+            if try each(frame) { return true }
         }
         return false
     }

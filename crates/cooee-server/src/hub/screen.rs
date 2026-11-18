@@ -83,16 +83,21 @@ impl Hub {
         })
     }
 
-    /// The owner takes control of `persona`'s browser for 10 minutes; its agent's browser calls wait meanwhile.
+    /// The owner takes control of `persona`'s browser for 10 minutes, or 10 more while they hold it; its agent's browser
+    /// calls wait meanwhile.
     ///
     /// # Errors
     /// [`HubError::Refused`] for an unknown persona.
     pub fn take_control(&self, persona: &str) -> Result<Screen, HubError> {
         self.known(persona)?;
-        *lock(&self.desks.map).entry(persona.to_owned()).or_default() = Desk {
-            control: Control::take(now()),
-            ..Desk::default()
-        };
+        let mut map = lock(&self.desks.map);
+        let desk = map.entry(persona.to_owned()).or_default();
+        let at = now();
+        if !matches!(desk.control, Control::Owner { until } if until > at) {
+            *desk = Desk::default();
+        }
+        desk.control = desk.control.take(at);
+        drop(map);
         self.screen(persona)
     }
 
