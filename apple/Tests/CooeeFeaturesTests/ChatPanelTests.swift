@@ -20,6 +20,7 @@ internal struct ChatPanelTests {
         state.home?.personas = [coder]
         state.path = ["t1"]
         state.chat = ChatFeature.State(server: mini, target: .thread("t1"), persona: Persona(coder))
+        state.home?.opened = ["coder": "t1"]
         let calls = calls
         return TestStore(initialState: state) {
             AppFeature()
@@ -64,7 +65,7 @@ internal struct ChatPanelTests {
         await store.receive(\.chat.compose.draftChanged) { $0.chat?.draft = "Make a routine: " }
     }
 
-    @Test internal func editOpensThePersonaSheetAndNewChatStartsOneWithThePersona() async {
+    @Test internal func editOpensThePersonaSheetAndNewTopicOpensNewWithThePersona() async {
         let store = app()
         await store.send(.chat(.panel(.show(true)))) { $0.chat?.panel = true }
         await store.send(.chat(.panel(.pick(.edit)))) {
@@ -76,8 +77,8 @@ internal struct ChatPanelTests {
         await store.receive(\.edit) { $0.persona = PersonaFeature.State(server: mini, persona: coder) }
         await store.send(.persona(.dismiss)) { $0.persona = nil }
         await store.send(.chat(.panel(.run(.newChat))))
-        await store.receive(\.chat.delegate.start)
-        await store.receive(\.start) {
+        await store.receive(\.chat.topics.open)
+        await store.receive(\.chat.delegate.topic) {
             $0.path = ["new:coder"]
             $0.chat = ChatFeature.State(server: mini, target: .new(coder), persona: Persona(coder))
         }

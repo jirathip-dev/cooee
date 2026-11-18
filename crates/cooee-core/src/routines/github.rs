@@ -55,11 +55,7 @@ impl Delivery {
         if event.is_empty() || guid.is_empty() {
             return Err(Rejected::NoHeaders);
         }
-        let sig = signature.strip_prefix("sha256=").and_then(unhex);
-        let mut mac = Hmac::<Sha256>::new_from_slice(secret).map_err(|_| Rejected::BadSignature)?;
-        mac.update(body);
-        mac.verify_slice(&sig.ok_or(Rejected::BadSignature)?)
-            .map_err(|_| Rejected::BadSignature)?;
+        verify(signature, body, secret)?;
         let payload = serde_json::from_slice(body).map_err(|_| Rejected::NotJson)?;
         Ok(Self::fetched(guid.to_owned(), event.to_owned(), payload))
     }
@@ -110,6 +106,14 @@ impl Delivery {
     }
 }
 
+pub(super) fn verify(signature: &str, body: &[u8], secret: &[u8]) -> Result<(), Rejected> {
+    let sig = signature.strip_prefix("sha256=").and_then(unhex);
+    let mut mac = Hmac::<Sha256>::new_from_slice(secret).map_err(|_| Rejected::BadSignature)?;
+    mac.update(body);
+    mac.verify_slice(&sig.ok_or(Rejected::BadSignature)?)
+        .map_err(|_| Rejected::BadSignature)
+}
+
 fn unhex(h: &str) -> Option<Vec<u8>> {
     let pairs = h.as_bytes().chunks(2);
     pairs
@@ -117,7 +121,8 @@ fn unhex(h: &str) -> Option<Vec<u8>> {
         .collect()
 }
 
-/// `[hooks]`: a second listener serving only `POST /hooks/github`, published by Tailscale Funnel.
+/// `[hooks]`: a second listener serving only `POST /hooks/github` and `POST /hooks/in/<id>`, published by Tailscale
+/// Funnel.
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct Hooks {
@@ -179,6 +184,8 @@ pub enum Fields<'a> {
     Due(u64, i32),
     /// A delivery.
     Event(&'a Delivery),
+    /// A signed POST to `/hooks/in/<id>`: no path reads it; its body follows the prompt as data.
+    Inbound(&'a super::Inbound),
 }
 
 impl Fields<'_> {
@@ -188,7 +195,14 @@ impl Fields<'_> {
             (Self::Event(d), "event") => d.event(),
             (Self::Event(d), "repo") => d.repo().to_owned(),
             (Self::Event(d), path) => d.at(path),
-            (Self::Due(..), _) => String::new(),
+            (Self::Due(..) | Self::Inbound(_), _) => String::new(),
+        }
+    }
+
+    pub(super) fn data(&self) -> String {
+        match self {
+            Self::Inbound(i) => i.data(),
+            Self::Due(..) | Self::Event(_) => String::new(),
         }
     }
 }

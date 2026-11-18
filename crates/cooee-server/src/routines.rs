@@ -1,7 +1,5 @@
 use std::{
-    io::Write as _,
     path::PathBuf,
-    process::Stdio,
     sync::{Arc, Mutex, PoisonError},
     time::Duration,
 };
@@ -11,8 +9,8 @@ use cooee_core::{
     agents::{self, BEAT, CONSOLIDATE, CONSOLIDATION, HEARTBEAT, Heartbeat},
     history::{self, Beat},
     routines::{
-        Ask, Book, Delivery, Edit, Fields, Hooks, Mark, Outcome, Paused, Place, Routine, Routines,
-        Run, Trigger, Who, local,
+        Ask, Book, Delivery, Edit, Fields, Hooks, Inbound, Mark, Outcome, Paused, Place, Routine,
+        Routines, Run, Trigger, Who, local,
     },
     secrets,
 };
@@ -28,6 +26,8 @@ use crate::{
     hub::{Hub, HubError, Recipe, now},
     push::Note,
 };
+
+mod webhook;
 
 /// How a `new_thread` run starts as `who`: its agent, the agent's name, its folder and its recipe.
 pub type Start =
@@ -50,6 +50,8 @@ pub struct Runner {
 }
 
 const HOUR: u64 = 3_600_000;
+
+type Picked = (Routine, String, String);
 
 impl Runner {
     /// The routines of config folder `config` (none: the data folder), their run state in `data`, run on `hub`;
@@ -111,6 +113,16 @@ impl Runner {
         self.file.load().map(|b| b.routines).map_err(refused)
     }
 
+    /// Routine `r`'s public URL, when it is a webhook one and `[hooks]` is set.
+    #[must_use]
+    pub fn url(&self, r: &Routine) -> Option<String> {
+        let hooks = self
+            .hooks
+            .as_ref()
+            .filter(|_| matches!(r.trigger, Trigger::Webhook(_)))?;
+        Some(hooks.inbound(&r.id))
+    }
+
     fn change<T>(&self, f: impl FnOnce(&mut Book) -> Result<T, HubError>) -> Result<T, HubError> {
         let _held = self.lock.lock().unwrap_or_else(PoisonError::into_inner);
         let mut book = self.file.load().map_err(refused)?;
@@ -120,11 +132,11 @@ impl Runner {
     }
 
     /// `create_routine` by thread `id`'s agent (`token`: its MCP token): a schedule is stored, then its chat gets
-    /// the `Created routine` line; a GitHub one only raises a card, and is stored when the owner approves it with
+    /// the `Created routine` line; a GitHub or webhook one only raises a card, and is stored when the owner approves it with
     /// Face ID. A Workflow session or a routine's own run can't make one. What the agent is told.
     ///
     /// # Errors
-    /// [`HubError::Refused`] for a wrong token, such a thread, no `[hooks]` for a GitHub one, or a routine `ask`
+    /// [`HubError::Refused`] for a wrong token, such a thread, no `[hooks]` for a GitHub or webhook one, or a routine `ask`
     /// doesn't make.
     pub fn create(
         self: &Arc<Self>,
@@ -138,7 +150,7 @@ impl Runner {
                 "NOT_HERE: a Workflow session or a routine's own run can't make routines",
             ));
         }
-        if ask.github.is_some() {
+        if ask.github.is_some() || ask.webhook.is_some() {
             if self.hooks.is_none() {
                 return Err(refused("NO_HOOKS: [hooks] isn't set up on this Mac"));
             }
@@ -472,24 +484,48 @@ impl Runner {
             }
             let mut runs = Vec::new();
             for r in b.routines.iter_mut().filter(|r| r.matches(d)) {
+                let key = r.key(d.guid());
                 match r.admit(now) {
-                    Ok(()) => runs.push(r.clone()),
-                    Err(why) => self.record(r, r.key(d.guid()), Outcome::Skipped { why }, now),
+                    Ok(()) => runs.push((r.clone(), r.text(&Fields::Event(d)), key)),
+                    Err(why) => self.record(r, key, Outcome::Skipped { why }, now),
                 }
             }
             Ok(Some(runs))
         });
+        self.later(picked)
+    }
+
+    /// Signed POST `i` to routine `id`, once per key: 200 when seen before; else 202 and the routine runs on a
+    /// worker (paused, or over the rate: skipped), so the answer comes before the run starts.
+    pub fn accept(self: &Arc<Self>, id: &str, i: &Inbound, now: u64) -> (u16, String) {
+        let picked = self.change(|b| {
+            if !b.see(&format!("{id}:{}", i.key()), now) {
+                return Ok(None);
+            }
+            let mut runs = Vec::new();
+            for r in b.routines.iter_mut().filter(|r| r.id == id) {
+                let key = r.key(i.key());
+                match r.admit(now) {
+                    Ok(()) => runs.push((r.clone(), r.text(&Fields::Inbound(i)), key)),
+                    Err(why) => self.record(r, key, Outcome::Skipped { why }, now),
+                }
+            }
+            Ok(Some(runs))
+        });
+        self.later(picked)
+    }
+
+    fn later(self: &Arc<Self>, picked: Result<Option<Vec<Picked>>, HubError>) -> (u16, String) {
         let runs = match picked {
             Ok(Some(runs)) => runs,
             Ok(None) => return (200, "seen".to_owned()),
             Err(e) => return (500, e.to_string()),
         };
         let n = runs.len();
-        let (runner, d) = (Arc::clone(self), d.clone());
+        let runner = Arc::clone(self);
         std::thread::spawn(move || {
-            for r in runs {
-                let key = r.key(d.guid());
-                let outcome = runner.run(&r, &r.text(&Fields::Event(&d)), &key);
+            for (r, text, key) in runs {
+                let outcome = runner.run(&r, &text, &key);
                 let saved = runner.change(|b| {
                     if let Some(o) = b.routines.iter_mut().find(|o| o.id == r.id) {
                         runner.record(o, key, outcome, crate::hub::now());
@@ -653,39 +689,26 @@ async fn github_hook(cx: &Cx, body: Raw) -> Result<Response> {
     Ok(Response::builder().status(status).body(Bytes::from(text))?)
 }
 
-/// `[hooks] bind`'s router: `POST /hooks/github` and nothing else; no Gate, no devices, no other route.
+/// `[hooks] bind`'s router: `POST /hooks/github`, `POST /hooks/in/<id>` and nothing else; no Gate, no devices, no other route.
 #[must_use]
 pub fn hooks(runner: Arc<Runner>) -> Router {
     Router::builder()
         .app_context(runner)
         .route(github_hook)
+        .route(webhook::inbound_hook)
         .build()
 }
 
 fn github(url: &str, token: &str) -> Result<Value, String> {
-    let mut c = cooee_core::runner::command("curl")
-        .args(["-sSf", "--max-time", "20", "-K", "-"])
-        .stdin(Stdio::piped())
-        .stdout(Stdio::piped())
-        .stderr(Stdio::piped())
-        .spawn()
-        .map_err(|e| format!("curl: {e}"))?;
-    let config = format!(
-        "url = {url:?}\nheader = \"Authorization: Bearer {token}\"\nheader = \"Accept: application/vnd.github+json\"\n"
-    );
-    if let Some(mut stdin) = c.stdin.take() {
-        stdin
-            .write_all(config.as_bytes())
-            .map_err(|e| e.to_string())?;
+    let headers = [
+        format!("Authorization: Bearer {token}"),
+        "Accept: application/vnd.github+json".to_owned(),
+    ];
+    let r = crate::net::fetch("GET", url, &headers, None)?;
+    if !r.ok() {
+        return Err(format!("{url}: HTTP {}", r.status));
     }
-    let out = c.wait_with_output().map_err(|e| e.to_string())?;
-    if !out.status.success() {
-        return Err(format!(
-            "{url}: {}",
-            String::from_utf8_lossy(&out.stderr).trim()
-        ));
-    }
-    serde_json::from_slice(&out.stdout).map_err(|e| format!("{url}: {e}"))
+    serde_json::from_str(&r.body).map_err(|e| format!("{url}: {e}"))
 }
 
 const fn placed(p: &Place) -> &'static str {

@@ -333,9 +333,7 @@ fn a_new_device_asks_and_a_paired_one_approves_it_with_its_passkey() {
     let log = dir.join("pushed.log");
     let fakes = [(
         "curl",
-        format!(
-            "#!/bin/sh\ncat >/dev/null\nfor a; do last=$a; done\necho \"$last\" >>{log:?}\nprintf 201\n"
-        ),
+        format!("#!/bin/sh\nsed -n 's/^url = \"\\(.*\\)\"$/\\1/p' >>{log:?}\nprintf 201\n"),
     )];
     for (name, script) in fakes {
         fs::write(bin.join(name), script).unwrap();

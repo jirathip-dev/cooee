@@ -12,6 +12,8 @@ public struct HomeFeature: Sendable {
         public var rows: [ThreadRow] = []
         public var personas: [APIPersona] = []
         public var plugins: [PluginRow] = []
+        public var counts: [String: TopicCount] = [:]
+        public var opened: [String: String] = [:]
         public var error: String?
         public var loading = true
 
@@ -26,6 +28,15 @@ public struct HomeFeature: Sendable {
             Listing.home(rows: rows, personas: personas, plugins: plugins, now: now)
         }
 
+        /// Home's rows: one per persona the server counts topics for, drawing the topic a tap opens (#516).
+        public func shown(_ lists: HomeLists) -> [ListedChat] {
+            Listing.collapsed(lists.chats, rows: rows, counts: counts, opened: opened)
+        }
+
+        public func opens(_ persona: String) -> ThreadRow? {
+            Listing.opens(persona, rows: rows, last: opened[persona])
+        }
+
         public func persona(_ id: String) -> APIPersona? {
             personas.first { $0.id == id }
         }
@@ -34,7 +45,7 @@ public struct HomeFeature: Sendable {
     public enum Action: Sendable {
         case task
         case refresh
-        case loaded(HomeScreen, [ThreadRow], [APIPersona], [PluginRow])
+        case loaded(HomeAnswer, [PluginRow])
         case failed(String)
         case delegate(Delegate)
 
@@ -45,7 +56,7 @@ public struct HomeFeature: Sendable {
     }
 
     private enum Outcome {
-        case loaded(HomeScreen, [ThreadRow], [APIPersona], [PluginRow])
+        case loaded(HomeAnswer, [PluginRow])
         case failed(String)
         case unauthorized
     }
@@ -63,10 +74,11 @@ public struct HomeFeature: Sendable {
                 return poll(state.server)
             case .refresh:
                 return refresh(state.server)
-            case .loaded(let screen, let rows, let personas, let plugins):
-                state.screen = screen
-                state.rows = rows.filter { !$0.archived }
-                state.personas = personas
+            case .loaded(let answer, let plugins):
+                state.screen = answer.screen
+                state.rows = answer.threads.filter { !$0.archived }
+                state.personas = answer.personas
+                state.counts = answer.counts
                 state.plugins = plugins
                 state.error = nil
                 state.loading = false
@@ -103,7 +115,7 @@ public struct HomeFeature: Sendable {
             async let home = threads.home(server)
             async let installed = plugins.installed(server)
             let (answer, rows) = (try await home, try await installed)
-            return .loaded(answer.screen, answer.threads, answer.personas, rows)
+            return .loaded(answer, rows)
         } catch let error as APIError where error.status == 401 {
             return .unauthorized
         } catch {
@@ -113,8 +125,8 @@ public struct HomeFeature: Sendable {
 
     private static func report(_ outcome: Outcome, _ send: Send<Action>) async {
         switch outcome {
-        case .loaded(let screen, let rows, let personas, let plugins):
-            await send(.loaded(screen, rows, personas, plugins))
+        case .loaded(let answer, let plugins):
+            await send(.loaded(answer, plugins))
         case .failed(let error): await send(.failed(error))
         case .unauthorized: await send(.delegate(.unauthorized))
         }

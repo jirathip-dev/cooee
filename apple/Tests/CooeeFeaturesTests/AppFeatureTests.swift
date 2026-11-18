@@ -55,6 +55,7 @@ internal struct AppFeatureTests {
         await store.send(.open("t1")) {
             $0.path = ["t1"]
             $0.chat = ChatFeature.State(server: mini, target: .thread("t1"), persona: Persona(coder, state: .working))
+            $0.home?.opened["coder"] = "t1"
         }
         await store.send(.path([])) {
             $0.path = []
@@ -82,6 +83,7 @@ internal struct AppFeatureTests {
         await store.send(.chat(.delegate(.started("n1")))) {
             $0.path = ["n1"]
             $0.chat = ChatFeature.State(server: mini, target: .thread("n1"), persona: Persona(coder))
+            $0.home?.opened["coder"] = "n1"
         }
         await store.receive(\.home.refresh)
         await store.receive(\.home.loaded) {
@@ -150,6 +152,7 @@ extension AppFeatureTests {
         await store.send(.open("t1")) {
             $0.path = ["t1"]
             $0.chat = ChatFeature.State(server: mini, target: .thread("t1"), persona: Persona(coder, state: .working))
+            $0.home?.opened["coder"] = "t1"
         }
         await store.send(.chat(.delegate(.open("gone"))))
         await store.receive(\.open, "gone") {

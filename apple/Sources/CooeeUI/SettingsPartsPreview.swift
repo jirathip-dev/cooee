@@ -140,7 +140,7 @@ internal struct MacSettings<Page: View>: View {
                 Spacer()
             }
             .padding(.top, 48).padding(.horizontal, 10).frame(width: 230)
-            .background(palette.card.opacity(look.style == .modern ? 0.45 : 0.8))
+            .background(palette.card.opacity(look.style.surface == .glass ? 0.45 : 0.8))
             .overlay(alignment: .trailing) { Rectangle().fill(palette.line).frame(width: 1) }
             page.frame(maxWidth: .infinity)
         }

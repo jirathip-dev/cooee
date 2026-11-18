@@ -30,7 +30,7 @@ internal struct ChatScreen: View {
         let places = store.places
         actions.places = places.map(\.label)
         actions.counts = places.map(\.count)
-        actions.new = store.persona.api.id.isEmpty ? nil : { store.send(.new) }
+        actions.new = store.persona.api.id.isEmpty || store.bar != nil ? nil : { store.send(.new) }
         actions.open = { store.send(.plugins(.open(places[$0]))) }
         actions.more = { store.send(.panel(.show(!store.panel))) }
         return extras(store, actions)
@@ -42,6 +42,7 @@ internal struct ChatScreen: View {
         actions.showWorkflow = { store.send(.workflow(.show(true))) }
         actions.workflowOpen = store.workflowOpen
         actions.step = store.step
+        actions.frames = FrameImages(images: store.frames) { store.send(.frame($0)) }
         guard !store.persona.api.id.isEmpty else { return actions }
         actions.persona = { store.send(.profile) }
         actions.choices = PersonaChoices(agents: store.agents, models: store.models, efforts: store.efforts)
@@ -55,6 +56,7 @@ internal struct ChatScreen: View {
         actions.backTo = backTo
         actions.machine = store.machine.shown
         actions.showMachine = { store.send(.machine(.show(true))) }
+        actions.topics = store.bar.map { Self.topics(store, $0) }
         return actions
     }
 
@@ -84,6 +86,8 @@ internal struct ChatScreen: View {
         .task { await store.send(.plugins(.load)).finish() }
         .task { await store.send(.pick(.load)).finish() }
         .task { await store.send(.machine(.load)).finish() }
+        .task { await store.send(.topics(.load)).finish() }
+        .modifier(TopicSheets(store: store))
         .sheet(item: $store.scope(state: \.screen, action: \.screen)) { PluginScreenSheet(store: $0) }
         .sheet(item: $store.scope(state: \.attaching, action: \.attaching)) { AttachScreen(store: $0) }
         .sheet(isPresented: Binding(get: { store.workflowOpen }, set: { store.send(.workflow(.show($0))) })) {

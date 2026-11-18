@@ -1,12 +1,49 @@
 use std::sync::Arc;
 
-use crate::{Entry, Plain, Spec};
+use serde_json::json;
+
+use crate::{
+    Entry, Provider, Spec,
+    action::Kind,
+    provider::{Builtin, Channel, Gap, Setup, Want},
+};
+
+/// Codex: the brief as developer instructions and its built-ins off through `CODEX_CONFIG`; its global files have no
+/// switch.
+#[derive(Debug)]
+pub struct Codex(Spec);
 
 pub const ENTRY: Entry = Entry {
     name: "codex",
     defaults,
-    build: |s| Arc::new(Plain(s)),
+    build: |s| Arc::new(Codex(s)),
 };
+
+impl Provider for Codex {
+    fn spec(&self) -> &Spec {
+        &self.0
+    }
+
+    fn session(&self, want: &Want) -> Setup {
+        let on = |b| !want.off.contains(&b);
+        let config = json!({
+            "developer_instructions": want.brief,
+            "tools": { "web_search": on(Builtin::Web) },
+            "features": { "multi_agent": on(Builtin::SubAgents), "memories": on(Builtin::Memory) },
+            "skills": { "bundled": { "enabled": on(Builtin::Skills) } },
+        });
+        let mut gaps = vec![Gap::PersonalFiles];
+        if want.ask_all {
+            gaps.extend([Kind::Read, Kind::Search, Kind::Run].map(Gap::AsksNot));
+        }
+        Setup {
+            env: vec![("CODEX_CONFIG".to_owned(), config.to_string())],
+            brief: Channel::System,
+            gaps,
+            ..Setup::default()
+        }
+    }
+}
 
 fn defaults() -> Spec {
     let v = |s: &str| s.split(' ').map(str::to_owned).collect();

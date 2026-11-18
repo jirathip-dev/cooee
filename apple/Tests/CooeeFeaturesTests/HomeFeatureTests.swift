@@ -67,7 +67,9 @@ internal struct HomeFeatureTests {
         var lists = store.state.lists(now: epoch)
         #expect(lists.chats.map(\.id) == ["t1"] && lists.workflow.isEmpty)
         #expect(lists.others.map(\.id) == ["l1", "loose"])
-        await store.send(.loaded(homeScreen, rows, [coder, conductor], [drover])) { $0.plugins = [drover] }
+        await store.send(
+            .loaded(HomeAnswer(screen: homeScreen, threads: rows, personas: [coder, conductor]), [drover])
+        ) { $0.plugins = [drover] }
         lists = store.state.lists(now: epoch)
         #expect(lists.chats.map(\.id) == ["t1"] && lists.others.map(\.id) == ["loose"])
         #expect(lists.workflow.mapValues { $0.map(\.id) } == ["cond": ["l1"]])
@@ -102,5 +104,30 @@ internal struct HomeFeatureTests {
             $0.loading = false
         }
         #expect(store.state.screen == nil && store.state.rows.isEmpty)
+    }
+
+    @Test internal func aPersonasRowCountsAndSumsAsTheServerDoesAndNamesTheTopicATapOpens() async {
+        let unread = ThreadRow(
+            id: "c2", title: "T c2", agent: "codex", persona: "cond", state: "done", last: "", updated: 1, unseen: 1,
+            archived: false)
+        let rows = [row("c1", persona: "cond"), unread, row("t1")]
+        let counts = ["cond": TopicCount(topics: 5, unread: 3)]
+        let store = store([])
+        store.dependencies.threads.home = { _ in
+            HomeAnswer(screen: homeScreen, threads: rows, personas: [coder, conductor], counts: counts)
+        }
+        await store.send(.refresh)
+        await store.receive(\.loaded) {
+            $0.loading = false
+            $0.screen = homeScreen
+            $0.rows = rows
+            $0.personas = [coder, conductor]
+            $0.plugins = [drover]
+            $0.counts = counts
+        }
+        let shown = store.state.shown(store.state.lists(now: epoch))
+        #expect(shown.map(\.id) == ["c2", "t1"])
+        #expect(shown[0].topics == 5 && shown[0].row.unseen == 3 && shown[0].row.title == "T c2")
+        #expect(shown[1].topics == 0 && store.state.opens("cond")?.id == "c2")
     }
 }

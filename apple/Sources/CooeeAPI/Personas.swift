@@ -14,6 +14,10 @@ extension Client {
         try await post("/threads/\(thread)/model", ["model": model, "effort": effort])
     }
 
+    public func switchAgent(_ thread: String, to agent: String) async throws {
+        try await post("/threads/\(thread)/agent", ["agent": agent])
+    }
+
     public func push(_ token: String, enabled: Bool) async throws {
         _ = try await send(request(enabled ? "POST" : "DELETE", "/push/apns", json: ["token": token]))
     }

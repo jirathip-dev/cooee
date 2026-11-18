@@ -283,6 +283,13 @@ impl Hub {
             return Ok(item);
         }
         let q = self.take(&l, text, random_id, files)?;
+        let title = super::start::opening(&q.text);
+        if l.chat.items.is_empty()
+            && l.meta.title == seated(&l.meta).join(", ")
+            && !title.is_empty()
+        {
+            l.meta.title = title;
+        }
         let body = Body::You {
             text: q.text,
             random_id: q.random_id,

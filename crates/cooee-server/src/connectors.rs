@@ -1,17 +1,21 @@
 #[cfg(test)]
 mod tests;
 mod tokens;
+mod upstream;
 
 use std::{
+    collections::HashMap,
     fs, io,
     path::{Path, PathBuf},
-    sync::{Mutex, MutexGuard, PoisonError},
+    sync::{Arc, Mutex, MutexGuard, PoisonError},
 };
 
 use base64::{Engine as _, engine::general_purpose::URL_SAFE_NO_PAD as B64};
 use cooee_core::{
     agents::Agent,
-    connectors::{self as core, Auth, Client as Kind, Endpoints, HttpsUrl, Name, Target},
+    connectors::{
+        self as core, Auth, Client as Kind, Endpoints, HttpsUrl, Name, Target, Transport,
+    },
     mcp::{Server, Source},
 };
 use serde::{Deserialize, Serialize};
@@ -90,6 +94,7 @@ pub(crate) struct Connectors {
     file: Mutex<()>,
     flows: Mutex<Vec<Flow>>,
     refreshing: Mutex<()>,
+    sessions: Mutex<HashMap<(String, String), Arc<upstream::Session>>>,
 }
 
 fn lock<T>(m: &Mutex<T>) -> MutexGuard<'_, T> {
@@ -110,13 +115,18 @@ fn random(n: usize) -> Result<String, String> {
     cooee_core::random(n).map(|b| B64.encode(b)).map_err(text)
 }
 
-fn target(s: &Server) -> Result<(HttpsUrl, Auth), String> {
+fn target(s: &Server) -> Result<(HttpsUrl, Transport, Auth), String> {
     match s.source()? {
         Source::Catalogue(e) => match &e.target {
-            Target::Url { url, .. } => Ok((url.clone(), e.auth.clone())),
+            Target::Url { url, transport } => Ok((url.clone(), *transport, e.auth.clone())),
             Target::Builtin(b) => match *b {},
         },
-        Source::Typed { url, auth, .. } => Ok((url, auth)),
+        Source::Typed {
+            url,
+            transport,
+            auth,
+            ..
+        } => Ok((url, transport, auth)),
         Source::Command { .. } => Err(format!("{} runs on the Mac: it has no sign-in", s.name)),
     }
 }
@@ -176,6 +186,7 @@ impl Connectors {
             file: Mutex::new(()),
             flows: Mutex::new(Vec::new()),
             refreshing: Mutex::new(()),
+            sessions: Mutex::default(),
         }
     }
 
@@ -249,7 +260,12 @@ impl Connectors {
             "token_endpoint_auth_method": "none",
         });
         let headers = ["Content-Type: application/json".to_owned()];
-        let r = fetch("POST", url.as_str(), &headers, Some(&body.to_string()))?;
+        let r = fetch(
+            "POST",
+            url.as_str(),
+            &headers,
+            Some(body.to_string().as_bytes()),
+        )?;
         let doc = r.json();
         let id = doc
             .get("client_id")
@@ -277,7 +293,7 @@ impl Connectors {
         id: &str,
         secret: Option<&str>,
     ) -> Result<String, String> {
-        let (url, auth) = target(s)?;
+        let (url, _, auth) = target(s)?;
         let Auth::OAuth { issuer, .. } = auth else {
             return Err(format!("{} doesn't sign in with OAuth", s.name));
         };
@@ -309,7 +325,7 @@ impl Connectors {
         now: u64,
     ) -> Result<Value, String> {
         let account = Name::try_from(account)?.as_str().to_owned();
-        let (url, auth) = target(s)?;
+        let (url, _, auth) = target(s)?;
         let id = random(16)?;
         let flow = |pending| Flow {
             id: id.clone(),
@@ -523,17 +539,13 @@ impl Connectors {
         self.client_of(r.ok_or("its sign-in client is gone: sign in again")?)
     }
 
-    #[cfg_attr(
-        not(test),
-        expect(dead_code, reason = "#497 slice B (#521) sends each call with it")
-    )]
     pub(crate) fn credential(
         &self,
         s: &Server,
         account: &str,
         now: u64,
     ) -> Result<(String, String), String> {
-        let (url, auth) = target(s)?;
+        let (url, _, auth) = target(s)?;
         let item = tokens::item(&s.name, account);
         let needs = || format!("{} ({account}) needs sign-in", s.name);
         let read = || {

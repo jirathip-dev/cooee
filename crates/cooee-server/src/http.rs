@@ -146,15 +146,10 @@ pub(crate) fn recipe(
                 pick.clone_from(default);
             }
         }
-        let (account, launch) = logins.agent(a, account, data)?;
         let recipe = Recipe {
-            account,
-            profile: a.id.clone(),
-            launch,
-            instructions: a.brief(config),
             mcp: a.mcp.iter().map(|k| k.server.clone()).collect(),
             machine: a.machine.clone(),
-            ..Recipe::default()
+            ..crate::hub::session::persona(logins, a, account, (data, config))?
         };
         (a.agent.clone(), a.work_folder().unwrap_or(folder), recipe)
     };

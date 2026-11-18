@@ -33,9 +33,8 @@ extension ChatFeature {
         switch pick {
         case .agent(let agent) where agent != persona.agent:
             (persona.agent, persona.model, persona.effort) = (agent, "", "")
-            guard case .new = state.target else { return .send(.delegate(.restart(persona))) }
             state.persona = Persona(api: persona, look: state.persona.look, state: state.persona.state)
-            return .none
+            return act(state) { threads, server, thread in try await threads.switchAgent(server, thread, agent) }
         case .model(let model, let effort):
             (persona.model, persona.effort) = (model, effort)
             state.persona = Persona(api: persona, look: state.persona.look, state: state.persona.state)

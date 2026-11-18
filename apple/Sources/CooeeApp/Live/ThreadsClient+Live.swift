@@ -11,6 +11,7 @@ extension ThreadsClient: DependencyKey {
         saveTheme: { server, name, draft in try await Client(server).saveTheme(name, draft) },
         themeArt: { server, theme, file in try await Client(server).themeArt(theme, file) },
         messages: { server, thread in try await Client(server).messages(thread) },
+        frame: { server, thread, name in try await Client(server).frame(thread, name) },
         events: { server, thread, since in Client(server).events(thread, since: since) },
         send: { server, thread, text, files, queue in
             try await Client(server).send(thread, text: text, files: files, queue: queue)
@@ -22,6 +23,7 @@ extension ThreadsClient: DependencyKey {
         model: { server, thread, model, effort in
             try await Client(server).model(thread, model: model, effort: effort)
         },
+        switchAgent: { server, thread, agent in try await Client(server).switchAgent(thread, to: agent) },
         answer: { server, thread, item, option, value in
             try await Client(server).answer(thread, item: item, option: option, value: value)
         },
@@ -30,6 +32,9 @@ extension ThreadsClient: DependencyKey {
         },
         move: { server, thread, machine in try await Client(server).move(thread, to: machine) },
         retry: { server, thread in try await Client(server).retry(thread) },
+        topics: { server, owner in try await Client(server).topics(of: owner) },
+        retitle: { server, thread, title in try await Client(server).retitle(thread, title) },
+        archive: { server, thread, archived in try await Client(server).archive(thread, archived) },
         room: { server, title, members in try await Client(server).newRoom(title: title, members: members) },
         seat: { server, room, persona, place, remove in
             try await Client(server).seat(room, persona: persona, place: place, remove: remove)

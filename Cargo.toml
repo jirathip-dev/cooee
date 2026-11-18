@@ -36,6 +36,7 @@ tokio = { version = "=1.54.1", features = ["rt-multi-thread", "net", "sync"] }
 security-framework = { version = "=3.7.0", default-features = false, features = ["OSX_10_14"] }
 # The thread items and their search index (#221): SQLite built in, so no system library is needed.
 rusqlite = { version = "=0.41.1", features = ["bundled"] }
+ruzstd = "=0.9.1"
 toml = { version = "=1.2.0", default-features = false, features = ["parse", "serde"] }
 # Surgical config saves (#360): only the touched keys change, comments and layout stay.
 toml_edit = { version = "=0.25.18", default-features = false, features = ["parse", "display"] }

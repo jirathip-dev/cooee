@@ -10,6 +10,7 @@ use std::{
 use cooee_core::{
     Agent, Body, Change, Chat, Item, Kind, Launch, Plugin, Profile, Queued, Shed, ShedError, Store,
     StoreError, Thread, Turn, Workflow,
+    provider::Gap,
     routines::Mark,
     shed_proto::{self, Event, TerminalInfo},
 };
@@ -24,6 +25,8 @@ mod cards;
 mod events;
 mod expire;
 mod folders;
+mod frames;
+mod handoff;
 mod heartbeat;
 mod mcp;
 mod models;
@@ -33,11 +36,13 @@ mod rooms;
 mod screen;
 mod secret;
 mod send;
+pub(crate) mod session;
 mod setup;
 mod start;
 #[cfg(test)]
 mod tests;
 mod threads;
+pub use mcp::Called;
 use mcp::Proposed;
 pub use rooms::Starter;
 pub use screen::{Input, Screen};
@@ -138,8 +143,10 @@ fn glance(live: &Live) -> Glance {
         Body::You { text, .. }
         | Body::Agent { text, .. }
         | Body::Note { text }
+        | Body::Frame { text, .. }
         | Body::Link { text, .. }
         | Body::Ask { text, .. }
+        | Body::Handoff { text, .. }
         | Body::Ended { text } => text,
         Body::Tool { title, .. } => title,
         Body::Approval { tool, .. } => tool,
@@ -292,6 +299,8 @@ pub struct Recipe {
     pub setup: bool,
     /// The routine whose run starts it (#75).
     pub routine: Option<Mark>,
+    /// What its persona's harness can't be told on this account (#503).
+    pub gaps: Vec<Gap>,
 }
 
 /// The threads and the shed they run on.
@@ -654,8 +663,8 @@ impl Hub {
                 Ok(t) if t.state == shed_proto::State::Running => {
                     since = Some(since.map_or(live.applied, |s| s.min(live.applied)));
                     let r = t.reported.unwrap_or_default();
-                    live.chat.turn.state = r.state;
-                    live.chat.turn.note = r.note;
+                    live.chat.turn.report(&r.state, r.note);
+                    live.chat.turn.context = t.session.and_then(|s| s.usage);
                     Vec::new()
                 }
                 Ok(_) => live.chat.ended(now(), 0, "The agent stopped.".to_owned()),

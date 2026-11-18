@@ -176,7 +176,12 @@ impl Hub {
             live.chat.turn.state.as_str(),
             "working" | "blocked" | "ended"
         );
-        if !between || live.meta.queue.is_empty() || live.meta.closed || !live.sending.is_empty() {
+        if !between
+            || live.meta.queue.is_empty()
+            || live.meta.closed
+            || live.meta.handoff != 0
+            || !live.sending.is_empty()
+        {
             return Ok(None);
         }
         let next = live.meta.queue.remove(0);

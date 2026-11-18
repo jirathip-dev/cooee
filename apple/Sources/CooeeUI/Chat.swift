@@ -9,37 +9,47 @@ public struct ChatView: View {
     private var since: Date?
     private var loading = false
     private var queued: [String] = []
-    private var draft = ""
+    internal var draft = ""
     private var back = true
     private var headed = true
     private var chips: [String]
-    private var actions = ChatActions()
+    internal var end = true
+    internal var actions = ChatActions()
 
     public var body: some View {
         ZStack {
             Backdrop()
             VStack(spacing: 0) {
                 if headed {
-                    ChatHeader(persona: persona, chips: chips, back: back, actions: actions)
-                        .overlay(alignment: .bottom) { if loading { LoadingBar().offset(y: 2) } }
+                    ChatHeader(
+                        persona: persona, chips: chips, back: back, plugged: actions.topics == nil, actions: actions
+                    )
+                    .overlay(alignment: .bottom) { if loading { LoadingBar().offset(y: 2) } }
                 }
-                Scroller(end: true) {
+                if let topics = actions.topics { StripRow(topics: topics, chips: chips, wide: !back, actions: actions) }
+                Scroller(end: end) {
                     VStack(alignment: .leading, spacing: 14) {
-                        if items.isEmpty { BigSprite(loading: loading) }
+                        if let topics = actions.topics {
+                            TopicOpening(topics: topics, chips: back ? chips : [], actions: actions)
+                        } else if items.isEmpty {
+                            BigSprite(loading: loading)
+                        }
                         ForEach(items) { item in
                             ItemView(item: item, retry: { actions.retry(item.id) }, view: actions.view)
                                 .environment(\.act) { actions.answer(item.id, $0) }
                                 .disabled(actions.answering.contains(item.id))
                         }
                     }
-                    .padding(.horizontal, 16).padding(.top, 8).padding(.bottom, 16)
+                    .padding(.horizontal, 16).padding(.top, actions.topics == nil ? 8 : 6).padding(.bottom, 16)
                 }
                 .frame(maxHeight: .infinity, alignment: .top)
                 .environment(\.asker, persona)
+                .environment(\.frames, actions.frames)
                 VStack(spacing: 8) {
                     if working { WorkingPill(persona: persona, since: since, step: actions.step, stop: actions.stop) }
+                    if let topics = actions.topics, topics.newing { FolderRow(actions: topics).padding(.bottom, 2) }
                     Composer(
-                        hint: "Message \(persona.name)",
+                        hint: "Message \(actions.topics?.start?.title ?? persona.name)",
                         queued: queued,
                         draft: draft,
                         attachments: working && since == nil ? ["look-sheet.png"] : [],
@@ -47,6 +57,9 @@ public struct ChatView: View {
                     )
                 }
                 .padding(.horizontal, 12).padding(.bottom, 26)
+            }
+            .overlayPreferenceValue(PressedChip.self) { anchor in
+                if let topics = actions.topics { TopicOverlays(topics: topics, anchor: anchor) }
             }
         }
         .foregroundStyle(look.palette.foreground)
@@ -110,6 +123,7 @@ internal struct ChatHeader: View {
     internal let persona: Persona
     internal let chips: [String]
     internal var back = true
+    internal var plugged = true
     internal var actions = ChatActions()
 
     internal var body: some View {
@@ -122,7 +136,7 @@ internal struct ChatHeader: View {
                     Button(action: actions.back) { RoundButton(symbol: "chevron.left", ascii: "<", size: 40) }
                         .buttonStyle(.plain).accessibilityLabel("Back")
                 }
-                sheet { Avatar(persona: persona, size: 38) }
+                sheet { FigureView(persona: persona, size: 38) }
                 VStack(alignment: .leading, spacing: 3) {
                     sheet { Text(persona.name).ui(16, .semibold, look) }
                     HStack(spacing: 6) {
@@ -140,7 +154,7 @@ internal struct ChatHeader: View {
                 }
                 more
             }
-            if !chips.isEmpty || actions.workflow != nil { plugins }
+            if plugged && (!chips.isEmpty || actions.workflow != nil) { plugins }
         }
         .padding(.horizontal, 14).padding(.vertical, 8)
         .overlay(alignment: .bottom) { Rectangle().fill(palette.line).frame(height: 0.5) }
@@ -169,6 +183,16 @@ internal struct ChatHeader: View {
     }
 
     private var plugins: some View {
+        PluginChips(chips: chips, actions: actions).padding(.leading, back ? 50 : 0)
+    }
+}
+
+internal struct PluginChips: View {
+    @Environment(\.look) private var look
+    internal let chips: [String]
+    internal let actions: ChatActions
+
+    internal var body: some View {
         HStack(spacing: 8) {
             ForEach(Array(chips.enumerated()), id: \.offset) { index, plugin in
                 Button {
@@ -190,6 +214,5 @@ internal struct ChatHeader: View {
                 WorkflowChip(count: count, lit: actions.workflowOpen, open: actions.showWorkflow)
             }
         }
-        .padding(.leading, back ? 50 : 0)
     }
 }

@@ -44,12 +44,13 @@ internal struct WorkflowNavigationTests {
             $0.chat = ChatFeature.State(server: mini, target: .new(conductor), persona: Persona(conductor))
             $0.chat?.workflow = sessions
         }
-        await store.send(.home(.loaded(homeScreen, [row("t1"), lane("l1")], [coder, conductor], []))) {
+        let answer = HomeAnswer(screen: homeScreen, threads: [row("t1"), lane("l1")], personas: [coder, conductor])
+        await store.send(.home(.loaded(answer, []))) {
             $0.home?.loading = false
             $0.home?.plugins = []
             $0.chat?.workflow = nil
         }
-        await store.send(.home(.loaded(homeScreen, [row("t1"), lane("l1")], [coder, conductor], [drover]))) {
+        await store.send(.home(.loaded(answer, [drover]))) {
             $0.home?.plugins = [drover]
             $0.chat?.workflow = sessions
         }

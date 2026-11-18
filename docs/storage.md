@@ -15,3 +15,11 @@ trigram full-text index (never tool output), which the `history` search uses. On
 `cooee export <thread>` writes a thread's items back out as JSON lines. A pending approval is stored before the page hears of it. Files sent
 with a message sit in `<data>/files/<thread>/` (the item keeps their names; the agent gets their paths under the text),
 and a thread's queued messages and its archived mark are in its JSON file.
+
+Retention (#364, `[history]` in [configuration](configuration.md)): every hour `cooee serve` moves the rows of each
+thread that is closed or whose session ended, quiet for `hot_days`, into the archive of its last month,
+`<data>/archive/threads-YYYY-MM.jsonl.zst` (JSON lines `{"thread", "item"}`, the file rewritten temp, fsync, rename), and
+marks the thread in `cooee.db`'s `archived` table, then `VACUUM`s the file so the space is freed. A tool item older than `trim_after_days` whose title is over
+`trim_over_kb` KB keeps its head and tail around a marker; its whole version goes to the archive first (`"whole": true`).
+Opening a thread, its pages, the `history` tool's read and search, and `cooee export` (with the whole text) read the
+archive as well; running it twice moves nothing more.

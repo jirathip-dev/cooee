@@ -93,16 +93,27 @@ async fn events(cx: &Cx) -> Result<Sse<impl Stream<Item = Result<Event>> + use<>
 #[derive(Deserialize)]
 struct Of {
     persona: Option<String>,
+    room: Option<String>,
 }
 
 #[route(GET "/threads")]
 async fn thread_list(cx: &Cx) -> Result<Answer<Vec<cooee_core::Summary>>> {
     let of: Option<Of> = parse_query_params(cx).ok();
-    let persona = of.and_then(|o| o.persona);
+    let (persona, room) = of.map_or((None, None), |o| (o.persona, o.room));
+    let seats = |r: &cooee_core::Summary| {
+        let mut seats = r.members.clone();
+        seats.sort();
+        seats
+    };
     Ok(Answer(
         blocking(cx, move |hub| {
             let mut rows = hub.list();
+            let room = room.map(|id| rows.iter().find(|r| r.id == id).map(seats));
             rows.retain(|r| persona.as_ref().is_none_or(|p| &r.persona == p));
+            rows.retain(|r| {
+                room.as_ref()
+                    .is_none_or(|m| m.as_ref().is_some_and(|m| !m.is_empty() && &seats(r) == m))
+            });
             Ok(rows)
         })
         .await,
@@ -141,6 +152,7 @@ async fn create(cx: &Cx, Json(new): Json<New>) -> Result<Answer<Created>> {
         let profile = new.profile.as_deref().unwrap_or_default();
         let list = profiles(&hub, (&data, config.as_deref()));
         let picked = (new.model, new.effort);
+        let asked = new.folder.clone();
         let (agent, folder, mut recipe) = recipe(
             &logins,
             (&data, config.as_deref(), &list),
@@ -148,6 +160,7 @@ async fn create(cx: &Cx, Json(new): Json<New>) -> Result<Answer<Created>> {
             new.folder,
             (picked, new.setup),
         )?;
+        let folder = topic_folder(asked, folder);
         if let Some(m) = new.machine {
             recipe.machine = m;
         }
@@ -239,6 +252,17 @@ async fn send(cx: &Cx, Json(m): Json<Message>) -> Result<Answer<cooee_core::Item
     ))
 }
 
+#[route(POST "/threads/{id}/handback")]
+async fn hand_back(cx: &Cx, Json(m): Json<Message>) -> Result<Answer<cooee_core::Item>> {
+    let id = thread_id(cx);
+    Ok(Answer(
+        blocking(cx, move |hub| {
+            hub.resume_handoff(&id, &m.text, &m.random_id)
+        })
+        .await,
+    ))
+}
+
 #[route(POST "/threads/{id}/queue")]
 async fn queue(cx: &Cx, Json(m): Json<Message>) -> Result<Answer<Vec<cooee_core::Queued>>> {
     let id = thread_id(cx);
@@ -269,6 +293,16 @@ async fn steer(cx: &Cx, Json(q): Json<Queued>) -> Result<Answer<Vec<cooee_core::
     Ok(Answer(
         blocking(cx, move |hub| hub.unqueue(&id, &q.random_id, true)).await,
     ))
+}
+
+fn topic_folder(asked: PathBuf, default: PathBuf) -> PathBuf {
+    if asked.as_os_str() == "scratch" {
+        PathBuf::new()
+    } else if asked.as_os_str().is_empty() {
+        default
+    } else {
+        asked
+    }
 }
 
 #[derive(Deserialize)]
@@ -329,6 +363,24 @@ async fn thread_file(cx: &Cx) -> Result<Response> {
         r
     };
     Ok(r.body(Body::from(bytes))?)
+}
+
+#[route(GET "/threads/{id}/frames/{name}")]
+async fn thread_frame(cx: &Cx) -> Result<Response> {
+    let (id, name) = (thread_id(cx), path_param::<Name>(cx).to_owned());
+    let Ok(bytes) = blocking(cx, move |hub| hub.frame_image(&id, &name)).await else {
+        return plain(404, "No such frame.");
+    };
+    let kind = if bytes.starts_with(&[0xff, 0xd8]) {
+        "image/jpeg"
+    } else {
+        "image/png"
+    };
+    Ok(Response::builder()
+        .header("Content-Type", kind)
+        .header("X-Content-Type-Options", "nosniff")
+        .header("Cache-Control", "private, no-store")
+        .body(Body::from(bytes))?)
 }
 
 #[derive(Deserialize)]
@@ -413,12 +465,14 @@ pub(super) fn routes(b: RouterBuilder) -> RouterBuilder {
         .route(create)
         .route(retry)
         .route(send)
+        .route(hand_back)
         .route(queue)
         .route(unqueue)
         .route(steer)
         .route(retitle)
         .route(archive)
         .route(thread_file)
+        .route(thread_frame)
         .route(approve)
         .route(cancel)
         .route(model)

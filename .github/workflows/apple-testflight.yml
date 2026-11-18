@@ -3,8 +3,10 @@
 # Uploads run only on a merge to `main` (#180). The ASC_* secrets live in the `testflight` environment, which only
 # `main` and `staging` may deploy from: pull_request and fork runs can't read them.
 # docs/testflight.md has the owner's one-time steps.
-# #365: runs on our own runners (mini-cooee, air-cooee). Any signing identity Xcode makes goes into a keychain of the
-# job's own, deleted when the job ends. A `workflow_dispatch` without `upload` archives and signs but uploads nothing.
+# #365, #565: runs on our own runner (mini-cooee), or on GitHub-hosted xcode-27 with `vars.MAC_RUNNER_TESTFLIGHT=hosted`
+# (docs/ci-runners.md). #568: the archive is unsigned (ad-hoc, for its entitlements) and only the export signs, with
+# Apple's managed distribution certificate, so no run mints a Development certificate. The job's keychain is its own,
+# deleted when the job ends. A `workflow_dispatch` without `upload` archives and signs (exports) but uploads nothing.
 name: apple-testflight
 on:
   push:
@@ -27,7 +29,7 @@ defaults:
 jobs:
   testflight:
     if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/staging'
-    runs-on: [self-hosted, macOS, ARM64, cooee-mac]
+    runs-on: ${{ vars.MAC_RUNNER_TESTFLIGHT == 'hosted' && 'xcode-27' || fromJSON('["self-hosted","macOS","ARM64","cooee-mac"]') }}
     environment: testflight
     timeout-minutes: 60
     env:
@@ -80,23 +82,22 @@ jobs:
           fi
           latest=$(api "builds?filter[app]=$app&sort=-uploadedDate&limit=1&fields[builds]=version" | jq -r '.data[0].attributes.version // "0"')
           { echo "TEAM=$team"; echo "APP=$app"; echo "VERSION=$version"; echo "BUILD=$((latest + 1))"; } >> "$GITHUB_ENV"
-      - name: archive (cloud signing)
+      - name: archive (unsigned)
         working-directory: apple
-        run: >-
-          xcodebuild archive -skipMacroValidation -project Cooee.xcodeproj -scheme Cooee -destination 'generic/platform=iOS'
-          -archivePath "$RUNNER_TEMP/Cooee.xcarchive" -allowProvisioningUpdates
-          -authenticationKeyPath "$ASC_KEY_PATH" -authenticationKeyID "$ASC_KEY_ID" -authenticationKeyIssuerID "$ASC_ISSUER_ID"
-          DEVELOPMENT_TEAM="$TEAM" CODE_SIGN_STYLE=Automatic CURRENT_PROJECT_VERSION="$BUILD"
-          INFOPLIST_KEY_ITSAppUsesNonExemptEncryption=NO 2>&1 | tee -a "$LOG"
-      - name: upload to TestFlight
-        if: env.UPLOAD == 'true'
         run: |
+          xcodebuild archive -skipMacroValidation -project Cooee.xcodeproj -scheme Cooee -destination 'generic/platform=iOS' \
+            -archivePath "$RUNNER_TEMP/Cooee.xcarchive" CODE_SIGNING_ALLOWED=NO CURRENT_PROJECT_VERSION="$BUILD" \
+            INFOPLIST_KEY_ITSAppUsesNonExemptEncryption=NO 2>&1 | tee -a "$LOG"
+          codesign --force --sign - --entitlements Cooee.entitlements "$RUNNER_TEMP/Cooee.xcarchive/Products/Applications/Cooee.app"
+      - name: export (cloud signing; uploads to TestFlight unless a dry run)
+        run: |
+          destination=$([ "$UPLOAD" = true ] && echo upload || echo export)
           cat > "$RUNNER_TEMP/export.plist" <<EOF
           <?xml version="1.0" encoding="UTF-8"?>
           <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
           <plist version="1.0"><dict>
             <key>method</key><string>app-store-connect</string>
-            <key>destination</key><string>upload</string>
+            <key>destination</key><string>$destination</string>
             <key>signingStyle</key><string>automatic</string>
             <key>teamID</key><string>$TEAM</string>
             <key>manageAppVersionAndBuildNumber</key><false/>
@@ -120,6 +121,9 @@ jobs:
           touch "$LOG"
           if grep -qiE 'cloud signing permission|no signing certificate|not have permission' "$LOG"; then
             echo "::error::The App Store Connect API key can't cloud-sign. Give the key the Admin role (App Store Connect → Users and Access → Integrations → Team Keys), or ask for another signing route; this workflow adds no fallback secret."
+          fi
+          if grep -qi 'private key is not installed' "$LOG"; then
+            echo "::error::A signing certificate's private key is not in the job's keychain (it is made fresh each run). Only the export may sign, with Apple's managed distribution certificate: revoke the \"Created via API\" Apple Development certificates under Certificates, Identifiers & Profiles, and check that no step signs with a Development identity."
           fi
           # The artifact is not masked like the job log: scrub the key id, issuer id and team before upload.
           for s in "$ASC_KEY_ID" "$ASC_ISSUER_ID" "${TEAM:-}"; do

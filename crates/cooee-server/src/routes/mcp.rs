@@ -10,6 +10,7 @@ use topcoat::{
 use crate::{
     HubError,
     http::{AgentAsk, Answer, bearer, blocking, refused},
+    hub::Called,
     mcp,
 };
 
@@ -63,7 +64,7 @@ async fn mcp_grant(cx: &Cx, Json(a): Json<AgentAsk>) -> Result<Answer<mcp::Grant
 }
 
 #[route(POST "/mcp/agent/call")]
-async fn mcp_call(cx: &Cx, Json(a): Json<AgentAsk>) -> Result<Answer<Option<String>>> {
+async fn mcp_call(cx: &Cx, Json(a): Json<AgentAsk>) -> Result<Answer<Called>> {
     let token = bearer(cx);
     let text = |k: &str| {
         a.server
@@ -77,6 +78,25 @@ async fn mcp_call(cx: &Cx, Json(a): Json<AgentAsk>) -> Result<Answer<Option<Stri
     Ok(Answer(
         blocking(cx, move |hub| {
             hub.call((&a.thread, &token), (&server, &tool), &args)
+        })
+        .await,
+    ))
+}
+
+#[route(POST "/mcp/agent/frame")]
+async fn mcp_frame(cx: &Cx, Json(a): Json<AgentAsk>) -> Result<Answer<()>> {
+    let token = bearer(cx);
+    let text = |k: &str| {
+        a.server
+            .get(k)
+            .and_then(serde_json::Value::as_str)
+            .unwrap_or_default()
+            .to_owned()
+    };
+    let (caption, image) = (text("caption"), text("image"));
+    Ok(Answer(
+        blocking(cx, move |hub| {
+            hub.keep_frame((&a.thread, &token), &caption, &image)
         })
         .await,
     ))
@@ -99,6 +119,16 @@ async fn mcp_ask(cx: &Cx, Json(a): Json<AgentAsk>) -> Result<Answer<String>> {
             hub.ask_persona((&a.thread, &token), &persona, &message, wait)
         })
         .await,
+    ))
+}
+
+#[route(POST "/mcp/agent/handoff")]
+async fn mcp_handoff(cx: &Cx, Json(a): Json<AgentAsk>) -> Result<Answer<String>> {
+    let token = bearer(cx);
+    let what = a.server.get("what").and_then(serde_json::Value::as_str);
+    let what = what.unwrap_or_default().to_owned();
+    Ok(Answer(
+        blocking(cx, move |hub| hub.handoff((&a.thread, &token), &what)).await,
     ))
 }
 
@@ -152,8 +182,10 @@ pub(super) fn routes(b: RouterBuilder) -> RouterBuilder {
     b.route(mcp_grant)
         .route(mcp_secret)
         .route(mcp_call)
+        .route(mcp_frame)
         .route(mcp_propose)
         .route(mcp_ask)
+        .route(mcp_handoff)
         .route(mcp_remember)
         .route(mcp_persona)
         .route(mcp_history)

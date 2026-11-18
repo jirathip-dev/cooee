@@ -84,6 +84,41 @@ async fn move_thread(cx: &Cx, Json(m): Json<Move>) -> Result<Answer<cooee_core::
     ))
 }
 
+#[derive(Deserialize)]
+struct Switch {
+    agent: String,
+}
+
+#[route(POST "/threads/{id}/agent")]
+async fn switch(cx: &Cx, Json(s): Json<Switch>) -> Result<Answer<cooee_core::Item>> {
+    let (id, hub, logins) = (thread_id(cx), hub(cx), logins(cx));
+    let data = app_context::<Data>(cx);
+    let (data, dir) = (data.0.clone(), data.1.clone());
+    let done = tokio::task::spawn_blocking(move || {
+        let known = hub.agents().map_err(HubError::Refused)?;
+        if !known.iter().any(|a| a.id == s.agent) {
+            return Err(HubError::Refused(format!("no agent {}", s.agent)));
+        }
+        let (t, _) = hub.thread(&id)?;
+        let mut list = profiles(&hub, (&data, dir.as_deref()));
+        for p in list.iter_mut().filter(|p| p.id == t.profile) {
+            s.agent.clone_into(&mut p.agent);
+            (p.account, p.model, p.effort) = (None, String::new(), String::new());
+        }
+        let (_, _, recipe) = recipe(
+            &logins,
+            (&data, dir.as_deref(), &list),
+            (&s.agent, None, &t.profile),
+            PathBuf::new(),
+            (Default::default(), t.setup),
+        )?;
+        hub.switch(&id, &s.agent, &recipe)
+    });
+    Ok(Answer(
+        done.await.map_err(|e| HubError::Refused(e.to_string()))?,
+    ))
+}
+
 pub(super) fn routes(b: RouterBuilder) -> RouterBuilder {
-    b.route(attach).route(move_thread)
+    b.route(attach).route(move_thread).route(switch)
 }

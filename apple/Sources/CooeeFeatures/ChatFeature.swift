@@ -16,6 +16,7 @@ public struct ChatFeature: Sendable {
         public let target: Target
         public var persona: Persona
         public var items: [APIItem] = []
+        public var frames: [String: Data] = [:]
         public var turn = Turn()
         public var queue: [Queued] = []
         public var live = ""
@@ -40,6 +41,7 @@ public struct ChatFeature: Sendable {
         public var workflowOpen = false
         public var unfolded: String?
         public var machine = MachineChip()
+        public var bar: TopicBar?
         @Presents public var screen: ScreenFeature.State?
         @Presents public var attaching: AttachFeature.State?
 
@@ -59,6 +61,13 @@ public struct ChatFeature: Sendable {
             return pending.map { [Outgoing(id: 0, text: $0, failure: failure)] } ?? []
         }
 
+        public var current: String {
+            switch target {
+            case .thread(let id): id
+            case .new(let persona), .setup(let persona): "new:\(persona.id)"
+            }
+        }
+
         public var step: String? { persona.api.style == .chat ? ChatItems.step(items) : nil }
 
         public init(server: Server, target: Target, persona: Persona, room: Room? = nil, exchange: Exchange? = nil) {
@@ -68,6 +77,9 @@ public struct ChatFeature: Sendable {
             self.room = room
             if case .thread = target { loading = true } else { loading = false }
             self.exchange = exchange
+            let setup = if case .setup = target { true } else { false }
+            guard exchange == nil, room != nil || !persona.api.id.isEmpty, !setup else { return }
+            bar = TopicBar(folder: persona.api.folder)
         }
     }
 
@@ -90,6 +102,9 @@ public struct ChatFeature: Sendable {
         case attaching(PresentationAction<AttachFeature.Action>)
         case workflow(WorkflowAction)
         case machine(MachineAction)
+        case frame(String)
+        case framed(String, Data)
+        case topics(TopicAction)
 
         @CasePathable
         public enum Delegate: Sendable, Equatable {
@@ -97,8 +112,8 @@ public struct ChatFeature: Sendable {
             case open(String)
             case persona(String)
             case start(String)
-            case restart(APIPersona)
             case round(String)
+            case topic(String)
         }
     }
 
@@ -106,7 +121,7 @@ public struct ChatFeature: Sendable {
     @Dependency(\.plugins) internal var pluginAPI
     @Dependency(\.personas) internal var personas
     @Dependency(\.ownerCheck) internal var ownerCheck
-    @Dependency(\.continuousClock) private var clock
+    @Dependency(\.continuousClock) internal var clock
     @Dependency(\.date.now) private var now
 
     public init() {}
@@ -126,11 +141,14 @@ public struct ChatFeature: Sendable {
                 return panel(&state, action)
             case .machine(let action):
                 return machine(&state, action)
+            case .topics(let action):
+                return topics(&state, action)
             default:
                 return listen(&state, action)
             }
         }
         Reduce { state, action in agent(&state, action) }
+        Reduce { state, action in frames(&state, action) }
         Reduce { state, action in plugins(&state, action) }
             .ifLet(\.$screen, action: \.screen) { ScreenFeature() }
             .ifLet(\.$attaching, action: \.attaching) { AttachFeature() }

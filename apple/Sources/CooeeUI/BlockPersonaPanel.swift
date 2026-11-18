@@ -5,6 +5,7 @@ internal struct PanelActions {
     internal var close: () -> Void = {}
     internal var edit: (() -> Void)?
     internal var newChat: (() -> Void)?
+    internal var topic = false
     internal var memory: (() -> Void)?
     internal var stop: (() -> Void)?
     internal var open: (Int) -> Void = { _ in }
@@ -64,7 +65,7 @@ public struct PersonaPanelBlocks: View {
 extension PersonaPanelBlocks {
     private var header: some View {
         HStack(spacing: 10) {
-            Avatar(persona: persona, size: column ? 36 : 44)
+            FigureView(persona: persona, size: column ? 36 : 44)
             VStack(alignment: .leading, spacing: 3) {
                 Text(persona.name).ui(column ? 16 : 18, .semibold, look)
                 AgentChip(persona: persona)
@@ -89,7 +90,8 @@ extension PersonaPanelBlocks {
         return HStack(spacing: 10) {
             if let edit = actions.edit { action("pencil", "Edit", "Edit \(persona.name)", edit) }
             if let newChat = actions.newChat {
-                action("square.and.pencil", "New chat", "New chat with \(persona.name)", newChat)
+                let new = actions.topic ? "New topic" : "New chat"
+                action("square.and.pencil", new, "\(new) with \(persona.name)", newChat)
             }
             if let open = actions.memory { action("brain.head.profile", memory, memory, open) }
             if let stop = actions.stop { action("stop.fill", "Stop", "Stop \(persona.name)", stop) }
@@ -109,7 +111,8 @@ extension PersonaPanelBlocks {
             }
             .foregroundStyle(palette.link).frame(maxWidth: .infinity).frame(height: 64)
             .background(
-                palette.card.opacity(look.style == .modern ? 0.75 : 1), in: .rect(cornerRadius: look.mono ? 0 : 16)
+                palette.card.opacity(look.style.surface == .glass ? 0.75 : 1),
+                in: .rect(cornerRadius: look.mono ? 0 : 16)
             )
             .overlay {
                 if look.mono { Rectangle().strokeBorder(palette.edge, lineWidth: 1) }

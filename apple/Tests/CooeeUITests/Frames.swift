@@ -25,7 +25,7 @@ internal struct Frame: Sendable, CustomTestStringConvertible {
 
     @MainActor
     internal func render(margin: CGFloat = 0, around: Color = .clear) -> CGImage? {
-        let look = Look(palette: palette, style: style, still: true)
+        let look = Look(palette: palette, style: .bundled(style), still: true)
         let content = Group {
             if phone { PhoneChrome { view() } } else { MacChrome { view() } }
         }
@@ -44,7 +44,7 @@ extension Frame {
 
     internal static var all: [Frame] {
         designs + styled + settings + missingPoster + additions + QueueFrames.all + DiagramFrames.all
-            + ThemeFrames.all
+            + ThemeFrames.all + TopicFrames.all
     }
 
     internal static var everyStyle: [Frame] {
