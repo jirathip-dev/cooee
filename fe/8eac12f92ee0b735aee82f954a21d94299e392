@@ -1,0 +1,13 @@
+Decided: views read tokens through Look+Style.swift only (label, radius, pill, ui, surface, chip, accent, Mark, and token reads outline, textMarks, quiet, glass, figures, stage, type); arch.toml bans look.style elsewhere in CooeeUI
+Because: "the `look.style` ban line in `.drover/arch.toml`"
+Decided: the label type is StyleLabel, not Label, since SwiftUI.Label and CooeeCore.Label would be ambiguous in every CooeeUI file
+Because: apple/Sources/CooeeCore/Style.swift:34
+Decided: Mark takes its text and a symbol builder instead of a closed enum, so each site keeps its own symbol size and pixels
+Because: apple/Sources/CooeeUI/Look+Style.swift:111
+Decided: RoundSurface folds into chip(look); AccountAvatar, the status marks, toggles and the round button are Marks
+Because: "`RoundSurface` into `.chip`, `AccountAvatar` and the list/map toggle as `Mark`s"
+Rejected: an AnyShape inside chip's tinted branch — it dropped the topic list's rounded clip (list-modern frames moved), so chip passes .rect or .capsule directly
+Rejected: folding the three stage name cards into one — each has its own padding, shape and opacity, and Scene frames must not move
+Check: base vs head renders of all 164 frames are byte-identical except sign-ins-terminal-dark and style-terminal-chat-dark (re-recorded) and four clock-driven frames (queue ages, "closes in Nm")
+Check: search topics, new, archived and the menu note keep their Terminal text through the quiet/textMarks tokens, so no frame moves beyond the wordings
+Owner: Nothing looks different in the app except two Terminal wordings; every look now comes from the style's data instead of code that names Terminal.
