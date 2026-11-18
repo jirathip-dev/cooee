@@ -63,4 +63,21 @@ internal struct HeaderRenderTests {
         actions.new = {}
         #expect(try Self.pixels(actions).differing(from: plain, by: 16) > 0.001)
     }
+
+    private static func home(loading: Bool) throws -> Pixels {
+        let view = HomeView(loading: loading).frame(width: 402, height: 200)
+            .environment(\.look, Look(palette: .farmLight, still: true))
+        let image = try #require(ImageRenderer(content: view).cgImage)
+        return try #require(Pixels(image))
+    }
+
+    @Test internal func theHomeLoadingLineSitsOnTheHeaderBottomEdge() throws {
+        let idle = try Self.home(loading: false)
+        let loading = try Self.home(loading: true)
+        let changed = (0..<idle.height).filter { row in
+            let start = row * idle.width * 4
+            return (start..<start + idle.width * 4).contains { abs(Int(loading.bytes[$0]) - Int(idle.bytes[$0])) > 16 }
+        }
+        #expect(changed.first == 54 && changed.contains(55) && (changed.last ?? 0) >= 70, "\(changed)")
+    }
 }

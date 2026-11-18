@@ -10,7 +10,7 @@ pub use crate::devices::{
 pub use crate::login::{Ran, Spec, Status, links, redact};
 pub use crate::profiles::Profile;
 pub use crate::provider::{Entry, Plain, Provider, Providers, agents_fix};
-pub use crate::shed::{Agent, Launch, SHED_MIN_PROTOCOL, Shed, ShedError, shed_fix};
+pub use crate::shed::{Agent, Launch, SHED_MIN_PROTOCOL, Shed, ShedError, Streamed, shed_fix};
 pub use crate::store::{
     FORMAT, Kind, Member, Message, Queued, Reason, Role, RoomTurn, Store, StoreError, Thread,
     Workflow,
