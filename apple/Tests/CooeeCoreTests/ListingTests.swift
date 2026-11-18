@@ -48,6 +48,16 @@ internal struct ListingTests {
         #expect(chats[1].row.persona.isEmpty && chats[1].persona.look.initials == "T")
     }
 
+    @Test internal func aRowWithNoMessagesShowsNoAge() throws {
+        let row = try JSONDecoder().decode(
+            ThreadRow.self,
+            from: Data(
+                #"{"id":"t0","title":"Test","agent":"","persona":"coder","state":"","last":"","unseen":0,"archived":false}"#
+                    .utf8)
+        )
+        #expect(Listing.chats(rows: [row], personas: [coder], now: now).map(\.row.ago) == [""])
+    }
+
     @Test(arguments: [
         (999_970, "now"), (999_000, "16m"), (990_000, "2h"), (800_000, "2d"), (1_000_500, "now"),
     ])
