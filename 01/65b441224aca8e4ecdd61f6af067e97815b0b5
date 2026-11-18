@@ -1,0 +1,19 @@
+Decided: a URL server's grant is Grant::Pipe; the proxy posts each line to /mcp/agent/rpc and cooee's Connectors::rpc admits it (Hub::granted, Hub::call for tools/call), adds the pick's credential and talks to the server
+Because: "cooee makes every call to a connector itself (`/mcp/agent/rpc`)"
+Decided: /mcp/agent/rpc answers when the request's own answer arrives, its messages one per line; a tools/call is piped on its own thread so a slow call doesn't hold the others
+Because: crates/cooee-server/src/routes/connectors.rs:207
+Decided: net::stream beside D's net::fetch, one config builder; push, the routines' catch-up and connectors all send through them, and the proxy's curl is gone
+Because: crates/cooee-server/src/net.rs:46
+Decided: a binary body (web push's aes128gcm) goes in a private temp file deleted after the call, since curl's config takes stdin and can't hold a NUL; text bodies stay in the config
+Because: crates/cooee-server/src/net.rs:64
+Decided: mcp::tools (the unused profile-sheet lister) and the proxy's HTTP half are deleted
+Because: "replacing the three `curl` copies"
+Rejected: the DELETE on thread close and reopening a dropped sse stream with the agent's initialize — a closed thread's token already fails every call; left for a later slice
+Check: crates/cooee/tests/mcp.rs's pipe test: http and sse fakes answer through the proxy, a 307 is answered not followed, every curl argv is exactly `-K -`, the grant answer is "pipe" with no URL or header
+Owner: Connectors now reach their servers through cooee itself, the older streaming kind included; agents never see a server's address, header or token.
+
+Decided: fix round 1 removes the two-line /// above Connectors::rpc; it is pub(crate), and the comments gate allows /// only on public API
+Because: crates/cooee-server/src/connectors/upstream.rs:224
+Rejected: making Connectors::rpc pub to keep its doc line — widening an API to keep a comment
+Check: scripts/comments.py exits 0 at the head; nothing else changed since 090f83d
+Owner: A comment-rule failure in the build is fixed; nothing changes in behaviour.
