@@ -39,6 +39,7 @@ internal struct TimingTests {
             $0.said = "Driving"
             $0.asOf = epoch
         }
+        await clock.advance(by: .seconds(2))
         await store.finish()
         #expect(calls.all == ["true tap 0.04 seconds"])
     }

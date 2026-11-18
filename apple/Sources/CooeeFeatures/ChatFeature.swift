@@ -159,6 +159,7 @@ public struct ChatFeature: Sendable {
         Reduce { state, action in plugins(&state, action) }
             .ifLet(\.$screen, action: \.screen) { ScreenFeature() }
             .ifLet(\.$attaching, action: \.attaching) { AttachFeature() }
+            .keepsLeftScreens { $0.screen.map { [$0] } ?? [] }
     }
 }
 
