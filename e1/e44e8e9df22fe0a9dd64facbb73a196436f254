@@ -1,0 +1,4 @@
+Decided: resolve the mcp.rs conflict by keeping this branch's handoff_tool() and staging's routine_tool() side by side
+Because: crates/cooee-server/src/mcp.rs:465
+Rejected: none
+Owner: Merged the latest staging; browser steps keep their pictures and the new routine tool stays.
