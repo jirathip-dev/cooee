@@ -66,12 +66,13 @@ fn row_34_a_thread_starts_on_its_pick_and_a_new_model_shows() {
     let start = |model: &str, random: &str| start(&cooee, &dir, model, random);
 
     reports(&shed, &["fake-opus-1", "fake-opus-2", "fake-sonnet-1"]);
+    let listed = shed.cli_log().matches(" agents\n").count();
     let (code, id) = start("opus", "r1");
     assert_eq!(code, 200, "{id}");
     assert_eq!(set_on(&shed, &id).as_deref(), Some("fake-opus-2"));
     let log = shed.cli_log();
     let line = log.lines().rfind(|l| l.contains(" run ")).unwrap();
-    assert_eq!(log.matches(" agents\n").count(), 1, "{log}");
+    assert_eq!(log.matches(" agents\n").count(), listed, "{log}");
     assert!(line.ends_with(" -- env fake-acp --effort high"), "{line}");
     assert_eq!(stored(&dir, &id), (json!("opus"), json!("high")));
     let lists = cooee.json("/models");

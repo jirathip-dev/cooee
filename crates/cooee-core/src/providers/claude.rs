@@ -17,6 +17,7 @@ pub struct Claude(Spec);
 pub const ENTRY: Entry = Entry {
     name: "claude",
     defaults,
+    keep: &[],
     build: |s| Arc::new(Claude(s)),
 };
 

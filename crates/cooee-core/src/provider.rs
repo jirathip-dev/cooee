@@ -6,13 +6,16 @@ use std::{
     sync::Arc,
 };
 
-use serde_json::Value;
+use serde::Deserialize;
+use serde_json::Value as Json;
+use toml::{Table, Value};
 
 use crate::{
-    Usage,
+    Shed, Usage,
     action::Kind,
     login::{Ran, Spec, Status, plain_status},
     providers::REGISTRY,
+    shed::Record,
 };
 
 /// What cooee wants of a persona session: the same for every provider.
@@ -47,7 +50,7 @@ pub enum Builtin {
 #[derive(Debug, Default)]
 pub struct Setup {
     /// ACP `_meta`.
-    pub meta: Option<Value>,
+    pub meta: Option<Json>,
     /// Variables on the adapter's command line.
     pub env: Vec<(String, String)>,
     /// Words after the adapter's command.
@@ -170,8 +173,10 @@ impl Provider for Plain {
 pub struct Entry {
     /// The name a spec's `base` (else its `name`) picks it by.
     pub name: &'static str,
-    /// Its spec when `[[providers]]` is not set.
+    /// Its spec where neither shed's record nor `[[providers]]` sets a field.
     pub defaults: fn() -> Spec,
+    /// The fields of its defaults that are cooee's own choice, kept over shed's record.
+    pub keep: &'static [&'static str],
     /// Its behaviour over a spec.
     pub build: fn(Spec) -> Arc<dyn Provider>,
 }
@@ -207,6 +212,13 @@ impl Providers {
         self.0.iter()
     }
 
+    /// Every provider: the registered defaults under shed's records, under `rows` by name (see [`specs`]).
+    #[must_use]
+    pub fn load(rows: &[Table], shed: &Shed) -> Self {
+        let records = shed.records().unwrap_or_default();
+        Self::new(&specs(rows, &records).unwrap_or_default())
+    }
+
     /// The provider named `name`.
     #[must_use]
     pub fn named(&self, name: &str) -> Option<&Arc<dyn Provider>> {
@@ -220,11 +232,57 @@ impl Providers {
     }
 }
 
-/// Refuses a spec whose `base` names no registered provider.
+/// The providers: each registered one's defaults with shed's record of its agent over them field by field (a record
+/// with no provider adds one named for its program), and with `[[providers]]` set, its rows instead, each over the
+/// provider of its name.
 ///
 /// # Errors
-/// The first such spec, said.
-pub fn check(specs: &[Spec]) -> Result<(), String> {
+/// A row that names no registered `base`, or that leaves a spec incomplete or with a field it doesn't know.
+pub fn specs(rows: &[Table], records: &[Record]) -> Result<Vec<Spec>, String> {
+    let mut known: Vec<(&[&str], Table)> = REGISTRY
+        .iter()
+        .filter_map(|e| Some((e.keep, Table::try_from((e.defaults)()).ok()?)))
+        .collect();
+    let field = |t: &Table, k: &str| t.get(k).and_then(Value::as_str).map(str::to_owned);
+    for r in records {
+        let mut facts = facts(r);
+        match known
+            .iter_mut()
+            .find(|(_, t)| field(t, "agent").as_ref() == Some(&r.id))
+        {
+            Some((keep, t)) => {
+                facts.retain(|k, _| !keep.contains(&k.as_ref()));
+                t.extend(facts);
+            }
+            None if facts.contains_key("login") && facts.contains_key("status") => {
+                let name = if r.agent.is_empty() { &r.id } else { &r.agent };
+                facts.insert("name".into(), name.as_str().into());
+                facts.insert("agent".into(), r.id.as_str().into());
+                known.push((&[], facts));
+            }
+            None => {}
+        }
+    }
+    let known = known.into_iter().map(|(_, t)| t);
+    let picked: Vec<Table> = if rows.is_empty() {
+        known.collect()
+    } else {
+        let known: Vec<Table> = known.collect();
+        let over = |row: &Table| {
+            let name = field(row, "name");
+            let base = known
+                .iter()
+                .find(|t| name.is_some() && field(t, "name") == name);
+            let mut t = base.cloned().unwrap_or_default();
+            t.extend(row.clone());
+            t
+        };
+        rows.iter().map(over).collect()
+    };
+    let specs = picked
+        .into_iter()
+        .map(|t| Spec::deserialize(t).map_err(|e| format!("providers: {}", e.message())))
+        .collect::<Result<Vec<_>, _>>()?;
     let unknown = |b: &&String| !REGISTRY.iter().any(|e| e.name == b.as_str());
     match specs
         .iter()
@@ -234,8 +292,39 @@ pub fn check(specs: &[Spec]) -> Result<(), String> {
             "providers: no provider {base} to base {} on",
             s.name
         )),
-        None => Ok(()),
+        None => Ok(specs),
     }
+}
+
+fn facts(r: &Record) -> Table {
+    let mut t = Table::new();
+    let lines = [
+        ("login", &r.login),
+        ("status", &r.status),
+        ("logout", &r.logout),
+    ];
+    for (k, line) in lines {
+        if let Some(line) = line {
+            t.insert(k.into(), line.split_whitespace().collect::<Vec<_>>().into());
+        }
+    }
+    for (k, var) in [("home", &r.config_dir_var), ("settings", &r.settings_var)] {
+        if let Some(var) = var {
+            t.insert(k.into(), var.as_str().into());
+        }
+    }
+    if !r.efforts.is_empty() {
+        t.insert("efforts".into(), r.efforts.clone().into());
+    }
+    if !r.effort_args.is_empty() {
+        let words: Vec<String> = r
+            .effort_args
+            .iter()
+            .map(|w| w.replace("{effort}", "{}"))
+            .collect();
+        t.insert("effort".into(), words.into());
+    }
+    t
 }
 
 /// Every registered provider's defaults, in registry order.

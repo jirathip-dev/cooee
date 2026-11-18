@@ -103,7 +103,8 @@ pub fn run(config: &Config, args: &[&str], json: bool, require: bool) -> ExitCod
     let Some(data) = config.data_dir() else {
         return refuse(1, "no data folder: set `data` or HOME");
     };
-    let providers = Providers::new(&config.providers);
+    let shed = cooee_core::Shed::new(config.shed.clone(), config.shed_dir.clone());
+    let providers = Providers::load(&config.providers, &shed);
     let all = entries(&providers, &data);
     let accounts = Accounts::new(&data);
     match args {

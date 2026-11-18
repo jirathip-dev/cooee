@@ -28,9 +28,10 @@ struct Ctx {
 impl Ctx {
     fn new(config: &Config) -> Self {
         let data = config.data_dir().unwrap_or_default();
+        let shed = Shed::new(config.shed.clone(), config.shed_dir.clone());
         Self {
-            shed: Shed::new(config.shed.clone(), config.shed_dir.clone()),
-            providers: Providers::new(&config.providers),
+            providers: Providers::load(&config.providers, &shed),
+            shed,
             accounts: config.data_dir().map(|d| Accounts::new(&d)),
             personas: agents::list(config.dir.as_deref(), &data),
         }
