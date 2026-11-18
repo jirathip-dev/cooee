@@ -962,7 +962,14 @@ fn cdp_client(mut s: TcpStream, port: u16, got: &Mutex<Vec<Value>>) {
         }
         let call: Value = serde_json::from_slice(&body).unwrap();
         let event = json!({ "method": "Page.loadEventFired" }).to_string();
-        let reply = json!({ "id": call["id"], "result": { "data": "anBlZw==" } }).to_string();
+        let result = match call["params"]["expression"].as_str() {
+            Some(e) if e.contains("elementFromPoint") => {
+                json!({ "result": { "value": "Sign in" } })
+            }
+            Some(_) => json!({ "result": { "value": "Email" } }),
+            None => json!({ "data": "anBlZw==" }),
+        };
+        let reply = json!({ "id": call["id"], "result": result }).to_string();
         got.lock().unwrap().push(call);
         for m in [event, reply] {
             s.write_all(&[0x81, u8::try_from(m.len()).unwrap()])
@@ -986,8 +993,8 @@ fn fake_cdp() -> (u16, Arc<Mutex<Vec<Value>>>) {
     (port, got)
 }
 
-fn screen_setup() -> (Setup, PathBuf, Arc<Mutex<Vec<Value>>>) {
-    let dir = scratch("mcp-screen");
+fn screen_setup(name: &str) -> (Setup, PathBuf, Arc<Mutex<Vec<Value>>>) {
+    let dir = scratch(name);
     let bin = dir.join("bin");
     fs::create_dir_all(&bin).unwrap();
     for (name, text) in [("chromium", CHROMIUM), ("playwright", PLAYWRIGHT)] {
@@ -1016,7 +1023,7 @@ fn screen_setup() -> (Setup, PathBuf, Arc<Mutex<Vec<Value>>>) {
 
 #[test]
 fn the_owner_watches_takes_control_and_hands_back_with_a_note_the_waiting_call_carries() {
-    let (s, bin, cdp) = screen_setup();
+    let (s, bin, cdp) = screen_setup("mcp-screen");
     let (_, servers) = s.thread("ann");
     let mut ann = Mcp::start(named(&servers, "browser"), Agent::Claude);
     let nav = json!({ "name": "browser_navigate", "arguments": { "url": "https://example.com/" } });
@@ -1120,18 +1127,75 @@ fn the_owner_watches_takes_control_and_hands_back_with_a_note_the_waiting_call_c
     assert_sent(&cdp);
 }
 
+#[test]
+fn a_lease_saved_as_a_skill_hands_the_persona_its_steps_and_no_typed_value_and_a_declined_card_saves_nothing()
+ {
+    let (s, _, _) = screen_setup("mcp-screen-skill");
+    let (id, servers) = s.thread("ann");
+    let mut ann = Mcp::start(named(&servers, "browser"), Agent::Claude);
+    let (status, body) = s.cooee.post("/personas/ann/screen/control", &json!({}));
+    assert_eq!(status, 200, "{body}");
+    for input in [
+        json!({ "click": { "x": 10.0, "y": 20.0 } }),
+        json!({ "text": "hunter2" }),
+    ] {
+        let (status, body) = s.cooee.post("/personas/ann/screen/input", &input);
+        assert_eq!(status, 200, "{body}");
+    }
+    let back = json!({ "note": "done it", "skill": true });
+    let (status, body) = s.cooee.post("/personas/ann/screen/back", &back);
+    assert_eq!(status, 200, "{body}");
+    let nav = json!({ "name": "browser_navigate", "arguments": { "url": "https://example.com/" } });
+    let r = ann.call("tools/call", &nav).unwrap();
+    let note = r["content"][1]["text"].as_str().unwrap();
+    assert_eq!(
+        note,
+        "The owner had the browser and handed it back: done it\n\nThe owner asks you to save what they just did as a \
+         skill: draft it from these steps and propose it with your skill tool. What they typed is left out: name the \
+         field, never a value.\n1. https://www.example.com \"A\": click \"Sign in\"\n2. https://www.example.com \"A\": \
+         type into \"Email\""
+    );
+
+    let steps = note.split_once("value.\n").unwrap().1;
+    let mut cooee = Mcp::start(named(&servers, "cooee"), Agent::Claude);
+    let plan = json!({ "name": "sign-in", "description": "How I sign in.", "body": steps });
+    let said = cooee.run("skill", &json!({ "propose": plan })).unwrap();
+    assert!(said.starts_with("Proposed."), "{said}");
+    let items = s.cooee.json(&format!("/threads/{id}/messages"))["items"].clone();
+    let card = items
+        .as_array()
+        .unwrap()
+        .iter()
+        .rfind(|i| i["form"] == "skill")
+        .unwrap()
+        .clone();
+    assert!(
+        card["detail"]
+            .as_str()
+            .unwrap()
+            .contains("type into \"Email\"")
+    );
+    let tap = json!({ "item": card["id"], "option": "decline" });
+    let (status, body) = s.cooee.post(&format!("/threads/{id}/approve"), &tap);
+    assert_eq!(status, 200, "{body}");
+    assert!(!s.dir.join("agents/ann/skills/sign-in").exists());
+    assert_eq!(s.cooee.json("/personas/ann/skills"), json!([]));
+}
+
 fn assert_sent(cdp: &Mutex<Vec<Value>>) {
     let sent: Vec<(String, Value)> = cdp
         .lock()
         .unwrap()
         .iter()
         .map(|c| {
-            (
-                c["method"].as_str().unwrap().to_owned(),
-                c["params"].clone(),
-            )
+            let params = match c["params"]["expression"].as_str() {
+                Some(e) => json!(e.rsplit_once(")(").unwrap().1),
+                None => c["params"].clone(),
+            };
+            (c["method"].as_str().unwrap().to_owned(), params)
         })
         .collect();
+    let ask = |at: &str| ("Runtime.evaluate".to_owned(), json!(at));
     let mouse = |kind: &str| {
         (
             "Input.dispatchMouseEvent".to_owned(),
@@ -1145,8 +1209,10 @@ fn assert_sent(cdp: &Mutex<Vec<Value>>) {
                 "Page.captureScreenshot".to_owned(),
                 json!({ "format": "jpeg", "quality": 60 })
             ),
+            ask("document.elementFromPoint(10, 20))"),
             mouse("mousePressed"),
             mouse("mouseReleased"),
+            ask("document.activeElement)"),
             ("Input.insertText".to_owned(), json!({ "text": "hunter2" })),
         ]
     );

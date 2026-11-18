@@ -76,10 +76,47 @@ pub fn allows(sites: &[Site], url: &str) -> bool {
     url == "about:blank" || host(url).is_some_and(|h| sites.iter().any(|s| on(s, &h)))
 }
 
+fn marked(sites: &[Site], url: &str, mark: fn(&Site) -> bool) -> bool {
+    host(url).is_some_and(|h| sites.iter().any(|s| mark(s) && on(s, &h)))
+}
+
 /// Whether a replay frame may show a page at `url` (#161): one `sites` allow, on no `no_frames` site.
 #[must_use]
 pub fn framed(sites: &[Site], url: &str) -> bool {
-    allows(sites, url) && !host(url).is_some_and(|h| sites.iter().any(|s| s.no_frames && on(s, &h)))
+    allows(sites, url) && !marked(sites, url, |s| s.no_frames)
+}
+
+/// What the owner did on a page under the lease (#500), by the label of what they did it to, never what they typed.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum Did {
+    /// A click on the element with this label.
+    Click(String),
+    /// Typing into the field with this label.
+    Type(String),
+}
+
+fn origin(url: &str) -> String {
+    match (url.split_once("://"), host(url)) {
+        (Some((scheme, _)), Some(h)) => format!("{scheme}://{h}"),
+        _ => url.split(['?', '#']).next().unwrap_or_default().to_owned(),
+    }
+}
+
+/// One line of the lease's action log: the page's origin, then its `title` and what the owner `did`, unless `sites`
+/// mark it `no_frames` or the owner's real account, which leave the origin only.
+#[must_use]
+pub fn step(sites: &[Site], url: &str, title: &str, did: &Did) -> String {
+    let at = origin(url);
+    if marked(sites, url, |s| s.no_frames || s.account) {
+        return at;
+    }
+    let did = match did {
+        Did::Click(l) if l.is_empty() => "click".to_owned(),
+        Did::Click(l) => format!("click {l:?}"),
+        Did::Type(l) if l.is_empty() => "type into a field".to_owned(),
+        Did::Type(l) => format!("type into {l:?}"),
+    };
+    format!("{at} {title:?}: {did}")
 }
 
 /// What a frame's caption and the log show for typed text into a password field.
@@ -410,6 +447,43 @@ mod tests {
         assert!(!framed(&sites, "https://bank.com/"));
         assert!(!framed(&sites, "https://www.bank.com/acct"));
         assert!(!framed(&sites, "https://evil.com/"));
+    }
+
+    #[test]
+    fn a_step_names_the_field_and_a_no_frames_or_account_site_gives_its_origin_only() {
+        let site = |site: &str, no_frames, account| Site {
+            site: site.to_owned(),
+            no_frames,
+            account,
+        };
+        let sites = [
+            site("example.com", false, false),
+            site("bank.com", true, false),
+            site("mail.com", false, true),
+        ];
+        let email = Did::Type("Email".to_owned());
+        assert_eq!(
+            step(&sites, "https://www.example.com/a?q=1", "A", &email),
+            r#"https://www.example.com "A": type into "Email""#
+        );
+        assert_eq!(
+            step(
+                &sites,
+                "https://example.com/",
+                "A",
+                &Did::Click(String::new())
+            ),
+            r#"https://example.com "A": click"#
+        );
+        assert_eq!(
+            step(&sites, "https://www.bank.com/acct?id=7", "Balance", &email),
+            "https://www.bank.com"
+        );
+        let send = Did::Click("Send".to_owned());
+        assert_eq!(
+            step(&sites, "https://mail.com/inbox", "Inbox", &send),
+            "https://mail.com"
+        );
     }
 
     #[test]
