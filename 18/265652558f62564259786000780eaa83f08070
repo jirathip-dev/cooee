@@ -1,0 +1,5 @@
+Decided: the render test's machine host is 203.0.113.7, the denylist's documented placeholder, instead of a private IP
+Because: ci/denylist.txt:3
+Check: scripts/hygiene.sh exits 0 and HeaderRenderTests still passes at 390 and 1440
+Rejected: allowlisting the IP in the hygiene script — the denylist exists to keep setup-specific addresses out of the repo
+Owner: fixed the failing public-hygiene check; the screen fix itself is unchanged
