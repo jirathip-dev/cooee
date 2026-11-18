@@ -1,0 +1,13 @@
+Decided: merged origin/staging; its HeaderRenderTests.swift change and this branch's both kept, apple-check green on the merge
+Because: apple/Tests/CooeeUITests/HeaderRenderTests.swift:40
+Decided: a send refused because the terminal is gone restarts the chat's agent (same persona, folder, machine), then sends again once.
+Because: "Sending a message in a chat whose agent is gone starts a fresh agent for that chat"
+Decided: the agent's ACP session id is saved on the thread and a restart passes it as --resume; a failed resume starts fresh with one note.
+Because: crates/cooee-server/src/hub/models.rs:58
+Decided: replayed events from a resumed session are skipped, so old turns aren't stored twice.
+Because: crates/cooee-server/src/hub/events.rs:103
+Decided: Restart shows on the gone line only while the chat is ended; the restart does nothing while the agent runs.
+Because: apple/Sources/CooeeUI/Items.swift:36
+Rejected: restarting on every ended chat — an exited agent or a closed chat still refuses a send, as before.
+Check: chat.rs's three gone tests fail at ca3bd3ceb and pass at the head.
+Owner: The branch now includes the latest staging; the restart feature itself is unchanged.
