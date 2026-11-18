@@ -1,0 +1,36 @@
+   Compiling cooee v0.1.0 (/Users/jkmacmini/.local/share/drover/work/cooee/issue-590/crates/cooee)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.94s
+     Running tests/setup.rs (/Users/jkmacmini/.local/share/herdsman/work/.build/cooee-impl-590/debug/deps/setup-519c1cb46d5d025c)
+
+running 15 tests
+test install_sh_downloads_the_latest_release_checks_it_and_runs_setup ... ok
+test a_missing_or_too_old_shed_stops_setup_naming_the_fix_and_changes_nothing ... ok
+test a_head_with_no_release_yet_or_auto_update_off_installs_nothing ... ok
+test dry_run_writes_nothing_and_prints_every_command ... ok
+test update_check_says_what_it_would_install_and_changes_nothing ... ok
+test doctor_warns_when_both_the_cli_and_the_mac_app_are_installed ... ok
+test a_download_that_fails_its_checksum_or_names_another_sha_is_never_swapped_in ... ok
+test an_existing_config_keeps_its_keys ... ok
+test a_doctor_failure_stops_with_its_fix ... ok
+test a_tailnet_url_answering_405_on_get_pair_passes_doctor ... FAILED
+test setup_on_a_mac_whose_app_ran_the_server_reuses_its_config_and_data ... ok
+test a_fresh_machine_runs_every_step_once_in_order_and_a_second_run_skips_them ... ok
+test update_installs_main_heads_release_with_no_build_or_signing_and_doctor_shows_it ... ok
+test setup_installs_the_first_party_themes_chosen_with_no_network ... ok
+test a_new_build_that_does_not_answer_is_rolled_back_and_the_old_one_serves_again ... ok
+
+failures:
+
+---- a_tailnet_url_answering_405_on_get_pair_passes_doctor stdout ----
+
+thread 'a_tailnet_url_answering_405_on_get_pair_passes_doctor' (764793921) panicked at crates/cooee/tests/setup.rs:357:5:
+Output { status: ExitStatus(unix_wait_status(256)), stdout: "shed protocol 1+: done, skipped\nconfig /var/folders/51/tp633f_n3tj561q8rqwrqtxw0000gn/T/cooee-su-405-48974/.config/cooee/cooee/config.toml:\n  wrote /var/folders/51/tp633f_n3tj561q8rqwrqtxw0000gn/T/cooee-su-405-48974/.config/cooee/cooee/config.toml\nthemes:\n  installed theme farm\n  installed theme scene\n  installed theme terminal\n  installed theme garden\n  installed theme kitchen\nagents:\n  $ shed agents add claude-acp\ncooee service dev.cooee.cooee:\n  wrote /var/folders/51/tp633f_n3tj561q8rqwrqtxw0000gn/T/cooee-su-405-48974/Library/LaunchAgents/dev.cooee.cooee.plist\n  $ launchctl bootstrap gui/501 /var/folders/51/tp633f_n3tj561q8rqwrqtxw0000gn/T/cooee-su-405-48974/Library/LaunchAgents/dev.cooee.cooee.plist\ncooee service dev.cooee.cooee.update:\n  wrote /var/folders/51/tp633f_n3tj561q8rqwrqtxw0000gn/T/cooee-su-405-48974/Library/LaunchAgents/dev.cooee.cooee.update.plist\n  $ launchctl bootstrap gui/501 /var/folders/51/tp633f_n3tj561q8rqwrqtxw0000gn/T/cooee-su-405-48974/Library/LaunchAgents/dev.cooee.cooee.update.plist\ntailscale serve 58813:\n  $ tailscale serve --bg --https=58813 http://127.0.0.1:58813\ndoctor:\nok   service dev.cooee.cooee loaded (else: cooee install)\nok   listening on port 58813\nok   shed at /var/folders/51/tp633f_n3tj561q8rqwrqtxw0000gn/T/cooee-su-405-48974/Library/Caches/shed/shed.sock\nwarn apns: no [apns] in config.toml: the native app gets no pushes\nok   push keys: none yet (made when a phone turns on notifications)\ninfo update: installed unknown, main's latest release build-2222222, last check never, auto-update on\nFAIL https://mac.tailnet.example:58813/ (else: tailscale serve --bg --https=58813 http://127.0.0.1:58813)\n", stderr: "cooee: doctor: 1 check(s) failed:\nFAIL https://mac.tailnet.example:58813/ (else: tailscale serve --bg --https=58813 http://127.0.0.1:58813)\nfix it, then run `cooee setup` again\n" }
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    a_tailnet_url_answering_405_on_get_pair_passes_doctor
+
+test result: FAILED. 14 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 11.66s
+
+error: test failed, to rerun pass `-p cooee --test setup`
