@@ -39,7 +39,9 @@ for the owner to run. `cooee doctor` checks the service, port, shed, APNs, push 
 
 `cooee serve` times every request (method, route pattern, status), every shed call (method, socket or CLI) and each
 prompt's first reply chunk (thread, agent) into `<data>/perf.log`, one JSON line each, never a prompt or a token;
-`cooee perf [--minutes 60]` prints p50/p95/max of each as a table.
+the app posts its own `client` timings there too (#606: `tap` to painted, stream `event` to painted, `send` to
+echo). `cooee perf [--minutes 60]` prints p50/p95/max of each as a table; `--budget` fails when a client p95 is over
+its budget (tap 100 ms, event and echo 150 ms).
 
 **Version your config (#361).** The config folder may be kept in git. Cooee writes a `.gitignore` there (secrets,
 keys, tokens, caches and build folders) when it creates the folder, or on `cooee serve` when the folder has none; it

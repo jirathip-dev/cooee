@@ -17,6 +17,7 @@ internal struct MenuHost: View {
                 VStack(spacing: 12) {
                     ForEach(rows.filter { !$0.locked }, id: \.id) { SlotView(store: store, node: $0, compact: compact) }
                     ActionRow(symbol: "arrow.counterclockwise", title: "Reset layout") { store.send(.layout(.reset)) }
+                    if !menu.timings.isEmpty { TimingRows(timings: menu.timings) }
                 }
                 .padding(12)
             }
@@ -168,5 +169,36 @@ internal struct MenuPage: View {
             .padding(.horizontal, 14).frame(height: 48).contentShape(.rect)
         }
         .buttonStyle(.plain).accessibilityAddTraits(selected ? .isSelected : [])
+    }
+}
+
+internal struct TimingRows: View {
+    @Environment(\.look) private var look
+    internal let timings: Timings
+
+    internal var body: some View {
+        Group2(header: "Timings · last \(Timings.window)") {
+            ForEach(Timing.allCases, id: \.self) { timing in
+                HStack {
+                    Text(Self.title(timing)).ui(16, .regular, look)
+                    Spacer()
+                    Text(value(timing)).ui(15, .regular, look).foregroundStyle(look.palette.mute).monospacedDigit()
+                }
+                .padding(.horizontal, 14).frame(height: 48)
+            }
+        }
+    }
+
+    private static func title(_ timing: Timing) -> String {
+        switch timing {
+        case .tap: "Tap to painted"
+        case .event: "Event to painted"
+        case .echo: "Send to echo"
+        }
+    }
+
+    private func value(_ timing: Timing) -> String {
+        guard let p50 = timings.percentile(timing, 50), let p95 = timings.percentile(timing, 95) else { return "–" }
+        return "p50 \(p50) · p95 \(p95) ms"
     }
 }

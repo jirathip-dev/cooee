@@ -71,6 +71,7 @@ public struct ScreenFeature: Sendable {
     @Dependency(\.screenCache) private var cache
     @Dependency(\.continuousClock) private var clock
     @Dependency(\.date.now) private var now
+    @Dependency(\.perf) private var perf
 
     public init() {}
 
@@ -168,10 +169,13 @@ extension ScreenFeature {
     private func act(_ state: inout State, _ action: BlockAction) -> Effect<Action> {
         guard !state.offline, !state.acting else { return .none }
         state.acting = true
-        let (plugins, server, source) = (plugins, state.server, state.source)
+        let (plugins, server, source, clock, perf) = (plugins, state.server, state.source, clock, perf)
         let screen = state.screen?.root.string("id") ?? ""
         return .run { send in
-            await send(.acted(try await plugins.act(server, source, screen, action), nil))
+            let took = try await clock.measure {
+                await send(.acted(try await plugins.act(server, source, screen, action), nil))
+            }
+            perf.record(server, .tap, took)
         } catch: { error, send in
             await send(.acted(nil, error.localizedDescription))
         }
