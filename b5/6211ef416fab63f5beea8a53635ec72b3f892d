@@ -1,0 +1,21 @@
+Decided: this PR carries the Screen sheet, control mode, the screen block and the handoff card; the rest are follow-ups
+Because: q1966
+Decided: a second take-control while holding the lease extends it by 10 minutes instead of restarting it
+Because: "Defaults: take-control lease 10 min"
+Decided: only frames from the agent's own screenshot tool are marked asked and shown as a screen block
+Because: "Never sent to the model as images unless the agent asked for that screenshot"
+Rejected: showing every replay frame as a screen block — the model never saw those, they stay in the filmstrip
+Check: crates/cooee/tests/mcp.rs asserts a second take adds 600000 ms and keeps the lease's steps
+Owner: the live phone check (watch, take control to log in, hand back) still needs a real phone and the Mini
+
+Decided: this PR carries the Screen sheet, control mode, the screen block and the handoff card; the rest are follow-ups
+Because: q1966
+Decided: a second take-control while holding the lease extends it by 10 minutes instead of restarting it
+Because: "Defaults: take-control lease 10 min"
+Decided: only frames from the agent's own screenshot tool are marked asked and shown as a screen block
+Because: "Never sent to the model as images unless the agent asked for that screenshot"
+Decided: a tap maps to the page's click as BrowserInput.tap in Doubles, not a CGPoint helper in CooeeCore
+Because: apple/Sources/CooeeCore/Browser.swift:64
+Rejected: import CoreGraphics in CooeeCore — it fixed the Release optimizer crash but anti-slop layer-imports allows Foundation only there
+Check: scripts/mac-app.sh (the dmg job's Release build) builds; it crashed deserializing LiveFrame.page before
+Owner: the live phone check (watch, take control to log in, hand back) still needs a real phone and the Mini
