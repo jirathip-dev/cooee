@@ -17,6 +17,7 @@ internal struct ChatAgentTests {
             $0.personas.agents = { _ in agents }
             $0.personas.models = { _ in lists }
             $0.threads.model = { _, thread, model, effort in calls.record("model \(thread) \(model) \(effort)") }
+            $0.threads.switchAgent = { _, thread, agent in calls.record("switch \(thread) \(agent)") }
             $0.threads.start = { _, persona, _, text, _ in
                 calls.record("start \(persona.agent) \(persona.model) \(persona.effort) \(text)")
                 return "n1"
@@ -39,10 +40,12 @@ internal struct ChatAgentTests {
         #expect(calls.all == ["model a1 gpt high"])
     }
 
-    @Test internal func anotherAgentInAThreadStartsANewChatOnIt() async {
-        let store = store(.thread("a1"))
-        await store.send(.pick(.agent("fake-acp")))
-        await store.receive(\.delegate.restart, APIPersona(id: "coder", name: "Coder", agent: "fake-acp"))
+    @Test internal func anotherAgentInAThreadSwitchesThatThreadToIt() async {
+        let store = store(.thread("a1"), persona: APIPersona(id: "coder", name: "Coder", agent: "codex", model: "gpt"))
+        await store.send(.pick(.agent("fake-acp"))) {
+            $0.persona = Persona(APIPersona(id: "coder", name: "Coder", agent: "fake-acp"))
+        }
+        #expect(calls.all == ["switch a1 fake-acp"])
     }
 
     @Test internal func aNewChatsFirstMessageRunsOnThePickedAgentModelAndEffort() async {

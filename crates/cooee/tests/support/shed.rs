@@ -66,7 +66,7 @@ pub struct FakeShed {
 }
 
 const CLI: &str = r#"#!/bin/sh
-# The fake `shed` CLI: `agents` lists one agent (it fails while the gate `agents-fails` is shut); `run` records its
+# The fake `shed` CLI: `agents` lists one agent, or agents.json's (it fails while the gate `agents-fails` is shut); `run` records its
 # arguments and prints the terminal (it waits while the gate `hold-run` is shut, and fails, as a slow start's CLI
 # would, while `run-fails` is; in a folder named <f>, it waits while `hold-in-<f>` is shut, and its session never
 # comes up while `fails-in-<f>` is); `machine ls` prints
@@ -85,7 +85,7 @@ case "$*" in
   if [ -e "$f.sent" ]; then sed 's/,"history":\[[^]]*\]//' "$f"; else cat "$f"; : >"$f.sent"; fi
   if grep -q '"online":false' "$f"; then exit 1; fi ;;
 *" agents") [ -e "$gates/agents-fails" ] && { echo 'fake shed: agents down' >&2; exit 1; }
-  echo '[{"id":"fake-acp","version":"1.0.0","distribution":"npx","cmd":["fake-acp"]}]' ;;
+  cat "$gates/agents.json" 2>/dev/null || echo '[{"id":"fake-acp","version":"1.0.0","distribution":"npx","cmd":["fake-acp"]}]' ;;
 *" run "*)
   while [ $# -gt 0 ]; do
     [ "$1" = --on ] && on=$2/
