@@ -1,0 +1,9 @@
+Decided: the doc line and Apns::env's doc comment say production for TestFlight and App Store, sandbox for Xcode debug
+Because: "TestFlight and App Store builds get Apple's production push environment"
+Decided: no code change; [apns] env is a required field with no default and setup never writes [apns]
+Because: crates/cooee-core/src/config.rs:90
+Decided: the Rust doc line writes test-flight, since clippy doc_markdown rejects the bare TestFlight
+Because: crates/cooee-core/src/config.rs:89
+Rejected: changing the entitlements' aps-environment to production — Xcode rewrites development to production on distribution export
+Check: docs/configuration.md:34 reads production for TestFlight and App Store, sandbox for Xcode debug builds
+Owner: Set [apns] env = "production" on hosts whose phones run the TestFlight build.
