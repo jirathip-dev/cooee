@@ -1,0 +1,4 @@
+Decided: merge origin/staging 23ad59e; shed.rs takes staging's folder split and this branch's Launch.meta doc line moves to shed/launch.rs
+Because: crates/cooee-core/src/shed/launch.rs:36
+Rejected: none
+Owner: Brings the branch up to date with staging's file reorganisation; no behaviour change.
