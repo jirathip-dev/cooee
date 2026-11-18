@@ -33,7 +33,7 @@ internal struct HeaderRenderTests {
         let persona = Persona(
             APIPersona(id: "cond", name: "Conductor", agent: "fake-acp-agent", model: "frontier-large-2026-11-05"))
         var actions = ChatActions()
-        actions.machine = MachineRow(name: "studio-mac-mini.tailnet", host: "10.0.0.7")
+        actions.machine = MachineRow(name: "studio-mac-mini.tailnet", host: "203.0.113.7")
         actions.screen = {}
         let row = ThreadRow(
             id: "t1", title: "release notes for the November build", agent: "fake-acp-agent", persona: "cond",
