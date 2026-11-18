@@ -131,7 +131,7 @@
     "list": {
       "required": ["rows"],
       "properties": {
-        "rows": { "$ref": "#/$defs/blocks" },
+        "rows": { "type": "array", "items": { "required": ["id"], "allOf": [{ "$ref": "#/$defs/block" }] } },
         "reorder": {
           "type": "object",
           "required": ["action", "name"],
@@ -243,7 +243,7 @@
       }
     },
     "form": {
-      "required": ["fields"],
+      "required": ["id", "fields"],
       "properties": {
         "submit": { "$ref": "#/$defs/submit" }, "action": { "type": "string" },
         "fields": { "type": "array", "items": { "$ref": "#/$defs/field" } }
@@ -325,7 +325,7 @@
       }
     },
     "editor": {
-      "required": ["name", "text", "action"],
+      "required": ["id", "name", "text", "action"],
       "properties": {
         "name": { "type": "string" }, "text": { "type": "string" }, "action": { "type": "string" },
         "first": { "type": "integer", "minimum": 1 },
