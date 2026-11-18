@@ -1,0 +1,13 @@
+Decided: a tap on a persona row or pinned avatar opens the newest unread topic, else the last-open one, else the newest
+Because: "the topic with the newest unread message; with nothing unread, the topic last open"
+Decided: the row's count and unread come from the server's personas fields, decoded beside APIPersona, not into it
+Because: crates/cooee-core/src/agents.rs:91
+Rejected: adding topics and unread to APIPersona — it is saved back to the server, whose Agent denies unknown fields
+Decided: a push tap opens the thread in aps.thread-id through PushClient.opened and AppFeature.taps
+Because: crates/cooee-server/src/push.rs:61
+Decided: the last-open topic is recorded per persona by a trailing reducer, in memory only
+Rejected: persisting it across launches — not asked for; after a relaunch the newest topic is the fallback
+Decided: the home-persona frames draw the rows like the design's scratch package, without Home's Chats heading and dividers
+Rejected: the mac-* frames — the sidebar matches, but #515's wide chat column (second Workflow chip row) does not
+Check: PinnedTests' three new tests and HomeFeatureTests' counts test fail on staging's newest-thread rule and missing counts
+Owner: Home shows one row per persona with its topic count and unread total; taps and notifications open the right topic
