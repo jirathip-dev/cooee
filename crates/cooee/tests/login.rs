@@ -86,7 +86,7 @@ fn setup_from(name: &str, check: Option<&str>, rows: bool) -> Setup {
         extra
     } else {
         fs::write(shed.dir.join("agents.json"), records.to_string()).unwrap();
-        String::new()
+        "# providers: shed's records\n".to_owned()
     };
     let cooee = Cooee::start_with(&dir, &shed.dir, &extra);
     Setup {

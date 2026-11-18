@@ -30,7 +30,7 @@ impl Ctx {
         let data = config.data_dir().unwrap_or_default();
         let shed = Shed::new(config.shed.clone(), config.shed_dir.clone());
         Self {
-            providers: Providers::load(&config.providers, &shed),
+            providers: Providers::load(config.providers.as_deref(), &shed),
             shed,
             accounts: config.data_dir().map(|d| Accounts::new(&d)),
             personas: agents::list(config.dir.as_deref(), &data),

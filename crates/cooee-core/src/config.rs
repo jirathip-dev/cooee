@@ -37,7 +37,7 @@ pub struct Config {
     pub data: Option<PathBuf>,
     /// The sign-ins sheet's providers (`[[providers]]`), each row over the provider of its name field by field;
     /// default every registered provider with shed's record of its agent (see [`provider::specs`]).
-    pub providers: Vec<toml::Table>,
+    pub providers: Option<Vec<toml::Table>>,
     /// The theme a device shows until it picks its own (default farm).
     pub theme: Option<String>,
     /// The config file's folder, where the owner's own `themes/` and `schemes/` live (set by [`Config::load`]).
@@ -167,7 +167,7 @@ impl Default for Config {
             shed: PathBuf::from("shed"),
             shed_dir: None,
             data: None,
-            providers: Vec::new(),
+            providers: None,
             plugins: Vec::new(),
             plugin_index: None,
             skill_index: None,
@@ -275,7 +275,7 @@ impl Config {
             path: path.to_owned(),
             why,
         })?;
-        provider::specs(&config.providers, &[]).map_err(|why| ConfigError::Invalid {
+        provider::specs(config.providers.as_deref(), &[]).map_err(|why| ConfigError::Invalid {
             path: path.to_owned(),
             why,
         })?;

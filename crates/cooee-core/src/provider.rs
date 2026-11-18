@@ -214,7 +214,7 @@ impl Providers {
 
     /// Every provider: the registered defaults under shed's records, under `rows` by name (see [`specs`]).
     #[must_use]
-    pub fn load(rows: &[Table], shed: &Shed) -> Self {
+    pub fn load(rows: Option<&[Table]>, shed: &Shed) -> Self {
         let records = shed.records().unwrap_or_default();
         Self::new(&specs(rows, &records).unwrap_or_default())
     }
@@ -238,7 +238,7 @@ impl Providers {
 ///
 /// # Errors
 /// A row that names no registered `base`, or that leaves a spec incomplete or with a field it doesn't know.
-pub fn specs(rows: &[Table], records: &[Record]) -> Result<Vec<Spec>, String> {
+pub fn specs(rows: Option<&[Table]>, records: &[Record]) -> Result<Vec<Spec>, String> {
     let mut known: Vec<(&[&str], Table)> = REGISTRY
         .iter()
         .filter_map(|e| Some((e.keep, Table::try_from((e.defaults)()).ok()?)))
@@ -263,22 +263,23 @@ pub fn specs(rows: &[Table], records: &[Record]) -> Result<Vec<Spec>, String> {
             None => {}
         }
     }
-    let known = known.into_iter().map(|(_, t)| t);
-    let picked: Vec<Table> = if rows.is_empty() {
-        known.collect()
-    } else {
-        let known: Vec<Table> = known.collect();
-        let over = |row: &Table| {
-            let name = field(row, "name");
-            let base = known
-                .iter()
-                .find(|t| name.is_some() && field(t, "name") == name);
-            let mut t = base.cloned().unwrap_or_default();
-            t.extend(row.clone());
-            t
-        };
-        rows.iter().map(over).collect()
+    let known: Vec<Table> = known.into_iter().map(|(_, t)| t).collect();
+    let Some(rows) = rows else {
+        return finish(known);
     };
+    let over = |row: &Table| {
+        let name = field(row, "name");
+        let base = known
+            .iter()
+            .find(|t| name.is_some() && field(t, "name") == name);
+        let mut t = base.cloned().unwrap_or_default();
+        t.extend(row.clone());
+        t
+    };
+    finish(rows.iter().map(over).collect())
+}
+
+fn finish(picked: Vec<Table>) -> Result<Vec<Spec>, String> {
     let specs = picked
         .into_iter()
         .map(|t| Spec::deserialize(t).map_err(|e| format!("providers: {}", e.message())))

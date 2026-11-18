@@ -84,9 +84,9 @@ mod tests {
         let row = |base: &str| -> toml::Table {
             toml::from_str(&format!("name = \"fake\"\nbase = \"{base}\"")).unwrap()
         };
-        assert!(provider::specs(&[row("fake")], &[]).is_ok());
+        assert!(provider::specs(Some(&[row("fake")]), &[]).is_ok());
         assert_eq!(
-            provider::specs(&[row("nope")], &[]),
+            provider::specs(Some(&[row("nope")]), &[]),
             Err("providers: no provider nope to base fake on".to_owned())
         );
     }
@@ -115,7 +115,7 @@ mod tests {
             r#"[{"id":"claude-acp","version":"1.0.0","distribution":"npx","cmd":["claude-acp"]}]"#,
         );
         assert_eq!(shed.agents().unwrap()[0].cmd, ["claude-acp"]);
-        assert_eq!(specs(&Providers::load(&[], &shed)), provider::defaults());
+        assert_eq!(specs(&Providers::load(None, &shed)), provider::defaults());
     }
 
     #[test]
@@ -133,7 +133,7 @@ mod tests {
         let agents = shed.agents().unwrap();
         assert_eq!(agents.len(), 1, "{agents:?}");
         assert_eq!((agents[0].id.as_str(), agents[0].version.as_str()), ("fake-acp", "2.0.0"));
-        let all = Providers::load(&[], &shed);
+        let all = Providers::load(None, &shed);
         let words = |s: &str| s.split(' ').map(str::to_owned).collect::<Vec<_>>();
         let fake = all.for_agent("fake-acp").unwrap();
         let read = Spec {
@@ -154,7 +154,7 @@ mod tests {
 
         let row: toml::Table = toml::from_str("name = \"fake\"\nefforts = [\"max\"]").unwrap();
         let records = shed.records().unwrap();
-        let only = provider::specs(std::slice::from_ref(&row), &records).unwrap();
+        let only = provider::specs(Some(std::slice::from_ref(&row)), &records).unwrap();
         assert_eq!(only, [Spec { efforts: words("max"), ..read }]);
     }
 }
