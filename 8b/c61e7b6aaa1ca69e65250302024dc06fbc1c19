@@ -1,0 +1,11 @@
+Decided: the lease's steps and the save-as-skill ask ride the existing hand-back note to the persona's next browser call
+Because: "the persona gets the lease's action log (the proxied browser calls and page titles, W1), not the frames, and proposes a skill through `skill` `propose`"
+Because: crates/cooee-server/src/hub/screen.rs:102
+Rejected: a new queued thread message — needs picking a thread; the waiting browser call already belongs to it
+Decided: a step names the field or button by its label, aria-label, placeholder, name or id; never reads .value, nor innerText of an editable element
+Because: "Nothing typed into a field during the lease reaches the model (W5's rule); the skill names the field, never its value."
+Decided: a no_frames or account site's step is its origin only, no title or label
+Because: "Sites marked 'no frames' or real-account stay out of the log's page content."
+Rejected: an end-to-end no-frames test — the fake CDP serves one fixed tab; step() is the function input() calls, unit-tested
+Check: the new mcp.rs test asserts the exact note (steps, no "hunter2") and that a declined skill card leaves no skill file
+Owner: Handing your browser back with "save as skill" now gives the persona your steps, never what you typed.
