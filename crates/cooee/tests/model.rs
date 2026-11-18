@@ -130,7 +130,8 @@ fn a_gone_pin_falls_back_with_one_line_and_a_short_name_moves_on() {
         .to_owned();
     assert_eq!(set_on(&shed, &id).as_deref(), Some("fake-opus-2"));
     let gone = "model fake-opus-3 is gone: now fake-opus (fake-opus-2)";
-    assert_eq!(notes(&cooee, &id), [gone]);
+    let personal = cooee_core::provider::Gap::PersonalFiles.words();
+    assert_eq!(notes(&cooee, &id), [personal.as_str(), gone]);
     assert_eq!(stored(&dir, &id).0, "fake-opus");
     let memory = cooee.json("/personas/pin/memory");
     let said = memory

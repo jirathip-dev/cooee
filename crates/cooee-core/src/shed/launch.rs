@@ -33,7 +33,7 @@ pub struct Launch {
     /// `--mcp`: the file the session's MCP servers pass through (written here, removed once shed has read it), and
     /// the servers, in ACP's shape (#56).
     pub mcp: Option<(PathBuf, Vec<Value>)>,
-    /// `--meta`: the session's options, sent as ACP `_meta` (a profile's provider's "no personal setup", #320).
+    /// `--meta`: the session's options, sent as ACP `_meta` (a persona's provider's session setup, #503).
     pub meta: Option<Value>,
 }
 
