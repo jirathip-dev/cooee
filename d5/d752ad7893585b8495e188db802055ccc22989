@@ -1,0 +1,27 @@
+Decided: retention lives in store/archive.rs as Store::retain, run hourly by cooee serve on its own thread with its own Store
+Because: "The step runs off the request path."
+Decided: the trim applies to a tool item's title, the only text a tool item stores
+Because: crates/cooee-core/src/chat.rs:51
+Decided: ended means closed, or the thread's newest item is the session's Ended line
+Because: q1612
+Decided: the archive is ruzstd's fastest level, each month file rewritten whole (temp, fsync, rename)
+Because: q1921
+Rejected: appending zstd frames to the month file — a torn append would corrupt the month; a rewrite is atomic
+Decided: VACUUM after a pass that moved or trimmed, so the freed rows shrink cooee.db
+Rejected: keeping archived rows in the said index — the rows they join to are gone; search scans the archive instead
+Check: page/items/said/whole merge the archive; a second retain at the same now returns 0
+Owner: Finished chats quiet for a month move to a compressed monthly archive and still open, search and export in full.
+
+Decided: staging build fix: create_routine's schema moved to routine_tool(), like secret_tool(), so own_tools is under clippy's 100 lines
+Because: crates/cooee-server/src/mcp.rs:387
+Decided: the chat.rs note-count failure is a flake outside this diff; merged staging for a fresh CI run
+Because: crates/cooee-server/src/hub/send.rs:146
+Rejected: changing the shed-version test or the send path — this issue doesn't touch either
+Check: CI at the head is green, including stable (macos-latest)
+Owner: No behaviour change this round: a fix to keep the shared build passing, and a fresh test run.
+
+Decided: took staging's split store.rs plus mod archive; the archive field and table moved into store/files.rs, the archive-aware page, bodies and said into store/items.rs
+Because: crates/cooee-core/src/store/items.rs:74
+Rejected: none
+Check: store:: tests pass at the head; no behaviour change beyond the merge
+Owner: No behaviour change this round: the retention work now sits on the store's new file layout.
