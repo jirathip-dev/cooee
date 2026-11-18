@@ -1,6 +1,7 @@
 public struct APIItem: Codable, Sendable, Equatable, Identifiable {
     private enum CodingKeys: String, CodingKey {
-        case id, kind, text, files, title, action, status, tool, plugin, block, speaker, persona, name, thread, outcome, secs,
+        case id, kind, text, files, title, action, status, tool, plugin, block, speaker, persona, name, thread, outcome,
+            secs,
             note
         case time = "at"
     }

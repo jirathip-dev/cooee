@@ -24,7 +24,7 @@ sha2 = "=0.11.1"
 # `cooee pair`'s QR code in the terminal.
 qrcode = { version = "=0.14.1", default-features = false }
 serde = { version = "=1.0.229", features = ["derive"] }
-serde_json = "=1.0.154"
+serde_json = { version = "=1.0.154", features = ["preserve_order"] }
 # shed's API types, pinned to a shed merge commit; the hello needs the same shed protocol.
 shed-proto = { git = "https://github.com/jirathip-dev/shed", rev = "3672ee2fa3f77f71798d56446f7f90403b068dd1" }
 futures-util = { version = "=0.3.34", default-features = false }

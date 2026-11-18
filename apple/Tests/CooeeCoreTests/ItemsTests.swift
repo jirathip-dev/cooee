@@ -25,7 +25,10 @@ internal struct ItemsTests {
                 .you(id: 1, text: "Fix it", files: ["1-0-log.txt"]),
                 .tools(
                     id: 2,
-                    rows: [ToolRow(.other, "Read a", "done"), ToolRow(.other, "Run b", "running"), ToolRow(.other, "Run c", "failed")]),
+                    rows: [
+                        ToolRow(.other, "Read a", "done"), ToolRow(.other, "Run b", "running"),
+                        ToolRow(.other, "Run c", "failed"),
+                    ]),
                 .card(id: 5, poster: "edgar", block: .object(["type": .string("card")])),
                 .note(id: 7, text: "Model set"),
                 .agent(id: 10, markdown: [.text("Done.")]),
@@ -44,7 +47,10 @@ internal struct ItemsTests {
              {"id": 4, "at": 4, "kind": "tool", "call": "c3", "title": "Look", "action": "browse", "status": "pending"}]
             """#
         let items = try JSONDecoder().decode([APIItem].self, from: Data(wire.utf8))
-        let rows = [ToolRow(.read, "src/lib.rs", "done"), ToolRow(.tool, "cooee/remember", "failed"), ToolRow(.other, "Look", "running")]
+        let rows = [
+            ToolRow(.read, "src/lib.rs", "done"), ToolRow(.tool, "cooee/remember", "failed"),
+            ToolRow(.other, "Look", "running"),
+        ]
         #expect(ChatItems.build(items, live: "") == [.tools(id: 2, rows: rows)])
     }
 

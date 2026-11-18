@@ -145,16 +145,24 @@ mod tests {
         }
     }
 
-    fn row(agent: &str, updates: &[(&str, Option<&str>, &[&str], Value)]) -> crate::Body {
+    type Update = (
+        &'static str,
+        Option<&'static str>,
+        &'static [&'static str],
+        Value,
+    );
+
+    const CSV: &[&str] = &["/w/crates/export/src/csv.rs"];
+
+    fn row(agent: &str, updates: &[Update]) -> crate::Body {
         let providers = crate::Providers::new(&crate::provider::defaults());
         let read = |c: &Call| providers.action(agent, c);
         let mut chat = crate::Chat::default();
-        let last = updates.len();
         for (seq, (title, kind, at, raw)) in (1..).zip(updates) {
             let event = shed_proto::EventKind::ToolCall {
                 id: "t1".into(),
                 title: (*title).into(),
-                status: if seq == last {
+                status: if seq == updates.len() {
                     "completed"
                 } else {
                     "in_progress"
@@ -169,133 +177,117 @@ mod tests {
         chat.items.pop().unwrap().body
     }
 
+    fn same(action: &str, providers: &[(&str, Vec<Update>)]) {
+        let rows: Vec<(&str, crate::Body)> =
+            providers.iter().map(|(a, u)| (*a, row(a, u))).collect();
+        let crate::Body::Tool { action: kind, .. } = &rows[0].1 else {
+            panic!("{action}: no tool row")
+        };
+        assert_eq!(serde_json::to_value(kind).unwrap(), json!(action));
+        for (agent, got) in &rows {
+            assert_eq!(got, &rows[0].1, "{action} from {agent}");
+        }
+    }
+
     #[test]
     fn the_same_action_from_each_providers_tool_name_gives_the_same_row() {
-        const CSV: &[&str] = &["/w/crates/export/src/csv.rs"];
-        let none = Value::Null;
-        let cases: [(&str, Vec<(&str, Vec<(&str, Option<&str>, &[&str], Value)>)>); 4] = [
-            (
-                "read",
-                vec![
-                    (
-                        "claude-acp",
-                        vec![
-                            (
-                                "Read crates/export/src/csv.rs",
-                                Some("read"),
-                                CSV,
-                                json!({ "file_path": CSV[0] }),
-                            ),
-                            (
-                                "Read crates/export/src/csv.rs",
-                                Some("read"),
-                                &[],
-                                none.clone(),
-                            ),
-                        ],
-                    ),
-                    (
-                        "codex-acp",
-                        vec![(
-                            "Read file '/w/crates/export/src/csv.rs'",
+        let file = json!({ "file_path": CSV[0] });
+        same(
+            "read",
+            &[
+                (
+                    "claude-acp",
+                    vec![
+                        (
+                            "Read crates/export/src/csv.rs",
                             Some("read"),
                             CSV,
-                            none.clone(),
-                        )],
-                    ),
-                    (
-                        "gemini",
-                        vec![("crates/export/src/csv.rs", Some("read"), CSV, none.clone())],
-                    ),
-                ],
-            ),
-            (
-                "edit",
-                vec![
-                    (
-                        "claude-acp",
-                        vec![(
-                            "Edit `crates/export/src/csv.rs`",
-                            Some("edit"),
-                            CSV,
-                            json!({ "file_path": CSV[0] }),
-                        )],
-                    ),
-                    (
-                        "codex-acp",
-                        vec![(
-                            "Edit crates/export/src/csv.rs",
-                            Some("edit"),
-                            CSV,
-                            none.clone(),
-                        )],
-                    ),
-                    (
-                        "gemini",
-                        vec![("csv.rs: let a => let b", Some("edit"), CSV, none.clone())],
-                    ),
-                ],
-            ),
-            (
-                "run",
-                vec![
-                    (
-                        "claude-acp",
-                        vec![
-                            (
-                                "cargo test -p export",
-                                Some("execute"),
-                                &[],
-                                json!({ "command": "cargo test -p export", "description": "Test" }),
-                            ),
-                            ("cargo test -p export", Some("execute"), &[], none.clone()),
-                        ],
-                    ),
-                    (
-                        "codex-acp",
-                        vec![(
+                            file.clone(),
+                        ),
+                        (
+                            "Read crates/export/src/csv.rs",
+                            Some("read"),
+                            &[],
+                            Value::Null,
+                        ),
+                    ],
+                ),
+                (
+                    "codex-acp",
+                    vec![(
+                        "Read file '/w/crates/export/src/csv.rs'",
+                        Some("read"),
+                        CSV,
+                        Value::Null,
+                    )],
+                ),
+                (
+                    "gemini",
+                    vec![("crates/export/src/csv.rs", Some("read"), CSV, Value::Null)],
+                ),
+            ],
+        );
+        same(
+            "edit",
+            &[
+                (
+                    "claude-acp",
+                    vec![("Edit `crates/export/src/csv.rs`", Some("edit"), CSV, file)],
+                ),
+                (
+                    "codex-acp",
+                    vec![(
+                        "Edit crates/export/src/csv.rs",
+                        Some("edit"),
+                        CSV,
+                        Value::Null,
+                    )],
+                ),
+                (
+                    "gemini",
+                    vec![("csv.rs: let a => let b", Some("edit"), CSV, Value::Null)],
+                ),
+            ],
+        );
+        let shell = json!({ "command": "/bin/zsh -lc 'cargo test -p export'", "cwd": "/w" });
+        same(
+            "run",
+            &[
+                (
+                    "claude-acp",
+                    vec![
+                        (
                             "cargo test -p export",
                             Some("execute"),
                             &[],
-                            json!({ "command": "/bin/zsh -lc 'cargo test -p export'", "cwd": "/w" }),
-                        )],
-                    ),
-                ],
-            ),
-            (
-                "tool",
-                vec![
-                    (
-                        "claude-acp",
-                        vec![("mcp__cooee__remember", None, &[], json!({ "text": "q3" }))],
-                    ),
-                    (
-                        "codex-acp",
-                        vec![
-                            (
-                                "mcp.cooee.remember",
-                                Some("execute"),
-                                &[],
-                                json!({ "server": "cooee", "tool": "remember", "arguments": {} }),
-                            ),
-                            ("mcp.cooee.remember", Some("execute"), &[], none.clone()),
-                        ],
-                    ),
-                ],
-            ),
-        ];
-        for (action, providers) in cases {
-            let rows: Vec<(&str, crate::Body)> =
-                providers.iter().map(|(a, u)| (*a, row(a, u))).collect();
-            let want = &rows[0].1;
-            let crate::Body::Tool { action: kind, .. } = want else {
-                panic!("{action}: no tool row")
-            };
-            assert_eq!(serde_json::to_value(kind).unwrap(), json!(action));
-            for (agent, got) in &rows {
-                assert_eq!(got, want, "{action} from {agent}");
-            }
-        }
+                            json!({ "command": "cargo test -p export" }),
+                        ),
+                        ("cargo test -p export", Some("execute"), &[], Value::Null),
+                    ],
+                ),
+                (
+                    "codex-acp",
+                    vec![("cargo test -p export", Some("execute"), &[], shell)],
+                ),
+            ],
+        );
+        let input = json!({ "server": "cooee", "tool": "remember", "arguments": {} });
+        same(
+            "tool",
+            &[
+                (
+                    "claude-acp",
+                    vec![("mcp__cooee__remember", None, &[], json!({ "text": "q3" }))],
+                ),
+                (
+                    "codex-acp",
+                    vec![
+                        ("mcp.cooee.remember", Some("execute"), &[], input),
+                        ("mcp.cooee.remember", Some("execute"), &[], Value::Null),
+                    ],
+                ),
+            ],
+        );
     }
 
     #[test]

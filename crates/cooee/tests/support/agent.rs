@@ -82,7 +82,6 @@ impl FakeShed {
         let prompt = topic
             .and_then(|t| t.split_once(").\n\n"))
             .map_or(prompt, |t| t.1);
-        let read = "Read src/lib.rs";
         if let Some(turn) = self.conformance(name, prompt, rx) {
             return Some(turn);
         }
@@ -109,18 +108,10 @@ impl FakeShed {
             events.push(reply("Ran 3 commands.", "end_turn"));
             (events, "end_turn")
         } else if prompt.contains("tool") {
-            let read = |status: &str, at: Vec<std::path::PathBuf>| EventKind::ToolCall {
-                id: "c1".to_owned(),
-                title: read.to_owned(),
-                status: status.to_owned(),
-                kind: Some("read".to_owned()),
-                locations: at,
-                raw_input: None,
-            };
             let events = [
-                read("pending", vec!["src/lib.rs".into()]),
-                read("in_progress", Vec::new()),
-                read("completed", Vec::new()),
+                read_file("pending", &["src/lib.rs"]),
+                read_file("in_progress", &[]),
+                read_file("completed", &[]),
                 text("Read "),
                 text("it."),
                 reply("Read it.", "end_turn"),
@@ -334,6 +325,17 @@ fn tool(id: &str, title: &str, status: &str) -> EventKind {
         status: status.to_owned(),
         kind: None,
         locations: Vec::new(),
+        raw_input: None,
+    }
+}
+
+fn read_file(status: &str, at: &[&str]) -> EventKind {
+    EventKind::ToolCall {
+        id: "c1".to_owned(),
+        title: "Read src/lib.rs".to_owned(),
+        status: status.to_owned(),
+        kind: Some("read".to_owned()),
+        locations: at.iter().map(Into::into).collect(),
         raw_input: None,
     }
 }

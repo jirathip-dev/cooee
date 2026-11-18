@@ -9,8 +9,10 @@ Open questions: none.
 ## How it was made
 
 SwiftUI, a standalone preview package like `apple/design/chat-format` (no `@State`, no dependency; `Look.swift` mirrors
-`CooeeUI/Theme.swift`'s farm palettes). `swift run shots` here rewrites all 9 PNGs with `ImageRenderer` at 2×: iPhone
-402 pt wide (804 px), Mac window 1100 pt (2200 px). The issue's frames replace the default 1440/390 HTML widths.
+`CooeeUI/Theme.swift`'s farm palettes); `swift run shots` here drew the approved frames. The build issue moved the rows
+into the app (`CooeeUI/ToolRows.swift`), and the 9 PNGs are now the app's own render of `ToolRowsPage` (the app's chat
+header and bubbles around the same rows), checked by `CooeeUITests` SnapshotTests and rewritten with `COOEE_RECORD=1`:
+iPhone 402 × 1513 pt, Mac window 1100 × 1400 pt, at 2×.
 
 ## The PNGs
 

@@ -80,7 +80,8 @@ extension Fixtures {
 
     public static let conductor: [Item] = [
         .you(id: 1, text: "How's cooee's queue?"),
-        .tools(id: 2, rows: [ToolRow(.run, "herdsman board cooee", "done"), ToolRow(.run, "herdsman asks cooee", "done")]),
+        .tools(
+            id: 2, rows: [ToolRow(.run, "herdsman board cooee", "done"), ToolRow(.run, "herdsman asks cooee", "done")]),
         .agent(
             id: 3,
             markdown: [

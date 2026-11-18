@@ -32,7 +32,9 @@ extension Fixtures {
             markdown: [.text("Q3 revenue was **$4.1M**, up 12% on Q2 (10-Q filed 6 Nov).")]),
         .tools(
             id: 4,
-            rows: [ToolRow(.search, "sec.gov", "done"), ToolRow(.read, "10-Q", "done"), ToolRow(.fetch, "sec.gov", "done")]
+            rows: [
+                ToolRow(.search, "sec.gov", "done"), ToolRow(.read, "10-Q", "done"), ToolRow(.fetch, "sec.gov", "done"),
+            ]
         ),
         .said(
             id: 5, speaker: "am", time: "now",
