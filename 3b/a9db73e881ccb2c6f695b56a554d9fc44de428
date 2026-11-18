@@ -1,0 +1,9 @@
+Decided: a checked browser call answers one Called value with both the owner's hand-back note (#162) and the frame caption, so the proxy keeps both after the merge
+Because: crates/cooee-server/src/hub/mcp.rs:82
+Rejected: two calls to the hub per action — a second round trip for every browser step
+Decided: this branch's frame route calls Hub::keep_frame, since staging's live screen took the name Hub::frame
+Because: crates/cooee-server/src/hub/screen.rs:144
+Decided: staging build fix: the handoff tool moves into handoff_tool() so own_tools stays under clippy's 100 lines, and TopicList's Avatar call becomes FigureView after the style tokens rename
+Because: apple/Sources/CooeeUI/TopicList.swift:41
+Check: crates/cooee/tests/mcp.rs runs staging's take-control test through the frame step too: the hand-back note still reaches the agent
+Owner: Merged the latest staging; browser steps keep their pictures and still carry your hand-back note.
