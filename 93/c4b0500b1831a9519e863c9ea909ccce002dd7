@@ -1,0 +1,13 @@
+Decided: cooee update downloads main head's build-<sha7> asset, checks SHA256SUMS and --version, swaps ~/.local/bin/cooee and restarts serve; a missing release just waits
+Because: crates/cooee/src/update.rs:145
+Because: "downloads main's release for the head, checks `SHA256SUMS` and that `--version` names the sha"
+Decided: setup's shed step only says hello: below SHED_MIN_PROTOCOL or no shed, it stops first with the fix; any newer protocol is accepted
+Because: crates/cooee-core/src/shed/client.rs:188
+Because: "only check that the running shed's protocol is at or above the oldest protocol cooee accepts (one constant)"
+Decided: release.yml and release-sign.sh copy drover's (#1275) with identifier cooee; main releases are marked latest so install.sh takes releases/latest
+Because: "cooee ships the way drover does (drover docs/releases.md, #1275 there)"
+Rejected: swapping current_exe in update — the tests would overwrite the test binary; one fixed path that install.sh and the plists share is simpler
+Rejected: changing conformance.yml's shed build — it builds a throwaway shed in the runner's temp folder for the suite, never a host's, and shed has no releases yet
+Check: setup.rs a_missing_or_too_old_shed_stops_setup_naming_the_fix_and_changes_nothing; shed_pool a_shed_on_a_newer_protocol_than_the_minimum_is_accepted
+Check: the staging release run after merge: codesign -dv on the prerelease shows Identifier=cooee and the Developer ID authority (needs the release environment's secrets)
+Owner: Hosts now download cooee's CI-signed build instead of compiling it, and cooee no longer installs or restarts shed; set the release secrets before the first staging release.
