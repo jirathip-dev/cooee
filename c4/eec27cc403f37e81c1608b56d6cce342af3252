@@ -1,0 +1,5 @@
+Decided: merge origin/staging into the branch; no change to the fix or its test
+Because: ci/denylist.txt:3
+Check: scripts/hygiene.sh exits 0 and HeaderRenderTests passes at 390 and 1440 on the merged head
+Rejected: leaving the branch behind staging — the PR would be reviewed against an old base
+Owner: brought the branch up to date with staging; the screen fix itself is unchanged
