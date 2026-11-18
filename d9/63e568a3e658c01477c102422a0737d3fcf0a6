@@ -1,0 +1,11 @@
+Decided: block lists key by a block's id (a form field by its name) through [JSONValue].keyed; a block with none, or a repeated id, falls back to its position
+Because: "Key blocks by their `id`, offset only when a block has none"
+Decided: the screens schema behind cooee plugin check requires id on form, editor and each list row; fields already require name and toggles are fields
+Because: q2033
+Decided: display-only lists (diff and editor lines, chips, markdown parts) keep position keys
+Because: "only display blocks may fall back to position"
+Rejected: changing cooee layout check — it validates nav layouts, which hold no blocks, and already requires unique node ids
+Rejected: keying Items.swift and RoomParts.swift — they iterate chat markdown [Block], not screen blocks
+Check: the AC test types into a choice block's inline text box, because form fields edit through an alert; it fails with BlockStack back on id: \.offset
+Because: apple/Tests/CooeeUITests/BlockIdentityTests.swift:30
+Owner: Text you are typing on a screen now stays put when the screen adds something above it; plugin screens must name their forms, editors and list rows.
