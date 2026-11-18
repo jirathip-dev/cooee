@@ -58,8 +58,9 @@ pub struct Summary {
     pub state: String,
     /// The last item's text, short.
     pub last: String,
-    /// When the last item was made, in Unix milliseconds.
-    pub at: u64,
+    /// When the last item was made, in Unix milliseconds (none: no items).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub at: Option<u64>,
     /// Whether it has items the owner hasn't seen.
     pub unread: bool,
     /// How many: the agent's items past the owner's read mark (the row's badge).

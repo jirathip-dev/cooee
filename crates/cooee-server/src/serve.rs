@@ -198,7 +198,7 @@ pub fn serve(config: &Config, ready: impl FnOnce(SocketAddr)) -> io::Result<()> 
         .ok_or_else(|| io::Error::other(format!("no theme {}", looks.default)))?;
     let logins = Logins::new(
         shed.clone(),
-        cooee_core::Providers::new(&config.providers),
+        cooee_core::Providers::load(config.providers.as_deref(), &shed),
         &data,
     );
     let hub = Hub::open(

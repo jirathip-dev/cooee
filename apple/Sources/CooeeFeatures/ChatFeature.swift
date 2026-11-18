@@ -128,6 +128,7 @@ public struct ChatFeature: Sendable {
     @Dependency(\.ownerCheck) internal var ownerCheck
     @Dependency(\.continuousClock) internal var clock
     @Dependency(\.date.now) internal var now
+    @Dependency(\.perf) internal var perf
 
     public init() {}
 
@@ -170,8 +171,10 @@ extension ChatFeature {
         case .loaded(let slice):
             load(&state, slice)
         case .event(let event):
+            let timed = painted(state, event)
             state.room?.hear(event, when: now)
             apply(&state, event)
+            return timed
         case .failed(let error):
             state.error = error
         default:
@@ -224,6 +227,14 @@ extension ChatFeature {
         case .reset, .roomTurn, .roomStop, .roomAsk:
             break
         }
+    }
+
+    private func painted(_ state: State, _ event: StreamEvent) -> Effect<Action> {
+        guard case .item(let item) = event, !state.items.contains(where: { $0.id == item.id }) else { return .none }
+        let took = Duration.milliseconds(Int64(now.timeIntervalSince1970 * 1000) - item.time)
+        guard took >= .zero else { return .none }
+        let (perf, server) = (perf, state.server)
+        return .run { _ in perf.record(server, .event, took) }
     }
 
     private func upsert(_ state: inout State, _ item: APIItem) {
