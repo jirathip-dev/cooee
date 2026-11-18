@@ -1,0 +1,14 @@
+Decided: each provider is built field by field: the registered fallback, then shed's record of its agent, then the [[providers]] row of its name
+Because: "A `[[providers]]` row still overrides, field by field."
+Decided: setting [[providers]] still replaces the list; a row names a provider to override, a new name needs agent, login and status
+Because: crates/cooee/tests/support/cooee.rs:98
+Rejected: rows merged into the default list — every test's fake row would add Claude, Codex and Gemini and run their real CLIs
+Decided: Codex keeps its own login (`--device-auth`) over shed's `codex login`, through the entry's keep list
+Because: crates/cooee-core/src/providers/codex.rs:19
+Decided: shed agents is read in both shapes, flat (older shed) and {id, provider, installed} (shed#142), so a record-only agent is never listed as installed
+Because: crates/cooee-core/src/shed/launch.rs:93
+Decided: a shed record with no provider here adds one named for its program, when it has login and status
+Because: "With no `[[providers]]` in the config, the sign-in panel and a new thread work from shed's records alone."
+Rejected: bumping shed-proto for its Provider type — cooee reads only seven fields and ignores the rest
+Check: login.rs with_no_providers_rows_… signs in and starts a thread on a fake shed's records with no [[providers]]
+Owner: Sign-in commands, account folders and effort choices now come from shed's facts about each agent; your [[providers]] rows only need the fields you change.
