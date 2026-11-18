@@ -612,6 +612,15 @@ impl Hub {
         self.raise(id, (tool, "routine", detail), Proposed::Later(then))
     }
 
+    pub(crate) fn ask_card(
+        &self,
+        id: &str,
+        (what, detail): (String, String),
+        allowed: Box<dyn FnOnce() -> Result<String, String> + Send>,
+    ) -> Result<Item, HubError> {
+        self.raise(id, (what, "tool", detail), Proposed::Later(allowed))
+    }
+
     /// Whether item `item` of thread `id` is an MCP server's, a routine's or a secret's card of cooee's (approving
     /// it needs Face ID).
     #[must_use]
