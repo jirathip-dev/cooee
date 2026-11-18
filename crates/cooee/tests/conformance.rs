@@ -32,7 +32,7 @@ struct Step {
     check: fn(&Run, &Value) -> Result<(), String>,
 }
 
-const SCENARIO: [Step; 5] = [
+const SCENARIO: [Step; 6] = [
     Step {
         n: 1,
         name: "The brief is honoured",
@@ -81,6 +81,26 @@ const SCENARIO: [Step; 5] = [
             left.map_or(Ok(()), |(pid, _)| {
                 Err(format!("sleep 120 is left: pid {pid}"))
             })
+        },
+    },
+    Step {
+        n: 7,
+        name: "A limit is reported",
+        says: "",
+        stop: false,
+        check: |run, _| {
+            if let Some(shed) = &run.fake {
+                shed.limit(&format!("cooee-{}", run.thread.as_deref().unwrap()));
+                let limited = |turn: &Value| turn["state"] == "limited" && turn["note"] == "3pm";
+                run.until(MAX_TURN, "limit state", |_| {
+                    limited(&run.turn_state()).then_some(())
+                })?;
+            }
+            let turn = run.turn_state();
+            let used = turn["context"]["used"].as_u64().unwrap_or_default();
+            (used > 0 && turn["context"]["size"].as_u64() > Some(0))
+                .then_some(())
+                .ok_or(format!("no context use: {turn}"))
         },
     },
     Step {
@@ -155,6 +175,7 @@ struct Run {
     thread: Option<String>,
     prompts: usize,
     tree: u32,
+    fake: Option<FakeShed>,
 }
 
 impl Run {
@@ -182,6 +203,7 @@ impl Run {
             thread: None,
             prompts: 0,
             tree,
+            fake: None,
         }
     }
 
@@ -189,6 +211,11 @@ impl Run {
         let id = self.thread.as_deref().unwrap();
         let items = self.cooee.json(&format!("/threads/{id}/messages"))["items"].clone();
         items.as_array().unwrap().clone()
+    }
+
+    fn turn_state(&self) -> Value {
+        let id = self.thread.as_deref().unwrap();
+        self.cooee.json(&format!("/threads/{id}/messages"))["turn"].clone()
     }
 
     fn agent_items(&self) -> Vec<Value> {
@@ -259,6 +286,9 @@ impl Run {
     }
 
     fn turn(&mut self, step: &Step) -> Result<Value, String> {
+        if step.says.is_empty() {
+            return Ok(Value::Null);
+        }
         let replies = self.agent_items().len();
         self.say(step.says)?;
         if step.stop {
@@ -321,6 +351,7 @@ fn the_scenario_passes_on_the_fake_shed() {
     let shed = FakeShed::start(&dir.join("shed"), version());
     let fake = ("fake-acp", "fake", None);
     let mut run = Run::start(&dir, (&shed.dir, FAKE), fake, std::process::id());
+    run.fake = Some(shed.clone());
     let results = scenario(&mut run);
     let table = report("fake", &results);
     assert!(results.iter().all(|(_, r)| r == "pass"), "{table}");

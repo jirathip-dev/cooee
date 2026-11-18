@@ -7,11 +7,27 @@ use serde::{Deserialize, Serialize};
 pub struct Turn {
     /// The reply so far.
     pub text: String,
-    /// shed's reported state (`working`, `blocked`, `done`, `error`), or `ended`.
+    /// shed's reported state (`working`, `blocked`, `done`, `error`), `limited` (shed's `rate-limited`), or `ended`.
     pub state: String,
-    /// The state's note.
+    /// The state's note: `limited`'s is the reset time, when the harness says one.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub note: Option<String>,
+    /// The session's context use, as the agent last reported it (ACP's `usage_update`).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub context: Option<shed_proto::AcpUsage>,
+}
+
+impl Turn {
+    /// Takes shed's reported `state` and its `note`, shed's `rate-limited` as the neutral `limited`.
+    pub fn report(&mut self, state: &str, note: Option<String>) {
+        let state = if state == "rate-limited" {
+            "limited"
+        } else {
+            state
+        };
+        state.clone_into(&mut self.state);
+        self.note = note;
+    }
 }
 
 /// One row of the thread list.
@@ -37,8 +53,8 @@ pub struct Summary {
     pub folder: PathBuf,
     /// The machine it runs on (#148; empty: this host).
     pub machine: String,
-    /// The state: `connecting`, `unconnected` (its start failed), `working`, `blocked`, `done`, `error`, `ended` or
-    /// empty.
+    /// The state: `connecting`, `unconnected` (its start failed), `working`, `blocked`, `done`, `error`, `limited`,
+    /// `ended` or empty.
     pub state: String,
     /// The last item's text, short.
     pub last: String,

@@ -92,8 +92,7 @@ impl Chat {
     }
 
     pub(super) fn state(&mut self, state: &str, note: Option<String>) -> Change {
-        state.clone_into(&mut self.turn.state);
-        self.turn.note = note;
+        self.turn.report(state, note);
         Change::State(self.turn.clone())
     }
 

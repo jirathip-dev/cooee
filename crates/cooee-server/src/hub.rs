@@ -663,8 +663,8 @@ impl Hub {
                 Ok(t) if t.state == shed_proto::State::Running => {
                     since = Some(since.map_or(live.applied, |s| s.min(live.applied)));
                     let r = t.reported.unwrap_or_default();
-                    live.chat.turn.state = r.state;
-                    live.chat.turn.note = r.note;
+                    live.chat.turn.report(&r.state, r.note);
+                    live.chat.turn.context = t.session.and_then(|s| s.usage);
                     Vec::new()
                 }
                 Ok(_) => live.chat.ended(now(), 0, "The agent stopped.".to_owned()),

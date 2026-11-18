@@ -7,7 +7,7 @@ use std::{
     time::Duration,
 };
 
-use cooee_core::shed_proto::{ApprovalOption, EventKind};
+use cooee_core::shed_proto::{AcpUsage, ApprovalOption, EventKind};
 use serde_json::{Value, json};
 
 use super::FakeShed;
@@ -209,7 +209,24 @@ impl FakeShed {
         } else {
             return None;
         };
-        Some((vec![reply(&said, "end_turn")], "end_turn"))
+        let usage = AcpUsage {
+            used: 1200,
+            size: 200_000,
+            cost: None,
+        };
+        Some((
+            vec![EventKind::Usage(usage), reply(&said, "end_turn")],
+            "end_turn",
+        ))
+    }
+
+    /// Terminal `name`'s agent hits its account limit as shed reports it: the limit line, then `rate-limited`.
+    pub fn limit(&self, name: &str) {
+        self.emit(
+            name,
+            reply("You've hit your limit · resets 3pm", "end_turn"),
+        );
+        self.report(name, "rate-limited", Some("3pm"));
     }
 
     fn cooee_tool(&self, name: &str, tool: &str, arguments: &Value) -> String {
