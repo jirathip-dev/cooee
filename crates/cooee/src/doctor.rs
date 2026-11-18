@@ -113,11 +113,11 @@ pub(crate) fn doctor(config: &Config) -> Result<(), String> {
 fn hooks(config: &Config) -> Option<(bool, String)> {
     let h = config.hooks.as_ref()?;
     let up = TcpStream::connect_timeout(&h.bind, Duration::from_secs(2)).is_ok();
-    let to = format!("http://{}/hooks/github", h.bind);
+    let to = format!("http://{}/hooks", h.bind);
     Some((
         up,
         format!(
-            "hooks listening on {} for {}\n     funnel: tailscale funnel --bg --https=8443 --set-path /hooks/github {to}",
+            "hooks listening on {} for {}\n     funnel: tailscale funnel --bg --https=8443 --set-path /hooks {to}",
             h.bind, h.url
         ),
     ))

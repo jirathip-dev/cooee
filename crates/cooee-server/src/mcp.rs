@@ -420,6 +420,13 @@ fn own_tools() -> Value {
             "timeout": { "type": "integer", "description": "seconds to wait, at most 600 (default 300)" }
         } }
     });
+    let handoff = json!({
+        "name": "handoff",
+        "description": "Hand a log-in, a 2FA code or a CLI login to the owner: they do it themselves, in your browser or their terminal, and you never see what they type. Then end your turn; when they hand back, their note is your next message.",
+        "inputSchema": { "type": "object", "required": ["what"], "properties": {
+            "what": { "type": "string", "description": "what the owner is to do, like Sign in to linkedin.com or Run gh auth login" }
+        } }
+    });
     let history = json!({
         "name": "history",
         "description": "Search your persona's past threads (query: words; at most 5 hits, each a thread ref, date and snippet), or read one (thread: its ref; paged with before); in a consolidation run, neither gives what is new since the last run.",
@@ -440,7 +447,7 @@ fn own_tools() -> Value {
     });
     let routine = json!({
         "name": "create_routine",
-        "description": "Make a routine (when the owner asks for something on a schedule or on a GitHub event): at each due time (when) or matching event (github) its prompt is sent to you, in this chat (place chat, the default) or as a new thread like this one (place new_thread). The owner sees it in this chat and changes it in Settings › routines; a github one is saved only once the owner approves its card. In the prompt {{due}} is the due time; {{event}}, {{repo}} and {{a.b}} (a path into the event's payload, like {{pull_request.title}}) fill from the event. A refusal starts with BAD_SCHEDULE, BAD_GITHUB, BAD_TRIGGER, BAD_NAME, BAD_PROMPT, BAD_PLACE, TOO_MANY, NO_HOOKS or NOT_HERE.",
+        "description": "Make a routine (when the owner asks for something on a schedule, on a GitHub event or on a signed POST from elsewhere): at each due time (when), matching event (github) or signed POST (webhook) its prompt is sent to you, in this chat (place chat, the default) or as a new thread like this one (place new_thread). The owner sees it in this chat and changes it in Settings › routines; a github or webhook one is saved only once the owner approves its card; a webhook's POST body follows the prompt as untrusted data. In the prompt {{due}} is the due time; {{event}}, {{repo}} and {{a.b}} (a path into the event's payload, like {{pull_request.title}}) fill from the event. A refusal starts with BAD_SCHEDULE, BAD_GITHUB, BAD_WEBHOOK, BAD_TRIGGER, BAD_NAME, BAD_PROMPT, BAD_PLACE, TOO_MANY, NO_HOOKS or NOT_HERE.",
         "inputSchema": { "type": "object", "required": ["name", "prompt"], "properties": {
             "name": { "type": "string", "description": "1 to 60 characters" },
             "when": { "type": "string", "description": "5-field cron in the Mac's local time (minute hour day-of-month month day-of-week; numbers, *, a-b, */n, lists), at least 15 minutes apart: 0 9 * * 1 is Mondays 09:00" },
@@ -448,6 +455,9 @@ fn own_tools() -> Value {
                 "repo": { "type": "string", "description": "owner/name" },
                 "events": { "type": "array", "items": { "type": "string" }, "description": "1 to 8, like pull_request (any action) or pull_request.opened" },
                 "match": { "type": "object", "additionalProperties": { "type": "string" }, "description": "payload path to the text it must equal, like {\"workflow_run.conclusion\": \"failure\"}" }
+            } },
+            "webhook": { "type": "object", "required": ["secret"], "properties": {
+                "secret": { "type": "string", "description": "the secret's name the sender signs with (A-Z, 0-9, _), like ALERTS_HOOK" }
             } },
             "prompt": { "type": "string" },
             "place": { "type": "string", "enum": ["chat", "new_thread"] }
@@ -470,6 +480,7 @@ fn own_tools() -> Value {
         tool,
         remember,
         ask_persona,
+        handoff,
         history,
         update,
         routine,
@@ -479,7 +490,7 @@ fn own_tools() -> Value {
 }
 
 /// `cooee mcp serve --thread <id>`: cooee's own MCP server: `propose_server`, and `remember` (#126),
-/// `ask_persona` (#156), `history` (#217), `update_persona` (#270), `skill` (#218) and `secret` (#163) for a persona's.
+/// `ask_persona` (#156), `handoff` (#164), `history` (#217), `update_persona` (#270), `skill` (#218) and `secret` (#163) for a persona's.
 ///
 /// # Errors
 /// Never past a broken stdin; each refused proposal is the tool's error.
@@ -520,6 +531,7 @@ pub fn serve(thread: &str) -> Result<(), String> {
                     )),
                     Some("remember") => Some(("/mcp/agent/remember", "")),
                     Some("ask_persona") => Some(("/mcp/agent/ask", "")),
+                    Some("handoff") => Some(("/mcp/agent/handoff", "")),
                     Some("history") => Some(("/mcp/agent/history", "")),
                     Some("update_persona") => Some(("/mcp/agent/persona", "")),
                     Some("create_routine") => Some(("/mcp/agent/routine", "")),
