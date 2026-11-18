@@ -210,10 +210,6 @@ extension AppFeature {
             state.path = state.path.dropLast() + [thread]
             state.chat = state.chat.map { Self.moved($0, to: .thread(thread), persona: $0.persona) }
             return .send(.home(.refresh))
-        case .restart(let persona):
-            state.path = state.path.dropLast() + ["new:\(persona.id)"]
-            state.chat = state.chat.map { Self.moved($0, to: .new(persona), persona: Persona(persona)) }
-            return .none
         }
     }
 

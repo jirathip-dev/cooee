@@ -23,6 +23,7 @@ extension ThreadsClient: DependencyKey {
         model: { server, thread, model, effort in
             try await Client(server).model(thread, model: model, effort: effort)
         },
+        switchAgent: { server, thread, agent in try await Client(server).switchAgent(thread, to: agent) },
         answer: { server, thread, item, option, value in
             try await Client(server).answer(thread, item: item, option: option, value: value)
         },

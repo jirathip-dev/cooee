@@ -67,21 +67,6 @@ internal struct PersonaControlsTests {
         await store.receive(\.edit) { $0.persona = PersonaFeature.State(server: mini, persona: coder) }
     }
 
-    @Test internal func anotherAgentRestartsTheChatAsANewOneOnIt() async {
-        let store = store(paired())
-        await store.send(.open("t1")) {
-            $0.path = ["t1"]
-            $0.chat = ChatFeature.State(server: mini, target: .thread("t1"), persona: Persona(coder, state: .working))
-            $0.home?.opened["coder"] = "t1"
-        }
-        var other = coder
-        other.agent = "fake-acp"
-        await store.send(.chat(.delegate(.restart(other)))) {
-            $0.path = ["new:coder"]
-            $0.chat = ChatFeature.State(server: mini, target: .new(other), persona: Persona(other))
-        }
-    }
-
     @Test internal func aDeletedPersonaClosesItsSheetAndHomeReloadsWithItsChats() async {
         let store = store(paired())
         await store.send(.edit("coder")) { $0.persona = PersonaFeature.State(server: mini, persona: coder) }
