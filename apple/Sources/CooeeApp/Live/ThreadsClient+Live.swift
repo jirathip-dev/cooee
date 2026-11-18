@@ -11,6 +11,7 @@ extension ThreadsClient: DependencyKey {
         saveTheme: { server, name, draft in try await Client(server).saveTheme(name, draft) },
         themeArt: { server, theme, file in try await Client(server).themeArt(theme, file) },
         messages: { server, thread in try await Client(server).messages(thread) },
+        frame: { server, thread, name in try await Client(server).frame(thread, name) },
         events: { server, thread, since in Client(server).events(thread, since: since) },
         send: { server, thread, text, files, queue in
             try await Client(server).send(thread, text: text, files: files, queue: queue)

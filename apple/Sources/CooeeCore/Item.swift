@@ -15,13 +15,15 @@ public struct ToolRow: Sendable, Equatable {
     public let kind: ToolKind
     public let title: String
     public let status: String
+    public let frame: String?
 
     public var running: Bool { status == "running" }
 
-    public init(_ kind: ToolKind, _ title: String, _ status: String) {
+    public init(_ kind: ToolKind, _ title: String, _ status: String, frame: String? = nil) {
         self.kind = kind
         self.title = title
         self.status = status
+        self.frame = frame
     }
 }
 
@@ -120,7 +122,7 @@ public enum ChatItems {
             out.append(.you(id: item.id, text: item.text ?? "", files: item.files ?? []))
         case "agent":
             out.append(.agent(id: item.id, markdown: Markdown.blocks(item.text ?? "")))
-        case "tool":
+        case "tool", "frame":
             fold(item, into: &out)
         case "approval", "ask":
             if let card = card(item) { out.append(card) }
@@ -144,7 +146,7 @@ public enum ChatItems {
         var steps: [APIItem] = []
         for item in items {
             switch item.kind {
-            case "tool":
+            case "tool", "frame":
                 steps.append(item)
             case "agent":
                 append(item, to: &out)
@@ -166,6 +168,7 @@ public enum ChatItems {
     }
 
     private static func row(_ item: APIItem) -> ToolRow {
+        if item.kind == "frame" { return ToolRow(.other, item.text ?? "", "done", frame: item.name) }
         let status = item.status == "completed" ? "done" : item.status == "failed" ? "failed" : "running"
         return ToolRow(ToolKind(rawValue: item.action ?? "") ?? .other, item.title ?? "", status)
     }

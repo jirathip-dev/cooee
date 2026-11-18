@@ -3,6 +3,7 @@ import SwiftUI
 
 internal struct TraceRow: View {
     @Environment(\.look) private var look
+    @Environment(\.frames) private var frames
     @State private var open = false
     internal let steps: [ToolRow]
     internal let seconds: Int
@@ -18,7 +19,7 @@ internal struct TraceRow: View {
             .ui(13, .regular, look).foregroundStyle(look.palette.mute).contentShape(.rect)
         }
         .buttonStyle(.plain)
-        .sheet(isPresented: $open) { TraceSheet(steps: steps) }
+        .sheet(isPresented: $open) { TraceSheet(steps: steps).environment(\.frames, frames) }
     }
 }
 
@@ -66,7 +67,10 @@ internal struct TraceSheet: View {
                 )
                 .font(.system(size: 13)).foregroundStyle(tint)
             }
-            Text(step.said).ui(14, .regular, look).lineLimit(2).truncationMode(.middle)
+            VStack(alignment: .leading, spacing: 6) {
+                Text(step.said).ui(14, .regular, look).lineLimit(2).truncationMode(.middle)
+                if let frame = step.frame { FrameThumb(name: frame) }
+            }
             Spacer(minLength: 0)
         }
         .padding(.horizontal, 14).padding(.vertical, 10)

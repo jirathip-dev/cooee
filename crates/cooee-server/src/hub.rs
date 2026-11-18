@@ -24,6 +24,7 @@ mod cards;
 mod events;
 mod expire;
 mod folders;
+mod frames;
 mod handoff;
 mod heartbeat;
 mod mcp;
@@ -39,6 +40,7 @@ mod start;
 #[cfg(test)]
 mod tests;
 mod threads;
+pub use mcp::Called;
 use mcp::Proposed;
 pub use rooms::Starter;
 pub use screen::{Input, Screen};
@@ -139,6 +141,7 @@ fn glance(live: &Live) -> Glance {
         Body::You { text, .. }
         | Body::Agent { text, .. }
         | Body::Note { text }
+        | Body::Frame { text, .. }
         | Body::Link { text, .. }
         | Body::Ask { text, .. }
         | Body::Handoff { text, .. }

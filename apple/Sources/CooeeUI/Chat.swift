@@ -44,6 +44,7 @@ public struct ChatView: View {
                 }
                 .frame(maxHeight: .infinity, alignment: .top)
                 .environment(\.asker, persona)
+                .environment(\.frames, actions.frames)
                 VStack(spacing: 8) {
                     if working { WorkingPill(persona: persona, since: since, step: actions.step, stop: actions.stop) }
                     if let topics = actions.topics, topics.newing { FolderRow(actions: topics).padding(.bottom, 2) }
