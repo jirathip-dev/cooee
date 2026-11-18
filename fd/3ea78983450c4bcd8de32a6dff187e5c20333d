@@ -1,0 +1,5 @@
+Decided: the Home loading test lists rows that differ by more than 16 per channel instead of comparing bytes exactly
+Because: apple/Tests/CooeeUITests/HeaderRenderTests.swift:53
+Rejected: exact byte equality above row 54 — CI's hosted runner rendered it differently, while the line itself was fixed
+Check: the test fails on base BlockHome.swift with rows [37 … 55] and passes at head (first row 54)
+Owner: The test for the Home loading line now tolerates tiny rendering noise, so it checks the line's position and nothing else.
