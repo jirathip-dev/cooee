@@ -1,0 +1,10 @@
+Decided: merged origin/staging; staging split chat.rs into chat/, so the tool row's subject and action moved to chat/item.rs and Chat::tool and apply's reader to chat/apply.rs unchanged.
+Because: crates/cooee-core/src/chat/apply.rs:7
+Decided: Frames.swift keeps both sides: ToolRowFrames.all and staging's TopicFrames.all.
+Because: apple/Tests/CooeeUITests/Frames.swift:46
+Decided: staging build fix: own_tools was 102 lines (clippy's limit is 100) after #164 and #528 merged, so the skill schema moved into skill_tool.
+Because: crates/cooee-server/src/mcp.rs:387
+Decided: staging build fix: staging's TopicFrames built tool rows with the old ToolRow(title, status) init; it now passes the run kind.
+Because: apple/Tests/CooeeUITests/TopicFrames.swift:33
+Rejected: none
+Owner: no change in behaviour; the branch is caught up with staging and builds clean again.
