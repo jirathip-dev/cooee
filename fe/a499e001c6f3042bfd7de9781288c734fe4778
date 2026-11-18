@@ -1,0 +1,10 @@
+Decided: cache lock+manifests keyed on plugins.lock mtime and size, not an in-process drop in write_lock
+Because: crates/cooee/src/cmd/plugin.rs:31
+Rejected: invalidate inside plugins::write_lock — the CLI's `cooee plugin add` writes the lock from another process
+Decided: keep-alive stays HTTP/1.0 with Connection: keep-alive and a Content-Length bound read
+Rejected: HTTP/1.1 — would need chunked decoding; 1.0 keeps the transfer-encoding refusal
+Decided: a pooled socket that fails before any status line is retried once on a fresh connection
+Decided: shared upstream stream per screen not done here
+Because: q2037
+Check: 100 /layout calls after the manifest is deleted still serve it; disabling in the lock drops it
+Owner: Plugin screens stop rereading files each request and reuse their connection to the plugin.
