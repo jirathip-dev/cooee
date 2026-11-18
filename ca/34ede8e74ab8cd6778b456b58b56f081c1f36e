@@ -1,0 +1,7 @@
+Decided: each pack keeps eight frames: home, chat, a card, the persona panel and the four trust posters
+Because: "one sheet per pack: home, chat, a card, the persona panel and the four trust cards"
+Decided: the kept PNGs are untouched; the sheet reuses the frame names slice 4 already recorded
+Decided: AdditionFrames.additions loses its suffix parameter, since only the deleted pack frames passed it
+Rejected: rewriting every area README row that names a deleted pack PNG — one pointer line in apple/design/v1/README.md is enough
+Check: apple/design/packs holds exactly 16 PNGs and PackFrames draws exactly those 16
+Owner: Terminal and Scene each keep one short sheet of reference pictures; the rest are deleted.
