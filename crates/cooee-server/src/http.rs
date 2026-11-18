@@ -262,3 +262,11 @@ pub(crate) async fn persona_save(cx: &Cx, p: Agent) -> Result<Answer<Agent>> {
     })
     .await
 }
+
+/// `screen` marked as core's own (`source: core`), as every `/screens/…` answer is.
+pub(crate) fn core(mut screen: serde_json::Value) -> serde_json::Value {
+    if let Some(o) = screen.as_object_mut() {
+        o.insert("source".to_owned(), serde_json::Value::from("core"));
+    }
+    screen
+}

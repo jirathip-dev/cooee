@@ -8,6 +8,7 @@ use topcoat::{
     Result,
     context::{Cx, app_context},
     router::{
+        RouterBuilder,
         content::Json,
         parse_query_params, path_param,
         response::{IntoResponse, Response},
@@ -16,7 +17,7 @@ use topcoat::{
 };
 
 use crate::{
-    http::{Data, Name, manager, plain},
+    http::{Data, Name, core, manager, plain},
     manage::Row,
 };
 
@@ -45,7 +46,7 @@ pub async fn attach(cx: &Cx) -> Result<Response> {
     })
     .await??;
     match found {
-        Ok(screen) => Json(super::core(screen)).into_response(cx),
+        Ok(screen) => Json(core(screen)).into_response(cx),
         Err(why) => plain(404, &why),
     }
 }
@@ -106,4 +107,8 @@ fn sheet(p: &Row, persona: &str) -> Value {
     let card = json!({ "type": "card", "id": "permissions", "kind": "permissions", "title": l.name,
                        "subtitle": format!("{} {} · {commit} · {source}", l.name, l.version), "blocks": blocks });
     json!({ "type": "screen", "id": "attach", "title": format!("Attach {}", l.name), "blocks": [card] })
+}
+
+pub(super) fn routes(b: RouterBuilder) -> RouterBuilder {
+    b.route(attach)
 }

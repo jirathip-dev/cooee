@@ -8,18 +8,18 @@ use serde_json::{Value, json};
 use topcoat::{
     Result,
     context::{Cx, app_context, request_context},
-    router::route,
+    router::{RouterBuilder, route},
 };
 
 use crate::{
     HubError,
-    http::{Answer, Paired, blocking, manager, on_logins, refused},
+    http::{Answer, Paired, blocking, core, manager, on_logins, refused},
     pairing,
 };
 
 fn list(id: &str, title: &str, rows: &[Value]) -> Value {
     let blocks = json!([{ "type": "list", "id": id, "rows": rows }]);
-    super::core(json!({ "type": "screen", "id": id, "title": title, "blocks": blocks }))
+    core(json!({ "type": "screen", "id": id, "title": title, "blocks": blocks }))
 }
 
 pub(super) async fn device_rows(cx: &Cx) -> Result<Vec<Value>, HubError> {
@@ -106,4 +106,11 @@ pub async fn machines(cx: &Cx) -> Result<Answer<Value>> {
 pub async fn plugins(cx: &Cx) -> Result<Answer<Value>> {
     let rows = plugin_rows(cx).await;
     Ok(Answer(rows.map(|r| list("plugins", "Plugins", &r))))
+}
+
+pub(super) fn routes(b: RouterBuilder) -> RouterBuilder {
+    b.route(devices)
+        .route(signins)
+        .route(machines)
+        .route(plugins)
 }

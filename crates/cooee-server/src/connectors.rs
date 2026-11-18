@@ -15,9 +15,9 @@ use base64::{Engine as _, engine::general_purpose::URL_SAFE_NO_PAD as B64};
 use cooee_core::{
     agents::Agent,
     connectors::{
-        self as core, Auth, Client as Kind, Endpoints, HttpsUrl, Name, Target, Transport,
+        self as core, Auth, Client as Kind, Endpoints, HttpsUrl, Name, Target, Tools, Transport,
     },
-    mcp::{Server, Source},
+    mcp::{Pick, Server, Source},
 };
 use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
@@ -662,58 +662,46 @@ impl Connectors {
 
     pub(crate) fn list(&self, servers: &[Server], personas: &[Agent]) -> Result<Value, String> {
         let file = self.load()?;
-        let kind = |a: &Auth| match a {
-            Auth::None => "none",
-            Auth::Token { .. } => "token",
-            Auth::OAuth { .. } => "oauth",
-        };
-        let catalogue: Vec<Value> = core::catalogue()
-            .iter()
-            .map(|e| json!({
-                "name": e.name.as_str(), "label": e.label, "publisher": e.publisher, "auth": kind(&e.auth),
-                "leaves": e.leaves,
-                "tools": { "read": e.tools.read.len(), "write": e.tools.write.len(), "never": e.tools.never.len() },
-            }))
-            .collect();
-        let mut connectors = Vec::new();
-        for s in servers {
-            let (label, publisher, reviewed, url, auth, leaves) = match s.source() {
-                Ok(Source::Catalogue(e)) => {
-                    let url = match &e.target {
-                        Target::Url { url, .. } => url.as_str().to_owned(),
-                        Target::Builtin(b) => match *b {},
-                    };
-                    (
-                        e.label.as_str(),
-                        e.publisher.as_str(),
-                        true,
-                        url,
-                        kind(&e.auth),
-                        e.leaves.as_str(),
-                    )
-                }
-                Ok(Source::Typed { url, auth, .. }) => (
-                    s.name.as_str(),
-                    "",
-                    false,
-                    url.as_str().to_owned(),
-                    kind(&auth),
-                    "",
-                ),
-                Ok(Source::Command { .. }) | Err(_) => (
-                    s.name.as_str(),
-                    "this Mac",
-                    false,
-                    String::new(),
-                    "none",
-                    "",
-                ),
-            };
-            let tools = calls::tools(s);
+        let row = |(name, e, (source, url, auth)): Shown<'_>,
+                   tools: &Tools,
+                   (enabled, accounts): (bool, Vec<Value>)| {
             let host = url
                 .split_once("://")
                 .map_or("", |(_, r)| r.split('/').next().unwrap_or_default());
-            let accounts: Vec<Value> = file
+            json!({
+                "name": name, "label": e.map_or(name.as_str(), |e| &e.label),
+                "publisher": e.map_or("", |e| &e.publisher), "source": source, "reviewed": e.is_some(),
+                "host": host, "leaves": e.map_or("", |e| &e.leaves), "checked": e.map(|e| e.reviewed.to_string()),
+                "auth": auth, "enabled": enabled, "accounts": accounts,
+                "tools": { "read": tools.read, "write": tools.write, "never": tools.never },
+            })
+        };
+        let catalogue: Vec<Value> = core::catalogue()
+            .iter()
+            .map(|e| row(shown(e), &e.tools, (false, Vec::new())))
+            .collect();
+        let mut connectors = Vec::new();
+        for s in servers {
+            let source = match s.source() {
+                Ok(Source::Catalogue(e)) => shown(e),
+                Ok(Source::Typed { url, auth, .. }) => (
+                    s.name.clone(),
+                    None,
+                    ("typed", url.as_str().to_owned(), auth_kind(&auth)),
+                ),
+                Ok(Source::Command { .. }) | Err(_) => {
+                    (s.name.clone(), None, ("command", String::new(), "none"))
+                }
+            };
+            let used = |account: &str| -> Vec<&str> {
+                let pick = |m: &Pick| m.server == s.name && m.account.as_deref() == Some(account);
+                personas
+                    .iter()
+                    .filter(|p| p.mcp.iter().any(pick))
+                    .map(|p| p.name.as_str())
+                    .collect()
+            };
+            let accounts = file
                 .accounts
                 .iter()
                 .filter(|a| a.connector == s.name)
@@ -722,21 +710,35 @@ impl Connectors {
                         State::SignedIn => ("signed_in", None),
                         State::NeedsSignIn { why } => ("needs_sign_in", Some(why)),
                     };
-                    json!({ "name": a.name, "state": state, "why": why, "scopes": a.scopes, "since": a.since })
+                    json!({ "name": a.name, "state": state, "why": why, "scopes": a.scopes, "since": a.since,
+                            "personas": used(&a.name) })
                 })
                 .collect();
-            let users: Vec<&str> = personas
-                .iter()
-                .filter(|p| p.mcp.iter().any(|m| m.server == s.name))
-                .map(|p| p.name.as_str())
-                .collect();
-            connectors.push(json!({
-                "name": s.name, "label": label, "publisher": publisher, "reviewed": reviewed, "host": host,
-                "leaves": leaves, "auth": auth, "enabled": s.enabled,
-                "tools": { "read": tools.read, "write": tools.write, "never": tools.never },
-                "accounts": accounts, "personas": users,
-            }));
+            connectors.push(row(source, &calls::tools(s), (s.enabled, accounts)));
         }
         Ok(json!({ "catalogue": catalogue, "connectors": connectors }))
     }
+}
+
+type Shown<'a> = (
+    String,
+    Option<&'a core::Entry>,
+    (&'static str, String, &'static str),
+);
+
+fn auth_kind(a: &Auth) -> &'static str {
+    match a {
+        Auth::None => "none",
+        Auth::Token { .. } => "token",
+        Auth::OAuth { .. } => "oauth",
+    }
+}
+
+fn shown(e: &core::Entry) -> Shown<'_> {
+    let url = match &e.target {
+        Target::Url { url, .. } => url.as_str().to_owned(),
+        Target::Builtin(b) => match *b {},
+    };
+    let how = ("catalogue", url, auth_kind(&e.auth));
+    (e.name.as_str().to_owned(), Some(e), how)
 }

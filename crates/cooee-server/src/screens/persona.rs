@@ -18,6 +18,7 @@ use topcoat::{
     Result,
     context::{Cx, app_context},
     router::{
+        RouterBuilder,
         content::Json,
         response::{IntoResponse, Response},
         route,
@@ -26,7 +27,7 @@ use topcoat::{
 
 use crate::{
     HubError,
-    http::{Answer, Data, blocking, persona_save, plain, refused, thread_id},
+    http::{Answer, Data, blocking, core, persona_save, plain, refused, thread_id},
     routines,
 };
 
@@ -78,13 +79,13 @@ pub async fn action(cx: &Cx, Json(a): Json<Act>) -> Result<Answer<Value>> {
         return Ok(Answer(Err(refused(format!("no screen {}", a.screen)))));
     };
     match a.action.as_str() {
-        "save" => match serde_json::from_value::<Agent>(Value::Object(a.values)) {
-            Ok(p) => {
-                let Answer(saved) = persona_save(cx, Agent { id, ..p }).await?;
-                Ok(Answer(saved.map(|p| json!(p))))
+        "save" => {
+            let named = a.values.contains_key("mcp");
+            match serde_json::from_value::<Agent>(Value::Object(a.values)) {
+                Ok(p) => Ok(Answer(save(cx, Agent { id, ..p }, named).await)),
+                Err(e) => Ok(Answer(Err(refused(e)))),
             }
-            Err(e) => Ok(Answer(Err(refused(e)))),
-        },
+        }
         "clear" => Ok(Answer(clear(cx, id).await)),
         "test" => {
             let routine = a
@@ -191,6 +192,33 @@ async fn add_skill(cx: &Cx, id: String, name: String) -> Result<Value, HubError>
     fill(cx, id).await
 }
 
+async fn save(cx: &Cx, p: Agent, named: bool) -> Result<Value, HubError> {
+    let picks = p.mcp.clone();
+    let known = picks.clone();
+    blocking(cx, move |hub| {
+        let servers = hub.mcp().map_err(refused)?;
+        match known
+            .iter()
+            .find(|p| !servers.iter().any(|s| s.name == p.server))
+        {
+            Some(p) => Err(refused(format!("there is no connector {}", p.server))),
+            None => Ok(()),
+        }
+    })
+    .await?;
+    let saved = persona_save(cx, p).await.map_err(refused)?.0?;
+    if !named {
+        return Ok(json!(saved));
+    }
+    let (data, config) = data(cx);
+    blocking(cx, move |_| {
+        let config = config.ok_or_else(|| refused("no config folder"))?;
+        let picked = agents::pick(&config, &data, &saved.id, picks).map_err(refused)?;
+        Ok(json!(picked))
+    })
+    .await
+}
+
 fn data(cx: &Cx) -> (std::path::PathBuf, Option<std::path::PathBuf>) {
     let d = app_context::<Data>(cx);
     (d.0.clone(), d.1.clone())
@@ -252,7 +280,7 @@ async fn fill(cx: &Cx, id: String) -> Result<Value, HubError> {
         if let Some(blocks) = screen.get_mut("blocks").and_then(Value::as_array_mut) {
             blocks.push(json!({ "type": "actions", "id": "actions", "rows": rows }));
         }
-        Ok(super::core(screen))
+        Ok(core(screen))
     })
     .await
 }
@@ -286,4 +314,8 @@ fn routine((url, r): &(Option<String>, Routine)) -> Value {
         o.insert("url".to_owned(), json!(url));
     }
     row
+}
+
+pub(super) fn routes(b: RouterBuilder) -> RouterBuilder {
+    b.route(persona).route(action)
 }

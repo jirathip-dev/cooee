@@ -2,18 +2,23 @@
 //! from the same data that screen lists; the device-local rows as bundled.
 
 use serde_json::{Value, json};
-use topcoat::{Result, context::Cx, router::route};
+use topcoat::{
+    Result,
+    context::Cx,
+    router::{RouterBuilder, route},
+};
 
-use super::settings;
+use super::{connectors, settings};
 use crate::{
     HubError,
-    http::{Answer, refused},
+    http::{Answer, core, refused},
 };
 
 const BUNDLED: &str = include_str!("../../../../apple/Sources/CooeeUI/Default/screens/menu.json");
 
 /// `{type: screen, source: core, id, title, blocks}`: `signins` valued with the signed-in accounts, `devices` with
-/// the paired count, `machines` with the hosts and `plugins` with the installed count.
+/// the paired count, `machines` with the hosts, `plugins` with the installed count and `connectors` with theirs (or
+/// `warn` and the count that needs sign-in).
 #[route(GET "/screens/menu")]
 pub async fn menu(cx: &Cx) -> Result<Answer<Value>> {
     Ok(Answer(fill(cx).await))
@@ -27,6 +32,7 @@ async fn fill(cx: &Cx) -> Result<Value, HubError> {
     };
     let mut signins = settings::signin_rows(cx).await?;
     signins.retain(|r| r.pointer("/subtitle/tone").is_some_and(|t| t == "ok"));
+    let (linked, warn) = connectors::menu_value(&connectors::connector_rows(cx).await?);
     let values = [
         ("signins", titles(&signins)),
         (
@@ -38,6 +44,7 @@ async fn fill(cx: &Cx) -> Result<Value, HubError> {
             "plugins",
             settings::plugin_rows(cx).await?.len().to_string(),
         ),
+        ("connectors", linked),
     ];
     let groups = screen
         .get_mut("blocks")
@@ -49,6 +56,13 @@ async fn fill(cx: &Cx) -> Result<Value, HubError> {
         if let Some((_, v)) = values.iter().find(|(id, _)| row["id"] == *id) {
             row["value"] = json!(v);
         }
+        if warn && row["id"] == "connectors" {
+            row["warn"] = json!(true);
+        }
     }
-    Ok(super::core(screen))
+    Ok(core(screen))
+}
+
+pub(super) fn routes(b: RouterBuilder) -> RouterBuilder {
+    b.route(menu)
 }

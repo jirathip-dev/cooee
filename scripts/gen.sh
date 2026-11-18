@@ -92,6 +92,7 @@ module crates/cooee-server/src/login
 module crates/cooee-server/src/mcp
 module crates/cooee-server/src/push
 routes crates/cooee-server/src/routes
+routes crates/cooee-server/src/screens
 crate crates/cooee-server/src "cooee's HTTP server: the native app's JSON API (docs/README.md)." \
   connectors contrast editor gate http hub layout login look manage pairing passkey net plugin push root routes routines screens serve themes
 cmds crates/cooee/src/cmd

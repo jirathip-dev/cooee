@@ -5,10 +5,10 @@ use serde_json::{Value, json};
 use topcoat::{
     Result,
     context::{Cx, app_context},
-    router::route,
+    router::{RouterBuilder, route},
 };
 
-use crate::http::{Answer, Data, blocking, refused};
+use crate::http::{Answer, Data, blocking, core, refused};
 
 const BUNDLED: &str = include_str!("../../../../apple/Sources/CooeeUI/Default/screens/home.json");
 
@@ -36,7 +36,11 @@ pub async fn home(cx: &Cx) -> Result<Answer<Value>> {
             o.insert("threads".to_owned(), json!(threads));
             o.insert("personas".to_owned(), personas);
         }
-        Ok(super::core(screen))
+        Ok(core(screen))
     });
     Ok(Answer(screen.await))
+}
+
+pub(super) fn routes(b: RouterBuilder) -> RouterBuilder {
+    b.route(home)
 }

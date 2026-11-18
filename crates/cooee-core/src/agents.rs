@@ -518,6 +518,22 @@ pub fn save(config: &Path, data: &Path, mut a: Agent) -> io::Result<Agent> {
     find(Some(config), data, &a.id)
 }
 
+/// Replaces agent `id`'s `[[mcp]]` picks (#524: the phone's attach and detach), changing no other key.
+///
+/// # Errors
+/// An unknown id, or an `agent.toml` that can't be read or written.
+pub fn pick(config: &Path, data: &Path, id: &str, mcp: Vec<mcp::Pick>) -> io::Result<Agent> {
+    let what = home(config, id)?.0.join("agent.toml");
+    let text = fs::read_to_string(&what)?;
+    let old = parse(&what).map_err(refused)?;
+    let new = Agent { mcp, ..old.clone() };
+    crate::write_private(
+        &what,
+        disk::patch(&text, &card(&old), &card(&new))?.as_bytes(),
+    )?;
+    find(Some(config), data, id)
+}
+
 /// Deletes agent `id`'s whole folder; its chats stay.
 ///
 /// # Errors
