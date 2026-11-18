@@ -6,7 +6,7 @@ use shed_proto::{
     TerminalInfo, WaitOutcome, WaitParams, WaitResult,
 };
 
-use super::{Agent, Launch, Shed, ShedError, client::CALL};
+use super::{Agent, Launch, Listed, Record, Shed, ShedError, client::CALL};
 
 /// One line of an event stream: an event, or shed's `reset`, the events up to its seq lost.
 #[derive(Debug)]
@@ -132,7 +132,17 @@ impl Shed {
     /// # Errors
     /// [`ShedError::Cli`] when the CLI fails.
     pub fn agents(&self) -> Result<Vec<Agent>, ShedError> {
-        self.cli(&["agents"])
+        let listed: Vec<Listed> = self.cli(&["agents"])?;
+        Ok(listed.into_iter().filter_map(Listed::agent).collect())
+    }
+
+    /// shed's records of the agent programs it knows (`shed agents`); none from a shed that has none.
+    ///
+    /// # Errors
+    /// [`ShedError::Cli`] when the CLI fails.
+    pub fn records(&self) -> Result<Vec<Record>, ShedError> {
+        let listed: Vec<Listed> = self.cli(&["agents"])?;
+        Ok(listed.into_iter().filter_map(Listed::record).collect())
     }
 
     /// Starts ACP agent `agent` in terminal `name` in `cwd` with `labels` (`shed run --acp`) and `launch`: with
