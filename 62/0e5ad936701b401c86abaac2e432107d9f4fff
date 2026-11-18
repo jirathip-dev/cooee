@@ -1,0 +1,11 @@
+Decided: Apple's rules verified first: every Mac build uploaded to App Store Connect (TestFlight too) must carry the App Sandbox, and Add Platform puts macOS on the iOS record under the same bundle id
+Because: "If TestFlight can't take the Mac app, the PR stops there and says why"
+Decided: one matrix job per platform in the same apple-testflight run; the build number reads the latest build filtered by preReleaseVersion.platform, so each platform counts on its own
+Because: "with the same build number rule (latest TestFlight build + 1, per platform)"
+Decided: LocalConfig reads the real home from getpwuid, since a sandboxed URL.homeDirectory is the container; a read-only temporary exception opens only ~/.config/cooee/cooee/
+Because: apple/Sources/CooeeAPI/Local.swift:49
+Decided: fix round: the red msrv skills test is a flake in code this PR does not touch; merged staging and re-ran CI instead of editing it
+Because: crates/cooee/tests/skills.rs:289
+Rejected: a second App Store Connect record or bundle id for the Mac — the issue asks for the same bundle id, and Universal Purchase keeps one record
+Check: the testflight (macOS) job on the first main merge uploads; until the owner adds the macOS platform it fails and iOS still uploads (fail-fast off)
+Owner: The Mac app now arrives through TestFlight like the iPhone app; add macOS to the app record once, then delete the mac-release secrets.
