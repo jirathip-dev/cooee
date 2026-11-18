@@ -1,0 +1,11 @@
+Decided: keep returns a 2 s debounced cancellable effect on the injected clock; save runs inside .run, off the main actor
+Because: "The screen cache is written off the main thread, at most once per 2 s"
+Decided: hosts wrap their reducer in keepsLeftScreens, which saves every screen the host drops, so a dismissal loses no pending save
+Because: "plus on leaving the screen and on the app going to the background"
+Decided: ScreenCache.backgrounds streams app-background notifications; .task listens and .background flushes at once
+Because: q2036
+Rejected: a .leave action sent from onDisappear — it arrives after ifLet has nilled the child, so it is dropped
+Rejected: writing on effect cancellation — a newer event's cancelInFlight would also write, defeating the debounce
+Check: MenuFeatureTests closing the menu while a save is pending writes once; it fails without the wrapper
+Check: KeepsLeftScreens calls base._reduce because TCA deprecates calling reduce(into:) directly (warnings are errors)
+Owner: busy plugin screens save their offline copy in the background at most every 2 s, and at once when you leave or switch away from the app
