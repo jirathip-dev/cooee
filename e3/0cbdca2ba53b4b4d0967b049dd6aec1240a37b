@@ -1,0 +1,9 @@
+Decided: R9 replaces the terminal through "Use a folder…" (attach), the one replace path on staging; the answer is checked in shed's send log of both terminals
+Because: crates/cooee-server/src/hub/cards.rs:30
+Decided: R27 asserts the pill (working vs not) goes exactly on then off, with all 5 working reports; the reply's own done sits before shed's idle, and both mean the pill is off
+Because: crates/cooee-core/src/chat/apply.rs:113
+Decided: "a runner that fails on any screen read" is checked as zero read or screen.* requests to the fake shed during the whole test
+Because: "the state path does no screen read"
+Rejected: dropping the reply's synthesized done so the states are literally working, idle — that changes turn-end behaviour every client relies on, which these tests did not ask for
+Check: r9 and r27 pass in cargo test -p cooee --test reliability; the AC3 phone check is still manual
+Owner: Two new server tests; they found no bug, so the app itself is unchanged.
