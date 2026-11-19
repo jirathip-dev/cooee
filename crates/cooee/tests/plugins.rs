@@ -18,7 +18,7 @@ use std::{
 };
 
 use serde_json::{Value, json};
-use support::{Cooee, FakeShed, HANG, is_item, others_go_on, scratch, version};
+use support::{Cooee, FakeShed, HANG, is_item, others_go_on, scratch, snapshot, version};
 
 struct Backend {
     port: u16,
@@ -807,6 +807,7 @@ fn cooees_own_cards_go_out_as_blocks_and_settle_to_their_line() {
         ran["block"]["blocks"],
         json!([{ "type": "text", "style": "footnote", "markdown": "ran: exit 0" }])
     );
+    snapshot("cards", &json!([blocks, ran["block"]]), &[]);
 }
 
 #[test]
