@@ -179,6 +179,18 @@ shed_dir = {}
         headers: &[(&str, &str)],
         body: &str,
     ) -> (String, String) {
+        let (head, body) = self.raw_bytes(method, path, headers, body);
+        (head, String::from_utf8(body).unwrap())
+    }
+
+    /// [`Self::raw`] with the body's bytes as sent.
+    pub fn raw_bytes(
+        &self,
+        method: &str,
+        path: &str,
+        headers: &[(&str, &str)],
+        body: &str,
+    ) -> (String, Vec<u8>) {
         let mut stream = TcpStream::connect(&self.addr).unwrap();
         let mut request = Vec::new();
         write!(request, "{method} {path} HTTP/1.0\r\n").unwrap();
@@ -190,9 +202,13 @@ shed_dir = {}
         }
         write!(request, "Content-Length: {}\r\n\r\n{body}", body.len()).unwrap();
         stream.write_all(&request).unwrap();
-        let mut response = String::new();
-        stream.read_to_string(&mut response).unwrap();
-        let (head, body) = response.split_once("\r\n\r\n").unwrap();
+        let mut response = Vec::new();
+        stream.read_to_end(&mut response).unwrap();
+        let at = response.windows(4).position(|w| w == b"\r\n\r\n").unwrap();
+        let (head, body) = (
+            String::from_utf8_lossy(&response[..at]),
+            &response[at + 4..],
+        );
         let head = head
             .lines()
             .map(|l| match l.split_once(": ") {
@@ -201,7 +217,7 @@ shed_dir = {}
             })
             .collect::<Vec<_>>()
             .join("\n");
-        (head, body.to_owned())
+        (head, body.to_vec())
     }
 
     pub fn request(&self, method: &str, path: &str, body: Option<&Value>) -> (u16, String) {
