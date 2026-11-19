@@ -78,12 +78,6 @@ struct MachineRow {
     last_seen: Option<u64>,
     health: Option<cooee_core::shed_proto::Sample>,
     error: Option<String>,
-    #[serde(skip_serializing_if = "Vec::is_empty")]
-    tags: Vec<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    spend: Option<f64>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    budget: Option<f64>,
 }
 
 #[route(GET "/machines")]
@@ -106,9 +100,6 @@ async fn machine_list(cx: &Cx) -> Result<Answer<Vec<MachineRow>>> {
                     last_seen: c.last_seen,
                     health: c.now,
                     error: c.error,
-                    tags: c.tags,
-                    spend: c.spend,
-                    budget: c.budget,
                 })
                 .collect())
         })

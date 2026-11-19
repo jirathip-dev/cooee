@@ -3,7 +3,13 @@
 
 mod support;
 
-use std::{fs, net::TcpListener, thread, time::Duration};
+use std::{
+    fs,
+    io::{BufRead, BufReader, Write},
+    net::TcpListener,
+    thread,
+    time::Duration,
+};
 
 use serde_json::{Value, json};
 use support::{Cooee, FakeShed, scratch, version};
@@ -67,9 +73,32 @@ fn the_machines_plugin_serves_each_machine_card_and_marks_one_offline() {
     );
 }
 
+fn fake_drover(hosts: Value) -> u16 {
+    let listener = TcpListener::bind("127.0.0.1:0").unwrap();
+    let port = listener.local_addr().unwrap().port();
+    thread::spawn(move || {
+        for mut s in listener.incoming().flatten() {
+            let mut head = String::new();
+            let mut r = BufReader::new(&s);
+            while r.read_line(&mut head).unwrap() > 2 {}
+            let body = if head.starts_with("GET /api/v1/host ") {
+                hosts.to_string()
+            } else {
+                "{}".to_owned()
+            };
+            write!(
+                s,
+                "HTTP/1.0 200 OK\r\nContent-Type: application/json\r\n\r\n{body}"
+            )
+            .ok();
+        }
+    });
+    port
+}
+
 #[test]
-fn a_cloud_machine_reports_its_tags_spend_and_budget_on_its_settings_row() {
-    let dir = scratch("machines-cloud");
+fn each_machine_shows_its_drover_host_tags_on_its_settings_row() {
+    let dir = scratch("machines-tags");
     let shed = FakeShed::start(&dir.join("shed"), version());
     fs::write(
         shed.dir.join("machines.json"),
@@ -81,21 +110,13 @@ fn a_cloud_machine_reports_its_tags_spend_and_budget_on_its_settings_row() {
                         "disk_free_mb": 50_000, "cpus": 4, "uptime_s": 60, "terminals": {} });
     fs::write(shed.dir.join("stats-d1.json"), stats.to_string()).unwrap();
     fs::write(shed.dir.join("stats-air.json"), stats.to_string()).unwrap();
-    let config = "[machines.d1]\ntags = [\"gpu\", \"linux\"]\nbudget = 50\n\
-                  spend_cmd = [\"sh\", \"-c\", \"echo 12.4\"]\n\n[machines.air]\ntags = [\"arm\"]\n";
-    let cooee = Cooee::start_with(&dir, &shed.dir, config);
-    let machines = cooee.json("/machines");
-    let d1 = machines
-        .as_array()
-        .unwrap()
-        .iter()
-        .find(|m| m["name"] == "d1")
-        .unwrap();
-    assert_eq!(
-        (&d1["tags"], &d1["spend"], &d1["budget"]),
-        (&json!(["gpu", "linux"]), &json!(12.4), &json!(50.0)),
-        "{machines}"
+    let card = |name: &str, tags: &str| json!({ "name": name, "rows": [{ "k": "lanes", "notes": ["none"] }, { "k": "tags", "t": "m", "notes": [tags] }] });
+    let port = fake_drover(json!({ "hosts": [card("d1", "gpu linux"), card("air", "arm")] }));
+    let config = format!(
+        "[[plugins]]\nname = \"drover\"\nlabel = \"Drover\"\nurl = \"http://127.0.0.1:{port}\"\n\
+         module = \"/tab.js\"\ntoken = \"drover-0123456789abcdef\"\n"
     );
+    let cooee = Cooee::start_with(&dir, &shed.dir, &config);
     let screen = cooee.json("/screens/settings/machines");
     let rows = screen["blocks"][0]["rows"].as_array().unwrap();
     let row = |id: &str| rows.iter().find(|r| r["id"] == id).unwrap().clone();

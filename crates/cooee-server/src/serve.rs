@@ -238,14 +238,11 @@ pub fn serve(config: &Config, ready: impl FnOnce(SocketAddr)) -> io::Result<()> 
         (
             logins,
             Arc::clone(&manager),
-            Arc::new(
-                Machines::new(
-                    config.shed.clone(),
-                    config.shed_dir.clone(),
-                    cooee_machines::local_name(),
-                )
-                .with_hosts(config.machines.clone()),
-            ),
+            Arc::new(Machines::new(
+                config.shed.clone(),
+                config.shed_dir.clone(),
+                cooee_machines::local_name(),
+            )),
             Arc::new(config.clone()),
         ),
         (&data, config.dir.as_deref()),

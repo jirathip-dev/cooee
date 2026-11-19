@@ -9,13 +9,7 @@
       "id": "machines",
       "rows": [
         { "type": "row", "id": "mini", "title": "mini", "subtitle": "online" },
-        {
-          "type": "row",
-          "id": "d1",
-          "title": "d1",
-          "subtitle": "online · gpu · linux",
-          "badge": { "text": "$12.40 of $50.00 this month", "tone": "mute" }
-        },
+        { "type": "row", "id": "d1", "title": "d1", "subtitle": "online · gpu · linux" },
         { "type": "row", "id": "air", "title": "air", "subtitle": "online · arm" }
       ]
     }

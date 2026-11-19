@@ -23,10 +23,10 @@ internal struct SettingsFrames {
             .phone("you-terminal-dark", .farmDark) { TerminalView.own() },
             .mac("mac-plugins-light", 1180, 780, .farmLight) { SettingsWindow(page: .plugins) },
         ]
-        let cloud = [("dark", Palette.farmDark), ("light", Palette.farmLight)].map {
-            Frame.phone("machines-cloud-\($0.0)", $0.1) { cloudMachines() }
+        let tagged = [("dark", Palette.farmDark), ("light", Palette.farmLight)].map {
+            Frame.phone("machines-tags-\($0.0)", $0.1) { taggedMachines() }
         }
-        return (phones + macs + more + cloud).map { $0.filed("v2-settings") }
+        return (phones + macs + more + tagged).map { $0.filed("v2-settings") }
     }
 
     private static let machines = URL(fileURLWithPath: #filePath)
@@ -34,7 +34,7 @@ internal struct SettingsFrames {
         .deletingLastPathComponent().deletingLastPathComponent().appendingPathComponent(
             "docs/design/screens-as-data/fixtures/machines.json")
 
-    @MainActor private static func cloudMachines() -> some View {
+    @MainActor private static func taggedMachines() -> some View {
         let screen = (try? JSONDecoder().decode(JSONValue.self, from: Data(contentsOf: machines))) ?? .null
         return Color.clear.overlay(alignment: .top) { BlocksView(screen, source: .core).padding(BlocksView.inset) }
             .clipped()
