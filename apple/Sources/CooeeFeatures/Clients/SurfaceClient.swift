@@ -21,7 +21,9 @@ public struct SurfaceClient: Sendable {
 }
 
 extension SurfaceClient: TestDependencyKey {
-    public static let testValue = SurfaceClient()
+    public static let testValue = SurfaceClient(
+        glance: { _ in throw CancellationError() }, register: { _, _, _ in }, tokens: { .finished }, cached: { nil },
+        keep: { _ in }, open: { _ in }, routes: { .finished })
 }
 
 extension DependencyValues {

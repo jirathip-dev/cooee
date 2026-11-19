@@ -82,21 +82,30 @@ public struct RunningSmall: View {
 public struct GlanceLarge: View {
     @Environment(\.look) private var look
     private let glance: SurfaceGlance
+    private let opens: Bool
 
     public var body: some View {
         let palette = look.palette
         VStack(alignment: .leading, spacing: 10) {
             Kicker(text: "Needs you · \(glance.needs.count)", tint: palette.red)
-            ForEach(glance.needs.prefix(3)) { row in Link(destination: row.url) { GlanceLine(row: row) } }
+            ForEach(glance.needs.prefix(3)) { line($0) }
             Rectangle().fill(palette.line).frame(height: 1)
             Kicker(text: "Running · \(glance.running.count)", tint: palette.cyan)
-            ForEach(glance.running.prefix(3)) { row in Link(destination: row.url) { GlanceLine(row: row) } }
+            ForEach(glance.running.prefix(3)) { line($0) }
             Spacer(minLength: 0)
             Text(glance.asOf).ui(12, .regular, look).foregroundStyle(palette.mute)
         }
     }
 
-    public init(_ glance: SurfaceGlance) { self.glance = glance }
+    @ViewBuilder private func line(_ row: SurfaceRow) -> some View {
+        if opens { Link(destination: row.url) { GlanceLine(row: row) } } else { GlanceLine(row: row) }
+    }
+
+    /// `opens`: each row is a link to its thread (a still image draws none).
+    public init(_ glance: SurfaceGlance, opens: Bool = true) {
+        self.glance = glance
+        self.opens = opens
+    }
 }
 
 /// The circular lock widget: how many need you.
