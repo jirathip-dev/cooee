@@ -1,0 +1,14 @@
+Decided: the hub ranks the one Live Activity from its thread list every 5 s (asks › failed › running, the rest as +N) and pushes only what due() allows
+Because: crates/cooee-server/src/push/activity.rs:117
+Decided: a new last line waits 15 s; a start, a state change, an ask, a new +N or an end goes at once
+Because: "a new last line (at most 1 per 15 s), an ask or an end"
+Decided: Stop is a LiveActivityIntent on iOS (AppIntent on macOS, where LiveActivityIntent does not exist) with authenticationPolicy .alwaysAllowed, so no Face ID
+Because: q1461
+Decided: the views live in CooeeUI and the extension links it; the snapshot test draws the design's lock, island and widgets frames from them in Modern, Terminal and Scene
+Because: apple/Tests/CooeeUITests/Frames/Surfaces.swift:266
+Rejected: linking the design package from the app — it is preview-only and no longer builds against today's CooeeUI
+Decided: What needs me opens the top ask, else the top blocked lane, else Home: the app has no Needs you screen
+Because: apple/Sources/CooeeApp/Intents.swift:87
+Check: SurfaceFrames passes in compare mode with no PNG re-recorded; the Rust activity tests cover tokens, ranking, the throttle and /glance
+Check: phone check (TestFlight) is not done: the App Group and widget bundle id need the cloud signing to register them
+Owner: Your lock screen, island, widgets, Siri and the Action button now show what needs you and what runs, with Stop on the island.
