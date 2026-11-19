@@ -134,8 +134,27 @@ fn own_tools() -> Value {
     ])
 }
 
+fn chief_tools(thread: &str) -> Vec<Value> {
+    let got = ask("/mcp/agent/chief/tools", &json!({ "thread": thread }));
+    got.ok()
+        .and_then(|v| serde_json::from_value(v).ok())
+        .unwrap_or_default()
+}
+
+fn merged(own: &Value, mut mine: Vec<Value>) -> Value {
+    let name = |t: &Value| t.get("name").cloned();
+    let own = own.as_array().into_iter().flatten();
+    let mut kept: Vec<Value> = own
+        .filter(|t| !mine.iter().any(|m| name(m) == name(t)))
+        .cloned()
+        .collect();
+    kept.append(&mut mine);
+    Value::Array(kept)
+}
+
 /// `cooee mcp serve --thread <id>`: cooee's own MCP server: `propose_server`, and `remember` (#126),
-/// `ask_persona` (#156), `handoff` (#164), `history` (#217), `update_persona` (#270), `skill` (#218) and `secret` (#163) for a persona's.
+/// `ask_persona` (#156), `handoff` (#164), `history` (#217), `update_persona` (#270), `skill` (#218) and `secret` (#163) for a persona's,
+/// and in Chief's own chat its tools (#664).
 ///
 /// # Errors
 /// Never past a broken stdin; each refused proposal is the tool's error.
@@ -163,40 +182,40 @@ pub fn serve(thread: &str) -> Result<(), String> {
                 }),
             ),
             "ping" => reply(id, &json!({})),
-            "tools/list" => reply(id, &json!({ "tools": tools })),
+            "tools/list" => reply(id, &json!({ "tools": merged(&tools, chief_tools(thread)) })),
             "tools/call" => {
                 let args = msg
                     .pointer("/params/arguments")
                     .cloned()
                     .unwrap_or_default();
-                let call = match msg.pointer("/params/name").and_then(Value::as_str) {
-                    Some("propose_server") => Some((
+                let name = msg.pointer("/params/name").and_then(Value::as_str);
+                let (path, said) = match name {
+                    Some("propose_server") => (
                         "/mcp/agent/propose",
                         "Proposed. The owner sees a card with the exact command or URL; once approved with Face ID it is added switched off. Nothing has run.",
-                    )),
-                    Some("remember") => Some(("/mcp/agent/remember", "")),
-                    Some("ask_persona") => Some(("/mcp/agent/ask", "")),
-                    Some("handoff") => Some(("/mcp/agent/handoff", "")),
-                    Some("history") => Some(("/mcp/agent/history", "")),
-                    Some("update_persona") => Some(("/mcp/agent/persona", "")),
-                    Some("create_routine") => Some(("/mcp/agent/routine", "")),
-                    Some("skill") => Some(("/mcp/agent/skill", "")),
-                    Some("secret") => Some(("/mcp/agent/secret", "")),
-                    _ => None,
+                    ),
+                    Some("remember") => ("/mcp/agent/remember", ""),
+                    Some("ask_persona") => ("/mcp/agent/ask", ""),
+                    Some("handoff") => ("/mcp/agent/handoff", ""),
+                    Some("history") => ("/mcp/agent/history", ""),
+                    Some("update_persona") => ("/mcp/agent/persona", ""),
+                    Some("create_routine") => ("/mcp/agent/routine", ""),
+                    Some("skill") => ("/mcp/agent/skill", ""),
+                    Some("secret") => ("/mcp/agent/secret", ""),
+                    _ => ("/mcp/agent/chief", ""),
                 };
-                match call.map(|(path, said)| {
-                    let got = ask(path, &json!({ "thread": thread, "server": args }));
-                    got.map(|v| v.as_str().unwrap_or(said).to_owned())
-                }) {
-                    Some(said) => {
-                        let (text, failed) = said.map_or_else(|e| (e, true), |s| (s, false));
-                        reply(
-                            id,
-                            &json!({ "content": [{ "type": "text", "text": text }], "isError": failed }),
-                        )
-                    }
-                    None => error(id, -32602, "cooee has no such tool"),
-                }
+                let server = if path == "/mcp/agent/chief" {
+                    json!({ "tool": name, "arguments": args })
+                } else {
+                    args
+                };
+                let got = ask(path, &json!({ "thread": thread, "server": server }));
+                let said = got.map(|v| v.as_str().unwrap_or(said).to_owned());
+                let (text, failed) = said.map_or_else(|e| (e, true), |s| (s, false));
+                reply(
+                    id,
+                    &json!({ "content": [{ "type": "text", "text": text }], "isError": failed }),
+                )
             }
             m => error(id, -32601, &format!("no method {m}")),
         };

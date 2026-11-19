@@ -15,6 +15,8 @@ use crate::{
     service::{job, plist, tailnet_name, write_plist},
 };
 
+mod chief;
+
 /// `cooee setup`'s flags.
 pub struct Setup {
     pub instance: String,
@@ -22,6 +24,8 @@ pub struct Setup {
     pub explicit: bool,
     pub dry_run: bool,
     pub yes: bool,
+    pub chief_agent: Option<String>,
+    pub chief_machine: Option<String>,
 }
 
 pub(crate) fn ok(argv: &[&str]) -> bool {
@@ -99,12 +103,14 @@ impl Setup {
 
     /// Every step, in order, then the pairing code.
     pub fn run(&self, path: &Path) -> Result<(), String> {
+        self.chief_flags(path)?;
         let uid = output(&["id", "-u"]).ok_or("`id -u` failed")?;
         let gui = format!("gui/{}", uid.trim());
         shed()?;
         let (config, changed) = self.config(path)?;
         self.themes(&config)?;
         self.agents(&config)?;
+        self.chief(&config, path)?;
         self.service(&config, path, &gui, changed, "serve")?;
         self.service(&config, path, &gui, false, "update")?;
         self.tailnet(config.port)?;

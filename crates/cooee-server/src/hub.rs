@@ -22,6 +22,7 @@ use crate::push::{Push, note};
 
 mod ask;
 mod cards;
+mod chief;
 mod events;
 mod expire;
 mod folders;
@@ -44,6 +45,7 @@ mod start;
 #[cfg(test)]
 mod tests;
 mod threads;
+pub(crate) use chief::Me;
 pub use mcp::Called;
 use mcp::Proposed;
 pub use rooms::Starter;
