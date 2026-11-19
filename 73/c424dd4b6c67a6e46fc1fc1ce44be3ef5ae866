@@ -1,0 +1,16 @@
+Decided: replace the acting flag with an ordered pending queue; the first entry is in flight, the rest wait
+Because: q2038
+Because: apple/Sources/CooeeFeatures/ScreenFeature.swift:169
+Rejected: keep disabling the whole screen while acting — that is what made taps look dropped
+Rejected: a separate struct pairing each tap with its screen id — sending the next tap before navigating keeps the screen right without it
+Check: a repeat tap on a pending control is ignored, and queued taps are sent in tap order after the earlier one ends
+Owner: A tap while another action runs now dims its button at once and is sent next, in order, never dropped.
+
+Decided: replace the acting flag with an ordered pending queue; the first entry is in flight, the rest wait
+Because: q2038
+Because: apple/Sources/CooeeFeatures/ScreenFeature.swift:212
+Decided: on the staging merge, the queued send keeps #606's tap timing and merges #603's debounced save with the next send
+Rejected: keep disabling the whole screen while acting — that is what made taps look dropped
+Rejected: a separate struct pairing each tap with its screen id — sending the next tap before navigating keeps the screen right without it
+Check: a repeat tap on a pending control is ignored, and queued taps are sent in tap order after the earlier one ends
+Owner: A tap while another action runs now dims its button at once and is sent next, in order, never dropped.
