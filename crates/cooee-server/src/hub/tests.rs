@@ -421,3 +421,18 @@ fn the_glance_shows_a_working_thread_as_running_then_its_ask() {
         (0, "run")
     );
 }
+
+#[test]
+fn the_activity_counts_the_tools_of_the_current_turn_only() {
+    let dir = scratch("tools");
+    let lines = [
+        json!({ "id": 1, "at": 1, "seq": 1, "kind": "you", "text": "go", "random_id": "r1" }),
+        json!({ "id": 2, "at": 2, "seq": 2, "kind": "tool", "call": "a", "title": "ls", "status": "completed" }),
+        json!({ "id": 3, "at": 3, "seq": 3, "kind": "you", "text": "more", "random_id": "r2" }),
+        json!({ "id": 4, "at": 4, "seq": 4, "kind": "tool", "call": "b", "title": "ls", "status": "completed" }),
+        json!({ "id": 5, "at": 5, "seq": 5, "kind": "tool", "call": "c", "title": "cat", "status": "completed" }),
+    ];
+    seed(&dir, "t", &lines.map(|l| l.to_string() + "\n").concat());
+    let hub = hub(&dir);
+    assert_eq!((hub.tools("t"), hub.tools("gone")), (2, 0));
+}

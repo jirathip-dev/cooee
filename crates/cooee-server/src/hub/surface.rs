@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use cooee_core::Summary;
+use cooee_core::{Body, Summary};
 
 use super::{Hub, lock, now};
 use crate::push::{Overview, Shown, due, kind, overview, rank};
@@ -42,11 +42,26 @@ impl Hub {
         overview(&rows, s.since(at), at)
     }
 
+    pub(super) fn tools(&self, id: &str) -> usize {
+        let Ok(live) = self.live(id) else { return 0 };
+        let live = lock(&live);
+        let turn = live
+            .chat
+            .items
+            .iter()
+            .rev()
+            .take_while(|i| !matches!(i.body, Body::You { .. }));
+        turn.filter(|i| matches!(i.body, Body::Tool { .. })).count()
+    }
+
     pub(super) fn surface(&self, at: u64) {
         let rows = self.list();
         let mut s = lock(&self.surface);
         s.seen(&rows, at);
-        let next = rank(&rows, s.since(at));
+        let mut next = rank(&rows, s.since(at));
+        if let Some(n) = next.as_mut() {
+            n.tools = self.tools(&n.thread);
+        }
         let Some(event) = due(s.sent.as_ref(), next.as_ref(), at) else {
             return;
         };

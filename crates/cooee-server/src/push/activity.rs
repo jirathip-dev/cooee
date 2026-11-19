@@ -40,8 +40,10 @@ pub struct Shown {
     pub thread: String,
     /// The thread's title.
     pub title: String,
-    /// Its persona's name (else its agent).
+    /// Its persona's id (empty: none).
     pub persona: String,
+    /// Its persona's name (else its agent).
+    pub name: String,
     /// Its machine (empty: this host).
     pub machine: String,
     /// The question, the failure or the last line.
@@ -50,6 +52,8 @@ pub struct Shown {
     pub since: u64,
     /// The rest: `+2 running` (empty: none).
     pub more: String,
+    /// The tools its turn ran so far.
+    pub tools: usize,
 }
 
 /// Each row's kind for the Live Activity: `ask` (blocked, not a lane), `failed`, `running` (or none).
@@ -89,11 +93,13 @@ pub fn rank(rows: &[Summary], since: impl Fn(&str) -> u64) -> Option<Shown> {
         kind: order.get(at).copied().unwrap_or("running").to_owned(),
         thread: top.id.clone(),
         title: top.title.clone(),
-        persona: who(top),
+        persona: top.persona.clone(),
+        name: who(top),
         machine: top.machine.clone(),
         line: top.last.clone(),
         since: since(&top.id),
         more: more.collect::<Vec<_>>().join(" · "),
+        tools: 0,
     })
 }
 
@@ -131,8 +137,10 @@ pub struct Glanced {
     pub thread: String,
     /// Its title.
     pub title: String,
-    /// Its persona's name (else its agent).
+    /// Its persona's id (empty: none).
     pub persona: String,
+    /// Its persona's name (else its agent).
+    pub name: String,
     /// Its machine (empty: this host).
     pub machine: String,
     /// The question or the last line.
@@ -162,7 +170,8 @@ pub fn overview(rows: &[Summary], since: impl Fn(&str) -> u64, at: u64) -> Overv
     let row = |r: &Summary| Glanced {
         thread: r.id.clone(),
         title: r.title.clone(),
-        persona: who(r),
+        persona: r.persona.clone(),
+        name: who(r),
         machine: r.machine.clone(),
         line: r.last.clone(),
         since: since(&r.id),
@@ -346,7 +355,7 @@ mod tests {
             (
                 top.kind.as_str(),
                 top.thread.as_str(),
-                top.persona.as_str(),
+                top.name.as_str(),
                 top.since
             ),
             ("ask", "ask", "Researcher", 7)
@@ -358,7 +367,7 @@ mod tests {
 
         let top = rank(&rows[..1], |_| 0).unwrap();
         assert_eq!(
-            (top.kind.as_str(), top.persona.as_str(), top.more.as_str()),
+            (top.kind.as_str(), top.name.as_str(), top.more.as_str()),
             ("running", "agent", "")
         );
         let failed = rank(
@@ -438,7 +447,7 @@ mod tests {
         let json = serde_json::to_value(&g).unwrap();
         assert_eq!(
             json["asks"][0],
-            serde_json::json!({"thread": "a", "title": "a title", "persona": "agent", "machine": "",
+            serde_json::json!({"thread": "a", "title": "a title", "persona": "", "name": "agent", "machine": "",
                 "line": "a line", "since": 97, "lane": false})
         );
     }

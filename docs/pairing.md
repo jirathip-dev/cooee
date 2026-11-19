@@ -67,7 +67,7 @@ an end drops the update token and the island shows `replied` for 15 minutes.
 | `POST /push/apns` | `{token, env?}`: a native device's APNs token (hex); `env` `sandbox` or `production`, default `[apns] env` | text; 400 for a token that isn't hex |
 | `DELETE /push/apns` | `{token}` | text |
 | `POST /push/activity` | `{token, activity?, env?}`: the Live Activity push-to-start token (no `activity`) or the running activity's update token | text; 400 for a token that isn't hex |
-| `GET /glance` | | `{at, asks, blocked, running}`, each row `{thread, title, persona, machine, line, since, lane}`: what the widgets show, as of `at` |
+| `GET /glance` | | `{at, asks, blocked, running}`, each row `{thread, title, persona, name, machine, line, since, lane}`: what the widgets show, as of `at` |
 | `GET /devices` | | `{id, label, created, used, me, by}[]`: `by`, the device that approved its request (empty if none) |
 | `POST /devices/remove` | `{id}` | text |
 | `POST /devices/pair` | `{}` | `{code, link, svg, host}`: a new code (dropping the open one), its link and the link as a QR code |
