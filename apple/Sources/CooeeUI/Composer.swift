@@ -24,7 +24,7 @@ internal struct Composer: View {
     }
 
     private var chips: [String] { actions.send == nil ? attachments : actions.files }
-    private var shown: String { queued.isEmpty ? hint : "Queue a message" }
+    private var shown: String { actions.denying ? "Deny and say…" : queued.isEmpty ? hint : "Queue a message" }
 
     internal var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -55,6 +55,7 @@ internal struct Composer: View {
                 TextField(members.isEmpty ? shown : "", text: text, axis: .vertical).ui(16, .regular, look)
                     .lineLimit(1...5).textFieldStyle(.plain).onSubmit(send).focused($typing)
                     .onChange(of: typing) { _, now in if !now && sending.wrappedValue { post() } }
+                    .onChange(of: actions.denying) { _, now in if now { typing = true } }
                     .foregroundStyle(members.isEmpty ? palette.foreground : .clear).accessibilityLabel(shown)
                     .overlay(alignment: .topLeading) {
                         if !members.isEmpty { tokens(text.wrappedValue).allowsHitTesting(false) }

@@ -132,6 +132,9 @@ pub struct Queued {
     /// The routine that sent it (#75).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub routine: Option<crate::routines::Mark>,
+    /// The approval it denies (#351): once sent it shows under that card, not as a message of its own.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub denied: Option<u64>,
 }
 
 /// One message in a thread.

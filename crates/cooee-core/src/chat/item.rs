@@ -156,3 +156,28 @@ pub enum Body {
         text: String,
     },
 }
+
+impl Item {
+    /// The answer that denies an approval with the owner's text as its value (#351).
+    pub const SAY: &str = "say";
+
+    /// An approval's deny: the agent's reject-once option, else its reject-always, else `decline`.
+    #[must_use]
+    pub fn deny(&self) -> Option<&ApprovalOption> {
+        let Body::Approval { options, .. } = &self.body else {
+            return None;
+        };
+        let reject = |kind: &str| options.iter().find(|o| o.kind == kind);
+        reject("reject_once")
+            .or_else(|| reject("reject_always"))
+            .or_else(|| options.iter().find(|o| o.id == "decline"))
+    }
+
+    /// Shed's own approval (no plugin card) with a deny (#351): it may be denied with the owner's text.
+    #[must_use]
+    pub fn sayable(&self) -> Option<&ApprovalOption> {
+        let shed =
+            matches!(&self.body, Body::Approval { plugin: None, card, .. } if card.form.is_none());
+        self.deny().filter(|_| shed)
+    }
+}

@@ -128,6 +128,7 @@ fn update(config: &Config, check: bool) -> Result<(), String> {
                 tag: "update".to_owned(),
                 url: "/".to_owned(),
                 item: 0,
+                say: false,
             };
             let push = cooee_server::Push::new(&data).with_apns(config.apns.clone());
             log(&data, &why)?;

@@ -7,6 +7,18 @@ public struct PushClient: Sendable {
     public var register: @Sendable (_ server: Server, _ token: String, _ enabled: Bool) async throws -> Void
     /// The thread of each notification the owner taps (#516).
     public var opened: @Sendable () async -> AsyncStream<String> = { .finished }
+    /// Each approval denied from its notification with the owner's text (#351).
+    public var said: @Sendable () async -> AsyncStream<PushSaid> = { .finished }
+}
+
+public struct PushSaid: Sendable, Equatable {
+    public let thread: String
+    public let item: Int
+    public let text: String
+
+    public init(thread: String, item: Int, text: String) {
+        (self.thread, self.item, self.text) = (thread, item, text)
+    }
 }
 
 extension PushClient: TestDependencyKey {
