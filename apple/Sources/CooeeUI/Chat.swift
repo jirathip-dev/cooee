@@ -24,7 +24,7 @@ public struct ChatView: View {
                     ChatHeader(
                         persona: persona, chips: chips, back: back, plugged: actions.topics == nil, actions: actions
                     )
-                    .overlay(alignment: .bottom) { if loading { LoadingBar().offset(y: 2) } }
+                    .overlay(alignment: .bottom) { if loading { SlowStrip().offset(y: 2) } }
                 }
                 if let topics = actions.topics { StripRow(topics: topics, chips: chips, wide: !back, actions: actions) }
                 Scroller(end: end) {
@@ -48,7 +48,7 @@ public struct ChatView: View {
                 .environment(\.frames, actions.frames).environment(\.screenActs, actions.screenActs)
                 VStack(spacing: 8) {
                     if let waits = actions.waits { WaitsPill(name: persona.name, since: waits) }
-                    if working { WorkingPill(persona: persona, since: since, step: actions.step, stop: actions.stop) }
+                    if working { WorkingPill(persona: persona, since: since, step: actions.step, actions: actions) }
                     if let topics = actions.topics, topics.newing { FolderRow(actions: topics).padding(.bottom, 2) }
                     Composer(
                         hint: "Message \(actions.topics?.start?.title ?? persona.name)",
@@ -162,7 +162,10 @@ internal struct ChatHeader: View {
                 }
                 sheet { FigureView(persona: persona, size: 38) }
                 VStack(alignment: .leading, spacing: 3) {
-                    sheet { Text(persona.name).ui(16, .semibold, look) }
+                    HStack(spacing: 6) {
+                        sheet { Text(persona.name).ui(16, .semibold, look) }
+                        if let sync = actions.sync { SyncBadge(sync: sync, asOf: actions.asOf) }
+                    }
                     HStack(spacing: 6) {
                         chip
                         if let machine = actions.machine {

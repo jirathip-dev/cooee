@@ -6,7 +6,7 @@ internal struct WorkingPill: View {
     internal let persona: Persona
     internal var since: Date?
     internal var step: String?
-    internal var stop: () -> Void = {}
+    internal var actions = ChatActions()
 
     internal var body: some View {
         let palette = look.palette
@@ -20,7 +20,7 @@ internal struct WorkingPill: View {
                 label(42)
             }
             Spacer()
-            Button(action: stop) {
+            Button(action: actions.stop) {
                 HStack(spacing: 4) {
                     Image(systemName: "stop.fill").font(.system(size: 10))
                     Text("Stop")
@@ -28,7 +28,7 @@ internal struct WorkingPill: View {
                 .ui(13, .semibold, look).foregroundStyle(palette.red)
                 .padding(.horizontal, 10).frame(height: 28).background(palette.red.opacity(0.14), in: .capsule)
             }
-            .buttonStyle(.plain).accessibilityLabel("Stop")
+            .buttonStyle(.plain).accessibilityLabel("Stop").disabled(actions.stopping)
         }
         .padding(.leading, 14).padding(.trailing, 6).frame(height: 40)
         .surface(look, radius: 20)
@@ -36,7 +36,8 @@ internal struct WorkingPill: View {
 
     private func label(_ seconds: Int) -> some View {
         let time = "\(max(0, seconds) / 60):\(String(format: "%02d", max(0, seconds) % 60))"
-        return Text("\(step ?? "Working") · \(time)").ui(13, .medium, look).lineLimit(1)
+        let word = actions.stopping ? "Stopping…" : actions.sync.flatMap(SyncBadge.word)
+        return Text("\(word ?? step ?? "Working") · \(time)").ui(13, .medium, look).lineLimit(1)
             .truncationMode(.middle)
     }
 }

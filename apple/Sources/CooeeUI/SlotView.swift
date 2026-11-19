@@ -146,6 +146,7 @@ private struct HomeSlot<Detail: View>: View {
                         actions: actions)
                 }
             }
+            .modifier(Refreshing { home.send(.refresh) }).modifier(Toasting(toast: home.error))
             .overlay(alignment: .bottom) {
                 if let broken = store.layout.broken {
                     Text(broken).ui(13, .regular, look).foregroundStyle(look.palette.amber).padding(12)
@@ -167,6 +168,7 @@ private struct HomeSlot<Detail: View>: View {
         actions.openOthers = { store.send(.open(AppFeature.others)) }
         actions.rooms = store.menu.settings.pinnedRooms
         actions.pinRoom = { store.send(.menu(.pinRoom($0))) }
+        (actions.sync, actions.asOf) = (store.home?.sync, store.home?.asOf)
         return actions
     }
 }

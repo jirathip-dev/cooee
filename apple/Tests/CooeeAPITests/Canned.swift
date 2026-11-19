@@ -7,6 +7,7 @@ internal struct Answer: Sendable {
     internal var status = 200
     internal var headers: [String: String] = [:]
     internal var chunks: [String]
+    internal var failure: URLError?
 }
 
 internal final class Canned: URLProtocol, @unchecked Sendable {
@@ -54,6 +55,7 @@ internal final class Canned: URLProtocol, @unchecked Sendable {
         Self.seen.withLock { $0.append(request) }
         guard let url = request.url else { return }
         let answer = Self.next(url.host() ?? "", url.path)
+        if let failure = answer.failure { return client?.urlProtocol(self, didFailWithError: failure) ?? () }
         guard
             let response = HTTPURLResponse(
                 url: url, statusCode: answer.status, httpVersion: "HTTP/1.1", headerFields: answer.headers

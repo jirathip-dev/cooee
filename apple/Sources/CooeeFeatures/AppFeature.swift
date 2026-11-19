@@ -1,5 +1,6 @@
 import ComposableArchitecture
 import CooeeCore
+import Foundation
 
 @Reducer
 public struct AppFeature: Sendable {
@@ -18,6 +19,7 @@ public struct AppFeature: Sendable {
         public var layout: LayoutFeature.State
         @Presents public var persona: PersonaFeature.State?
         public var notice: String?
+        public var away: Date?
 
         public init(layout: Layout, server: Server?, settings: Settings = Settings()) {
             self.layout = LayoutFeature.State(server: server, layout: layout)
@@ -50,12 +52,13 @@ public struct AppFeature: Sendable {
         case start(String)
         case back
         case path([String])
+        case scene(active: Bool)
     }
 
     @Dependency(\.serverStore) internal var serverStore
     @Dependency(\.loginItems) private var loginItems
     @Dependency(\.push) private var push
-    @Dependency(\.date.now) private var now
+    @Dependency(\.date.now) internal var now
     @Dependency(\.continuousClock) internal var clock
 
     public init() {}
@@ -112,6 +115,8 @@ public struct AppFeature: Sendable {
             case .newRoom(.delegate(.cancel)):
                 state.newRoom = nil
                 return .none
+            case .scene(let active):
+                return scene(&state, active: active)
             default:
                 return navigate(&state, action)
             }

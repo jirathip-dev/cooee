@@ -60,7 +60,10 @@ internal struct PinnedTests {
             $0.chat?.turn = Turn(state: "done")
             $0.chat?.since = epoch
         }
-        await store.receive(\.chat.failed) { $0.chat?.error = "Gone." }
+        await store.receive(\.chat.link.dropped) {
+            $0.chat?.error = "Gone."
+            $0.chat?.status.sync = .reconnecting
+        }
         await task.cancel()
         #expect(calls.all == ["messages new", "read new 7"])
     }

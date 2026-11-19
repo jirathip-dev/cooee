@@ -85,10 +85,10 @@ internal struct ScreensTests {
         let folder = FileManager.default.temporaryDirectory.appending(path: "kept-\(UUID().uuidString)")
         let kept = KeptScreen(screen: .object(["title": .string("Queue")]), kept: Date(timeIntervalSince1970: 60))
         let screens = KeptScreens(folder: folder)
-        #expect(screens.load("https://mini|d|/screens/queue") == nil)
+        #expect(screens.load("https://mini|d|/screens/queue") as KeptScreen? == nil)
         screens.save("https://mini|d|/screens/queue", kept)
-        #expect(screens.load("https://mini|d|/screens/queue") == kept)
-        #expect(screens.load("https://mini|d|/screens/events") == nil)
+        #expect(screens.load("https://mini|d|/screens/queue") as KeptScreen? == kept)
+        #expect(screens.load("https://mini|d|/screens/events") as KeptScreen? == nil)
         try FileManager.default.removeItem(at: folder)
     }
 }

@@ -77,7 +77,7 @@ internal struct ChatFeatureTests {
         await store.receive(\.event) { $0.turn = Turn(state: "done") }
         await store.receive(\.event) { $0.queue = [] }
         await store.receive(\.event)
-        await store.receive(\.failed) { $0.error = "Gone." }
+        await store.receive(\.link.dropped) { ($0.error, $0.status.sync) = ("Gone.", .reconnecting) }
         await task.cancel()
         #expect(calls.all == ["read a1 1"])
         #expect(store.state.drawn.count == 2 && !store.state.working)
@@ -92,12 +92,18 @@ internal struct ChatFeatureTests {
         #expect(state.drawn.count == 2 && state.step == nil)
     }
 
-    @Test internal func aFailedLoadSaysWhyAndTriesAgain() async {
+    @Test internal func aFailedLoadToastsOnceGoesOfflineAndTriesAgain() async {
         let store = store { $0.threads.messages = { _, _ in throw APIError(status: 500, text: "Locked.") } }
         let task = await store.send(.task)
-        await store.receive(\.failed) { $0.error = "Locked." }
+        await store.receive(\.link.dropped) {
+            $0.error = "Locked."
+            $0.loading = false
+            $0.status.sync = .reconnecting
+        }
         await clock.advance(by: .seconds(2))
-        await store.receive(\.failed)
+        await store.receive(\.link.dropped) { $0.status.sync = .offline }
+        await clock.advance(by: .seconds(1))
+        await store.receive(\.link.toasted) { $0.error = nil }
         await task.cancel()
     }
 
@@ -154,15 +160,9 @@ internal struct ChatFeatureTests {
         await store.send(.compose(.steer(0)))
         await store.send(.compose(.unqueue(1)))
         await store.send(.compose(.unqueue(7)))
-        await store.send(.compose(.stop))
+        await store.send(.compose(.stop)) { $0.status.stopping = true }
         await store.finish()
         #expect(calls.all == ["steer a1 q1", "unqueue a1 q2", "stop a1"])
-    }
-
-    @Test internal func aFailedCallSaysWhy() async {
-        let store = store { $0.threads.stop = { _, _ in throw APIError(status: 409, text: "Nothing runs.") } }
-        await store.send(.compose(.stop))
-        await store.receive(\.failed) { $0.error = "Nothing runs." }
     }
 }
 
@@ -177,5 +177,65 @@ extension ChatFeatureTests {
         await store.receive(\.outbox.delivered) { $0.outbox = [] }
         await store.receive(\.delegate.started)
         #expect(calls.all == ["start coder  hi setup"])
+    }
+}
+
+extension ChatFeatureTests {
+    @Test internal func aThreadThatCannotLoadDrawsTheSliceItLastLoadedWithItsTime() async {
+        let kept = LockIsolated<KeptSlice?>(nil)
+        let online = store { $0.kept.keepThread = { _, _, slice in kept.setValue(slice) } }
+        await online.send(.link(.refresh))
+        await online.receive(\.loaded) {
+            $0.items = slice.items
+            $0.queue = slice.queue
+            $0.turn = slice.turn
+            $0.since = epoch
+            $0.live = LiveReply("Hel")
+            $0.loading = false
+        }
+        let offline = store {
+            $0.threads.messages = { _, _ in throw URLError(.notConnectedToInternet) }
+            $0.kept.thread = { _, thread in thread == "a1" ? kept.value : nil }
+        }
+        await offline.send(.link(.refresh))
+        await offline.receive(\.link.dropped) {
+            $0.items = slice.items
+            $0.queue = slice.queue
+            ($0.loading, $0.status.asOf, $0.status.sync) = (false, epoch, .reconnecting)
+            $0.error = URLError(.notConnectedToInternet).localizedDescription
+        }
+        await offline.send(.event(.sync(.live))) { $0.status.sync = .live }
+        await clock.advance(by: .seconds(3))
+        await offline.receive(\.link.toasted) { $0.error = nil }
+    }
+
+    @Test internal func aFailedCallToastsWhyUntilItsTimeIsUp() async {
+        let store = store { $0.threads.stop = { _, _ in throw APIError(status: 409, text: "Nothing runs.") } }
+        await store.send(.compose(.stop)) { $0.status.stopping = true }
+        await store.receive(\.failed) {
+            $0.error = "Nothing runs."
+            $0.status.stopping = false
+        }
+        await clock.advance(by: .seconds(2))
+        await store.send(.compose(.stop)) { $0.status.stopping = true }
+        await store.receive(\.failed) { $0.status.stopping = false }
+        await clock.advance(by: .seconds(2))
+        await clock.advance(by: .seconds(1))
+        await store.receive(\.link.toasted) { $0.error = nil }
+    }
+
+    @Test internal func aStopReadsStoppingUntilTheTurnEnds() async {
+        let store = store()
+        await store.send(.event(.state(Turn(state: "working")))) {
+            $0.turn = Turn(state: "working")
+            $0.since = epoch
+        }
+        await store.send(.compose(.stop)) { $0.status.stopping = true }
+        await store.send(.event(.state(Turn(state: "working"))))
+        await store.send(.event(.state(Turn(state: "done")))) {
+            $0.turn = Turn(state: "done")
+            $0.status.stopping = false
+        }
+        #expect(calls.all == ["stop a1"])
     }
 }

@@ -63,6 +63,7 @@ internal struct ChatScreen: View {
         actions.showMachine = { store.send(.machine(.show(true))) }
         actions.topics = store.bar.map { Self.topics(store, $0) }
         actions.live = { store.live }
+        (actions.sync, actions.asOf, actions.stopping) = (store.status.sync, store.status.asOf, store.status.stopping)
         return actions
     }
 
@@ -81,6 +82,7 @@ internal struct ChatScreen: View {
             )
             if !back && store.panel { panel(column: true).frame(width: 360) }
         }
+        .modifier(Refreshing { store.send(.link(.refresh)) }).modifier(Toasting(toast: store.error))
         .sheet(
             isPresented: Binding(get: { back && store.panel }, set: { store.send(.panel(.show($0))) }),
             onDismiss: { store.send(.panel(.dismissed)) },

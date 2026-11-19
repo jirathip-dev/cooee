@@ -22,6 +22,7 @@ public struct ChatFeature: Sendable {
         public var live = LiveReply()
         public var since = Date.distantPast
         public var error: String?
+        public var status = ChatStatus()
         public var draft = ""
         public var files: [Attachment] = []
         public var outbox: [Outgoing] = []
@@ -91,6 +92,7 @@ public struct ChatFeature: Sendable {
         case loaded(Slice)
         case event(StreamEvent)
         case failed(String)
+        case link(Link)
         case compose(Compose)
         case outbox(Outbox)
         case cards(Cards)
@@ -129,6 +131,7 @@ public struct ChatFeature: Sendable {
     @Dependency(\.date.now) internal var now
     @Dependency(\.perf) internal var perf
     @Dependency(\.markdown) internal var markdown
+    @Dependency(\.kept) internal var kept
 
     public init() {}
 
@@ -170,46 +173,22 @@ extension ChatFeature {
             return open(state)
         case .loaded(let slice):
             load(&state, slice)
+            return keep(state)
         case .event(let event):
             let timed = painted(state, event)
             state.room?.hear(event, when: now)
             apply(&state, event)
-            return timed
+            guard case .item = event else { return timed }
+            return .merge(timed, keep(state))
         case .failed(let error):
-            state.error = error
+            state.status.stopping = false
+            return toast(&state, error)
+        case .link(let action):
+            return link(&state, action)
         default:
             break
         }
         return .none
-    }
-
-    private func open(_ state: State) -> Effect<Action> {
-        guard case .thread(let thread) = state.target else { return .none }
-        let (threads, clock, server) = (threads, clock, state.server)
-        return .run { send in
-            while true {
-                do {
-                    let slice = try await threads.messages(server, thread)
-                    await send(.loaded(slice))
-                    if let last = slice.items.last { try? await threads.read(server, thread, last.id) }
-                    for try await event in threads.events(server, thread, slice.cursor) { await send(.event(event)) }
-                } catch {
-                    await send(.failed(error.localizedDescription))
-                    try await clock.sleep(for: .seconds(2))
-                }
-            }
-        }
-    }
-
-    private func load(_ state: inout State, _ slice: Slice) {
-        state.loading = false
-        state.items = slice.items
-        state.queue = slice.queue
-        state.turn = slice.turn
-        state.since = now
-        state.pending = slice.pending?.text
-        state.live = LiveReply(slice.turn.working ? slice.turn.text ?? "" : "", parse: markdown)
-        state.room?.heard(slice.asks ?? [], when: now)
     }
 
     private func apply(_ state: inout State, _ event: StreamEvent) {
@@ -221,9 +200,11 @@ extension ChatFeature {
         case .state(let turn):
             if turn.state != state.turn.state { state.since = now }
             state.turn = Turn(text: nil, state: turn.state, note: turn.note)
-            if !state.working { state.live = LiveReply() }
+            if !state.working { (state.live, state.status.stopping) = (LiveReply(), false) }
         case .queue(let queue):
             state.queue = queue
+        case .sync(let sync):
+            state.status.sync = sync
         case .reset, .roomTurn, .roomStop, .roomAsk:
             break
         }
