@@ -1,0 +1,12 @@
+Decided: the streaming reply is a LiveReply; a chunk parses only the text after its last blank line or closing fence
+Because: "closed blocks are parsed once, only the open tail is parsed again"
+Decided: drawn stays computed and no longer reads live; a chunk writes only live, so the transcript is not rebuilt
+Because: "a chunk touches only the live reply"
+Rejected: a stored drawn copy — every exhaustive TestStore assertion on items, outbox and turn would restate it (about 80 sites)
+Decided: LazyVStack only outside still mode; the still snapshot path keeps VStack so every frame stays identical
+Because: apple/Sources/CooeeUI/Chat.swift:131
+Decided: the scroll follows growth only while at the bottom (sizeChanges anchor from onScrollGeometryChange)
+Because: "stays put when the owner has scrolled up"
+Check: LiveReplyTests compares every chunk size to the whole-text parse; ChatStreamingTests counts parser calls with 200 items loaded
+Check: AC4 dropped frames on a phone were not measured; the PR gives a CPU proxy (0.636 ms to 0.0068 ms per chunk)
+Owner: Streaming replies redraw only the reply being written; a phone frame measurement is still owed.
