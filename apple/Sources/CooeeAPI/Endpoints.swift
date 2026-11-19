@@ -123,8 +123,8 @@ extension Client {
         String(bytes: try await send(request("GET", "/look/\(theme)/\(file)")).0, encoding: .utf8) ?? ""
     }
 
-    public func messages(_ id: String, before: Int = 50) async throws -> Slice {
-        try await call("GET", "/threads/\(id)/messages?before=\(before)")
+    public func messages(_ id: String, before: Int = 50, around: Int? = nil) async throws -> Slice {
+        try await call("GET", "/threads/\(id)/messages?before=\(before)" + (around.map { "&around=\($0)" } ?? ""))
     }
 
     public func frame(_ id: String, _ name: String) async throws -> Data {

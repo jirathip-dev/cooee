@@ -11,6 +11,7 @@ public struct ThreadsClient: Sendable {
     public var saveTheme: @Sendable (_ server: Server, _ name: String, _ draft: ThemeDraft) async throws -> Void
     public var themeArt: @Sendable (_ server: Server, _ theme: String, _ file: String) async throws -> String
     public var messages: @Sendable (_ server: Server, _ thread: String) async throws -> Slice
+    public var older: @Sendable (_ server: Server, _ thread: String, _ oldest: Int) async throws -> [APIItem]
     public var frame: @Sendable (_ server: Server, _ thread: String, _ name: String) async throws -> Data
     public var file: @Sendable (_ server: Server, _ thread: String, _ name: String) async throws -> Data
     public var screen: @Sendable (_ server: Server, _ persona: String) async throws -> BrowserScreen

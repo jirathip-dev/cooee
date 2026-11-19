@@ -2,20 +2,23 @@ import ComposableArchitecture
 import CooeeCore
 import Foundation
 
-@Reducer
-public struct ChatFeature: Sendable {
+extension ChatFeature {
     public enum Target: Equatable, Sendable {
         case thread(String)
         case new(APIPersona)
         case setup(APIPersona)
     }
+}
 
+@Reducer
+public struct ChatFeature: Sendable {
     @ObservableState
     public struct State: Equatable {
         public let server: Server
         public let target: Target
         public var persona: Persona
         public var items: [APIItem] = []
+        public var history = History.more
         public var frames: [String: Data] = [:]
         public var photos: [String: Data] = [:]
         public var turn = Turn()
@@ -91,6 +94,7 @@ public struct ChatFeature: Sendable {
     public enum Action: Sendable {
         case task
         case loaded(Slice)
+        case older(Older)
         case event(StreamEvent)
         case failed(String)
         case compose(Compose)
@@ -176,6 +180,8 @@ extension ChatFeature {
             return open(state)
         case .loaded(let slice):
             load(&state, slice)
+        case .older(let older):
+            return self.older(&state, older)
         case .event(let event):
             let timed = painted(state, event)
             state.room?.hear(event, when: now)
@@ -209,7 +215,7 @@ extension ChatFeature {
 
     private func load(_ state: inout State, _ slice: Slice) {
         state.loading = false
-        state.items = slice.items
+        state.items = state.items.filter { $0.id < slice.items.first?.id ?? 0 } + slice.items
         state.queue = slice.queue
         state.turn = slice.turn
         state.since = now
