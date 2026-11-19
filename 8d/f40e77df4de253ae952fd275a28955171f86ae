@@ -1,0 +1,10 @@
+Decided: a 401 waits 5 s on the clock and asks once more; only a second 401 clears the saved server
+Because: "A 401 re-checks once before clearing the saved server"
+Decided: the launch keychain read moves into AppFeature's .launch effect, raced by a 5 s clock deadline
+Because: "a hanging keychain fake → an error within 5 s (test clock)"
+Decided: after the deadline the app shows a notice, not pairing: an unread keychain is not an unpaired device
+Because: "only a confirmed unpaired state shows pairing"
+Rejected: a deadline inside Keychain.load with a thread wait — untestable on a test clock and blocks a thread
+Rejected: an immediate re-check — a restarting server would answer 401 twice in a row
+Check: AppFeatureTests oneUnauthorizedAnswerThenAGoodOneKeepsHomeAndTheServer and aKeychainThatNeverAnswersIsAnErrorAfterFiveSeconds fail on staging
+Owner: one bad answer no longer sends the phone back to pairing, and a stuck keychain shows an error instead of hanging.
