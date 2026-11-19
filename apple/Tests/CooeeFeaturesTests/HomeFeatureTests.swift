@@ -34,6 +34,7 @@ internal struct HomeFeatureTests {
         let rows = [row("t1", state: "working"), row("old", archived: true)]
         let store = store([
             .rows(rows), .failure(APIError(status: 500, text: "Locked.")), .failure(APIError(status: 401, text: "")),
+            .failure(APIError(status: 401, text: "")),
         ])
         await store.send(.task)
         await store.receive(\.loaded) {
@@ -45,6 +46,7 @@ internal struct HomeFeatureTests {
         }
         await clock.advance(by: .seconds(5))
         await store.receive(\.failed) { $0.error = "Locked." }
+        await clock.advance(by: .seconds(5))
         await clock.advance(by: .seconds(5))
         await store.receive(\.delegate.unauthorized)
         await store.finish()

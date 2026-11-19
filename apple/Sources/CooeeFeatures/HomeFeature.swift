@@ -97,7 +97,7 @@ public struct HomeFeature: Sendable {
         let (threads, plugins, clock) = (threads, plugins, clock)
         return .run { send in
             while true {
-                let outcome = await Self.load(server, threads, plugins)
+                let outcome = try await Self.check(server, threads, plugins, clock)
                 await Self.report(outcome, send)
                 if case .unauthorized = outcome { return }
                 try await clock.sleep(for: .seconds(5))
@@ -106,8 +106,17 @@ public struct HomeFeature: Sendable {
     }
 
     private func refresh(_ server: Server) -> Effect<Action> {
-        let (threads, plugins) = (threads, plugins)
-        return .run { send in await Self.report(await Self.load(server, threads, plugins), send) }
+        let (threads, plugins, clock) = (threads, plugins, clock)
+        return .run { send in await Self.report(try await Self.check(server, threads, plugins, clock), send) }
+    }
+
+    private static func check(
+        _ server: Server, _ threads: ThreadsClient, _ plugins: PluginsClient, _ clock: any _Concurrency.Clock<Duration>
+    ) async throws -> Outcome {
+        let outcome = await load(server, threads, plugins)
+        guard case .unauthorized = outcome else { return outcome }
+        try await clock.sleep(for: .seconds(5))
+        return await load(server, threads, plugins)
     }
 
     private static func load(_ server: Server, _ threads: ThreadsClient, _ plugins: PluginsClient) async -> Outcome {

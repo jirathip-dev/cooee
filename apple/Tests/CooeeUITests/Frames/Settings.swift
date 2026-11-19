@@ -1,4 +1,3 @@
-import CooeeCore
 import CooeeUI
 import SwiftUI
 import Testing

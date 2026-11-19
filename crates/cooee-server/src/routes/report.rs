@@ -46,6 +46,21 @@ async fn report(cx: &Cx, Json(r): Json<Report>) -> Result<Response> {
     plain(200, "report sent")
 }
 
+#[derive(Deserialize)]
+struct Timing {
+    name: String,
+    ms: u64,
+}
+
+#[route(POST "/perf")]
+async fn perf(Json(t): Json<Timing>) -> Result<Response> {
+    if t.ms > 600_000 || !cooee_core::perf::BUDGETS.iter().any(|(n, _)| *n == t.name) {
+        return plain(400, "A timing is tap, event or echo, under 10 minutes.");
+    }
+    cooee_core::perf::client(&t.name, t.ms);
+    plain(200, "ok")
+}
+
 pub(super) fn routes(b: RouterBuilder) -> RouterBuilder {
-    b.route(report)
+    b.route(report).route(perf)
 }

@@ -92,7 +92,6 @@ extension Block {
 public enum ChatItems {
     public static func build(
         _ items: [APIItem],
-        live: String,
         outbox: [Outgoing] = [],
         style: ChatStyle = .detailed,
         working: Bool = false
@@ -103,11 +102,7 @@ public enum ChatItems {
         } else {
             for item in items { append(item, to: &out) }
         }
-        out += outbox.map(Item.outgoing)
-        if !live.isEmpty {
-            out.append(.agent(id: Int.max, markdown: Markdown.blocks(live + " ▍")))
-        }
-        return out
+        return out + outbox.map(Item.outgoing)
     }
 
     internal static func append(_ item: APIItem, to out: inout [Item]) {

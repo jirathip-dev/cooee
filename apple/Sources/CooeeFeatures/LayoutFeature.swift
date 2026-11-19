@@ -106,6 +106,7 @@ public struct LayoutFeature: Sendable {
             return .none
         }
         .forEach(\.screens, action: \.screens) { ScreenFeature() }
+        .keepsLeftScreens { Array($0.screens) }
     }
 
     private func apply(_ state: inout State, _ answer: LayoutAnswer) {

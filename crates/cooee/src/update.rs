@@ -131,7 +131,7 @@ fn update(config: &Config, check: bool) -> Result<(), String> {
             };
             let push = cooee_server::Push::new(&data).with_apns(config.apns.clone());
             log(&data, &why)?;
-            push.send_to(None, &note).join().ok();
+            push.send_now(None, &note);
             Err(why)
         }
     }

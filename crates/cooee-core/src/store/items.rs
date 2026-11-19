@@ -1,3 +1,5 @@
+use std::path::Path;
+
 use rusqlite::{Connection, Transaction, params};
 
 use super::{Store, StoreError, error::db_err};
@@ -15,46 +17,24 @@ pub enum Page {
 }
 
 impl Store {
-    /// Stores `item` in thread `id`, replacing an earlier version of it, and commits it to disk.
+    /// Stores `item` in thread `id`, replacing an earlier version of it, and waits until its batch is on disk.
     ///
     /// # Errors
     ///
     /// Returns [`StoreError`] if the id is invalid or the item can't be written.
     pub fn append(&self, id: &str, item: &Item) -> Result<(), StoreError> {
         self.path(id)?;
-        let mut db = self.db();
-        let tx = db.transaction().map_err(db_err(&self.path))?;
-        self.put(&tx, id, item)?;
-        tx.commit().map_err(db_err(&self.path))
+        self.writer.send(Some((id.to_owned(), item.clone())), true)
     }
 
-    pub(super) fn put(&self, tx: &Transaction, id: &str, item: &Item) -> Result<(), StoreError> {
-        let body = serde_json::to_value(item).map_err(|source| StoreError::Parse {
-            path: self.path.clone(),
-            source,
-        })?;
-        let kind = body
-            .get("kind")
-            .and_then(serde_json::Value::as_str)
-            .unwrap_or_default();
-        let row: i64 = tx
-            .query_row(
-                "INSERT INTO items (thread, id, at, kind, body) VALUES (?1, ?2, ?3, ?4, ?5)
-                 ON CONFLICT (thread, id) DO UPDATE SET at = excluded.at, kind = excluded.kind, body = excluded.body
-                 RETURNING rowid",
-                params![id, int(item.id), int(item.at), kind, body.to_string()],
-                |r| r.get(0),
-            )
-            .and_then(|row| tx.execute("DELETE FROM said WHERE rowid = ?1", [row]).map(|_| row))
-            .map_err(db_err(&self.path))?;
-        if let Some((_, text)) = history::said(item) {
-            tx.execute(
-                "INSERT INTO said (rowid, text) VALUES (?1, ?2)",
-                params![row, text.to_lowercase()],
-            )
-            .map_err(db_err(&self.path))?;
-        }
-        Ok(())
+    /// Hands `item` to the writer, which stores it with the next batch; a crash before that batch syncs loses it.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`StoreError`] if the id is invalid or the writer has stopped.
+    pub fn queue(&self, id: &str, item: &Item) -> Result<(), StoreError> {
+        self.path(id)?;
+        self.writer.send(Some((id.to_owned(), item.clone())), false)
     }
 
     /// Thread `id`'s items, oldest first; none when it has none.
@@ -73,6 +53,7 @@ impl Store {
     /// Returns [`StoreError`] if the id is invalid or the items can't be read.
     pub fn page(&self, id: &str, from: Page, n: usize) -> Result<Vec<Item>, StoreError> {
         self.path(id)?;
+        self.writer.flush();
         let db = self.db();
         if let Some(mut all) = self.moved(&db, id)? {
             for item in self.bodies(&db, "thread = ?1", params![id])? {
@@ -143,6 +124,7 @@ impl Store {
             "SELECT items.thread, items.body FROM said JOIN items ON items.rowid = said.rowid
              WHERE 1 {like} ORDER BY items.at DESC, items.id DESC"
         );
+        self.writer.flush();
         let db = self.db();
         let mut q = db.prepare(&sql).map_err(db_err(&self.path))?;
         let patterns = words.iter().map(|w| format!("%{w}%"));
@@ -170,6 +152,35 @@ impl Store {
         }
         Ok(())
     }
+}
+
+pub(super) fn put(tx: &Transaction, path: &Path, id: &str, item: &Item) -> Result<(), StoreError> {
+    let body = serde_json::to_value(item).map_err(|source| StoreError::Parse {
+        path: path.to_owned(),
+        source,
+    })?;
+    let kind = body
+        .get("kind")
+        .and_then(serde_json::Value::as_str)
+        .unwrap_or_default();
+    let row: i64 = tx
+        .query_row(
+            "INSERT INTO items (thread, id, at, kind, body) VALUES (?1, ?2, ?3, ?4, ?5)
+             ON CONFLICT (thread, id) DO UPDATE SET at = excluded.at, kind = excluded.kind, body = excluded.body
+             RETURNING rowid",
+            params![id, int(item.id), int(item.at), kind, body.to_string()],
+            |r| r.get(0),
+        )
+        .and_then(|row| tx.execute("DELETE FROM said WHERE rowid = ?1", [row]).map(|_| row))
+        .map_err(db_err(path))?;
+    if let Some((_, text)) = history::said(item) {
+        tx.execute(
+            "INSERT INTO said (rowid, text) VALUES (?1, ?2)",
+            params![row, text.to_lowercase()],
+        )
+        .map_err(db_err(path))?;
+    }
+    Ok(())
 }
 
 pub(super) fn int(n: u64) -> i64 {
@@ -264,7 +275,7 @@ pub(super) mod tests {
         }
         let mut db = store.db();
         let tx = db.transaction().unwrap();
-        store.put(&tx, "a", &item(101, "agent", "torn")).unwrap();
+        put(&tx, &store.path, "a", &item(101, "agent", "torn")).unwrap();
         std::process::abort();
     }
 }

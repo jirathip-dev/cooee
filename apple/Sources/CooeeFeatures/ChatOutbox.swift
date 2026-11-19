@@ -69,12 +69,15 @@ extension ChatFeature {
         if let bar = state.bar { topic.folder = bar.folder ?? "scratch" }
         let (threads, server, persona) = (threads, state.server, topic)
         let queue = state.working && state.exchange == nil
-        let (target, machine) = (state.target, state.machine.current)
+        let (target, machine, clock, perf) = (state.target, state.machine.current, clock, perf)
         return .run { send in
             switch target {
             case .thread(let thread):
-                try await threads.send(server, thread, message.text, message.files, queue)
-                await send(.outbox(.delivered(message.id)))
+                let took = try await clock.measure {
+                    try await threads.send(server, thread, message.text, message.files, queue)
+                    await send(.outbox(.delivered(message.id)))
+                }
+                perf.record(server, .echo, took)
             case .new, .setup:
                 let setup = if case .setup = target { true } else { false }
                 let thread = try await threads.start(server, persona, machine, message.text, setup)

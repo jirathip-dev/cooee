@@ -38,6 +38,7 @@ impl Store {
         let quiet = now.saturating_sub(history.hot_days.saturating_mul(DAY));
         let old = now.saturating_sub(history.trim_after_days.saturating_mul(DAY));
         let over = history.trim_over_kb.saturating_mul(1024);
+        self.writer.flush();
         let mut db = self.db();
         let tx = db
             .transaction_with_behavior(TransactionBehavior::Immediate)
@@ -104,7 +105,7 @@ impl Store {
             .map_err(db_err(&self.path))?;
         }
         for (id, short) in &trims {
-            self.put(&tx, id, short)?;
+            super::items::put(&tx, &self.path, id, short)?;
         }
         tx.commit().map_err(db_err(&self.path))?;
         n += trims.len();

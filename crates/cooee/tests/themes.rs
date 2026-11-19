@@ -7,6 +7,7 @@ mod support;
 
 use std::{
     fs,
+    io::Read,
     path::{Path, PathBuf},
     process::Command,
     thread,
@@ -111,6 +112,40 @@ fn check_passes_the_first_party_packs_and_fails_a_broken_one() {
     assert!(out.contains("1 theme(s) fail the theme gate"), "{out}");
 }
 
+fn gzips_and_revalidates(cooee: &Cooee, head: &str, svg: &str) {
+    let tag = head.lines().find_map(|l| l.strip_prefix("etag: ")).unwrap();
+    assert!(head.contains("cache-control: no-cache"), "{head}");
+    let gzip = [("Accept-Encoding", "gzip, br")];
+    let (head, zipped) = cooee.raw_bytes("GET", "/look/farm/sprites.svg", &gzip, "");
+    assert!(head.contains("content-encoding: gzip"), "{head}");
+    assert!(
+        zipped.len() < svg.len() / 4,
+        "{} of {}",
+        zipped.len(),
+        svg.len()
+    );
+    let mut unzipped = String::new();
+    flate2::read::GzDecoder::new(zipped.as_slice())
+        .read_to_string(&mut unzipped)
+        .unwrap();
+    assert_eq!(unzipped, svg);
+    let weak = head.lines().find_map(|l| l.strip_prefix("etag: ")).unwrap();
+    assert_eq!(weak, format!("W/{tag}"));
+    for seen in [tag, weak] {
+        let (head, body) = cooee.raw(
+            "GET",
+            "/look/farm/sprites.svg",
+            &[("If-None-Match", seen)],
+            "",
+        );
+        assert!(
+            head.starts_with("HTTP/1.1 304") || head.starts_with("HTTP/1.0 304"),
+            "{head}"
+        );
+        assert_eq!(body, "");
+    }
+}
+
 #[test]
 fn add_remove_and_list_with_the_lock() {
     let s = setup("th-add");
@@ -152,6 +187,7 @@ fn add_remove_and_list_with_the_lock() {
         svg.contains("id=\"s-needs\"") && svg.contains("--o1"),
         "{svg}"
     );
+    gzips_and_revalidates(&s.cooee, &head, &svg);
     let (head, _) = s.cooee.raw("GET", "/look/farm/theme.json", &[], "");
     assert!(
         head.starts_with("HTTP/1.0 404") || head.starts_with("HTTP/1.1 404"),

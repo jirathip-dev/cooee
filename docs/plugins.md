@@ -108,7 +108,8 @@ it can attach the thread.
 - `cooee plugin check <answer.json|cooee-plugin.toml>...` (#138) validates a plugin's answers (a screen or any block, a
   list of them, stream events, places) against `docs/plugins/screens.schema.json`, the JSON Schema of #125's blocks, and
   names each field that breaks it (`$.blocks[0].rows[0].badge.tone: "red" is not one of …`). An unknown block type
-  passes. A `.toml` file is checked as a manifest, by the rules `cooee plugin add` applies.
+  passes. A block that holds state (a form, an editor, a list's row) needs an `id`: the app keeps its draft and focus
+  by it when blocks above it come or go (#602). A `.toml` file is checked as a manifest, by the rules `cooee plugin add` applies.
 
 A manifest's `attach = "http://127.0.0.1:<port>"` (#226) names a backend that may be running already, like herdsman's
 own `herdsman serve` on :7777: while that port answers, `add` checks it instead of starting `run`, and `cooee serve`

@@ -15,16 +15,20 @@ internal struct PluginNavigationTests {
     nonisolated private static let lane = Slice(
         items: [APIItem(id: 1, time: 1, kind: "agent", text: "Fixing both.")], turn: Turn(), cursor: "b.1", queue: [])
 
+    private let clock = TestClock()
+
     private func store(
         showing screen: JSONValue? = nil,
         _ dependencies: @escaping (inout DependencyValues) -> Void
     ) -> TestStoreOf<ScreenFeature> {
         var state = ScreenFeature.State(server: mini, place: Self.queue)
         state.screen = screen.map(LiveScreen.init)
+        let clock = clock
         return TestStore(initialState: state) {
             ScreenFeature()
         } withDependencies: {
             $0.date.now = epoch
+            $0.continuousClock = clock
             $0.screenCache.save = { _, _ in }
             dependencies(&$0)
         }
@@ -50,6 +54,7 @@ internal struct PluginNavigationTests {
             $0.screen = nil
         }
         await store.receive(\.loaded) { $0.screen = LiveScreen(.object(["title": .string("/screens/queue")])) }
+        await clock.advance(by: .seconds(2))
         #expect(paths.all == ["/screens/fleets/cooee", "/screens/queue"])
     }
 
@@ -76,6 +81,7 @@ internal struct PluginNavigationTests {
             $0.screen = nil
         }
         await store.receive(\.loaded) { $0.screen = LiveScreen(.object(["title": .string("/screens/queue")])) }
+        await clock.advance(by: .seconds(2))
         #expect(paths.all == ["/screens/global", "/screens/queue"])
     }
 
@@ -84,14 +90,17 @@ internal struct PluginNavigationTests {
             $0.plugins.act = { _, _, _, _ in .object(["open": .string("/screens/fleets/review")]) }
             $0.plugins.screen = { _, _, path in .object(["title": .string(path)]) }
         }
-        await store.send(.act(BlockAction(action: "review", values: [:]))) { $0.acting = true }
+        await store.send(.act(BlockAction(action: "review", values: [:]))) {
+            $0.pending = [BlockAction(action: "review", values: [:])]
+        }
         await store.receive(\.acted) {
-            $0.acting = false
+            $0.pending = []
             $0.path = ["/screens/fleets/review"]
             $0.screen = nil
             $0.asOf = epoch
         }
         await store.receive(\.loaded) { $0.screen = LiveScreen(.object(["title": .string("/screens/fleets/review")])) }
+        await clock.advance(by: .seconds(2))
     }
 
     @Test internal func aLaneTappedOnTheStripPushesItsChatAndQueueReturnsToTheSameStrip() async {
@@ -145,6 +154,7 @@ internal struct PluginNavigationTests {
             $0.screen = LiveScreen(.object(["title": .string("/screens/global")]))
             $0.asOf = epoch
         }
+        await clock.advance(by: .seconds(2))
         #expect(paths.all == ["/screens/queue?state=fix", "/screens/global"])
     }
 

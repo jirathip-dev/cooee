@@ -44,6 +44,7 @@ public struct AppRoot: View {
                 Text(Markdown.inline(notice)).ui(13, .regular, look).foregroundStyle(look.palette.mute).padding(8)
             }
         }
+        .task { await store.send(.launch).finish() }
         .task { await store.send(.retire).finish() }
         .task { await store.send(.taps).finish() }
         .sheet(item: $store.scope(state: \.persona, action: \.persona)) { persona in

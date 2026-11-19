@@ -1,12 +1,18 @@
-use std::{net::IpAddr, sync::Arc};
+use std::{
+    io::{self, Write},
+    net::IpAddr,
+    sync::Arc,
+};
 
 use cooee_core::Devices;
+use flate2::write::GzEncoder;
+use futures_util::StreamExt;
 use topcoat::{
     context::Cx,
     router::{
-        Body, Layer, LayerFuture, Next, Path,
+        Body, HeaderValue, Layer, LayerFuture, Next, Path,
         request::{method, uri},
-        response::IntoResponse,
+        response::{IntoResponse, Response},
         try_endpoint,
     },
 };
@@ -117,6 +123,60 @@ impl Layer for Timing {
             let status = response.status().as_u16();
             cooee_core::perf::request(method(cx).as_str(), route, status, start);
             Ok(response)
+        })
+    }
+}
+
+pub(crate) struct Gzip;
+
+impl Layer for Gzip {
+    fn path(&self) -> Option<&Path> {
+        None
+    }
+
+    fn handle<'a>(&'a self, cx: &'a Cx, body: Body, next: Next<'a>) -> LayerFuture<'a> {
+        Box::pin(async move {
+            let accepts = header(cx, "accept-encoding").is_some_and(|a| {
+                a.split(',').any(|e| {
+                    let mut parts = e.split(';').map(str::trim);
+                    let refused = |q: &str| q.parse::<f32>().is_ok_and(|q| q <= 0.0);
+                    parts.next() == Some("gzip")
+                        && !parts.any(|p| p.strip_prefix("q=").is_some_and(refused))
+                })
+            });
+            let response = next.run(cx, body).await.into_response(cx)?;
+            let kind = response.headers().get("content-type");
+            let kind = kind.and_then(|k| k.to_str().ok()).unwrap_or("");
+            let text = kind.starts_with("text/") && !kind.starts_with("text/event-stream");
+            let squeezable = text
+                || ["application/json", "image/svg+xml"]
+                    .iter()
+                    .any(|k| kind.starts_with(k));
+            if !accepts || !squeezable || response.headers().contains_key("content-encoding") {
+                return Ok(response);
+            }
+            let (mut parts, body) = response.into_parts();
+            let mut whole = Vec::new();
+            let mut chunks = body.into_data_stream();
+            while let Some(chunk) = chunks.next().await {
+                whole.extend_from_slice(&chunk.map_err(io::Error::other)?);
+            }
+            if whole.len() <= 1024 {
+                return Ok(Response::from_parts(parts, Body::from(whole)));
+            }
+            let mut zip = GzEncoder::new(Vec::new(), flate2::Compression::default());
+            zip.write_all(&whole)?;
+            let headers = &mut parts.headers;
+            headers.remove("content-length");
+            headers.insert("content-encoding", HeaderValue::from_static("gzip"));
+            headers.append("vary", HeaderValue::from_static("accept-encoding"));
+            if let Some(tag) = headers.get("etag").and_then(|t| t.to_str().ok())
+                && !tag.starts_with("W/")
+            {
+                let weak = HeaderValue::try_from(format!("W/{tag}"))?;
+                headers.insert("etag", weak);
+            }
+            Ok(Response::from_parts(parts, Body::from(zip.finish()?)))
         })
     }
 }

@@ -1,12 +1,16 @@
 import CooeeCore
 import SwiftUI
 
-internal struct ItemView: View {
+internal struct ItemView: View, Equatable {
     @Environment(\.look) private var look
     internal let item: Item
     internal var retry: () -> Void = {}
     internal var view: () -> Void = {}
     internal var restart: (() -> Void)?
+
+    nonisolated internal static func == (lhs: Self, rhs: Self) -> Bool {
+        lhs.item == rhs.item && (lhs.restart == nil) == (rhs.restart == nil)
+    }
 
     internal var body: some View {
         switch item {
@@ -20,7 +24,7 @@ internal struct ItemView: View {
             }
         case .agent(_, let blocks):
             VStack(alignment: .leading, spacing: 10) {
-                ForEach(Array(blocks.enumerated()), id: \.offset) { _, block in BlockView(block: block) }
+                ForEach(Array(blocks.enumerated()), id: \.offset) { _, block in BlockView(block: block).equatable() }
             }
             .modifier(Copyable(text: item.plainText ?? ""))
         case .tools(_, let rows):
@@ -113,10 +117,12 @@ internal struct Delivery: View {
     }
 }
 
-internal struct BlockView: View {
+internal struct BlockView: View, Equatable {
     @Environment(\.look) private var look
     @Environment(\.members) private var members
     internal let block: Block
+
+    nonisolated internal static func == (lhs: Self, rhs: Self) -> Bool { lhs.block == rhs.block }
 
     internal var body: some View {
         switch block {

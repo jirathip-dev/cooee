@@ -223,7 +223,7 @@ private struct ColumnScreen: View {
                 } openThread: {
                     open($0)
                 }
-                .disabled(store.offline || store.acting).opacity(store.offline ? 0.6 : 1)
+                .environment(\.acting, store.pending).disabled(store.offline).opacity(store.offline ? 0.6 : 1)
                 .environment(\.refresh, screen.root["refresh"]?.bool == true ? refresh : nil)
             }
         }

@@ -19,7 +19,7 @@ public struct ChatFeature: Sendable {
         public var frames: [String: Data] = [:]
         public var turn = Turn()
         public var queue: [Queued] = []
-        public var live = ""
+        public var live = LiveReply()
         public var since = Date.distantPast
         public var error: String?
         public var draft = ""
@@ -53,8 +53,7 @@ public struct ChatFeature: Sendable {
         public var drawn: [Item] {
             if let exchange { return LinkedItems.build(items, exchange: exchange, outbox: outbox, now: since) }
             return room.map { RoomItems.build(items, names: $0.names, last: $0.round) + $0.cards }
-                ?? ChatItems.build(
-                    items, live: live, outbox: first + outbox, style: persona.api.style, working: working)
+                ?? ChatItems.build(items, outbox: first + outbox, style: persona.api.style, working: working)
         }
 
         private var first: [Outgoing] {
@@ -128,6 +127,8 @@ public struct ChatFeature: Sendable {
     @Dependency(\.ownerCheck) internal var ownerCheck
     @Dependency(\.continuousClock) internal var clock
     @Dependency(\.date.now) internal var now
+    @Dependency(\.perf) internal var perf
+    @Dependency(\.markdown) internal var markdown
 
     public init() {}
 
@@ -158,6 +159,7 @@ public struct ChatFeature: Sendable {
         Reduce { state, action in plugins(&state, action) }
             .ifLet(\.$screen, action: \.screen) { ScreenFeature() }
             .ifLet(\.$attaching, action: \.attaching) { AttachFeature() }
+            .keepsLeftScreens { $0.screen.map { [$0] } ?? [] }
     }
 }
 
@@ -169,8 +171,10 @@ extension ChatFeature {
         case .loaded(let slice):
             load(&state, slice)
         case .event(let event):
+            let timed = painted(state, event)
             state.room?.hear(event, when: now)
             apply(&state, event)
+            return timed
         case .failed(let error):
             state.error = error
         default:
@@ -204,7 +208,7 @@ extension ChatFeature {
         state.turn = slice.turn
         state.since = now
         state.pending = slice.pending?.text
-        state.live = slice.turn.working ? slice.turn.text ?? "" : ""
+        state.live = LiveReply(slice.turn.working ? slice.turn.text ?? "" : "", parse: markdown)
         state.room?.heard(slice.asks ?? [], when: now)
     }
 
@@ -213,16 +217,24 @@ extension ChatFeature {
         case .item(let item):
             upsert(&state, item)
         case .text(let text):
-            state.live += text
+            state.live.append(text, parse: markdown)
         case .state(let turn):
             if turn.state != state.turn.state { state.since = now }
             state.turn = Turn(text: nil, state: turn.state, note: turn.note)
-            if !state.working { state.live = "" }
+            if !state.working { state.live = LiveReply() }
         case .queue(let queue):
             state.queue = queue
         case .reset, .roomTurn, .roomStop, .roomAsk:
             break
         }
+    }
+
+    private func painted(_ state: State, _ event: StreamEvent) -> Effect<Action> {
+        guard case .item(let item) = event, !state.items.contains(where: { $0.id == item.id }) else { return .none }
+        let took = Duration.milliseconds(Int64(now.timeIntervalSince1970 * 1000) - item.time)
+        guard took >= .zero else { return .none }
+        let (perf, server) = (perf, state.server)
+        return .run { _ in perf.record(server, .event, took) }
     }
 
     private func upsert(_ state: inout State, _ item: APIItem) {
@@ -232,6 +244,6 @@ extension ChatFeature {
             state.items.append(item)
         }
         if item.kind == "you" { state.pending = nil }
-        if item.kind == "agent" { state.live = "" }
+        if item.kind == "agent" { state.live = LiveReply() }
     }
 }
