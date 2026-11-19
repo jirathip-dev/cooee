@@ -131,6 +131,10 @@ extension Client {
         try await send(request("GET", "/threads/\(id)/frames/\(name)")).0
     }
 
+    public func file(_ id: String, _ name: String) async throws -> Data {
+        try await send(request("GET", "/threads/\(id)/files/\(name)")).0
+    }
+
     public func send(
         _ id: String,
         text: String,

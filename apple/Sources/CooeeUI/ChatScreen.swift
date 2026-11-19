@@ -64,6 +64,10 @@ internal struct ChatScreen: View {
         actions.showMachine = { store.send(.machine(.show(true))) }
         actions.topics = store.bar.map { Self.topics(store, $0) }
         actions.live = { store.live }
+        actions.edit = { store.send(.compose(.edit($0))) }
+        actions.message.photos = FrameImages(images: store.photos) { store.send(.photo($0)) }
+        actions.message.source = { store.state.source($0) }
+        actions.message.quote = { store.send(.compose(.quote($0))) }
         return actions
     }
 

@@ -30,6 +30,26 @@ internal struct ChatFramesTests {
         #expect(calls.all == ["frame a1 f1", "frame a1 gone"])
     }
 
+    @Test internal func aSentPhotoLoadsOnceFromTheThreadsFiles() async {
+        let calls = calls
+        let state = ChatFeature.State(server: mini, target: .thread("a1"), persona: Persona(coder))
+        let store = TestStore(initialState: state) {
+            ChatFeature()
+        } withDependencies: {
+            $0.threads.file = { _, thread, name in
+                calls.record("file \(thread) \(name)")
+                guard name == "a.png" else { throw URLError(.fileDoesNotExist) }
+                return Data("pixels".utf8)
+            }
+        }
+        await store.send(.photo("a.png"))
+        await store.receive(\.photoed) { $0.photos["a.png"] = Data("pixels".utf8) }
+        await store.send(.photo("a.png"))
+        await store.send(.photo("b.png"))
+        await store.receive(\.photoed) { $0.photos["b.png"] = Data() }
+        #expect(calls.all == ["file a1 a.png", "file a1 b.png"])
+    }
+
     @Test internal func aNewChatHasNoFramesToLoad() async {
         let store = TestStore(
             initialState: ChatFeature.State(server: mini, target: .new(coder), persona: Persona(coder))

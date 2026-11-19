@@ -14,19 +14,19 @@ internal struct ItemView: View, Equatable {
 
     internal var body: some View {
         switch item {
-        case .you(_, let text, let files):
-            YouBubble(text: text, files: files).modifier(Copyable(text: text))
+        case .you(let id, let text, let files):
+            YouBubble(text: text, files: files).modifier(Copyable(text: text, id: id))
         case .outgoing(let message):
             VStack(alignment: .trailing, spacing: 4) {
                 YouBubble(text: message.text, files: message.files.map(\.name))
-                    .modifier(Copyable(text: message.text))
+                    .modifier(Copyable(text: message.text, id: message.id))
                 Delivery(failure: message.failure, retry: retry)
             }
         case .agent(_, let blocks):
             VStack(alignment: .leading, spacing: 10) {
                 ForEach(Array(blocks.enumerated()), id: \.offset) { _, block in BlockView(block: block).equatable() }
             }
-            .modifier(Copyable(text: item.plainText ?? ""))
+            .modifier(Copyable(text: item.plainText ?? "", id: item.id))
         case .tools(_, let rows):
             ToolFold(rows: rows)
         case .trace(_, let steps, let seconds):
@@ -69,11 +69,7 @@ internal struct YouBubble: View {
             if let noteTo {
                 Text("Your note · to \(noteTo)").ui(13, .regular, look).foregroundStyle(palette.mute)
             }
-            ForEach(files, id: \.self) { file in
-                Label(file, systemImage: "doc.text").ui(13, .regular, look).foregroundStyle(palette.mute)
-                    .padding(.horizontal, 10).padding(.vertical, 6)
-                    .background(palette.card, in: .rect(cornerRadius: 10))
-            }
+            ForEach(files, id: \.self) { FileChip(name: $0) }
             if members.isEmpty {
                 Text(look.label(.said, text)).ui(16, .regular, look)
                     .padding(.horizontal, 14).padding(.vertical, 10)

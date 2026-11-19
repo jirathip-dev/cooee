@@ -18,7 +18,9 @@ extension ChatFeature {
         state.outbox.append(message)
         state.draft = ""
         state.files = []
-        return deliver(state, message)
+        let replaced = state.editing
+        state.editing = nil
+        return deliver(state, message, replacing: replaced)
     }
 
     internal func outbox(_ state: inout State, _ action: Outbox) -> Effect<Action> {
@@ -31,6 +33,7 @@ extension ChatFeature {
             guard state.draft.isEmpty, state.files.isEmpty else { return .none }
             state.draft = state.outbox[index].text
             state.files = state.outbox[index].files
+            keep(state)
         case .retry(let id):
             guard let index = state.outbox.firstIndex(where: { $0.id == id && $0.failure != nil }) else {
                 return id == 0 ? restart(state) : .none
@@ -64,7 +67,7 @@ extension ChatFeature {
         }
     }
 
-    private func deliver(_ state: State, _ message: Outgoing) -> Effect<Action> {
+    private func deliver(_ state: State, _ message: Outgoing, replacing: String? = nil) -> Effect<Action> {
         var topic = state.persona.api
         if let bar = state.bar { topic.folder = bar.folder ?? "scratch" }
         let (threads, server, persona) = (threads, state.server, topic)
@@ -74,6 +77,7 @@ extension ChatFeature {
             switch target {
             case .thread(let thread):
                 let took = try await clock.measure {
+                    if let replacing { try await threads.unqueue(server, thread, replacing) }
                     try await threads.send(server, thread, message.text, message.files, queue)
                     await send(.outbox(.delivered(message.id)))
                 }

@@ -1,13 +1,21 @@
 import SwiftUI
 
 internal struct Copyable: ViewModifier {
+    @Environment(\.message) private var message
     @State private var selecting = false
     internal let text: String
+    internal var id: Int?
 
     internal func body(content: Content) -> some View {
         content
             .contextMenu {
                 Button("Copy", systemImage: "doc.on.doc") { copy(text) }
+                if let id, let quote = message.quote {
+                    Button("Copy as markdown", systemImage: "chevron.left.forwardslash.chevron.right") {
+                        copy(message.source(id) ?? text)
+                    }
+                    Button("Quote", systemImage: "text.quote") { quote(id) }
+                }
                 Button("Select text", systemImage: "selection.pin.in.out") { selecting = true }
             }
             .sheet(isPresented: $selecting) { SelectSheet(text: text) }

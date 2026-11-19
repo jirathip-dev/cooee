@@ -10,6 +10,8 @@ public struct ChatActions {
     public var stop: () -> Void
     public var steer: (Int) -> Void
     public var unqueue: (Int) -> Void
+    public var edit: (Int) -> Void = { _ in }
+    public var message = MessageActs()
     public var answer: (Int, BlockAction) -> Void
     public var answering: Set<Int>
     public var sending = false

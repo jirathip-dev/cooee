@@ -15,6 +15,11 @@ internal struct FrameClientTests {
         try await server.client().restart("a1b2")
         #expect(server.body("/threads/a1b2/restart") == "{}")
     }
+
+    @Test internal func aSentFileIsItsBytesFromTheThreadsFiles() async throws {
+        let server = CannedServer(["/threads/a1b2/files/a.png": [Answer(chunks: ["pixels"])]])
+        #expect(try await server.client().file("a1b2", "a.png") == Data("pixels".utf8))
+    }
 }
 
 internal struct ScreenClientTests {
