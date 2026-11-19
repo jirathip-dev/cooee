@@ -58,6 +58,7 @@ extension Client {
         fileprivate let item: Int
         fileprivate let option: String
         fileprivate let value: String?
+        fileprivate let passkey: Passkey?
     }
 
     private struct Created: Decodable {
@@ -173,8 +174,10 @@ extension Client {
         try await post("/threads/\(id)/cancel", [String: String]())
     }
 
-    public func answer(_ id: String, item: Int, option: String, value: String?) async throws {
-        try await post("/threads/\(id)/approve", Answer(item: item, option: option, value: value))
+    public func answer(_ id: String, item: Int, option: String, value: String?, key: DeviceKey? = nil) async throws {
+        var passkey: Passkey?
+        if let key { passkey = try await prove(key) }
+        try await post("/threads/\(id)/approve", Answer(item: item, option: option, value: value, passkey: passkey))
     }
 
     public func read(_ id: String, upTo item: Int) async throws {

@@ -2,8 +2,6 @@ use std::collections::BTreeMap;
 
 use serde::Serialize;
 
-use crate::look::Scheme;
-
 /// The tokens every scheme sets: the ones the gate checks.
 pub const TOKENS: [&str; 19] = [
     "--bg", "--card", "--edge", "--line", "--scrim", "--fg", "--mute", "--l", "--link", "--g",
@@ -129,10 +127,10 @@ pub struct Check {
 /// # Errors
 ///
 /// The first token missing or not `#rrggbb`.
-pub fn checks(s: &Scheme) -> Result<Vec<Check>, String> {
+pub fn checks(tokens: &BTreeMap<String, String>) -> Result<Vec<Check>, String> {
     let mut c = BTreeMap::new();
     for k in TOKENS {
-        match s.tokens.get(k).and_then(|v| hex(v)) {
+        match tokens.get(k).and_then(|v| hex(v)) {
             Some(v) => drop(c.insert(k, v)),
             None => return Err(format!("{k}: missing or not #rrggbb")),
         }
@@ -181,24 +179,6 @@ pub fn checks(s: &Scheme) -> Result<Vec<Check>, String> {
     Ok(out)
 }
 
-/// herdsman's scheme gate: every [`checks`] at or over its minimum.
-///
-/// # Errors
-///
-/// The checks that fail, each with its value and minimum, or the tokens missing or not `#rrggbb`.
-pub fn gate(s: &Scheme) -> Result<(), String> {
-    let fails: Vec<String> = checks(s)?
-        .into_iter()
-        .filter(|c| c.value < c.min)
-        .map(|c| format!("{} {:.2} (min {})", c.what, c.value, c.min))
-        .collect();
-    if fails.is_empty() {
-        Ok(())
-    } else {
-        Err(format!("fails the contrast gate: {}", fails.join("; ")))
-    }
-}
-
 /// The checks that name `token`: the ones a change to it can break.
 #[must_use]
 pub fn about<'a>(all: &'a [Check], token: &str) -> Vec<&'a Check> {
@@ -210,15 +190,15 @@ pub fn about<'a>(all: &'a [Check], token: &str) -> Vec<&'a Check> {
 /// The nearest colour to `token`'s, darker or lighter, with which every check naming it passes; none when no shade
 /// does.
 #[must_use]
-pub fn fix(s: &Scheme, token: &str) -> Option<String> {
-    let n = u32::from_str_radix(s.tokens.get(token)?.strip_prefix('#')?, 16).ok()?;
+pub fn fix(tokens: &BTreeMap<String, String>, token: &str) -> Option<String> {
+    let n = u32::from_str_radix(tokens.get(token)?.strip_prefix('#')?, 16).ok()?;
     let [red, green, blue] = [n >> 16, (n >> 8) & 255, n & 255];
     (1..=64u32)
         .flat_map(|i| [0, 255].map(|t| [red, green, blue].map(|v| (v * (64 - i) + t * i) / 64)))
         .map(|[r, g, b]| format!("#{r:02x}{g:02x}{b:02x}"))
         .find(|candidate| {
-            let mut t = s.clone();
-            t.tokens.insert(token.to_owned(), candidate.clone());
+            let mut t = tokens.clone();
+            t.insert(token.to_owned(), candidate.clone());
             checks(&t).is_ok_and(|all| about(&all, token).iter().all(|c| c.value >= c.min))
         })
 }

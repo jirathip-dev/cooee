@@ -296,6 +296,14 @@ mod tests {
     }
 
     #[test]
+    fn the_apple_tests_schemes_are_the_ones_served() {
+        let (looks, _) = Looks::load(None, None);
+        let fixture = include_str!("../../../../apple/Tests/schemes.json");
+        let fixture: serde_json::Value = serde_json::from_str(fixture).unwrap();
+        assert_eq!(serde_json::to_value(&looks.schemes).unwrap(), fixture);
+    }
+
+    #[test]
     fn a_broken_style_is_reported_and_leaves_its_packs_theme_served() {
         let dir = tmp("broken-style");
         let farm = farm_with("broken-style-farm", |d| {

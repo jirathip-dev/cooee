@@ -41,6 +41,10 @@ extension ThreadsClient: DependencyKey {
         answer: { server, thread, item, option, value in
             try await client(server).answer(thread, item: item, option: option, value: value)
         },
+        approve: { server, thread, item, value in
+            let key = try DeviceKeychain(server: server.url).key()
+            try await client(server).answer(thread, item: item, option: "approve", value: value, key: key)
+        },
         start: { server, persona, machine, text, setup in
             try await client(server).newThread(persona: persona, machine: machine, text: text, setup: setup)
         },

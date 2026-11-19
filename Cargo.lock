@@ -195,6 +195,7 @@ dependencies = [
  "serde_json",
  "sha2 0.11.1",
  "shed-proto",
+ "swag",
  "thiserror",
  "toml",
  "toml_edit",
@@ -225,6 +226,7 @@ dependencies = [
  "serde",
  "serde_json",
  "sha2 0.11.1",
+ "swag",
  "thiserror",
  "tokio",
  "topcoat",
@@ -1735,6 +1737,11 @@ name = "subtle"
 version = "2.6.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "13c2bddecc57b384dee18652358fb23172facb8a2c51ccc10d74c157bdea3292"
+
+[[package]]
+name = "swag"
+version = "0.1.0"
+source = "git+https://github.com/jirathip-dev/swag?rev=e9ad9ba0ace20e3169e82f42efa2a5f1f8a21847#e9ad9ba0ace20e3169e82f42efa2a5f1f8a21847"
 
 [[package]]
 name = "syn"

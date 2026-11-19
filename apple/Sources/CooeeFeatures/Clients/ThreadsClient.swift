@@ -39,6 +39,8 @@ public struct ThreadsClient: Sendable {
     public var answer:
         @Sendable (_ server: Server, _ thread: String, _ item: Int, _ option: String, _ value: String?) async throws
             -> Void
+    public var approve:
+        @Sendable (_ server: Server, _ thread: String, _ item: Int, _ value: String?) async throws -> Void
     public var start:
         @Sendable (_ server: Server, _ persona: APIPersona, _ machine: String, _ text: String, _ setup: Bool)
             async throws

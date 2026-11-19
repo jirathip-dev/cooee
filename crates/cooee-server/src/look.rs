@@ -1,23 +1,23 @@
 use std::{collections::BTreeMap, fs, path::Path};
 
+use blocks::theme::{Mode, Scheme};
 use serde::{Deserialize, Serialize};
 
 mod pack;
 
 pub use pack::{STYLES, Style, check, read_pack};
 
-use crate::contrast::gate;
-
-/// A colour scheme: its label, `dark` or `light`, and the tokens the style sheets read.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-pub struct Scheme {
-    /// The name shown in COLOURS.
-    pub label: String,
-    /// `dark` or `light`: the Appearance mode it serves.
-    #[serde(rename = "color-scheme")]
-    pub mode: String,
-    /// `--bg`, `--fg`, … as `#rrggbb` (the gate's [`crate::contrast::TOKENS`], and any others the scheme adds).
-    pub tokens: BTreeMap<String, String>,
+/// blocks' contrast gate on `s`, as `cooee theme check` says a fail.
+///
+/// # Errors
+/// Each check it fails, with its value and minimum.
+pub fn gate(s: &Scheme) -> Result<(), String> {
+    let fails: Vec<String> = blocks::theme::gate(s)
+        .iter()
+        .map(|m| format!("{} {:.2} (min {})", m.what, m.got, m.min))
+        .collect();
+    let why = || format!("fails the contrast gate: {}", fails.join("; "));
+    fails.is_empty().then_some(()).ok_or_else(why)
 }
 
 /// A theme's default scheme per mode.
@@ -163,12 +163,6 @@ macro_rules! builtin_theme {
     };
 }
 
-macro_rules! builtin_scheme {
-    ($($name:literal),*) => {
-        [$(($name, include_str!(concat!("../../../design-system/schemes/", $name, ".json")))),*]
-    };
-}
-
 type Builtin = (
     &'static str,
     &'static str,
@@ -194,21 +188,6 @@ pub const ASCII: [(&str, [&str; 2]); 11] = [
     ("loading", ["( o.o )\n  ...", "( o.O )\n  .. "]),
     ("empty", ["( -.- )\n  z  ", "( -.- )\n  zZ "]),
 ];
-
-pub(crate) const SCHEMES: [(&str, &str); 12] = builtin_scheme!(
-    "github-dark",
-    "solarized-dark",
-    "gruvbox",
-    "nord",
-    "dracula",
-    "farm",
-    "kitchen",
-    "garden-dark",
-    "paper",
-    "farm-light",
-    "kitchen-light",
-    "garden-light"
-);
 
 fn valid_name(name: &str) -> bool {
     !name.is_empty()
@@ -323,7 +302,7 @@ impl Looks {
 }
 
 fn builtin_schemes() -> BTreeMap<String, Scheme> {
-    SCHEMES
+    swag::schemes()
         .iter()
         .filter_map(|(n, json)| Some(((*n).to_owned(), serde_json::from_str(json).ok()?)))
         .collect()
@@ -458,9 +437,13 @@ fn read_theme(dir: &Path, schemes: &BTreeMap<String, Scheme>) -> Result<Option<O
             Err(e) => fails.push(format!("schemes/{name}: {e}")),
         }
     }
-    for (mode, name) in [("dark", &t.scheme.dark), ("light", &t.scheme.light)] {
+    let modes = [
+        ("dark", Mode::Dark, &t.scheme.dark),
+        ("light", Mode::Light, &t.scheme.light),
+    ];
+    for (mode, want, name) in modes {
         match own.get(name).or_else(|| schemes.get(name)) {
-            Some(s) if s.mode != mode => {
+            Some(s) if s.mode != want => {
                 fails.push(format!("scheme.{mode} {name:?} is not a {mode} scheme"));
             }
             Some(s) => {
@@ -545,17 +528,14 @@ fn entries(dir: &Path, refused: &mut Vec<String>) -> Vec<(String, std::path::Pat
 
 fn read_scheme(path: &Path) -> Result<Scheme, String> {
     let text = fs::read_to_string(path).map_err(|e| e.to_string())?;
-    let s: Scheme = serde_json::from_str(&text).map_err(|e| e.to_string())?;
-    if s.mode != "dark" && s.mode != "light" {
-        return Err(format!("color-scheme {:?}: not dark or light", s.mode));
-    }
-    Ok(s)
+    serde_json::from_str(&text).map_err(|e| e.to_string())
 }
 
 #[cfg(test)]
-mod tests {
+pub(crate) mod tests {
     use super::*;
     use crate::contrast::{de, hex, ratio};
+    use cooee_core::swag::Swag;
 
     pub(super) fn tmp(name: &str) -> std::path::PathBuf {
         let dir = cooee_core::scratch::owned(
@@ -570,6 +550,32 @@ mod tests {
         Path::new(env!("CARGO_MANIFEST_DIR")).join("../../packs")
     }
 
+    pub(crate) fn first_party(name: &str) -> std::path::PathBuf {
+        let dir = tmp(name);
+        let swag = Swag::pinned();
+        for pack in swag.names() {
+            fs::create_dir_all(dir.join("themes").join(pack)).unwrap();
+            for (f, bytes) in swag.files(pack).unwrap() {
+                fs::write(dir.join("themes").join(pack).join(f), bytes).unwrap();
+            }
+        }
+        dir
+    }
+
+    fn token(s: &Scheme, k: &str) -> String {
+        let all = s.tokens.all();
+        all.iter()
+            .find(|(n, _)| *n == k)
+            .unwrap()
+            .1
+            .as_str()
+            .to_owned()
+    }
+
+    fn murky_fg(s: &mut Scheme) {
+        s.tokens.fg = "#30363d".to_owned().try_into().unwrap();
+    }
+
     #[test]
     fn only_plain_is_built_in_and_the_first_party_packs_load_installed() {
         let (looks, refused) = Looks::load(None, None);
@@ -580,7 +586,7 @@ mod tests {
         for (name, s) in &looks.schemes {
             assert_eq!(gate(s), Ok(()), "{name}");
         }
-        let (looks, refused) = Looks::load(Some(&packs()), None);
+        let (looks, refused) = Looks::load(Some(&first_party("load-first")), None);
         assert_eq!(refused, Vec::<String>::new());
         assert_eq!(looks.default, "farm");
         assert_eq!(
@@ -603,7 +609,7 @@ mod tests {
 
     #[test]
     fn the_theme_gate_passes_the_first_party_packs_and_the_starter() {
-        let mut dirs: Vec<_> = fs::read_dir(packs().join("themes"))
+        let mut dirs: Vec<_> = fs::read_dir(first_party("gate-first").join("themes"))
             .unwrap()
             .map(|e| e.unwrap().path())
             .collect();
@@ -615,10 +621,7 @@ mod tests {
     }
 
     pub(super) fn farm_with(name: &str, edit: impl FnOnce(&Path)) -> std::path::PathBuf {
-        let dir = tmp(name);
-        for f in ["theme.json", "sprites.svg", "scene.svg", "icon.png"] {
-            fs::copy(packs().join("themes/farm").join(f), dir.join(f)).unwrap();
-        }
+        let dir = first_party(name).join("themes/farm");
         edit(&dir);
         dir
     }
@@ -647,8 +650,8 @@ mod tests {
         });
         assert_eq!(fails(&bare), "scene.svg: missing (theme.json says sprites)");
         let murky = farm_with("gate-contrast", |d| {
-            let mut s: Scheme = serde_json::from_str(SCHEMES[0].1).unwrap();
-            s.tokens.insert("--fg".to_owned(), "#30363d".to_owned());
+            let mut s = builtin_schemes()["github-dark"].clone();
+            murky_fg(&mut s);
             fs::create_dir_all(d.join("schemes")).unwrap();
             fs::write(
                 d.join("schemes/murky.json"),
@@ -708,7 +711,7 @@ mod tests {
         fs::create_dir_all(dir.join("schemes")).unwrap();
         fs::create_dir_all(dir.join("themes/sea")).unwrap();
         fs::create_dir_all(dir.join("themes/broken")).unwrap();
-        let mut sea: Scheme = serde_json::from_str(SCHEMES[0].1).unwrap();
+        let mut sea = builtin_schemes()["github-dark"].clone();
         sea.label = "Sea".to_owned();
         fs::write(
             dir.join("schemes/sea.json"),
@@ -716,7 +719,7 @@ mod tests {
         )
         .unwrap();
         let mut murky = sea.clone();
-        murky.tokens.insert("--fg".to_owned(), "#30363d".to_owned());
+        murky_fg(&mut murky);
         fs::write(
             dir.join("schemes/murky.json"),
             serde_json::to_string(&murky).unwrap(),
@@ -752,7 +755,7 @@ mod tests {
     #[test]
     fn gate_numbers_match_herdsmans() {
         let (looks, _) = Looks::load(None, None);
-        let t = |s: &str, k: &str| hex(&looks.schemes[s].tokens[k]).unwrap();
+        let t = |s: &str, k: &str| hex(&token(&looks.schemes[s], k)).unwrap();
         let d = de(t("farm-light", "--l"), t("farm-light", "--a"));
         assert!((d - 20.37).abs() < 0.01, "{d}");
         let r = ratio(t("kitchen-light", "--fk-a"), t("kitchen-light", "--card"));
@@ -777,7 +780,7 @@ mod tests {
 
     #[test]
     fn push_body_says_the_theme_word_and_the_plain_word() {
-        let (looks, _) = Looks::load(Some(&packs()), None);
+        let (looks, _) = Looks::load(Some(&first_party("push-body")), None);
         assert_eq!(
             looks.themes["farm"].push_body("needs", "codex: Edit src/pair.rs?"),
             "at the gate · needs you · codex: Edit src/pair.rs?"
