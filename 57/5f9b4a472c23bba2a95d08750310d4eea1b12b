@@ -1,0 +1,14 @@
+Decided: a limit posts a card of the persona's fallback chain plus wait; the owner's pick switches and continues the turn
+Because: q719
+Decided: the earliest reset is the first-capped seat's note, kept in order on the thread
+Because: crates/cooee-server/src/hub/fallback.rs:55
+Rejected: parsing reset times — shed passes them as free text in several provider formats
+Decided: a pick reuses the #503 switch, now allowed across accounts of one agent
+Because: crates/cooee-server/src/hub/relaunch.rs:45
+Check: a non-limit error posts no card, and a second tap on a picked card starts nothing
+Owner: When an agent runs out of usage, the chat asks which listed agent to continue on, or to wait.
+
+Decided: merge origin/staging; the threads route import list keeps staging's Tag and this branch's seated
+Because: crates/cooee-server/src/routes/threads.rs:26
+Rejected: none
+Owner: The branch is brought up to date with staging; the feature itself is unchanged.
