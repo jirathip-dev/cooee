@@ -41,7 +41,7 @@ cp apple/e2e/screens.py docs/design/screens-as-data/fixtures/events.json docs/de
   docs/design/queue-scene/fixtures/queue-stream.json "$drover/"
 cat >"$drover/cooee-plugin.toml" <<'TOML'
 name = "drover"
-version = "0.0.1"
+version = "0.1.0"
 build = "python3 -m py_compile screens.py"
 run = "TOKEN=$COOEE_PLUGIN_TOKEN exec python3 screens.py"
 needs = ["python3"]

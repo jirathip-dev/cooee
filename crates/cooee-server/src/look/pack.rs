@@ -27,6 +27,24 @@ pub struct Style {
     stage: Option<Stage>,
 }
 
+/// A theme's own drawing of its Scene's host load.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct LoadScene {
+    /// How it draws the load.
+    pub kind: LoadKind,
+}
+
+/// The kinds of load drawing.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum LoadKind {
+    /// A Fire Danger Rating sign: `sprites.svg`'s `s-sign-moderate s-sign-high s-sign-catastrophic` (calm, busy, held).
+    Sign,
+}
+
+const SIGN: [&str; 3] = ["s-sign-moderate", "s-sign-high", "s-sign-catastrophic"];
+
 macro_rules! tokens {
     ($($name:ident { $($v:ident),* })*) => {$(
         #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Default, Serialize, Deserialize)]
@@ -101,6 +119,7 @@ pub fn read_pack(dir: &Path, schemes: &BTreeMap<String, Scheme>) -> Result<Pack,
         fails.extend(e);
         None
     });
+    fails.extend(theme.as_ref().and_then(|(t, _)| signs(t)));
     let style = read_style(dir, theme.as_ref()).unwrap_or_else(|e| {
         fails.extend(e);
         None
@@ -117,6 +136,17 @@ pub fn read_pack(dir: &Path, schemes: &BTreeMap<String, Scheme>) -> Result<Pack,
         schemes: schemes.unwrap_or_default(),
         style,
     })
+}
+
+fn signs(t: &Theme) -> Option<String> {
+    t.load_scene?;
+    let sheet = String::from_utf8_lossy(t.sprite_sheet.as_deref().unwrap_or_default());
+    let missing: Vec<&str> = SIGN
+        .into_iter()
+        .filter(|s| !sheet.contains(&format!("id=\"{s}\"")))
+        .collect();
+    (!missing.is_empty())
+        .then(|| format!("load_scene sign: sprites.svg has no {}", missing.join(", ")))
 }
 
 fn read_style(dir: &Path, theme: Option<&Own>) -> Result<Option<Style>, Vec<String>> {
@@ -246,6 +276,33 @@ mod tests {
         dir
     }
 
+    #[test]
+    fn a_load_scene_sign_needs_its_three_levels_and_a_theme_without_one_serves_as_before() {
+        let theme = |dir: &Path| read_theme(dir, &builtin_schemes()).unwrap().unwrap().0;
+        let bush = theme(&packs().join("themes/bush"));
+        let sign = Some(LoadScene {
+            kind: LoadKind::Sign,
+        });
+        assert_eq!(bush.load_scene, sign);
+        let served = serde_json::to_value(&bush).unwrap();
+        assert_eq!(served["load_scene"], serde_json::json!({"kind": "sign"}));
+        let farm = farm_with("sign-none", |_| {});
+        let served = serde_json::to_value(theme(&farm)).unwrap();
+        assert_eq!(served.get("load_scene"), None);
+        set(&farm, "load_scene", serde_json::json!({"kind": "sign"}));
+        assert_eq!(
+            check(&farm).unwrap_err(),
+            [
+                "load_scene sign: sprites.svg has no s-sign-moderate, s-sign-high, s-sign-catastrophic"
+            ]
+        );
+        set(&farm, "load_scene", serde_json::json!({"kind": "weather"}));
+        let got = check(&farm).unwrap_err().join("\n");
+        assert!(
+            got.starts_with("theme.json: unknown variant `weather`"),
+            "{got}"
+        );
+    }
     #[test]
     fn the_gate_passes_both_style_packs_and_each_fixture_as_its_name_says() {
         for (name, json) in STYLES {
