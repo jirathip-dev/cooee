@@ -315,5 +315,5 @@ reaches them through cooee, with the plugin's token, never the cookie:
 
 | Call | Body | Answer |
 |---|---|---|
-| `GET /p/{plugin}/screens/{path}` | | the backend's `GET /screens/{path}`: a screen (JSON), or its stream (SSE, each event `{seq, ops}` as sent, its id kept; `Last-Event-ID` goes along) |
+| `GET /p/{plugin}/screens/{path}` | | the backend's `GET /screens/{path}`: a screen (JSON), or its stream (SSE, each event `{seq, ops}` as sent, its id kept; `Last-Event-ID` goes along). Every client of one stream shares one backend connection: a later one first gets the kept screen, and a stream that ends after an event is opened again with the last id, its clients still connected |
 | `POST /p/{plugin}/action` | `{screen, block, action, values}` | the backend's answer to `POST /action` (`by`: the device), as it sent it; 403 for an action not in its `[permissions] actions` (never sent); 404 for no installed plugin with places; 502 when the backend can't be reached |
