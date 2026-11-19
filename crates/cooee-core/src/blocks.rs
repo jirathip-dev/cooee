@@ -54,11 +54,17 @@ impl Item {
             Some("config") => CardKind::Config,
             Some("secret") => CardKind::Secret,
             Some("run-card") => CardKind::Run,
+            Some("mcp" | "routine") => CardKind::Proposal,
             _ => CardKind::Ask,
         };
         let mut blocks = Vec::new();
-        if kind == CardKind::Config {
-            let diff = Text::default().markdown(format!("```\n{detail}\n```"));
+        if matches!(kind, CardKind::Config | CardKind::Proposal) {
+            let lang = if matches!(kind, CardKind::Config) {
+                "diff"
+            } else {
+                ""
+            };
+            let diff = Text::default().markdown(format!("```{lang}\n{detail}\n```"));
             blocks.push(Block::Text(Box::new(diff)));
         }
         let answer = format!("{id}-answer");

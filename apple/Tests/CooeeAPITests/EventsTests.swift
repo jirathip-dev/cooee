@@ -76,6 +76,21 @@ internal struct EventsTests {
         #expect(try await reader.value == 0)
     }
 
+    @Test internal func homeHearsAChangeOnConnectOnEachChangedAndAfterAFailedAttempt() async {
+        let server = CannedServer([
+            "/home/events": [
+                Answer(chunks: [], failure: URLError(.notConnectedToInternet)),
+                Answer(headers: sse, chunks: ["event: changed\ndata: {}\n\n"]),
+            ]
+        ])
+        var heard = 0
+        for await _ in server.client().homeChanges() {
+            heard += 1
+            if server.requests("/home/events").count > 2 { break }
+        }
+        #expect(heard >= 2)
+    }
+
     @Test internal func sseFramesFollowTheSpec() throws {
         var parser = SSEParser(id: "start")
         #expect(parser.feed("") == nil)

@@ -104,7 +104,9 @@ internal struct ChatScreen: View {
         .task { await store.send(.topics(.load)).finish() }
         .modifier(TopicSheets(store: store))
         .modifier(BrowserPresenting(store: store, wide: !back && store.browser != nil))
-        .sheet(item: $store.scope(state: \.screen, action: \.screen)) { PluginScreenSheet(store: $0) }
+        .sheet(item: $store.scope(state: \.screen, action: \.screen)) {
+            PluginScreenSheet(store: $0).presentationDetents([.medium, .fraction(0.75), .large])
+        }
         .sheet(item: $store.scope(state: \.attaching, action: \.attaching)) { AttachScreen(store: $0) }
         .sheet(isPresented: Binding(get: { store.workflowOpen }, set: { store.send(.workflow(.show($0))) })) {
             WorkflowSheet(

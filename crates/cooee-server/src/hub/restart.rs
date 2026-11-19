@@ -83,7 +83,7 @@ impl Hub {
             };
             changes.push(Change::Item(l.chat.push(now(), 0, note)));
         }
-        self.store.save(&l.meta)?;
+        self.save(&l)?;
         l.chat.turn.report("done", None);
         changes.push(Change::State(l.chat.turn.clone()));
         l.publish(self, changes)?;

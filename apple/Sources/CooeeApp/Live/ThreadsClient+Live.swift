@@ -23,6 +23,7 @@ extension ThreadsClient: DependencyKey {
         resume: { server, thread, note in try await client(server).resumeHandoff(thread, note: note) },
         input: { server, persona, input in try await client(server).input(persona, input) },
         live: { server, persona in client(server).live(persona) },
+        changes: { server in client(server).homeChanges() },
         events: { server, thread, since in client(server).events(thread, since: since) },
         send: { server, thread, text, files, queue in
             try await client(server).send(thread, text: text, files: files, queue: queue)
@@ -37,6 +38,10 @@ extension ThreadsClient: DependencyKey {
         switchAgent: { server, thread, agent in try await client(server).switchAgent(thread, to: agent) },
         answer: { server, thread, item, option, value in
             try await client(server).answer(thread, item: item, option: option, value: value)
+        },
+        approve: { server, thread, item, value in
+            let key = try DeviceKeychain(server: server.url).key()
+            try await client(server).answer(thread, item: item, option: "approve", value: value, key: key)
         },
         start: { server, persona, machine, text, setup in
             try await client(server).newThread(persona: persona, machine: machine, text: text, setup: setup)

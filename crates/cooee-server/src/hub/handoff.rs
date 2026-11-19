@@ -27,7 +27,7 @@ impl Hub {
             };
             let item = l.chat.push(now(), 0, body);
             l.meta.handoff = item.id;
-            self.store.save(&l.meta)?;
+            self.save(&l)?;
             l.publish(self, vec![Change::Item(item)])?;
         }
         Ok(ENDED.to_owned())
@@ -63,7 +63,7 @@ impl Hub {
             before = format!("[The owner handed back: {text}; their note]:");
         }
         let item = item.clone();
-        self.store.save(&l.meta)?;
+        self.save(&l)?;
         l.publish(self, vec![Change::Item(item)])?;
         let text = if note.trim().is_empty() {
             "Done."
