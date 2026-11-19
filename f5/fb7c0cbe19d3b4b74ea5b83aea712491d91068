@@ -1,0 +1,8 @@
+Decided: apple_cap 25000 and line_cap 36000, raised together in one step
+Because: q2383
+Because: q2341
+Decided: the cap-history note records 18664 apple and 30951 non-test lines at staging 9a57f02
+Because: "Raise cooee's `apple_cap` from 18,700 to 25,000 and `line_cap` from 32,000 to 36,000 in one step"
+Rejected: a smaller apple-only raise — the owner picked both caps sized for open PRs plus the queue
+Check: sh scripts/line-cap.sh exits 0 with 30951 / 36000 and 18664 / 25000
+Owner: The code size limits go up so the open and queued work can merge.
