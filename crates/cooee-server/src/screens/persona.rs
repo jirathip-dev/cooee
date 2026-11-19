@@ -9,6 +9,7 @@ use cooee_core::{
     Config, Kind,
     agents::{self, Agent},
     library, memory,
+    plugins::PlaceKind,
     routines::{Mark, Place, Routine},
     skills,
 };
@@ -220,6 +221,7 @@ async fn fill(cx: &Cx, id: String) -> Result<Value, HubError> {
         let places = agents::places(config.as_deref(), &data, &p.id).map_err(refused)?;
         let places: Vec<Value> = places
             .iter()
+            .filter(|pl| pl.kind == PlaceKind::HeaderStrip)
             .map(|pl| json!({ "id": pl.id, "plugin": pl.plugin, "title": pl.label, "open": pl.screen }))
             .collect();
         let home = config.as_deref().and_then(|c| agents::home(c, &p.id).ok());
