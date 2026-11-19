@@ -144,5 +144,6 @@ internal struct ChatOutboxTests {
         store.dependencies.threads.restart = { _, _ in throw APIError(status: 400, text: "The thread is closed.") }
         await store.send(.outbox(.restart))
         await store.receive(\.failed) { $0.error = "The thread is closed." }
+        await store.receive(\.link.toasted) { $0.error = nil }
     }
 }

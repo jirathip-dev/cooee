@@ -37,20 +37,24 @@ extension ChatFeature {
             }
             return toast(&state, failure)
         case .retry(let id):
-            guard let index = state.outbox.firstIndex(where: { $0.id == id && $0.failure != nil }) else {
-                return id == 0 ? restart(state) : .none
-            }
-            state.outbox[index].failure = nil
-            let message = state.outbox[index]
-            if state.draft == message.text, state.files == message.files {
-                state.draft = ""
-                state.files = []
-            }
-            return deliver(state, message)
+            return retry(&state, id)
         case .restart:
             return again(state, threads.restart)
         }
         return .none
+    }
+
+    private func retry(_ state: inout State, _ id: Int) -> Effect<Action> {
+        guard let index = state.outbox.firstIndex(where: { $0.id == id && $0.failure != nil }) else {
+            return id == 0 ? restart(state) : .none
+        }
+        state.outbox[index].failure = nil
+        let message = state.outbox[index]
+        if state.draft == message.text, state.files == message.files {
+            state.draft = ""
+            state.files = []
+        }
+        return deliver(state, message)
     }
 
     private func restart(_ state: State) -> Effect<Action> {
