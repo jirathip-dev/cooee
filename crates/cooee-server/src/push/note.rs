@@ -101,8 +101,6 @@ pub fn note(
 
 #[cfg(test)]
 pub(super) mod tests {
-    use std::path::Path;
-
     use cooee_core::{Item, Turn};
 
     use super::*;
@@ -179,7 +177,7 @@ pub(super) mod tests {
             item,
         };
         let t = thread();
-        let packs = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../packs");
+        let packs = crate::look::tests::first_party("note-words");
         let (looks, _) = crate::look::Looks::load(Some(&packs), None);
         let (farm, plain) = (&looks.themes["farm"], &looks.themes["plain"]);
         assert_eq!(
