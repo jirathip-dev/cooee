@@ -140,7 +140,9 @@ public struct AppFeature: Sendable {
             return .none
         }
     }
+}
 
+extension AppFeature {
     private func navigate(_ state: inout State, _ action: Action) -> Effect<Action> {
         switch action {
         case .open(let thread):
@@ -163,9 +165,7 @@ public struct AppFeature: Sendable {
         }
         return .none
     }
-}
 
-extension AppFeature {
     private func pop(_ state: inout State, to path: [String]) {
         let round = state.home?.lists(now: now).all.first { $0.id == state.path.last }?.workflow
         state.path = path
