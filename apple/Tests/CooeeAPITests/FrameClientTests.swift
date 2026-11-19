@@ -9,6 +9,11 @@ internal struct FrameClientTests {
         #expect(try await server.client().frame("a1b2", "f1") == Data("pixels".utf8))
         #expect(server.requests("/threads/a1b2/frames/f1").first?.value(forHTTPHeaderField: "Cookie") == "cooee=tok")
     }
+
+    @Test internal func aSentFileIsItsBytesFromTheThreadsFiles() async throws {
+        let server = CannedServer(["/threads/a1b2/files/a.png": [Answer(chunks: ["pixels"])]])
+        #expect(try await server.client().file("a1b2", "a.png") == Data("pixels".utf8))
+    }
 }
 
 internal struct ScreenClientTests {

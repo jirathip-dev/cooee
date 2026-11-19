@@ -17,6 +17,7 @@ public struct ChatFeature: Sendable {
         public var persona: Persona
         public var items: [APIItem] = []
         public var frames: [String: Data] = [:]
+        public var photos: [String: Data] = [:]
         public var turn = Turn()
         public var queue: [Queued] = []
         public var live = LiveReply()
@@ -24,6 +25,7 @@ public struct ChatFeature: Sendable {
         public var error: String?
         public var draft = ""
         public var files: [Attachment] = []
+        public var editing: String?
         public var outbox: [Outgoing] = []
         public var pending: String?
         public var answering: Set<Int> = []
@@ -107,6 +109,8 @@ public struct ChatFeature: Sendable {
         case machine(MachineAction)
         case frame(String)
         case framed(String, Data)
+        case photo(String)
+        case photoed(String, Data)
         case topics(TopicAction)
         case browse(Browse)
 
@@ -129,6 +133,7 @@ public struct ChatFeature: Sendable {
     @Dependency(\.date.now) internal var now
     @Dependency(\.perf) internal var perf
     @Dependency(\.markdown) internal var markdown
+    @Dependency(\.drafts) internal var drafts
 
     public init() {}
 
@@ -167,6 +172,7 @@ extension ChatFeature {
     private func listen(_ state: inout State, _ action: Action) -> Effect<Action> {
         switch action {
         case .task:
+            restore(&state)
             return open(state)
         case .loaded(let slice):
             load(&state, slice)
@@ -227,23 +233,5 @@ extension ChatFeature {
         case .reset, .roomTurn, .roomStop, .roomAsk:
             break
         }
-    }
-
-    private func painted(_ state: State, _ event: StreamEvent) -> Effect<Action> {
-        guard case .item(let item) = event, !state.items.contains(where: { $0.id == item.id }) else { return .none }
-        let took = Duration.milliseconds(Int64(now.timeIntervalSince1970 * 1000) - item.time)
-        guard took >= .zero else { return .none }
-        let (perf, server) = (perf, state.server)
-        return .run { _ in perf.record(server, .event, took) }
-    }
-
-    private func upsert(_ state: inout State, _ item: APIItem) {
-        if let index = state.items.firstIndex(where: { $0.id == item.id }) {
-            state.items[index] = item
-        } else {
-            state.items.append(item)
-        }
-        if item.kind == "you" { state.pending = nil }
-        if item.kind == "agent" { state.live = LiveReply() }
     }
 }
