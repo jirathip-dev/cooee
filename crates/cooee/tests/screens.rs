@@ -36,7 +36,8 @@ fn hello_repo(repo: &Path) {
     fs::copy(src.join("hello.py"), repo.join("hello.py")).unwrap();
     let manifest = fs::read_to_string(src.join("cooee-plugin.toml")).unwrap();
     let strip = "[[places]]\ntype = \"header-strip\"\nid = \"waves\"\npersona = \"pal\"\nlabel = \"Waves\"\n\
-                 screen = \"/screens/hello\"\n\n[permissions]\nplaces = [\"menu-row\", \"header-strip\"]\n";
+                 screen = \"/screens/hello\"\n\n[[places]]\ntype = \"chat-cards\"\npersona = \"pal\"\n\n\
+                 [permissions]\nplaces = [\"menu-row\", \"header-strip\", \"chat-cards\"]\n";
     let manifest = manifest.replace("[permissions]\nplaces = [\"menu-row\"]\n", strip);
     let manifest = format!("claims = [\"lab\"]\n{manifest}");
     fs::write(repo.join("cooee-plugin.toml"), manifest).unwrap();
@@ -108,7 +109,7 @@ fn a_plugin_screen_streams_its_ops_and_an_action_outside_its_permissions_is_refu
         .unwrap();
     assert!(add.status.success(), "{add:?}");
     let out = String::from_utf8(add.stdout).unwrap();
-    assert!(out.contains("screens: 2 places; actions: wave"), "{out}");
+    assert!(out.contains("screens: 3 places; actions: wave"), "{out}");
     let log = dir.join("data/plugins/hello/plugin.log");
     until("its screen", || {
         let at = Instant::now();
@@ -175,14 +176,7 @@ fn a_plugin_screen_streams_its_ops_and_an_action_outside_its_permissions_is_refu
     }
     assert_eq!(cooee.post("/p/nope/action", &wave).0, 404);
 
-    let pal = json!({ "name": "pal", "agent": "claude", "plugins": ["hello"] });
-    let (status, body) = cooee.post("/personas", &pal);
-    assert_eq!(status, 200, "{body}");
-    let chips = cooee.json("/personas/pal/places");
-    assert_eq!(
-        chips,
-        json!([{ "plugin": "hello", "id": "waves", "label": "Waves", "screen": "/screens/hello" }])
-    );
+    pals_places(cooee);
     let row = &cooee.json("/plugins")["installed"][0];
     assert_eq!(
         (
@@ -192,4 +186,18 @@ fn a_plugin_screen_streams_its_ops_and_an_action_outside_its_permissions_is_refu
         ),
         (&json!(["wave"]), &json!("menu-row"), &json!(["lab"]))
     );
+}
+
+fn pals_places(cooee: &Cooee) {
+    let pal = json!({ "name": "pal", "agent": "claude", "plugins": ["hello"] });
+    let (status, body) = cooee.post("/personas", &pal);
+    assert_eq!(status, 200, "{body}");
+    assert_eq!(
+        cooee.json("/personas/pal/places"),
+        json!([
+            { "type": "header-strip", "plugin": "hello", "id": "waves", "label": "Waves", "screen": "/screens/hello" },
+            { "type": "chat-cards", "plugin": "hello", "id": "", "label": "", "screen": "/screens/cards" }
+        ])
+    );
+    assert_eq!(cooee.json("/p/hello/screens/cards")["title"], "Hello");
 }
