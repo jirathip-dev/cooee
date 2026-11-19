@@ -1,0 +1,14 @@
+Decided: errors Home and chat already store in `error` are the toast; one clock effect per screen clears it after 3 s, a newer toast restarts the wait
+Because: "One short self-clearing toast for every action's result and every error Home and chat store today"
+Decided: the event stream yields .sync(.reconnecting/.offline) on a failed attempt and .sync(.live) once it reconnects; the existing Last-Event-ID resume brings back what was missed
+Because: apple/Sources/CooeeAPI/Events.swift:73
+Decided: only the first failure after live toasts and goes amber; the next goes grey offline, so a 5 s Home poll while offline does not toast every time
+Because: apple/Sources/CooeeFeatures/HomeFeature.swift:115
+Decided: kept copies reuse KeptScreens (now generic) in their own folder, through a new KeptCopies dependency whose test value keeps nothing
+Because: apple/Sources/CooeeApp/Live/KeptCopies+Live.swift:6
+Decided: the 300 ms strip delay is a view animation delay (SlowStrip) instead of a reducer timer, and still frames draw it at once
+Because: apple/Sources/CooeeUI/SyncParts.swift:59
+Rejected: a reducer 300 ms timer — it adds an action to every load and every test that loads, for a purely visual delay
+Rejected: restarting the event stream on pull to refresh — refresh refetches the slice once so its spinner ends, and the stream keeps its cursor while rows dedupe by id
+Check: HomeFeatureTests offlineHomeDraws…, ChatFeatureTests aThreadThatCannotLoad…, aStopReadsStopping…, aFailedCallToasts…, AppFeatureTests homeAndTheOpenChatReload…, EventsTests aServerErrorABadEventOrNoNetwork…
+Owner: Home and chat keep their last copy offline with its age, show a live/reconnecting/offline dot, toast errors briefly, refresh on pull or on return, and say "Stopping…" after Stop.
