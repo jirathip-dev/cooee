@@ -832,7 +832,7 @@ fn plugin_check_passes_the_fixtures_and_names_a_broken_field() {
     let said = String::from_utf8_lossy(&out.stdout);
     assert!(
         out.status.success()
-            && said.lines().count() == 25
+            && said.lines().count() == 26
             && said.lines().all(|l| l.starts_with("ok")),
         "{said}"
     );

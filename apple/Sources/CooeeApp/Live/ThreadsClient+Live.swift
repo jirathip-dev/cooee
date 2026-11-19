@@ -43,6 +43,7 @@ extension ThreadsClient: DependencyKey {
         },
         move: { server, thread, machine in try await client(server).move(thread, to: machine) },
         retry: { server, thread in try await client(server).retry(thread) },
+        restart: { server, thread in try await client(server).restart(thread) },
         topics: { server, owner in try await client(server).topics(of: owner) },
         retitle: { server, thread, title in try await client(server).retitle(thread, title) },
         archive: { server, thread, archived in try await client(server).archive(thread, archived) },

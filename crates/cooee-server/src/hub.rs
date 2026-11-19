@@ -32,6 +32,7 @@ mod mcp;
 mod models;
 mod plugins;
 mod relaunch;
+mod restart;
 mod rooms;
 mod screen;
 mod secret;

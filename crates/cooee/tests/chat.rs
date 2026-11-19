@@ -526,3 +526,76 @@ fn a_hanging_shed_approve_never_holds_another_thread() {
         assert_eq!(code, 200, "{body}");
     });
 }
+
+fn restarts(s: &Setup) -> Vec<String> {
+    let log = s.shed.cli_log();
+    let runs = log.lines().filter(|l| l.contains(" run --acp "));
+    runs.skip(1).map(str::to_owned).collect()
+}
+
+fn notes(s: &Setup, id: &str) -> usize {
+    s.items(id).iter().filter(|i| i["kind"] == "note").count()
+}
+
+#[test]
+fn a_send_to_a_gone_agent_starts_a_fresh_one_in_the_chat_and_delivers() {
+    let s = setup("gone-send");
+    let id = s.create("hi");
+    let mut events = s.events(&id);
+    events.until(|e| is_item(e, "agent"));
+    s.shed.vanish(&terminal(&id));
+    let (status, body) = s.send(&id, "echo back", "g1");
+    assert_eq!(status, 200, "{body}");
+    events.until(|e| is_item(e, "agent") && e.data["text"] == "back");
+    let again = restarts(&s);
+    assert_eq!(again.len(), 1, "{again:?}");
+    assert!(!again[0].contains("--resume"), "{again:?}");
+    assert_eq!(notes(&s, &id), 1, "one line says it started fresh");
+}
+
+#[test]
+fn a_gone_agent_that_reported_its_session_resumes_it_on_send() {
+    let s = setup("gone-resume");
+    fs::write(s.shed.dir.join("session.json"), r#"{"id":"sess-1"}"#).unwrap();
+    let id = s.create("hi");
+    let mut events = s.events(&id);
+    events.until(|e| is_item(e, "agent"));
+    s.shed.vanish(&terminal(&id));
+    let (status, body) = s.send(&id, "echo back", "g1");
+    assert_eq!(status, 200, "{body}");
+    events.until(|e| is_item(e, "agent") && e.data["text"] == "back");
+    let again = restarts(&s);
+    assert_eq!(again.len(), 1, "{again:?}");
+    assert!(again[0].contains("--resume sess-1"), "{again:?}");
+    assert_eq!(notes(&s, &id), 0, "resumed: no fresh-start line");
+}
+
+#[test]
+fn restart_on_the_gone_line_starts_the_agent_and_leaves_ended() {
+    let mut s = setup("gone-restart");
+    let id = s.create("hi");
+    let mut events = s.events(&id);
+    events.until(|e| is_item(e, "agent"));
+    s.shed.vanish(&terminal(&id));
+    let _shed = s.shed.restart(version());
+    events.until(|e| e.event == "state" && e.data["state"] == "ended");
+    let path = format!("/threads/{id}/restart");
+    let (status, body) = s.cooee.post(&path, &json!({}));
+    assert_eq!(status, 200, "{body}");
+    events.until(|e| e.event == "state" && e.data["state"] != "ended");
+    assert_eq!(restarts(&s).len(), 1);
+    assert_eq!(s.cooee.post(&path, &json!({})).0, 200);
+    assert_eq!(restarts(&s).len(), 1, "a second tap starts nothing");
+    let (status, body) = s.send(&id, "echo back", "g1");
+    assert_eq!(status, 200, "{body}");
+    events.until(|e| is_item(e, "agent") && e.data["text"] == "back");
+    drop(events);
+    drop(std::mem::replace(
+        &mut s.cooee,
+        Cooee::start(&s.dir, &s.shed.dir),
+    ));
+    let mut events = s.events(&id);
+    let (status, body) = s.send(&id, "echo again", "g2");
+    assert_eq!(status, 200, "{body}");
+    events.until(|e| is_item(e, "agent") && e.data["text"] == "again");
+}

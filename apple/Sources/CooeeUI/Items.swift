@@ -6,8 +6,11 @@ internal struct ItemView: View, Equatable {
     internal let item: Item
     internal var retry: () -> Void = {}
     internal var view: () -> Void = {}
+    internal var restart: (() -> Void)?
 
-    nonisolated internal static func == (lhs: Self, rhs: Self) -> Bool { lhs.item == rhs.item }
+    nonisolated internal static func == (lhs: Self, rhs: Self) -> Bool {
+        lhs.item == rhs.item && (lhs.restart == nil) == (rhs.restart == nil)
+    }
 
     internal var body: some View {
         switch item {
@@ -33,6 +36,9 @@ internal struct ItemView: View, Equatable {
                 Text(text).foregroundStyle(look.palette.mute)
                 if text.hasPrefix("Updated ") {
                     Button("View", action: view).buttonStyle(.plain).foregroundStyle(look.palette.link)
+                }
+                if text.hasPrefix("The agent is gone"), let restart {
+                    Button("Restart", action: restart).buttonStyle(.plain).foregroundStyle(look.palette.link)
                 }
             }
             .ui(13, .regular, look).frame(maxWidth: .infinity)

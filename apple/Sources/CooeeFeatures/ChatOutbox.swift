@@ -8,6 +8,7 @@ extension ChatFeature {
         case delivered(Int)
         case undelivered(Int, String)
         case retry(Int)
+        case restart
     }
 
     internal func send(_ state: inout State) -> Effect<Action> {
@@ -41,25 +42,37 @@ extension ChatFeature {
             }
             return toast(&state, failure)
         case .retry(let id):
-            guard let index = state.outbox.firstIndex(where: { $0.id == id && $0.failure != nil }) else {
-                return id == 0 ? restart(state) : .none
-            }
-            state.outbox[index].failure = nil
-            let message = state.outbox[index]
-            if state.draft == message.text, state.files == message.files {
-                state.draft = ""
-                state.files = []
-            }
-            return deliver(state, message)
+            return retry(&state, id)
+        case .restart:
+            return again(state, threads.restart)
         }
         return .none
     }
 
+    private func retry(_ state: inout State, _ id: Int) -> Effect<Action> {
+        guard let index = state.outbox.firstIndex(where: { $0.id == id && $0.failure != nil }) else {
+            return id == 0 ? restart(state) : .none
+        }
+        state.outbox[index].failure = nil
+        let message = state.outbox[index]
+        if state.draft == message.text, state.files == message.files {
+            state.draft = ""
+            state.files = []
+        }
+        return deliver(state, message)
+    }
+
     private func restart(_ state: State) -> Effect<Action> {
-        guard case .thread(let thread) = state.target, state.pending != nil else { return .none }
-        let (threads, server) = (threads, state.server)
+        state.pending == nil ? .none : again(state, threads.retry)
+    }
+
+    private func again(
+        _ state: State, _ call: @escaping @Sendable (Server, String) async throws -> Void
+    ) -> Effect<Action> {
+        guard case .thread(let thread) = state.target else { return .none }
+        let server = state.server
         return .run { _ in
-            try await threads.retry(server, thread)
+            try await call(server, thread)
         } catch: { error, send in
             await send(.failed(error.localizedDescription))
         }

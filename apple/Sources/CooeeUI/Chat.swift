@@ -35,7 +35,10 @@ public struct ChatView: View {
                             BigSprite(loading: loading)
                         }
                         ForEach(items) { item in
-                            ItemView(item: item, retry: { actions.retry(item.id) }, view: actions.view).equatable()
+                            ItemView(
+                                item: item, retry: { actions.retry(item.id) }, view: actions.view,
+                                restart: actions.restart
+                            ).equatable()
                                 .environment(\.act) { actions.answer(item.id, $0) }
                                 .disabled(actions.answering.contains(item.id))
                         }
