@@ -1,0 +1,343 @@
+Fetching https://github.com/pointfreeco/swift-case-paths from cache
+Fetching https://github.com/pointfreeco/swift-perception from cache
+Fetching https://github.com/pointfreeco/swift-dependencies from cache
+Fetching https://github.com/pointfreeco/combine-schedulers from cache
+Fetching https://github.com/pointfreeco/swift-navigation from cache
+Fetching https://github.com/swiftlang/swift-syntax from cache
+Fetching https://github.com/pointfreeco/swift-concurrency-extras from cache
+Fetching https://github.com/pointfreeco/swift-issue-reporting from cache
+Fetching https://github.com/pointfreeco/swift-custom-dump from cache
+Fetched https://github.com/pointfreeco/swift-custom-dump from cache (1.43s)
+Fetching https://github.com/apple/swift-collections from cache
+Fetched https://github.com/pointfreeco/swift-case-paths from cache (1.54s)
+Fetched https://github.com/pointfreeco/swift-perception from cache (1.54s)
+Fetched https://github.com/pointfreeco/swift-issue-reporting from cache (1.54s)
+Fetched https://github.com/pointfreeco/swift-concurrency-extras from cache (1.54s)
+Fetched https://github.com/pointfreeco/combine-schedulers from cache (1.54s)
+Fetched https://github.com/pointfreeco/swift-dependencies from cache (1.56s)
+Fetched https://github.com/pointfreeco/swift-navigation from cache (1.57s)
+Fetching https://github.com/pointfreeco/swift-composable-architecture from cache
+Fetching https://github.com/pointfreeco/swift-clocks from cache
+Fetching https://github.com/pointfreeco/swift-sharing from cache
+Fetching https://github.com/pointfreeco/swift-identified-collections from cache
+Fetched https://github.com/swiftlang/swift-syntax from cache (1.72s)
+Fetched https://github.com/pointfreeco/swift-clocks from cache (0.83s)
+Fetched https://github.com/pointfreeco/swift-sharing from cache (0.83s)
+Fetched https://github.com/apple/swift-collections from cache (1.04s)
+Fetched https://github.com/pointfreeco/swift-composable-architecture from cache (0.96s)
+Computing version for https://github.com/pointfreeco/swift-composable-architecture
+Fetched https://github.com/pointfreeco/swift-identified-collections from cache (0.98s)
+Computed https://github.com/pointfreeco/swift-composable-architecture at 1.26.2 (3.11s)
+Computing version for https://github.com/swiftlang/swift-syntax
+Computed https://github.com/swiftlang/swift-syntax at 604.0.0 (0.57s)
+Computing version for https://github.com/pointfreeco/swift-sharing
+Computed https://github.com/pointfreeco/swift-sharing at 2.10.1 (1.08s)
+Computing version for https://github.com/pointfreeco/swift-perception
+Computed https://github.com/pointfreeco/swift-perception at 2.0.12 (0.48s)
+Computing version for https://github.com/pointfreeco/swift-navigation
+Computed https://github.com/pointfreeco/swift-navigation at 2.11.2 (0.67s)
+Computing version for https://github.com/pointfreeco/swift-issue-reporting
+Computed https://github.com/pointfreeco/swift-issue-reporting at 2.1.2 (0.65s)
+Computing version for https://github.com/pointfreeco/swift-identified-collections
+Computed https://github.com/pointfreeco/swift-identified-collections at 1.1.1 (0.47s)
+Computing version for https://github.com/pointfreeco/swift-dependencies
+Computed https://github.com/pointfreeco/swift-dependencies at 1.17.2 (0.53s)
+Computing version for https://github.com/pointfreeco/swift-custom-dump
+Computed https://github.com/pointfreeco/swift-custom-dump at 1.7.3 (0.44s)
+Computing version for https://github.com/pointfreeco/swift-concurrency-extras
+Computed https://github.com/pointfreeco/swift-concurrency-extras at 1.4.3 (0.47s)
+Computing version for https://github.com/pointfreeco/swift-clocks
+Computed https://github.com/pointfreeco/swift-clocks at 1.1.1 (0.75s)
+Computing version for https://github.com/pointfreeco/swift-case-paths
+Computed https://github.com/pointfreeco/swift-case-paths at 1.10.0 (0.91s)
+Computing version for https://github.com/pointfreeco/combine-schedulers
+Computed https://github.com/pointfreeco/combine-schedulers at 1.2.2 (0.74s)
+Computing version for https://github.com/apple/swift-collections
+Computed https://github.com/apple/swift-collections at 1.7.5 (0.90s)
+Creating working copy for https://github.com/pointfreeco/swift-issue-reporting
+Working copy of https://github.com/pointfreeco/swift-issue-reporting resolved at 2.1.2
+Creating working copy for https://github.com/pointfreeco/swift-navigation
+Working copy of https://github.com/pointfreeco/swift-navigation resolved at 2.11.2
+Creating working copy for https://github.com/pointfreeco/swift-dependencies
+Working copy of https://github.com/pointfreeco/swift-dependencies resolved at 1.17.2
+Creating working copy for https://github.com/swiftlang/swift-syntax
+Working copy of https://github.com/swiftlang/swift-syntax resolved at 604.0.0
+Creating working copy for https://github.com/pointfreeco/swift-composable-architecture
+Working copy of https://github.com/pointfreeco/swift-composable-architecture resolved at 1.26.2
+Creating working copy for https://github.com/pointfreeco/swift-custom-dump
+Working copy of https://github.com/pointfreeco/swift-custom-dump resolved at 1.7.3
+Creating working copy for https://github.com/pointfreeco/combine-schedulers
+Working copy of https://github.com/pointfreeco/combine-schedulers resolved at 1.2.2
+Creating working copy for https://github.com/pointfreeco/swift-perception
+Working copy of https://github.com/pointfreeco/swift-perception resolved at 2.0.12
+Creating working copy for https://github.com/pointfreeco/swift-sharing
+Working copy of https://github.com/pointfreeco/swift-sharing resolved at 2.10.1
+Creating working copy for https://github.com/pointfreeco/swift-identified-collections
+Working copy of https://github.com/pointfreeco/swift-identified-collections resolved at 1.1.1
+Creating working copy for https://github.com/pointfreeco/swift-case-paths
+Working copy of https://github.com/pointfreeco/swift-case-paths resolved at 1.10.0
+Creating working copy for https://github.com/apple/swift-collections
+Working copy of https://github.com/apple/swift-collections resolved at 1.7.5
+Creating working copy for https://github.com/pointfreeco/swift-clocks
+Working copy of https://github.com/pointfreeco/swift-clocks resolved at 1.1.1
+Creating working copy for https://github.com/pointfreeco/swift-concurrency-extras
+Working copy of https://github.com/pointfreeco/swift-concurrency-extras resolved at 1.4.3
+Building for debugging...
+[Computing dependencies]
+[Constructing description]
+[Pre-planning 1 / 1333]
+[Planning deferred tasks]
+[Starting]
+[29 / 662] SwiftUINavigation
+[101 / 662] DependenciesMacros
+[260 / 662] Clocks
+[315 / 662] Cooee_CooeeUI
+[317 / 662]
+[331 / 676]
+[333 / 676] UIKitNavigationShim
+[334 / 676] Sharing2
+[336 / 680]
+[344 / 680] Sharing2
+[346 / 682] Sharing1
+[352 / 682] Sharing2
+[356 / 682] Sharing1
+[356 / 682] CasePathsMacrosSupport
+[362 / 708]
+[363 / 708]
+[365 / 708]
+[372 / 739]
+[377 / 753] ComposableArchitectureMacros
+[386 / 837]
+[395 / 837] InternalCollectionsUtilities
+[402 / 837]
+[411 / 867]
+[418 / 867]
+[423 / 867]
+[427 / 867] InternalCollectionsUtilities
+[443 / 867]
+[447 / 868]
+[460 / 881]
+[463 / 881]
+[470 / 881]
+[477 / 881]
+[480 / 881]
+[485 / 881] DependenciesMacrosPlugin
+[487 / 881]
+[488 / 881]
+[493 / 881] CasePathsMacrosSupport
+[504 / 881]
+[508 / 881]
+[511 / 881] DependenciesMacrosPlugin
+[516 / 881] DependenciesMacrosPlugin
+[517 / 881] DependenciesMacrosPlugin
+[519 / 881]
+[521 / 881] OrderedCollections
+[524 / 881]
+[525 / 881] DependenciesMacrosPlugin
+[528 / 881] PerceptionMacros
+[529 / 881] PerceptionMacros
+[531 / 881] OrderedCollections
+[540 / 882] OrderedCollections
+[542 / 882] CasePathsMacrosSupport
+[562 / 882] SwiftNavigationMacros
+[564 / 882] CooeeCore
+[566 / 882] ComposableArchitectureMacros
+[571 / 895] IssueReporting
+[572 / 895] ComposableArchitectureMacros
+[575 / 895] ConcurrencyExtras
+[581 / 895] IssueReporting
+[582 / 895] IssueReporting
+[585 / 895] IdentifiedCollections
+[587 / 895] IdentifiedCollections
+[593 / 895] IssueReporting
+[594 / 895] IssueReporting
+[606 / 895] IssueReporting-product
+[608 / 895] IdentifiedCollections
+[610 / 895] IdentifiedCollections
+[611 / 895] IdentifiedCollections-product
+[612 / 895] IdentifiedCollections-product
+[614 / 895] IdentifiedCollections
+[616 / 895] IdentifiedCollections
+[623 / 895] CooeeCore
+[627 / 895] CooeeCore
+[629 / 895] ConcurrencyExtras
+[632 / 895] ConcurrencyExtras
+[633 / 895] ConcurrencyExtras
+[638 / 895] ConcurrencyExtras
+[642 / 895] CombineSchedulers
+[656 / 899]
+[659 / 903] SwiftNavigationMacros
+[661 / 907] SwiftNavigationMacros
+[664 / 911] SwiftNavigationMacros
+[666 / 911] SwiftNavigationMacros
+[667 / 911] DependenciesMacros
+[672 / 914] CasePathsMacros
+[691 / 916] DependenciesMacros
+[695 / 917] SwiftNavigationMacros
+[706 / 986]
+[715 / 998] CasePathsCore
+[721 / 998] CooeeAPI
+[727 / 1099] CasePathsCore
+[740 / 1099]
+[749 / 1099]
+[762 / 1099]
+[767 / 1099]
+[777 / 1099]
+[784 / 1099]
+[787 / 1099] CooeeAPI
+[795 / 1099]
+[801 / 1099]
+[807 / 1099]
+[809 / 1099]
+[811 / 1099]
+[812 / 1099]
+[814 / 1099]
+[816 / 1099]
+[820 / 1099] CooeeCoreTests-product
+[831 / 1099]
+[838 / 1099]
+[842 / 1099]
+[863 / 1099] CustomDump
+[864 / 1099] CooeeCoreTests-product
+[867 / 1099]
+[870 / 1099] CustomDump
+[873 / 1099] CustomDump
+[875 / 1099] CustomDump
+[878 / 1099] CombineSchedulers
+[879 / 1099] CustomDump
+[886 / 1099] CustomDump-product
+[890 / 1099] CombineSchedulers
+[892 / 1099] Clocks
+[893 / 1099] Clocks
+[895 / 1099] Clocks-product
+[898 / 1099] Clocks
+[901 / 1099] CasePathsCore
+[904 / 1099] CasePathsCore
+[907 / 1099] PerceptionCore
+[911 / 1099] PerceptionCore
+[915 / 1099] PerceptionCore
+[918 / 1099] PerceptionCore
+[932 / 1101] Dependencies
+[932 / 1101]
+[936 / 1102] CooeeAPITests-product
+[937 / 1102] CooeeCoreTests-product
+[938 / 1103]
+[939 / 1106] CooeeAPITests-product
+[941 / 1119] CooeeAPITests-product
+[947 / 1139] Dependencies
+[949 / 1139] Dependencies
+[958 / 1139] Perception
+[979 / 1139] Dependencies
+[982 / 1139] CustomDump
+[985 / 1139] CustomDump
+[987 / 1139] CooeeAPITests-product
+[990 / 1139] CooeeAPITests-product
+[991 / 1139] CooeeAPITests-product
+[995 / 1139] CooeeAPITests-product
+[999 / 1139] CombineSchedulers
+[1001 / 1139] CasePaths
+[1002 / 1139] CasePaths
+[1003 / 1139] CasePaths-product
+[1005 / 1139]
+[1006 / 1139]
+[1009 / 1141]
+[1012 / 1141] PerceptionCore
+[1014 / 1141] Perception
+[1014 / 1141] CasePaths
+[1024 / 1154] SwiftNavigation
+[1025 / 1167] Sharing
+[1027 / 1167] SwiftNavigation
+[1029 / 1167] SwiftNavigation
+[1030 / 1167] SwiftNavigation
+[1031 / 1167] Sharing
+[1035 / 1167] Sharing
+[1037 / 1167] Sharing
+[1038 / 1167] SwiftNavigation
+[1047 / 1167] UIKitNavigation
+[1049 / 1167] Sharing
+[1056 / 1169]
+[1061 / 1182] UIKitNavigation
+[1068 / 1182] UIKitNavigation
+[1074 / 1182] UIKitNavigation-product
+[1077 / 1182] UIKitNavigation
+[1079 / 1182] Sharing
+[1081 / 1182] SwiftUINavigation
+[1091 / 1195] SwiftUINavigation
+[1094 / 1195] SwiftUINavigation
+[1094 / 1195] CooeeAPITests-product
+[1105 / 1196] CooeeAPITests-product
+[1105 / 1196] SwiftUINavigation
+[1108 / 1196] Sharing
+[1109 / 1196] ComposableArchitecture
+[1122 / 1209] ComposableArchitecture
+[1129 / 1210] ComposableArchitecture
+[1129 / 1210] CooeeFeatures
+[1140 / 1223] CooeeFeatures
+[1141 / 1223] CooeeFeatures
+[1142 / 1223] CooeeFeatures
+[1142 / 1223] ComposableArchitecture
+[1144 / 1223] ComposableArchitecture
+[1144 / 1223] CooeeFeatures
+[1153 / 1224] CooeeFeatures
+[1155 / 1241]
+[1157 / 1241]
+[1168 / 1241] CooeeUI
+[1169 / 1241] CooeeUI
+[1170 / 1241] CooeeUI
+[1171 / 1241] CooeeUI
+[1179 / 1242] CooeeApp
+[1182 / 1256] CooeeApp
+[1184 / 1256] CooeeApp
+[1185 / 1256] CooeeApp
+[1192 / 1256] CooeeApp
+[1193 / 1256] CooeeAppTests-product
+[1194 / 1256] CooeeAppTests-product
+[1196 / 1256] CooeeApp
+[1198 / 1256] CooeeApp
+[1199 / 1256] CooeeApp
+[1201 / 1256] CooeeUI
+[1201 / 1256] CooeeApp
+[1202 / 1256] CooeeUI
+[1203 / 1256] CooeeFeatures
+[1211 / 1257] CooeeUI
+[1224 / 1259] CooeeUITests-product
+[1226 / 1259] CooeeFeaturesTests-product
+[1237 / 1272] CooeeFeaturesTests-product
+[1239 / 1291] CooeeAppTests-product
+[1240 / 1291]
+[1242 / 1291]
+[1244 / 1291] CooeeFeaturesTests-product
+[1249 / 1291] CooeeUITests-product
+[1249 / 1291] CooeeFeaturesTests-product
+[1261 / 1291] CooeeUITests-product
+[1263 / 1291] CooeeUITests-product
+[1266 / 1291] CooeeUITests-product
+[1268 / 1291] CooeeUITests-product
+[1269 / 1291] CooeeUITests-product
+[1271 / 1291] CooeeFeaturesTests-product
+[1272 / 1291] CooeeAppTests-product
+[1273 / 1291] CooeeAppTests-product
+[1273 / 1291] CooeeUITests-product
+[1275 / 1291] CooeeUITests-product
+[1277 / 1291] CooeeAppTests-product
+[1279 / 1291] CooeeUITests-product
+[1281 / 1291] CooeeFeaturesTests-product
+[1281 / 1291] CooeeUITests-product
+[1283 / 1291] CooeeFeaturesTests-product
+[1287 / 1291] CooeeFeaturesTests-product
+Build complete! (70.23 secs)
+◇ Test run started.
+↳ Testing Library Version: 2403
+↳ Target Platform: arm64e-apple-macos14.0
+◇ Suite HeaderRenderTests started.
+◇ Test aThreadIsNoWiderThanItsWindow(_:) started.
+◇ Test case passing 1 argument window → 390.0 to aThreadIsNoWiderThanItsWindow(_:) started.
+◇ Test case passing 1 argument window → 1440.0 to aThreadIsNoWiderThanItsWindow(_:) started.
+✘ Test aThreadIsNoWiderThanItsWindow(_:) recorded an issue with 1 argument window → 390.0 at HeaderRenderTests.swift:57:9: Expectation failed: try Self.thread(window: window).width <= Int(window)
+↳ try Self.thread(window: window).width <= Int(window) → <not evaluated>
+✘ Test aThreadIsNoWiderThanItsWindow(_:) with 2 test cases failed after 0.124 seconds with 1 issue.
+✘ Suite HeaderRenderTests failed after 0.124 seconds with 1 issue.
+✘ Test run with 1 test in 1 suite failed after 0.124 seconds with 1 issue.
+Note: Some test targets reported failures:
+  - CooeeUITests (Swift Testing)
+exit=1
