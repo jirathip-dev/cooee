@@ -28,6 +28,8 @@ extension AppFeature {
             state.path = state.path.dropLast() + [thread]
             state.chat = state.chat.map { Self.moved($0, to: .thread(thread)) }
             return .send(.home(.refresh))
+        case .closed:
+            return .merge(.send(.back), .send(.home(.refresh)))
         }
     }
 

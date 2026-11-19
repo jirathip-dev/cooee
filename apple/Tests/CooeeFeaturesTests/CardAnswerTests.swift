@@ -43,7 +43,6 @@ internal struct CardAnswerTests {
             $0.items = [secret]
             $0.since = epoch
         }
-        let calls = calls
         store.dependencies.ownerCheck.confirm = { reason in
             calls.record("check \(reason)")
             return confirmed
@@ -74,7 +73,6 @@ internal struct CardAnswerTests {
             $0.items = items
             $0.since = epoch
         }
-        let calls = calls
         store.dependencies.threads.approve = { _, thread, item, value in
             calls.record("approve \(thread) \(item) \(value ?? "-")")
         }

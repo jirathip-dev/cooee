@@ -207,7 +207,7 @@ extension AppFeature {
             chat = ChatFeature.State(server: home.server, target: .thread(id), persona: persona)
             chat.machine.current = home.rows.first { $0.id == id }?.machine ?? ""
         }
-        chat.workflow = lists.workflow[chat.persona.id]
+        chat.place(in: lists)
         return chat
     }
 }

@@ -66,15 +66,18 @@ impl Hub {
         Ok(self.shed.cancel(&terminal)?)
     }
 
-    /// Closes the thread: kills and removes its terminal. Its history stays.
+    /// Closes the thread: kills and removes its terminal, once. Its history stays; a Workflow session's is archived.
     ///
     /// # Errors
-    /// [`HubError::Shed`] when shed fails.
+    /// [`HubError::Refused`] for a live Workflow session a plugin claims; [`HubError::Shed`] when shed fails.
     pub fn close(&self, id: &str) -> Result<(), HubError> {
         let live = self.live(id)?;
         let terminal = {
             let l = lock(&live);
-            if l.meta.workflow.is_some() {
+            if l.meta.closed {
+                return Ok(());
+            }
+            if !self.closable(&l) {
                 return Err(HubError::Refused(
                     "the tool that started this session closes it".to_owned(),
                 ));
@@ -84,6 +87,7 @@ impl Hub {
         self.shed.close(&terminal)?;
         let mut live = lock(&live);
         live.meta.closed = true;
+        live.meta.archived |= live.meta.workflow.is_some();
         self.save(&live)?;
         if live.chat.turn.state != "ended" {
             let changes = live

@@ -120,6 +120,7 @@ public struct Row: Identifiable, Sendable, Equatable {
     public let ago: String
     public let unseen: Int
     public let state: LaneState
+    public var status: String?
 
     public init(id: String, persona: String, title: String, last: String, ago: String, unseen: Int, state: LaneState) {
         self.id = id

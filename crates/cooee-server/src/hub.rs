@@ -32,6 +32,7 @@ mod glance;
 mod handoff;
 mod heartbeat;
 mod home;
+mod lanes;
 mod mcp;
 mod models;
 mod plugins;
@@ -732,25 +733,6 @@ impl Hub {
         let live = Arc::new(Mutex::new(Live::new(meta, Chat::default())));
         self.insert(id, t.name.clone(), &live);
         Some(live)
-    }
-
-    /// Drops the Workflow sessions whose terminal is not among `terminals` (listed at `at`): the tool that started
-    /// them cleaned them up (#33). One adopted since the listing stays.
-    pub fn prune(&self, terminals: &[TerminalInfo], at: u64) {
-        for live in self.all() {
-            let id = {
-                let live = lock(&live);
-                let listed = terminals.iter().any(|t| t.name == live.meta.terminal);
-                if live.meta.workflow.is_none() || listed || live.moved > at {
-                    continue;
-                }
-                live.meta.id.clone()
-            };
-            self.remove(&id);
-            if let Err(e) = self.store.remove(&id) {
-                cooee_core::note!("cooee: {e}");
-            }
-        }
     }
 
     /// The push subscriptions and key.
