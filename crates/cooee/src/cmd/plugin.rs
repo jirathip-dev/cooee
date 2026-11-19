@@ -77,11 +77,12 @@ fn plugin(
                 let l = &r.locked;
                 let source = if l.listed { "index" } else { "url" };
                 cooee_core::say!(
-                    "{}  {}  {}  {source}  {}",
+                    "{}  {}  {}  {source}  {}  accepts {}",
                     l.name,
                     l.version,
                     &l.commit[..7],
-                    r.state
+                    r.state,
+                    r.accepts
                 );
             }
         }

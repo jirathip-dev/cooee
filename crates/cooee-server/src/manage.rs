@@ -79,6 +79,8 @@ pub struct Row {
     pub claims: Vec<String>,
     /// Its manifest's `[permissions]`.
     pub permissions: plugins::Permissions,
+    /// The cooee versions it accepts.
+    pub accepts: String,
 }
 
 struct Run {
@@ -428,6 +430,7 @@ impl Manager {
         let manifest = git(repo, &["show", &format!("{commit}:cooee-plugin.toml")])
             .map_err(|_| other(format!("{url} has no cooee-plugin.toml at {commit}")))?;
         let m = Manifest::parse(&manifest)?;
+        m.fits().map_err(other)?;
         if listed.is_some_and(|l| l != m.name) {
             return Err(other(format!(
                 "{url}: its manifest names {}, not the index's name",
@@ -698,7 +701,9 @@ impl Manager {
             .clone()
             .ok_or_else(|| other(format!("{name} has no build to roll back to")))?;
         let manifest = fs::read_to_string(self.build_dir(name, &prev).join("cooee-plugin.toml"))?;
-        self.switch(&l, &prev, &Manifest::parse(&manifest)?)
+        let m = Manifest::parse(&manifest)?;
+        m.fits().map_err(other)?;
+        self.switch(&l, &prev, &m)
     }
 
     /// Removes plugin `name`: `cooee serve` stops it, its entries go; its folder stays unless `purge`.
@@ -822,8 +827,9 @@ impl Manager {
                 (if up(l.port) { "running" } else { "not running" }).to_owned()
             };
             let first_party = self.index.iter().any(|x| x.name == l.name && x.first_party);
-            let (places, claims, permissions) = plugins::manifest(&self.data, &l)
-                .map(|m| (m.places, m.claims, m.permissions))
+            let (places, claims, permissions, accepts) = plugins::manifest(&self.data, &l)
+                .map(|m| (m.accepts(), m))
+                .map(|(a, m)| (m.places, m.claims, m.permissions, a))
                 .unwrap_or_default();
             Row {
                 locked: l,
@@ -832,6 +838,7 @@ impl Manager {
                 places,
                 claims,
                 permissions,
+                accepts,
             }
         });
         Ok(rows.collect())
@@ -962,6 +969,10 @@ impl Manager {
                 }
             }
             if crashed.is_none() && run.child.is_none() && now >= run.next {
+                if let Some(why) = self.manifest(l).ok().and_then(|m| m.fits().err()) {
+                    alerts.push(self.turn_off(l, &why, ""));
+                    continue;
+                }
                 match self.spawn(l) {
                     Ok(Some((c, module))) => {
                         run.child = Some(c);
@@ -993,19 +1004,20 @@ impl Manager {
                 run.state = format!("crashed ({how}), restarting");
                 continue;
             }
-            let why = "off after 5 crashes in 10 minutes".to_owned();
-            let _one = lock(&self.ops);
-            self.change(&l.name, |l| {
-                l.enabled = false;
-                l.note.clone_from(&why);
-            })
-            .ok();
-            alerts.push(format!(
-                "plugin {}: {why}; its log is in Settings › Plugins",
-                l.name
-            ));
+            let why = "off after 5 crashes in 10 minutes";
+            alerts.push(self.turn_off(l, why, "; its log is in Settings › Plugins"));
         }
         alerts
+    }
+
+    fn turn_off(&self, l: &Locked, why: &str, more: &str) -> String {
+        let _one = lock(&self.ops);
+        self.change(&l.name, |l| {
+            l.enabled = false;
+            why.clone_into(&mut l.note);
+        })
+        .ok();
+        format!("plugin {}: {why}{more}", l.name)
     }
 
     /// Supervises the backends for `hub` on a thread of its own, every half second: its tabs follow the installed
