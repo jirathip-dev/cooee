@@ -14,7 +14,7 @@ internal enum PictureSource: Hashable, Sendable {
     }
 }
 
-internal final class Pictures: Sendable {
+internal actor Pictures {
     internal static let shared = Pictures()
     internal static let context = CIContext()
     private nonisolated(unsafe) let kept = NSCache<NSString, CGImage>()
@@ -25,19 +25,19 @@ internal final class Pictures: Sendable {
         kept.totalCostLimit = 64 << 20
     }
 
-    internal func drawn(_ source: PictureSource, still: Bool) -> CGImage? {
+    internal nonisolated func drawn(_ source: PictureSource, still: Bool) -> CGImage? {
         guard still, case .sprite(let name) = source else { return kept.object(forKey: source.key) }
         return sprite(name)
     }
 
-    @concurrent internal func decoded(_ source: PictureSource) async -> CGImage? {
+    internal func decoded(_ source: PictureSource) async -> CGImage? {
         switch source {
         case .sprite(let name): sprite(name)
         case .data(let src): picture(src)
         }
     }
 
-    private func sprite(_ name: String) -> CGImage? {
+    private nonisolated func sprite(_ name: String) -> CGImage? {
         let key = PictureSource.sprite(name).key
         if let image = kept.object(forKey: key) { return image }
         guard let url = Bundle.module.url(forResource: name, withExtension: "png", subdirectory: "Sprites"),
@@ -49,7 +49,7 @@ internal final class Pictures: Sendable {
     }
 
     private func picture(_ src: String) -> CGImage? {
-        precondition(!Thread.isMainThread, "block images decode off the main actor")
+        preconditionIsolated("block images decode on the pictures actor, off the main actor")
         let key = PictureSource.data(src).key
         if let image = kept.object(forKey: key) { return image }
         guard let comma = src.firstIndex(of: ","),
@@ -59,7 +59,7 @@ internal final class Pictures: Sendable {
         return keep(drawn, key)
     }
 
-    private func keep(_ image: CGImage, _ key: NSString) -> CGImage {
+    private nonisolated func keep(_ image: CGImage, _ key: NSString) -> CGImage {
         kept.setObject(image, forKey: key, cost: image.bytesPerRow * image.height)
         return image
     }
