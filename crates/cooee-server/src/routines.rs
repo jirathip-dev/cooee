@@ -442,6 +442,7 @@ impl Runner {
                 tag: r.id.clone(),
                 url: "/routines".to_owned(),
                 item: 0,
+                say: false,
             });
         }
         r.last_run = Some(Run {

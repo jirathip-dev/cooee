@@ -15,6 +15,9 @@ pub struct Note {
     pub url: String,
     /// The item it is about.
     pub item: u64,
+    /// An approval the owner may deny with their text from the notification (#351).
+    #[serde(skip_serializing_if = "std::ops::Not::not")]
+    pub say: bool,
 }
 
 impl Note {
@@ -36,6 +39,7 @@ impl Note {
             tag: thread.id.clone(),
             url: format!("/t/{}", thread.id),
             item,
+            say: false,
         }
     }
 
@@ -65,6 +69,7 @@ pub fn note(
     theme: &crate::look::Theme,
 ) -> Option<Note> {
     let last = chat.items.last().map_or(0, |i| i.id);
+    let say = matches!(change, Change::Item(i) if i.sayable().is_some());
     let (key, line, item) = match change {
         Change::Item(i) => match &i.body {
             Body::Approval {
@@ -96,7 +101,8 @@ pub fn note(
         ),
         Change::State(_) | Change::Text(_) => return None,
     };
-    Some(Note::new(thread, (key, &thread.agent, &line), item, theme))
+    let note = Note::new(thread, (key, &thread.agent, &line), item, theme);
+    Some(Note { say, ..note })
 }
 
 #[cfg(test)]
@@ -114,6 +120,7 @@ pub(super) mod tests {
             tag: "t1".to_owned(),
             url: "/t/t1".to_owned(),
             item: 7,
+            say: false,
         }
     }
 
@@ -132,6 +139,38 @@ pub(super) mod tests {
             note: note.map(str::to_owned),
             ..Turn::default()
         })
+    }
+
+    #[test]
+    fn only_an_approval_the_agent_can_deny_asks_for_text_from_its_push() {
+        let (looks, _) = crate::look::Looks::load(None, None);
+        let theme = &looks.themes[&looks.default];
+        let reject = cooee_core::shed_proto::ApprovalOption {
+            id: "reject".to_owned(),
+            name: "Reject".to_owned(),
+            kind: "reject_once".to_owned(),
+        };
+        let says = |options: Vec<_>, plugin: Option<&str>| {
+            let ask = Change::Item(Item {
+                id: 3,
+                at: 3,
+                seq: 2,
+                speaker: String::new(),
+                body: Body::Approval {
+                    tool: "Edit src/lib.rs".to_owned(),
+                    options,
+                    tapped: None,
+                    chosen: None,
+                    plugin: plugin.map(str::to_owned),
+                    card: cooee_core::Card::default(),
+                },
+            });
+            let n = note(&thread(), &Chat::default(), &ask, "working", true, theme);
+            n.unwrap().say
+        };
+        assert!(says(vec![reject.clone()], None));
+        assert!(!says(Vec::new(), None));
+        assert!(!says(vec![reject], Some("drover")));
     }
 
     #[test]
@@ -178,6 +217,7 @@ pub(super) mod tests {
             tag: "t1".to_owned(),
             url: "/t/t1".to_owned(),
             item,
+            say: false,
         };
         let t = thread();
         let packs = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../packs");

@@ -135,6 +135,9 @@ pub struct Queued {
     /// How it was sent (#663).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub via: Option<crate::Via>,
+    /// The approval it denies (#351): once sent it shows under that card, not as a message of its own.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub denied: Option<u64>,
 }
 
 /// One message in a thread.

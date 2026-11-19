@@ -11,4 +11,23 @@ extension AppFeature {
         let chat: Effect<Action> = state.chat?.target.started == true ? .send(.chat(.link(.refresh))) : .none
         return .merge(.send(.home(.refresh)), chat)
     }
+
+    internal func taps(_ state: State) -> Effect<Action> {
+        @Dependency(\.threads) var client
+        let (push, threads, server, voice) = (push, client, state.home?.server, voice)
+        return .merge(
+            .run { send in for await thread in await push.opened() { await send(.open(thread)) } },
+            .run { send in for await persona in await voice.calls() { await send(.call(persona)) } },
+            .run { send in
+                for await said in await push.said() {
+                    guard let server else { continue }
+                    do {
+                        try await threads.answer(server, said.thread, said.item, "say", said.text)
+                    } catch {
+                        await send(.open(said.thread))
+                    }
+                }
+            }
+        )
+    }
 }

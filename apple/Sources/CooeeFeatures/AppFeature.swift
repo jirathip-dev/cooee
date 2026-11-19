@@ -61,8 +61,8 @@ public struct AppFeature: Sendable {
 
     @Dependency(\.serverStore) internal var serverStore
     @Dependency(\.loginItems) private var loginItems
-    @Dependency(\.push) private var push
-    @Dependency(\.voice) private var voice
+    @Dependency(\.push) internal var push
+    @Dependency(\.voice) internal var voice
     @Dependency(\.date.now) internal var now
     @Dependency(\.continuousClock) internal var clock
 
@@ -93,10 +93,7 @@ public struct AppFeature: Sendable {
                 state.notice = Self.retired
                 return .none
             case .taps:
-                let (push, voice) = (push, voice)
-                return .merge(
-                    .run { send in for await thread in await push.opened() { await send(.open(thread)) } },
-                    .run { send in for await persona in await voice.calls() { await send(.call(persona)) } })
+                return taps(state)
             case .call(let name):
                 return call(&state, name)
             case .persona(.presented(.delegate(.saved))), .persona(.presented(.delegate(.deleted))):
