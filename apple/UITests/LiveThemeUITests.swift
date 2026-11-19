@@ -12,7 +12,7 @@
     extension LiveUITestCase {
         @MainActor
         internal func themes(_ app: XCUIApplication, _ new: XCUIElement) {
-            for theme in ["Kitchen", "Garden", "Farm"] {
+            for (theme, scene) in [("Kitchen", false), ("Garden", false), ("Bush", true), ("Farm", true)] {
                 look(app, theme, "Modern")
                 keep("theme-\(theme.lowercased())-modern")
                 new.tap()
@@ -21,6 +21,7 @@
                 keep("theme-\(theme.lowercased())-chat")
                 app.buttons["Back"].firstMatch.tap()
                 XCTAssert(new.waitForExistence(timeout: 10))
+                guard scene else { continue }
                 look(app, theme, "Scene")
                 keep("theme-\(theme.lowercased())-scene")
             }
