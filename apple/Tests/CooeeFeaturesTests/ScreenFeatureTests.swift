@@ -208,8 +208,8 @@ extension ScreenFeatureTests {
 }
 
 extension ScreenFeatureTests {
-    @Test internal func aSlowLoadShowsAStripAfter300msAndTheShownScreenStaysTappable() async {
-        let store = store {
+    private func slowStore() -> TestStoreOf<ScreenFeature> {
+        store {
             $0.screenCache.load = { _ in nil }
             $0.plugins.screen = { [clock] _, _, _ in
                 try await clock.sleep(for: .seconds(2))
@@ -221,8 +221,13 @@ extension ScreenFeatureTests {
                 return .null
             }
         }
+    }
+
+    @Test internal func aSlowLoadShowsAStripAfter300msAndTheShownScreenStaysTappable() async {
+        let store = slowStore()
         let task = await store.send(.task)
         await clock.advance(by: .milliseconds(299))
+        await store.send(.background)
         await clock.advance(by: .milliseconds(1))
         await store.receive(\.slow) { $0.slow = true }
         await clock.advance(by: .milliseconds(1_700))

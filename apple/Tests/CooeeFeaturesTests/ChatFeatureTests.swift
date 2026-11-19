@@ -219,10 +219,10 @@ extension ChatFeatureTests {
 
     @Test internal func aRepeatedIdRefreshedFiveTimesStaysOneRow() async {
         let store = store()
-        let row = { (n: Int) in APIItem(id: 7, time: 7, kind: "agent", text: "v\(n)") }
+        let row = { (refresh: Int) in APIItem(id: 7, time: 7, kind: "agent", text: "v\(refresh)") }
         await store.send(.event(.item(row(0)))) { $0.items = [row(0)] }
-        for n in 1...4 {
-            await store.send(.event(.item(row(n)))) { $0.items = [row(n)] }
+        for refresh in 1...4 {
+            await store.send(.event(.item(row(refresh)))) { $0.items = [row(refresh)] }
         }
         await store.send(.loaded(Slice(items: [row(5)], turn: Turn(), cursor: "b.7", queue: []))) {
             $0.items = [row(5)]

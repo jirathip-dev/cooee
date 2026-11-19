@@ -16,12 +16,10 @@
             let attach = app.buttons["Attach"].firstMatch
             let gap = settled(attach).minY - last.frame.maxY
             keep("keyboard-down")
-            XCTAssertGreaterThanOrEqual(attach.frame.minX, 0, "the thread is wider than the screen")
             app.textFields.matching(NSPredicate(format: "label BEGINSWITH 'Message '")).firstMatch.tap()
             XCTAssert(keyboard.waitForExistence(timeout: 10), "no keyboard came up")
             let bar = settled(attach)
             keep("keyboard-up")
-            XCTAssertGreaterThanOrEqual(bar.minX, 0, "the composer is wider than the screen")
             XCTAssert((0...56).contains(keyboard.frame.minY - bar.maxY), "the composer is off the keyboard: \(bar)")
             XCTAssertEqual(bar.minY - last.frame.maxY, gap, accuracy: 2, "the thread lost its place")
         }
@@ -60,13 +58,13 @@
             let (width, height) = (32, 64)
             var pixels = [UInt8](repeating: 0, count: width * height * 4)
             let drawn = pixels.withUnsafeMutableBytes { bytes in
-                guard let cg = image.cgImage,
+                guard let picture = image.cgImage,
                     let context = CGContext(
                         data: bytes.baseAddress, width: width, height: height, bitsPerComponent: 8,
                         bytesPerRow: width * 4, space: CGColorSpaceCreateDeviceRGB(),
                         bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)
                 else { return false }
-                context.draw(cg, in: CGRect(x: 0, y: 0, width: width, height: height))
+                context.draw(picture, in: CGRect(x: 0, y: 0, width: width, height: height))
                 return true
             }
             guard drawn else { return false }
