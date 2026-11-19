@@ -26,6 +26,11 @@ extension Client {
     public func perf(_ name: String, millis: Int) async throws {
         try await post("/perf", Sample(name: name, millis: millis))
     }
+
+    /// A report-mode note into the server's reports (#376), listed by `cooee reports`.
+    public func report(_ report: Report) async throws {
+        try await post("/report", report)
+    }
 }
 
 private struct Sample: Encodable {

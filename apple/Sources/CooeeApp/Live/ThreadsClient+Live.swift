@@ -9,6 +9,7 @@ extension ThreadsClient: DependencyKey {
         home: { server in try await client(server).home() },
         personas: { server in try await client(server).personas() },
         looks: { server in try await client(server).looks() },
+        report: { server, report in try await client(server).report(report) },
         checkTheme: { server, draft in try await client(server).checkTheme(dark: draft.dark, light: draft.light) },
         saveTheme: { server, name, draft in try await client(server).saveTheme(name, draft) },
         themeArt: { server, theme, file in try await client(server).themeArt(theme, file) },

@@ -17,6 +17,7 @@ internal struct MenuHost: View {
                 VStack(spacing: 12) {
                     ForEach(rows.filter { !$0.locked }, id: \.id) { SlotView(store: store, node: $0, compact: compact) }
                     ActionRow(symbol: "arrow.counterclockwise", title: "Reset layout") { store.send(.layout(.reset)) }
+                    ActionRow(symbol: "exclamationmark.bubble", title: "Report") { store.send(.reporting) }
                     if !menu.timings.isEmpty { TimingRows(timings: menu.timings) }
                 }
                 .padding(12)
