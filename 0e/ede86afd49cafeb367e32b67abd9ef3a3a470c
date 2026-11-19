@@ -1,0 +1,11 @@
+Decided: the app side only; the pinned drover already emits chain folds, +N more, moves, stage chips, asked-in, backlog, legend and lock tags
+Because: "plus any block the native app lacks"
+Decided: a card's fold ({line, main}) draws one line and its main button until tapped open; a new fold folds it again
+Because: apple/Sources/CooeeUI/BlockFold.swift:4
+Decided: a card's color (drover's l/p/c/g/a) edges it ahead of its tone; a subtitle may carry a tone
+Because: apple/Sources/CooeeUI/BlockCards.swift:111
+Rejected: hashing the card id for a colour in the app — drover owns the fleet colour (its config override)
+Rejected: a native swipe between repos (row 36) — not in the acceptance phone checks; left for #378
+Check: BlockRenderTests aPausedFleetsCardFoldsToOneLineAndDrawsInItsOwnColour fails on staging sources, passes at head
+Check: drover still sends tone accent for every fleet; per-fleet colour needs a drover change (ask q2255)
+Owner: A paused fleet's card now folds to one line in the app, with Resume beside it; fleet cards can draw in their own colour once drover sends it.
