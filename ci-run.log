@@ -1,0 +1,956 @@
+stable (ubuntu-latest)	test	﻿2026-11-19T07:47:01.1891807Z ##[group]Run setsid --wait cargo test --workspace --locked
+stable (ubuntu-latest)	test	2026-11-19T07:47:01.1892257Z ^[[36;1msetsid --wait cargo test --workspace --locked^[[0m
+stable (ubuntu-latest)	test	2026-11-19T07:47:01.1910458Z shell: /usr/bin/bash -e {0}
+stable (ubuntu-latest)	test	2026-11-19T07:47:01.1910771Z env:
+stable (ubuntu-latest)	test	2026-11-19T07:47:01.1911010Z   CARGO_TERM_COLOR: always
+stable (ubuntu-latest)	test	2026-11-19T07:47:01.1911306Z   REF: 
+stable (ubuntu-latest)	test	2026-11-19T07:47:01.1911546Z   RUSTUP_TOOLCHAIN: stable
+stable (ubuntu-latest)	test	2026-11-19T07:47:01.1911795Z   CARGO_HOME: /home/runner/.cargo
+stable (ubuntu-latest)	test	2026-11-19T07:47:01.1912049Z   CARGO_INCREMENTAL: 0
+stable (ubuntu-latest)	test	2026-11-19T07:47:01.1912332Z   CACHE_ON_FAILURE: false
+stable (ubuntu-latest)	test	2026-11-19T07:47:01.1912562Z ##[endgroup]
+stable (ubuntu-latest)	test	2026-11-19T07:47:01.9349541Z ^[[1m^[[92m    Updating^[[0m git repository `https://github.com/jirathip-dev/blocks`
+stable (ubuntu-latest)	test	2026-11-19T07:47:02.3809052Z ^[[1m^[[92m    Updating^[[0m crates.io index
+stable (ubuntu-latest)	test	2026-11-19T07:47:02.9361059Z ^[[1m^[[92m   Compiling^[[0m cooee-core v0.1.0 (/home/runner/work/cooee/cooee/crates/cooee-core)
+stable (ubuntu-latest)	test	2026-11-19T07:47:02.9372226Z ^[[1m^[[92m   Compiling^[[0m blocks v0.1.0 (https://github.com/jirathip-dev/blocks?rev=d0882093e32c6d752910c459efa04a2a6beb5c3a#d0882093)
+stable (ubuntu-latest)	test	2026-11-19T07:47:14.9064583Z ^[[1m^[[92m   Compiling^[[0m cooee-machines v0.1.0 (/home/runner/work/cooee/cooee/crates/cooee-machines)
+stable (ubuntu-latest)	test	2026-11-19T07:47:14.9094083Z ^[[1m^[[92m   Compiling^[[0m cooee-terminal v0.1.0 (/home/runner/work/cooee/cooee/crates/cooee-terminal)
+stable (ubuntu-latest)	test	2026-11-19T07:47:15.3061924Z ^[[1m^[[92m   Compiling^[[0m cooee-server v0.1.0 (/home/runner/work/cooee/cooee/crates/cooee-server)
+stable (ubuntu-latest)	test	2026-11-19T07:47:30.4028523Z ^[[1m^[[92m   Compiling^[[0m cooee v0.1.0 (/home/runner/work/cooee/cooee/crates/cooee)
+stable (ubuntu-latest)	test	2026-11-19T07:47:53.8544715Z ^[[1m^[[92m    Finished^[[0m `test` profile [unoptimized + debuginfo] target(s) in 52.64s
+stable (ubuntu-latest)	test	2026-11-19T07:47:53.8851989Z ^[[1m^[[92m     Running^[[0m unittests src/main.rs (target/debug/build/cooee/a8a6288265cc97da/out/cooee-a8a6288265cc97da)
+stable (ubuntu-latest)	test	2026-11-19T07:47:53.8861188Z 
+stable (ubuntu-latest)	test	2026-11-19T07:47:53.8861441Z running 1 test
+stable (ubuntu-latest)	test	2026-11-19T07:47:53.8869072Z test update::tests::only_a_new_head_that_never_failed_is_installed ... ok
+stable (ubuntu-latest)	test	2026-11-19T07:47:53.8869385Z 
+stable (ubuntu-latest)	test	2026-11-19T07:47:53.8869870Z ^[[1m^[[92m     Running^[[0m tests/accounts.rs (target/debug/build/cooee/7d50804b15528e2d/out/accounts-7d50804b15528e2d)
+stable (ubuntu-latest)	test	2026-11-19T07:47:53.8870441Z test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+stable (ubuntu-latest)	test	2026-11-19T07:47:53.8870744Z 
+stable (ubuntu-latest)	test	2026-11-19T07:47:53.8872243Z 
+stable (ubuntu-latest)	test	2026-11-19T07:47:53.8872339Z running 2 tests
+stable (ubuntu-latest)	test	2026-11-19T07:47:54.0549717Z test signed_in_only_while_the_status_says_so_not_from_the_last_sign_in_noted ... ok
+stable (ubuntu-latest)	test	2026-11-19T07:47:54.1728482Z test add_account_listed_only_on_success_thread_pick_spawns_with_its_folder_sign_out_removes_it ... ok
+stable (ubuntu-latest)	test	2026-11-19T07:47:54.1728988Z 
+stable (ubuntu-latest)	test	2026-11-19T07:47:54.1729254Z test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.29s
+stable (ubuntu-latest)	test	2026-11-19T07:47:54.1730069Z 
+stable (ubuntu-latest)	test	2026-11-19T07:47:54.1734104Z ^[[1m^[[92m     Running^[[0m tests/accounts_env.rs (target/debug/build/cooee/84090dc538e2f12d/out/accounts_env-84090dc538e2f12d)
+stable (ubuntu-latest)	test	2026-11-19T07:47:54.1742333Z 
+stable (ubuntu-latest)	test	2026-11-19T07:47:54.1742471Z running 7 tests
+stable (ubuntu-latest)	test	2026-11-19T07:47:54.1818402Z test a_token_file_goes_in_the_token_variable_only_at_0600_or_tighter ... ok
+stable (ubuntu-latest)	test	2026-11-19T07:47:54.1993588Z test an_inherited_token_never_signs_a_folder_in ... ok
+stable (ubuntu-latest)	test	2026-11-19T07:47:54.2899668Z test env_prints_a_folder_accounts_variable_and_reports_signed_out ... ok
+stable (ubuntu-latest)	test	2026-11-19T07:47:54.2986787Z test unknown_provider_or_account_refuses_on_one_line ... ok
+stable (ubuntu-latest)	test	2026-11-19T07:47:54.3039596Z test ls_json_lists_every_account_without_its_token ... ok
+stable (ubuntu-latest)	test	2026-11-19T07:47:54.3624808Z test an_adopted_folder_is_an_account_until_dropped_and_the_folder_stays ... ok
+stable (ubuntu-latest)	test	2026-11-19T07:47:54.3715649Z test ls_json_carries_usage_and_a_reading_past_its_reset_reads_zero_with_its_age ... ok
+stable (ubuntu-latest)	test	2026-11-19T07:47:54.3716316Z 
+stable (ubuntu-latest)	test	2026-11-19T07:47:54.3716997Z test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.20s
+stable (ubuntu-latest)	test	2026-11-19T07:47:54.3717376Z 
+stable (ubuntu-latest)	test	2026-11-19T07:47:54.3718305Z ^[[1m^[[92m     Running^[[0m tests/agents.rs (target/debug/build/cooee/0866e38e7050e8a7/out/agents-0866e38e7050e8a7)
+stable (ubuntu-latest)	test	2026-11-19T07:47:54.3727195Z 
+stable (ubuntu-latest)	test	2026-11-19T07:47:54.3727496Z running 3 tests
+stable (ubuntu-latest)	test	2026-11-19T07:47:54.3788938Z test a_dry_run_prints_the_plan_and_changes_nothing ... ok
+stable (ubuntu-latest)	test	2026-11-19T07:47:54.4483569Z test a_malformed_agent_toml_hides_only_that_agent_and_the_log_never_quotes_it ... ok
+stable (ubuntu-latest)	test	2026-11-19T07:47:54.4570326Z test a_folder_written_by_hand_is_listed_and_starts_a_chat ... ok
+stable (ubuntu-latest)	test	2026-11-19T07:47:54.4570702Z 
+stable (ubuntu-latest)	test	2026-11-19T07:47:54.4571301Z test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.08s
+stable (ubuntu-latest)	test	2026-11-19T07:47:54.4571776Z 
+stable (ubuntu-latest)	test	2026-11-19T07:47:54.4575395Z ^[[1m^[[92m     Running^[[0m tests/ask.rs (target/debug/build/cooee/bc4e362fa46a370f/out/ask-bc4e362fa46a370f)
+stable (ubuntu-latest)	test	2026-11-19T07:47:54.4583720Z 
+stable (ubuntu-latest)	test	2026-11-19T07:47:54.4583937Z running 5 tests
+stable (ubuntu-latest)	test	2026-11-19T07:47:54.5903471Z test a_persona_its_can_message_doesnt_name_is_not_allowed ... ok
+stable (ubuntu-latest)	test	2026-11-19T07:47:54.5993762Z test an_allowed_ask_returns_the_reply_in_a_linked_thread_the_owner_reads_and_steers ... ok
+stable (ubuntu-latest)	test	2026-11-19T07:47:54.6017113Z test an_asked_persona_may_ask_one_more_and_no_further ... ok
+stable (ubuntu-latest)	test	2026-11-19T07:47:54.7276717Z test the_owners_note_mid_exchange_reaches_the_asked_persona_and_returns_to_the_asker_with_the_reply ... ok
+stable (ubuntu-latest)	test	2026-11-19T07:47:55.6106871Z test no_reply_in_time_is_a_timeout_and_a_session_that_cant_start_is_offline ... ok
+stable (ubuntu-latest)	test	2026-11-19T07:47:55.6113313Z 
+stable (ubuntu-latest)	test	2026-11-19T07:47:55.6113833Z test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.15s
+stable (ubuntu-latest)	test	2026-11-19T07:47:55.6114146Z 
+stable (ubuntu-latest)	test	2026-11-19T07:47:55.6117121Z ^[[1m^[[92m     Running^[[0m tests/chat.rs (target/debug/build/cooee/dafd1e448d5b6027/out/chat-dafd1e448d5b6027)
+stable (ubuntu-latest)	test	2026-11-19T07:47:55.6124283Z 
+stable (ubuntu-latest)	test	2026-11-19T07:47:55.6124432Z running 13 tests
+stable (ubuntu-latest)	test	2026-11-19T07:47:55.7188769Z test a_message_to_a_stopped_agent_is_refused_never_stored_as_sent ... ok
+stable (ubuntu-latest)	test	2026-11-19T07:47:55.7222109Z test a_reconnect_with_last_event_id_replays_without_gaps_or_duplicates ... ok
+stable (ubuntu-latest)	test	2026-11-19T07:47:55.7463122Z test a_hanging_shed_approve_never_holds_another_thread ... ok
+stable (ubuntu-latest)	test	2026-11-19T07:47:55.8213893Z test a_send_to_a_shed_on_another_protocol_says_why_in_the_chat_then_goes_through_once_fixed ... ok
+stable (ubuntu-latest)	test	2026-11-19T07:47:55.8755496Z test a_restarted_cooee_reattaches_to_its_terminals_and_catches_up ... ok
+stable (ubuntu-latest)	test	2026-11-19T07:47:55.8960816Z test a_shed_of_another_protocol_is_refused_naming_both_sides ... ok
+stable (ubuntu-latest)	test	2026-11-19T07:47:55.9092277Z test a_tool_call_is_one_row_updated_in_place_and_a_retried_send_is_stored_once ... ok
+stable (ubuntu-latest)	test	2026-11-19T07:47:55.9638794Z test an_approval_is_sent_to_shed_once_however_often_it_is_tapped ... ok
+stable (ubuntu-latest)	test	2026-11-19T07:47:55.9639550Z test fake_shed_server ... ignored, a server for apple/e2e, not a test
+stable (ubuntu-latest)	test	2026-11-19T07:47:55.9800083Z test cancel_ends_the_turn_and_writes_back_the_tool_call_in_progress ... ok
+stable (ubuntu-latest)	test	2026-11-19T07:47:55.9917808Z test closing_a_thread_kills_and_removes_its_terminal ... ok
+stable (ubuntu-latest)	test	2026-11-19T07:47:56.0454850Z test new_thread_runs_the_agent_in_an_allowed_folder_and_streams_the_reply ... ok
+stable (ubuntu-latest)	test	2026-11-19T07:47:57.7352523Z test a_reset_from_shed_resyncs_the_stream_and_drops_no_event ... ok
+stable (ubuntu-latest)	test	2026-11-19T07:47:57.7353543Z 
+stable (ubuntu-latest)	test	2026-11-19T07:47:57.7360747Z test result: ok. 12 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out; finished in 2.12s
+stable (ubuntu-latest)	test	2026-11-19T07:47:57.7361079Z 
+stable (ubuntu-latest)	test	2026-11-19T07:47:57.7363301Z ^[[1m^[[92m     Running^[[0m tests/chat_first.rs (target/debug/build/cooee/a5ae2b43b0741fbd/out/chat_first-a5ae2b43b0741fbd)
+stable (ubuntu-latest)	test	2026-11-19T07:47:57.7372191Z 
+stable (ubuntu-latest)	test	2026-11-19T07:47:57.7372382Z running 1 test
+stable (ubuntu-latest)	test	2026-11-19T07:47:57.8377799Z test a_new_chat_runs_in_its_own_scratch_folder_and_a_folder_attached_takes_later_turns ... ok
+stable (ubuntu-latest)	test	2026-11-19T07:47:57.8378297Z 
+stable (ubuntu-latest)	test	2026-11-19T07:47:57.8378658Z test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.10s
+stable (ubuntu-latest)	test	2026-11-19T07:47:57.8379001Z 
+stable (ubuntu-latest)	test	2026-11-19T07:47:57.8381318Z ^[[1m^[[92m     Running^[[0m tests/cli.rs (target/debug/build/cooee/6ec9481b70caf589/out/cli-6ec9481b70caf589)
+stable (ubuntu-latest)	test	2026-11-19T07:47:57.8387805Z 
+stable (ubuntu-latest)	test	2026-11-19T07:47:57.8388011Z running 4 tests
+stable (ubuntu-latest)	test	2026-11-19T07:47:57.8412738Z test version ... ok
+stable (ubuntu-latest)	test	2026-11-19T07:47:57.8417690Z test listening_beyond_localhost_needs_allowed_hosts ... ok
+stable (ubuntu-latest)	test	2026-11-19T07:47:57.8430630Z test unknown_args_and_config_keys_fail ... ok
+stable (ubuntu-latest)	test	2026-11-19T07:47:57.8467967Z cooee: shed at /run/user/1001/shed.sock: No such file or directory (os error 2)
+stable (ubuntu-latest)	test	2026-11-19T07:47:57.8511408Z test serve_listens_on_localhost_at_the_configured_port ... ok
+stable (ubuntu-latest)	test	2026-11-19T07:47:57.8511748Z 
+stable (ubuntu-latest)	test	2026-11-19T07:47:57.8512047Z test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+stable (ubuntu-latest)	test	2026-11-19T07:47:57.8512424Z 
+stable (ubuntu-latest)	test	2026-11-19T07:47:57.8515251Z ^[[1m^[[92m     Running^[[0m tests/config_edits.rs (target/debug/build/cooee/42cf224fba92090b/out/config_edits-42cf224fba92090b)
+stable (ubuntu-latest)	test	2026-11-19T07:47:57.8521209Z 
+stable (ubuntu-latest)	test	2026-11-19T07:47:57.8521582Z running 4 tests
+stable (ubuntu-latest)	test	2026-11-19T07:47:57.9363156Z test a_new_note_adds_exactly_one_line_to_memory ... ok
+stable (ubuntu-latest)	test	2026-11-19T07:47:57.9478254Z test saving_the_model_changes_only_its_line_and_keeps_the_comments ... ok
+stable (ubuntu-latest)	test	2026-11-19T07:47:57.9524647Z test a_save_after_a_hand_edit_is_refused_and_the_edit_stays ... ok
+stable (ubuntu-latest)	test	2026-11-19T07:47:57.9714897Z test a_hand_edited_instructions_file_reaches_the_next_chat ... ok
+stable (ubuntu-latest)	test	2026-11-19T07:47:57.9718039Z 
+stable (ubuntu-latest)	test	2026-11-19T07:47:57.9718456Z test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.12s
+stable (ubuntu-latest)	test	2026-11-19T07:47:57.9718780Z 
+stable (ubuntu-latest)	test	2026-11-19T07:47:57.9719732Z ^[[1m^[[92m     Running^[[0m tests/config_git.rs (target/debug/build/cooee/a19fa4d45cc2cc91/out/config_git-a19fa4d45cc2cc91)
+stable (ubuntu-latest)	test	2026-11-19T07:47:57.9727504Z 
+stable (ubuntu-latest)	test	2026-11-19T07:47:57.9727612Z running 3 tests
+stable (ubuntu-latest)	test	2026-11-19T07:47:57.9869502Z test init_git_keeps_the_owners_gitignore ... ok
+stable (ubuntu-latest)	test	2026-11-19T07:47:57.9956051Z test init_git_commits_the_config_without_its_secrets_once ... ok
+stable (ubuntu-latest)	test	2026-11-19T07:47:58.1828194Z test serve_adds_a_gitignore_to_its_own_config_folder_only ... ok
+stable (ubuntu-latest)	test	2026-11-19T07:47:58.1828562Z 
+stable (ubuntu-latest)	test	2026-11-19T07:47:58.1828865Z test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.21s
+stable (ubuntu-latest)	test	2026-11-19T07:47:58.1829193Z 
+stable (ubuntu-latest)	test	2026-11-19T07:47:58.1832153Z ^[[1m^[[92m     Running^[[0m tests/conformance.rs (target/debug/build/cooee/2d48cf6c54b0282b/out/conformance-2d48cf6c54b0282b)
+stable (ubuntu-latest)	test	2026-11-19T07:47:58.1839443Z 
+stable (ubuntu-latest)	test	2026-11-19T07:47:58.1839938Z running 2 tests
+stable (ubuntu-latest)	test	2026-11-19T07:47:58.1843564Z test the_scenario_on_a_real_harness ... ignored, the nightly: a real shed and harness, on the owner's own login
+stable (ubuntu-latest)	test	2026-11-19T07:47:58.4495593Z test the_scenario_passes_on_the_fake_shed ... ok
+stable (ubuntu-latest)	test	2026-11-19T07:47:58.4497222Z 
+stable (ubuntu-latest)	test	2026-11-19T07:47:58.4497898Z test result: ok. 1 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out; finished in 0.27s
+stable (ubuntu-latest)	test	2026-11-19T07:47:58.4498182Z 
+stable (ubuntu-latest)	test	2026-11-19T07:47:58.4499136Z ^[[1m^[[92m     Running^[[0m tests/connectors.rs (target/debug/build/cooee/cc24c31a7e956a79/out/connectors-cc24c31a7e956a79)
+stable (ubuntu-latest)	test	2026-11-19T07:47:58.4507919Z 
+stable (ubuntu-latest)	test	2026-11-19T07:47:58.4508032Z running 1 test
+stable (ubuntu-latest)	test	2026-11-19T07:47:58.5516947Z test the_callback_answers_only_its_own_state_and_no_token_leaks ... ok
+stable (ubuntu-latest)	test	2026-11-19T07:47:58.5517730Z 
+stable (ubuntu-latest)	test	2026-11-19T07:47:58.5518147Z test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.10s
+stable (ubuntu-latest)	test	2026-11-19T07:47:58.5518668Z 
+stable (ubuntu-latest)	test	2026-11-19T07:47:58.5520612Z ^[[1m^[[92m     Running^[[0m tests/consolidate.rs (target/debug/build/cooee/38297517586bfdce/out/consolidate-38297517586bfdce)
+stable (ubuntu-latest)	test	2026-11-19T07:47:58.5528363Z 
+stable (ubuntu-latest)	test	2026-11-19T07:47:58.5528742Z running 1 test
+stable (ubuntu-latest)	test	2026-11-19T07:47:59.4539324Z test a_run_reads_new_history_once_and_its_writes_wait_for_approval ... ok
+stable (ubuntu-latest)	test	2026-11-19T07:47:59.4539710Z 
+stable (ubuntu-latest)	test	2026-11-19T07:47:59.4539998Z test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.90s
+stable (ubuntu-latest)	test	2026-11-19T07:47:59.4540395Z 
+stable (ubuntu-latest)	test	2026-11-19T07:47:59.4542556Z ^[[1m^[[92m     Running^[[0m tests/first_run.rs (target/debug/build/cooee/37ddc3ac67e8a935/out/first_run-37ddc3ac67e8a935)
+stable (ubuntu-latest)	test	2026-11-19T07:47:59.4551384Z 
+stable (ubuntu-latest)	test	2026-11-19T07:47:59.4551724Z running 3 tests
+stable (ubuntu-latest)	test	2026-11-19T07:47:59.5414813Z test with_one_root_and_nothing_in_it_a_thread_starts_in_the_root ... ok
+stable (ubuntu-latest)	test	2026-11-19T07:47:59.5448183Z test with_no_roots_a_chat_still_starts_in_scratch_and_use_a_folder_is_refused ... ok
+stable (ubuntu-latest)	test	2026-11-19T07:47:59.5588480Z test no_agents_and_no_roots_show_the_fix_lines_and_doctor_warns ... ok
+stable (ubuntu-latest)	test	2026-11-19T07:47:59.5589058Z 
+stable (ubuntu-latest)	test	2026-11-19T07:47:59.5589339Z test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.10s
+stable (ubuntu-latest)	test	2026-11-19T07:47:59.5589633Z 
+stable (ubuntu-latest)	test	2026-11-19T07:47:59.5594517Z ^[[1m^[[92m     Running^[[0m tests/folders.rs (target/debug/build/cooee/89de83cd8addf71e/out/folders-89de83cd8addf71e)
+stable (ubuntu-latest)	test	2026-11-19T07:47:59.5601797Z 
+stable (ubuntu-latest)	test	2026-11-19T07:47:59.5602157Z running 5 tests
+stable (ubuntu-latest)	test	2026-11-19T07:47:59.6483910Z test browse_lists_a_root_outside_home_spelled_as_listed ... ok
+stable (ubuntu-latest)	test	2026-11-19T07:47:59.6518449Z test add_and_remove_root_persists_in_the_config ... ok
+stable (ubuntu-latest)	test	2026-11-19T07:47:59.6531576Z test browse_lists_only_folders_inside_home ... ok
+stable (ubuntu-latest)	test	2026-11-19T07:47:59.6562540Z test dot_dot_symlink_and_absolute_escapes_are_refused ... ok
+stable (ubuntu-latest)	test	2026-11-19T07:47:59.7276021Z test new_folder_is_made_inside_a_root_and_a_thread_starts_there ... ok
+stable (ubuntu-latest)	test	2026-11-19T07:47:59.7276545Z 
+stable (ubuntu-latest)	test	2026-11-19T07:47:59.7276842Z test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.17s
+stable (ubuntu-latest)	test	2026-11-19T07:47:59.7277201Z 
+stable (ubuntu-latest)	test	2026-11-19T07:47:59.7282161Z ^[[1m^[[92m     Running^[[0m tests/handoff.rs (target/debug/build/cooee/7539a1d1e092febf/out/handoff-7539a1d1e092febf)
+stable (ubuntu-latest)	test	2026-11-19T07:47:59.7290344Z 
+stable (ubuntu-latest)	test	2026-11-19T07:47:59.7290603Z running 2 tests
+stable (ubuntu-latest)	test	2026-11-19T07:47:59.8735970Z test the_turn_stops_with_a_handoff_and_hand_back_resumes_it_with_the_note_only ... ok
+stable (ubuntu-latest)	test	2026-11-19T07:47:59.8743696Z test a_message_queued_before_the_handoff_waits_until_the_owner_hands_back ... ok
+stable (ubuntu-latest)	test	2026-11-19T07:47:59.8744468Z 
+stable (ubuntu-latest)	test	2026-11-19T07:47:59.8744817Z test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.15s
+stable (ubuntu-latest)	test	2026-11-19T07:47:59.8745253Z 
+stable (ubuntu-latest)	test	2026-11-19T07:47:59.8748702Z ^[[1m^[[92m     Running^[[0m tests/heartbeat.rs (target/debug/build/cooee/dc11d7e8b7b18cf9/out/heartbeat-dc11d7e8b7b18cf9)
+stable (ubuntu-latest)	test	2026-11-19T07:47:59.8757384Z 
+stable (ubuntu-latest)	test	2026-11-19T07:47:59.8757828Z running 2 tests
+stable (ubuntu-latest)	test	2026-11-19T07:48:01.2382003Z test a_heartbeat_action_is_a_card_with_nothing_done_and_its_daily_limit_holds ... ok
+stable (ubuntu-latest)	test	2026-11-19T07:48:01.5967800Z test a_heartbeat_runs_only_on_news_and_pushes_only_when_its_rule_matches ... ok
+stable (ubuntu-latest)	test	2026-11-19T07:48:01.5971617Z 
+stable (ubuntu-latest)	test	2026-11-19T07:48:01.5972080Z test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.72s
+stable (ubuntu-latest)	test	2026-11-19T07:48:01.5973621Z ^[[1m^[[92m     Running^[[0m tests/history.rs (target/debug/build/cooee/c88f551c59dde4a1/out/history-c88f551c59dde4a1)
+stable (ubuntu-latest)	test	2026-11-19T07:48:01.5973943Z 
+stable (ubuntu-latest)	test	2026-11-19T07:48:01.5982553Z 
+stable (ubuntu-latest)	test	2026-11-19T07:48:01.5982672Z running 1 test
+stable (ubuntu-latest)	test	2026-11-19T07:48:01.7028454Z test a_persona_finds_and_reads_its_own_threads_and_not_another_personas ... ok
+stable (ubuntu-latest)	test	2026-11-19T07:48:01.7028824Z 
+stable (ubuntu-latest)	test	2026-11-19T07:48:01.7029048Z test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.10s
+stable (ubuntu-latest)	test	2026-11-19T07:48:01.7029470Z 
+stable (ubuntu-latest)	test	2026-11-19T07:48:01.7032000Z ^[[1m^[[92m     Running^[[0m tests/home_screen.rs (target/debug/build/cooee/2d91e1741ea47acb/out/home_screen-2d91e1741ea47acb)
+stable (ubuntu-latest)	test	2026-11-19T07:48:01.7038900Z 
+stable (ubuntu-latest)	test	2026-11-19T07:48:01.7039086Z running 1 test
+stable (ubuntu-latest)	test	2026-11-19T07:48:01.7833181Z test home_is_the_bundled_screen_filled_with_todays_threads_and_personas ... ok
+stable (ubuntu-latest)	test	2026-11-19T07:48:01.7833582Z 
+stable (ubuntu-latest)	test	2026-11-19T07:48:01.7833894Z test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.08s
+stable (ubuntu-latest)	test	2026-11-19T07:48:01.7834143Z 
+stable (ubuntu-latest)	test	2026-11-19T07:48:01.7836263Z ^[[1m^[[92m     Running^[[0m tests/instances.rs (target/debug/build/cooee/60f639873bf797dd/out/instances-60f639873bf797dd)
+stable (ubuntu-latest)	test	2026-11-19T07:48:01.7843824Z 
+stable (ubuntu-latest)	test	2026-11-19T07:48:01.7844190Z running 3 tests
+stable (ubuntu-latest)	test	2026-11-19T07:48:01.7897218Z test install_writes_a_plist_and_prints_the_commands ... ok
+stable (ubuntu-latest)	test	2026-11-19T07:48:01.8553100Z test doctor_reports_a_missing_shed ... ok
+stable (ubuntu-latest)	test	2026-11-19T07:48:01.9358583Z test two_instances_never_see_each_others_threads_or_devices ... ok
+stable (ubuntu-latest)	test	2026-11-19T07:48:01.9359040Z 
+stable (ubuntu-latest)	test	2026-11-19T07:48:01.9359280Z test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.15s
+stable (ubuntu-latest)	test	2026-11-19T07:48:01.9359530Z 
+stable (ubuntu-latest)	test	2026-11-19T07:48:01.9364597Z ^[[1m^[[92m     Running^[[0m tests/layout.rs (target/debug/build/cooee/069cdc1f5ceaa501/out/layout-069cdc1f5ceaa501)
+stable (ubuntu-latest)	test	2026-11-19T07:48:01.9372343Z 
+stable (ubuntu-latest)	test	2026-11-19T07:48:01.9372508Z running 3 tests
+stable (ubuntu-latest)	test	2026-11-19T07:48:03.0584416Z test a_plugins_places_are_merged_and_a_place_its_manifest_lacks_is_skipped ... ok
+stable (ubuntu-latest)	test	2026-11-19T07:48:04.0187247Z test a_layout_that_replaces_a_locked_screen_is_refused_and_reset_still_restores_the_default ... ok
+stable (ubuntu-latest)	test	2026-11-19T07:48:04.1466980Z test a_bad_write_keeps_the_last_good_layout_and_reset_restores_the_default ... ok
+stable (ubuntu-latest)	test	2026-11-19T07:48:04.1469558Z 
+stable (ubuntu-latest)	test	2026-11-19T07:48:04.1469888Z test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.21s
+stable (ubuntu-latest)	test	2026-11-19T07:48:04.1470207Z 
+stable (ubuntu-latest)	test	2026-11-19T07:48:04.1471903Z ^[[1m^[[92m     Running^[[0m tests/login.rs (target/debug/build/cooee/ae5ca369abe9b58f/out/login-ae5ca369abe9b58f)
+stable (ubuntu-latest)	test	2026-11-19T07:48:04.1479529Z 
+stable (ubuntu-latest)	test	2026-11-19T07:48:04.1479883Z running 6 tests
+stable (ubuntu-latest)	test	2026-11-19T07:48:04.2410808Z test a_failed_sign_out_keeps_the_last_known_status ... ok
+stable (ubuntu-latest)	test	2026-11-19T07:48:04.2678566Z test a_sign_in_started_for_a_remote_machine_runs_there ... ok
+stable (ubuntu-latest)	test	2026-11-19T07:48:04.2897956Z test a_login_left_for_10_minutes_is_killed_and_removed ... ok
+stable (ubuntu-latest)	test	2026-11-19T07:48:04.3825543Z test login_shows_the_link_sends_the_code_and_detects_success_never_storing_the_screen ... ok
+stable (ubuntu-latest)	test	2026-11-19T07:48:04.4217079Z test with_no_providers_rows_the_sign_in_and_a_new_thread_run_on_sheds_records ... ok
+stable (ubuntu-latest)	test	2026-11-19T07:48:15.9363652Z test a_hanging_status_check_never_holds_a_request_and_runs_once ... ok
+stable (ubuntu-latest)	test	2026-11-19T07:48:15.9364102Z 
+stable (ubuntu-latest)	test	2026-11-19T07:48:15.9364326Z test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 11.79s
+stable (ubuntu-latest)	test	2026-11-19T07:48:15.9364828Z 
+stable (ubuntu-latest)	test	2026-11-19T07:48:15.9375807Z ^[[1m^[[92m     Running^[[0m tests/machine_check.rs (target/debug/build/cooee/c8bd1abecf99d1d4/out/machine_check-c8bd1abecf99d1d4)
+stable (ubuntu-latest)	test	2026-11-19T07:48:15.9385049Z 
+stable (ubuntu-latest)	test	2026-11-19T07:48:15.9385246Z running 5 tests
+stable (ubuntu-latest)	test	2026-11-19T07:48:15.9767026Z test a_machine_shed_cant_reach_or_doesnt_have_fails_its_first_check_and_runs_nothing_there ... ok
+stable (ubuntu-latest)	test	2026-11-19T07:48:15.9914351Z test a_ready_machine_passes_every_check_each_run_there ... ok
+stable (ubuntu-latest)	test	2026-11-19T07:48:16.0154471Z test each_check_fails_with_its_part_missing_there_and_says_the_fix ... ok
+stable (ubuntu-latest)	test	2026-11-19T07:48:16.0567049Z test yes_clones_the_folder_and_copies_the_settings_there_once ... ok
+stable (ubuntu-latest)	test	2026-11-19T07:48:16.1093345Z test doctor_has_a_row_per_machine ... ok
+stable (ubuntu-latest)	test	2026-11-19T07:48:16.1093895Z 
+stable (ubuntu-latest)	test	2026-11-19T07:48:16.1094168Z test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.17s
+stable (ubuntu-latest)	test	2026-11-19T07:48:16.1094545Z 
+stable (ubuntu-latest)	test	2026-11-19T07:48:16.1099101Z ^[[1m^[[92m     Running^[[0m tests/machines.rs (target/debug/build/cooee/d707d05feeb5af71/out/machines-d707d05feeb5af71)
+stable (ubuntu-latest)	test	2026-11-19T07:48:16.1105956Z 
+stable (ubuntu-latest)	test	2026-11-19T07:48:16.1106462Z running 1 test
+stable (ubuntu-latest)	test	2026-11-19T07:48:16.2831360Z test the_machines_plugin_serves_each_machine_card_and_marks_one_offline ... ok
+stable (ubuntu-latest)	test	2026-11-19T07:48:16.2831749Z 
+stable (ubuntu-latest)	test	2026-11-19T07:48:16.2831978Z test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.17s
+stable (ubuntu-latest)	test	2026-11-19T07:48:16.2832294Z 
+stable (ubuntu-latest)	test	2026-11-19T07:48:16.2835223Z ^[[1m^[[92m     Running^[[0m tests/mcp.rs (target/debug/build/cooee/27bab7acd7958866/out/mcp-27bab7acd7958866)
+stable (ubuntu-latest)	test	2026-11-19T07:48:16.2844248Z 
+stable (ubuntu-latest)	test	2026-11-19T07:48:16.2844643Z running 12 tests
+stable (ubuntu-latest)	test	2026-11-19T07:48:16.3025965Z test a_literal_token_in_the_registry_is_refused_at_load_naming_the_key_only ... ok
+stable (ubuntu-latest)	test	2026-11-19T07:48:16.4213538Z test a_read_tool_runs_with_no_card_and_a_write_tool_runs_only_once_its_card_is_allowed ... ok
+stable (ubuntu-latest)	test	2026-11-19T07:48:16.4318023Z test a_secret_dropped_once_is_typed_into_its_terminal_and_reaches_no_transcript_event_file_log_or_model ... ok
+stable (ubuntu-latest)	test	2026-11-19T07:48:16.4589864Z test a_saved_secret_is_typed_again_without_asking_and_reaches_the_personas_environment_only ... ok
+stable (ubuntu-latest)	test	2026-11-19T07:48:16.5752336Z test a_streamable_http_and_an_sse_server_answer_through_the_pipe_with_headers_on_curls_stdin_and_no_redirect ... ok
+stable (ubuntu-latest)	test	2026-11-19T07:48:16.6292067Z test each_browser_action_leaves_one_captioned_encrypted_frame_and_a_no_frames_site_none ... ok
+stable (ubuntu-latest)	test	2026-11-19T07:48:16.6758382Z test a_lease_saved_as_a_skill_hands_the_persona_its_steps_and_no_typed_value_and_a_declined_card_saves_nothing ... ok
+stable (ubuntu-latest)	test	2026-11-19T07:48:16.6890218Z test propose_server_shows_the_exact_command_runs_nothing_and_needs_face_id_to_add_it_off ... ok
+stable (ubuntu-latest)	test	2026-11-19T07:48:16.6914039Z test the_mac_adds_toggles_and_removes_servers_with_references_only ... ok
+stable (ubuntu-latest)	test	2026-11-19T07:48:16.7672591Z test the_agent_sees_and_calls_only_the_allowed_tools_under_claude_and_codex_and_no_value_is_written ... ok
+stable (ubuntu-latest)	test	2026-11-19T07:48:16.7942469Z test each_persona_gets_its_own_browser_and_every_call_is_checked_and_logged ... ok
+stable (ubuntu-latest)	test	2026-11-19T07:48:17.6348857Z test the_owner_watches_takes_control_and_hands_back_with_a_note_the_waiting_call_carries ... ok
+stable (ubuntu-latest)	test	2026-11-19T07:48:17.6349617Z 
+stable (ubuntu-latest)	test	2026-11-19T07:48:17.6353759Z test result: ok. 12 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.35s
+stable (ubuntu-latest)	test	2026-11-19T07:48:17.6354266Z 
+stable (ubuntu-latest)	test	2026-11-19T07:48:17.6366364Z ^[[1m^[[92m     Running^[[0m tests/menu_screens.rs (target/debug/build/cooee/7f0177881540f914/out/menu_screens-7f0177881540f914)
+stable (ubuntu-latest)	test	2026-11-19T07:48:17.6376516Z 
+stable (ubuntu-latest)	test	2026-11-19T07:48:17.6377917Z running 4 tests
+stable (ubuntu-latest)	test	2026-11-19T07:48:17.7332719Z test the_attach_sheet_is_one_permissions_card ... ok
+stable (ubuntu-latest)	test	2026-11-19T07:48:17.7424942Z test each_settings_screen_is_one_list_from_its_route ... ok
+stable (ubuntu-latest)	test	2026-11-19T07:48:17.7543480Z test the_menu_is_the_bundled_screen_valued_from_the_servers_data ... ok
+stable (ubuntu-latest)	test	2026-11-19T07:48:17.7722433Z test each_core_screen_is_on_the_wire_as_staging_served_it ... ok
+stable (ubuntu-latest)	test	2026-11-19T07:48:17.7722739Z 
+stable (ubuntu-latest)	test	2026-11-19T07:48:17.7723173Z test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.13s
+stable (ubuntu-latest)	test	2026-11-19T07:48:17.7723583Z 
+stable (ubuntu-latest)	test	2026-11-19T07:48:17.7725542Z ^[[1m^[[92m     Running^[[0m tests/model.rs (target/debug/build/cooee/bb1f28b2c6b07e98/out/model-bb1f28b2c6b07e98)
+stable (ubuntu-latest)	test	2026-11-19T07:48:17.7733913Z 
+stable (ubuntu-latest)	test	2026-11-19T07:48:17.7734133Z running 4 tests
+stable (ubuntu-latest)	test	2026-11-19T07:48:17.8633783Z test a_day_old_list_is_asked_again ... ok
+stable (ubuntu-latest)	test	2026-11-19T07:48:17.8686945Z test the_agent_list_carries_each_agents_efforts ... ok
+stable (ubuntu-latest)	test	2026-11-19T07:48:17.9003804Z test row_34_a_thread_starts_on_its_pick_and_a_new_model_shows ... ok
+stable (ubuntu-latest)	test	2026-11-19T07:48:17.9127940Z test a_gone_pin_falls_back_with_one_line_and_a_short_name_moves_on ... ok
+stable (ubuntu-latest)	test	2026-11-19T07:48:17.9129497Z 
+stable (ubuntu-latest)	test	2026-11-19T07:48:17.9130022Z test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.14s
+stable (ubuntu-latest)	test	2026-11-19T07:48:17.9130441Z 
+stable (ubuntu-latest)	test	2026-11-19T07:48:17.9135475Z ^[[1m^[[92m     Running^[[0m tests/move_thread.rs (target/debug/build/cooee/5853839e96f03439/out/move_thread-5853839e96f03439)
+stable (ubuntu-latest)	test	2026-11-19T07:48:17.9144087Z 
+stable (ubuntu-latest)	test	2026-11-19T07:48:17.9144383Z running 4 tests
+stable (ubuntu-latest)	test	2026-11-19T07:48:18.0395211Z test a_move_to_a_machine_not_ready_is_refused_with_its_failed_checks_and_starts_nothing_there ... ok
+stable (ubuntu-latest)	test	2026-11-19T07:48:18.0572663Z test an_idle_thread_moves_after_box_is_checked_and_the_next_message_starts_there_with_a_hand_over ... ok
+stable (ubuntu-latest)	test	2026-11-19T07:48:18.0647438Z test a_move_is_refused_while_a_turn_works_and_goes_once_it_is_stopped ... ok
+stable (ubuntu-latest)	test	2026-11-19T07:48:18.0786092Z test a_switch_starts_the_other_agent_with_the_brief_and_a_handoff_in_the_same_thread_and_keeps_the_persona ... ok
+stable (ubuntu-latest)	test	2026-11-19T07:48:18.0786653Z 
+stable (ubuntu-latest)	test	2026-11-19T07:48:18.0787119Z test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.16s
+stable (ubuntu-latest)	test	2026-11-19T07:48:18.0787519Z 
+stable (ubuntu-latest)	test	2026-11-19T07:48:18.0791678Z ^[[1m^[[92m     Running^[[0m tests/pairing.rs (target/debug/build/cooee/36ad56a69781ac9c/out/pairing-36ad56a69781ac9c)
+stable (ubuntu-latest)	test	2026-11-19T07:48:18.0800385Z 
+stable (ubuntu-latest)	test	2026-11-19T07:48:18.0800534Z running 16 tests
+stable (ubuntu-latest)	test	2026-11-19T07:48:18.1725591Z test a_declined_request_tells_the_new_device_who_said_no ... ok
+stable (ubuntu-latest)	test	2026-11-19T07:48:18.1741583Z test a_foreign_host_or_origin_is_refused_even_paired ... ok
+stable (ubuntu-latest)	test	2026-11-19T07:48:18.2003872Z test a_passkey_signs_a_device_back_in_and_can_be_removed ... ok
+stable (ubuntu-latest)	test	2026-11-19T07:48:18.2569499Z test a_qr_codes_link_carries_a_code_that_pairs_at_once ... ok
+stable (ubuntu-latest)	test	2026-11-19T07:48:18.2613010Z test a_report_is_kept_and_listed ... ok
+stable (ubuntu-latest)	test	2026-11-19T07:48:18.2765830Z test a_new_device_asks_and_a_paired_one_approves_it_with_its_passkey ... ok
+stable (ubuntu-latest)	test	2026-11-19T07:48:18.2873839Z test a_wrong_expired_or_reused_code_says_so ... ok
+stable (ubuntu-latest)	test	2026-11-19T07:48:18.3508939Z test alerts_status_test_and_off_are_this_devices ... ok
+stable (ubuntu-latest)	test	2026-11-19T07:48:18.3522507Z test devices_are_listed_and_removed_from_the_phone ... ok
+stable (ubuntu-latest)	test	2026-11-19T07:48:18.3692506Z test five_wrong_codes_a_minute_refuse_that_address ... ok
+stable (ubuntu-latest)	test	2026-11-19T07:48:18.3784315Z test pair_use_remove_and_only_the_hash_on_disk ... ok
+stable (ubuntu-latest)	test	2026-11-19T07:48:18.3877027Z test the_mac_declines_a_request_from_the_cli ... ok
+stable (ubuntu-latest)	test	2026-11-19T07:48:18.4250488Z test push_subscriptions_are_checked_and_tied_to_the_device ... ok
+stable (ubuntu-latest)	test	2026-11-19T07:48:18.4579364Z test the_new_calls_need_a_paired_device_but_pairing_requests_do_not ... ok
+stable (ubuntu-latest)	test	2026-11-19T07:48:18.4588264Z test the_mac_lists_and_approves_a_request_from_the_cli ... ok
+stable (ubuntu-latest)	test	2026-11-19T07:48:18.4648780Z test unpaired_reads_and_writes_are_refused ... ok
+stable (ubuntu-latest)	test	2026-11-19T07:48:18.4649070Z 
+stable (ubuntu-latest)	test	2026-11-19T07:48:18.4649417Z test result: ok. 16 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.38s
+stable (ubuntu-latest)	test	2026-11-19T07:48:18.4649827Z 
+stable (ubuntu-latest)	test	2026-11-19T07:48:18.4657203Z ^[[1m^[[92m     Running^[[0m tests/perf.rs (target/debug/build/cooee/b29caade2b33b414/out/perf-b29caade2b33b414)
+stable (ubuntu-latest)	test	2026-11-19T07:48:18.4666786Z 
+stable (ubuntu-latest)	test	2026-11-19T07:48:18.4666923Z running 6 tests
+stable (ubuntu-latest)	test	2026-11-19T07:48:18.4734445Z test cooee_perf_turns_a_log_into_the_table ... ok
+stable (ubuntu-latest)	test	2026-11-19T07:48:18.5551369Z test a_fast_request_under_the_default_threshold_is_debug_only ... ok
+stable (ubuntu-latest)	test	2026-11-19T07:48:18.5690568Z test first_token_is_logged_once_per_prompt_and_nothing_private_is ... ok
+stable (ubuntu-latest)	test	2026-11-19T07:48:18.5695699Z test the_apps_timings_are_logged_and_a_p95_over_budget_fails_cooee_perf_budget ... ok
+stable (ubuntu-latest)	test	2026-11-19T07:48:18.5696570Z test requests_and_shed_calls_are_timed_by_route_and_method_and_slow_ones_warn ... ok
+stable (ubuntu-latest)	test	2026-11-19T07:48:46.3734745Z test with_500_threads_of_1000_items_the_list_answers_within_300_ms_of_start ... ok
+stable (ubuntu-latest)	test	2026-11-19T07:48:46.3735265Z 
+stable (ubuntu-latest)	test	2026-11-19T07:48:46.3735658Z test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 27.91s
+stable (ubuntu-latest)	test	2026-11-19T07:48:46.3736043Z 
+stable (ubuntu-latest)	test	2026-11-19T07:48:46.3741787Z ^[[1m^[[92m     Running^[[0m tests/persona_screen.rs (target/debug/build/cooee/a66bfb1fd5fce010/out/persona_screen-a66bfb1fd5fce010)
+stable (ubuntu-latest)	test	2026-11-19T07:48:46.3750695Z 
+stable (ubuntu-latest)	test	2026-11-19T07:48:46.3750840Z running 2 tests
+stable (ubuntu-latest)	test	2026-11-19T07:48:46.4588918Z test the_panel_is_the_bundled_screen_filled_with_the_personas_own ... ok
+stable (ubuntu-latest)	test	2026-11-19T07:48:46.4589671Z test its_actions_save_the_persona_and_clear_its_memory ... ok
+stable (ubuntu-latest)	test	2026-11-19T07:48:46.4589928Z 
+stable (ubuntu-latest)	test	2026-11-19T07:48:46.4590231Z test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.08s
+stable (ubuntu-latest)	test	2026-11-19T07:48:46.4592380Z ^[[1m^[[92m     Running^[[0m tests/personas.rs (target/debug/build/cooee/77282cec35f7b90f/out/personas-77282cec35f7b90f)
+stable (ubuntu-latest)	test	2026-11-19T07:48:46.4593346Z 
+stable (ubuntu-latest)	test	2026-11-19T07:48:46.4602091Z 
+stable (ubuntu-latest)	test	2026-11-19T07:48:46.4602395Z running 14 tests
+stable (ubuntu-latest)	test	2026-11-19T07:48:46.5648432Z test a_detailed_persona_gets_no_plain_line ... ok
+stable (ubuntu-latest)	test	2026-11-19T07:48:46.5931110Z test a_migrated_persona_without_instructions_takes_its_profiles ... ok
+stable (ubuntu-latest)	test	2026-11-19T07:48:46.6312289Z test a_persona_is_created_edited_and_deleted_and_its_notes_reach_its_next_session ... ok
+stable (ubuntu-latest)	test	2026-11-19T07:48:46.6507403Z test a_plugin_is_attached_to_a_persona_and_detached ... ok
+stable (ubuntu-latest)	test	2026-11-19T07:48:46.6709056Z test a_persona_and_its_threads_name_their_machine ... ok
+stable (ubuntu-latest)	test	2026-11-19T07:48:46.6966150Z test a_setup_chat_interviews_and_its_update_persona_saves_at_once_for_the_next_session ... ok
+stable (ubuntu-latest)	test	2026-11-19T07:48:46.7563349Z test an_agents_launch_keys_are_read_only_and_an_edit_keeps_them ... ok
+stable (ubuntu-latest)	test	2026-11-19T07:48:46.7847227Z test old_notes_past_the_cap_get_ids_and_a_session_keeps_its_brief ... ok
+stable (ubuntu-latest)	test	2026-11-19T07:48:46.8116613Z test migration_keeps_the_name_and_sets_the_orchestrator_role ... ok
+stable (ubuntu-latest)	test	2026-11-19T07:48:46.8241868Z test outside_setup_update_persona_is_a_card_saved_only_on_approve_and_never_for_another_persona ... ok
+stable (ubuntu-latest)	test	2026-11-19T07:48:46.8690072Z test renaming_the_orchestrator_changes_no_attachment ... ok
+stable (ubuntu-latest)	test	2026-11-19T07:48:46.8717409Z test remember_adds_replaces_and_forgets_one_note_under_the_cap ... ok
+stable (ubuntu-latest)	test	2026-11-19T07:48:46.8919070Z test the_plugin_attaches_by_role ... ok
+stable (ubuntu-latest)	test	2026-11-19T07:48:46.9233698Z test two_orchestrator_personas_each_with_their_own_fleets ... ok
+stable (ubuntu-latest)	test	2026-11-19T07:48:46.9234222Z 
+stable (ubuntu-latest)	test	2026-11-19T07:48:46.9234600Z test result: ok. 14 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.46s
+stable (ubuntu-latest)	test	2026-11-19T07:48:46.9234972Z 
+stable (ubuntu-latest)	test	2026-11-19T07:48:46.9246776Z ^[[1m^[[92m     Running^[[0m tests/plugin_manager.rs (target/debug/build/cooee/f5ae16931e3518e3/out/plugin_manager-f5ae16931e3518e3)
+stable (ubuntu-latest)	test	2026-11-19T07:48:46.9255480Z 
+stable (ubuntu-latest)	test	2026-11-19T07:48:46.9255637Z running 8 tests
+stable (ubuntu-latest)	test	2026-11-19T07:48:52.1447096Z test add_from_the_index_clones_builds_writes_the_entry_and_token_starts_it_and_locks_it ... ok
+stable (ubuntu-latest)	test	2026-11-19T07:48:52.2495264Z test a_backend_ends_when_cooee_is_killed_and_a_restart_starts_it_again ... ok
+stable (ubuntu-latest)	test	2026-11-19T07:48:52.6025634Z test an_attach_backend_that_answers_is_used_and_run_only_starts_once_it_is_gone ... ok
+stable (ubuntu-latest)	test	2026-11-19T07:48:53.0091632Z test only_a_paired_device_may_add_and_a_first_party_plugin_is_improved_via_an_issue ... ok
+stable (ubuntu-latest)	test	2026-11-19T07:48:53.9480803Z test improve_makes_a_branch_an_approval_builds_and_swaps_it_in_and_it_rolls_back ... ok
+stable (ubuntu-latest)	test	2026-11-19T07:48:57.1264222Z test a_failed_update_keeps_the_old_build_and_a_good_one_swaps_in ... ok
+stable (ubuntu-latest)	test	2026-11-19T07:48:57.3076464Z test an_index_plugin_has_no_warning_and_a_url_plugin_is_not_reviewed ... ok
+stable (ubuntu-latest)	test	2026-11-19T07:49:13.1256106Z test remove_stops_it_and_keeps_the_checkout_unless_purged ... ok
+stable (ubuntu-latest)	test	2026-11-19T07:49:13.1256497Z 
+stable (ubuntu-latest)	test	2026-11-19T07:49:13.1257081Z test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 26.20s
+stable (ubuntu-latest)	test	2026-11-19T07:49:13.1257474Z 
+stable (ubuntu-latest)	test	2026-11-19T07:49:13.1264959Z ^[[1m^[[92m     Running^[[0m tests/plugins.rs (target/debug/build/cooee/9f9866710ddf45b1/out/plugins-9f9866710ddf45b1)
+stable (ubuntu-latest)	test	2026-11-19T07:49:13.1274696Z 
+stable (ubuntu-latest)	test	2026-11-19T07:49:13.1274936Z running 20 tests
+stable (ubuntu-latest)	test	2026-11-19T07:49:13.2135875Z test a_backends_event_stream_comes_through_the_proxy ... ok
+stable (ubuntu-latest)	test	2026-11-19T07:49:13.2380162Z test a_choice_card_goes_into_the_thread_and_its_answer_to_its_own_plugin ... ok
+stable (ubuntu-latest)	test	2026-11-19T07:49:13.2523894Z test a_card_to_a_thread_of_a_persona_its_plugin_isnt_attached_to_is_refused ... ok
+stable (ubuntu-latest)	test	2026-11-19T07:49:13.3208520Z test a_closed_page_closes_its_backend_stream ... ok
+stable (ubuntu-latest)	test	2026-11-19T07:49:13.3274355Z test a_plugin_with_no_token_configured_does_not_start ... ok
+stable (ubuntu-latest)	test	2026-11-19T07:49:13.3351542Z test a_plugin_names_its_push_tag_and_sets_its_dot_only_with_its_token ... ok
+stable (ubuntu-latest)	test	2026-11-19T07:49:13.3581594Z test a_hanging_plugin_answer_never_holds_another_thread ... ok
+stable (ubuntu-latest)	test	2026-11-19T07:49:13.4070606Z test a_plugin_without_its_token_is_refused ... ok
+stable (ubuntu-latest)	test	2026-11-19T07:49:13.4371996Z test a_run_card_approves_once_with_its_sha_and_shows_the_tail ... ok
+stable (ubuntu-latest)	test	2026-11-19T07:49:13.4527984Z test plugin_check_checks_a_manifest ... ok
+stable (ubuntu-latest)	test	2026-11-19T07:49:13.4579291Z test cooees_own_cards_go_out_as_blocks_and_settle_to_their_line ... ok
+stable (ubuntu-latest)	test	2026-11-19T07:49:13.4943545Z test plugin_check_passes_the_fixtures_and_names_a_broken_field ... FAILED
+stable (ubuntu-latest)	test	2026-11-19T07:49:13.5366609Z test plugin_check_knows_swipe_menu_and_refresh ... ok
+stable (ubuntu-latest)	test	2026-11-19T07:49:13.5490600Z test row_30_choice_rows_recommended_first_other_text_and_who_and_when ... ok
+stable (ubuntu-latest)	test	2026-11-19T07:49:13.5779893Z test row_31_a_conductors_answer_takes_one_change_from_the_owner ... ok
+stable (ubuntu-latest)	test	2026-11-19T07:49:13.6354824Z test row_33_a_secrets_value_reaches_its_plugin_only ... ok
+stable (ubuntu-latest)	test	2026-11-19T07:49:13.6386885Z test row_32_config_card_waits_applies_with_the_plugins_line_or_goes_stale ... ok
+stable (ubuntu-latest)	test	2026-11-19T07:49:13.6701909Z test row_35_handoff_chips_flow_back_lines_and_pick_a_thread ... ok
+stable (ubuntu-latest)	test	2026-11-19T07:49:13.7096671Z test the_proxy_sends_the_plugins_own_token_and_never_the_cookie ... ok
+stable (ubuntu-latest)	test	2026-11-19T07:49:14.6345146Z test a_hung_plugin_holds_only_its_own_calls ... ok
+stable (ubuntu-latest)	test	2026-11-19T07:49:14.6353300Z 
+stable (ubuntu-latest)	test	2026-11-19T07:49:14.6354150Z failures:
+stable (ubuntu-latest)	test	2026-11-19T07:49:14.6354473Z 
+stable (ubuntu-latest)	test	2026-11-19T07:49:14.6354751Z ---- plugin_check_passes_the_fixtures_and_names_a_broken_field stdout ----
+stable (ubuntu-latest)	test	2026-11-19T07:49:14.6355003Z 
+stable (ubuntu-latest)	test	2026-11-19T07:49:14.6355338Z thread 'plugin_check_passes_the_fixtures_and_names_a_broken_field' (12893) panicked at crates/cooee/tests/plugins.rs:833:5:
+stable (ubuntu-latest)	test	2026-11-19T07:49:14.6356621Z ok   /home/runner/work/cooee/cooee/crates/cooee/../../docs/design/fleets-config/fixtures/add.json
+stable (ubuntu-latest)	test	2026-11-19T07:49:14.6357360Z ok   /home/runner/work/cooee/cooee/crates/cooee/../../docs/design/fleets-config/fixtures/chat.json
+stable (ubuntu-latest)	test	2026-11-19T07:49:14.6358070Z ok   /home/runner/work/cooee/cooee/crates/cooee/../../docs/design/fleets-config/fixtures/fleet.json
+stable (ubuntu-latest)	test	2026-11-19T07:49:14.6358583Z ok   /home/runner/work/cooee/cooee/crates/cooee/../../docs/design/fleets-config/fixtures/fleets.json
+stable (ubuntu-latest)	test	2026-11-19T07:49:14.6359092Z ok   /home/runner/work/cooee/cooee/crates/cooee/../../docs/design/fleets-config/fixtures/global.json
+stable (ubuntu-latest)	test	2026-11-19T07:49:14.6359659Z ok   /home/runner/work/cooee/cooee/crates/cooee/../../docs/design/fleets-config/fixtures/review.json
+stable (ubuntu-latest)	test	2026-11-19T07:49:14.6360143Z ok   /home/runner/work/cooee/cooee/crates/cooee/../../docs/design/fleets-config/fixtures/role.json
+stable (ubuntu-latest)	test	2026-11-19T07:49:14.6360748Z ok   /home/runner/work/cooee/cooee/crates/cooee/../../docs/design/fleets-config/fixtures/stale.json
+stable (ubuntu-latest)	test	2026-11-19T07:49:14.6361244Z ok   /home/runner/work/cooee/cooee/crates/cooee/../../docs/design/fleets-config/fixtures/text.json
+stable (ubuntu-latest)	test	2026-11-19T07:49:14.6361797Z ok   /home/runner/work/cooee/cooee/crates/cooee/../../docs/design/queue-scene/fixtures/queue-stream.json
+stable (ubuntu-latest)	test	2026-11-19T07:49:14.6362321Z ok   /home/runner/work/cooee/cooee/crates/cooee/../../docs/design/queue-scene/fixtures/queue.json
+stable (ubuntu-latest)	test	2026-11-19T07:49:14.6363034Z FAIL /home/runner/work/cooee/cooee/crates/cooee/../../docs/design/screens-as-data/fixtures/blocks.json
+stable (ubuntu-latest)	test	2026-11-19T07:49:14.6363550Z      $[4].block.subtitle: an object is not string or null
+stable (ubuntu-latest)	test	2026-11-19T07:49:14.6363992Z ok   /home/runner/work/cooee/cooee/crates/cooee/../../docs/design/screens-as-data/fixtures/cards.json
+stable (ubuntu-latest)	test	2026-11-19T07:49:14.6364522Z ok   /home/runner/work/cooee/cooee/crates/cooee/../../docs/design/screens-as-data/fixtures/events.json
+stable (ubuntu-latest)	test	2026-11-19T07:49:14.6365336Z ^[[1m^[[91merror^[[0m: test failed, to rerun pass `-p cooee --test plugins`
+stable (ubuntu-latest)	test	2026-11-19T07:49:14.6365788Z ok   /home/runner/work/cooee/cooee/crates/cooee/../../docs/design/screens-as-data/fixtures/fleets.json
+stable (ubuntu-latest)	test	2026-11-19T07:49:14.6366309Z ok   /home/runner/work/cooee/cooee/crates/cooee/../../docs/design/screens-as-data/fixtures/hello.json
+stable (ubuntu-latest)	test	2026-11-19T07:49:14.6366827Z ok   /home/runner/work/cooee/cooee/crates/cooee/../../docs/design/screens-as-data/fixtures/own-cards.json
+stable (ubuntu-latest)	test	2026-11-19T07:49:14.6367417Z ok   /home/runner/work/cooee/cooee/crates/cooee/../../docs/design/screens-as-data/fixtures/permissions.json
+stable (ubuntu-latest)	test	2026-11-19T07:49:14.6367945Z ok   /home/runner/work/cooee/cooee/crates/cooee/../../docs/design/screens-as-data/fixtures/places.json
+stable (ubuntu-latest)	test	2026-11-19T07:49:14.6368586Z ok   /home/runner/work/cooee/cooee/crates/cooee/../../docs/design/screens-as-data/fixtures/queue-stream.json
+stable (ubuntu-latest)	test	2026-11-19T07:49:14.6369151Z ok   /home/runner/work/cooee/cooee/crates/cooee/../../docs/design/screens-as-data/fixtures/queue.json
+stable (ubuntu-latest)	test	2026-11-19T07:49:14.6369650Z ok   /home/runner/work/cooee/cooee/crates/cooee/../../docs/design/workflow-diagram/fixtures/chat.json
+stable (ubuntu-latest)	test	2026-11-19T07:49:14.6370205Z ok   /home/runner/work/cooee/cooee/crates/cooee/../../docs/design/workflow-diagram/fixtures/fix.json
+stable (ubuntu-latest)	test	2026-11-19T07:49:14.6370730Z ok   /home/runner/work/cooee/cooee/crates/cooee/../../docs/design/workflow-diagram/fixtures/map.json
+stable (ubuntu-latest)	test	2026-11-19T07:49:14.6371261Z ok   /home/runner/work/cooee/cooee/crates/cooee/../../docs/design/workflow-diagram/fixtures/stream.json
+stable (ubuntu-latest)	test	2026-11-19T07:49:14.6371571Z 
+stable (ubuntu-latest)	test	2026-11-19T07:49:14.6371749Z note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+stable (ubuntu-latest)	test	2026-11-19T07:49:14.6372005Z 
+stable (ubuntu-latest)	test	2026-11-19T07:49:14.6372008Z 
+stable (ubuntu-latest)	test	2026-11-19T07:49:14.6372123Z failures:
+stable (ubuntu-latest)	test	2026-11-19T07:49:14.6372430Z     plugin_check_passes_the_fixtures_and_names_a_broken_field
+stable (ubuntu-latest)	test	2026-11-19T07:49:14.6372624Z 
+stable (ubuntu-latest)	test	2026-11-19T07:49:14.6373091Z test result: FAILED. 19 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.51s
+stable (ubuntu-latest)	test	2026-11-19T07:49:14.6373511Z 
+stable (ubuntu-latest)	test	2026-11-19T07:49:14.6415691Z ##[error]Process completed with exit code 101.
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	﻿2026-11-19T07:48:16.1022940Z ##[group]Run setsid --wait ci/gates.sh
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:48:16.1023319Z ^[[36;1msetsid --wait ci/gates.sh^[[0m
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:48:16.1057746Z shell: /usr/bin/bash -e {0}
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:48:16.1058015Z env:
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:48:16.1058212Z   CARGO_TERM_COLOR: always
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:48:16.1058441Z   REF: 
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:48:16.1058636Z   CARGO_HOME: /home/runner/.cargo
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:48:16.1058903Z   CARGO_INCREMENTAL: 0
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:48:16.1059146Z   CACHE_ON_FAILURE: false
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:48:16.1061755Z   GH_TOKEN: ***
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:48:16.1061984Z ##[endgroup]
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:48:16.1189420Z == bans: The banned APIs (#203): TypeScript's (scripts/ts-bans.py), and every Rust and TypeScript ban failing on its fixture.
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:48:17.8360562Z bans test ok
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:48:17.8404541Z == cap: The line cap holds (crates/*/src ≤ line_cap; apple/ Swift ≤ apple_cap), and its script's own tests pass.
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:48:18.5421184Z non-test lines: 30494 / 32000
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:48:18.5421720Z apple lines: 18425 / 18700
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:48:18.5675149Z non-test lines: 1 / 100
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:48:18.5675636Z apple lines: 5 / 5
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:48:18.5799376Z non-test lines: 1 / 100
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:48:18.5799904Z apple lines: 6 / 5
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:48:18.5910805Z line-cap test ok
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:48:18.5941157Z == ci-scripts: The CI's own scripts (#329): which legs a run needs, the staging reuse, the nightly's issue.
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:48:18.8920459Z /home/runner/work/cooee/cooee/scripts/ci-scope.sh: 35: echo: echo: I/O error
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:48:20.7467260Z ci scripts test ok
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:48:20.7875816Z test gate test ok
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:48:20.7903581Z == clippy: clippy pedantic and the banned APIs (#203) pass, warnings denied; tests may unwrap, expect, panic and index. At most 10 allows, each with a reason.
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:48:20.8654318Z ^[[1m^[[92m    Updating^[[0m git repository `https://github.com/jirathip-dev/blocks`
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:48:21.3813227Z ^[[1m^[[92m    Updating^[[0m crates.io index
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:48:22.2487028Z ^[[1m^[[92m   Compiling^[[0m cooee-core v0.1.0 (/home/runner/work/cooee/cooee/crates/cooee-core)
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:48:22.2518073Z ^[[1m^[[92m    Checking^[[0m blocks v0.1.0 (https://github.com/jirathip-dev/blocks?rev=d0882093e32c6d752910c459efa04a2a6beb5c3a#d0882093)
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:48:28.3824287Z ^[[1m^[[92m    Checking^[[0m cooee-machines v0.1.0 (/home/runner/work/cooee/cooee/crates/cooee-machines)
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:48:28.3826214Z ^[[1m^[[92m    Checking^[[0m cooee-terminal v0.1.0 (/home/runner/work/cooee/cooee/crates/cooee-terminal)
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:48:28.5065644Z ^[[1m^[[92m    Checking^[[0m cooee-server v0.1.0 (/home/runner/work/cooee/cooee/crates/cooee-server)
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:48:33.5009056Z ^[[1m^[[92m    Checking^[[0m cooee v0.1.0 (/home/runner/work/cooee/cooee/crates/cooee)
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:48:33.9012839Z ^[[1m^[[92m    Finished^[[0m `dev` profile [unoptimized + debuginfo] target(s) in 13.06s
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:48:34.1075773Z ^[[1m^[[92m   Compiling^[[0m cooee-core v0.1.0 (/home/runner/work/cooee/cooee/crates/cooee-core)
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:48:37.3839908Z ^[[1m^[[92m    Checking^[[0m cooee-machines v0.1.0 (/home/runner/work/cooee/cooee/crates/cooee-machines)
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:48:37.3841406Z ^[[1m^[[92m    Checking^[[0m cooee-terminal v0.1.0 (/home/runner/work/cooee/cooee/crates/cooee-terminal)
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:48:37.5530467Z ^[[1m^[[92m    Checking^[[0m cooee-server v0.1.0 (/home/runner/work/cooee/cooee/crates/cooee-server)
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:48:42.9321310Z ^[[1m^[[92m    Checking^[[0m cooee v0.1.0 (/home/runner/work/cooee/cooee/crates/cooee)
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:48:48.5303864Z ^[[1m^[[92m    Finished^[[0m `dev` profile [unoptimized + debuginfo] target(s) in 14.55s
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:48:48.5769626Z == comments: One comment rule (#201): no // or /* */; /// only on public API; // SAFETY: and // TODO(#N) on an open issue allowed.
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:48:49.4254823Z no comments break the rule
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:48:49.6641598Z comments test ok
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:48:50.5092797Z == deny: Licences, advisories and duplicate versions pass cargo deny.
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:48:51.1017311Z ^[[0m^[[1m^[[38;5;11mwarning[license-not-encountered]^[[0m^[[1m: license was not encountered^[[0m
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:48:51.1019579Z    ^[[0m^[[36m┌─^[[0m /home/runner/work/cooee/cooee/deny.toml:12:64
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:48:51.1020457Z    ^[[0m^[[36m│^[[0m
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:48:51.1035288Z ^[[0m^[[36m12^[[0m ^[[0m^[[36m│^[[0m allow = ["MIT", "Apache-2.0", "BSD-2-Clause", "BSD-3-Clause", "^[[0m^[[33mISC^[[0m", "Unicode-3.0", "Unicode-DFS-2016", "Zlib"]
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:48:51.1039107Z    ^[[0m^[[36m│^[[0m                                                                ^[[0m^[[33m━━━^[[0m ^[[0m^[[33munmatched license allowance^[[0m
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:48:51.1064433Z 
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:48:51.1065396Z ^[[0m^[[1m^[[38;5;11mwarning[license-not-encountered]^[[0m^[[1m: license was not encountered^[[0m
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:48:51.1080078Z    ^[[0m^[[36m┌─^[[0m /home/runner/work/cooee/cooee/deny.toml:12:86
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:48:51.1091504Z    ^[[0m^[[36m│^[[0m
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:48:51.1093003Z ^[[0m^[[36m12^[[0m ^[[0m^[[36m│^[[0m allow = ["MIT", "Apache-2.0", "BSD-2-Clause", "BSD-3-Clause", "ISC", "Unicode-3.0", "^[[0m^[[33mUnicode-DFS-2016^[[0m", "Zlib"]
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:48:51.1094622Z    ^[[0m^[[36m│^[[0m                                                                                      ^[[0m^[[33m━━━━━━━━━━━━━━━━^[[0m ^[[0m^[[33munmatched license allowance^[[0m
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:48:51.1095472Z 
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:48:51.1096390Z ^[[0m^[[1m^[[38;5;11mwarning[unnecessary-skip]^[[0m^[[1m: skip 'syn = =3.0.9' applied to a crate with only one version^[[0m
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:48:51.1097757Z    ^[[0m^[[36m┌─^[[0m /home/runner/work/cooee/cooee/deny.toml:31:16
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:48:51.1099184Z    ^[[0m^[[36m│^[[0m
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:48:51.1100481Z ^[[0m^[[36m31^[[0m ^[[0m^[[36m│^[[0m     { crate = "^[[0m^[[33msyn@3.0.9^[[0m", reason = "serde_derive, thiserror and futures macros; Topcoat's macros use 2" },
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:48:51.1102790Z    ^[[0m^[[36m│^[[0m                ^[[0m^[[33m━━━━━━━━━^[[0m             ^[[0m^[[36m──────────────────────────────────────────────────────────────────^[[0m ^[[0m^[[36mreason^[[0m
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:48:51.1104395Z    ^[[0m^[[36m│^[[0m                ^[[0m^[[33m│^[[0m                      
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:48:51.1105350Z    ^[[0m^[[36m│^[[0m                ^[[0m^[[33munnecessary skip configuration^[[0m
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:48:51.1105922Z 
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:48:51.1506665Z advisories ^[[32mok^[[0m, bans ^[[32mok^[[0m, licenses ^[[32mok^[[0m, sources ^[[32mok^[[0m
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:48:51.1533461Z == deps: Dependency direction: cooee-core has no workspace deps.
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:48:51.1972751Z dependency direction ok
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:48:51.1993687Z == doc: The docs build with warnings denied.
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:48:51.3481530Z ^[[1m^[[92m   Compiling^[[0m cooee-core v0.1.0 (/home/runner/work/cooee/cooee/crates/cooee-core)
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:48:51.4923114Z ^[[1m^[[92m Documenting^[[0m cooee-core v0.1.0 (/home/runner/work/cooee/cooee/crates/cooee-core)
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:48:54.1129035Z ^[[1m^[[92m    Checking^[[0m cooee-machines v0.1.0 (/home/runner/work/cooee/cooee/crates/cooee-machines)
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:48:54.1130453Z ^[[1m^[[92m    Checking^[[0m cooee-terminal v0.1.0 (/home/runner/work/cooee/cooee/crates/cooee-terminal)
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:48:54.1131803Z ^[[1m^[[92m Documenting^[[0m cooee-machines v0.1.0 (/home/runner/work/cooee/cooee/crates/cooee-machines)
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:48:54.1133137Z ^[[1m^[[92m Documenting^[[0m cooee-terminal v0.1.0 (/home/runner/work/cooee/cooee/crates/cooee-terminal)
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:48:54.2394465Z ^[[1m^[[92m    Checking^[[0m cooee-server v0.1.0 (/home/runner/work/cooee/cooee/crates/cooee-server)
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:48:54.2439838Z ^[[1m^[[92m Documenting^[[0m cooee-server v0.1.0 (/home/runner/work/cooee/cooee/crates/cooee-server)
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:48:58.9316152Z ^[[1m^[[92m Documenting^[[0m cooee v0.1.0 (/home/runner/work/cooee/cooee/crates/cooee)
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:48:59.2938600Z ^[[1m^[[92m    Finished^[[0m `dev` profile [unoptimized + debuginfo] target(s) in 8.06s
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:48:59.3073708Z ^[[1m^[[92m   Generated^[[0m /home/runner/work/cooee/cooee/target/doc/cooee/index.html and 4 other files
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:48:59.3151627Z == fmt: Rust and topcoat sources are formatted (cargo fmt, topcoat fmt).
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:49:01.0550161Z checked 251 inputs (0 need formatting), 0 failed in 319ms
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:49:01.0584686Z == hygiene: Public hygiene: nothing from ci/denylist.txt is in the tree.
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:49:01.1091784Z no setup-specific names or secrets
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:49:01.1112886Z == lessons: The lesson checks' own tests (#323); the checks themselves run on a PR in .github/workflows/lessons.yml.
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:49:01.1488432Z pr-body test ok
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:49:01.1518026Z == neutral: Core names no provider (#200): only crates/cooee-core/src/providers/ and tests may.
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:49:01.4868892Z core names no provider
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:49:01.5090454Z core names no provider
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:49:01.5220083Z crates/x/src/lib.rs:1: /// Asks Hermes.
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:49:01.5220871Z a provider is named outside crates/cooee-core/src/providers/: move it into its module
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:49:01.5221870Z neutral-core test ok
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:49:01.5274794Z == test: The workspace tests pass (incl. upgrade compatibility and crash injection) and leave no temp folder (#202).
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:49:01.6922818Z ^[[1m^[[92m   Compiling^[[0m cooee-core v0.1.0 (/home/runner/work/cooee/cooee/crates/cooee-core)
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:49:01.6953141Z ^[[1m^[[92m   Compiling^[[0m blocks v0.1.0 (https://github.com/jirathip-dev/blocks?rev=d0882093e32c6d752910c459efa04a2a6beb5c3a#d0882093)
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:49:10.8920185Z ^[[1m^[[92m   Compiling^[[0m cooee-machines v0.1.0 (/home/runner/work/cooee/cooee/crates/cooee-machines)
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:49:10.8945457Z ^[[1m^[[92m   Compiling^[[0m cooee-terminal v0.1.0 (/home/runner/work/cooee/cooee/crates/cooee-terminal)
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:49:11.4896226Z ^[[1m^[[92m   Compiling^[[0m cooee-server v0.1.0 (/home/runner/work/cooee/cooee/crates/cooee-server)
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:49:32.2711466Z ^[[1m^[[92m   Compiling^[[0m cooee v0.1.0 (/home/runner/work/cooee/cooee/crates/cooee)
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:04.5958576Z ^[[1m^[[92m    Finished^[[0m `test` profile [unoptimized + debuginfo] target(s) in 1m 03s
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:04.6337459Z ^[[1m^[[92m     Running^[[0m unittests src/main.rs (target/debug/deps/cooee-e76d1cf432f10e85)
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:04.6349716Z 
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:04.6349972Z running 1 test
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:04.6357708Z test update::tests::only_a_new_head_that_never_failed_is_installed ... ok
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:04.6358327Z 
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:04.6358974Z ^[[1m^[[92m     Running^[[0m tests/accounts.rs (target/debug/deps/accounts-53e9a0da49448c23)
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:04.6359841Z test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:04.6360251Z 
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:04.6365366Z 
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:04.6365550Z running 2 tests
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:05.7614410Z test signed_in_only_while_the_status_says_so_not_from_the_last_sign_in_noted ... ok
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:05.8877388Z test add_account_listed_only_on_success_thread_pick_spawns_with_its_folder_sign_out_removes_it ... ok
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:05.8878000Z 
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:05.8878291Z test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.25s
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:05.8878702Z 
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:05.8885900Z ^[[1m^[[92m     Running^[[0m tests/accounts_env.rs (target/debug/deps/accounts_env-b5a9c5dc844d834b)
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:05.8897321Z 
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:05.8897475Z running 7 tests
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:05.9016973Z test a_token_file_goes_in_the_token_variable_only_at_0600_or_tighter ... ok
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:05.9165489Z test an_inherited_token_never_signs_a_folder_in ... ok
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:06.0129992Z test env_prints_a_folder_accounts_variable_and_reports_signed_out ... ok
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:06.0236659Z test ls_json_lists_every_account_without_its_token ... ok
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:06.0263131Z test unknown_provider_or_account_refuses_on_one_line ... ok
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:06.0910444Z test an_adopted_folder_is_an_account_until_dropped_and_the_folder_stays ... ok
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:06.0968890Z test ls_json_carries_usage_and_a_reading_past_its_reset_reads_zero_with_its_age ... ok
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:06.0970494Z 
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:06.0970995Z test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.21s
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:06.0972564Z ^[[1m^[[92m     Running^[[0m tests/agents.rs (target/debug/deps/agents-2bc135571ae7be5d)
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:06.0973114Z 
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:06.0985814Z 
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:06.0986547Z running 3 tests
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:06.1099137Z test a_dry_run_prints_the_plan_and_changes_nothing ... ok
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:06.1914662Z test a_malformed_agent_toml_hides_only_that_agent_and_the_log_never_quotes_it ... ok
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:06.2040113Z test a_folder_written_by_hand_is_listed_and_starts_a_chat ... ok
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:06.2040563Z 
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:06.2040915Z test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.11s
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:06.2041344Z 
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:06.2048476Z ^[[1m^[[92m     Running^[[0m tests/ask.rs (target/debug/deps/ask-ade95451482a8044)
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:06.2061096Z 
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:06.2061301Z running 5 tests
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:06.3863082Z test a_persona_its_can_message_doesnt_name_is_not_allowed ... ok
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:06.4051907Z test an_allowed_ask_returns_the_reply_in_a_linked_thread_the_owner_reads_and_steers ... ok
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:06.4087492Z test an_asked_persona_may_ask_one_more_and_no_further ... ok
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:06.5426527Z test the_owners_note_mid_exchange_reaches_the_asked_persona_and_returns_to_the_asker_with_the_reply ... ok
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:07.4038919Z test no_reply_in_time_is_a_timeout_and_a_session_that_cant_start_is_offline ... ok
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:07.4039565Z 
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:07.4040196Z test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.20s
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:07.4049893Z ^[[1m^[[92m     Running^[[0m tests/chat.rs (target/debug/deps/chat-9934625e63994ca2)
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:07.4050962Z 
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:07.4062391Z 
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:07.4062686Z running 13 tests
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:07.5400832Z test a_message_to_a_stopped_agent_is_refused_never_stored_as_sent ... ok
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:07.5535222Z test a_reconnect_with_last_event_id_replays_without_gaps_or_duplicates ... ok
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:07.5772204Z test a_hanging_shed_approve_never_holds_another_thread ... ok
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:07.6719919Z test a_send_to_a_shed_on_another_protocol_says_why_in_the_chat_then_goes_through_once_fixed ... ok
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:07.7249117Z test a_restarted_cooee_reattaches_to_its_terminals_and_catches_up ... ok
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:07.7523017Z test a_shed_of_another_protocol_is_refused_naming_both_sides ... ok
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:07.7772573Z test a_tool_call_is_one_row_updated_in_place_and_a_retried_send_is_stored_once ... ok
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:07.8310250Z test an_approval_is_sent_to_shed_once_however_often_it_is_tapped ... ok
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:07.8310963Z test fake_shed_server ... ignored, a server for apple/e2e, not a test
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:07.8561088Z test cancel_ends_the_turn_and_writes_back_the_tool_call_in_progress ... ok
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:07.8762932Z test closing_a_thread_kills_and_removes_its_terminal ... ok
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:07.9305006Z test new_thread_runs_the_agent_in_an_allowed_folder_and_streams_the_reply ... ok
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:09.5489664Z test a_reset_from_shed_resyncs_the_stream_and_drops_no_event ... ok
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:09.5490609Z 
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:09.5495193Z test result: ok. 12 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out; finished in 2.14s
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:09.5496051Z 
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:09.5508722Z ^[[1m^[[92m     Running^[[0m tests/chat_first.rs (target/debug/deps/chat_first-c297f995a35a841d)
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:09.5520614Z 
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:09.5520801Z running 1 test
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:09.6764153Z test a_new_chat_runs_in_its_own_scratch_folder_and_a_folder_attached_takes_later_turns ... ok
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:09.6764966Z 
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:09.6765337Z test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.12s
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:09.6765779Z 
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:09.6770638Z ^[[1m^[[92m     Running^[[0m tests/cli.rs (target/debug/deps/cli-13970aa9c444dba5)
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:09.6781709Z 
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:09.6781860Z running 4 tests
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:09.6822318Z test version ... ok
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:09.6834826Z test listening_beyond_localhost_needs_allowed_hosts ... ok
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:09.6850095Z test unknown_args_and_config_keys_fail ... ok
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:09.6899584Z cooee: shed at /run/user/1001/shed.sock: No such file or directory (os error 2)
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:09.6981579Z test serve_listens_on_localhost_at_the_configured_port ... ok
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:09.6982089Z 
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:09.6982573Z test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:09.6983196Z 
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:09.6986713Z ^[[1m^[[92m     Running^[[0m tests/config_edits.rs (target/debug/deps/config_edits-3e6e7d65e0a213d3)
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:09.6995777Z 
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:09.6995952Z running 4 tests
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:09.8106709Z test saving_the_model_changes_only_its_line_and_keeps_the_comments ... ok
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:09.8120591Z test a_new_note_adds_exactly_one_line_to_memory ... ok
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:09.8178954Z test a_save_after_a_hand_edit_is_refused_and_the_edit_stays ... ok
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:09.8607638Z test a_hand_edited_instructions_file_reaches_the_next_chat ... ok
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:09.8608395Z 
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:09.8608822Z test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.16s
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:09.8609295Z 
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:09.8615772Z ^[[1m^[[92m     Running^[[0m tests/config_git.rs (target/debug/deps/config_git-4fee00a5997b113d)
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:09.8627377Z 
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:09.8627712Z running 3 tests
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:09.8865371Z test init_git_keeps_the_owners_gitignore ... ok
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:09.9027440Z test init_git_commits_the_config_without_its_secrets_once ... ok
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:10.1069763Z test serve_adds_a_gitignore_to_its_own_config_folder_only ... ok
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:10.1070447Z 
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:10.1070989Z test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.24s
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:10.1071795Z 
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:10.1075851Z ^[[1m^[[92m     Running^[[0m tests/conformance.rs (target/debug/deps/conformance-dc4568f43cc918b2)
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:10.1088067Z 
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:10.1088241Z running 2 tests
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:10.1090168Z test the_scenario_on_a_real_harness ... ignored, the nightly: a real shed and harness, on the owner's own login
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:10.3489938Z test the_scenario_passes_on_the_fake_shed ... ok
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:10.3490614Z 
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:10.3491267Z test result: ok. 1 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out; finished in 0.24s
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:10.3492186Z 
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:10.3496653Z ^[[1m^[[92m     Running^[[0m tests/connectors.rs (target/debug/deps/connectors-05f359fa3a461317)
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:10.3508841Z 
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:10.3509026Z running 1 test
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:10.4804366Z test the_callback_answers_only_its_own_state_and_no_token_leaks ... ok
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:10.4804956Z 
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:10.4805256Z test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.13s
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:10.4805658Z 
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:10.4809211Z ^[[1m^[[92m     Running^[[0m tests/consolidate.rs (target/debug/deps/consolidate-e9862593ad21ebc4)
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:10.4821327Z 
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:10.4821513Z running 1 test
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:11.4363764Z test a_run_reads_new_history_once_and_its_writes_wait_for_approval ... ok
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:11.4364611Z 
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:11.4365116Z test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.95s
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:11.4365675Z 
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:11.4368834Z ^[[1m^[[92m     Running^[[0m tests/first_run.rs (target/debug/deps/first_run-1207346f60b13c08)
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:11.4380401Z 
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:11.4380565Z running 3 tests
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:11.5507211Z test with_one_root_and_nothing_in_it_a_thread_starts_in_the_root ... ok
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:11.5543475Z test with_no_roots_a_chat_still_starts_in_scratch_and_use_a_folder_is_refused ... ok
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:11.6657182Z test no_agents_and_no_roots_show_the_fix_lines_and_doctor_warns ... ok
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:11.6658157Z 
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:11.6658771Z test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.23s
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:11.6659475Z 
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:11.6665165Z ^[[1m^[[92m     Running^[[0m tests/folders.rs (target/debug/deps/folders-2e88d95db0848ef2)
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:11.6677478Z 
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:11.6677629Z running 5 tests
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:11.7805466Z test browse_lists_a_root_outside_home_spelled_as_listed ... ok
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:11.7907297Z test browse_lists_only_folders_inside_home ... ok
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:11.7921644Z test dot_dot_symlink_and_absolute_escapes_are_refused ... ok
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:11.7922379Z test add_and_remove_root_persists_in_the_config ... ok
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:11.8768573Z test new_folder_is_made_inside_a_root_and_a_thread_starts_there ... ok
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:11.8769067Z 
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:11.8769367Z test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.21s
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:11.8778003Z ^[[1m^[[92m     Running^[[0m tests/handoff.rs (target/debug/deps/handoff-ee118ecff0b6651c)
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:11.8778431Z 
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:11.8789887Z 
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:11.8790093Z running 2 tests
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:12.0463456Z test the_turn_stops_with_a_handoff_and_hand_back_resumes_it_with_the_note_only ... ok
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:12.0509555Z test a_message_queued_before_the_handoff_waits_until_the_owner_hands_back ... ok
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:12.0510119Z 
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:12.0510433Z test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.17s
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:12.0510870Z 
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:12.0516322Z ^[[1m^[[92m     Running^[[0m tests/heartbeat.rs (target/debug/deps/heartbeat-4175e80ec6ff53de)
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:12.0528165Z 
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:12.0528325Z running 2 tests
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:13.4261847Z test a_heartbeat_action_is_a_card_with_nothing_done_and_its_daily_limit_holds ... ok
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:13.8378746Z test a_heartbeat_runs_only_on_news_and_pushes_only_when_its_rule_matches ... ok
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:13.8379330Z 
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:13.8379616Z test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.78s
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:13.8380011Z 
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:13.8388497Z ^[[1m^[[92m     Running^[[0m tests/history.rs (target/debug/deps/history-4d0ff3eb9e88a2b1)
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:13.8400464Z 
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:13.8400639Z running 1 test
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:13.9735490Z test a_persona_finds_and_reads_its_own_threads_and_not_another_personas ... ok
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:13.9736402Z 
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:13.9737024Z test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.13s
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:13.9737756Z 
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:13.9741702Z ^[[1m^[[92m     Running^[[0m tests/home_screen.rs (target/debug/deps/home_screen-82e1a1c7e948ddff)
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:13.9757603Z 
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:13.9757789Z running 1 test
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:14.0718484Z test home_is_the_bundled_screen_filled_with_todays_threads_and_personas ... ok
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:14.0719116Z 
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:14.0719394Z test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.10s
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:14.0719811Z 
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:14.0723016Z ^[[1m^[[92m     Running^[[0m tests/instances.rs (target/debug/deps/instances-f9b3bc27ac8c7390)
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:14.0734314Z 
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:14.0734613Z running 3 tests
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:14.0836303Z test install_writes_a_plist_and_prints_the_commands ... ok
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:14.2040648Z test doctor_reports_a_missing_shed ... ok
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:14.2632680Z test two_instances_never_see_each_others_threads_or_devices ... ok
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:14.2633248Z 
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:14.2637467Z test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.19s
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:14.2637976Z 
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:14.2640218Z ^[[1m^[[92m     Running^[[0m tests/layout.rs (target/debug/deps/layout-2a38795f0a1813e7)
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:14.2651838Z 
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:14.2651992Z running 3 tests
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:15.4275377Z test a_plugins_places_are_merged_and_a_place_its_manifest_lacks_is_skipped ... ok
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:16.3646346Z test a_layout_that_replaces_a_locked_screen_is_refused_and_reset_still_restores_the_default ... ok
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:16.5869313Z test a_bad_write_keeps_the_last_good_layout_and_reset_restores_the_default ... ok
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:16.5870387Z 
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:16.5870916Z test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.32s
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:16.5871557Z 
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:16.5876807Z ^[[1m^[[92m     Running^[[0m tests/login.rs (target/debug/deps/login-bfcd8066dcaa46fd)
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:16.5889240Z 
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:16.5889435Z running 6 tests
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:16.7179942Z test a_failed_sign_out_keeps_the_last_known_status ... ok
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:16.7435119Z test a_sign_in_started_for_a_remote_machine_runs_there ... ok
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:16.7615216Z test a_login_left_for_10_minutes_is_killed_and_removed ... ok
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:16.8560011Z test login_shows_the_link_sends_the_code_and_detects_success_never_storing_the_screen ... ok
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:16.9055367Z test with_no_providers_rows_the_sign_in_and_a_new_thread_run_on_sheds_records ... ok
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:28.3916974Z test a_hanging_status_check_never_holds_a_request_and_runs_once ... ok
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:28.3917473Z 
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:28.3917816Z test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 11.80s
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:28.3918336Z 
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:28.3928833Z ^[[1m^[[92m     Running^[[0m tests/machine_check.rs (target/debug/deps/machine_check-68af9ed593cc3970)
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:28.3940682Z 
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:28.3940853Z running 5 tests
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:28.4976471Z test a_machine_shed_cant_reach_or_doesnt_have_fails_its_first_check_and_runs_nothing_there ... ok
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:28.5224858Z test a_ready_machine_passes_every_check_each_run_there ... ok
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:28.5668330Z test each_check_fails_with_its_part_missing_there_and_says_the_fix ... ok
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:28.6401277Z test yes_clones_the_folder_and_copies_the_settings_there_once ... ok
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:28.6609814Z test doctor_has_a_row_per_machine ... ok
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:28.6610113Z 
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:28.6611332Z test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.27s
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:28.6612017Z 
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:28.6619849Z ^[[1m^[[92m     Running^[[0m tests/machines.rs (target/debug/deps/machines-5458996372d82c62)
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:28.6631225Z 
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:28.6631394Z running 1 test
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:28.8504411Z test the_machines_plugin_serves_each_machine_card_and_marks_one_offline ... ok
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:28.8505106Z 
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:28.8505657Z test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.19s
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:28.8506294Z 
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:28.8508654Z ^[[1m^[[92m     Running^[[0m tests/mcp.rs (target/debug/deps/mcp-0f6bd4bdd4118a83)
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:28.8522099Z 
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:28.8522271Z running 12 tests
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:28.8656524Z test a_literal_token_in_the_registry_is_refused_at_load_naming_the_key_only ... ok
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:29.0495479Z test a_read_tool_runs_with_no_card_and_a_write_tool_runs_only_once_its_card_is_allowed ... ok
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:29.0593541Z test a_secret_dropped_once_is_typed_into_its_terminal_and_reaches_no_transcript_event_file_log_or_model ... ok
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:29.1031665Z test a_saved_secret_is_typed_again_without_asking_and_reaches_the_personas_environment_only ... ok
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:29.2794893Z test a_streamable_http_and_an_sse_server_answer_through_the_pipe_with_headers_on_curls_stdin_and_no_redirect ... ok
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:29.3056392Z test a_lease_saved_as_a_skill_hands_the_persona_its_steps_and_no_typed_value_and_a_declined_card_saves_nothing ... ok
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:29.3322820Z test each_browser_action_leaves_one_captioned_encrypted_frame_and_a_no_frames_site_none ... ok
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:29.3579944Z test the_mac_adds_toggles_and_removes_servers_with_references_only ... ok
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:29.4568451Z test propose_server_shows_the_exact_command_runs_nothing_and_needs_face_id_to_add_it_off ... ok
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:29.5050251Z test each_persona_gets_its_own_browser_and_every_call_is_checked_and_logged ... ok
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:29.5242894Z test the_agent_sees_and_calls_only_the_allowed_tools_under_claude_and_codex_and_no_value_is_written ... ok
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:30.3562828Z test the_owner_watches_takes_control_and_hands_back_with_a_note_the_waiting_call_carries ... ok
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:30.3563657Z 
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:30.3564689Z test result: ok. 12 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.50s
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:30.3565379Z 
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:30.3581936Z ^[[1m^[[92m     Running^[[0m tests/menu_screens.rs (target/debug/deps/menu_screens-0e5040e6cd241647)
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:30.3595259Z 
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:30.3595465Z running 4 tests
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:30.4764350Z test the_attach_sheet_is_one_permissions_card ... ok
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:30.5019013Z test each_settings_screen_is_one_list_from_its_route ... ok
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:30.5256585Z test the_menu_is_the_bundled_screen_valued_from_the_servers_data ... ok
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:30.5523070Z test each_core_screen_is_on_the_wire_as_staging_served_it ... ok
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:30.5523656Z 
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:30.5524285Z test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.19s
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:30.5524800Z 
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:30.5530976Z ^[[1m^[[92m     Running^[[0m tests/model.rs (target/debug/deps/model-ea13097c67b69f09)
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:30.5542896Z 
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:30.5543065Z running 4 tests
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:30.6543171Z test a_day_old_list_is_asked_again ... ok
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:30.6791695Z test the_agent_list_carries_each_agents_efforts ... ok
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:30.7293882Z test row_34_a_thread_starts_on_its_pick_and_a_new_model_shows ... ok
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:30.7495140Z test a_gone_pin_falls_back_with_one_line_and_a_short_name_moves_on ... ok
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:30.7495722Z 
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:30.7496172Z test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.20s
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:30.7496686Z 
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:30.7504833Z ^[[1m^[[92m     Running^[[0m tests/move_thread.rs (target/debug/deps/move_thread-528f69679e00003c)
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:30.7517663Z 
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:30.7517828Z running 4 tests
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:31.1971632Z test a_move_to_a_machine_not_ready_is_refused_with_its_failed_checks_and_starts_nothing_there ... ok
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:31.2231308Z test an_idle_thread_moves_after_box_is_checked_and_the_next_message_starts_there_with_a_hand_over ... ok
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:31.2406907Z test a_move_is_refused_while_a_turn_works_and_goes_once_it_is_stopped ... ok
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:31.2450936Z test a_switch_starts_the_other_agent_with_the_brief_and_a_handoff_in_the_same_thread_and_keeps_the_persona ... ok
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:31.2451828Z 
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:31.2452306Z test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.49s
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:31.2452874Z 
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:31.2463789Z ^[[1m^[[92m     Running^[[0m tests/pairing.rs (target/debug/deps/pairing-a6156ea11a81e34b)
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:31.2475852Z 
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:31.2476051Z running 16 tests
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:31.3731456Z test a_foreign_host_or_origin_is_refused_even_paired ... ok
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:31.3732778Z test a_declined_request_tells_the_new_device_who_said_no ... ok
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:31.4064225Z test a_passkey_signs_a_device_back_in_and_can_be_removed ... ok
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:31.4837525Z test a_report_is_kept_and_listed ... ok
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:31.4842031Z test a_qr_codes_link_carries_a_code_that_pairs_at_once ... ok
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:31.5060629Z test a_new_device_asks_and_a_paired_one_approves_it_with_its_passkey ... ok
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:31.5264276Z test a_wrong_expired_or_reused_code_says_so ... ok
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:31.6068060Z test alerts_status_test_and_off_are_this_devices ... ok
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:31.6121809Z test devices_are_listed_and_removed_from_the_phone ... ok
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:31.6355397Z test five_wrong_codes_a_minute_refuse_that_address ... ok
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:31.6495354Z test pair_use_remove_and_only_the_hash_on_disk ... ok
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:31.7021266Z test push_subscriptions_are_checked_and_tied_to_the_device ... ok
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:31.7145017Z test the_mac_declines_a_request_from_the_cli ... ok
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:31.7458332Z test the_new_calls_need_a_paired_device_but_pairing_requests_do_not ... ok
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:31.7487277Z test the_mac_lists_and_approves_a_request_from_the_cli ... ok
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:31.7924606Z test unpaired_reads_and_writes_are_refused ... ok
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:31.7934538Z 
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:31.7935190Z test result: ok. 16 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.54s
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:31.7935827Z 
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:31.7939412Z ^[[1m^[[92m     Running^[[0m tests/perf.rs (target/debug/deps/perf-5eff8d1bdd6ddb94)
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:31.7952729Z 
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:31.7952907Z running 6 tests
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:31.8068273Z test cooee_perf_turns_a_log_into_the_table ... ok
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:31.8999959Z test a_fast_request_under_the_default_threshold_is_debug_only ... ok
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:31.9269093Z test requests_and_shed_calls_are_timed_by_route_and_method_and_slow_ones_warn ... ok
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:31.9284326Z test the_apps_timings_are_logged_and_a_p95_over_budget_fails_cooee_perf_budget ... ok
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:50:31.9285330Z test first_token_is_logged_once_per_prompt_and_nothing_private_is ... ok
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:51:31.5039234Z test with_500_threads_of_1000_items_the_list_answers_within_300_ms_of_start ... ok
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:51:31.5039658Z 
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:51:31.5040284Z test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 59.71s
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:51:31.5040786Z 
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:51:31.5052327Z ^[[1m^[[92m     Running^[[0m tests/persona_screen.rs (target/debug/deps/persona_screen-b298ac194405c7fd)
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:51:31.5065490Z 
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:51:31.5065696Z running 2 tests
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:51:31.6067674Z test the_panel_is_the_bundled_screen_filled_with_the_personas_own ... ok
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:51:31.6111364Z test its_actions_save_the_persona_and_clear_its_memory ... ok
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:51:31.6111865Z 
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:51:31.6112297Z test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.10s
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:51:31.6112775Z 
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:51:31.6119700Z ^[[1m^[[92m     Running^[[0m tests/personas.rs (target/debug/deps/personas-0b2b47960ffc02da)
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:51:31.6131636Z 
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:51:31.6131801Z running 14 tests
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:51:31.7448657Z test a_detailed_persona_gets_no_plain_line ... ok
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:51:31.8105304Z test a_migrated_persona_without_instructions_takes_its_profiles ... ok
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:51:31.8591887Z test a_plugin_is_attached_to_a_persona_and_detached ... ok
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:51:31.8763882Z test a_persona_is_created_edited_and_deleted_and_its_notes_reach_its_next_session ... ok
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:51:31.9338683Z test a_persona_and_its_threads_name_their_machine ... ok
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:51:31.9667783Z test a_setup_chat_interviews_and_its_update_persona_saves_at_once_for_the_next_session ... ok
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:51:32.0439007Z test an_agents_launch_keys_are_read_only_and_an_edit_keeps_them ... ok
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:51:32.0838463Z test old_notes_past_the_cap_get_ids_and_a_session_keeps_its_brief ... ok
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:51:32.0962562Z test migration_keeps_the_name_and_sets_the_orchestrator_role ... ok
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:51:32.1353755Z test outside_setup_update_persona_is_a_card_saved_only_on_approve_and_never_for_another_persona ... ok
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:51:32.2061919Z test renaming_the_orchestrator_changes_no_attachment ... ok
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:51:32.2166762Z test the_plugin_attaches_by_role ... ok
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:51:32.2202254Z test remember_adds_replaces_and_forgets_one_note_under_the_cap ... ok
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:51:32.2753790Z test two_orchestrator_personas_each_with_their_own_fleets ... ok
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:51:32.2771977Z 
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:51:32.2772693Z test result: ok. 14 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.66s
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:51:32.2774415Z ^[[1m^[[92m     Running^[[0m tests/plugin_manager.rs (target/debug/deps/plugin_manager-88e41ec5bc01c6bf)
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:51:32.2774899Z 
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:51:32.2786663Z 
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:51:32.2786866Z running 8 tests
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:51:37.5338401Z test add_from_the_index_clones_builds_writes_the_entry_and_token_starts_it_and_locks_it ... ok
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:51:37.6992813Z test a_backend_ends_when_cooee_is_killed_and_a_restart_starts_it_again ... ok
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:51:38.0295912Z test an_attach_backend_that_answers_is_used_and_run_only_starts_once_it_is_gone ... ok
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:51:38.5090923Z test only_a_paired_device_may_add_and_a_first_party_plugin_is_improved_via_an_issue ... ok
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:51:39.4271283Z test improve_makes_a_branch_an_approval_builds_and_swaps_it_in_and_it_rolls_back ... ok
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:51:42.5467191Z test a_failed_update_keeps_the_old_build_and_a_good_one_swaps_in ... ok
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:51:42.7140452Z test an_index_plugin_has_no_warning_and_a_url_plugin_is_not_reviewed ... ok
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:51:58.6793034Z test remove_stops_it_and_keeps_the_checkout_unless_purged ... ok
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:51:58.6794283Z 
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:51:58.6794940Z test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 26.40s
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:51:58.6795754Z 
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:51:58.6803860Z ^[[1m^[[92m     Running^[[0m tests/plugins.rs (target/debug/deps/plugins-7c447efcad58cf33)
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:51:58.6816799Z 
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:51:58.6817049Z running 20 tests
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:51:58.8025248Z test a_backends_event_stream_comes_through_the_proxy ... ok
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:51:58.8295149Z test a_choice_card_goes_into_the_thread_and_its_answer_to_its_own_plugin ... ok
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:51:58.8573190Z test a_card_to_a_thread_of_a_persona_its_plugin_isnt_attached_to_is_refused ... ok
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:51:58.9089404Z test a_closed_page_closes_its_backend_stream ... ok
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:51:58.9249491Z test a_plugin_with_no_token_configured_does_not_start ... ok
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:51:58.9933341Z test a_plugin_names_its_push_tag_and_sets_its_dot_only_with_its_token ... ok
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:51:59.0379159Z test a_hanging_plugin_answer_never_holds_another_thread ... ok
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:51:59.0701839Z test a_plugin_without_its_token_is_refused ... ok
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:51:59.1808097Z test a_run_card_approves_once_with_its_sha_and_shows_the_tail ... ok
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:51:59.2138122Z test cooees_own_cards_go_out_as_blocks_and_settle_to_their_line ... ok
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:51:59.2170033Z test plugin_check_checks_a_manifest ... ok
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:51:59.2940814Z test plugin_check_passes_the_fixtures_and_names_a_broken_field ... FAILED
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:51:59.3170378Z test plugin_check_knows_swipe_menu_and_refresh ... ok
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:51:59.3326803Z test row_30_choice_rows_recommended_first_other_text_and_who_and_when ... ok
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:51:59.4127396Z test row_31_a_conductors_answer_takes_one_change_from_the_owner ... ok
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:51:59.4436568Z test row_32_config_card_waits_applies_with_the_plugins_line_or_goes_stale ... ok
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:51:59.4486776Z test row_33_a_secrets_value_reaches_its_plugin_only ... ok
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:51:59.5362500Z test the_proxy_sends_the_plugins_own_token_and_never_the_cookie ... ok
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:51:59.5370670Z test row_35_handoff_chips_flow_back_lines_and_pick_a_thread ... ok
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:52:00.0517331Z test a_hung_plugin_holds_only_its_own_calls ... ok
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:52:00.0523098Z 
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:52:00.0534805Z failures:
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:52:00.0535004Z 
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:52:00.0535282Z ---- plugin_check_passes_the_fixtures_and_names_a_broken_field stdout ----
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:52:00.0535626Z 
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:52:00.0536153Z thread 'plugin_check_passes_the_fixtures_and_names_a_broken_field' (16218) panicked at crates/cooee/tests/plugins.rs:833:5:
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:52:00.0537501Z ok   /home/runner/work/cooee/cooee/crates/cooee/../../docs/design/fleets-config/fixtures/add.json
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:52:00.0538677Z ok   /home/runner/work/cooee/cooee/crates/cooee/../../docs/design/fleets-config/fixtures/chat.json
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:52:00.0539809Z ok   /home/runner/work/cooee/cooee/crates/cooee/../../docs/design/fleets-config/fixtures/fleet.json
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:52:00.0540960Z ok   /home/runner/work/cooee/cooee/crates/cooee/../../docs/design/fleets-config/fixtures/fleets.json
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:52:00.0541820Z ok   /home/runner/work/cooee/cooee/crates/cooee/../../docs/design/fleets-config/fixtures/global.json
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:52:00.0542495Z ok   /home/runner/work/cooee/cooee/crates/cooee/../../docs/design/fleets-config/fixtures/review.json
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:52:00.0543457Z ok   /home/runner/work/cooee/cooee/crates/cooee/../../docs/design/fleets-config/fixtures/role.json
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:52:00.0544342Z ok   /home/runner/work/cooee/cooee/crates/cooee/../../docs/design/fleets-config/fixtures/stale.json
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:52:00.0545011Z ok   /home/runner/work/cooee/cooee/crates/cooee/../../docs/design/fleets-config/fixtures/text.json
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:52:00.0545694Z ok   /home/runner/work/cooee/cooee/crates/cooee/../../docs/design/queue-scene/fixtures/queue-stream.json
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:52:00.0546373Z ok   /home/runner/work/cooee/cooee/crates/cooee/../../docs/design/queue-scene/fixtures/queue.json
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:52:00.0547034Z FAIL /home/runner/work/cooee/cooee/crates/cooee/../../docs/design/screens-as-data/fixtures/blocks.json
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:52:00.0547563Z      $[4].block.subtitle: an object is not string or null
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:52:00.0548066Z ok   /home/runner/work/cooee/cooee/crates/cooee/../../docs/design/screens-as-data/fixtures/cards.json
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:52:00.0548722Z ok   /home/runner/work/cooee/cooee/crates/cooee/../../docs/design/screens-as-data/fixtures/events.json
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:52:00.0549451Z ok   /home/runner/work/cooee/cooee/crates/cooee/../../docs/design/screens-as-data/fixtures/fleets.json
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:52:00.0550617Z ok   /home/runner/work/cooee/cooee/crates/cooee/../../docs/design/screens-as-data/fixtures/hello.json
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:52:00.0551289Z ok   /home/runner/work/cooee/cooee/crates/cooee/../../docs/design/screens-as-data/fixtures/own-cards.json
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:52:00.0552866Z ok   /home/runner/work/cooee/cooee/crates/cooee/../../docs/design/screens-as-data/fixtures/permissions.json
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:52:00.0554318Z ok   /home/runner/work/cooee/cooee/crates/cooee/../../docs/design/screens-as-data/fixtures/places.json
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:52:00.0555585Z ok   /home/runner/work/cooee/cooee/crates/cooee/../../docs/design/screens-as-data/fixtures/queue-stream.json
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:52:00.0556499Z ok   /home/runner/work/cooee/cooee/crates/cooee/../../docs/design/screens-as-data/fixtures/queue.json
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:52:00.0557165Z ok   /home/runner/work/cooee/cooee/crates/cooee/../../docs/design/workflow-diagram/fixtures/chat.json
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:52:00.0557822Z ok   /home/runner/work/cooee/cooee/crates/cooee/../../docs/design/workflow-diagram/fixtures/fix.json
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:52:00.0558483Z ok   /home/runner/work/cooee/cooee/crates/cooee/../../docs/design/workflow-diagram/fixtures/map.json
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:52:00.0559148Z ok   /home/runner/work/cooee/cooee/crates/cooee/../../docs/design/workflow-diagram/fixtures/stream.json
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:52:00.0559537Z 
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:52:00.0559746Z note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:52:00.0560052Z 
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:52:00.0560056Z 
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:52:00.0560141Z failures:
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:52:00.0560407Z     plugin_check_passes_the_fixtures_and_names_a_broken_field
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:52:00.0560654Z 
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:52:00.0560918Z test result: FAILED. 19 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.37s
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:52:00.0561279Z 
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:52:00.0561734Z ^[[1m^[[91merror^[[0m: test failed, to rerun pass `-p cooee --test plugins`
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:52:00.0649553Z == themes: The theme gate (docs/themes.md, docs/styles.md) on the first-party packs (the build vendors swag's at its pin),
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:52:15.6946632Z ok   packs/themes/farm (theme)
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:52:15.7172328Z ok   packs/themes/garden (theme)
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:52:15.7314402Z ok   packs/themes/kitchen (theme)
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:52:15.7319067Z ok   packs/terminal (style)
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:52:15.7323380Z ok   packs/scene (style)
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:52:15.7330564Z ok   packs/starter (theme)
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:52:15.7339598Z failed gates: test
+msrv (ubuntu-latest)	gates (ci/gates/*.sh)	2026-11-19T07:52:15.7357217Z ##[error]Process completed with exit code 1.
