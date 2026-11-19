@@ -1,0 +1,21 @@
+Decided: the phone proves it is the owner with a P-256 key made once per server (tagged by its URL), in the Secure Enclave, else a keychain key, both behind user presence
+Because: "made in the Secure Enclave on first use, registered with `POST /passkeys`, signing each approval's challenge"
+Decided: the client signs authenticator data (the host's hash, flags UP and UV) plus the hash of its client JSON, exactly what a browser passkey signs, so the server is unchanged
+Because: crates/cooee-server/src/pairing.rs:119
+Decided: a key the server doesn't list is registered first, then a fresh challenge is signed; registering again after a passkey is removed just works
+Because: apple/Sources/CooeeAPI/Passkey.swift:58
+Decided: only an approve of cooee's own proposal or secret card (no plugin) is signed; a deny or a plugin's card answers as before
+Because: crates/cooee-server/src/routes/threads.rs:447
+Decided: mcp and routine cards are drawn as proposal cards, their command or prompt in a code block above the choice
+Because: "The server draws `mcp` and `routine` cards as proposal cards, so their exact command or prompt shows."
+Rejected: a Swift test against a live server — swift test can't hold an enclave key and the e2e server has no agent to raise an mcp card; the server's refusal of a missing or wrong signature stays covered in tests/mcp.rs
+Check: CardClientTests verifies the posted signature with CryptoKit against the registered point; the TestFlight phone check is still owed
+Owner: From the phone you can now approve an MCP server, a GitHub routine or a secret with Face ID, and those cards show the exact command or prompt.
+
+Decided: fix round: no code change; the red ubuntu check was perf.rs timing the thread list at 657 ms on a busy runner, a path this PR doesn't touch
+Because: crates/cooee-core/src/blocks.rs:57
+Decided: merged origin/staging for a fresh CI run; the perf, mcp and routines tests pass locally at the new head
+Because: "The server draws `mcp` and `routine` cards as proposal cards"
+Rejected: loosening or skipping the perf test — it guards the thread list, and the issue says to keep the server tests as they are
+Check: CI's stable (ubuntu-latest) and apple checks are green at ff352524d
+Owner: Nothing new for you: the build check failed on an unrelated slow timing test, so this round only brings the branch up to date and re-runs it.
