@@ -396,3 +396,82 @@ fn a_busy_thread_does_not_hold_up_another_threads_event() {
     let took = (0..3).map(round).min().unwrap();
     assert!(took < Duration::from_millis(50), "{took:?}");
 }
+
+fn texts(rx: &mut broadcast::Receiver<Out>) -> Vec<Out> {
+    std::iter::from_fn(|| rx.try_recv().ok()).collect()
+}
+
+fn joined(outs: &[Out]) -> String {
+    outs.iter()
+        .filter(|o| o.event == "text")
+        .map(|o| {
+            serde_json::from_str::<serde_json::Value>(&o.data).unwrap()["text"]
+                .as_str()
+                .unwrap()
+                .to_owned()
+        })
+        .collect()
+}
+
+#[test]
+fn five_hundred_chunks_in_a_second_are_at_most_thirty_text_events() {
+    let mut live = Live::new(Thread::default(), Chat::default());
+    let mut rx = live.tx.insert(broadcast::channel(1024).0).subscribe();
+    let t0 = 1_000_000;
+    let chunks: Vec<String> = (0..500).map(|i| format!("c{i} ")).collect();
+    for (at, chunk) in (t0..).step_by(2).zip(&chunks) {
+        live.text(at, chunk);
+    }
+    live.emit("state", "{}".to_owned());
+    let outs = texts(&mut rx);
+    let text = outs.iter().filter(|o| o.event == "text").count();
+    assert!(text <= 30, "{text} text events");
+    assert_eq!(joined(&outs), chunks.concat());
+    assert_eq!(outs.last().unwrap().event, "state");
+}
+
+#[test]
+fn a_held_chunk_goes_out_on_the_tick() {
+    let mut live = Live::new(Thread::default(), Chat::default());
+    let mut rx = live.tx.insert(broadcast::channel(16).0).subscribe();
+    let t0 = 1_000_000;
+    assert!(!live.text(t0, "a"));
+    assert!(live.text(t0 + 1, "b"));
+    assert!(!live.text(t0 + 2, "c"));
+    assert_eq!(live.tick(t0 + 3), Some(t0 + 40));
+    assert_eq!(joined(&texts(&mut rx)), "a");
+    assert_eq!(live.tick(t0 + 40), None);
+    assert_eq!(joined(&texts(&mut rx)), "bc");
+    assert!(live.text(t0 + 41, "d"));
+}
+
+#[test]
+fn a_reply_delivers_its_text_before_its_item_and_replays_only_the_item() {
+    let dir = scratch("coalesce");
+    seed(&dir, "t", "");
+    let hub = hub(&dir);
+    let before = hub.slice("t", None, 10, 0).unwrap().cursor;
+    let mut rx = hub.subscribe("t", &before).unwrap().1;
+    for (seq, chunk) in (1..).zip(["Do", "n", "e."]) {
+        hub.apply(event("t", seq, EventKind::Text { text: chunk.into() }));
+    }
+    let reply = EventKind::Reply {
+        text: "Done.".to_owned(),
+        stop_reason: "end_turn".to_owned(),
+    };
+    hub.apply(event("t", 4, reply));
+    let outs = texts(&mut rx);
+    let item = outs.iter().position(|o| o.event == "item").unwrap();
+    assert_eq!(joined(outs.get(..item).unwrap()), "Done.");
+    assert_eq!(joined(outs.get(item..).unwrap()), "");
+    assert!(lock(&lock(&hub.threads)["t"]).unsent.is_empty());
+
+    let Resume::Replay(replayed) = hub.subscribe("t", &before).unwrap().0 else {
+        panic!("reset");
+    };
+    let events: Vec<&str> = replayed.iter().map(|o| o.event).collect();
+    assert!(
+        events.contains(&"item") && !events.contains(&"text"),
+        "{events:?}"
+    );
+}

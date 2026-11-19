@@ -53,6 +53,8 @@ const REPLAY: u64 = 5 * 60 * 1000;
 
 const LAG: usize = 256;
 
+const TEXT_TICK: u64 = 40;
+
 const IDLE: u64 = 10 * 60 * 1000;
 
 const LABEL: &str = "cooee";
@@ -105,6 +107,10 @@ struct Live {
     applied: u64,
     seq: u64,
     ring: VecDeque<(u64, Out)>,
+    trimmed: u64,
+    unsent: String,
+    text_at: u64,
+    flushing: bool,
     tx: Option<broadcast::Sender<Out>>,
     was: String,
     moved: u64,
@@ -333,6 +339,7 @@ pub struct Hub {
     updates: Mutex<HashMap<(String, u64), (String, Update)>>,
     registry: Mutex<()>,
     turns: mpsc::Sender<String>,
+    texts: mpsc::Sender<String>,
     starter: OnceLock<Starter>,
     asks: Mutex<HashMap<String, mpsc::Sender<String>>>,
     models: Mutex<Vec<cooee_core::models::Offered>>,
@@ -391,6 +398,10 @@ impl Live {
             chat,
             seq: 0,
             ring: VecDeque::new(),
+            trimmed: 0,
+            unsent: String::new(),
+            text_at: 0,
+            flushing: false,
             tx: None,
             moved: now(),
             stuck: false,
@@ -406,8 +417,8 @@ impl Live {
     }
 
     fn trim(&mut self, now: u64) {
-        while self.ring.front().is_some_and(|(at, _)| at + REPLAY < now) {
-            self.ring.pop_front();
+        while let Some((_, out)) = self.ring.pop_front_if(|(at, _)| *at + REPLAY < now) {
+            self.trimmed = out.seq;
         }
     }
 
@@ -432,7 +443,38 @@ impl Live {
         self.tx = None;
     }
 
+    fn text(&mut self, at: u64, text: &str) -> bool {
+        self.unsent.push_str(text);
+        if at >= self.text_at + TEXT_TICK {
+            self.flush(at);
+        }
+        let schedule = !self.unsent.is_empty() && !self.flushing;
+        self.flushing |= schedule;
+        schedule
+    }
+
+    fn tick(&mut self, at: u64) -> Option<u64> {
+        let due = self.text_at + TEXT_TICK;
+        if !self.unsent.is_empty() && at < due {
+            return Some(due);
+        }
+        self.flush(at);
+        self.flushing = false;
+        None
+    }
+
+    fn flush(&mut self, at: u64) {
+        if !self.unsent.is_empty() {
+            self.text_at = at;
+            let text = std::mem::take(&mut self.unsent);
+            self.emit("text", json!({ "text": text }).to_string());
+        }
+    }
+
     fn emit(&mut self, event: &'static str, data: String) {
+        if event != "text" {
+            self.flush(now());
+        }
         self.seq += 1;
         let out = Out {
             seq: self.seq,
@@ -485,8 +527,15 @@ impl Live {
                         store.queue(&self.meta.id, &item)?;
                     }
                     self.emit("item", serde_json::to_string(&item).unwrap_or_default());
+                    if matches!(item.body, Body::Agent { .. }) {
+                        self.ring.retain(|(_, o)| o.event != "text");
+                    }
                 }
-                Change::Text(text) => self.emit("text", json!({ "text": text }).to_string()),
+                Change::Text(text) => {
+                    if self.text(now(), &text) {
+                        hub.texts.send(self.meta.id.clone()).ok();
+                    }
+                }
                 Change::State(turn) => self.emit("state", json!(turn).to_string()),
             }
         }
@@ -535,6 +584,7 @@ impl Hub {
             threads.insert(id, live);
         }
         let (turns, next) = mpsc::channel();
+        let (texts, unsent) = mpsc::channel();
         let hub = Arc::new(Self {
             agents: Mutex::new((None, 0)),
             listed: Condvar::new(),
@@ -560,6 +610,7 @@ impl Hub {
             updates: Mutex::default(),
             registry: Mutex::default(),
             turns,
+            texts,
             starter: OnceLock::new(),
             asks: Mutex::default(),
             models: Mutex::new(cooee_core::models::load(&data.join("models.json"))),
@@ -572,6 +623,12 @@ impl Hub {
                 if let Err(e) = worker.take_turn(&room) {
                     cooee_core::note!("cooee: room {room}: {e}");
                 }
+            }
+        });
+        let flusher = Arc::clone(&hub);
+        thread::spawn(move || {
+            for id in unsent {
+                flusher.flush_text(id);
             }
         });
         let follower = Arc::clone(&hub);
@@ -627,6 +684,17 @@ impl Hub {
             let mut live = lock(&live);
             live.trim(now);
             live.unload(now);
+        }
+    }
+
+    fn flush_text(&self, id: String) {
+        let Some(live) = lock(&self.threads).get(&id).cloned() else {
+            return;
+        };
+        let due = lock(&live).tick(now());
+        if let Some(due) = due {
+            cooee_core::clock::sleep(Duration::from_millis(due.saturating_sub(now())));
+            self.texts.send(id).ok();
         }
     }
 
