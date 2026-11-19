@@ -2,7 +2,7 @@ use std::{
     collections::{BTreeMap, HashMap, VecDeque},
     fs, io,
     path::{Path, PathBuf},
-    sync::{Arc, Mutex, MutexGuard, OnceLock, PoisonError, atomic::AtomicBool, mpsc},
+    sync::{Arc, Condvar, Mutex, MutexGuard, OnceLock, PoisonError, atomic::AtomicBool, mpsc},
     thread,
     time::{Duration, Instant, UNIX_EPOCH},
 };
@@ -62,6 +62,7 @@ const CHANGE: u64 = 30 * 60 * 1000;
 
 const TICK: Duration = Duration::from_secs(30);
 const AGENTS_FOR: u64 = 60_000;
+const AGENTS_WAIT: Duration = Duration::from_secs(2);
 const SERVED_EVERY: Duration = Duration::from_secs(5);
 
 /// Why a thread action failed.
@@ -127,6 +128,13 @@ struct Glance {
 
 fn glance(live: &Live) -> Glance {
     let items = &live.chat.items;
+    let from = items.partition_point(|i| i.id <= live.meta.read.unwrap_or(0));
+    let after = items.get(from..).unwrap_or_default().iter();
+    let unseen = after.filter(|i| !matches!(i.body, Body::You { .. }));
+    summary(&live.meta, items, unseen.count())
+}
+
+fn summary(meta: &Thread, items: &[Item], unseen: usize) -> Glance {
     let ask = items.iter().find_map(|i| match &i.body {
         Body::Approval {
             tool,
@@ -134,7 +142,7 @@ fn glance(live: &Live) -> Glance {
             chosen: None,
             card,
             ..
-        } if card.line.is_none() => Some((live.meta.room.clone(), i.speaker.clone(), tool.clone())),
+        } if card.line.is_none() => Some((meta.room.clone(), i.speaker.clone(), tool.clone())),
         _ => None,
     });
     let last = items.last();
@@ -153,8 +161,6 @@ fn glance(live: &Live) -> Glance {
         Body::Plan { .. } => "plan",
         Body::Routine { name, .. } => name,
     });
-    let read = live.meta.read.unwrap_or(0);
-    let from = items.partition_point(|i| i.id <= read);
     let waiting = items.iter().find_map(|i| match &i.body {
         Body::Approval { tool, .. } if waits(&i.body) => Some(format!("{tool} waiting")),
         _ => None,
@@ -165,13 +171,8 @@ fn glance(live: &Live) -> Glance {
             .unwrap_or_else(|| text.lines().last().unwrap_or("").chars().take(80).collect()),
         at: last.map(|i| i.at),
         speaker: last.map(|i| i.speaker.clone()).unwrap_or_default(),
-        unseen: items
-            .get(from..)
-            .unwrap_or_default()
-            .iter()
-            .filter(|i| !matches!(i.body, Body::You { .. }))
-            .count(),
-        routine: routine_of(live),
+        unseen,
+        routine: routine_of(meta, items),
     }
 }
 
@@ -182,12 +183,12 @@ struct After {
     asked: String,
 }
 
-fn routine_of(live: &Live) -> String {
-    let you = live.chat.items.iter().rev().find_map(|i| match &i.body {
+fn routine_of(meta: &Thread, items: &[Item]) -> String {
+    let you = items.iter().rev().find_map(|i| match &i.body {
         Body::You { routine, .. } => Some(routine),
         _ => None,
     });
-    let mark = live.meta.routine.as_ref().or_else(|| you?.as_ref());
+    let mark = meta.routine.as_ref().or_else(|| you?.as_ref());
     mark.map(|m| m.name.clone()).unwrap_or_default()
 }
 
@@ -315,7 +316,8 @@ pub struct Hub {
     roots: Mutex<Vec<PathBuf>>,
     config: Option<PathBuf>,
     plugins: Mutex<Vec<Plugin>>,
-    agents: Mutex<(Result<Vec<Agent>, String>, u64)>,
+    agents: Mutex<(Option<Result<Vec<Agent>, String>>, u64)>,
+    listed: Condvar,
     served: Mutex<HashMap<String, Option<Vec<Profile>>>>,
     boot: String,
     threads: Mutex<BTreeMap<String, Arc<Mutex<Live>>>>,
@@ -490,7 +492,7 @@ impl Live {
 }
 
 impl Hub {
-    /// Loads every stored thread, re-attaches the open ones to their shed terminals by name, and starts
+    /// Loads every stored thread's meta and list row (its items on first open), re-attaches the open ones to their shed terminals by name, and starts
     /// following shed's events. A push speaks `theme`'s words; `plugins` may post choice cards and get their answers;
     /// roots added or removed on the phone are saved in `config`; a routine's approval
     /// waits `expiry` milliseconds before it counts as Deny.
@@ -522,16 +524,17 @@ impl Hub {
                 meta.account.clear();
             }
             let terminal = meta.terminal.clone();
-            let live = Arc::new(Mutex::new(Live::new(
-                meta,
-                Chat::from_versions(store.items(&id)?),
-            )));
+            let (items, unseen) = store.glance(&id, meta.read.unwrap_or(0))?;
+            let mut live = Live::new(meta, Chat::default());
+            live.unloaded = Some(summary(&live.meta, &items, unseen));
+            let live = Arc::new(Mutex::new(live));
             terminals.insert(terminal, Arc::clone(&live));
             threads.insert(id, live);
         }
         let (turns, next) = mpsc::channel();
         let hub = Arc::new(Self {
-            agents: Mutex::new((shed.agents().map_err(|e| e.to_string()), now())),
+            agents: Mutex::new((None, 0)),
+            listed: Condvar::new(),
             served: Mutex::default(),
             shed,
             store,
@@ -580,6 +583,7 @@ impl Hub {
         });
         let ticker = Arc::clone(&hub);
         thread::spawn(move || {
+            ticker.refresh(now(), false);
             loop {
                 cooee_core::clock::sleep(TICK);
                 ticker.refresh(now(), false);
@@ -608,6 +612,7 @@ impl Hub {
         if live.unloaded.is_some() {
             let mut chat = Chat::from_versions(self.store.items(&live.meta.id)?);
             chat.turn = std::mem::take(&mut live.chat.turn);
+            live.applied = live.applied.max(chat.seq());
             live.chat = chat;
             live.unloaded = None;
         }

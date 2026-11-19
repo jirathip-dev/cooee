@@ -1,5 +1,6 @@
 //! Timing (#53): each HTTP request, shed call and first reply chunk is one JSON line in the data folder's
 //! `perf.log` (`at`, `level`, `kind`, `name`, `ms`, and `status`, `via` or `thread`); `cooee perf` sums them up.
+//! The first request after [`init`] adds a `start` line: the time from start to its answer (#346).
 //! The app's own timings (#606) are `client` lines: `tap`, `event` and `echo`, checked against [`BUDGETS`].
 //! Only route patterns, methods, agent and thread ids and durations are written: never a prompt, a token or a URL.
 
@@ -23,6 +24,7 @@ pub const FILE: &str = "perf.log";
 struct Log {
     file: Mutex<File>,
     slow_ms: u64,
+    started: Mutex<Option<Instant>>,
 }
 
 static LOG: OnceLock<Log> = OnceLock::new();
@@ -47,6 +49,7 @@ pub fn init(data: &Path, slow_ms: u64) -> io::Result<()> {
     LOG.set(Log {
         file: Mutex::new(file),
         slow_ms,
+        started: Mutex::new(Some(crate::clock::instant())),
     })
     .ok();
     Ok(())
@@ -77,6 +80,15 @@ pub fn request(method: &str, route: &str, status: u16, start: Instant) {
     let level = if slow { "warn" } else { "debug" };
     let line = json!({ "level": level, "kind": "http", "name": name, "status": status });
     write(log, line, since(start));
+    let started = log
+        .started
+        .lock()
+        .unwrap_or_else(PoisonError::into_inner)
+        .take();
+    if let Some(at) = started {
+        let line = json!({ "level": "debug", "kind": "start", "name": "to first request" });
+        write(log, line, since(at));
+    }
 }
 
 /// One shed call since `start`: its method, `via` the socket or the CLI.

@@ -236,6 +236,7 @@ fn the_agent_list_is_refreshed_at_most_once_a_minute() {
     fs::set_permissions(&bin, fs::Permissions::from_mode(0o755)).unwrap();
     let hub = hub_on(&dir, bin);
     let count = || fs::read_to_string(&runs).unwrap().lines().count();
+    assert_eq!(hub.agents().unwrap()[0].id, "a");
     let t0 = now();
     for i in 0..10 {
         hub.refresh(t0 + i * 6_000, false);
@@ -267,6 +268,34 @@ fn prune_drops_only_the_workflow_sessions_shed_no_longer_lists() {
     assert_eq!(ids.len(), 2, "{ids:?}");
     assert!(ids.contains(&"mine".to_owned()) && ids.contains(&"new".to_owned()));
     assert!(!threads.join("gone.json").exists());
+}
+
+#[test]
+fn a_thread_opened_right_after_start_has_its_items_and_its_row_matches() {
+    let dir = scratch("lazy");
+    let option = |id: &str| json!({ "id": id, "name": id, "kind": "allow_once" });
+    let lines = [
+        json!({ "id": 1, "at": 1, "seq": 1, "kind": "you", "text": "go", "random_id": "r1" }),
+        json!({ "id": 2, "at": 2, "seq": 2, "kind": "agent", "text": "ok", "stop_reason": "end_turn" }),
+        json!({ "id": 3, "at": 3, "seq": 3, "kind": "you", "text": "more", "random_id": "r2" }),
+        json!({ "id": 4, "at": 4, "seq": 4, "kind": "approval", "tool": "Edit a.rs", "options": [option("allow")] }),
+        json!({ "id": 5, "at": 5, "seq": 5, "kind": "tool", "call": "c", "title": "ls", "status": "completed" }),
+        json!({ "id": 6, "at": 6, "seq": 6, "kind": "agent", "text": "first\nlast line", "stop_reason": "end_turn" }),
+    ];
+    let jsonl: String = lines.iter().map(|l| format!("{l}\n")).collect();
+    seed(&dir, "a", &jsonl);
+    let meta = json!({ "format": 1, "thread": { "id": "a", "title": "a", "messages": [], "terminal": "cooee-a", "read": 2 } });
+    fs::write(dir.join("data/threads/a.json"), meta.to_string()).unwrap();
+    let hub = hub(&dir);
+    let unloaded = |hub: &Hub| lock(&lock(&hub.threads)["a"]).unloaded.is_some();
+    assert!(unloaded(&hub));
+    let row = json!(hub.list());
+    assert_eq!(row[0]["unseen"], 3, "{row}");
+    let slice = hub.slice("a", None, 100, 0).unwrap();
+    assert!(!unloaded(&hub));
+    let ids: Vec<u64> = slice.items.iter().map(|i| i.id).collect();
+    assert_eq!(ids, [1, 2, 3, 4, 5, 6]);
+    assert_eq!(json!(hub.list()), row);
 }
 
 #[test]

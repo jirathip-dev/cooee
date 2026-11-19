@@ -9,7 +9,13 @@ impl Hub {
         self.drop_frames(now);
         for live in self.all() {
             let due = {
-                let l = lock(&live);
+                let mut l = lock(&live);
+                if l.unloaded.as_ref().is_some_and(|g| g.ask.is_some())
+                    && let Err(e) = self.load(&mut l)
+                {
+                    cooee_core::note!("cooee: {e}");
+                    continue;
+                }
                 let mut due = l
                     .chat
                     .items
