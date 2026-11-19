@@ -1,0 +1,70 @@
+Decided: errors Home and chat already store in `error` are the toast; one clock effect per screen clears it after 3 s, a newer toast restarts the wait
+Because: "One short self-clearing toast for every action's result and every error Home and chat store today"
+Decided: the event stream yields .sync(.reconnecting/.offline) on a failed attempt and .sync(.live) once it reconnects; the existing Last-Event-ID resume brings back what was missed
+Because: apple/Sources/CooeeAPI/Events.swift:73
+Decided: only the first failure after live toasts and goes amber; the next goes grey offline, so a 5 s Home poll while offline does not toast every time
+Because: apple/Sources/CooeeFeatures/HomeFeature.swift:115
+Decided: kept copies reuse KeptScreens (now generic) in their own folder, through a new KeptCopies dependency whose test value keeps nothing
+Because: apple/Sources/CooeeApp/Live/KeptCopies+Live.swift:6
+Decided: the 300 ms strip delay is a view animation delay (SlowStrip) instead of a reducer timer, and still frames draw it at once
+Because: apple/Sources/CooeeUI/SyncParts.swift:59
+Rejected: a reducer 300 ms timer — it adds an action to every load and every test that loads, for a purely visual delay
+Rejected: restarting the event stream on pull to refresh — refresh refetches the slice once so its spinner ends, and the stream keeps its cursor while rows dedupe by id
+Check: HomeFeatureTests offlineHomeDraws…, ChatFeatureTests aThreadThatCannotLoad…, aStopReadsStopping…, aFailedCallToasts…, AppFeatureTests homeAndTheOpenChatReload…, EventsTests aServerErrorABadEventOrNoNetwork…
+Owner: Home and chat keep their last copy offline with its age, show a live/reconnecting/offline dot, toast errors briefly, refresh on pull or on return, and say "Stopping…" after Stop.
+
+Decided: merge origin/staging keeping both sides; the thread-copy helper is renamed keepSlice so it no longer clashes with staging's draft keep
+Because: apple/Sources/CooeeFeatures/ChatLink.swift:93
+Decided: staging's ChatComposeTests expect this branch's link.dropped on a failed load, and four State computed properties moved to an extension so the struct stays under 150 lines
+Because: apple/Sources/CooeeFeatures/ChatFeature.swift:208
+Rejected: none
+Owner: The chat changes now sit on top of the latest staging, with saved drafts and offline copies both kept.
+
+Decided: merge origin/staging (1b1a94c) keeping both sides; staging's older-page and setup-mode tests moved unchanged into their own file
+Because: apple/Tests/CooeeFeaturesTests/ChatOlderTests.swift:7
+Rejected: trimming test bodies to fit 250 lines — that would weaken staging's assertions
+Owner: The chat work now sits on the newest staging, including loading older messages and colour schemes.
+
+Decided: merge origin/staging keeping both sides: the scene action and foreground reload next to staging's report screen
+Because: apple/Sources/CooeeFeatures/AppFeature.swift:56
+Decided: navigate moved from the struct body into the file's extension so AppFeature stays under SwiftLint's 150-line body limit
+Because: apple/Sources/CooeeFeatures/AppFeature.swift:146
+Decided: moved() takes the chat's own persona instead of an argument its only caller filled with that same value
+Because: apple/Sources/CooeeFeatures/AppFeature.swift:243
+Rejected: a new file for navigate — it calls the file's private chat and pop helpers
+Check: apple-check exit 0 at 48ae05e; CI apple red only for the runner's unaccepted Xcode license (exit 69)
+Owner: The chat work now sits on the newest staging, alongside the new report screen.
+
+Decided: merge origin/staging (9d341e1) with no conflicts; it touches only Rust crates, none of this branch's apple files
+Because: crates/cooee-server/src/hub/start.rs:1
+Decided: no code change for the FAIL; it was CI scope still queued at 48ae05e, and the fresh push reruns every check
+Because: apple/Sources/CooeeFeatures/AppFeature.swift:56
+Rejected: none
+Check: apple-check exit 0 and arch-check exit 0 at 5f9abfa; CI green at the new head
+Owner: The chat work now sits on the newest staging again; nothing in it changed.
+
+Decided: merge origin/staging (ca94eb9) with no conflicts; it adds ChatDeck.swift beside this branch's chat changes
+Because: apple/Sources/CooeeFeatures/ChatDeck.swift:1
+Decided: no code change for the FAIL; it was CI lessons still pending at 5f9abfa, and lessons then passed there
+Because: apple/Sources/CooeeFeatures/AppFeature.swift:56
+Rejected: chasing the macOS routines test failure — this branch has no crates/ changes and staging ci is green at the same base
+Check: apple-check exit 0 and arch-check exit 0 at 53d33f8; CI at the new head
+Owner: The chat work now sits on the newest staging again; nothing in it changed.
+
+Decided: merge origin/staging (4e338bb) with no conflicts; it brings typed blocks and the Queue card changes beside this branch's apple files
+Because: apple/Sources/CooeeFeatures/AppFeature.swift:56
+Decided: no code change for the FAIL; actionlint failed only in a ci run that was canceled when a newer run at the same head replaced it, and this branch changes no workflow files
+Because: apple/Sources/CooeeFeatures/ChatFeature.swift:1
+Rejected: none
+Check: apple-check exit 0 and arch-check exit 0 at 048b21e; CI at the new head
+Owner: The chat work now sits on the newest staging again; nothing in it changed.
+
+Decided: staging build fix; the card.fold fixture's subtitle becomes a plain string, because the pinned blocks schema that plugin check now uses only takes a string
+Because: docs/design/screens-as-data/fixtures/blocks.json:24
+Decided: merge origin/staging (4e338bb) with no conflicts beside this branch's apple files
+Because: apple/Sources/CooeeFeatures/AppFeature.swift:56
+Rejected: bumping the blocks crate to allow a toned subtitle — a dependency change outside this issue
+Rejected: none for the actionlint FAIL; it came from a canceled, superseded ci run and passes at the new head
+Because: apple/Sources/CooeeFeatures/ChatFeature.swift:1
+Check: cargo test -p cooee --test plugins exit 0 and apple-check exit 0 at a65c6d5
+Owner: Staging's design-check test was broken by two merges that crossed; one sample card now uses a plain subtitle so it passes again.
