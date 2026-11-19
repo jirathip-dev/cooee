@@ -12,7 +12,7 @@ use topcoat::router::{BodyLimit, Router};
 
 use crate::{
     Hub, Layouts, Logins, Manager, connectors, editor,
-    gate::{Gate, Timing, names},
+    gate::{Gate, Gzip, Timing, names},
     http::{Data, profiles, provider_name, recipe},
     hub, layout, look, pairing,
     passkey::Unlocks,
@@ -100,6 +100,7 @@ pub fn router(
     screens::routes(editor::routes(themes::routes(routes::routes(
         Router::builder()
             .layer(Timing)
+            .layer(Gzip)
             .layer(gate)
             .layer(BodyLimit::max(64 << 20).at("/threads")),
     ))))
