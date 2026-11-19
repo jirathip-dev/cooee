@@ -14,7 +14,7 @@ public struct ScreenFeature: Sendable {
         public var screen: LiveScreen?
         public var asOf: Date?
         public var unreachable: String?
-        public var acting = false
+        public var pending: [BlockAction] = []
         public var said: String?
         public var path: [String] = []
         public var focus: String?
@@ -209,8 +209,12 @@ extension ScreenFeature {
     }
 
     private func act(_ state: inout State, _ action: BlockAction) -> Effect<Action> {
-        guard !state.offline, !state.acting else { return .none }
-        state.acting = true
+        guard !state.offline, !state.pending.contains(action) else { return .none }
+        state.pending.append(action)
+        return state.pending.count == 1 ? send(state, action) : .none
+    }
+
+    private func send(_ state: State, _ action: BlockAction) -> Effect<Action> {
         let (plugins, server, source, clock, perf) = (plugins, state.server, state.source, clock, perf)
         let screen = state.screen?.root.string("id") ?? ""
         return .run { send in
@@ -224,13 +228,15 @@ extension ScreenFeature {
     }
 
     private func acted(_ state: inout State, _ answer: JSONValue?, _ error: String?) -> Effect<Action> {
-        state.acting = false
+        state.pending = Array(state.pending.dropFirst())
         state.said = error ?? answer?.string("toast")
-        guard let answer else { return .none }
-        state.screen?.apply(event: answer)
-        let kept = keep(&state)
-        guard let open = answer.string("open") else { return kept }
-        return navigate(&state, to: open)
+        let kept = answer.map { answer in
+            state.screen?.apply(event: answer)
+            return keep(&state)
+        }
+        let next = state.pending.first.map { send(state, $0) } ?? .none
+        guard let open = answer?.string("open") else { return .merge(next, kept ?? .none) }
+        return .merge(next, navigate(&state, to: open))
     }
 
     private func navigate(_ state: inout State, to path: String?) -> Effect<Action> {

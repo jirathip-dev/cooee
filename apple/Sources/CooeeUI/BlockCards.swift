@@ -7,6 +7,7 @@ internal struct ActButton<Label: View>: View {
     @Environment(\.openThread) private var openThread
     @Environment(\.open) private var open
     @Environment(\.openBeside) private var openBeside
+    @Environment(\.acting) private var acting
     @State private var pending: JSONValue?
     internal var action: String?
     internal let source: JSONValue
@@ -20,7 +21,12 @@ internal struct ActButton<Label: View>: View {
             label
         }
         .buttonStyle(.plain)
+        .disabled(waiting).opacity(waiting ? 0.5 : 1)
         .modifier(Confirming(pending: $pending) { _ in fire() })
+    }
+
+    private var waiting: Bool {
+        BlockAction(action: action, source: source, values: values).map(acting.contains) ?? false
     }
 
     private func fire() {
@@ -36,6 +42,10 @@ internal struct ActButton<Label: View>: View {
             act(action)
         }
     }
+}
+
+extension EnvironmentValues {
+    @Entry internal var acting: [BlockAction] = []
 }
 
 internal struct Confirming: ViewModifier {
