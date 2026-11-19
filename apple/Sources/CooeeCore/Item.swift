@@ -6,17 +6,29 @@ public enum Block: Sendable, Equatable {
     case bullets([String])
 }
 
+public struct PlanEntry: Sendable, Equatable {
+    public let text: String
+    public let done: Bool
+
+    public init(_ text: String, done: Bool) {
+        self.text = text
+        self.done = done
+    }
+}
+
 public struct ToolRow: Sendable, Equatable {
     public let title: String
     public let status: String
     public let frame: String?
+    public let plan: [PlanEntry]
 
     public var running: Bool { status == "running" }
 
-    public init(_ title: String, _ status: String, frame: String? = nil) {
+    public init(_ title: String, _ status: String, frame: String? = nil, plan: [PlanEntry] = []) {
         self.title = title
         self.status = status
         self.frame = frame
+        self.plan = plan
     }
 }
 
@@ -152,7 +164,7 @@ public enum ChatItems {
         var steps: [APIItem] = []
         for item in items {
             switch item.kind {
-            case "tool",
+            case "tool", "plan",
                 "frame" where item.asked != true:
                 steps.append(item)
             case "agent":
@@ -176,6 +188,12 @@ public enum ChatItems {
 
     private static func row(_ item: APIItem) -> ToolRow {
         if item.kind == "frame" { return ToolRow(item.text ?? "", "done", frame: item.name) }
+        if item.kind == "plan" {
+            let plan = (item.entries ?? []).map {
+                PlanEntry($0.string("content") ?? "", done: $0.string("status") == "completed")
+            }
+            return ToolRow("Plan", "done", plan: plan)
+        }
         let status = item.status == "completed" ? "done" : item.status == "failed" ? "failed" : "running"
         return ToolRow(item.title ?? "", status)
     }

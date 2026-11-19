@@ -72,6 +72,27 @@ internal struct ItemsTests {
         )
     }
 
+    @Test internal func aChatStyleTurnFoldsItsPlanIntoTheTraceInOrderWithItsEntries() {
+        var plan = APIItem(id: 3, time: 3000, kind: "plan")
+        plan.entries = [
+            .object(["content": .string("Read the code"), "status": .string("completed")]),
+            .object(["content": .string("Fix the bug"), "status": .string("in_progress")]),
+        ]
+        let turn = [
+            APIItem(id: 1, time: 1000, kind: "you", text: "Fix it"),
+            APIItem(id: 2, time: 2000, kind: "tool", title: "Read a", status: "completed"),
+            plan,
+            APIItem(id: 4, time: 4000, kind: "tool", title: "Edit a", status: "failed"),
+            APIItem(id: 5, time: 5000, kind: "agent", text: "Fixed."),
+        ]
+        let entries = [PlanEntry("Read the code", done: true), PlanEntry("Fix the bug", done: false)]
+        let steps = [ToolRow("Read a", "done"), ToolRow("Plan", "done", plan: entries), ToolRow("Edit a", "failed")]
+        #expect(
+            ChatItems.build(turn, style: .chat).suffix(2) == [
+                .agent(id: 5, markdown: [.text("Fixed.")]), .trace(id: 2, steps: steps, seconds: 3),
+            ])
+    }
+
     @Test internal func aBrowserFrameIsADoneStepWithItsCaptionInTheThreadAndTheTrace() {
         var frame = APIItem(id: 2, time: 2000, kind: "frame", text: #"click "Sign in""#)
         frame.name = "f1"
