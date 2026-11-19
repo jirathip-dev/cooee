@@ -17,6 +17,7 @@ public struct AppFeature: Sendable {
         public var terminal: TerminalFeature.State
         public var layout: LayoutFeature.State
         @Presents public var persona: PersonaFeature.State?
+        public var report: ReportFeature.State?
         public var notice: String?
 
         public init(layout: Layout, server: Server?, settings: Settings = Settings()) {
@@ -50,6 +51,8 @@ public struct AppFeature: Sendable {
         case start(String)
         case back
         case path([String])
+        case reporting
+        case report(ReportFeature.Action)
     }
 
     @Dependency(\.serverStore) internal var serverStore
@@ -73,6 +76,9 @@ public struct AppFeature: Sendable {
                 serverStore.clear()
                 state = State(layout: state.layout.layout, server: nil, settings: state.menu.settings)
                 return .none
+            case .reporting, .report,
+                .back where state.report != nil:
+                return report(&state, action)
             case .launch, .launched, .keychainSilent:
                 return launch(&state, action)
             case .retire:
@@ -121,6 +127,7 @@ public struct AppFeature: Sendable {
         .ifLet(\.chat, action: \.chat) { ChatFeature() }
         .ifLet(\.newRoom, action: \.newRoom) { NewRoomFeature() }
         .ifLet(\.$persona, action: \.persona) { PersonaFeature() }
+        .ifLet(\.report, action: \.report) { ReportFeature() }
         Reduce { state, _ in
             if let chat = state.chat, case .thread(let id) = chat.target, chat.bar != nil {
                 state.home?.opened[chat.persona.id] = id

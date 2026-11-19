@@ -2,23 +2,33 @@ use std::{
     collections::BTreeMap,
     fs,
     path::Path,
-    sync::{Arc, Mutex},
+    sync::{Arc, Mutex, PoisonError},
     thread,
 };
 
 use cooee_core::{Agent, Body, Change, Chat, Thread, provider::Gap, shed_proto};
 
-use super::{AGENTS_FOR, Hub, HubError, LABEL, Live, Recipe, lock, now, on_machine, refused};
+use super::{
+    AGENTS_FOR, AGENTS_WAIT, Hub, HubError, LABEL, Live, Recipe, lock, now, on_machine, refused,
+};
 
 const TITLE: usize = 28;
 
 impl Hub {
-    /// The installed ACP agents, as last checked.
+    /// The installed ACP agents, as last checked; right after start, waits briefly for the first check.
     ///
     /// # Errors
-    /// Why `shed agents` failed, when it did.
+    /// Why `shed agents` failed, when it did, or that the first check is not done yet.
     pub fn agents(&self) -> Result<Vec<Agent>, String> {
-        lock(&self.agents).0.clone()
+        let agents = lock(&self.agents);
+        let (agents, _) = self
+            .listed
+            .wait_timeout_while(agents, AGENTS_WAIT, |a| a.0.is_none())
+            .unwrap_or_else(PoisonError::into_inner);
+        agents
+            .0
+            .clone()
+            .unwrap_or_else(|| Err("the agent list is still loading".to_owned()))
     }
 
     pub(super) fn refresh(&self, at: u64, now: bool) {
@@ -29,9 +39,12 @@ impl Hub {
         let mut agents = lock(&self.agents);
         agents.1 = at;
         match fresh {
-            Err(e) if agents.0.is_ok() => cooee_core::note!("cooee: kept the agent list: {e}"),
-            fresh => agents.0 = fresh,
+            Err(e) if matches!(agents.0, Some(Ok(_))) => {
+                cooee_core::note!("cooee: kept the agent list: {e}");
+            }
+            fresh => agents.0 = Some(fresh),
         }
+        self.listed.notify_all();
     }
 
     pub(super) fn adapter(&self, id: &str) -> Vec<String> {

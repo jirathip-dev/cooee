@@ -140,7 +140,7 @@ internal struct BlockStack: View {
 
     internal var body: some View {
         VStack(alignment: .leading, spacing: spacing) {
-            ForEach(blocks.keyed()) { BlockNode(block: $0.element) }
+            ForEach(blocks.keyed()) { BlockNode(block: $0.element).reportable(block: $0.element) }
         }
     }
 }

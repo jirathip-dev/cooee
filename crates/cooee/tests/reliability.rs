@@ -276,6 +276,7 @@ fn agents_are_listed_from_the_hub_and_a_failed_refresh_keeps_the_list() {
         let log = s.shed.cli_log();
         log.lines().filter(|l| l.ends_with(" agents")).count()
     };
+    assert_ne!(s.cooee.get("/agents").0, 200);
     s.shed.gate("agents-fails", false);
     for _ in 0..10 {
         assert_eq!(s.cooee.get("/threads").0, 200);
