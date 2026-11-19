@@ -126,6 +126,8 @@ internal struct Composer: View {
         }
         .padding(.horizontal, 12).frame(height: 34)
         .background(palette.card.opacity(0.8), in: .rect(cornerRadius: 12))
+        .contentShape(.rect).onTapGesture { actions.edit(index) }
+        .accessibilityAction(named: "Edit") { actions.edit(index) }
     }
 
     private func send() {

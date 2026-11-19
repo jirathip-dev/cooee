@@ -12,6 +12,7 @@ public struct ThreadsClient: Sendable {
     public var themeArt: @Sendable (_ server: Server, _ theme: String, _ file: String) async throws -> String
     public var messages: @Sendable (_ server: Server, _ thread: String) async throws -> Slice
     public var frame: @Sendable (_ server: Server, _ thread: String, _ name: String) async throws -> Data
+    public var file: @Sendable (_ server: Server, _ thread: String, _ name: String) async throws -> Data
     public var screen: @Sendable (_ server: Server, _ persona: String) async throws -> BrowserScreen
     public var takeControl: @Sendable (_ server: Server, _ persona: String) async throws -> BrowserScreen
     public var handBack: @Sendable (_ server: Server, _ persona: String, _ note: String) async throws -> BrowserScreen

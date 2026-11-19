@@ -90,7 +90,7 @@ extension ChatFeature {
         state.status.stopping = state.status.stopping && slice.turn.working
     }
 
-    internal func keep(_ state: State) -> Effect<Action> {
+    internal func keepSlice(_ state: State) -> Effect<Action> {
         guard case .thread(let thread) = state.target else { return .none }
         let slice = Slice(items: state.items, turn: state.turn, cursor: "", queue: state.queue)
         let (kept, server, copy) = (kept, state.server, KeptSlice(slice: slice, kept: now))

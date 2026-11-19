@@ -17,6 +17,7 @@ public struct ChatFeature: Sendable {
         public var persona: Persona
         public var items: [APIItem] = []
         public var frames: [String: Data] = [:]
+        public var photos: [String: Data] = [:]
         public var turn = Turn()
         public var queue: [Queued] = []
         public var live = LiveReply()
@@ -25,6 +26,7 @@ public struct ChatFeature: Sendable {
         public var status = ChatStatus()
         public var draft = ""
         public var files: [Attachment] = []
+        public var editing: String?
         public var outbox: [Outgoing] = []
         public var pending: String?
         public var answering: Set<Int> = []
@@ -62,18 +64,6 @@ public struct ChatFeature: Sendable {
             return pending.map { [Outgoing(id: 0, text: $0, failure: failure)] } ?? []
         }
 
-        public var current: String {
-            switch target {
-            case .thread(let id): id
-            case .new(let persona), .setup(let persona): "new:\(persona.id)"
-            }
-        }
-
-        public var filmstrip: [APIItem] { items.filter { $0.kind == "frame" && $0.name != nil } }
-        public var handoff: APIItem? { items.last { $0.kind == "handoff" && $0.outcome == "waiting" } }
-
-        public var step: String? { persona.api.style == .chat ? ChatItems.step(items) : nil }
-
         public init(server: Server, target: Target, persona: Persona, room: Room? = nil, exchange: Exchange? = nil) {
             self.server = server
             self.target = target
@@ -109,6 +99,8 @@ public struct ChatFeature: Sendable {
         case machine(MachineAction)
         case frame(String)
         case framed(String, Data)
+        case photo(String)
+        case photoed(String, Data)
         case topics(TopicAction)
         case browse(Browse)
 
@@ -131,6 +123,7 @@ public struct ChatFeature: Sendable {
     @Dependency(\.date.now) internal var now
     @Dependency(\.perf) internal var perf
     @Dependency(\.markdown) internal var markdown
+    @Dependency(\.drafts) internal var drafts
     @Dependency(\.kept) internal var kept
 
     public init() {}
@@ -170,16 +163,17 @@ extension ChatFeature {
     private func listen(_ state: inout State, _ action: Action) -> Effect<Action> {
         switch action {
         case .task:
+            restore(&state)
             return open(state)
         case .loaded(let slice):
             load(&state, slice)
-            return keep(state)
+            return keepSlice(state)
         case .event(let event):
             let timed = painted(state, event)
             state.room?.hear(event, when: now)
             apply(&state, event)
             guard case .item = event else { return timed }
-            return .merge(timed, keep(state))
+            return .merge(timed, keepSlice(state))
         case .failed(let error):
             state.status.stopping = false
             return toast(&state, error)
@@ -209,22 +203,18 @@ extension ChatFeature {
             break
         }
     }
+}
 
-    private func painted(_ state: State, _ event: StreamEvent) -> Effect<Action> {
-        guard case .item(let item) = event, !state.items.contains(where: { $0.id == item.id }) else { return .none }
-        let took = Duration.milliseconds(Int64(now.timeIntervalSince1970 * 1000) - item.time)
-        guard took >= .zero else { return .none }
-        let (perf, server) = (perf, state.server)
-        return .run { _ in perf.record(server, .event, took) }
-    }
-
-    private func upsert(_ state: inout State, _ item: APIItem) {
-        if let index = state.items.firstIndex(where: { $0.id == item.id }) {
-            state.items[index] = item
-        } else {
-            state.items.append(item)
+extension ChatFeature.State {
+    public var current: String {
+        switch target {
+        case .thread(let id): id
+        case .new(let persona), .setup(let persona): "new:\(persona.id)"
         }
-        if item.kind == "you" { state.pending = nil }
-        if item.kind == "agent" { state.live = LiveReply() }
     }
+
+    public var filmstrip: [APIItem] { items.filter { $0.kind == "frame" && $0.name != nil } }
+    public var handoff: APIItem? { items.last { $0.kind == "handoff" && $0.outcome == "waiting" } }
+
+    public var step: String? { persona.api.style == .chat ? ChatItems.step(items) : nil }
 }
