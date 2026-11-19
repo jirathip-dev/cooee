@@ -1,0 +1,11 @@
+Decided: the list is memory::REFUSED in cooee-core, four rows each a reason and a check; Hub::scan runs it for remember and update_persona
+Because: "The list lives in one place with a test per row"
+Decided: the scan runs before a routine's card is raised, so #219's consolidation proposals are scanned too
+Because: crates/cooee-server/src/hub/mcp.rs:334
+Decided: owner edits (the /personas/{id}/memory routes and the model-switch note) call memory::remember directly and stay unscanned
+Because: "The owner's own edits in the app are not scanned."
+Decided: an override is one of ignore/disregard/override/bypass/circumvent followed within four words by rules, instructions, owner, approval, policy or prompt
+Because: "ordinary notes that mention a URL or the word \"ignore\" in passing are accepted"
+Rejected: a regex crate — stdlib word splits cover the four rows without a new dependency
+Check: a full 40-hex git sha in a note is refused as a secret (32+ hex); short shas pass
+Owner: An agent can no longer save a note or persona text that tells it to ignore your rules, send data to an address, holds a key or hides characters; you see each refused try in the chat.
