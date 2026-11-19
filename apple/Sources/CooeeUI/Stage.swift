@@ -47,7 +47,12 @@ internal struct LaneStage: View {
             TimelineView(.everyMinute) { context in
                 let night = look.night ?? Weather.night(at: context.date)
                 strip(stage)
-                    .overlay { Sky(weather: Weather(load: block["load"]?.number), night: night) }
+                    .overlay {
+                        if look.sign {
+                            Sprite(name: "", pack: "sprites.svg#s-sign-\(SignLevel(scene: block).rawValue)")
+                        }
+                    }
+                    .overlay { Sky(weather: look.sign ? .clear : Weather(load: block["load"]?.number), night: night) }
                     .overlay(alignment: .topTrailing) { SkyButtons(next: block["next"], night: night) }
             }
             .padding(.horizontal, -BlocksView.inset)
@@ -80,7 +85,8 @@ internal struct LaneFigure: View {
         let (ink, alert) = (stage.color(\.ink), stage.color(\.alert))
         let needs = lane.state == .needs
         VStack(spacing: 2) {
-            Sprite(name: lane.sprite).frame(width: 92, height: 70)
+            Sprite(name: lane.sprite, pack: look.sign ? "sprites.svg#s-scene-\(lane.state.pose)" : nil)
+                .frame(width: 92, height: 70)
             Text(lane.name).ui(12, .semibold, look).lineLimit(1).foregroundStyle(ink)
                 .padding(.horizontal, 8).padding(.vertical, 3)
                 .background(stage.color(needs ? \.alertPaper : \.paper).opacity(0.92), in: .capsule)

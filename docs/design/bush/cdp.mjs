@@ -1,5 +1,3 @@
-// Copied from herdsman docs/design/theme-370 (ff58da7). A dependency-free headless Chrome driver (--remote-debugging-pipe), like ../pickers/shoot.mjs, and a static
-// file server for a folder. `open(url, W, H, dpr)` gives a fresh context: `ev` (awaited expression), `png`, `done`.
 import { spawn } from 'node:child_process';
 import { mkdtempSync, readFileSync, statSync } from 'node:fs';
 import { createServer } from 'node:http';
@@ -56,7 +54,6 @@ export function chrome(bin) {
     await ev('document.fonts.ready.then(() => 1)');
     await sleep(400);
     const png = async (clip = {}) => Buffer.from((await cmd('Page.captureScreenshot', { format: 'png', captureBeyondViewport: true, clip: { x: 0, y: 0, width: W, height: H, scale: 1, ...clip } })).data, 'base64');
-    // The whole page: the viewport grows to the page's height first, so the fixed tab bar sits at its foot.
     const full = async () => {
       const h = await ev('Math.max(document.documentElement.scrollHeight, document.body.scrollHeight)');
       await cmd('Emulation.setDeviceMetricsOverride', { width: W, height: h, deviceScaleFactor: dpr, mobile: W < 720 });

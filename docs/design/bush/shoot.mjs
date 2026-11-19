@@ -1,6 +1,3 @@
-// cooee#22: regenerates every PNG here: index.html and sheet.html at 390 (DPR 2) and 1440, each in bush-light and
-// bush-dark, under Reduce Motion (frame 1), and the icon PNGs from art.mjs. No dependencies: Chrome over
-// --remote-debugging-pipe (cdp.mjs). `node docs/design/bush/shoot.mjs <chrome-headless-shell> [only]`.
 import { writeFileSync, mkdirSync } from 'node:fs';
 import { serve, chrome } from './cdp.mjs';
 import { icon, favicon } from './art.mjs';

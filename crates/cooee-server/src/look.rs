@@ -48,6 +48,9 @@ pub struct Theme {
     /// The Scene's layers: element ids in `scene.svg` (`viewBox` at most 400 × 320); none: no scene.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub scene: Vec<String>,
+    /// What the Scene draws for its host's load; none: the weather sky.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub load_scene: Option<LoadScene>,
     /// The theme's word per state key (`working needs done fail idle merged loading empty-threads`); a missing key
     /// says the plain word.
     #[serde(default)]
@@ -61,6 +64,22 @@ pub struct Theme {
     /// `scene.svg`, when it has a scene.
     #[serde(skip)]
     pub scene_art: Option<Vec<u8>>,
+}
+
+/// A theme's own drawing of its Scene's host load.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct LoadScene {
+    /// How it draws the load.
+    pub kind: LoadKind,
+}
+
+/// The kinds of load drawing.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum LoadKind {
+    /// A Fire Danger Rating sign: `sprites.svg`'s `s-sign-moderate s-sign-high s-sign-catastrophic` (calm, busy, held).
+    Sign,
 }
 
 /// A built-in style: the shape, radius, type and buttons every scheme is drawn with.
@@ -326,6 +345,8 @@ pub const SPRITES: [&str; 10] = [
     "edit", "read", "run", "idle", "done", "needs", "merged", "fail", "loading", "empty",
 ];
 
+const SIGN: [&str; 3] = ["s-sign-moderate", "s-sign-high", "s-sign-catastrophic"];
+
 /// The largest Scene art, width × height of its `viewBox` (herdsman's scenes are 390 × 320 and 392 × 188).
 pub const SCENE: (f64, f64) = (400.0, 320.0);
 
@@ -415,6 +436,17 @@ fn active(svg: &str) -> Vec<String> {
 
 type Own = (Theme, BTreeMap<String, Scheme>);
 
+fn signs(t: &Theme) -> Option<String> {
+    t.load_scene?;
+    let sheet = String::from_utf8_lossy(t.sprite_sheet.as_deref().unwrap_or_default());
+    let missing: Vec<&str> = SIGN
+        .into_iter()
+        .filter(|s| !sheet.contains(&format!("id=\"{s}\"")))
+        .collect();
+    (!missing.is_empty())
+        .then(|| format!("load_scene sign: sprites.svg has no {}", missing.join(", ")))
+}
+
 fn read_theme(dir: &Path, schemes: &BTreeMap<String, Scheme>) -> Result<Option<Own>, Vec<String>> {
     let mut fails = Vec::new();
     let Some(json) = file(dir, "theme.json", &mut fails) else {
@@ -469,6 +501,7 @@ fn read_theme(dir: &Path, schemes: &BTreeMap<String, Scheme>) -> Result<Option<O
         }
         t.sprite_sheet = svg;
     }
+    fails.extend(signs(&t));
     let svg = file(dir, "scene.svg", &mut fails);
     let text = String::from_utf8_lossy(svg.as_deref().unwrap_or_default());
     let view = text
@@ -613,11 +646,39 @@ pub(crate) mod tests {
             .unwrap()
             .map(|e| e.unwrap().path())
             .collect();
-        dirs.push(packs().join("starter"));
-        assert_eq!(dirs.len(), 4, "{dirs:?}");
+        dirs.extend([packs().join("starter"), packs().join("themes/bush")]);
+        assert_eq!(dirs.len(), 5, "{dirs:?}");
         for dir in dirs {
             assert_eq!(check(&dir), Ok("theme"), "{}", dir.display());
         }
+    }
+
+    #[test]
+    fn a_load_scene_sign_needs_its_three_levels_and_a_theme_without_one_serves_as_before() {
+        let theme = |dir: &Path| read_theme(dir, &builtin_schemes()).unwrap().unwrap().0;
+        let bush = theme(&packs().join("themes/bush"));
+        let sign = Some(LoadScene {
+            kind: LoadKind::Sign,
+        });
+        assert_eq!(bush.load_scene, sign);
+        let served = serde_json::to_value(&bush).unwrap();
+        assert_eq!(served["load_scene"], serde_json::json!({"kind": "sign"}));
+        let farm = farm_with("sign-none", |_| {});
+        let served = serde_json::to_value(theme(&farm)).unwrap();
+        assert_eq!(served.get("load_scene"), None);
+        set(&farm, "load_scene", serde_json::json!({"kind": "sign"}));
+        assert_eq!(
+            check(&farm).unwrap_err(),
+            [
+                "load_scene sign: sprites.svg has no s-sign-moderate, s-sign-high, s-sign-catastrophic"
+            ]
+        );
+        set(&farm, "load_scene", serde_json::json!({"kind": "weather"}));
+        let got = check(&farm).unwrap_err().join("\n");
+        assert!(
+            got.starts_with("theme.json: unknown variant `weather`"),
+            "{got}"
+        );
     }
 
     pub(super) fn farm_with(name: &str, edit: impl FnOnce(&Path)) -> std::path::PathBuf {

@@ -1,0 +1,25 @@
+{
+  "label": "bush",
+  "scheme": {
+    "dark": "bush-dark",
+    "light": "bush-light"
+  },
+  "sprites": true,
+  "moments": true,
+  "scene": [
+    "night",
+    "clearing"
+  ],
+  "load_scene": {
+    "kind": "sign"
+  },
+  "words": {
+    "working": "on the move",
+    "needs": "screech",
+    "done": "home and hosed",
+    "fail": "swooped",
+    "idle": "having a kip",
+    "merged": "over the fence",
+    "loading": "bounding…"
+  }
+}

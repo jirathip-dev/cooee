@@ -162,6 +162,7 @@ pub fn files(name: &str, draft: &Draft, looks: &Looks) -> io::Result<Vec<(String
         sprites: true,
         moments: false,
         scene: Vec::new(),
+        load_scene: None,
         words: BTreeMap::new(),
         sprite_sheet: Some(STARTER[0].1.to_vec()),
         icon: None,

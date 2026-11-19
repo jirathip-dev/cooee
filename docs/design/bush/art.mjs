@@ -1,37 +1,18 @@
-// cooee#22 (herdsman#462) bush theme pack, design revision 1: the animals by role, the moments, the hollow-log rail, the outback clearing with its
-// billabong and Fire Danger Rating sign, the sign minis, the row sprites, the icon and the ASCII figures all come from
-// the pixel maps below (one character = one pixel), like ../kitchen/art.mjs and #423's garden. index.html and sheet.html
-// import this module; phase 2's build writes the theme files (sprites.svg, scene.svg, icons) from the same maps.
-// Lane sprites keep the farm's box: 132 × 100, composed on a 33 × 25 grid and drawn by fine() at 2 units per art pixel (66 × 50), feet on y 23, shadow on y 24.
-// Row sprites are a 16 × 16 grid, one pixel = 1 (drawn at 24 px, 1.5×). Per-lane fur colours are CSS custom properties
-// (`looks`: one set covers all four animals, so a lane keeps its look across roles); `--fk` is the repo colour, worn as
-// a drover's neckerchief.
 
-// One character → a fill (and an opacity). `.` and space are transparent.
 export const INK = {
   k: '#241a14', q: ['#241a14', 0.18], Q: '#ffffff', x: ['#ffffff', 0.7], T: 'var(--fk,#58a6ff)',
-  // kangaroo (and joey): fur, its shade, the pale belly
   R: 'var(--ro,#b8643a)', r: 'var(--rs,#8c4527)', c: 'var(--rb,#ecd2aa)',
-  // wombat: fur, shade, the broad nose
   W: 'var(--wo,#7d6a58)', w: 'var(--ws,#5b4b3e)', n: '#2e2420',
-  // koala: fur, shade, ear fluff and chest, the big nose
   G: 'var(--ko,#9ea3a8)', g: 'var(--ks,#71777d)', E: '#efece6', N: '#2a2522',
-  // emu: shaggy feathers, their shade, the blue neck skin, legs
   M: 'var(--em,#5c4a38)', m: 'var(--es,#3f3226)', B: '#7b9cc0', Y: '#8f7d5a',
-  // kookaburra: brown back, its shade, cream head, the blue wing patch, beak (dark top, pale bottom), rufous tail
   U: '#7a5232', u: '#553820', F: '#efe6d2', V: '#5f93c4', X: '#3a3632', Z: '#cdbd9c', J: '#b8602e',
-  // cockatoo: the sulphur crest; its white is Q with an f edge; grey beak and feet
   H: '#f2d23a', h: '#d6b126', f: '#b9b09e', i: '#5f6670',
-  // ghost gum: trunk, trunk shade, gum-leaf sage, its shade
   P: '#e6dfcf', p: '#b6ab94', L: '#7d9a66', l: '#5b7a4c',
-  // red earth, its shade, dust; the hollow log: wood, shade, the dark inside, highlight; the emu egg
   D: '#b5562e', d: '#8a3d1f', e: '#dc9a66', O: '#8b6a48', o: '#62482f', A: '#2f2117', a: '#ad8a62', K: '#2f6a5c', j: '#5f9a88',
 };
 
-// ---- map helpers ----
 const flipH = m => m.map(r => [...r].reverse().join(''));
 const recolor = (m, tr) => m.map(r => [...r].map(c => tr[c] || c).join(''));
-// A pixel line (Bresenham) as layers of one-pixel maps.
 function line(x0, y0, x1, y1, ch) {
   const L = [], dx = Math.abs(x1 - x0), dy = -Math.abs(y1 - y0), sx = x0 < x1 ? 1 : -1, sy = y0 < y1 ? 1 : -1;
   let err = dx + dy;
@@ -47,8 +28,6 @@ function line(x0, y0, x1, y1, ch) {
 const f = (l, k) => l.map(a => [a[0], a[1], a[2], k]);
 const at = (l, dx, dy) => l.map(a => [a[0], a[1] + dx, a[2] + dy, a[3]]);
 
-// ---- the animals (lane scale) ----
-// impl: a kangaroo bounding. Frame 1 crouched on its big feet, frame 2 in the air, legs out behind.
 const ROO_CROUCH = [
   '................r..r.....',
   '................Rr.Rr....',
@@ -90,7 +69,6 @@ const ROO_AIR = [
   '..rrrrrr....................',
   'rrrrk.......................',
 ];
-// fix: a wombat digging into a mound, dirt flying out behind on two frames.
 const WOMBAT = [
   '.....wwwwwwwww.........',
   '...wwWWWWWWWWWWww......',
@@ -105,14 +83,12 @@ const WOMBAT = [
 const WLEGS1 = ['..wwW....wwW....wwW.wW.', '..ww.....ww.....w...ww.'];
 const WLEGS2 = ['..wwW...wwW......wwWwW.', '.ww......w.......ww.ww.'];
 const MOUND = ['....eDDD..', '..eDDDDDD.', '.eDDAADDDD', 'eDDAAAADDd', 'DDAAAAADDd', 'DDDAAADDdd', 'dDDDDDDddd'];
-// rev: a koala on a gum branch, peering down over its end. Its head dips a pixel on frame 2.
 const GUM = (x, top, bot) => [[Array(bot - top).fill('PPPp'), x, top], [['..lLLl', 'lLLLLLLl', 'LLlLLLLLl', '.lLLLlLL'], x - 3, top - 1]];
 const KBODY = ['....gGGGGGg..', '..gGGGGGGGGGg', '.gGGGGGGGGGGG', 'gGGGGGGGGGGGG', 'gGGGGGGGGGGGg', 'gGGGGGGGGGGg.', '.gggGGGGGgg..'];
 const KHEAD = ['EEE.....EEE', 'EGGE...EGGE', 'EGGGGGGGGGE', '.GGGGGGGGG.', '.GGGGGGGGG.', '.GkGNNNGkG.', '..GGNNNGG..', '...GNNNG...', '....GGG....'];
 const KHEAD_SHUT = ['EEE.....EEE', 'EGGE...EGGE', 'EGGGGGGGGGE', '.GGGGGGGGG.', '.GkkGGGkkG.', '.GGGNNNGGG.', '..GGNNNGG..', '...GNNNG...', '....GGG....'];
 const KHEAD_BIG = ['EEE.......EEE', 'EGGE.....EGGE', 'EGGGGGGGGGGGE', '.GGGGGGGGGGG.', '.GGGGGGGGGGG.', '.GGkGGGGGkGG.', '.GGGGNNNGGGG.', '..GGGNNNGGG..', '...GTNNNTG...', '....TTTTT....'];
 const KSIT = ['..gGGGGGGg.', '.gGGEEEGGGg', 'gGGGEEEGGGG', 'gGGGGGGGGGg', '.gGGGGGGGg.'];
-// update: an emu running, legs scissoring on the two frames.
 const EMU = [
   '....mMMMMMMm.....',
   '..mMMMMMMMMMMm...',
@@ -124,7 +100,6 @@ const EMU = [
   '....mmMMMMmm.....',
 ];
 const EMU_NECK = ['....kMM.', '...MMMMX', '...MkMM.', '...BBB..', '..BBM...', '..BTB...', '.BBM....', '.BTB....', 'MMB.....'];
-// done: a kookaburra laughing on a fence post, its beak open on frame 2.
 const KOOK = [
   '....FFFFFF.......',
   '...FFuuuuFF......',
@@ -145,7 +120,6 @@ const KOOK_OPEN = ['..........XX.....', '....FFFFFFXXX....', '...FFuuuuFXX.....'
 const POST = ['oOOOOo', 'aOOOOo', '.OOOO.', '.OOOo.', '.OOOo.', '.OOOo.', '.OOOo.', '.OOOo.', '.OOOo.', '.OOOo.'];
 const HA = ['b.b.bb', 'bbb.bb', 'b.bb.b'];
 
-// The 7 actions (the contract's `actions`): f1/f2 are the loop's two frames.
 const RSHADOW = ['..qqqqqqqqqqqqqqqqqqqq..'];
 export const ACTIONS = {
   bound: () => [[RSHADOW, 3, 24], [ROO_CROUCH, 4, 3, 'f1'], [['qqqqqqqqqqqq'], 9, 24, 'f2'], [ROO_AIR, 3, 1, 'f2'],
@@ -170,17 +144,14 @@ export const ACTIONS = {
     [['ww', 'Ww', 'ww'], 7, 20, 'f1'], [['ww', 'wW', 'ww'], 24, 21, 'f1'], [['ww', 'Ww', 'ww'], 7, 21, 'f2'], [['ww', 'wW', 'ww'], 24, 20, 'f2'], [['w'], 16, 15],
     [['e.e', '.e.'], 2, 12, 'f1'], [['.e.', 'e.e'], 28, 11, 'f2']],
 };
-// The contract's `actions`, by role and state: the sprite id is `a-<action>`.
 export const ACT_OF = { impl: 'bound', fix: 'dig', rev: 'peer', update: 'run', idle: 'sleep', done: 'laugh', blocked: 'stuck' };
 export const ACT_WORD = { bound: 'bound', dig: 'dig', peer: 'peer', run: 'run', sleep: 'asleep', laugh: 'laugh', stuck: 'stuck' };
 
-// ---- the moments (#241 `moments`) and the rail ----
 const MAGPIE = ['kk..........', '.kkk.....kQ.', '..kkkQQ.kkkki', '...QQkkkkkk.', '....kkkQkk..', '......kk....'];
 const MAGPIE_DOWN = ['..........kQ.', 'kk.....kkkkki', '.kkkQQkkkkk..', '..QQkkkkQ....', '...kkkk......'];
 const COCKY = ['..H.H.....', '..HHH.H...', '...HHHH...', '..fQQQQf..', '.fQQQkQQf.', '.fQQQQQii.', '.fQQQQQi..', 'fQQQQQQf..', 'fQQfQQQf..', 'fQQQQQf...', '.fQQQQf...', '..fQf.....', '..i.i.....'];
 const COCKY_OPEN = ['.H..H.H...', '..H.HH.H..', '..HHHHH...', '..fQQQQf..', '.fQQQkQQii', '.fQQQQQf..', '.fQQQQQii.'];
 const SCREECH = ['..b', '.b.', '...', 'bb.', '...', '.b.', '..b'];
-// The hollow log: a section with a knot hole, so the rail's items in a row read as one log (`hole` draws what's in it).
 function logPart(y0 = 10) {
   return [[['aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa', ...Array(12).fill('OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO'), 'ooooooooooooooooooooooooooooooooo', 'qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq'], 0, y0],
     [['oo....oo...oooo....ooo....oo..oo'], 0, y0 + 3], [['....ooo....o.....ooo....oooo....'], 0, y0 + 9],
@@ -194,19 +165,15 @@ export const RAIL = {
   cocky: () => [...logPart(), [JOEY, 13, 13], [COCKY, 19, 0, 'f1'], [COCKY.slice(7), 19, 7, 'f2'], [COCKY_OPEN, 19, 0, 'f2'], [SCREECH, 30, 1, 'f2']],
 };
 export const MOMENTS = {
-  // merged: the kangaroo clears the station fence in one bound; a kookaburra laughs on the post (hop)
   clear: () => [[['.....qqqqqqqqqqqqqqq......'], 4, 24], [['oo', 'oo', 'oO', 'oO', 'oO', 'oO', 'oO'], 3, 17], [['oo', 'oo', 'oO', 'oO', 'oO', 'oO', 'oO'], 28, 17],
     [['iiiiiiiiiiiiiiiiiiiiiiiiiiii'], 3, 18], [['iiiiiiiiiiiiiiiiiiiiiiiiiiii'], 3, 21], [ROO_AIR, 5, 0],
     [['.FFF..', 'FFkuXX', 'FFFFZZ', 'UUFF..', 'UVUF..', 'JUU...', 'J.Y...'], 0, 10, 'f1'], [['....X.', '.FFFX.', 'FFkuF.', 'FFFFZ.', 'UUFF.Z', 'UVUF..', 'JUU...', 'J.Y...'], 0, 9, 'f2']],
-  // review FAIL: a magpie swoops the kangaroo, which ducks (shake)
   swoop: () => [[RSHADOW, 3, 24], [ROO_CROUCH.map((r, i) => i < 3 ? '.'.repeat(r.length) : r), 4, 5], [MAGPIE, 9, 0, 'f1'], [MAGPIE_DOWN, 13, 2, 'f2'],
     [['b.b', '.b.', 'b.b'], 29, 2, 'f2']],
-  // needs you: a cockatoo screeches on the hollow log (pulse)
   screech: RAIL.cocky,
 };
 export const SAYS = { clear: 'over the fence!', swoop: 'swooped!', screech: 'screech!' };
 
-// ---- #241 `row_sprites` (16 × 16) ----
 const RR = [
   '...........r.r..',
   '...........RrRr.',
@@ -258,7 +225,6 @@ export const ROWS = {
   fail: [[RR_CROUCH.slice(3), 0, 7], [['kk.......', '.kkk...kQ', '..kQQkkkki', '...kkkQ..'], 5, 0, 'f1'], [['kk........', '.kkkQQkkkki', '..QQkkk...'], 6, 2, 'f2']],
 };
 
-// ---- rasterising: layers → <rect> runs, one <g> per frame class ----
 function rects(map, x0, y0, u) {
   let s = '';
   map.forEach((row, j) => {
@@ -278,7 +244,6 @@ function rects(map, x0, y0, u) {
 export function draw(layers, u = 4) {
   return layers.map(([map, x, y, cls]) => cls ? `<g class="${cls}">${rects(map, x, y, u)}</g>` : rects(map, x, y, u)).join('');
 }
-// Symbols for a page: a-<action>, m-<moment>, q-<rail item> (132 × 100), r-<row> (16 × 16).
 export function symbols() {
   const sym = (id, vb, body) => `<symbol id="${id}" viewBox="${vb}" shape-rendering="crispEdges">${body}</symbol>`;
   let s = '';
@@ -291,8 +256,6 @@ export function symbols() {
   return s;
 }
 
-// ---- the per-lane looks: one set for all four animals, 8 of them like the farm's coats (the same stable pick) ----
-// A look is a kangaroo coat (red, grey, sandy), a wombat coat, a koala coat and an emu coat.
 const ROO = { red: ['#b8643a', '#8c4527', '#ecd2aa'], grey: ['#9b8e82', '#76695e', '#e3dacb'], sandy: ['#c9935a', '#a0703f', '#f0dcb8'], dusk: ['#a3573f', '#7d3e2c', '#e8c7a6'] };
 const WOM = { brown: ['#7d6a58', '#5b4b3e'], grey: ['#80786f', '#5f5852'], sandy: ['#9b8166', '#78624c'], dark: ['#5e5047', '#433832'] };
 const KOA = { grey: ['#9ea3a8', '#71777d'], silver: ['#b3b6b6', '#878b8c'], brown: ['#9a8f86', '#71675f'] };
@@ -307,11 +270,9 @@ export const LOOKS = [
 export const FLEET = { l: '#58a6ff', p: '#bc8cff', c: '#39c5cf', g: '#3fb950', a: '#d29922' };
 export const style = (look, fk = 'l') => Object.entries({ ...LOOKS[look].vars, '--fk': FLEET[fk] || fk }).map(([k, v]) => `${k}:${v}`).join(';');
 
-// ---- the Fire Danger Rating sign: four bands, Moderate · High · Extreme · Catastrophic (the AFDRS colours) ----
 export const LEVELS = ['moderate', 'high', 'catastrophic'];
 const BANDS = ['#3e9a4a', '#f2c31a', '#e8731e', '#c41f1e'];
 const NEEDLE = { moderate: 157.5, high: 112.5, catastrophic: 22.5 };
-// The dial as grid cells: a half ring centred on (cx, cy), radius r0..r1, each cell coloured by its angle.
 function dial(cx, cy, r0, r1, u, x0 = 0, y0 = 0) {
   let s = '';
   for (let y = Math.floor(cy - r1); y < cy; y++) for (let x = Math.floor(cx - r1); x < cx + r1; x++) {
@@ -331,17 +292,13 @@ function needle(cx, cy, len, deg, u, x0 = 0, y0 = 0, w = 1) {
 }
 const LABEL = { moderate: 'MODERATE', high: 'HIGH', catastrophic: 'CATASTROPHIC' };
 const WORDINK = { moderate: '#2f7a3a', high: '#8a6a00', catastrophic: '#c41f1e' };
-// The roadside sign, small (design revision 1): about a kangaroo's height, at the edge of the clearing. Drawn on the
-// 2-unit pixel grid: a 32 × 22 board on two posts (64 × 60 units in all), its top-left at (X, Y) in scene units. The
-// header reads FIRE DANGER RATING, the half dial carries the four AFDRS bands, the needle and its word follow the level
-// (`.s-<level>`, a 5° wobble on f2).
-function sign(X, Y) {
+function sign(X, Y, only) {
   const u = 2, x0 = X / u, y0 = Y / u, r = (a, b, w, h, fill) => `<rect x="${X + a * u}" y="${Y + b * u}" width="${w * u}" height="${h * u}" fill="${fill}"/>`;
   let s = r(4, 22, 2, 8, '#6b6f73') + r(4, 22, 1, 8, '#8d9196') + r(26, 22, 2, 8, '#6b6f73') + r(26, 22, 1, 8, '#8d9196') + r(3, 30, 4, 1, '#000') .replace('/>', ' opacity=".2"/>') + r(25, 30, 4, 1, '#000').replace('/>', ' opacity=".2"/>');
   s += r(0, 0, 32, 22, '#1d4a2c') + r(1, 1, 30, 20, '#f4efe2') + r(1, 1, 30, 5, '#1d4a2c') + r(31, 1, 1, 21, '#14361f') + r(1, 21, 31, 1, '#14361f');
   s += `<text x="${X + 16 * u}" y="${Y + 4.6 * u}" font-size="5.2" font-weight="800" font-family="Helvetica,Arial,sans-serif" text-anchor="middle" textLength="54" lengthAdjust="spacingAndGlyphs" fill="#f4efe2">FIRE DANGER RATING</text>`;
   s += dial(16, 16.5, 4, 9, u, x0, y0) + r(15, 15, 2, 1.5, '#1b1b1b');
-  for (const l of LEVELS) {
+  for (const l of only ? [only] : LEVELS) {
     s += `<g class="s-${l}"><g class="f1">${needle(16, 16, 8, NEEDLE[l], u, x0, y0)}</g><g class="f2">${needle(16, 16, 8, NEEDLE[l] - 5, u, x0, y0)}</g>` +
       `<text x="${X + 16 * u}" y="${Y + 20.4 * u}" font-size="5.4" font-weight="800" font-family="Helvetica,Arial,sans-serif" text-anchor="middle" fill="${WORDINK[l]}"${l === 'catastrophic' ? ' textLength="44" lengthAdjust="spacingAndGlyphs"' : ''}>${LABEL[l]}</text></g>`;
   }
@@ -349,10 +306,6 @@ function sign(X, Y) {
 }
 export const SIGN_AT = { x: 6, y: 90 };
 
-// ---- the clearing (scene.svg): one repo's clearing of ghost gums on red earth along a dirt track, 392 × 188, one pixel
-// = 4. A billabong at the front, the station gate over the track in the repo colour (`--fk`), the roadside sign on the
-// right. `.sky-day` / `.sky-night` follow the scheme's light/dark; `.s-<level>` and `.s-up` (high and catastrophic) the
-// load: heat shimmer over the track and cicadas rising from the gums. ----
 const STARS = [[6, 3], [14, 8], [22, 2], [31, 6], [38, 11], [47, 4], [52, 9], [86, 3], [93, 9], [80, 12], [44, 14], [27, 12], [9, 13], [60, 2]];
 const CROSS = [[70, 3, 3], [71, 15, 3], [65, 9, 3], [75.5, 8, 2], [73.5, 12, 1]];
 function tree(x, y, h, k, u) {
@@ -370,7 +323,7 @@ function tree(x, y, h, k, u) {
   for (const [a, b, w, hh] of can) for (let i = 1; i < w * 2 - 1; i += 2) if (hash(x + i, b) % 3) s += r(a + i / 2, b + hh, 0.5, 0.5 + (hash(i, x) % 2) / 2, '#5b7a4c');
   return s;
 }
-export function clearing(u = 4) {
+export function clearing(u = 4, bare = false) {
   const W = 98, H = 47, r = (x, y, w, h, fill, extra = '') => `<rect x="${x * u}" y="${y * u}" width="${w * u}" height="${h * u}" fill="${fill}"${extra}/>`;
   const grad = (id, a, b) => `<linearGradient id="${id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${a}"/><stop offset="1" stop-color="${b}"/></linearGradient>`;
   let s = `<defs>${grad('bsd', '#b9d8e3', '#f1e2c0')}${grad('bsn', '#0e1035', '#2c285a')}</defs>`;
@@ -379,47 +332,46 @@ export function clearing(u = 4) {
   for (const [x, y] of STARS) s += r(x, y, 0.5, 0.5, '#e8e6f5');
   for (const [x, y, k] of CROSS) s += k > 1 ? r(x, y - (k - 1) / 2, 0.75, k - 0.5, '#ffffff') + r(x - (k - 1) / 2 + 0.125, y, k - 0.5, 0.75, '#ffffff') : r(x, y, 0.75, 0.75, '#ffffff');
   s += r(56, 12, 1, 1, '#fff6d8') + r(60, 10.5, 1, 1, '#fff6d8') + '</g>';
-  // the far range: a flat-topped mesa and low hills, then the red earth
   s += `<g class="sky-day">${r(52, 19, 26, 8, '#c98a62')}${r(55, 17, 19, 2, '#c98a62')}${r(57, 16, 14, 1, '#d29a72')}${r(0, 23, 30, 4, '#b98a6a')}${r(78, 22, 20, 5, '#b98a6a')}</g>`;
   s += `<g class="sky-night">${r(52, 19, 26, 8, '#3a2f55')}${r(55, 17, 19, 2, '#3a2f55')}${r(57, 16, 14, 1, '#463a64')}${r(0, 23, 30, 4, '#2e2848')}${r(78, 22, 20, 5, '#2e2848')}</g>`;
   s += r(0, 26, W, H - 26, '#b5562e') + r(0, 26, W, 2, '#c4693c');
   for (let i = 0; i < 40; i++) s += r((i * 37) % W, 29 + ((i * 11) % 17), 1, 0.5, i % 2 ? '#a24b27' : '#c9703f');
   for (let i = 0; i < 420; i++) { const hh = hash(i, 3), x = (hh % 196) / 2, y = 27 + (hash(i, 9) % 40) / 2; s += r(x, y, 0.5, 0.5, ['#a24b27', '#c9703f', '#8a3d1f', '#d4814f'][i % 4]); }
   for (let i = 0; i < 26; i++) { const x = (hash(i, 21) % 190) / 2, y = 30 + (hash(i, 33) % 32) / 2; s += r(x, y, 1, 0.5, '#d8b49a') + r(x, y + 0.5, 1, 0.5, '#7a3418'); }
-  // the dirt track: from the front to the horizon, pale dust with two ruts
   for (let y = 26; y < H; y++) { const t = (y - 26) / (H - 26), c = 46 + t * 6, hw = 1.5 + t * 13; s += r(c - hw, y, hw * 2, 1, '#d9a070') + r(c - hw * 0.45, y, 0.75, 1, '#c48558') + r(c + hw * 0.45 - 0.75, y, 0.75, 1, '#c48558'); }
-  // spinifex tufts
   for (const [x, y] of [[4, 30], [20, 28], [33, 33], [64, 30], [70, 41], [90, 30], [84, 44], [12, 35]]) s += r(x, y, 3, 1, '#b8a84a') + r(x + 0.5, y - 1, 0.5, 1, '#c9bb5a') + r(x + 2, y - 1, 0.5, 1, '#c9bb5a') + r(x + 1, y - 1.5, 0.5, 1.5, '#d6c86a');
-  // ghost gums
   s += tree(24, 21, 12, 1, u) + tree(40, 18, 10, 0, u) + tree(93, 20, 9, 0, u) + tree(80, 19, 7, 0, u);
-  // the station gate over the track, its crossbar and name board in the repo colour
   s += r(38, 17, 1.25, 12, '#62482f') + r(57, 17, 1.25, 12, '#62482f') + r(37.5, 17, 21, 1, '#8b6a48') + r(42, 15, 12, 3, 'var(--fk)') + r(42, 17.5, 12, 0.5, '#241a14', ' opacity=".3"');
   s += r(43, 16, 10, 0.75, '#ffffff', ' opacity=".55"');
-  // the billabong at the front: still water, reeds, a ripple
   s += r(10, 41, 26, 6, '#5d8ea3') + r(8, 42, 30, 5, '#5d8ea3') + r(12, 40, 20, 1, '#5d8ea3') + r(14, 43, 9, 0.5, '#9cc4cf') + r(24, 45, 7, 0.5, '#9cc4cf') + r(10, 41, 26, 0.5, '#4a7689');
   for (const x of [9, 10.5, 35, 36.5]) s += r(x, 38.5, 0.5, 3, '#6d8a4a') + r(x - 0.5, 37.5, 1.5, 1.5, '#4f3a2a');
-  // the hollow log lies by the track (the rail's log, in the scene)
   s += r(61, 36, 12, 3, '#8b6a48') + r(61, 36, 12, 0.5, '#ad8a62') + r(61, 39, 12, 0.5, '#62482f') + r(60, 36, 2, 3.5, '#62482f') + r(60.5, 36.5, 1, 2.5, '#2f2117');
   for (const x of [63, 65.5, 68, 70.5]) s += r(x, 37 + (x % 2), 1.5, 0.5, '#62482f');
-  // the sign
-  s += `<g class="fdr">${sign(SIGN_AT.x, SIGN_AT.y)}</g>`;
-  // the night over the ground, and the load: heat shimmer (high, catastrophic) and cicadas rising
+  if (!bare) s += `<g class="fdr">${sign(SIGN_AT.x, SIGN_AT.y)}</g>`;
   s += `<g class="sky-night">${r(0, 26, W, H - 26, '#0c0f33', ' opacity=".5"')}${r(11, 42, 1, 0.5, '#e8e6f5')}${r(22, 43, 1, 0.5, '#e8e6f5')}</g>`;
-  const shimmer = k => { let t = ''; for (let i = 0; i < 9; i++) { const y = 25 + (i % 3) * 1.5, x = (i * 11 + k * 3) % 90; t += r(x, y, 6, 0.5, '#fff4d8', ' opacity=".45"') + r(x + 6, y - 0.5, 4, 0.5, '#fff4d8', ' opacity=".35"'); } return t; };
-  s += `<g class="s-up"><g class="f1">${shimmer(0)}</g><g class="f2">${shimmer(1)}</g></g>`;
-  const cic = (n, k) => { let t = ''; for (let i = 0; i < n; i++) { const x = 4 + ((i * 13 + k * 5) % 40), y = 3 + ((i * 7 + k * 3) % 13); t += r(x, y, 1, 0.75, '#2e3a24') + r(x - 0.5, y - 0.25, 0.5, 0.5, '#e6efe0', ' opacity=".7"') + r(x + 1, y - 0.25, 0.5, 0.5, '#e6efe0', ' opacity=".7"'); } return t; };
-  s += `<g class="s-high"><g class="f1">${cic(4, 0)}</g><g class="f2">${cic(4, 1)}</g></g><g class="s-catastrophic"><g class="f1">${cic(11, 0)}</g><g class="f2">${cic(11, 1)}</g>${r(0, 0, W, 27, '#f0a050', ' opacity=".16"')}</g>`;
+  if (!bare) s += load(r, W);
   return `<svg viewBox="0 0 ${W * u} ${H * u}" preserveAspectRatio="xMidYMax slice" shape-rendering="crispEdges" aria-hidden="true">${s}</svg>`;
 }
+function load(r, W, only) {
+  const shimmer = k => { let t = ''; for (let i = 0; i < 9; i++) { const y = 25 + (i % 3) * 1.5, x = (i * 11 + k * 3) % 90; t += r(x, y, 6, 0.5, '#fff4d8', ' opacity=".45"') + r(x + 6, y - 0.5, 4, 0.5, '#fff4d8', ' opacity=".35"'); } return t; };
+  const cic = (n, k) => { let t = ''; for (let i = 0; i < n; i++) { const x = 4 + ((i * 13 + k * 5) % 40), y = 3 + ((i * 7 + k * 3) % 13); t += r(x, y, 1, 0.75, '#2e3a24') + r(x - 0.5, y - 0.25, 0.5, 0.5, '#e6efe0', ' opacity=".7"') + r(x + 1, y - 0.25, 0.5, 0.5, '#e6efe0', ' opacity=".7"'); } return t; };
+  const shows = l => !only || only === l;
+  let s = only === 'moderate' ? '' : `<g class="s-up"><g class="f1">${shimmer(0)}</g><g class="f2">${shimmer(1)}</g></g>`;
+  if (shows('high')) s += `<g class="s-high"><g class="f1">${cic(4, 0)}</g><g class="f2">${cic(4, 1)}</g></g>`;
+  if (shows('catastrophic')) s += `<g class="s-catastrophic"><g class="f1">${cic(11, 0)}</g><g class="f2">${cic(11, 1)}</g>${r(0, 0, W, 27, '#f0a050', ' opacity=".16"')}</g>`;
+  return s;
+}
+export function signLayer(level, u = 4) {
+  const r = (x, y, w, h, fill, extra = '') => `<rect x="${x * u}" y="${y * u}" width="${w * u}" height="${h * u}" fill="${fill}"${extra}/>`;
+  return sign(SIGN_AT.x, SIGN_AT.y, level) + load(r, 98, level);
+}
 
-// The sign in miniature for the Host card header (#370 `minis`, 48 × 16): the dial and its needle, no words.
 export function mini(level, frame = 0) {
   let s = '<rect width="48" height="16" rx="1" fill="#1d4a2c"/><rect x="1" y="1" width="46" height="14" fill="#f4efe2"/>';
   s += dial(24, 15, 5, 13.4, 1) + needle(24, 15, 12, NEEDLE[level] - frame * 5, 1, 0, 0) + '<rect x="22" y="13" width="4" height="2" fill="#1b1b1b"/>';
   return `<svg class="hm" viewBox="0 0 48 16" shape-rendering="crispEdges" aria-hidden="true">${s}</svg>`;
 }
 
-// ---- #241 `icons`: a yellow roo-crossing sign (black kangaroo on a yellow diamond) on a post, sky over red earth ----
 const ROO_SIGN = [
   '......................k..k....',
   '......................kk.kk...',
@@ -463,14 +415,11 @@ export function icon(size = 512) {
     `<rect width="512" height="512" fill="url(#isky)"/><rect y="432" width="512" height="80" fill="#b5562e"/><rect y="432" width="512" height="16" fill="#c9703f"/>` +
     `<rect x="240" y="472" width="32" height="40" fill="#6b6f73"/><rect x="240" y="472" width="10" height="40" fill="#8d9196"/>${px(d, 8, SIGNINK)}</svg>`;
 }
-// The favicon (16 px): the diamond alone, a simpler roo, readable at 16.
 const ROO_FAV = ['......k.k', '......kkk', '....kkkk.', '..kkkkkk.', 'kkkkkkk..', 'k..kkk...', '....kkkk.'];
 export function favicon(size = 32) {
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 16 16" shape-rendering="crispEdges"><rect width="16" height="13" fill="#9fcde0"/><rect y="13" width="16" height="3" fill="#b5562e"/>${px(diamond(16, 8, 8, 8, ROO_FAV, 3, 5), 1, SIGNINK)}</svg>`;
 }
 
-// ---- ascii (#335): the Lanes cells (≤ 3 lines of 8, the farm's), the row figures (3 characters), the Host load (≤ 5),
-// the loading frames. The roo, the wombat, the koala, the emu, the kookaburra, by role and state. ----
 export const ASCII = {
   impl: '   //_\n~__( o>\n //  \\\\', fix: "'. ,\n(___)o^\n '' ''", rev: '=====||\n (oYo)||\n      ||',
   update: '    _o>\n (###)/\n  / >', idle: ' \\ z /\n (-Y-)\n   \\|/', done: 'ha! ha!\n  (o<=\n  |##|', blocked: "  _..._\n / () \\\n/_/''\\_\\",
@@ -479,11 +428,6 @@ export const ASCII_ROWS = { impl: '~R^', fix: '.W:', rev: '=K|', update: 'E>>', 
 export const ASCII_LOAD = { calm: '(\\  )', busy: '( | )', held: '(  /)' };
 export const ASCII_LOADING = '~R^\n_R_';
 
-// ---- the fine pass (design revision 1): 2 screen px per art pixel, double the detail ----
-// The lane-scale maps above are the compositions at 33 × 25. `fine` composes each frame, doubles it with scale2x (EPX:
-// crisp pixels, rounder curves and diagonals), then draws the detail the 66 × 50 grid has room for: a dark outline,
-// fur and feather texture, a sunlit rim on top and shade underneath, a catch-light in each eye, bark streaks, leaf
-// dither and red-earth speckle. Every result is still whole pixels on a 2-unit grid: no smoothing.
 Object.assign(INK, { b: '#ffffff', t: '#2a1b12', s: ['#ffffff', 0.3], y: ['#000000', 0.16], v: '#a3bd8a', '1': '#241a14', z: '#ffffff' });
 const FUR = new Set('RrWwGgMm');
 const BODY_EXCLUDE = new Set('.qxe ');
@@ -539,11 +483,9 @@ function detail(g) {
   }
   return [base, over];
 }
-// Layers (in the 33 × 25 lane grid) → two frames of fine pixels, drawn at u = 2 (the 132 × 100 box).
 export function fine(layers, W = 33, H = 25) {
   const framed = layers.some(l => l[3] === 'f2');
   const one = fr => { const [b, o] = detail(scale2x(eyes(compose(layers, fr, W, H)))); const s = m => m.map(r => r.join('')); return draw([[s(b), 0, 0], [s(o), 0, 0]], 2); };
   return framed ? `<g class="f1">${one('f1')}</g><g class="f2">${one('f2')}</g>` : one('f1');
 }
-// The sign alone, for the sprite sheet: its own 64 × 62 box, the level's class on the caller.
 export const signAlone = () => `<svg viewBox="0 0 64 62" shape-rendering="crispEdges" aria-hidden="true">${sign(0, 0)}</svg>`;

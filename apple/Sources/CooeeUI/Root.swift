@@ -71,6 +71,7 @@ public struct AppRoot: View {
             palette: menu.palette(device: scheme == .dark), style: menu.style(for: theme) ?? .bundled, art: art)
         look.moving = menu.settings.moves(reduceMotion: reduceMotion)
         look.night = menu.settings.night
+        look.sign = art != nil && menu.looks.themes[theme]?.sign == true
         look.sprites = menu.settings.sprites(in: theme)
         return look
     }

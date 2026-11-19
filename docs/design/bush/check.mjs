@@ -1,4 +1,3 @@
-// cooee#22 (herdsman#462): cooee's scheme gate (../look/gate.mjs) over the two bush schemes. `node check.mjs [--json]`; exit 1 on a fail.
 import { readFileSync } from 'node:fs';
 import { gate } from '../look/gate.mjs';
 
