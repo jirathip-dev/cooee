@@ -1,0 +1,30 @@
+   Compiling cooee-core v0.1.0 (/Users/jkmacmini/.local/share/drover/work/cooee/issue-613/crates/cooee-core)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 7.76s
+     Running unittests src/lib.rs (/Users/jkmacmini/.local/share/herdsman/work/.build/cooee-impl-613/debug/deps/cooee_core-4fea4ca7b76db187)
+
+running 4 tests
+test chat::log::tests::a_repeated_id_is_one_row ... ok
+test chat::apply::tests::a_conductors_answer_may_be_changed_for_its_window_only ... ok
+test chat::apply::tests::shed_answers_its_own_approval_never_a_plugins_card ... ok
+test chat::log::tests::r6_folding_a_long_log_is_within_budget ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 89 filtered out; finished in 0.01s
+
+     Running tests/disk.rs (/Users/jkmacmini/.local/share/herdsman/work/.build/cooee-impl-613/debug/deps/disk-a2a39351f74360a8)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 2 filtered out; finished in 0.00s
+
+     Running tests/group.rs (/Users/jkmacmini/.local/share/herdsman/work/.build/cooee-impl-613/debug/deps/group-34bf16eb2e5ace5a)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 3 filtered out; finished in 0.00s
+
+     Running tests/upgrade_compat.rs (/Users/jkmacmini/.local/share/herdsman/work/.build/cooee-impl-613/debug/deps/upgrade_compat-1db95c246734ddb5)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 4 filtered out; finished in 0.00s
+

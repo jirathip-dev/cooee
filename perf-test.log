@@ -1,0 +1,14 @@
+   Compiling cooee v0.1.0 (/Users/jkmacmini/.local/share/drover/work/cooee/issue-613/crates/cooee)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 2.43s
+     Running tests/perf.rs (/Users/jkmacmini/.local/share/herdsman/work/.build/cooee-impl-613/debug/deps/perf-2695d99efd60bbcc)
+
+running 6 tests
+test cooee_perf_turns_a_log_into_the_table ... ok
+test a_fast_request_under_the_default_threshold_is_debug_only ... ok
+test the_apps_timings_are_logged_and_a_p95_over_budget_fails_cooee_perf_budget ... ok
+test first_token_is_logged_once_per_prompt_and_nothing_private_is ... ok
+test requests_and_shed_calls_are_timed_by_route_and_method_and_slow_ones_warn ... ok
+test with_500_threads_of_1000_items_the_list_answers_within_300_ms_of_start ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 33.50s
+

@@ -1,0 +1,34 @@
+   Compiling cooee v0.1.0 (/Users/jkmacmini/.local/share/drover/work/cooee/issue-613/crates/cooee)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.44s
+     Running tests/reliability.rs (/Users/jkmacmini/.local/share/herdsman/work/.build/cooee-impl-613/debug/deps/reliability-e015e4e87785c0b1)
+
+running 17 tests
+test r14_a_crash_between_start_and_send_is_recovered_once ... ok
+test a_background_start_answers_before_the_agent_runs_and_sends_once ... ok
+test a_failed_background_start_says_why_and_a_retry_sends_once ... ok
+test r13_malformed_input_or_config_is_denied_with_a_reason ... ok
+test r10_an_ask_made_during_the_start_is_listed_and_answerable ... ok
+test an_old_keychain_key_is_copied_to_the_file_once ... ok
+test r16_a_repeated_id_is_one_row_however_often_it_is_refreshed ... ok
+test a_start_with_no_folder_runs_in_its_own_scratch_folder ... ok
+test r17_paths_in_text_are_never_files_served ... ok
+test r11_a_slow_start_is_adopted_once ... ok
+test a_key_made_during_the_keychain_read_wins_and_old_subscriptions_reset ... ok
+test r3_a_store_error_is_a_503_not_unpaired_and_a_401_does_not_latch ... ok
+test r21_an_answer_to_a_gone_session_says_not_delivered ... ok
+test agents_are_listed_from_the_hub_and_a_failed_refresh_keeps_the_list ... ok
+test r7_requests_run_no_subprocess ... ok
+test r1_a_hung_keychain_falls_through_to_a_new_key_and_blocks_nothing ... ok
+test r20_a_stuck_delivery_never_holds_the_next_one ... ok
+
+test result: ok. 17 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 11.86s
+
+     Running tests/workflow.rs (/Users/jkmacmini/.local/share/herdsman/work/.build/cooee-impl-613/debug/deps/workflow-af3a7172b9496607)
+
+running 3 tests
+test a_lane_opens_as_a_chat_that_streams_takes_a_reply_and_stops ... ok
+test a_lane_is_listed_with_its_labels_but_never_among_the_agents ... ok
+test a_lane_goes_once_its_tool_removes_it ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.31s
+

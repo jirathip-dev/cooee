@@ -1,0 +1,13 @@
+   Compiling cooee-core v0.1.0 (/Users/jkmacmini/.local/share/drover/work/cooee/issue-613/crates/cooee-core)
+   Compiling cooee-machines v0.1.0 (/Users/jkmacmini/.local/share/drover/work/cooee/issue-613/crates/cooee-machines)
+   Compiling cooee-terminal v0.1.0 (/Users/jkmacmini/.local/share/drover/work/cooee/issue-613/crates/cooee-terminal)
+   Compiling cooee-server v0.1.0 (/Users/jkmacmini/.local/share/drover/work/cooee/issue-613/crates/cooee-server)
+   Compiling cooee v0.1.0 (/Users/jkmacmini/.local/share/drover/work/cooee/issue-613/crates/cooee)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 4.85s
+     Running tests/chat.rs (/Users/jkmacmini/.local/share/herdsman/work/.build/cooee-impl-613/debug/deps/chat-fcdd427d86ae5735)
+
+running 3 tests
+test a_gone_agent_that_reported_its_session_resumes_it_on_send has been running for over 60 seconds
+test a_send_to_a_gone_agent_starts_a_fresh_one_in_the_chat_and_delivers has been running for over 60 seconds
+test restart_on_the_gone_line_starts_the_agent_and_leaves_ended has been running for over 60 seconds
+killed after the 60 s hang warnings (no reply event ever arrived)
