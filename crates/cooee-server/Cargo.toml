@@ -11,6 +11,7 @@ publish.workspace = true
 [dependencies]
 aes-gcm.workspace = true
 base64.workspace = true
+blocks.workspace = true
 hkdf.workspace = true
 p256.workspace = true
 qrcode = { workspace = true, features = ["svg"] }

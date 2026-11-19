@@ -30,7 +30,7 @@ internal struct ChatScreen: View {
         actions.view = { store.send(.delegate(.persona(store.persona.id))) }
         let places = store.places
         actions.places = places.map(\.label)
-        actions.counts = places.map(\.count)
+        actions.counts = store.chipCounts
         actions.new = store.persona.api.id.isEmpty || store.bar != nil ? nil : { store.send(.new) }
         actions.open = { store.send(.plugins(.open(places[$0]))) }
         actions.more = { store.send(.panel(.show(!store.panel))) }

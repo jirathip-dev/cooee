@@ -104,6 +104,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "blocks"
+version = "0.1.0"
+source = "git+https://github.com/jirathip-dev/blocks?rev=d0882093e32c6d752910c459efa04a2a6beb5c3a#d0882093e32c6d752910c459efa04a2a6beb5c3a"
+dependencies = [
+ "schemars",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
 name = "bumpalo"
 version = "3.20.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -158,6 +168,7 @@ name = "cooee"
 version = "0.1.0"
 dependencies = [
  "base64 0.22.1",
+ "blocks",
  "cooee-core",
  "cooee-machines",
  "cooee-server",
@@ -175,6 +186,7 @@ name = "cooee-core"
 version = "0.1.0"
 dependencies = [
  "base64 0.22.1",
+ "blocks",
  "hkdf 0.13.0",
  "rusqlite",
  "ruzstd",
@@ -202,6 +214,7 @@ version = "0.1.0"
 dependencies = [
  "aes-gcm",
  "base64 0.22.1",
+ "blocks",
  "cooee-core",
  "cooee-machines",
  "flate2",

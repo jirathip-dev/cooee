@@ -10,6 +10,7 @@ internal struct ActButton<Label: View>: View {
     @Environment(\.acting) private var acting
     @State private var pending: JSONValue?
     internal var action: String?
+    internal var block: String?
     internal let source: JSONValue
     internal var values: [String: JSONValue] = [:]
     @ViewBuilder internal let label: Label
@@ -26,7 +27,7 @@ internal struct ActButton<Label: View>: View {
     }
 
     private var waiting: Bool {
-        BlockAction(action: action, source: source, values: values).map(acting.contains) ?? false
+        BlockAction(action: action, source: source, values: values, block: block).map(acting.contains) ?? false
     }
 
     private func fire() {
@@ -38,7 +39,7 @@ internal struct ActButton<Label: View>: View {
             openBeside(path)
         } else if let tap = source["tap"], let path = tap.string("sheet") ?? tap.string("open") {
             open(tap.string("focus").map { "\(path)#\($0)" } ?? path)
-        } else if let action = BlockAction(action: action, source: source, values: values) {
+        } else if let action = BlockAction(action: action, source: source, values: values, block: block) {
             act(action)
         }
     }
@@ -100,21 +101,24 @@ internal struct CardBlock: View {
 
     internal var body: some View {
         if CardTrust.draws(block.string("kind"), from: context.poster) {
-            card
+            Folding(block: block) { card }
         } else {
             MissingPoster(kind: block.string("kind") ?? "")
         }
     }
 
     @ViewBuilder private var card: some View {
-        let tint = kind?.tint ?? look.palette.tone(block.string("tone")) ?? look.palette.lead
+        let palette = look.palette
+        let tint =
+            kind?.tint ?? palette.fleet(block.string("color")) ?? palette.tone(block.string("tone")) ?? palette.lead
         VStack(alignment: .leading, spacing: 10) {
             header(tint)
             if let title = block.string("title") {
                 Text(title).ui(16, .semibold, look).foregroundStyle(look.palette.foreground)
             }
-            if let subtitle = block.string("subtitle") {
-                Text(subtitle).ui(13, .regular, look).foregroundStyle(look.palette.mute).lineLimit(2)
+            if let subtitle = block["subtitle"], let text = subtitle.string ?? subtitle.string("text") {
+                Text(text).ui(13, .regular, look).foregroundStyle(palette.tone(subtitle.string("tone")) ?? palette.mute)
+                    .lineLimit(2)
             }
             if !block.list("buttons").isEmpty {
                 HStack(spacing: 8) {
@@ -176,18 +180,6 @@ internal struct MissingPoster: View {
     }
 }
 
-internal struct Pill: View {
-    @Environment(\.look) private var look
-    internal let badge: JSONValue
-
-    internal var body: some View {
-        let tint = look.palette.tone(badge.string("tone")) ?? look.palette.mute
-        Text(badge.string("text") ?? "").ui(11, .bold, look).foregroundStyle(tint)
-            .padding(.horizontal, 8).padding(.vertical, 3)
-            .background(tint.opacity(0.15), in: look.pill)
-    }
-}
-
 internal struct AnswerBlock: View {
     internal let block: JSONValue
 
@@ -216,7 +208,7 @@ internal struct ChoiceBlock: View {
         VStack(alignment: .leading, spacing: 8) {
             if let question = block.string("question") { Text(question).ui(15, .semibold, look) }
             ForEach(Array(options.enumerated()), id: \.offset) { index, option in
-                ActButton(action: block.string("action"), source: option, values: values(option)) {
+                ActButton(action: block.string("action"), block: block.id, source: option, values: values(option)) {
                     CardButton(
                         title: title(option),
                         primary: option.string("value") == block.string("recommended"),

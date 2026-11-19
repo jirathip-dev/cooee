@@ -1,6 +1,8 @@
 import ComposableArchitecture
 import CooeeCore
 
+private enum Deck { case follow }
+
 extension ChatFeature {
     @CasePathable
     public enum WorkflowAction: Sendable, Equatable {
@@ -46,7 +48,8 @@ extension ChatFeature {
         case .load:
             return load(state)
         case .loaded(let places, let installed):
-            state.places = places
+            state.places = places.filter { !$0.cards }
+            state.deck.follow(places.filter(\.cards))
             state.attachable = installed.filter { row in
                 row.places.contains { $0.kind == "header-strip" } && !places.contains { $0.plugin == row.name }
             }
@@ -61,16 +64,19 @@ extension ChatFeature {
     }
 
     private func load(_ state: State) -> Effect<Action> {
-        let (plugins, server, persona) = (pluginAPI, state.server, state.persona.api.id)
+        let (plugins, server, persona, clock) = (pluginAPI, state.server, state.persona.api.id, clock)
         guard !persona.isEmpty else { return .none }
         return .run { send in
             async let places = plugins.places(server, persona)
             async let installed = plugins.installed(server)
-            await send(.plugins(.loaded(try await places, try await installed)))
+            let found = try await places
+            await send(.plugins(.loaded(found, try await installed)))
             let screen = try await plugins.screen(server, .core, "/screens/persona/\(persona)")
             await send(.plugins(.teach(screen.list("blocks").first { $0.type == "actions" }?.list("rows") ?? [])))
+            await Self.deal(found.filter(\.cards), plugins, clock, server, send)
         } catch: { error, send in
             await send(.failed(error.localizedDescription))
         }
+        .cancellable(id: Deck.follow, cancelInFlight: true)
     }
 }

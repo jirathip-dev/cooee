@@ -1,0 +1,103 @@
+[
+  [
+    {
+      "type": "card",
+      "id": "3",
+      "kind": "ask",
+      "title": "Which first?",
+      "blocks": [
+        {
+          "type": "choice",
+          "id": "3-answer",
+          "action": "answer",
+          "options": [
+            {
+              "value": "#44",
+              "label": "#44"
+            },
+            {
+              "value": "#43",
+              "label": "#43"
+            }
+          ],
+          "recommended": "#44",
+          "other": {
+            "placeholder": "other…"
+          }
+        }
+      ]
+    },
+    {
+      "type": "card",
+      "id": "4",
+      "kind": "config",
+      "title": "config c1",
+      "blocks": [
+        {
+          "type": "text",
+          "markdown": "```\n+max_impl = 3\n```"
+        },
+        {
+          "type": "choice",
+          "id": "4-answer",
+          "action": "answer",
+          "options": [
+            {
+              "value": "apply",
+              "label": "apply"
+            },
+            {
+              "value": "discard",
+              "label": "discard"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "card",
+      "id": "5",
+      "kind": "secret",
+      "title": "for the bot",
+      "blocks": [
+        {
+          "type": "secret",
+          "id": "5-answer",
+          "name": "BOT_TOKEN",
+          "action": "answer",
+          "values": {
+            "choice": "save"
+          }
+        }
+      ]
+    },
+    {
+      "type": "card",
+      "id": "6",
+      "kind": "run",
+      "title": "re-tag",
+      "blocks": [
+        {
+          "type": "run",
+          "id": "6-answer",
+          "action": "answer",
+          "command": "git tag -f v1",
+          "sha": "9f86d081"
+        }
+      ]
+    }
+  ],
+  {
+    "type": "card",
+    "id": "6",
+    "kind": "run",
+    "title": "re-tag",
+    "blocks": [
+      {
+        "type": "text",
+        "style": "footnote",
+        "markdown": "ran: exit 0"
+      }
+    ]
+  }
+]

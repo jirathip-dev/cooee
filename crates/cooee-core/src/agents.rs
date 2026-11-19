@@ -240,9 +240,12 @@ impl Home {
     }
 }
 
-/// One of its attached plugins' chips on an agent's header strip (#125's `header-strip`, q984).
+/// One of its attached plugins' places in an agent's chats: a header-strip chip (q984) or its chat cards (#377).
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub struct Place {
+    /// Where it goes.
+    #[serde(rename = "type")]
+    pub kind: plugins::PlaceKind,
     /// Its plugin.
     pub plugin: String,
     /// Its id among the plugin's places.
@@ -526,7 +529,7 @@ pub fn remove(config: &Path, id: &str) -> io::Result<()> {
     fs::remove_dir_all(home(config, id)?.path())
 }
 
-/// Agent `id`'s header strip: the `header-strip` places of the plugins attached to it, in its order and theirs.
+/// Agent `id`'s chat places: the `header-strip` and `chat-cards` places of its plugins, in its order and theirs.
 ///
 /// # Errors
 /// When there is no such agent.
@@ -544,8 +547,9 @@ pub fn places(config: Option<&Path>, data: &Path, id: &str) -> io::Result<Vec<Pl
         out.extend(
             places
                 .into_iter()
-                .filter(|p| p.kind == plugins::PlaceKind::HeaderStrip)
+                .filter(|p| p.kind != plugins::PlaceKind::MenuRow)
                 .map(|p| Place {
+                    kind: p.kind,
                     plugin: l.name.clone(),
                     id: p.id,
                     label: p.label,

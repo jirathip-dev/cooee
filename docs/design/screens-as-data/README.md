@@ -120,7 +120,8 @@ has a tap), `swipe` actions, `tap`, `indent` (0–2, for a chain), and `style` (
 ```
 
 **card**: a titled group: a `tone` edge, a `badge`, `meta` (right), a `subtitle`, header `buttons`, and its blocks. A
-whole-card `tap` is allowed.
+whole-card `tap` is allowed. A `color` (`l`, `p`, `c`, `g`, `a`: a fleet's colour) edges it in place of `tone`; a `fold`
+(`{"line", "main"}`) draws it as that one line and its `main` button until tapped open.
 ```json
 { "type": "card", "id": "fleet", "tone": "accent", "title": "herdsman", "badge": { "text": "driving", "tone": "ok" },
   "subtitle": "7 lanes on mini",

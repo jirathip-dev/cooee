@@ -1,0 +1,20 @@
+{
+  "type": "screen",
+  "id": "reset-layout",
+  "title": "Reset layout",
+  "blocks": [
+    {
+      "type": "text",
+      "id": "why",
+      "text": "Puts the default layout back. The old layout.json is kept as layout.json.bak."
+    },
+    {
+      "type": "button",
+      "id": "reset",
+      "label": "Reset layout",
+      "style": "destructive",
+      "action": "/layout/reset"
+    }
+  ],
+  "source": "core"
+}
