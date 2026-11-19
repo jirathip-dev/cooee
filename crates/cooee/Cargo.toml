@@ -9,6 +9,7 @@ repository.workspace = true
 publish.workspace = true
 
 [dependencies]
+blocks = { workspace = true, features = ["schema"] }
 cooee-core.workspace = true
 cooee-machines.workspace = true
 cooee-terminal.workspace = true

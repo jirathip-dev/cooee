@@ -1,0 +1,13 @@
+{
+  "type": "screen",
+  "id": "signins",
+  "title": "Sign-ins",
+  "blocks": [
+    {
+      "type": "list",
+      "id": "signins",
+      "rows": []
+    }
+  ],
+  "source": "core"
+}
