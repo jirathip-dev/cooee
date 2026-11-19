@@ -19,6 +19,7 @@ On `staging`, each line with the PR or file that proves it:
 - **Chat-first:** a new chat needs no folder; the sidebar lists agents with their chats (#88, #63).
 - **Messages are kept:** a send the agent never got stays on its bubble, and a stopped agent refuses sends (#256).
 - **Models:** each agent's live model list; short names track the newest model (#194).
+- **Chief:** cooee's own persona, made by `cooee setup`, that sets up personas and routines at once and asks a Face ID card for MCP servers, secrets, a persona's access, machines and the config file (#664).
 - **Setup:** one command installs CI's signed release, the services, the config, Tailscale serve and prints a pairing code (#45, #584).
 - **Perf:** requests, shed calls and first token timed; `cooee perf` prints the table (#69).
 - **MCP:** a registry of MCP servers per persona through cooee's proxy; agents propose new ones for Face ID approval (#108).

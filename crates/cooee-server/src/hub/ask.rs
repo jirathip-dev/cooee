@@ -39,7 +39,9 @@ impl Hub {
             secs: 0,
             note: String::new(),
         };
-        let asker = found(&meta.profile).filter(|p| p.can_message.iter().any(|t| t == target));
+        let chief = self.chief_of(id, token).is_ok();
+        let asker =
+            found(&meta.profile).filter(|p| chief || p.can_message.iter().any(|t| t == target));
         let Some(asker) = asker else {
             self.say(id, card("", "not_allowed"))?;
             return no("NOT_ALLOWED", &format!("can_message doesn't name {target}"));

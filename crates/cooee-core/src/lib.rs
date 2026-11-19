@@ -9,6 +9,7 @@ mod blocks;
 pub mod browser;
 pub mod cdp;
 mod chat;
+pub mod chief;
 pub mod clock;
 mod config;
 pub mod connectors;
