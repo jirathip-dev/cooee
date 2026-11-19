@@ -1,0 +1,14 @@
+Decided: schemes and first-party packs come from the swag crate pinned in Cargo.toml beside blocks; packs/swag.toml, its build fetch and design-system/schemes are deleted
+Because: q2122
+Because: "design-system/schemes/ does not exist."
+Decided: cooee's Scheme and contrast gate give way to blocks::theme::Scheme and blocks::theme::gate, worded as before
+Because: crates/cooee-server/src/look.rs:14
+Decided: cooee's Style and pack checks stay; blocks' Style denies the label, icon, figures and stage fields the style packs carry
+Because: packs/terminal/style.json:3
+Rejected: blocks::theme::check_pack for pack loading — it needs all 8 words and refuses plain and the starter, which have none
+Decided: contrast.rs keeps only the editor's per-token checks and fixes; blocks' gate returns misses only, with no marks or shades
+Because: crates/cooee-server/src/editor.rs:84
+Decided: the Swift tests read apple/Tests/schemes.json, kept equal to the served schemes by a Rust test
+Because: crates/cooee-server/src/look/pack.rs:299
+Check: swag's 12 schemes are byte-identical to the deleted files, and its packs match every deleted sha256
+Owner: the themes now come from the shared swag package with the same colours; cooee's own copies are gone
