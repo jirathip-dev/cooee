@@ -525,7 +525,7 @@ fn a_gone_agent_that_reported_its_session_resumes_it_on_send() {
 
 #[test]
 fn restart_on_the_gone_line_starts_the_agent_and_leaves_ended() {
-    let s = setup("gone-restart");
+    let mut s = setup("gone-restart");
     let id = s.create("hi");
     let mut events = s.events(&id);
     events.until(|e| is_item(e, "agent"));
@@ -542,4 +542,13 @@ fn restart_on_the_gone_line_starts_the_agent_and_leaves_ended() {
     let (status, body) = s.send(&id, "echo back", "g1");
     assert_eq!(status, 200, "{body}");
     events.until(|e| is_item(e, "agent") && e.data["text"] == "back");
+    drop(events);
+    drop(std::mem::replace(
+        &mut s.cooee,
+        Cooee::start(&s.dir, &s.shed.dir),
+    ));
+    let mut events = s.events(&id);
+    let (status, body) = s.send(&id, "echo again", "g2");
+    assert_eq!(status, 200, "{body}");
+    events.until(|e| is_item(e, "agent") && e.data["text"] == "again");
 }
