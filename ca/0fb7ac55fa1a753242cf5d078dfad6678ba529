@@ -1,0 +1,15 @@
+Decided: parked is the tool's own shed state passed through with its note; cooee invents no parked state
+Because: crates/cooee-core/src/chat/summary.rs:22
+Decided: an unlisted Workflow session whose machine link is down stays as offline instead of being pruned
+Because: crates/cooee-server/src/hub/lanes.rs:11
+Decided: close is allowed on a Workflow session that ended or whose source no installed plugin claims; it is idempotent and archives the thread
+Because: "A dead or foreign Workflow session offers [close] (confirmed) that ends it and archives the thread."
+Rejected: a new LaneState case per state — every switch, sprite pose and design frame would change for three rare states
+Rejected: dropping a session once shed no longer lists it when its link is up — that is the tool's cleanup (#33) and stays
+Check: a_parked_dead_or_offline_lane_lists_its_state_and_reason and only_a_dead_or_unclaimed_lane_closes_once_and_is_archived pass; the phone checks are manual
+Owner: Workflow sessions now read parked, dead or host offline with a reason, and a dead one can be closed from its chat after a confirm.
+
+Decided: merge origin/staging; the closed chat delegate case and its relay move into staging's new AppRelay.swift
+Because: apple/Sources/CooeeFeatures/AppRelay.swift:31
+Rejected: none
+Owner: Brought the branch up to date with staging; no behaviour change.
