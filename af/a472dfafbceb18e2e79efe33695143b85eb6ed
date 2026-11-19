@@ -1,0 +1,12 @@
+Decided: cooee send pairs itself once through the local device list (pair, then claim) and keeps the token in the data folder's cli-token, renamed cooee CLI.
+Because: crates/cooee-server/src/gate.rs:100
+Decided: --wait follows the thread's event stream from the cursor taken before the send and judges only items newer than the sent one.
+Because: "`--wait` blocks until the turn ends"
+Decided: a pending approval is an approval item with neither tapped nor chosen; exit 3 at the first one.
+Because: "Exit codes: 0 done, 1 error, 2 usage, 3 waiting on an approval, 124 timeout."
+Decided: the docs go in docs/scripting.md, since docs/api.md is frozen and arch-check fails every line added there; asked as q2396.
+Because: .drover/arch.toml:3
+Rejected: unfreezing docs/api.md in .drover/arch.toml myself — a repo rule change waits on q2396.
+Rejected: a --url flag for the server — config's port and bind already name it; tests use a config with the real port.
+Check: tests/send.rs drives the real binary against cooee serve and the fake agent: one case per exit code and exact --json objects.
+Owner: Scripts can send a message to a thread, wait for the reply and read the result as JSON, with exit codes for each outcome.
