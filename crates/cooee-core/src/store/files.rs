@@ -58,6 +58,7 @@ impl Store {
                     "PRAGMA synchronous = FULL;
                      CREATE TABLE IF NOT EXISTS items (thread TEXT NOT NULL, id INTEGER NOT NULL,
                          at INTEGER NOT NULL, kind TEXT NOT NULL, body TEXT NOT NULL, PRIMARY KEY (thread, id));
+                     CREATE INDEX IF NOT EXISTS items_kind ON items (thread, kind, id);
                      CREATE VIRTUAL TABLE IF NOT EXISTS said USING fts5(text, tokenize = 'trigram');
                      CREATE TABLE IF NOT EXISTS archived (thread TEXT NOT NULL, month TEXT NOT NULL,
                          PRIMARY KEY (thread, month));",
