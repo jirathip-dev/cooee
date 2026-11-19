@@ -1,5 +1,5 @@
 //! Chief (#664): cooee's own persona, the folder `agents/chief/` with role chief. What it sets on a persona with no
-//! card ([`PersonaAsk`]), and the changes that wait on the owner's Face ID ([`Carded`]), each made with its card.
+//! card ([`PERSONA_KEYS`]), and the changes that wait on the owner's Face ID ([`Carded`]), each made with its card.
 
 use std::{
     collections::BTreeMap,

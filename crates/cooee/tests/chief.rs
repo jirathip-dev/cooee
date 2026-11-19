@@ -457,7 +457,7 @@ fn access_and_config_cards_show_the_files_diff_and_write_exactly_it_after_face_i
         json!({ "FLIGHTS_KEY": "secret:FLIGHTS_KEY" })
     );
     assert_eq!(finance["mcp"], json!([{ "server": "flights" }]));
-    let bad = json!({ "persona": "finance", "env": { "KEY": "sk-abcdefghijklmnopqrstuvwxyz0123456789" } });
+    let bad = json!({ "persona": "finance", "env": { "KEY": format!("tk-{}", "q7".repeat(16)) } });
     assert!(
         s.call(&chief, "access", &bad)
             .unwrap_err()
