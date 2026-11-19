@@ -1029,6 +1029,7 @@ impl Manager {
                         tag,
                         url,
                         item: 0,
+                        say: false,
                     });
                 }
                 cooee_core::clock::sleep(Duration::from_millis(500));

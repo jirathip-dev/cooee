@@ -88,8 +88,12 @@ impl Push {
             ApnsEnv::Sandbox => "https://api.sandbox.push.apple.com",
             ApnsEnv::Production => "https://api.push.apple.com",
         });
+        let mut aps = serde_json::json!({"alert": {"title": note.title, "body": note.body}, "thread-id": note.tag, "sound": "default"});
+        if let Some(aps) = aps.as_object_mut().filter(|_| note.say) {
+            aps.insert("category".to_owned(), "approval".into());
+        }
         let body = serde_json::json!({
-            "aps": {"alert": {"title": note.title, "body": note.body}, "thread-id": note.tag, "sound": "default"},
+            "aps": aps,
             "url": note.url,
             "item": note.item,
         });
@@ -288,7 +292,19 @@ pub(super) mod tests {
                 (&body["aps"]["thread-id"], &body["url"]),
                 (&"t1".into(), &"/t/t1".into())
             );
+            assert!(body["aps"].get("category").is_none(), "{body}");
         }
+        let ask = Note {
+            say: true,
+            ..test_note()
+        };
+        let a = Sub {
+            endpoint: tok("a"),
+            ..Sub::default()
+        };
+        let (_, _, body) = push.apns_post(&apns(&url), &k, ApnsEnv::Production, &a, &ask);
+        let body: serde_json::Value = serde_json::from_slice(&body).unwrap();
+        assert_eq!(body["aps"]["category"], "approval");
         assert_eq!(push.endpoints(&ids[0]), [tok("a"), tok("d")]);
         assert!(push.endpoints(&ids[1]).is_empty() && push.endpoints(&ids[2]).is_empty());
         assert_eq!(push.endpoints("unpaired"), Vec::<String>::new());

@@ -198,6 +198,53 @@ fn an_approval_is_sent_to_shed_once_however_often_it_is_tapped() {
 }
 
 #[test]
+fn deny_and_say_rejects_the_call_and_the_agent_gets_the_text_once_under_the_denial() {
+    let s = setup("deny-say");
+    let id = s.create("please approve an edit");
+    let mut events = s.events(&id);
+    let ask = events.until(|e| is_item(e, "approval")).pop().unwrap();
+    let choice = &ask.data["block"]["blocks"][0];
+    let last = choice["options"].as_array().unwrap().last().unwrap();
+    assert_eq!(
+        (&last["value"], &last["label"]),
+        (&json!("say"), &json!("Deny and say…"))
+    );
+    let item = ask.data["id"].as_u64().unwrap();
+    let path = format!("/threads/{id}/approve");
+    let say = json!({ "item": item, "option": "say", "value": "fake says: Use a branch instead." });
+    thread::scope(|scope| {
+        for _ in 0..3 {
+            scope.spawn(|| assert_eq!(s.cooee.post(&path, &say).0, 200));
+        }
+    });
+    events.until(|e| is_item(e, "agent") && e.data["text"] == "Use a branch instead.");
+    assert_eq!(s.cooee.post(&path, &say).0, 200);
+    let allow = json!({ "item": item, "option": "allow" });
+    assert_eq!(s.cooee.post(&path, &allow).0, 200);
+    let sent = s.shed.sent(&terminal(&id));
+    let approvals: Vec<&String> = sent.iter().filter(|t| t.contains("approve\":")).collect();
+    assert_eq!(approvals, ["\x1e{\"approve\":\"reject\"}\n"]);
+    let said = sent.iter().filter(|t| t.contains("Use a branch")).count();
+    assert_eq!(said, 1, "{sent:?}");
+
+    let items = s.items(&id);
+    let kinds: Vec<&Value> = items.iter().map(|i| &i["kind"]).collect();
+    assert_eq!(kinds, ["you", "tool", "approval", "agent", "agent"]);
+    let card = items.iter().find(|i| i["kind"] == "approval").unwrap();
+    assert_eq!(card["chosen"], "reject");
+    let lines: Vec<&Value> = card["block"]["blocks"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|b| &b["markdown"])
+        .collect();
+    assert_eq!(
+        lines,
+        ["✓ reject · browser", "fake says: Use a branch instead."]
+    );
+}
+
+#[test]
 fn cancel_ends_the_turn_and_writes_back_the_tool_call_in_progress() {
     let s = setup("cancel");
     let id = s.create("hang on");

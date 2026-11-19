@@ -43,6 +43,7 @@ public struct ChatActions {
     public var sync: Sync?
     public var asOf: Date?
     public var stopping = false
+    public var denying = false
     public var older: (() -> Void)?
 
     public init(

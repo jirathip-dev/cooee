@@ -122,6 +122,7 @@ async fn pair_request(cx: &Cx) -> Result<Response> {
         tag: "pair".to_owned(),
         url: "/".to_owned(),
         item: 0,
+        say: false,
     });
     Json(serde_json::json!({ "word": word, "claim": claim })).into_response(cx)
 }

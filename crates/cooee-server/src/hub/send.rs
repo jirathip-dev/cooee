@@ -96,7 +96,7 @@ impl Hub {
             text: text.to_owned(),
             random_id: random_id.to_owned(),
             files: names,
-            routine: None,
+            ..Queued::default()
         })
     }
 
@@ -186,6 +186,12 @@ impl Hub {
             self.store.save(&live.meta)?;
         }
         live.sent = Some(start);
+        if let Some(card) = q
+            .denied
+            .and_then(|c| live.chat.items.iter().find(|i| i.id == c))
+        {
+            return Ok(card.clone());
+        }
         let first = live.meta.random_id == q.random_id;
         let body = Body::You {
             text: q.text,
@@ -249,16 +255,27 @@ impl Hub {
         files: &[Upload],
         routine: Option<Mark>,
     ) -> Result<Vec<Queued>, HubError> {
+        self.enqueue(id, random_id, |l| {
+            Ok(Queued {
+                routine,
+                ..self.take(l, text, random_id, files)?
+            })
+        })
+    }
+
+    pub(super) fn enqueue(
+        &self,
+        id: &str,
+        random_id: &str,
+        make: impl FnOnce(&Live) -> Result<Queued, HubError>,
+    ) -> Result<Vec<Queued>, HubError> {
         let live = self.live(id)?;
         let mut l = lock(&live);
         let have = l.meta.queue.iter().any(|q| q.random_id == random_id);
         if have || Self::sent(&l, random_id).is_some() {
             return Ok(l.meta.queue.clone());
         }
-        let q = Queued {
-            routine,
-            ..self.take(&l, text, random_id, files)?
-        };
+        let q = make(&l)?;
         l.meta.queue.push(q);
         self.queued(&mut l)?;
         let next = self.drain(&mut l)?;

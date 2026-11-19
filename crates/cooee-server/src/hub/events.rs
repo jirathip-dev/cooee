@@ -69,6 +69,7 @@ impl Hub {
             tag: "shed".to_owned(),
             url: "/".to_owned(),
             item: 0,
+            say: false,
         });
         version
     }
