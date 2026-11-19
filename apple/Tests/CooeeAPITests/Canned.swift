@@ -70,7 +70,7 @@ internal final class Canned: URLProtocol, @unchecked Sendable {
 }
 
 internal struct CannedServer {
-    private let host = "\(UUID().uuidString.lowercased()).test"
+    internal let host = "\(UUID().uuidString.lowercased()).test"
 
     internal init(_ answers: [String: [Answer]]) {
         Canned.register(host, answers)
