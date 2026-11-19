@@ -21,7 +21,7 @@
       "blocks": [ { "type": "text", "markdown": "Next pass in 3 min." } ] } },
   { "name": "card.fold", "note": "a paused fleet in its own colour: one line and its main button until tapped open",
     "block": { "type": "card", "id": "fleet-cooee", "color": "p", "title": "cooee", "badge": { "text": "paused", "tone": "mute" },
-      "subtitle": { "text": "paused by owner", "tone": "warn" },
+      "subtitle": "paused by owner",
       "fold": { "line": "cooee · paused by owner · 4 open",
         "main": { "label": "Resume", "action": "pause", "values": { "fleet": "cooee", "on": false } } },
       "blocks": [ { "type": "text", "markdown": "Next pass in 3 min." } ] } },

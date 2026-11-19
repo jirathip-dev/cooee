@@ -46,7 +46,7 @@ internal struct ChatComposeTests {
     private func reopen(_ thread: String, _ restored: ((inout ChatFeature.State) -> Void)? = nil) async {
         let store = store(chat(thread))
         let task = await store.send(.task, assert: restored)
-        await store.receive(\.failed) { $0.error = "Away." }
+        await store.receive(\.link.dropped) { ($0.error, $0.status.sync, $0.loading) = ("Away.", .reconnecting, false) }
         await task.cancel()
     }
 
@@ -65,7 +65,7 @@ internal struct ChatComposeTests {
             $0.draft = "half a thought"
             $0.files = [file]
         }
-        await again.receive(\.failed) { $0.error = "Away." }
+        await again.receive(\.link.dropped) { ($0.error, $0.status.sync, $0.loading) = ("Away.", .reconnecting, false) }
         await task.cancel()
         await again.send(.compose(.send)) {
             $0.draft = ""
