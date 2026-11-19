@@ -1,0 +1,106 @@
+{
+  "type": "screen",
+  "id": "persona",
+  "title": "Coder",
+  "blocks": [
+    {
+      "type": "screen",
+      "id": "screen",
+      "url": "",
+      "sites": 0
+    },
+    {
+      "type": "terminal",
+      "id": "terminal",
+      "lines": []
+    },
+    {
+      "type": "workflow",
+      "id": "workflow",
+      "issues": [],
+      "more": 0
+    },
+    {
+      "type": "routines",
+      "id": "routines",
+      "rows": []
+    },
+    {
+      "type": "places",
+      "id": "places",
+      "rows": []
+    },
+    {
+      "type": "skills",
+      "id": "skills",
+      "rows": [],
+      "library": [
+        {
+          "name": "bills",
+          "description": "Keep track of subscriptions and bills: what renews when, what it costs a year, what to cancel."
+        },
+        {
+          "name": "decide",
+          "description": "Help make a decision: lay out the options, what matters, the trade-offs, and a recommendation."
+        },
+        {
+          "name": "edit",
+          "description": "Edit a piece of writing for clarity: shorter sentences, plain words, same meaning and voice."
+        },
+        {
+          "name": "inbox",
+          "description": "Triage a pile of messages: what needs a reply today, what can wait, what to archive."
+        },
+        {
+          "name": "meal-plan",
+          "description": "Plan meals for the week around what is in the kitchen, with one shopping list."
+        },
+        {
+          "name": "meeting-notes",
+          "description": "Turn a meeting transcript or rough notes into decisions, action items with owners, and open questions."
+        },
+        {
+          "name": "packing",
+          "description": "Make a packing list for a trip from where, how long, the weather and what the owner will do there."
+        },
+        {
+          "name": "research",
+          "description": "Research a question: find good sources, compare what they say, and answer with citations."
+        },
+        {
+          "name": "travel",
+          "description": "Plan a trip: dates, getting there, where to stay, a day by day outline and what to book first."
+        },
+        {
+          "name": "weekly-review",
+          "description": "Run a short weekly review: what got done, what slipped, and the three things that matter next week."
+        }
+      ]
+    },
+    {
+      "type": "memory",
+      "id": "memory",
+      "count": 0,
+      "notes": []
+    },
+    {
+      "type": "edit",
+      "id": "edit"
+    },
+    {
+      "type": "actions",
+      "id": "actions",
+      "rows": [
+        {
+          "label": "Save as skill",
+          "action": "skill"
+        },
+        {
+          "label": "Make this a routine",
+          "action": "routine"
+        }
+      ]
+    }
+  ],
+  "source": "core"
+}
