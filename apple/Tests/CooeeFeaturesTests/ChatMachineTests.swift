@@ -19,6 +19,7 @@ internal struct ChatMachineTests {
         return TestStore(initialState: state) {
             ChatFeature()
         } withDependencies: {
+            $0.continuousClock = ImmediateClock()
             $0.personas.machines = { _ in machines }
             $0.threads.move = { _, thread, machine in
                 if let refused = refusals.next() { throw refused }
@@ -77,6 +78,7 @@ internal struct ChatMachineTests {
         store.dependencies.personas.machines = { _ in throw APIError(status: 400, text: "no") }
         await store.send(.machine(.load))
         await store.receive(\.failed) { $0.error = "no" }
+        await store.receive(\.link.toasted) { $0.error = nil }
         var room = ChatFeature.State(server: mini, target: .thread("r1"), persona: Persona(coder))
         room.room = Room(title: "R", members: ["coder"], cast: [coder])
         let rooms = TestStore(initialState: room) { ChatFeature() }

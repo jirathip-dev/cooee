@@ -16,6 +16,8 @@ public struct HomeFeature: Sendable {
         public var opened: [String: String] = [:]
         public var error: String?
         public var loading = true
+        public var sync = Sync.live
+        public var asOf: Date?
 
         public var pinned: [Persona] { Listing.pinned(personas: personas, rows: rows) }
         public var everyone: [Persona] { Listing.everyone(personas: personas, rows: rows) }
@@ -46,7 +48,8 @@ public struct HomeFeature: Sendable {
         case task
         case refresh
         case loaded(HomeAnswer, [PluginRow])
-        case failed(String)
+        case failed(String, KeptHome?)
+        case toasted
         case delegate(Delegate)
 
         @CasePathable
@@ -57,13 +60,15 @@ public struct HomeFeature: Sendable {
 
     private enum Outcome {
         case loaded(HomeAnswer, [PluginRow])
-        case failed(String)
+        case failed(String, KeptHome?)
         case unauthorized
     }
 
     @Dependency(\.threads) private var threads
     @Dependency(\.plugins) private var plugins
+    @Dependency(\.kept) private var kept
     @Dependency(\.continuousClock) private var clock
+    @Dependency(\.date.now) private var now
 
     public init() {}
 
@@ -75,17 +80,14 @@ public struct HomeFeature: Sendable {
             case .refresh:
                 return refresh(state.server)
             case .loaded(let answer, let plugins):
-                state.screen = answer.screen
-                state.rows = answer.threads.filter { !$0.archived }
-                state.personas = answer.personas
-                state.counts = answer.counts
-                state.plugins = plugins
+                show(&state, answer, plugins)
+                (state.error, state.sync, state.asOf) = (nil, .live, nil)
+                let (kept, server, copy) = (kept, state.server, KeptHome(answer, plugins: plugins, kept: now))
+                return .run { _ in kept.keepHome(server, copy) }
+            case .failed(let error, let copy):
+                return failed(&state, error, copy)
+            case .toasted:
                 state.error = nil
-                state.loading = false
-                return .none
-            case .failed(let error):
-                state.error = error
-                state.loading = false
                 return .none
             case .delegate:
                 return .none
@@ -93,11 +95,36 @@ public struct HomeFeature: Sendable {
         }
     }
 
+    private func show(_ state: inout State, _ answer: HomeAnswer, _ plugins: [PluginRow]) {
+        state.screen = answer.screen
+        state.rows = answer.threads.filter { !$0.archived }
+        state.personas = answer.personas
+        state.counts = answer.counts
+        state.plugins = plugins
+        state.loading = false
+    }
+
+    private func failed(_ state: inout State, _ error: String, _ copy: KeptHome?) -> Effect<Action> {
+        state.loading = false
+        if state.rows.isEmpty, let copy {
+            let answer = HomeAnswer(
+                screen: copy.screen, threads: copy.threads, personas: copy.personas, counts: copy.counts)
+            show(&state, answer, copy.plugins)
+            state.asOf = copy.kept
+        }
+        guard state.sync == .live else {
+            state.sync = .offline
+            return .none
+        }
+        (state.sync, state.error) = (.reconnecting, error)
+        return .clears(.home, after: clock, with: .toasted)
+    }
+
     private func poll(_ server: Server) -> Effect<Action> {
-        let (threads, plugins, clock) = (threads, plugins, clock)
+        let (threads, plugins, clock, kept) = (threads, plugins, clock, kept)
         return .run { send in
             while true {
-                let outcome = try await Self.check(server, threads, plugins, clock)
+                let outcome = try await Self.check(server, threads, plugins, kept, clock)
                 await Self.report(outcome, send)
                 if case .unauthorized = outcome { return }
                 try await clock.sleep(for: .seconds(5))
@@ -106,20 +133,23 @@ public struct HomeFeature: Sendable {
     }
 
     private func refresh(_ server: Server) -> Effect<Action> {
-        let (threads, plugins, clock) = (threads, plugins, clock)
-        return .run { send in await Self.report(try await Self.check(server, threads, plugins, clock), send) }
+        let (threads, plugins, clock, kept) = (threads, plugins, clock, kept)
+        return .run { send in await Self.report(try await Self.check(server, threads, plugins, kept, clock), send) }
     }
 
     private static func check(
-        _ server: Server, _ threads: ThreadsClient, _ plugins: PluginsClient, _ clock: any _Concurrency.Clock<Duration>
+        _ server: Server, _ threads: ThreadsClient, _ plugins: PluginsClient, _ kept: KeptCopies,
+        _ clock: any _Concurrency.Clock<Duration>
     ) async throws -> Outcome {
-        let outcome = await load(server, threads, plugins)
+        let outcome = await load(server, threads, plugins, kept)
         guard case .unauthorized = outcome else { return outcome }
         try await clock.sleep(for: .seconds(5))
-        return await load(server, threads, plugins)
+        return await load(server, threads, plugins, kept)
     }
 
-    private static func load(_ server: Server, _ threads: ThreadsClient, _ plugins: PluginsClient) async -> Outcome {
+    private static func load(
+        _ server: Server, _ threads: ThreadsClient, _ plugins: PluginsClient, _ kept: KeptCopies
+    ) async -> Outcome {
         do {
             async let home = threads.home(server)
             async let installed = plugins.installed(server)
@@ -128,7 +158,7 @@ public struct HomeFeature: Sendable {
         } catch let error as APIError where error.status == 401 {
             return .unauthorized
         } catch {
-            return .failed(error.localizedDescription)
+            return .failed(error.localizedDescription, kept.home(server))
         }
     }
 
@@ -136,7 +166,7 @@ public struct HomeFeature: Sendable {
         switch outcome {
         case .loaded(let answer, let plugins):
             await send(.loaded(answer, plugins))
-        case .failed(let error): await send(.failed(error))
+        case .failed(let error, let copy): await send(.failed(error, copy))
         case .unauthorized: await send(.delegate(.unauthorized))
         }
     }

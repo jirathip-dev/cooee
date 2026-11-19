@@ -38,7 +38,7 @@ internal struct ChatPanelTests {
             $0.chat?.picked = .stop
         }
         await store.send(.chat(.panel(.dismissed))) { $0.chat?.picked = nil }
-        await store.receive(\.chat.compose.stop)
+        await store.receive(\.chat.compose.stop) { $0.chat?.status.stopping = true }
         await store.send(.chat(.panel(.dismissed)))
         #expect(calls.all == ["stop t1"])
     }

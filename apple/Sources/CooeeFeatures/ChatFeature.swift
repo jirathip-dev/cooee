@@ -26,6 +26,7 @@ public struct ChatFeature: Sendable {
         public var live = LiveReply()
         public var since = Date.distantPast
         public var error: String?
+        public var status = ChatStatus()
         public var draft = ""
         public var files: [Attachment] = []
         public var editing: String?
@@ -69,18 +70,6 @@ public struct ChatFeature: Sendable {
             return pending.map { [Outgoing(id: 0, text: $0, failure: failure)] } ?? []
         }
 
-        public var current: String {
-            switch target {
-            case .thread(let id): id
-            case .new(let persona), .setup(let persona): "new:\(persona.id)"
-            }
-        }
-
-        public var filmstrip: [APIItem] { items.filter { $0.kind == "frame" && $0.name != nil } }
-        public var handoff: APIItem? { items.last { $0.kind == "handoff" && $0.outcome == "waiting" } }
-
-        public var step: String? { persona.api.style == .chat ? ChatItems.step(items) : nil }
-
         public init(server: Server, target: Target, persona: Persona, room: Room? = nil, exchange: Exchange? = nil) {
             self.server = server
             self.target = target
@@ -100,6 +89,7 @@ public struct ChatFeature: Sendable {
         case older(Older)
         case event(StreamEvent)
         case failed(String)
+        case link(Link)
         case compose(Compose)
         case outbox(Outbox)
         case cards(Cards)
@@ -141,6 +131,7 @@ public struct ChatFeature: Sendable {
     @Dependency(\.perf) internal var perf
     @Dependency(\.markdown) internal var markdown
     @Dependency(\.drafts) internal var drafts
+    @Dependency(\.kept) internal var kept
 
     public init() {}
 
@@ -183,48 +174,24 @@ extension ChatFeature {
             return open(state)
         case .loaded(let slice):
             load(&state, slice)
+            return keepSlice(state)
         case .older(let older):
             return self.older(&state, older)
         case .event(let event):
             let timed = painted(state, event)
             state.room?.hear(event, when: now)
             apply(&state, event)
-            return timed
+            guard case .item = event else { return timed }
+            return .merge(timed, keepSlice(state))
         case .failed(let error):
-            state.error = error
+            state.status.stopping = false
+            return toast(&state, error)
+        case .link(let action):
+            return link(&state, action)
         default:
             break
         }
         return .none
-    }
-
-    private func open(_ state: State) -> Effect<Action> {
-        guard case .thread(let thread) = state.target else { return .none }
-        let (threads, clock, server) = (threads, clock, state.server)
-        return .run { send in
-            while true {
-                do {
-                    let slice = try await threads.messages(server, thread)
-                    await send(.loaded(slice))
-                    if let last = slice.items.last { try? await threads.read(server, thread, last.id) }
-                    for try await event in threads.events(server, thread, slice.cursor) { await send(.event(event)) }
-                } catch {
-                    await send(.failed(error.localizedDescription))
-                    try await clock.sleep(for: .seconds(2))
-                }
-            }
-        }
-    }
-
-    private func load(_ state: inout State, _ slice: Slice) {
-        state.loading = false
-        state.items = state.items.filter { $0.id < slice.items.first?.id ?? 0 } + slice.items
-        state.queue = slice.queue
-        state.turn = slice.turn
-        state.since = now
-        state.pending = slice.pending?.text
-        state.live = LiveReply(slice.turn.working ? slice.turn.text ?? "" : "", parse: markdown)
-        state.room?.heard(slice.asks ?? [], when: now)
     }
 
     private func apply(_ state: inout State, _ event: StreamEvent) {
@@ -236,11 +203,27 @@ extension ChatFeature {
         case .state(let turn):
             if turn.state != state.turn.state { state.since = now }
             state.turn = Turn(text: nil, state: turn.state, note: turn.note)
-            if !state.working { state.live = LiveReply() }
+            if !state.working { (state.live, state.status.stopping) = (LiveReply(), false) }
         case .queue(let queue):
             state.queue = queue
+        case .sync(let sync):
+            state.status.sync = sync
         case .reset, .roomTurn, .roomStop, .roomAsk:
             break
         }
     }
+}
+
+extension ChatFeature.State {
+    public var current: String {
+        switch target {
+        case .thread(let id): id
+        case .new(let persona), .setup(let persona): "new:\(persona.id)"
+        }
+    }
+
+    public var filmstrip: [APIItem] { items.filter { $0.kind == "frame" && $0.name != nil } }
+    public var handoff: APIItem? { items.last { $0.kind == "handoff" && $0.outcome == "waiting" } }
+
+    public var step: String? { persona.api.style == .chat ? ChatItems.step(items) : nil }
 }

@@ -46,9 +46,10 @@ internal struct EventsTests {
         }
     }
 
-    @Test internal func aServerErrorOrABadEventIsRetried() async throws {
+    @Test internal func aServerErrorABadEventOrNoNetworkIsRetriedAndSaysSoUntilItIsBack() async throws {
         let server = CannedServer([
             "/threads/a1b2/events": [
+                Answer(chunks: [], failure: URLError(.notConnectedToInternet)),
                 Answer(status: 503, chunks: []),
                 Answer(headers: sse, chunks: ["id: b.1\nevent: text\ndata: not json\n\n"]),
                 Answer(headers: sse, chunks: ["id: b.2\nevent: reset\ndata: {}\n\n"]),
@@ -56,8 +57,10 @@ internal struct EventsTests {
         ])
         var got: [StreamEvent] = []
         for try await event in server.client().events("a1b2", since: "b.0") { got.append(event) }
-        #expect(got == [.reset])
-        #expect(server.requests("/threads/a1b2/events").count == 3)
+        #expect(
+            got == [.sync(.offline), .sync(.reconnecting), .sync(.live), .sync(.reconnecting), .sync(.live), .reset])
+        let requests = server.requests("/threads/a1b2/events")
+        #expect(requests.count == 4 && requests[3].value(forHTTPHeaderField: "Last-Event-ID") == "b.1")
     }
 
     @Test internal func aCancelledStreamStops() async throws {

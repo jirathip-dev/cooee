@@ -31,6 +31,7 @@ internal struct ChatPluginsTests {
         return TestStore(initialState: state) {
             ChatFeature()
         } withDependencies: {
+            $0.continuousClock = ImmediateClock()
             $0.plugins.places = { _, persona in
                 calls.record("places \(persona)")
                 return calls.all.contains("attach hello cond") ? [Self.queue, Self.queue] : [Self.queue]
@@ -83,6 +84,7 @@ internal struct ChatPluginsTests {
         }
         await store.send(.panel(.run(.teach("routine"))))
         await store.receive(\.failed) { $0.error = "a room has no one persona" }
+        await store.receive(\.link.toasted) { $0.error = nil }
         let new = ChatFeature.State(server: mini, target: .new(Self.conductor), persona: Persona(Self.conductor))
         await TestStore(initialState: new) { ChatFeature() }.send(.panel(.run(.teach("skill"))))
     }
@@ -102,6 +104,7 @@ internal struct ChatPluginsTests {
         failing.dependencies.plugins.installed = { _ in throw APIError(status: 500, text: "down") }
         await failing.send(.plugins(.load))
         await failing.receive(\.failed) { $0.error = "down" }
+        await failing.receive(\.link.toasted) { $0.error = nil }
     }
 
     @Test internal func theAttachSheetIsCoresPermissionsScreenForThatPluginAndPersona() async {
