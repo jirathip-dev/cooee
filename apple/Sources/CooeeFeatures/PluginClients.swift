@@ -20,6 +20,7 @@ public struct PluginsClient: Sendable {
 public struct ScreenCache: Sendable {
     public var load: @Sendable (_ key: String) -> KeptScreen? = { _ in nil }
     public var save: @Sendable (_ key: String, _ kept: KeptScreen) -> Void
+    public var backgrounds: @Sendable () -> AsyncStream<Void> = { .finished }
 }
 
 extension PluginsClient: TestDependencyKey {

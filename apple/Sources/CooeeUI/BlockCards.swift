@@ -118,8 +118,8 @@ internal struct CardBlock: View {
             }
             if !block.list("buttons").isEmpty {
                 HStack(spacing: 8) {
-                    ForEach(Array(block.list("buttons").enumerated()), id: \.offset) { _, button in
-                        BlockNode(block: button)
+                    ForEach(block.list("buttons").keyed()) { button in
+                        BlockNode(block: button.element)
                     }
                 }
             }

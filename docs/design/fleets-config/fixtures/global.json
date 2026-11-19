@@ -14,6 +14,7 @@
      "rows": [
       {
        "type": "row",
+       "id": "a-claude-max",
        "figure": {
         "icon": "A"
        },
@@ -27,6 +28,7 @@
       },
       {
        "type": "row",
+       "id": "b-claude-max",
        "figure": {
         "icon": "B"
        },
@@ -43,6 +45,7 @@
       },
       {
        "type": "row",
+       "id": "c-claude-pro",
        "figure": {
         "icon": "C"
        },
@@ -52,6 +55,7 @@
       },
       {
        "type": "row",
+       "id": "sign-in-another-account",
        "title": "+ Sign in another account",
        "style": "link",
        "tap": {}
@@ -69,6 +73,7 @@
      "rows": [
       {
        "type": "row",
+       "id": "mini",
        "figure": {
         "state": "working",
         "coat": "wht"
@@ -80,6 +85,7 @@
       },
       {
        "type": "row",
+       "id": "air",
        "figure": {
         "state": "idle",
         "coat": "gry"
@@ -91,6 +97,7 @@
       },
       {
        "type": "row",
+       "id": "boat1",
        "figure": {
         "state": "idle",
         "coat": "blk"
@@ -156,6 +163,7 @@
      "rows": [
       {
        "type": "row",
+       "id": "web-push",
        "figure": {
         "icon": "!"
        },
@@ -165,6 +173,7 @@
       },
       {
        "type": "row",
+       "id": "add-a-notifier",
        "title": "+ Add a notifier",
        "style": "link",
        "tap": {}

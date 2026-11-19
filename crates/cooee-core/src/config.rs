@@ -8,7 +8,7 @@ use std::{
 
 use serde::Deserialize;
 
-use crate::{Spec, provider};
+use crate::provider;
 
 /// The environment variable `name` (#203: CI's arch-check bans `env::var` outside this module).
 #[must_use]
@@ -17,7 +17,7 @@ pub fn env_var(name: &str) -> Option<OsString> {
 }
 
 /// cooee's settings, read from `config.toml`.
-#[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Deserialize)]
 #[serde(default, deny_unknown_fields)]
 pub struct Config {
     /// The port `cooee serve` listens on (default 4747; 0 picks a free one).
@@ -35,8 +35,9 @@ pub struct Config {
     pub shed_dir: Option<PathBuf>,
     /// Where threads are stored; default `$XDG_DATA_HOME/cooee/<instance>`, else `~/.local/share/cooee/<instance>`.
     pub data: Option<PathBuf>,
-    /// The sign-ins sheet's providers (`[[providers]]`); default every registered provider's.
-    pub providers: Vec<Spec>,
+    /// The sign-ins sheet's providers (`[[providers]]`), each row over the provider of its name field by field;
+    /// default every registered provider with shed's record of its agent (see [`provider::specs`]).
+    pub providers: Option<Vec<toml::Table>>,
     /// The theme a device shows until it picks its own (default farm).
     pub theme: Option<String>,
     /// The config file's folder, where the owner's own `themes/` and `schemes/` live (set by [`Config::load`]).
@@ -166,7 +167,7 @@ impl Default for Config {
             shed: PathBuf::from("shed"),
             shed_dir: None,
             data: None,
-            providers: provider::defaults(),
+            providers: None,
             plugins: Vec::new(),
             plugin_index: None,
             skill_index: None,
@@ -274,7 +275,7 @@ impl Config {
             path: path.to_owned(),
             why,
         })?;
-        provider::check(&config.providers).map_err(|why| ConfigError::Invalid {
+        provider::specs(config.providers.as_deref(), &[]).map_err(|why| ConfigError::Invalid {
             path: path.to_owned(),
             why,
         })?;
