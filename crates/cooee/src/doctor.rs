@@ -3,7 +3,7 @@ use std::{
     time::Duration,
 };
 
-use cooee_core::{Config, ROOTS_FIX, Shed, ShedError, agents_fix, shed_fix};
+use cooee_core::{Config, ROOTS_FIX, Shed, ShedError, agents_fix, plugins, shed_fix};
 use cooee_server::machine;
 
 use crate::service::{app_items, label, tailnet_name};
@@ -51,13 +51,13 @@ pub(crate) fn doctor(config: &Config) -> Result<(), String> {
         Err(e @ ShedError::Version { .. }) => check(false, format!("shed: {e}")),
         Err(e) => check(false, format!("shed: {e}\n     fix: {}", shed_fix())),
     }
-    for (ok, what) in machine::rows(config) {
+    let data = config.data_dir().ok_or("no data folder")?;
+    for (ok, what) in machine::rows(config).into_iter().chain(plugin_rows(&data)) {
         check(ok, what);
     }
     if config.roots.is_empty() {
         cooee_core::say!("warn no roots configured\n     fix: add {ROOTS_FIX} to config.toml");
     }
-    let data = config.data_dir().ok_or("no data folder")?;
     if cooee_core::chief::find(config.dir.as_deref(), &data).is_none() {
         cooee_core::say!("warn no Chief\n     fix: run cooee setup");
     }
@@ -108,6 +108,24 @@ pub(crate) fn doctor(config: &Config) -> Result<(), String> {
             failed.join("\n")
         ))
     }
+}
+
+fn plugin_rows(data: &std::path::Path) -> Vec<(bool, String)> {
+    let (version, min) = (plugins::COOEE_VERSION, plugins::MIN_PLUGIN);
+    let installed = plugins::installed(data).unwrap_or_default();
+    let rows = installed.iter().map(|(l, m)| {
+        let accepts = format!("plugin {} {}: accepts {}", l.name, m.version, m.accepts());
+        match m.fits() {
+            Ok(()) => (true, accepts),
+            Err(why) => (false, format!("{accepts}: {why}")),
+        }
+    });
+    std::iter::once((
+        true,
+        format!("cooee {version} accepts plugins {min} or newer"),
+    ))
+    .chain(rows)
+    .collect()
 }
 
 fn hooks(config: &Config) -> Option<(bool, String)> {
