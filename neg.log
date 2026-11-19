@@ -1,0 +1,76 @@
+Building for debugging...
+[Computing dependencies]
+[Using on-disk description]
+[1 / 5]
+[1 / 2] CooeeFeaturesTests-product
+[2 / 6] CooeeFeatures
+/Users/jkmacmini/.local/share/drover/work/cooee/issue-603/apple/Sources/CooeeFeatures/AppFeature.swift:55:41: [1;33mwarning: [1;39mcannot use struct 'Date' in a property declaration member of a type not marked '@_implementationOnly'; 'Foundation' was not imported by this file[0;0m
+ [0;36m53 |[0;0m     @Dependency(\.loginItems) private var loginItems
+ [0;36m54 |[0;0m     @Dependency(\.push) private var push
+ [0;36m55 |[0;0m     @Dependency(\.date.now) private var now
+    [0;36m|[0;0m                                         `- [1;33mwarning: [1;39mcannot use struct 'Date' in a property declaration member of a type not marked '@_implementationOnly'; 'Foundation' was not imported by this file[0;0m
+ [0;36m56 |[0;0m 
+ [0;36m57 |[0;0m     public init() {}
+
+Foundation.Date:2:15: [1;39mnote: [1;39mstruct declared here[0;0m
+ [0;36m1 |[0;0m @available(macOS 10.10, iOS 8.0, watchOS 2.0, tvOS 9.0, *)
+ [0;36m2 |[0;0m public struct Date : Comparable, Hashable, Equatable, Sendable {
+   [0;36m|[0;0m               `- [1;39mnote: [1;39mstruct declared here[0;0m
+ [0;36m3 |[0;0m     public static let timeIntervalBetween1970AndReferenceDate: Double
+ [0;36m4 |[0;0m     public static var timeIntervalSinceReferenceDate: TimeInterval { get }
+[3 / 7] CooeeFeatures
+[7 / 10] CooeeFeatures
+[9 / 11] CooeeFeatures
+[10 / 11] CooeeFeaturesTests-product
+[12 / 14] CooeeUITests-product
+[13 / 14] CooeeUITests-product
+[15 / 15] CooeeUITests-product
+[16 / 17] CooeeUI-product
+Build complete! (13.31 secs)
+◇ Test run started.
+↳ Testing Library Version: 2403
+↳ Target Platform: arm64e-apple-macos14.0
+◇ Suite MenuFeatureTests started.
+◇ Test aPickedRowTakesThePacksTokensOrModern() started.
+◇ Test aThemeWithoutSpritesDrawsModernAndHidesTheSceneRowButKeepsThePick() started.
+◇ Test theLooksLoadOnlyWithAServerAndKeepFarmWhenTheReadFails() started.
+◇ Test aRefusedIconChangeSaysWhichTileToTapAgain() started.
+◇ Test offlineTheKeptTokensDrawAndNothingIsShown() started.
+◇ Test withoutAServerPushDoesNothing() started.
+◇ Test anUnreadableOrBrokenStyleKeepsTheLastGoodTokens(_:_:_:) started.
+◇ Test aPickedIconStaysThroughStyleChangesUntilTheLookIsFollowedAgain() started.
+◇ Test offlineTheMenuKeepsTheBundledOneAndWithoutAServerOpensNothing() started.
+◇ Test aPackTheServerNoLongerHasFallsBackToModernAndSaysSo() started.
+◇ Test theMotionSwitchAndAPickedSpriteAreKept() started.
+◇ Test aServerRowOpensCoresScreenAndClosingTheMenuKeepsAndDropsIt() started.
+◇ Test anAnswerWithThePacksStyleKeepsItsTokensAndClearsTheLine() started.
+◇ Test theLookIsPickedAndKept() started.
+◇ Test aRefusedPushStaysOffWithTheReason() started.
+◇ Test aLaunchDrawsTheKeptTokensOrModernAndAnUpgradedPickSaysItIsAPackNow() started.
+◇ Test pushOnRegistersTheDeviceTokenAndOffRemovesIt() started.
+◇ Test case passing 3 arguments styles → ["terminal": CooeeCore.ServedStyle(style: nil)], broken → nil, line → "terminal needs a newer app · last good style kept" to anUnreadableOrBrokenStyleKeepsTheLastGoodTokens(_:_:_:) started.
+◇ Test case passing 3 arguments styles → [:], broken → ["terminal": "style.json: surface \"blur\": not one of glass dashed solid"], line → "terminal/style.json: surface "blur": not one of glass dashed solid · last good style kept" to anUnreadableOrBrokenStyleKeepsTheLastGoodTokens(_:_:_:) started.
+✔ Test aLaunchDrawsTheKeptTokensOrModernAndAnUpgradedPickSaysItIsAPackNow() passed after 0.343 seconds.
+✔ Test offlineTheKeptTokensDrawAndNothingIsShown() passed after 0.385 seconds.
+✔ Test withoutAServerPushDoesNothing() passed after 0.385 seconds.
+✔ Test anUnreadableOrBrokenStyleKeepsTheLastGoodTokens(_:_:_:) with 2 test cases passed after 0.385 seconds.
+✔ Test aRefusedIconChangeSaysWhichTileToTapAgain() passed after 0.385 seconds.
+✔ Test aRefusedPushStaysOffWithTheReason() passed after 0.385 seconds.
+✔ Test aPackTheServerNoLongerHasFallsBackToModernAndSaysSo() passed after 0.400 seconds.
+✔ Test anAnswerWithThePacksStyleKeepsItsTokensAndClearsTheLine() passed after 0.400 seconds.
+✔ Test theLooksLoadOnlyWithAServerAndKeepFarmWhenTheReadFails() passed after 0.400 seconds.
+✔ Test aThemeWithoutSpritesDrawsModernAndHidesTheSceneRowButKeepsThePick() passed after 0.401 seconds.
+✔ Test theMotionSwitchAndAPickedSpriteAreKept() passed after 0.411 seconds.
+✔ Test offlineTheMenuKeepsTheBundledOneAndWithoutAServerOpensNothing() passed after 0.411 seconds.
+✔ Test pushOnRegistersTheDeviceTokenAndOffRemovesIt() passed after 0.411 seconds.
+✘ Test aServerRowOpensCoresScreenAndClosingTheMenuKeepsAndDropsIt() recorded an issue at MenuFeatureTests.swift:87:9: Expectation failed: calls.all == ["keep https://mini.local|core|/screens/settings/devices true"]
+↳ calls.all == ["keep https://mini.local|core|/screens/settings/devices true"] → false
+↳   calls.all → []
+✔ Test aPickedIconStaysThroughStyleChangesUntilTheLookIsFollowedAgain() passed after 0.414 seconds.
+✔ Test aPickedRowTakesThePacksTokensOrModern() passed after 0.416 seconds.
+✘ Test aServerRowOpensCoresScreenAndClosingTheMenuKeepsAndDropsIt() failed after 0.422 seconds with 1 issue.
+✔ Test theLookIsPickedAndKept() passed after 0.580 seconds.
+✘ Suite MenuFeatureTests failed after 0.580 seconds with 1 issue.
+✘ Test run with 17 tests in 1 suite failed after 0.581 seconds with 1 issue.
+Note: Some test targets reported failures:
+  - CooeeFeaturesTests (Swift Testing)

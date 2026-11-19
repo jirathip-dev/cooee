@@ -1,0 +1,126 @@
+Building for debugging...
+[Computing dependencies]
+[Provisioning 2 / 62]
+[Using on-disk description]
+[1 / 5]
+[1 / 6] IssueReporting
+[1 / 4] InternalCollectionsUtilities
+[1 / 4] UIKitNavigation
+[1 / 4] InternalCollectionsUtilities
+[2 / 6] CooeeFeaturesTests-product
+[5 / 9] CooeeFeaturesTests-product
+[10 / 12] CooeeFeaturesTests-product
+[12 / 13] CooeeApp-product
+Build complete! (7.32 secs)
+◇ Test run started.
+↳ Testing Library Version: 2403
+↳ Target Platform: arm64e-apple-macos14.0
+◇ Suite PluginNavigationTests started.
+◇ Test aStateThatFailsToLoadBesideTheMapSaysWhoIsUnreachable() started.
+◇ Test aLaneTappedOnTheStripPushesItsChatAndQueueReturnsToTheSameStrip() started.
+◇ Test aTimerTapPushesItsSettingsScreenFocusedOnItsFieldAndBackClearsTheFocus() started.
+◇ Suite LayoutFeatureTests started.
+◇ Test aStateTappedOnTheMacLoadsItsIssuesBesideTheMapAndAPushClearsThem() started.
+◇ Test aTappedSheetPushesItsScreenAndBackReturnsToTheOneUnder() started.
+◇ Test anAnswersOpenPushesThatScreen() started.
+◇ Test aLayoutTheAppCantReadKeepsTheLastGoodAndSaysWhy() started.
+◇ Suite MenuFeatureTests started.
+◇ Suite ScreenFeatureTests started.
+◇ Test aBrokenFileOnTheMacKeepsTheLastGoodUntilAGoodWrite() started.
+◇ Test aChangeToTheLayoutAlreadyDrawnFetchesNothing() started.
+◇ Test aFetchedLayoutIsDrawnAndKept() started.
+◇ Test resetAppliesTheMacsAnswer() started.
+◇ Test resetOfflineDrawsTheBundledDefaultAndForgetsTheLastGood() started.
+◇ Test aLayoutThatReplacesPairingIsRefusedAndTheLastGoodKept() started.
+◇ Suite ChatFeatureTests started.
+◇ Test goingToTheBackgroundKeepsTheScreenAtOnce() started.
+◇ Test anActionAppliesItsAnswersOpsAndSaysItsToast() started.
+◇ Test aCoreScreenIsFetchedFromCoreAndKeptUnderCore() started.
+◇ Test anUnreadableOrBrokenStyleKeepsTheLastGoodTokens(_:_:_:) started.
+◇ Test aServerRowOpensCoresScreenAndClosingTheMenuKeepsAndDropsIt() started.
+◇ Test aScreenLoadsFollowsItsStreamAndIsKept() started.
+◇ Test theMotionSwitchAndAPickedSpriteAreKept() started.
+◇ Test leavingAScreenKeepsItAtOnce() started.
+◇ Test aRefusedActionSaysWhy() started.
+◇ Test anUnreachableMacShowsTheKeptAnswerWithItsAgeThenRetries() started.
+◇ Test aLaunchDrawsTheKeptTokensOrModernAndAnUpgradedPickSaysItIsAPackNow() started.
+◇ Test aLaneTapAsksTheChatToOpenItsThread() started.
+◇ Test aPackTheServerNoLongerHasFallsBackToModernAndSaysSo() started.
+◇ Test aHundredEventsInASecondAreKeptOnceTwoSecondsAfterTheLast() started.
+◇ Test withoutAServerPushDoesNothing() started.
+◇ Test aThemeWithoutSpritesDrawsModernAndHidesTheSceneRowButKeepsThePick() started.
+◇ Test offlineTheMenuKeepsTheBundledOneAndWithoutAServerOpensNothing() started.
+◇ Test aRefusedPushStaysOffWithTheReason() started.
+◇ Test anAnswerWithThePacksStyleKeepsItsTokensAndClearsTheLine() started.
+◇ Test aPickedIconStaysThroughStyleChangesUntilTheLookIsFollowedAgain() started.
+◇ Test offlineTheKeptTokensDrawAndNothingIsShown() started.
+◇ Test theLookIsPickedAndKept() started.
+◇ Test pushOnRegistersTheDeviceTokenAndOffRemovesIt() started.
+◇ Test aRefusedIconChangeSaysWhichTileToTapAgain() started.
+◇ Test aScreenWithNoStreamStopsAfterItsAnswer() started.
+◇ Test aPickedRowTakesThePacksTokensOrModern() started.
+◇ Test queuedMessagesAreSteeredOrTakenBack() started.
+◇ Test theFirstMessageStartsANewChat() started.
+◇ Test aFailedCallSaysWhy() started.
+◇ Test aChatStyleTurnFoldsItsStepsAndThePillNamesTheCurrentOne() started.
+◇ Test aSendQueuesWhileATurnRuns() started.
+◇ Test aSetupChatStartsInSetupMode() started.
+◇ Test aFailedLoadSaysWhyAndTriesAgain() started.
+◇ Test aChatLoadsItsSliceThenFollowsItsStream() started.
+◇ Test theLooksLoadOnlyWithAServerAndKeepFarmWhenTheReadFails() started.
+◇ Test case passing 3 arguments styles → ["terminal": CooeeCore.ServedStyle(style: nil)], broken → nil, line → "terminal needs a newer app · last good style kept" to anUnreadableOrBrokenStyleKeepsTheLastGoodTokens(_:_:_:) started.
+◇ Test case passing 3 arguments styles → [:], broken → ["terminal": "style.json: surface \"blur\": not one of glass dashed solid"], line → "terminal/style.json: surface "blur": not one of glass dashed solid · last good style kept" to anUnreadableOrBrokenStyleKeepsTheLastGoodTokens(_:_:_:) started.
+✔ Test aChatStyleTurnFoldsItsStepsAndThePillNamesTheCurrentOne() passed after 0.391 seconds.
+✔ Test aLaunchDrawsTheKeptTokensOrModernAndAnUpgradedPickSaysItIsAPackNow() passed after 0.391 seconds.
+✔ Test aStateThatFailsToLoadBesideTheMapSaysWhoIsUnreachable() passed after 0.443 seconds.
+✔ Test aChangeToTheLayoutAlreadyDrawnFetchesNothing() passed after 0.504 seconds.
+✔ Test withoutAServerPushDoesNothing() passed after 0.504 seconds.
+✔ Test offlineTheKeptTokensDrawAndNothingIsShown() passed after 0.504 seconds.
+✔ Test anUnreadableOrBrokenStyleKeepsTheLastGoodTokens(_:_:_:) with 2 test cases passed after 0.504 seconds.
+✔ Test aLayoutTheAppCantReadKeepsTheLastGoodAndSaysWhy() passed after 0.504 seconds.
+✔ Test resetAppliesTheMacsAnswer() passed after 0.504 seconds.
+✔ Test resetOfflineDrawsTheBundledDefaultAndForgetsTheLastGood() passed after 0.504 seconds.
+✔ Test aFetchedLayoutIsDrawnAndKept() passed after 0.504 seconds.
+✔ Test aRefusedActionSaysWhy() passed after 0.504 seconds.
+✔ Test aLaneTapAsksTheChatToOpenItsThread() passed after 0.504 seconds.
+✔ Test aRefusedPushStaysOffWithTheReason() passed after 0.504 seconds.
+✔ Test aLayoutThatReplacesPairingIsRefusedAndTheLastGoodKept() passed after 0.504 seconds.
+✔ Test aRefusedIconChangeSaysWhichTileToTapAgain() passed after 0.504 seconds.
+✔ Test aFailedCallSaysWhy() passed after 0.504 seconds.
+✔ Test aBrokenFileOnTheMacKeepsTheLastGoodUntilAGoodWrite() passed after 0.507 seconds.
+✔ Suite LayoutFeatureTests passed after 0.507 seconds.
+✔ Test aPackTheServerNoLongerHasFallsBackToModernAndSaysSo() passed after 0.531 seconds.
+✔ Test anAnswerWithThePacksStyleKeepsItsTokensAndClearsTheLine() passed after 0.531 seconds.
+✔ Test aThemeWithoutSpritesDrawsModernAndHidesTheSceneRowButKeepsThePick() passed after 0.532 seconds.
+✔ Test theLooksLoadOnlyWithAServerAndKeepFarmWhenTheReadFails() passed after 0.531 seconds.
+✔ Test aSetupChatStartsInSetupMode() passed after 0.545 seconds.
+✔ Test theMotionSwitchAndAPickedSpriteAreKept() passed after 0.579 seconds.
+✔ Test offlineTheMenuKeepsTheBundledOneAndWithoutAServerOpensNothing() passed after 0.579 seconds.
+✔ Test pushOnRegistersTheDeviceTokenAndOffRemovesIt() passed after 0.587 seconds.
+✔ Test aPickedIconStaysThroughStyleChangesUntilTheLookIsFollowedAgain() passed after 0.617 seconds.
+✔ Test aPickedRowTakesThePacksTokensOrModern() passed after 0.644 seconds.
+✔ Test aServerRowOpensCoresScreenAndClosingTheMenuKeepsAndDropsIt() passed after 0.646 seconds.
+✔ Test aLaneTappedOnTheStripPushesItsChatAndQueueReturnsToTheSameStrip() passed after 0.648 seconds.
+✔ Test anActionAppliesItsAnswersOpsAndSaysItsToast() passed after 0.671 seconds.
+✔ Test aCoreScreenIsFetchedFromCoreAndKeptUnderCore() passed after 0.671 seconds.
+✔ Test aScreenWithNoStreamStopsAfterItsAnswer() passed after 0.671 seconds.
+✔ Test queuedMessagesAreSteeredOrTakenBack() passed after 0.673 seconds.
+✔ Test theFirstMessageStartsANewChat() passed after 0.677 seconds.
+✔ Test leavingAScreenKeepsItAtOnce() passed after 0.683 seconds.
+✔ Test aStateTappedOnTheMacLoadsItsIssuesBesideTheMapAndAPushClearsThem() passed after 0.684 seconds.
+✔ Test goingToTheBackgroundKeepsTheScreenAtOnce() passed after 0.683 seconds.
+✔ Test theLookIsPickedAndKept() passed after 0.684 seconds.
+✔ Suite MenuFeatureTests passed after 0.685 seconds.
+✔ Test anAnswersOpenPushesThatScreen() passed after 0.687 seconds.
+✔ Test aFailedLoadSaysWhyAndTriesAgain() passed after 0.687 seconds.
+✔ Test aTimerTapPushesItsSettingsScreenFocusedOnItsFieldAndBackClearsTheFocus() passed after 0.693 seconds.
+✔ Test aSendQueuesWhileATurnRuns() passed after 0.694 seconds.
+✔ Test aTappedSheetPushesItsScreenAndBackReturnsToTheOneUnder() passed after 0.708 seconds.
+✔ Test aScreenLoadsFollowsItsStreamAndIsKept() passed after 0.707 seconds.
+✔ Suite PluginNavigationTests passed after 0.708 seconds.
+✔ Test anUnreachableMacShowsTheKeptAnswerWithItsAgeThenRetries() passed after 0.711 seconds.
+✔ Test aChatLoadsItsSliceThenFollowsItsStream() passed after 0.741 seconds.
+✔ Suite ChatFeatureTests passed after 0.742 seconds.
+✔ Test aHundredEventsInASecondAreKeptOnceTwoSecondsAfterTheLast() passed after 1.355 seconds.
+✔ Suite ScreenFeatureTests passed after 1.355 seconds.
+✔ Test run with 48 tests in 5 suites passed after 1.356 seconds.
