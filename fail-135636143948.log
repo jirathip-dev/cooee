@@ -1,0 +1,755 @@
+stable (macos-latest)	test	﻿2026-11-19T14:38:38.3609860Z ##[group]Run cargo test --workspace --locked
+stable (macos-latest)	test	2026-11-19T14:38:38.3610260Z ^[[36;1m cargo test --workspace --locked^[[0m
+stable (macos-latest)	test	2026-11-19T14:38:38.3653470Z shell: /bin/bash -e {0}
+stable (macos-latest)	test	2026-11-19T14:38:38.3653690Z env:
+stable (macos-latest)	test	2026-11-19T14:38:38.3653850Z   CARGO_TERM_COLOR: always
+stable (macos-latest)	test	2026-11-19T14:38:38.3654030Z   REF: 
+stable (macos-latest)	test	2026-11-19T14:38:38.3654180Z   RUSTUP_TOOLCHAIN: stable
+stable (macos-latest)	test	2026-11-19T14:38:38.3654420Z   APPLE_DERIVED: /Users/runner/work/_temp/apple/derived
+stable (macos-latest)	test	2026-11-19T14:38:38.3654720Z   APPLE_PACKAGES: /Users/runner/work/_temp/apple/packages
+stable (macos-latest)	test	2026-11-19T14:38:38.3655040Z   DEVELOPER_DIR: /Applications/Xcode_27.2.app/Contents/Developer
+stable (macos-latest)	test	2026-11-19T14:38:38.3655310Z   CARGO_HOME: /Users/runner/.cargo
+stable (macos-latest)	test	2026-11-19T14:38:38.3655520Z   CARGO_INCREMENTAL: 0
+stable (macos-latest)	test	2026-11-19T14:38:38.3655710Z   CACHE_ON_FAILURE: false
+stable (macos-latest)	test	2026-11-19T14:38:38.3655870Z ##[endgroup]
+stable (macos-latest)	test	2026-11-19T14:38:38.5586530Z ^[[1m^[[92m    Updating^[[0m git repository `https://github.com/jirathip-dev/blocks`
+stable (macos-latest)	test	2026-11-19T14:38:39.7414440Z ^[[1m^[[92m    Updating^[[0m crates.io index
+stable (macos-latest)	test	2026-11-19T14:38:39.7571840Z ^[[1m^[[92m    Updating^[[0m git repository `https://github.com/jirathip-dev/shed`
+stable (macos-latest)	test	2026-11-19T14:38:40.7485990Z ^[[1m^[[92m    Updating^[[0m git repository `https://github.com/jirathip-dev/swag`
+stable (macos-latest)	test	2026-11-19T14:38:42.4960960Z ^[[1m^[[92m Downloading^[[0m crates ...
+stable (macos-latest)	test	2026-11-19T14:38:42.6129220Z ^[[1m^[[92m  Downloaded^[[0m crypto-common v0.1.7
+stable (macos-latest)	test	2026-11-19T14:38:42.6231920Z ^[[1m^[[92m  Downloaded^[[0m cpufeatures v0.3.1
+stable (macos-latest)	test	2026-11-19T14:38:42.6332250Z ^[[1m^[[92m  Downloaded^[[0m adler2 v2.0.1
+stable (macos-latest)	test	2026-11-19T14:38:42.6436750Z ^[[1m^[[92m  Downloaded^[[0m crypto-common v0.2.2
+stable (macos-latest)	test	2026-11-19T14:38:42.6547000Z ^[[1m^[[92m  Downloaded^[[0m block-buffer v0.12.1
+stable (macos-latest)	test	2026-11-19T14:38:42.6651910Z ^[[1m^[[92m  Downloaded^[[0m anymap3 v1.1.0
+stable (macos-latest)	test	2026-11-19T14:38:42.6761300Z ^[[1m^[[92m  Downloaded^[[0m atomic-waker v1.1.2
+stable (macos-latest)	test	2026-11-19T14:38:42.6855100Z ^[[1m^[[92m  Downloaded^[[0m base16ct v1.0.0
+stable (macos-latest)	test	2026-11-19T14:38:42.6963820Z ^[[1m^[[92m  Downloaded^[[0m cpufeatures v0.2.17
+stable (macos-latest)	test	2026-11-19T14:38:42.7066350Z ^[[1m^[[92m  Downloaded^[[0m web-time v1.1.0
+stable (macos-latest)	test	2026-11-19T14:38:42.7168690Z ^[[1m^[[92m  Downloaded^[[0m zmij v1.0.23
+stable (macos-latest)	test	2026-11-19T14:38:42.7272240Z ^[[1m^[[92m  Downloaded^[[0m aead v0.5.2
+stable (macos-latest)	test	2026-11-19T14:38:42.7373730Z ^[[1m^[[92m  Downloaded^[[0m block-buffer v0.10.4
+stable (macos-latest)	test	2026-11-19T14:38:42.7474590Z ^[[1m^[[92m  Downloaded^[[0m cpubits v0.1.1
+stable (macos-latest)	test	2026-11-19T14:38:42.7547700Z ^[[1m^[[92m  Downloaded^[[0m dyn-clone v1.0.20
+stable (macos-latest)	test	2026-11-19T14:38:42.7548510Z ^[[1m^[[92m  Downloaded^[[0m form_urlencoded v1.2.2
+stable (macos-latest)	test	2026-11-19T14:38:42.7549310Z ^[[1m^[[92m  Downloaded^[[0m futures-macro v0.3.34
+stable (macos-latest)	test	2026-11-19T14:38:42.7549770Z ^[[1m^[[92m  Downloaded^[[0m tungstenite v0.29.0
+stable (macos-latest)	test	2026-11-19T14:38:42.7550780Z ^[[1m^[[92m  Downloaded^[[0m cfg-if v1.0.5
+stable (macos-latest)	test	2026-11-19T14:38:42.7551240Z ^[[1m^[[92m  Downloaded^[[0m equivalent v1.0.3
+stable (macos-latest)	test	2026-11-19T14:38:42.7551680Z ^[[1m^[[92m  Downloaded^[[0m utf8_iter v1.1.0
+stable (macos-latest)	test	2026-11-19T14:38:42.7552020Z ^[[1m^[[92m  Downloaded^[[0m ctr v0.9.2
+stable (macos-latest)	test	2026-11-19T14:38:42.7552440Z ^[[1m^[[92m  Downloaded^[[0m data-encoding v2.11.1
+stable (macos-latest)	test	2026-11-19T14:38:42.7552770Z ^[[1m^[[92m  Downloaded^[[0m elsa v1.11.2
+stable (macos-latest)	test	2026-11-19T14:38:42.7553140Z ^[[1m^[[92m  Downloaded^[[0m http-body v1.1.0
+stable (macos-latest)	test	2026-11-19T14:38:42.7553610Z ^[[1m^[[92m  Downloaded^[[0m universal-hash v0.5.1
+stable (macos-latest)	test	2026-11-19T14:38:42.7553990Z ^[[1m^[[92m  Downloaded^[[0m utf_types v1.0.0
+stable (macos-latest)	test	2026-11-19T14:38:42.7554360Z ^[[1m^[[92m  Downloaded^[[0m version_check v0.9.5
+stable (macos-latest)	test	2026-11-19T14:38:42.7554720Z ^[[1m^[[92m  Downloaded^[[0m stable_deref_trait v1.2.1
+stable (macos-latest)	test	2026-11-19T14:38:42.7560840Z ^[[1m^[[92m  Downloaded^[[0m yoke-derive v0.8.4
+stable (macos-latest)	test	2026-11-19T14:38:42.7590660Z ^[[1m^[[92m  Downloaded^[[0m fallible-streaming-iterator v0.1.9
+stable (macos-latest)	test	2026-11-19T14:38:42.7606140Z ^[[1m^[[92m  Downloaded^[[0m generic-array v0.14.7
+stable (macos-latest)	test	2026-11-19T14:38:42.7632320Z ^[[1m^[[92m  Downloaded^[[0m fnv v1.0.7
+stable (macos-latest)	test	2026-11-19T14:38:42.7654140Z ^[[1m^[[92m  Downloaded^[[0m futures-sink v0.3.34
+stable (macos-latest)	test	2026-11-19T14:38:42.7694480Z ^[[1m^[[92m  Downloaded^[[0m futures-task v0.3.34
+stable (macos-latest)	test	2026-11-19T14:38:42.7736890Z ^[[1m^[[92m  Downloaded^[[0m heck v0.5.0
+stable (macos-latest)	test	2026-11-19T14:38:42.7773350Z ^[[1m^[[92m  Downloaded^[[0m hostname v0.4.2
+stable (macos-latest)	test	2026-11-19T14:38:42.7806320Z ^[[1m^[[92m  Downloaded^[[0m http-body-util v0.1.5
+stable (macos-latest)	test	2026-11-19T14:38:42.7865900Z ^[[1m^[[92m  Downloaded^[[0m httpdate v1.0.3
+stable (macos-latest)	test	2026-11-19T14:38:42.7882120Z ^[[1m^[[92m  Downloaded^[[0m icu_locale_fallback_data v2.4.0
+stable (macos-latest)	test	2026-11-19T14:38:42.7901760Z ^[[1m^[[92m  Downloaded^[[0m idna_adapter v1.2.2
+stable (macos-latest)	test	2026-11-19T14:38:42.7915960Z ^[[1m^[[92m  Downloaded^[[0m inout v0.1.4
+stable (macos-latest)	test	2026-11-19T14:38:42.7935680Z ^[[1m^[[92m  Downloaded^[[0m itoa v1.0.18
+stable (macos-latest)	test	2026-11-19T14:38:42.7977760Z ^[[1m^[[92m  Downloaded^[[0m zeroize v1.9.1
+stable (macos-latest)	test	2026-11-19T14:38:42.8018010Z ^[[1m^[[92m  Downloaded^[[0m zerovec-derive v0.11.7
+stable (macos-latest)	test	2026-11-19T14:38:42.8053860Z ^[[1m^[[92m  Downloaded^[[0m serde_spanned v1.1.2
+stable (macos-latest)	test	2026-11-19T14:38:42.8074550Z ^[[1m^[[92m  Downloaded^[[0m sha1 v0.10.7
+stable (macos-latest)	test	2026-11-19T14:38:42.8101780Z ^[[1m^[[92m  Downloaded^[[0m autocfg v1.5.1
+stable (macos-latest)	test	2026-11-19T14:38:42.8137030Z ^[[1m^[[92m  Downloaded^[[0m cipher v0.4.4
+stable (macos-latest)	test	2026-11-19T14:38:42.8164390Z ^[[1m^[[92m  Downloaded^[[0m core-foundation v0.10.1
+stable (macos-latest)	test	2026-11-19T14:38:42.8212530Z ^[[1m^[[92m  Downloaded^[[0m deranged v0.5.9
+stable (macos-latest)	test	2026-11-19T14:38:42.8239990Z ^[[1m^[[92m  Downloaded^[[0m digest v0.10.7
+stable (macos-latest)	test	2026-11-19T14:38:42.8320340Z ^[[1m^[[92m  Downloaded^[[0m displaydoc v0.2.7
+stable (macos-latest)	test	2026-11-19T14:38:42.8401810Z ^[[1m^[[92m  Downloaded^[[0m ecdsa v0.17.0
+stable (macos-latest)	test	2026-11-19T14:38:42.8476240Z ^[[1m^[[92m  Downloaded^[[0m errno v0.3.14
+stable (macos-latest)	test	2026-11-19T14:38:42.8542300Z ^[[1m^[[92m  Downloaded^[[0m fallible-iterator v0.3.0
+stable (macos-latest)	test	2026-11-19T14:38:42.8609960Z ^[[1m^[[92m  Downloaded^[[0m fastrand v2.5.0
+stable (macos-latest)	test	2026-11-19T14:38:42.8655990Z ^[[1m^[[92m  Downloaded^[[0m ff v0.14.0
+stable (macos-latest)	test	2026-11-19T14:38:42.8684120Z ^[[1m^[[92m  Downloaded^[[0m find-msvc-tools v0.1.15
+stable (macos-latest)	test	2026-11-19T14:38:42.8732190Z ^[[1m^[[92m  Downloaded^[[0m foldhash v0.2.0
+stable (macos-latest)	test	2026-11-19T14:38:42.8753640Z ^[[1m^[[92m  Downloaded^[[0m futures-core v0.3.34
+stable (macos-latest)	test	2026-11-19T14:38:42.8776600Z ^[[1m^[[92m  Downloaded^[[0m ghash v0.5.1
+stable (macos-latest)	test	2026-11-19T14:38:42.8796960Z ^[[1m^[[92m  Downloaded^[[0m group v0.14.0
+stable (macos-latest)	test	2026-11-19T14:38:42.8831280Z ^[[1m^[[92m  Downloaded^[[0m wnaf v0.14.1
+stable (macos-latest)	test	2026-11-19T14:38:42.8854240Z ^[[1m^[[92m  Downloaded^[[0m zerofrom v0.1.8
+stable (macos-latest)	test	2026-11-19T14:38:42.8870120Z ^[[1m^[[92m  Downloaded^[[0m cmov v0.5.4
+stable (macos-latest)	test	2026-11-19T14:38:42.8911870Z ^[[1m^[[92m  Downloaded^[[0m writeable v0.6.4
+stable (macos-latest)	test	2026-11-19T14:38:42.8942430Z ^[[1m^[[92m  Downloaded^[[0m zerofrom-derive v0.1.8
+stable (macos-latest)	test	2026-11-19T14:38:42.8976140Z ^[[1m^[[92m  Downloaded^[[0m core-foundation-sys v0.8.7
+stable (macos-latest)	test	2026-11-19T14:38:42.9040490Z ^[[1m^[[92m  Downloaded^[[0m ctutils v0.4.8
+stable (macos-latest)	test	2026-11-19T14:38:42.9080180Z ^[[1m^[[92m  Downloaded^[[0m digest v0.11.3
+stable (macos-latest)	test	2026-11-19T14:38:42.9123950Z ^[[1m^[[92m  Downloaded^[[0m email-encoding v0.4.2
+stable (macos-latest)	test	2026-11-19T14:38:42.9159340Z ^[[1m^[[92m  Downloaded^[[0m email_address v0.2.9
+stable (macos-latest)	test	2026-11-19T14:38:42.9188330Z ^[[1m^[[92m  Downloaded^[[0m futures-channel v0.3.34
+stable (macos-latest)	test	2026-11-19T14:38:42.9225470Z ^[[1m^[[92m  Downloaded^[[0m hashlink v0.12.2
+stable (macos-latest)	test	2026-11-19T14:38:42.9260900Z ^[[1m^[[92m  Downloaded^[[0m hmac v0.12.1
+stable (macos-latest)	test	2026-11-19T14:38:42.9294180Z ^[[1m^[[92m  Downloaded^[[0m httparse v1.10.1
+stable (macos-latest)	test	2026-11-19T14:38:42.9347600Z ^[[1m^[[92m  Downloaded^[[0m hybrid-array v0.4.15
+stable (macos-latest)	test	2026-11-19T14:38:42.9388710Z ^[[1m^[[92m  Downloaded^[[0m icu_locale v2.4.0
+stable (macos-latest)	test	2026-11-19T14:38:42.9441610Z ^[[1m^[[92m  Downloaded^[[0m icu_locale_fallback v2.4.0
+stable (macos-latest)	test	2026-11-19T14:38:42.9464090Z ^[[1m^[[92m  Downloaded^[[0m ipnet v2.12.2
+stable (macos-latest)	test	2026-11-19T14:38:42.9497710Z ^[[1m^[[92m  Downloaded^[[0m num-conv v0.2.2
+stable (macos-latest)	test	2026-11-19T14:38:42.9510310Z ^[[1m^[[92m  Downloaded^[[0m percent-encoding v2.3.2
+stable (macos-latest)	test	2026-11-19T14:38:42.9523210Z ^[[1m^[[92m  Downloaded^[[0m potential_utf v0.1.6
+stable (macos-latest)	test	2026-11-19T14:38:42.9571840Z ^[[1m^[[92m  Downloaded^[[0m powerfmt v0.2.1
+stable (macos-latest)	test	2026-11-19T14:38:42.9585410Z ^[[1m^[[92m  Downloaded^[[0m proc-macro-crate v3.5.0
+stable (macos-latest)	test	2026-11-19T14:38:42.9618690Z ^[[1m^[[92m  Downloaded^[[0m quoted_printable v0.5.2
+stable (macos-latest)	test	2026-11-19T14:38:42.9639080Z ^[[1m^[[92m  Downloaded^[[0m rand_chacha v0.3.1
+stable (macos-latest)	test	2026-11-19T14:38:42.9659000Z ^[[1m^[[92m  Downloaded^[[0m ref-cast v1.0.27
+stable (macos-latest)	test	2026-11-19T14:38:42.9755120Z ^[[1m^[[92m  Downloaded^[[0m rfc6979 v0.6.0
+stable (macos-latest)	test	2026-11-19T14:38:42.9785460Z ^[[1m^[[92m  Downloaded^[[0m signature v3.0.0
+stable (macos-latest)	test	2026-11-19T14:38:42.9859390Z ^[[1m^[[92m  Downloaded^[[0m time-core v0.1.9
+stable (macos-latest)	test	2026-11-19T14:38:42.9941900Z ^[[1m^[[92m  Downloaded^[[0m tokio-tungstenite v0.29.0
+stable (macos-latest)	test	2026-11-19T14:38:42.9980660Z ^[[1m^[[92m  Downloaded^[[0m topcoat-mail v0.11.0
+stable (macos-latest)	test	2026-11-19T14:38:43.0021860Z ^[[1m^[[92m  Downloaded^[[0m topcoat-core-macro v0.11.0
+stable (macos-latest)	test	2026-11-19T14:38:43.0105540Z ^[[1m^[[92m  Downloaded^[[0m topcoat-session v0.11.0
+stable (macos-latest)	test	2026-11-19T14:38:43.0167030Z ^[[1m^[[92m  Downloaded^[[0m bitflags v2.13.2
+stable (macos-latest)	test	2026-11-19T14:38:43.0264930Z ^[[1m^[[92m  Downloaded^[[0m cookie v0.18.2
+stable (macos-latest)	test	2026-11-19T14:38:43.0334620Z ^[[1m^[[92m  Downloaded^[[0m crc32fast v1.5.5
+stable (macos-latest)	test	2026-11-19T14:38:43.0451340Z ^[[1m^[[92m  Downloaded^[[0m elliptic-curve v0.14.3
+stable (macos-latest)	test	2026-11-19T14:38:43.0537200Z ^[[1m^[[92m  Downloaded^[[0m getrandom v0.2.17
+stable (macos-latest)	test	2026-11-19T14:38:43.0601590Z ^[[1m^[[92m  Downloaded^[[0m getrandom v0.3.4
+stable (macos-latest)	test	2026-11-19T14:38:43.0682410Z ^[[1m^[[92m  Downloaded^[[0m getrandom v0.4.3
+stable (macos-latest)	test	2026-11-19T14:38:43.0773140Z ^[[1m^[[92m  Downloaded^[[0m hmac v0.13.0
+stable (macos-latest)	test	2026-11-19T14:38:43.0818040Z ^[[1m^[[92m  Downloaded^[[0m icu_normalizer_data v2.4.0
+stable (macos-latest)	test	2026-11-19T14:38:43.0865790Z ^[[1m^[[92m  Downloaded^[[0m icu_provider v2.4.0
+stable (macos-latest)	test	2026-11-19T14:38:43.0927610Z ^[[1m^[[92m  Downloaded^[[0m twox-hash v2.1.5
+stable (macos-latest)	test	2026-11-19T14:38:43.0977580Z ^[[1m^[[92m  Downloaded^[[0m yoke v0.8.4
+stable (macos-latest)	test	2026-11-19T14:38:43.1010530Z ^[[1m^[[92m  Downloaded^[[0m matchit v0.9.2
+stable (macos-latest)	test	2026-11-19T14:38:43.1060940Z ^[[1m^[[92m  Downloaded^[[0m opaque-debug v0.3.1
+stable (macos-latest)	test	2026-11-19T14:38:43.1084190Z ^[[1m^[[92m  Downloaded^[[0m rand_core v0.6.4
+stable (macos-latest)	test	2026-11-19T14:38:43.1114860Z ^[[1m^[[92m  Downloaded^[[0m rand_core v0.10.1
+stable (macos-latest)	test	2026-11-19T14:38:43.1151210Z ^[[1m^[[92m  Downloaded^[[0m ref-cast-impl v1.0.27
+stable (macos-latest)	test	2026-11-19T14:38:43.1173080Z ^[[1m^[[92m  Downloaded^[[0m schemars_derive v1.2.3
+stable (macos-latest)	test	2026-11-19T14:38:43.1232700Z ^[[1m^[[92m  Downloaded^[[0m sec1 v0.8.1
+stable (macos-latest)	test	2026-11-19T14:38:43.1292210Z ^[[1m^[[92m  Downloaded^[[0m security-framework-sys v2.17.0
+stable (macos-latest)	test	2026-11-19T14:38:43.1350400Z ^[[1m^[[92m  Downloaded^[[0m serde_path_to_error v0.1.20
+stable (macos-latest)	test	2026-11-19T14:38:43.1381420Z ^[[1m^[[92m  Downloaded^[[0m serde_urlencoded v0.7.1
+stable (macos-latest)	test	2026-11-19T14:38:43.1469720Z ^[[1m^[[92m  Downloaded^[[0m sha2 v0.11.1
+stable (macos-latest)	test	2026-11-19T14:38:43.1558520Z ^[[1m^[[92m  Downloaded^[[0m shlex v2.0.1
+stable (macos-latest)	test	2026-11-19T14:38:43.1582380Z ^[[1m^[[92m  Downloaded^[[0m simd-adler32 v0.3.10
+stable (macos-latest)	test	2026-11-19T14:38:43.1617130Z ^[[1m^[[92m  Downloaded^[[0m siphasher v1.0.4
+stable (macos-latest)	test	2026-11-19T14:38:43.1649380Z ^[[1m^[[92m  Downloaded^[[0m subtle v2.6.1
+stable (macos-latest)	test	2026-11-19T14:38:43.1675080Z ^[[1m^[[92m  Downloaded^[[0m synstructure v0.14.0
+stable (macos-latest)	test	2026-11-19T14:38:43.1705390Z ^[[1m^[[92m  Downloaded^[[0m thiserror v2.0.21
+stable (macos-latest)	test	2026-11-19T14:38:43.1903460Z ^[[1m^[[92m  Downloaded^[[0m tinystr v0.8.5
+stable (macos-latest)	test	2026-11-19T14:38:43.1948120Z ^[[1m^[[92m  Downloaded^[[0m toml_datetime v1.1.2+spec-1.1.0
+stable (macos-latest)	test	2026-11-19T14:38:43.1967530Z ^[[1m^[[92m  Downloaded^[[0m topcoat-router-grammar v0.11.0
+stable (macos-latest)	test	2026-11-19T14:38:43.2001110Z ^[[1m^[[92m  Downloaded^[[0m base64 v0.23.1
+stable (macos-latest)	test	2026-11-19T14:38:43.2113080Z ^[[1m^[[92m  Downloaded^[[0m bytes v1.12.1
+stable (macos-latest)	test	2026-11-19T14:38:43.2189170Z ^[[1m^[[92m  Downloaded^[[0m const-oid v0.10.2
+stable (macos-latest)	test	2026-11-19T14:38:43.2230460Z ^[[1m^[[92m  Downloaded^[[0m flate2 v1.1.10
+stable (macos-latest)	test	2026-11-19T14:38:43.2367720Z ^[[1m^[[92m  Downloaded^[[0m icu_locale_core v2.4.0
+stable (macos-latest)	test	2026-11-19T14:38:43.2542420Z ^[[1m^[[92m  Downloaded^[[0m unicode-ident v1.0.27
+stable (macos-latest)	test	2026-11-19T14:38:43.2601710Z ^[[1m^[[92m  Downloaded^[[0m litemap v0.8.3
+stable (macos-latest)	test	2026-11-19T14:38:43.2640110Z ^[[1m^[[92m  Downloaded^[[0m mime v0.3.18
+stable (macos-latest)	test	2026-11-19T14:38:43.2663290Z ^[[1m^[[92m  Downloaded^[[0m pin-project-lite v0.2.17
+stable (macos-latest)	test	2026-11-19T14:38:43.2858340Z ^[[1m^[[92m  Downloaded^[[0m pkg-config v0.3.34
+stable (macos-latest)	test	2026-11-19T14:38:43.2893580Z ^[[1m^[[92m  Downloaded^[[0m polyval v0.6.2
+stable (macos-latest)	test	2026-11-19T14:38:43.2921510Z ^[[1m^[[92m  Downloaded^[[0m ppv-lite86 v0.2.21
+stable (macos-latest)	test	2026-11-19T14:38:43.2972000Z ^[[1m^[[92m  Downloaded^[[0m primefield v0.14.0
+stable (macos-latest)	test	2026-11-19T14:38:43.2995480Z ^[[1m^[[92m  Downloaded^[[0m primeorder v0.14.0
+stable (macos-latest)	test	2026-11-19T14:38:43.3024580Z ^[[1m^[[92m  Downloaded^[[0m qrcode v0.14.1
+stable (macos-latest)	test	2026-11-19T14:38:43.3088830Z ^[[1m^[[92m  Downloaded^[[0m quote v1.0.47
+stable (macos-latest)	test	2026-11-19T14:38:43.3209540Z ^[[1m^[[92m  Downloaded^[[0m rand_chacha v0.9.0
+stable (macos-latest)	test	2026-11-19T14:38:43.3256050Z ^[[1m^[[92m  Downloaded^[[0m rand_core v0.9.5
+stable (macos-latest)	test	2026-11-19T14:38:43.3316010Z ^[[1m^[[92m  Downloaded^[[0m serde_derive_internals v0.30.0
+stable (macos-latest)	test	2026-11-19T14:38:43.3356390Z ^[[1m^[[92m  Downloaded^[[0m sha2 v0.10.9
+stable (macos-latest)	test	2026-11-19T14:38:43.3391510Z ^[[1m^[[92m  Downloaded^[[0m signal-hook-registry v1.4.8
+stable (macos-latest)	test	2026-11-19T14:38:43.3412410Z ^[[1m^[[92m  Downloaded^[[0m slab v0.4.12
+stable (macos-latest)	test	2026-11-19T14:38:43.3440230Z ^[[1m^[[92m  Downloaded^[[0m smallvec v1.16.4
+stable (macos-latest)	test	2026-11-19T14:38:43.3465020Z ^[[1m^[[92m  Downloaded^[[0m thiserror-impl v2.0.21
+stable (macos-latest)	test	2026-11-19T14:38:43.3491520Z ^[[1m^[[92m  Downloaded^[[0m toml_parser v1.1.5+spec-1.1.0
+stable (macos-latest)	test	2026-11-19T14:38:43.3530020Z ^[[1m^[[92m  Downloaded^[[0m topcoat-core v0.11.0
+stable (macos-latest)	test	2026-11-19T14:38:43.3585630Z ^[[1m^[[92m  Downloaded^[[0m toml_writer v1.2.0+spec-1.1.0
+stable (macos-latest)	test	2026-11-19T14:38:43.3617520Z ^[[1m^[[92m  Downloaded^[[0m topcoat-view-macro v0.11.0
+stable (macos-latest)	test	2026-11-19T14:38:43.3675410Z ^[[1m^[[92m  Downloaded^[[0m topcoat-router-macro v0.11.0
+stable (macos-latest)	test	2026-11-19T14:38:43.3704890Z ^[[1m^[[92m  Downloaded^[[0m tokio-macros v2.7.2
+stable (macos-latest)	test	2026-11-19T14:38:43.3724370Z ^[[1m^[[92m  Downloaded^[[0m time-macros v0.2.32
+stable (macos-latest)	test	2026-11-19T14:38:43.3778770Z ^[[1m^[[92m  Downloaded^[[0m base64 v0.22.1
+stable (macos-latest)	test	2026-11-19T14:38:43.3860030Z ^[[1m^[[92m  Downloaded^[[0m http v1.5.0
+stable (macos-latest)	test	2026-11-19T14:38:43.3993280Z ^[[1m^[[92m  Downloaded^[[0m log v0.4.35
+stable (macos-latest)	test	2026-11-19T14:38:43.4043970Z ^[[1m^[[92m  Downloaded^[[0m miniz_oxide v0.9.1
+stable (macos-latest)	test	2026-11-19T14:38:43.4084740Z ^[[1m^[[92m  Downloaded^[[0m num-traits v0.2.19
+stable (macos-latest)	test	2026-11-19T14:38:43.4134680Z ^[[1m^[[92m  Downloaded^[[0m once_cell v1.21.4
+stable (macos-latest)	test	2026-11-19T14:38:43.4178760Z ^[[1m^[[92m  Downloaded^[[0m ryu v1.0.23
+stable (macos-latest)	test	2026-11-19T14:38:43.4258880Z ^[[1m^[[92m  Downloaded^[[0m toml_edit v0.25.18+spec-1.1.0
+stable (macos-latest)	test	2026-11-19T14:38:43.4376380Z ^[[1m^[[92m  Downloaded^[[0m topcoat-core-grammar v0.11.0
+stable (macos-latest)	test	2026-11-19T14:38:43.4901020Z ^[[1m^[[92m  Downloaded^[[0m topcoat-view v0.11.0
+stable (macos-latest)	test	2026-11-19T14:38:43.5039880Z ^[[1m^[[92m  Downloaded^[[0m topcoat-asset v0.11.0
+stable (macos-latest)	test	2026-11-19T14:38:43.5066370Z ^[[1m^[[92m  Downloaded^[[0m topcoat-cookie v0.11.0
+stable (macos-latest)	test	2026-11-19T14:38:43.5113110Z ^[[1m^[[92m  Downloaded^[[0m icu_collections v2.4.0
+stable (macos-latest)	test	2026-11-19T14:38:43.5390310Z ^[[1m^[[92m  Downloaded^[[0m indexmap v2.14.2
+stable (macos-latest)	test	2026-11-19T14:38:43.5541270Z ^[[1m^[[92m  Downloaded^[[0m tracing-core v0.1.36
+stable (macos-latest)	test	2026-11-19T14:38:43.5632320Z ^[[1m^[[92m  Downloaded^[[0m proc-macro2 v1.0.107
+stable (macos-latest)	test	2026-11-19T14:38:43.5690710Z ^[[1m^[[92m  Downloaded^[[0m serde_core v1.0.229
+stable (macos-latest)	test	2026-11-19T14:38:43.5743650Z ^[[1m^[[92m  Downloaded^[[0m socket2 v0.6.5
+stable (macos-latest)	test	2026-11-19T14:38:43.5773260Z ^[[1m^[[92m  Downloaded^[[0m topcoat-font v0.11.0
+stable (macos-latest)	test	2026-11-19T14:38:43.5850080Z ^[[1m^[[92m  Downloaded^[[0m topcoat-l10n v0.11.0
+stable (macos-latest)	test	2026-11-19T14:38:43.5923070Z ^[[1m^[[92m  Downloaded^[[0m topcoat-view-grammar v0.11.0
+stable (macos-latest)	test	2026-11-19T14:38:43.6145380Z ^[[1m^[[92m  Downloaded^[[0m toml v1.2.0+spec-1.1.0
+stable (macos-latest)	test	2026-11-19T14:38:43.6218650Z ^[[1m^[[92m  Downloaded^[[0m aes v0.8.4
+stable (macos-latest)	test	2026-11-19T14:38:43.6274010Z ^[[1m^[[92m  Downloaded^[[0m der v0.8.3
+stable (macos-latest)	test	2026-11-19T14:38:43.6440900Z ^[[1m^[[92m  Downloaded^[[0m hyper-util v0.1.21
+stable (macos-latest)	test	2026-11-19T14:38:43.6653100Z ^[[1m^[[92m  Downloaded^[[0m idna v1.1.0
+stable (macos-latest)	test	2026-11-19T14:38:43.6731210Z ^[[1m^[[92m  Downloaded^[[0m zerotrie v0.2.5
+stable (macos-latest)	test	2026-11-19T14:38:43.6854440Z ^[[1m^[[92m  Downloaded^[[0m p256 v0.14.0
+stable (macos-latest)	test	2026-11-19T14:38:43.6922470Z ^[[1m^[[92m  Downloaded^[[0m rand v0.8.8
+stable (macos-latest)	test	2026-11-19T14:38:43.7014450Z ^[[1m^[[92m  Downloaded^[[0m schemars v1.2.3
+stable (macos-latest)	test	2026-11-19T14:38:43.7445790Z ^[[1m^[[92m  Downloaded^[[0m security-framework v3.7.0
+stable (macos-latest)	test	2026-11-19T14:38:43.7526410Z ^[[1m^[[92m  Downloaded^[[0m serde v1.0.229
+stable (macos-latest)	test	2026-11-19T14:38:43.7610810Z ^[[1m^[[92m  Downloaded^[[0m serde_derive v1.0.229
+stable (macos-latest)	test	2026-11-19T14:38:43.7663240Z ^[[1m^[[92m  Downloaded^[[0m topcoat v0.11.0
+stable (macos-latest)	test	2026-11-19T14:38:43.7754280Z ^[[1m^[[92m  Downloaded^[[0m aes-gcm v0.10.3
+stable (macos-latest)	test	2026-11-19T14:38:43.7955290Z ^[[1m^[[92m  Downloaded^[[0m cc v1.11.2
+stable (macos-latest)	test	2026-11-19T14:38:43.8078380Z ^[[1m^[[92m  Downloaded^[[0m memchr v2.8.3
+stable (macos-latest)	test	2026-11-19T14:38:43.8191220Z ^[[1m^[[92m  Downloaded^[[0m mio v1.2.4
+stable (macos-latest)	test	2026-11-19T14:38:43.8358630Z ^[[1m^[[92m  Downloaded^[[0m ruzstd v0.9.1
+stable (macos-latest)	test	2026-11-19T14:38:43.8486460Z ^[[1m^[[92m  Downloaded^[[0m crypto-bigint v0.7.10
+stable (macos-latest)	test	2026-11-19T14:38:43.8880770Z ^[[1m^[[92m  Downloaded^[[0m futures-util v0.3.34
+stable (macos-latest)	test	2026-11-19T14:38:43.9302810Z ^[[1m^[[92m  Downloaded^[[0m hkdf v0.13.0
+stable (macos-latest)	test	2026-11-19T14:38:43.9425220Z ^[[1m^[[92m  Downloaded^[[0m hyper v1.12.0
+stable (macos-latest)	test	2026-11-19T14:38:43.9787600Z ^[[1m^[[92m  Downloaded^[[0m icu_properties v2.4.0
+stable (macos-latest)	test	2026-11-19T14:38:43.9883180Z ^[[1m^[[92m  Downloaded^[[0m icu_properties_data v2.4.0
+stable (macos-latest)	test	2026-11-19T14:38:44.0268180Z ^[[1m^[[92m  Downloaded^[[0m lettre v0.11.23
+stable (macos-latest)	test	2026-11-19T14:38:44.0526420Z ^[[1m^[[92m  Downloaded^[[0m typenum v1.20.1
+stable (macos-latest)	test	2026-11-19T14:38:44.0597510Z ^[[1m^[[92m  Downloaded^[[0m rand v0.9.5
+stable (macos-latest)	test	2026-11-19T14:38:44.0667990Z ^[[1m^[[92m  Downloaded^[[0m h2 v0.4.20
+stable (macos-latest)	test	2026-11-19T14:38:44.0831480Z ^[[1m^[[92m  Downloaded^[[0m hashbrown v0.17.1
+stable (macos-latest)	test	2026-11-19T14:38:44.0937610Z ^[[1m^[[92m  Downloaded^[[0m hkdf v0.12.4
+stable (macos-latest)	test	2026-11-19T14:38:44.0975700Z ^[[1m^[[92m  Downloaded^[[0m zerovec v0.11.9
+stable (macos-latest)	test	2026-11-19T14:38:44.1101560Z ^[[1m^[[92m  Downloaded^[[0m topcoat-runtime v0.11.0
+stable (macos-latest)	test	2026-11-19T14:38:44.1313560Z ^[[1m^[[92m  Downloaded^[[0m tokio-util v0.7.20
+stable (macos-latest)	test	2026-11-19T14:38:44.1588100Z ^[[1m^[[92m  Downloaded^[[0m nom v8.0.0
+stable (macos-latest)	test	2026-11-19T14:38:44.1724460Z ^[[1m^[[92m  Downloaded^[[0m serde_json v1.0.154
+stable (macos-latest)	test	2026-11-19T14:38:44.2055980Z ^[[1m^[[92m  Downloaded^[[0m rusqlite v0.41.1
+stable (macos-latest)	test	2026-11-19T14:38:44.2448600Z ^[[1m^[[92m  Downloaded^[[0m topcoat-router v0.11.0
+stable (macos-latest)	test	2026-11-19T14:38:44.2896890Z ^[[1m^[[92m  Downloaded^[[0m winnow v1.0.5
+stable (macos-latest)	test	2026-11-19T14:38:44.3194290Z ^[[1m^[[92m  Downloaded^[[0m zlib-rs v0.6.8
+stable (macos-latest)	test	2026-11-19T14:38:44.3372670Z ^[[1m^[[92m  Downloaded^[[0m vcpkg v0.2.15
+stable (macos-latest)	test	2026-11-19T14:38:44.5086080Z ^[[1m^[[92m  Downloaded^[[0m time v0.3.55
+stable (macos-latest)	test	2026-11-19T14:38:44.5561410Z ^[[1m^[[92m  Downloaded^[[0m syn v3.0.9
+stable (macos-latest)	test	2026-11-19T14:38:44.5845890Z ^[[1m^[[92m  Downloaded^[[0m zerocopy v0.8.63
+stable (macos-latest)	test	2026-11-19T14:38:44.6737320Z ^[[1m^[[92m  Downloaded^[[0m tracing v0.1.44
+stable (macos-latest)	test	2026-11-19T14:38:44.7208650Z ^[[1m^[[92m  Downloaded^[[0m icu_normalizer v2.4.0
+stable (macos-latest)	test	2026-11-19T14:38:44.7413800Z ^[[1m^[[92m  Downloaded^[[0m libc v0.2.191
+stable (macos-latest)	test	2026-11-19T14:38:44.9235090Z ^[[1m^[[92m  Downloaded^[[0m tokio v1.54.1
+stable (macos-latest)	test	2026-11-19T14:38:45.0839480Z ^[[1m^[[92m  Downloaded^[[0m icu_locale_data v2.4.0
+stable (macos-latest)	test	2026-11-19T14:38:45.1230180Z ^[[1m^[[92m  Downloaded^[[0m libsqlite3-sys v0.39.1
+stable (macos-latest)	test	2026-11-19T14:38:45.4174310Z ^[[1m^[[92m   Compiling^[[0m proc-macro2 v1.0.107
+stable (macos-latest)	test	2026-11-19T14:38:45.4178710Z ^[[1m^[[92m   Compiling^[[0m quote v1.0.47
+stable (macos-latest)	test	2026-11-19T14:38:45.4179360Z ^[[1m^[[92m   Compiling^[[0m unicode-ident v1.0.27
+stable (macos-latest)	test	2026-11-19T14:38:45.7042140Z ^[[1m^[[92m   Compiling^[[0m typenum v1.20.1
+stable (macos-latest)	test	2026-11-19T14:38:46.9070300Z ^[[1m^[[92m   Compiling^[[0m libc v0.2.191
+stable (macos-latest)	test	2026-11-19T14:38:51.6617940Z ^[[1m^[[92m   Compiling^[[0m subtle v2.6.1
+stable (macos-latest)	test	2026-11-19T14:38:51.8523280Z ^[[1m^[[92m   Compiling^[[0m itoa v1.0.18
+stable (macos-latest)	test	2026-11-19T14:38:52.0406210Z ^[[1m^[[92m   Compiling^[[0m equivalent v1.0.3
+stable (macos-latest)	test	2026-11-19T14:38:52.1074300Z ^[[1m^[[92m   Compiling^[[0m zeroize v1.9.1
+stable (macos-latest)	test	2026-11-19T14:38:52.2485710Z ^[[1m^[[92m   Compiling^[[0m hybrid-array v0.4.15
+stable (macos-latest)	test	2026-11-19T14:38:52.5197090Z ^[[1m^[[92m   Compiling^[[0m syn v3.0.9
+stable (macos-latest)	test	2026-11-19T14:38:52.5197930Z ^[[1m^[[92m   Compiling^[[0m rand_core v0.10.1
+stable (macos-latest)	test	2026-11-19T14:38:52.6224580Z ^[[1m^[[92m   Compiling^[[0m cfg-if v1.0.5
+stable (macos-latest)	test	2026-11-19T14:38:52.6481350Z ^[[1m^[[92m   Compiling^[[0m serde_core v1.0.229
+stable (macos-latest)	test	2026-11-19T14:38:52.6871850Z ^[[1m^[[92m   Compiling^[[0m cmov v0.5.4
+stable (macos-latest)	test	2026-11-19T14:38:52.8477640Z ^[[1m^[[92m   Compiling^[[0m ctutils v0.4.8
+stable (macos-latest)	test	2026-11-19T14:38:53.0054310Z ^[[1m^[[92m   Compiling^[[0m foldhash v0.2.0
+stable (macos-latest)	test	2026-11-19T14:38:53.1275750Z ^[[1m^[[92m   Compiling^[[0m hashbrown v0.17.1
+stable (macos-latest)	test	2026-11-19T14:38:53.7979140Z ^[[1m^[[92m   Compiling^[[0m crypto-common v0.2.2
+stable (macos-latest)	test	2026-11-19T14:38:54.6678030Z ^[[1m^[[92m   Compiling^[[0m thiserror v2.0.21
+stable (macos-latest)	test	2026-11-19T14:38:55.1231940Z ^[[1m^[[92m   Compiling^[[0m const-oid v0.10.2
+stable (macos-latest)	test	2026-11-19T14:38:55.3594360Z ^[[1m^[[92m   Compiling^[[0m winnow v1.0.5
+stable (macos-latest)	test	2026-11-19T14:38:55.6291220Z ^[[1m^[[92m   Compiling^[[0m indexmap v2.14.2
+stable (macos-latest)	test	2026-11-19T14:38:56.1718840Z ^[[1m^[[92m   Compiling^[[0m block-buffer v0.12.1
+stable (macos-latest)	test	2026-11-19T14:38:56.2974360Z ^[[1m^[[92m   Compiling^[[0m memchr v2.8.3
+stable (macos-latest)	test	2026-11-19T14:38:56.4954510Z ^[[1m^[[92m   Compiling^[[0m toml_parser v1.1.5+spec-1.1.0
+stable (macos-latest)	test	2026-11-19T14:38:56.7554690Z ^[[1m^[[92m   Compiling^[[0m digest v0.11.3
+stable (macos-latest)	test	2026-11-19T14:38:56.9544080Z ^[[1m^[[92m   Compiling^[[0m base64 v0.22.1
+stable (macos-latest)	test	2026-11-19T14:38:57.2008970Z ^[[1m^[[92m   Compiling^[[0m zmij v1.0.23
+stable (macos-latest)	test	2026-11-19T14:38:57.2543310Z ^[[1m^[[92m   Compiling^[[0m thiserror-impl v2.0.21
+stable (macos-latest)	test	2026-11-19T14:38:57.2912520Z ^[[1m^[[92m   Compiling^[[0m serde v1.0.229
+stable (macos-latest)	test	2026-11-19T14:38:57.5309940Z ^[[1m^[[92m   Compiling^[[0m serde_derive v1.0.229
+stable (macos-latest)	test	2026-11-19T14:38:57.6037620Z ^[[1m^[[92m   Compiling^[[0m ref-cast v1.0.27
+stable (macos-latest)	test	2026-11-19T14:38:57.8283240Z ^[[1m^[[92m   Compiling^[[0m serde_json v1.0.154
+stable (macos-latest)	test	2026-11-19T14:38:58.4091140Z ^[[1m^[[92m   Compiling^[[0m ref-cast-impl v1.0.27
+stable (macos-latest)	test	2026-11-19T14:38:58.4493050Z ^[[1m^[[92m   Compiling^[[0m hmac v0.13.0
+stable (macos-latest)	test	2026-11-19T14:38:58.6442690Z ^[[1m^[[92m   Compiling^[[0m version_check v0.9.5
+stable (macos-latest)	test	2026-11-19T14:38:58.8871980Z ^[[1m^[[92m   Compiling^[[0m pin-project-lite v0.2.17
+stable (macos-latest)	test	2026-11-19T14:38:58.9734990Z ^[[1m^[[92m   Compiling^[[0m smallvec v1.16.4
+stable (macos-latest)	test	2026-11-19T14:38:58.9735930Z ^[[1m^[[92m   Compiling^[[0m generic-array v0.14.7
+stable (macos-latest)	test	2026-11-19T14:38:59.2156970Z ^[[1m^[[92m   Compiling^[[0m find-msvc-tools v0.1.15
+stable (macos-latest)	test	2026-11-19T14:38:59.4599200Z ^[[1m^[[92m   Compiling^[[0m shlex v2.0.1
+stable (macos-latest)	test	2026-11-19T14:38:59.6949770Z ^[[1m^[[92m   Compiling^[[0m bytes v1.12.1
+stable (macos-latest)	test	2026-11-19T14:39:00.5324160Z ^[[1m^[[92m   Compiling^[[0m cc v1.11.2
+stable (macos-latest)	test	2026-11-19T14:39:00.9549250Z ^[[1m^[[92m   Compiling^[[0m hkdf v0.13.0
+stable (macos-latest)	test	2026-11-19T14:39:01.0238260Z ^[[1m^[[92m   Compiling^[[0m serde_derive_internals v0.30.0
+stable (macos-latest)	test	2026-11-19T14:39:01.0749220Z ^[[1m^[[92m   Compiling^[[0m pkg-config v0.3.34
+stable (macos-latest)	test	2026-11-19T14:39:01.4655880Z ^[[1m^[[92m   Compiling^[[0m vcpkg v0.2.15
+stable (macos-latest)	test	2026-11-19T14:39:01.6819620Z ^[[1m^[[92m   Compiling^[[0m schemars_derive v1.2.3
+stable (macos-latest)	test	2026-11-19T14:39:01.9569340Z ^[[1m^[[92m   Compiling^[[0m libsqlite3-sys v0.39.1
+stable (macos-latest)	test	2026-11-19T14:39:02.2349480Z ^[[1m^[[92m   Compiling^[[0m dyn-clone v1.0.20
+stable (macos-latest)	test	2026-11-19T14:39:02.3447460Z ^[[1m^[[92m   Compiling^[[0m core-foundation-sys v0.8.7
+stable (macos-latest)	test	2026-11-19T14:39:02.5239360Z ^[[1m^[[92m   Compiling^[[0m http v1.5.0
+stable (macos-latest)	test	2026-11-19T14:39:02.8948920Z ^[[1m^[[92m   Compiling^[[0m schemars v1.2.3
+stable (macos-latest)	test	2026-11-19T14:39:03.5319120Z ^[[1m^[[92m   Compiling^[[0m toml_datetime v1.1.2+spec-1.1.0
+stable (macos-latest)	test	2026-11-19T14:39:03.7794780Z ^[[1m^[[92m   Compiling^[[0m cpufeatures v0.3.1
+stable (macos-latest)	test	2026-11-19T14:39:03.8746830Z ^[[1m^[[92m   Compiling^[[0m bitflags v2.13.2
+stable (macos-latest)	test	2026-11-19T14:39:04.0552500Z ^[[1m^[[92m   Compiling^[[0m shed-proto v0.0.0 (https://github.com/jirathip-dev/shed?rev=4ac443dbbcb51227dc9df2fb55e2f0834d6a91eb#4ac443db)
+stable (macos-latest)	test	2026-11-19T14:39:04.2888460Z ^[[1m^[[92m   Compiling^[[0m futures-core v0.3.34
+stable (macos-latest)	test	2026-11-19T14:39:04.4343070Z ^[[1m^[[92m   Compiling^[[0m sha2 v0.11.1
+stable (macos-latest)	test	2026-11-19T14:39:04.5250320Z ^[[1m^[[92m   Compiling^[[0m core-foundation v0.10.1
+stable (macos-latest)	test	2026-11-19T14:39:04.9117900Z ^[[1m^[[92m   Compiling^[[0m security-framework-sys v2.17.0
+stable (macos-latest)	test	2026-11-19T14:39:05.0724990Z ^[[1m^[[92m   Compiling^[[0m serde_spanned v1.1.2
+stable (macos-latest)	test	2026-11-19T14:39:05.1993090Z ^[[1m^[[92m   Compiling^[[0m hashlink v0.12.2
+stable (macos-latest)	test	2026-11-19T14:39:05.2523250Z ^[[1m^[[92m   Compiling^[[0m twox-hash v2.1.5
+stable (macos-latest)	test	2026-11-19T14:39:05.3785770Z ^[[1m^[[92m   Compiling^[[0m fallible-iterator v0.3.0
+stable (macos-latest)	test	2026-11-19T14:39:05.6125600Z ^[[1m^[[92m   Compiling^[[0m cooee-core v0.1.0 (/Users/runner/work/cooee/cooee/crates/cooee-core)
+stable (macos-latest)	test	2026-11-19T14:39:05.8176550Z ^[[1m^[[92m   Compiling^[[0m toml_writer v1.2.0+spec-1.1.0
+stable (macos-latest)	test	2026-11-19T14:39:06.0432500Z ^[[1m^[[92m   Compiling^[[0m fallible-streaming-iterator v0.1.9
+stable (macos-latest)	test	2026-11-19T14:39:06.1571440Z ^[[1m^[[92m   Compiling^[[0m toml_edit v0.25.18+spec-1.1.0
+stable (macos-latest)	test	2026-11-19T14:39:06.2525330Z ^[[1m^[[92m   Compiling^[[0m ruzstd v0.9.1
+stable (macos-latest)	test	2026-11-19T14:39:08.0775950Z ^[[1m^[[92m   Compiling^[[0m toml v1.2.0+spec-1.1.0
+stable (macos-latest)	test	2026-11-19T14:39:08.0992570Z ^[[1m^[[92m   Compiling^[[0m security-framework v3.7.0
+stable (macos-latest)	test	2026-11-19T14:39:09.9267860Z ^[[1m^[[92m   Compiling^[[0m blocks v0.1.0 (https://github.com/jirathip-dev/blocks?rev=d0882093e32c6d752910c459efa04a2a6beb5c3a#d0882093)
+stable (macos-latest)	test	2026-11-19T14:39:12.0405070Z ^[[1m^[[92m   Compiling^[[0m crypto-common v0.1.7
+stable (macos-latest)	test	2026-11-19T14:39:12.1497070Z ^[[1m^[[92m   Compiling^[[0m swag v0.1.0 (https://github.com/jirathip-dev/swag?rev=e9ad9ba0ace20e3169e82f42efa2a5f1f8a21847#e9ad9ba0)
+stable (macos-latest)	test	2026-11-19T14:39:12.2751630Z ^[[1m^[[92m   Compiling^[[0m errno v0.3.14
+stable (macos-latest)	test	2026-11-19T14:39:12.4020120Z ^[[1m^[[92m   Compiling^[[0m autocfg v1.5.1
+stable (macos-latest)	test	2026-11-19T14:39:12.7432420Z ^[[1m^[[92m   Compiling^[[0m rusqlite v0.41.1
+stable (macos-latest)	test	2026-11-19T14:39:12.7534740Z ^[[1m^[[92m   Compiling^[[0m num-traits v0.2.19
+stable (macos-latest)	test	2026-11-19T14:39:12.9480690Z ^[[1m^[[92m   Compiling^[[0m signal-hook-registry v1.4.8
+stable (macos-latest)	test	2026-11-19T14:39:13.1704550Z ^[[1m^[[92m   Compiling^[[0m tokio-macros v2.7.2
+stable (macos-latest)	test	2026-11-19T14:39:13.8626010Z ^[[1m^[[92m   Compiling^[[0m mio v1.2.4
+stable (macos-latest)	test	2026-11-19T14:39:14.1576200Z ^[[1m^[[92m   Compiling^[[0m socket2 v0.6.5
+stable (macos-latest)	test	2026-11-19T14:39:14.6119340Z ^[[1m^[[92m   Compiling^[[0m tokio v1.54.1
+stable (macos-latest)	test	2026-11-19T14:39:16.2582140Z ^[[1m^[[92m   Compiling^[[0m futures-macro v0.3.34
+stable (macos-latest)	test	2026-11-19T14:39:23.4627340Z ^[[1m^[[92m   Compiling^[[0m stable_deref_trait v1.2.1
+stable (macos-latest)	test	2026-11-19T14:39:23.5793280Z ^[[1m^[[92m   Compiling^[[0m futures-task v0.3.34
+stable (macos-latest)	test	2026-11-19T14:39:23.7601220Z ^[[1m^[[92m   Compiling^[[0m futures-sink v0.3.34
+stable (macos-latest)	test	2026-11-19T14:39:23.8921500Z ^[[1m^[[92m   Compiling^[[0m elsa v1.11.2
+stable (macos-latest)	test	2026-11-19T14:39:25.8835430Z ^[[1m^[[92m   Compiling^[[0m cpufeatures v0.2.17
+stable (macos-latest)	test	2026-11-19T14:39:26.0224850Z ^[[1m^[[92m   Compiling^[[0m cpubits v0.1.1
+stable (macos-latest)	test	2026-11-19T14:39:26.1244390Z ^[[1m^[[92m   Compiling^[[0m slab v0.4.12
+stable (macos-latest)	test	2026-11-19T14:39:26.3205810Z ^[[1m^[[92m   Compiling^[[0m getrandom v0.3.4
+stable (macos-latest)	test	2026-11-19T14:39:26.6977900Z ^[[1m^[[92m   Compiling^[[0m anymap3 v1.1.0
+stable (macos-latest)	test	2026-11-19T14:39:26.8500960Z ^[[1m^[[92m   Compiling^[[0m zerocopy v0.8.63
+stable (macos-latest)	test	2026-11-19T14:39:27.1789060Z ^[[1m^[[92m   Compiling^[[0m httparse v1.10.1
+stable (macos-latest)	test	2026-11-19T14:39:27.4074080Z ^[[1m^[[92m   Compiling^[[0m siphasher v1.0.4
+stable (macos-latest)	test	2026-11-19T14:39:27.6854950Z ^[[1m^[[92m   Compiling^[[0m crypto-bigint v0.7.10
+stable (macos-latest)	test	2026-11-19T14:39:27.7604880Z ^[[1m^[[92m   Compiling^[[0m proc-macro-crate v3.5.0
+stable (macos-latest)	test	2026-11-19T14:39:28.2061120Z ^[[1m^[[92m   Compiling^[[0m ff v0.14.0
+stable (macos-latest)	test	2026-11-19T14:39:28.3393400Z ^[[1m^[[92m   Compiling^[[0m once_cell v1.21.4
+stable (macos-latest)	test	2026-11-19T14:39:28.6109130Z ^[[1m^[[92m   Compiling^[[0m tracing-core v0.1.36
+stable (macos-latest)	test	2026-11-19T14:39:29.4101200Z ^[[1m^[[92m   Compiling^[[0m topcoat-core-grammar v0.11.0
+stable (macos-latest)	test	2026-11-19T14:39:31.1899700Z ^[[1m^[[92m   Compiling^[[0m heck v0.5.0
+stable (macos-latest)	test	2026-11-19T14:39:31.4142160Z ^[[1m^[[92m   Compiling^[[0m rand_core v0.9.5
+stable (macos-latest)	test	2026-11-19T14:39:31.6258400Z ^[[1m^[[92m   Compiling^[[0m tracing v0.1.44
+stable (macos-latest)	test	2026-11-19T14:39:31.8375930Z ^[[1m^[[92m   Compiling^[[0m group v0.14.0
+stable (macos-latest)	test	2026-11-19T14:39:31.9482020Z ^[[1m^[[92m   Compiling^[[0m tokio-util v0.7.20
+stable (macos-latest)	test	2026-11-19T14:39:32.7558050Z ^[[1m^[[92m   Compiling^[[0m http-body v1.1.0
+stable (macos-latest)	test	2026-11-19T14:39:32.9190520Z ^[[1m^[[92m   Compiling^[[0m block-buffer v0.10.4
+stable (macos-latest)	test	2026-11-19T14:39:34.1653410Z ^[[1m^[[92m   Compiling^[[0m der v0.8.3
+stable (macos-latest)	test	2026-11-19T14:39:34.5194180Z ^[[1m^[[92m   Compiling^[[0m ppv-lite86 v0.2.21
+stable (macos-latest)	test	2026-11-19T14:39:34.7824140Z ^[[1m^[[92m   Compiling^[[0m fnv v1.0.7
+stable (macos-latest)	test	2026-11-19T14:39:34.9152230Z ^[[1m^[[92m   Compiling^[[0m base16ct v1.0.0
+stable (macos-latest)	test	2026-11-19T14:39:35.2629770Z ^[[1m^[[92m   Compiling^[[0m atomic-waker v1.1.2
+stable (macos-latest)	test	2026-11-19T14:39:35.3479670Z ^[[1m^[[92m   Compiling^[[0m futures-util v0.3.34
+stable (macos-latest)	test	2026-11-19T14:39:35.3897830Z ^[[1m^[[92m   Compiling^[[0m h2 v0.4.20
+stable (macos-latest)	test	2026-11-19T14:39:37.0966450Z ^[[1m^[[92m   Compiling^[[0m sec1 v0.8.1
+stable (macos-latest)	test	2026-11-19T14:39:37.3747010Z ^[[1m^[[92m   Compiling^[[0m rand_chacha v0.9.0
+stable (macos-latest)	test	2026-11-19T14:39:37.4750370Z ^[[1m^[[92m   Compiling^[[0m topcoat-core v0.11.0
+stable (macos-latest)	test	2026-11-19T14:39:37.9127000Z ^[[1m^[[92m   Compiling^[[0m digest v0.10.7
+stable (macos-latest)	test	2026-11-19T14:39:38.2031070Z ^[[1m^[[92m   Compiling^[[0m futures-channel v0.3.34
+stable (macos-latest)	test	2026-11-19T14:39:38.4378430Z ^[[1m^[[92m   Compiling^[[0m inout v0.1.4
+stable (macos-latest)	test	2026-11-19T14:39:38.5957490Z ^[[1m^[[92m   Compiling^[[0m percent-encoding v2.3.2
+stable (macos-latest)	test	2026-11-19T14:39:39.0075570Z ^[[1m^[[92m   Compiling^[[0m httpdate v1.0.3
+stable (macos-latest)	test	2026-11-19T14:39:39.2286000Z ^[[1m^[[92m   Compiling^[[0m hyper v1.12.0
+stable (macos-latest)	test	2026-11-19T14:39:39.3674080Z ^[[1m^[[92m   Compiling^[[0m topcoat-view v0.11.0
+stable (macos-latest)	test	2026-11-19T14:39:40.1159060Z ^[[1m^[[92m   Compiling^[[0m form_urlencoded v1.2.2
+stable (macos-latest)	test	2026-11-19T14:39:40.2824070Z ^[[1m^[[92m   Compiling^[[0m cipher v0.4.4
+stable (macos-latest)	test	2026-11-19T14:39:40.3572890Z ^[[1m^[[92m   Compiling^[[0m sha1 v0.10.7
+stable (macos-latest)	test	2026-11-19T14:39:40.5041430Z ^[[1m^[[92m   Compiling^[[0m rand v0.9.5
+stable (macos-latest)	test	2026-11-19T14:39:40.5148100Z ^[[1m^[[92m   Compiling^[[0m elliptic-curve v0.14.3
+stable (macos-latest)	test	2026-11-19T14:39:40.7104790Z ^[[1m^[[92m   Compiling^[[0m primefield v0.14.0
+stable (macos-latest)	test	2026-11-19T14:39:40.9431950Z ^[[1m^[[92m   Compiling^[[0m universal-hash v0.5.1
+stable (macos-latest)	test	2026-11-19T14:39:41.0704870Z ^[[1m^[[92m   Compiling^[[0m opaque-debug v0.3.1
+stable (macos-latest)	test	2026-11-19T14:39:41.1592410Z ^[[1m^[[92m   Compiling^[[0m ryu v1.0.23
+stable (macos-latest)	test	2026-11-19T14:39:41.1919370Z ^[[1m^[[92m   Compiling^[[0m crc32fast v1.5.5
+stable (macos-latest)	test	2026-11-19T14:39:41.3648370Z ^[[1m^[[92m   Compiling^[[0m data-encoding v2.11.1
+stable (macos-latest)	test	2026-11-19T14:39:41.5261390Z ^[[1m^[[92m   Compiling^[[0m log v0.4.35
+stable (macos-latest)	test	2026-11-19T14:39:41.6797770Z ^[[1m^[[92m   Compiling^[[0m serde_urlencoded v0.7.1
+stable (macos-latest)	test	2026-11-19T14:39:41.9737030Z ^[[1m^[[92m   Compiling^[[0m tungstenite v0.29.0
+stable (macos-latest)	test	2026-11-19T14:39:42.3416900Z ^[[1m^[[92m   Compiling^[[0m polyval v0.6.2
+stable (macos-latest)	test	2026-11-19T14:39:42.5154140Z ^[[1m^[[92m   Compiling^[[0m wnaf v0.14.1
+stable (macos-latest)	test	2026-11-19T14:39:42.6628350Z ^[[1m^[[92m   Compiling^[[0m hyper-util v0.1.21
+stable (macos-latest)	test	2026-11-19T14:39:42.7478290Z ^[[1m^[[92m   Compiling^[[0m topcoat-view-grammar v0.11.0
+stable (macos-latest)	test	2026-11-19T14:39:43.0246750Z ^[[1m^[[92m   Compiling^[[0m http-body-util v0.1.5
+stable (macos-latest)	test	2026-11-19T14:39:43.1962410Z ^[[1m^[[92m   Compiling^[[0m topcoat-router-grammar v0.11.0
+stable (macos-latest)	test	2026-11-19T14:39:43.4477570Z ^[[1m^[[92m   Compiling^[[0m rfc6979 v0.6.0
+stable (macos-latest)	test	2026-11-19T14:39:43.5783850Z ^[[1m^[[92m   Compiling^[[0m cooee-machines v0.1.0 (/Users/runner/work/cooee/cooee/crates/cooee-machines)
+stable (macos-latest)	test	2026-11-19T14:39:44.3100750Z ^[[1m^[[92m   Compiling^[[0m signature v3.0.0
+stable (macos-latest)	test	2026-11-19T14:39:44.4421020Z ^[[1m^[[92m   Compiling^[[0m serde_path_to_error v0.1.20
+stable (macos-latest)	test	2026-11-19T14:39:44.5982850Z ^[[1m^[[92m   Compiling^[[0m simd-adler32 v0.3.10
+stable (macos-latest)	test	2026-11-19T14:39:44.8225680Z ^[[1m^[[92m   Compiling^[[0m matchit v0.9.2
+stable (macos-latest)	test	2026-11-19T14:39:45.2050280Z ^[[1m^[[92m   Compiling^[[0m adler2 v2.0.1
+stable (macos-latest)	test	2026-11-19T14:39:45.2152600Z ^[[1m^[[92m   Compiling^[[0m ipnet v2.12.2
+stable (macos-latest)	test	2026-11-19T14:39:45.3503660Z ^[[1m^[[92m   Compiling^[[0m miniz_oxide v0.9.1
+stable (macos-latest)	test	2026-11-19T14:39:45.4452890Z ^[[1m^[[92m   Compiling^[[0m topcoat-view-macro v0.11.0
+stable (macos-latest)	test	2026-11-19T14:39:45.7973920Z ^[[1m^[[92m   Compiling^[[0m topcoat-router v0.11.0
+stable (macos-latest)	test	2026-11-19T14:39:46.0345510Z ^[[1m^[[92m   Compiling^[[0m ecdsa v0.17.0
+stable (macos-latest)	test	2026-11-19T14:39:46.2182280Z ^[[1m^[[92m   Compiling^[[0m topcoat-router-macro v0.11.0
+stable (macos-latest)	test	2026-11-19T14:39:46.5747140Z ^[[1m^[[92m   Compiling^[[0m primeorder v0.14.0
+stable (macos-latest)	test	2026-11-19T14:39:46.6855930Z ^[[1m^[[92m   Compiling^[[0m tokio-tungstenite v0.29.0
+stable (macos-latest)	test	2026-11-19T14:39:46.9770550Z ^[[1m^[[92m   Compiling^[[0m ghash v0.5.1
+stable (macos-latest)	test	2026-11-19T14:39:47.1093940Z ^[[1m^[[92m   Compiling^[[0m ctr v0.9.2
+stable (macos-latest)	test	2026-11-19T14:39:47.2700230Z ^[[1m^[[92m   Compiling^[[0m aes v0.8.4
+stable (macos-latest)	test	2026-11-19T14:39:47.6293570Z ^[[1m^[[92m   Compiling^[[0m topcoat-core-macro v0.11.0
+stable (macos-latest)	test	2026-11-19T14:39:47.9375820Z ^[[1m^[[92m   Compiling^[[0m aead v0.5.2
+stable (macos-latest)	test	2026-11-19T14:39:48.0037060Z ^[[1m^[[92m   Compiling^[[0m topcoat v0.11.0
+stable (macos-latest)	test	2026-11-19T14:39:48.0649880Z ^[[1m^[[92m   Compiling^[[0m aes-gcm v0.10.3
+stable (macos-latest)	test	2026-11-19T14:39:48.2244550Z ^[[1m^[[92m   Compiling^[[0m flate2 v1.1.10
+stable (macos-latest)	test	2026-11-19T14:39:48.4944430Z ^[[1m^[[92m   Compiling^[[0m p256 v0.14.0
+stable (macos-latest)	test	2026-11-19T14:39:48.6395990Z ^[[1m^[[92m   Compiling^[[0m qrcode v0.14.1
+stable (macos-latest)	test	2026-11-19T14:39:49.0401380Z ^[[1m^[[92m   Compiling^[[0m cooee-terminal v0.1.0 (/Users/runner/work/cooee/cooee/crates/cooee-terminal)
+stable (macos-latest)	test	2026-11-19T14:39:49.6576020Z ^[[1m^[[92m   Compiling^[[0m cooee-server v0.1.0 (/Users/runner/work/cooee/cooee/crates/cooee-server)
+stable (macos-latest)	test	2026-11-19T14:40:21.9629640Z ^[[1m^[[92m   Compiling^[[0m cooee v0.1.0 (/Users/runner/work/cooee/cooee/crates/cooee)
+stable (macos-latest)	test	2026-11-19T14:41:09.0930100Z ^[[1m^[[92m    Finished^[[0m `test` profile [unoptimized + debuginfo] target(s) in 2m 30s
+stable (macos-latest)	test	2026-11-19T14:41:09.3063290Z ^[[1m^[[92m     Running^[[0m unittests src/main.rs (target/debug/build/cooee/7a63b3799c9074ee/out/cooee-7a63b3799c9074ee)
+stable (macos-latest)	test	2026-11-19T14:41:09.3189870Z 
+stable (macos-latest)	test	2026-11-19T14:41:09.3192070Z running 1 test
+stable (macos-latest)	test	2026-11-19T14:41:09.3262080Z test update::tests::only_a_new_head_that_never_failed_is_installed ... ok
+stable (macos-latest)	test	2026-11-19T14:41:09.3264960Z ^[[1m^[[92m     Running^[[0m tests/accounts.rs (target/debug/build/cooee/89b87971cb1b43d0/out/accounts-89b87971cb1b43d0)
+stable (macos-latest)	test	2026-11-19T14:41:09.3265400Z 
+stable (macos-latest)	test	2026-11-19T14:41:09.3269390Z test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+stable (macos-latest)	test	2026-11-19T14:41:09.3269740Z 
+stable (macos-latest)	test	2026-11-19T14:41:09.3308090Z 
+stable (macos-latest)	test	2026-11-19T14:41:09.3318980Z running 2 tests
+stable (macos-latest)	test	2026-11-19T14:41:10.4104470Z test signed_in_only_while_the_status_says_so_not_from_the_last_sign_in_noted ... ok
+stable (macos-latest)	test	2026-11-19T14:41:10.8929010Z ^[[1m^[[92m     Running^[[0m tests/accounts_env.rs (target/debug/build/cooee/839ba1076e9b8df0/out/accounts_env-839ba1076e9b8df0)
+stable (macos-latest)	test	2026-11-19T14:41:10.8929830Z test add_account_listed_only_on_success_thread_pick_spawns_with_its_folder_sign_out_removes_it ... ok
+stable (macos-latest)	test	2026-11-19T14:41:10.9053420Z 
+stable (macos-latest)	test	2026-11-19T14:41:10.9169500Z test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.56s
+stable (macos-latest)	test	2026-11-19T14:41:10.9266980Z 
+stable (macos-latest)	test	2026-11-19T14:41:10.9309450Z 
+stable (macos-latest)	test	2026-11-19T14:41:10.9335940Z running 7 tests
+stable (macos-latest)	test	2026-11-19T14:41:10.9833320Z test a_token_file_goes_in_the_token_variable_only_at_0600_or_tighter ... ok
+stable (macos-latest)	test	2026-11-19T14:41:11.1022070Z test an_inherited_token_never_signs_a_folder_in ... ok
+stable (macos-latest)	test	2026-11-19T14:41:11.7564310Z test env_prints_a_folder_accounts_variable_and_reports_signed_out ... ok
+stable (macos-latest)	test	2026-11-19T14:41:11.9167600Z test ls_json_carries_usage_and_a_reading_past_its_reset_reads_zero_with_its_age ... ok
+stable (macos-latest)	test	2026-11-19T14:41:11.9772510Z test an_adopted_folder_is_an_account_until_dropped_and_the_folder_stays ... ok
+stable (macos-latest)	test	2026-11-19T14:41:11.9815010Z test unknown_provider_or_account_refuses_on_one_line ... ok
+stable (macos-latest)	test	2026-11-19T14:41:12.4189220Z test ls_json_lists_every_account_without_its_token ... ok
+stable (macos-latest)	test	2026-11-19T14:41:12.4190720Z 
+stable (macos-latest)	test	2026-11-19T14:41:12.4192190Z test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.52s
+stable (macos-latest)	test	2026-11-19T14:41:12.4192870Z 
+stable (macos-latest)	test	2026-11-19T14:41:12.4196240Z ^[[1m^[[92m     Running^[[0m tests/agents.rs (target/debug/build/cooee/d097d21a89ce5848/out/agents-d097d21a89ce5848)
+stable (macos-latest)	test	2026-11-19T14:41:12.4353370Z 
+stable (macos-latest)	test	2026-11-19T14:41:12.4355870Z running 3 tests
+stable (macos-latest)	test	2026-11-19T14:41:12.4851270Z test a_dry_run_prints_the_plan_and_changes_nothing ... ok
+stable (macos-latest)	test	2026-11-19T14:41:12.6693420Z test a_malformed_agent_toml_hides_only_that_agent_and_the_log_never_quotes_it ... ok
+stable (macos-latest)	test	2026-11-19T14:41:12.6871190Z test a_folder_written_by_hand_is_listed_and_starts_a_chat ... ok
+stable (macos-latest)	test	2026-11-19T14:41:12.6874610Z 
+stable (macos-latest)	test	2026-11-19T14:41:12.6877710Z test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.25s
+stable (macos-latest)	test	2026-11-19T14:41:12.6878710Z 
+stable (macos-latest)	test	2026-11-19T14:41:12.6884050Z ^[[1m^[[92m     Running^[[0m tests/ask.rs (target/debug/build/cooee/d0de84f24432e3a1/out/ask-d0de84f24432e3a1)
+stable (macos-latest)	test	2026-11-19T14:41:12.6989780Z 
+stable (macos-latest)	test	2026-11-19T14:41:12.6992360Z running 5 tests
+stable (macos-latest)	test	2026-11-19T14:41:13.0491390Z test a_persona_its_can_message_doesnt_name_is_not_allowed ... ok
+stable (macos-latest)	test	2026-11-19T14:41:13.2073410Z test an_allowed_ask_returns_the_reply_in_a_linked_thread_the_owner_reads_and_steers ... ok
+stable (macos-latest)	test	2026-11-19T14:41:13.2235370Z test an_asked_persona_may_ask_one_more_and_no_further ... ok
+stable (macos-latest)	test	2026-11-19T14:41:13.4704240Z test the_owners_note_mid_exchange_reaches_the_asked_persona_and_returns_to_the_asker_with_the_reply ... ok
+stable (macos-latest)	test	2026-11-19T14:41:14.4165290Z test no_reply_in_time_is_a_timeout_and_a_session_that_cant_start_is_offline ... ok
+stable (macos-latest)	test	2026-11-19T14:41:14.4168810Z 
+stable (macos-latest)	test	2026-11-19T14:41:14.4170120Z test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.72s
+stable (macos-latest)	test	2026-11-19T14:41:14.4171740Z 
+stable (macos-latest)	test	2026-11-19T14:41:14.4184780Z ^[[1m^[[92m     Running^[[0m tests/chat.rs (target/debug/build/cooee/8010dabaad42f5af/out/chat-8010dabaad42f5af)
+stable (macos-latest)	test	2026-11-19T14:41:14.4261670Z 
+stable (macos-latest)	test	2026-11-19T14:41:14.4271420Z running 17 tests
+stable (macos-latest)	test	2026-11-19T14:41:14.8523630Z test a_message_to_a_stopped_agent_is_refused_never_stored_as_sent ... ok
+stable (macos-latest)	test	2026-11-19T14:41:14.9061900Z test a_gone_agent_that_reported_its_session_resumes_it_on_send ... ok
+stable (macos-latest)	test	2026-11-19T14:41:15.0331430Z test a_hanging_shed_approve_never_holds_another_thread ... ok
+stable (macos-latest)	test	2026-11-19T14:41:15.1550920Z test a_reconnect_with_last_event_id_replays_without_gaps_or_duplicates ... ok
+stable (macos-latest)	test	2026-11-19T14:41:15.4563010Z test a_send_to_a_gone_agent_starts_a_fresh_one_in_the_chat_and_delivers ... ok
+stable (macos-latest)	test	2026-11-19T14:41:15.5286690Z test a_restarted_cooee_reattaches_to_its_terminals_and_catches_up ... ok
+stable (macos-latest)	test	2026-11-19T14:41:15.6733890Z test a_send_to_a_shed_on_another_protocol_says_why_in_the_chat_then_goes_through_once_fixed ... ok
+stable (macos-latest)	test	2026-11-19T14:41:15.9049950Z test a_shed_of_another_protocol_is_refused_naming_both_sides ... ok
+stable (macos-latest)	test	2026-11-19T14:41:16.0091610Z test a_tool_call_is_one_row_updated_in_place_and_a_retried_send_is_stored_once ... ok
+stable (macos-latest)	test	2026-11-19T14:41:16.1202400Z test an_approval_is_sent_to_shed_once_however_often_it_is_tapped ... ok
+stable (macos-latest)	test	2026-11-19T14:41:16.3038870Z test cancel_ends_the_turn_and_writes_back_the_tool_call_in_progress ... ok
+stable (macos-latest)	test	2026-11-19T14:41:16.4105820Z test closing_a_thread_kills_and_removes_its_terminal ... ok
+stable (macos-latest)	test	2026-11-19T14:41:16.4111550Z test fake_shed_server ... ignored, a server for apple/e2e, not a test
+stable (macos-latest)	test	2026-11-19T14:41:16.6218550Z test new_thread_runs_the_agent_in_an_allowed_folder_and_streams_the_reply ... ok
+stable (macos-latest)	test	2026-11-19T14:41:16.6550540Z test deny_and_say_rejects_the_call_and_the_agent_gets_the_text_once_under_the_denial ... ok
+stable (macos-latest)	test	2026-11-19T14:41:17.5716970Z test a_reset_from_shed_resyncs_the_stream_and_drops_no_event ... ok
+stable (macos-latest)	test	2026-11-19T14:41:18.2535190Z ^[[1m^[[92m     Running^[[0m tests/chat_first.rs (target/debug/build/cooee/2b0469e83dfcc914/out/chat_first-2b0469e83dfcc914)
+stable (macos-latest)	test	2026-11-19T14:41:18.2535870Z test restart_on_the_gone_line_starts_the_agent_and_leaves_ended ... ok
+stable (macos-latest)	test	2026-11-19T14:41:18.2637480Z 
+stable (macos-latest)	test	2026-11-19T14:41:18.2740880Z test result: ok. 16 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out; finished in 3.82s
+stable (macos-latest)	test	2026-11-19T14:41:18.2841610Z 
+stable (macos-latest)	test	2026-11-19T14:41:18.2942740Z 
+stable (macos-latest)	test	2026-11-19T14:41:18.3043830Z running 1 test
+stable (macos-latest)	test	2026-11-19T14:41:18.5812810Z test a_new_chat_runs_in_its_own_scratch_folder_and_a_folder_attached_takes_later_turns ... ok
+stable (macos-latest)	test	2026-11-19T14:41:18.5914810Z ^[[1m^[[92m     Running^[[0m tests/cli.rs (target/debug/build/cooee/fdd7eb383fe2a1fd/out/cli-fdd7eb383fe2a1fd)
+stable (macos-latest)	test	2026-11-19T14:41:18.5916370Z 
+stable (macos-latest)	test	2026-11-19T14:41:18.6023870Z test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.32s
+stable (macos-latest)	test	2026-11-19T14:41:18.6124910Z 
+stable (macos-latest)	test	2026-11-19T14:41:18.6179100Z 
+stable (macos-latest)	test	2026-11-19T14:41:18.6183060Z running 4 tests
+stable (macos-latest)	test	2026-11-19T14:41:18.6186920Z test listening_beyond_localhost_needs_allowed_hosts ... ok
+stable (macos-latest)	test	2026-11-19T14:41:18.6190080Z test version ... ok
+stable (macos-latest)	test	2026-11-19T14:41:18.6191400Z test unknown_args_and_config_keys_fail ... ok
+stable (macos-latest)	test	2026-11-19T14:41:18.6329980Z cooee: shed at /Users/runner/Library/Caches/shed/shed.sock: No such file or directory (os error 2)
+stable (macos-latest)	test	2026-11-19T14:41:18.6488020Z test serve_listens_on_localhost_at_the_configured_port ... ok
+stable (macos-latest)	test	2026-11-19T14:41:18.6492790Z 
+stable (macos-latest)	test	2026-11-19T14:41:18.6494410Z test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.06s
+stable (macos-latest)	test	2026-11-19T14:41:18.6506690Z ^[[1m^[[92m     Running^[[0m tests/config_edits.rs (target/debug/build/cooee/e9e8f1d5afadcaea/out/config_edits-e9e8f1d5afadcaea)
+stable (macos-latest)	test	2026-11-19T14:41:18.6507300Z 
+stable (macos-latest)	test	2026-11-19T14:41:18.6590130Z 
+stable (macos-latest)	test	2026-11-19T14:41:18.6599110Z running 4 tests
+stable (macos-latest)	test	2026-11-19T14:41:18.8857640Z test a_save_after_a_hand_edit_is_refused_and_the_edit_stays ... ok
+stable (macos-latest)	test	2026-11-19T14:41:18.8861100Z test a_new_note_adds_exactly_one_line_to_memory ... ok
+stable (macos-latest)	test	2026-11-19T14:41:19.1609720Z test a_hand_edited_instructions_file_reaches_the_next_chat ... ok
+stable (macos-latest)	test	2026-11-19T14:41:19.2123630Z ^[[1m^[[92m     Running^[[0m tests/config_git.rs (target/debug/build/cooee/4d6d5e4b4e51c891/out/config_git-4d6d5e4b4e51c891)
+stable (macos-latest)	test	2026-11-19T14:41:19.2127630Z test saving_the_model_changes_only_its_line_and_keeps_the_comments ... ok
+stable (macos-latest)	test	2026-11-19T14:41:19.2232000Z 
+stable (macos-latest)	test	2026-11-19T14:41:19.2340840Z test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.55s
+stable (macos-latest)	test	2026-11-19T14:41:19.2442950Z 
+stable (macos-latest)	test	2026-11-19T14:41:19.2543670Z 
+stable (macos-latest)	test	2026-11-19T14:41:19.2644600Z running 3 tests
+stable (macos-latest)	test	2026-11-19T14:41:19.4540550Z test init_git_keeps_the_owners_gitignore ... ok
+stable (macos-latest)	test	2026-11-19T14:41:19.5693800Z test init_git_commits_the_config_without_its_secrets_once ... ok
+stable (macos-latest)	test	2026-11-19T14:41:20.0371640Z test serve_adds_a_gitignore_to_its_own_config_folder_only ... ok
+stable (macos-latest)	test	2026-11-19T14:41:20.0475850Z ^[[1m^[[92m     Running^[[0m tests/conformance.rs (target/debug/build/cooee/05a0c5fbde4fb547/out/conformance-05a0c5fbde4fb547)
+stable (macos-latest)	test	2026-11-19T14:41:20.0477080Z 
+stable (macos-latest)	test	2026-11-19T14:41:20.0575830Z test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.81s
+stable (macos-latest)	test	2026-11-19T14:41:20.0627310Z 
+stable (macos-latest)	test	2026-11-19T14:41:20.0644240Z 
+stable (macos-latest)	test	2026-11-19T14:41:20.0671770Z running 2 tests
+stable (macos-latest)	test	2026-11-19T14:41:20.0676050Z test the_scenario_on_a_real_harness ... ignored, the nightly: a real shed and harness, on the owner's own login
+stable (macos-latest)	test	2026-11-19T14:41:21.0267990Z test the_scenario_passes_on_the_fake_shed ... ok
+stable (macos-latest)	test	2026-11-19T14:41:21.0268270Z 
+stable (macos-latest)	test	2026-11-19T14:41:21.0268550Z test result: ok. 1 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out; finished in 0.98s
+stable (macos-latest)	test	2026-11-19T14:41:21.0268920Z 
+stable (macos-latest)	test	2026-11-19T14:41:21.0271930Z ^[[1m^[[92m     Running^[[0m tests/connectors.rs (target/debug/build/cooee/0255a0dfb367b3a3/out/connectors-0255a0dfb367b3a3)
+stable (macos-latest)	test	2026-11-19T14:41:21.0334940Z 
+stable (macos-latest)	test	2026-11-19T14:41:21.0335850Z running 1 test
+stable (macos-latest)	test	2026-11-19T14:41:21.4012540Z test the_callback_answers_only_its_own_state_and_no_token_leaks ... ok
+stable (macos-latest)	test	2026-11-19T14:41:21.4055160Z ^[[1m^[[92m     Running^[[0m tests/consolidate.rs (target/debug/build/cooee/acc0e0bc720209d9/out/consolidate-acc0e0bc720209d9)
+stable (macos-latest)	test	2026-11-19T14:41:21.4055840Z 
+stable (macos-latest)	test	2026-11-19T14:41:21.4092900Z test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.37s
+stable (macos-latest)	test	2026-11-19T14:41:21.4104740Z 
+stable (macos-latest)	test	2026-11-19T14:41:21.4108820Z 
+stable (macos-latest)	test	2026-11-19T14:41:21.4111650Z running 1 test
+stable (macos-latest)	test	2026-11-19T14:41:23.2029420Z test a_run_reads_new_history_once_and_its_writes_wait_for_approval ... ok
+stable (macos-latest)	test	2026-11-19T14:41:23.2140440Z ^[[1m^[[92m     Running^[[0m tests/first_run.rs (target/debug/build/cooee/df1028331ff0cf68/out/first_run-df1028331ff0cf68)
+stable (macos-latest)	test	2026-11-19T14:41:23.2141660Z 
+stable (macos-latest)	test	2026-11-19T14:41:23.2245380Z test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.79s
+stable (macos-latest)	test	2026-11-19T14:41:23.2349190Z 
+stable (macos-latest)	test	2026-11-19T14:41:23.2468160Z 
+stable (macos-latest)	test	2026-11-19T14:41:23.2572950Z running 3 tests
+stable (macos-latest)	test	2026-11-19T14:41:23.4889910Z test with_no_roots_a_chat_still_starts_in_scratch_and_use_a_folder_is_refused ... ok
+stable (macos-latest)	test	2026-11-19T14:41:23.5264360Z test with_one_root_and_nothing_in_it_a_thread_starts_in_the_root ... ok
+stable (macos-latest)	test	2026-11-19T14:41:23.8983990Z test no_agents_and_no_roots_show_the_fix_lines_and_doctor_warns ... ok
+stable (macos-latest)	test	2026-11-19T14:41:23.9087320Z ^[[1m^[[92m     Running^[[0m tests/folders.rs (target/debug/build/cooee/21a0ceb5760ee5f2/out/folders-21a0ceb5760ee5f2)
+stable (macos-latest)	test	2026-11-19T14:41:23.9087960Z 
+stable (macos-latest)	test	2026-11-19T14:41:23.9208130Z test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.68s
+stable (macos-latest)	test	2026-11-19T14:41:23.9320480Z 
+stable (macos-latest)	test	2026-11-19T14:41:23.9421770Z 
+stable (macos-latest)	test	2026-11-19T14:41:23.9534610Z running 5 tests
+stable (macos-latest)	test	2026-11-19T14:41:24.1633750Z test add_and_remove_root_persists_in_the_config ... ok
+stable (macos-latest)	test	2026-11-19T14:41:24.1636250Z test browse_lists_only_folders_inside_home ... ok
+stable (macos-latest)	test	2026-11-19T14:41:24.2589570Z test browse_lists_a_root_outside_home_spelled_as_listed ... ok
+stable (macos-latest)	test	2026-11-19T14:41:24.5368040Z test dot_dot_symlink_and_absolute_escapes_are_refused ... ok
+stable (macos-latest)	test	2026-11-19T14:41:24.5472120Z ^[[1m^[[92m     Running^[[0m tests/handoff.rs (target/debug/build/cooee/e42b87f91a184e5b/out/handoff-e42b87f91a184e5b)
+stable (macos-latest)	test	2026-11-19T14:41:24.5472870Z test new_folder_is_made_inside_a_root_and_a_thread_starts_there ... ok
+stable (macos-latest)	test	2026-11-19T14:41:24.5573550Z 
+stable (macos-latest)	test	2026-11-19T14:41:24.5690480Z test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.64s
+stable (macos-latest)	test	2026-11-19T14:41:24.5795520Z 
+stable (macos-latest)	test	2026-11-19T14:41:24.5902810Z 
+stable (macos-latest)	test	2026-11-19T14:41:24.6042130Z running 2 tests
+stable (macos-latest)	test	2026-11-19T14:41:24.9335400Z test a_message_queued_before_the_handoff_waits_until_the_owner_hands_back ... ok
+stable (macos-latest)	test	2026-11-19T14:41:25.0781590Z test the_turn_stops_with_a_handoff_and_hand_back_resumes_it_with_the_note_only ... ok
+stable (macos-latest)	test	2026-11-19T14:41:25.0883530Z ^[[1m^[[92m     Running^[[0m tests/heartbeat.rs (target/debug/build/cooee/3d9848f6cb5fc635/out/heartbeat-3d9848f6cb5fc635)
+stable (macos-latest)	test	2026-11-19T14:41:25.0986190Z 
+stable (macos-latest)	test	2026-11-19T14:41:25.0986540Z test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.52s
+stable (macos-latest)	test	2026-11-19T14:41:25.0986930Z 
+stable (macos-latest)	test	2026-11-19T14:41:25.0986930Z 
+stable (macos-latest)	test	2026-11-19T14:41:25.0987040Z running 2 tests
+stable (macos-latest)	test	2026-11-19T14:41:27.2790550Z test a_heartbeat_action_is_a_card_with_nothing_done_and_its_daily_limit_holds ... ok
+stable (macos-latest)	test	2026-11-19T14:41:28.0876940Z test a_heartbeat_runs_only_on_news_and_pushes_only_when_its_rule_matches ... ok
+stable (macos-latest)	test	2026-11-19T14:41:28.0980910Z ^[[1m^[[92m     Running^[[0m tests/history.rs (target/debug/build/cooee/92bf9c36c53e06e2/out/history-92bf9c36c53e06e2)
+stable (macos-latest)	test	2026-11-19T14:41:28.0984590Z 
+stable (macos-latest)	test	2026-11-19T14:41:28.1092560Z test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 3.00s
+stable (macos-latest)	test	2026-11-19T14:41:28.1225210Z 
+stable (macos-latest)	test	2026-11-19T14:41:28.1325820Z 
+stable (macos-latest)	test	2026-11-19T14:41:28.1472060Z running 1 test
+stable (macos-latest)	test	2026-11-19T14:41:28.4935350Z test a_persona_finds_and_reads_its_own_threads_and_not_another_personas ... ok
+stable (macos-latest)	test	2026-11-19T14:41:28.4936000Z 
+stable (macos-latest)	test	2026-11-19T14:41:28.4936270Z test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.39s
+stable (macos-latest)	test	2026-11-19T14:41:28.4936700Z 
+stable (macos-latest)	test	2026-11-19T14:41:28.4946200Z ^[[1m^[[92m     Running^[[0m tests/home_screen.rs (target/debug/build/cooee/fefd13a34597fc9e/out/home_screen-fefd13a34597fc9e)
+stable (macos-latest)	test	2026-11-19T14:41:28.5027590Z 
+stable (macos-latest)	test	2026-11-19T14:41:28.5028230Z running 2 tests
+stable (macos-latest)	test	2026-11-19T14:41:28.7890530Z test an_approval_in_a_background_thread_reaches_a_connected_home_within_a_second ... ok
+stable (macos-latest)	test	2026-11-19T14:41:28.8788140Z test home_is_the_bundled_screen_filled_with_todays_threads_and_personas ... ok
+stable (macos-latest)	test	2026-11-19T14:41:28.8892430Z ^[[1m^[[92m     Running^[[0m tests/instances.rs (target/debug/build/cooee/a48517e58182733b/out/instances-a48517e58182733b)
+stable (macos-latest)	test	2026-11-19T14:41:28.8895740Z 
+stable (macos-latest)	test	2026-11-19T14:41:28.9005440Z test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.38s
+stable (macos-latest)	test	2026-11-19T14:41:28.9111510Z 
+stable (macos-latest)	test	2026-11-19T14:41:28.9215190Z 
+stable (macos-latest)	test	2026-11-19T14:41:28.9317000Z running 3 tests
+stable (macos-latest)	test	2026-11-19T14:41:28.9734390Z test install_writes_a_plist_and_prints_the_commands ... ok
+stable (macos-latest)	test	2026-11-19T14:41:29.2746080Z test doctor_reports_a_missing_shed ... ok
+stable (macos-latest)	test	2026-11-19T14:41:29.3271150Z ^[[1m^[[92m     Running^[[0m tests/layout.rs (target/debug/build/cooee/c0b5f24b0e2f7af9/out/layout-c0b5f24b0e2f7af9)
+stable (macos-latest)	test	2026-11-19T14:41:29.3271850Z test two_instances_never_see_each_others_threads_or_devices ... ok
+stable (macos-latest)	test	2026-11-19T14:41:29.3372440Z 
+stable (macos-latest)	test	2026-11-19T14:41:29.3484130Z test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.43s
+stable (macos-latest)	test	2026-11-19T14:41:29.3588620Z 
+stable (macos-latest)	test	2026-11-19T14:41:29.3693550Z 
+stable (macos-latest)	test	2026-11-19T14:41:29.3806830Z running 4 tests
+stable (macos-latest)	test	2026-11-19T14:41:30.7881250Z test a_plugins_places_are_merged_and_a_place_its_manifest_lacks_is_skipped ... ok
+stable (macos-latest)	test	2026-11-19T14:41:30.7885330Z test the_app_and_the_server_read_layouts_with_the_same_blocks ... ok
+stable (macos-latest)	test	2026-11-19T14:41:31.9034440Z test a_layout_that_replaces_a_locked_screen_is_refused_and_reset_still_restores_the_default ... ok
+stable (macos-latest)	test	2026-11-19T14:41:31.9392130Z test a_bad_write_keeps_the_last_good_layout_and_reset_restores_the_default ... ok
+stable (macos-latest)	test	2026-11-19T14:41:31.9418540Z 
+stable (macos-latest)	test	2026-11-19T14:41:31.9419060Z test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.60s
+stable (macos-latest)	test	2026-11-19T14:41:31.9429910Z ^[[1m^[[92m     Running^[[0m tests/login.rs (target/debug/build/cooee/ece1edbe71248328/out/login-ece1edbe71248328)
+stable (macos-latest)	test	2026-11-19T14:41:31.9430360Z 
+stable (macos-latest)	test	2026-11-19T14:41:31.9614390Z 
+stable (macos-latest)	test	2026-11-19T14:41:31.9718430Z running 6 tests
+stable (macos-latest)	test	2026-11-19T14:41:32.2056280Z test a_failed_sign_out_keeps_the_last_known_status ... ok
+stable (macos-latest)	test	2026-11-19T14:41:32.5992560Z test a_login_left_for_10_minutes_is_killed_and_removed ... ok
+stable (macos-latest)	test	2026-11-19T14:41:32.6372040Z test a_sign_in_started_for_a_remote_machine_runs_there ... ok
+stable (macos-latest)	test	2026-11-19T14:41:33.3662150Z test login_shows_the_link_sends_the_code_and_detects_success_never_storing_the_screen ... ok
+stable (macos-latest)	test	2026-11-19T14:41:33.4064870Z test with_no_providers_rows_the_sign_in_and_a_new_thread_run_on_sheds_records ... ok
+stable (macos-latest)	test	2026-11-19T14:41:44.1868440Z test a_hanging_status_check_never_holds_a_request_and_runs_once ... ok
+stable (macos-latest)	test	2026-11-19T14:41:44.1874390Z 
+stable (macos-latest)	test	2026-11-19T14:41:44.1875160Z test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 12.23s
+stable (macos-latest)	test	2026-11-19T14:41:44.1876170Z 
+stable (macos-latest)	test	2026-11-19T14:41:44.1932850Z ^[[1m^[[92m     Running^[[0m tests/machine_check.rs (target/debug/build/cooee/3596588e9c630f40/out/machine_check-3596588e9c630f40)
+stable (macos-latest)	test	2026-11-19T14:41:44.1996400Z 
+stable (macos-latest)	test	2026-11-19T14:41:44.2001230Z running 5 tests
+stable (macos-latest)	test	2026-11-19T14:41:44.4225730Z test a_machine_shed_cant_reach_or_doesnt_have_fails_its_first_check_and_runs_nothing_there ... ok
+stable (macos-latest)	test	2026-11-19T14:41:44.4512270Z test a_ready_machine_passes_every_check_each_run_there ... ok
+stable (macos-latest)	test	2026-11-19T14:41:44.7647590Z test each_check_fails_with_its_part_missing_there_and_says_the_fix ... ok
+stable (macos-latest)	test	2026-11-19T14:41:44.8717510Z test yes_clones_the_folder_and_copies_the_settings_there_once ... ok
+stable (macos-latest)	test	2026-11-19T14:41:44.9067000Z test doctor_has_a_row_per_machine ... ok
+stable (macos-latest)	test	2026-11-19T14:41:44.9073080Z ^[[1m^[[92m     Running^[[0m tests/machines.rs (target/debug/build/cooee/e8f251e58f432fa4/out/machines-e8f251e58f432fa4)
+stable (macos-latest)	test	2026-11-19T14:41:44.9073510Z 
+stable (macos-latest)	test	2026-11-19T14:41:44.9073810Z test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.71s
+stable (macos-latest)	test	2026-11-19T14:41:44.9074100Z 
+stable (macos-latest)	test	2026-11-19T14:41:44.9172510Z 
+stable (macos-latest)	test	2026-11-19T14:41:44.9174020Z running 2 tests
+stable (macos-latest)	test	2026-11-19T14:41:45.2391170Z test each_machine_shows_its_drover_host_tags_on_its_settings_row ... ok
+stable (macos-latest)	test	2026-11-19T14:41:45.2939120Z test the_machines_plugin_serves_each_machine_card_and_marks_one_offline ... ok
+stable (macos-latest)	test	2026-11-19T14:41:45.2944340Z ^[[1m^[[92m     Running^[[0m tests/mcp.rs (target/debug/build/cooee/902e90d4ac56c709/out/mcp-902e90d4ac56c709)
+stable (macos-latest)	test	2026-11-19T14:41:45.2945410Z 
+stable (macos-latest)	test	2026-11-19T14:41:45.2946050Z test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.38s
+stable (macos-latest)	test	2026-11-19T14:41:45.2956480Z 
+stable (macos-latest)	test	2026-11-19T14:41:45.3014890Z 
+stable (macos-latest)	test	2026-11-19T14:41:45.3016570Z running 11 tests
+stable (macos-latest)	test	2026-11-19T14:41:45.3387660Z test a_literal_token_in_the_registry_is_refused_at_load_naming_the_key_only ... ok
+stable (macos-latest)	test	2026-11-19T14:41:45.6523560Z cooee: a replay frame: /var/folders/5n/5t77mfb93jd7q8v9s6f0dn0m0000gn/T/cooee-mcp-screen-skill-21348/data/frames/t1a1f441a5ce: this cooee isn't signed with Apple Development, so its next build couldn't read the secret: install it with scripts/install.sh
+stable (macos-latest)	test	2026-11-19T14:41:45.6787710Z test a_read_tool_runs_with_no_card_and_a_write_tool_runs_only_once_its_card_is_allowed ... ok
+stable (macos-latest)	test	2026-11-19T14:41:45.7345260Z test a_secret_dropped_once_is_typed_into_its_terminal_and_reaches_no_transcript_event_file_log_or_model ... ok
+stable (macos-latest)	test	2026-11-19T14:41:45.7731630Z test a_lease_saved_as_a_skill_hands_the_persona_its_steps_and_no_typed_value_and_a_declined_card_saves_nothing ... ok
+stable (macos-latest)	test	2026-11-19T14:41:46.2533040Z test a_streamable_http_and_an_sse_server_answer_through_the_pipe_with_headers_on_curls_stdin_and_no_redirect ... ok
+stable (macos-latest)	test	2026-11-19T14:41:46.2994130Z test each_browser_action_leaves_one_captioned_encrypted_frame_and_a_no_frames_site_none ... ok
+stable (macos-latest)	test	2026-11-19T14:41:46.6540340Z test propose_server_shows_the_exact_command_runs_nothing_and_needs_face_id_to_add_it_off ... ok
+stable (macos-latest)	test	2026-11-19T14:41:46.7128570Z test the_mac_adds_toggles_and_removes_servers_with_references_only ... ok
+stable (macos-latest)	test	2026-11-19T14:41:46.7488760Z test each_persona_gets_its_own_browser_and_every_call_is_checked_and_logged ... ok
+stable (macos-latest)	test	2026-11-19T14:41:46.7913580Z test the_agent_sees_and_calls_only_the_allowed_tools_under_claude_and_codex_and_no_value_is_written ... ok
+stable (macos-latest)	test	2026-11-19T14:41:47.0270950Z cooee: a replay frame: /var/folders/5n/5t77mfb93jd7q8v9s6f0dn0m0000gn/T/cooee-mcp-screen-21348/data/frames/t1a1f441ab24: this cooee isn't signed with Apple Development, so its next build couldn't read the secret: install it with scripts/install.sh
+stable (macos-latest)	test	2026-11-19T14:41:47.7312560Z cooee: a replay frame: /var/folders/5n/5t77mfb93jd7q8v9s6f0dn0m0000gn/T/cooee-mcp-screen-21348/data/frames/t1a1f441ab24: this cooee isn't signed with Apple Development, so its next build couldn't read the secret: install it with scripts/install.sh
+stable (macos-latest)	test	2026-11-19T14:41:47.7666090Z cooee: a replay frame: /var/folders/5n/5t77mfb93jd7q8v9s6f0dn0m0000gn/T/cooee-mcp-screen-21348/data/frames/t1a1f441ab24: this cooee isn't signed with Apple Development, so its next build couldn't read the secret: install it with scripts/install.sh
+stable (macos-latest)	test	2026-11-19T14:41:47.8310150Z test the_owner_watches_takes_control_and_hands_back_with_a_note_the_waiting_call_carries ... ok
+stable (macos-latest)	test	2026-11-19T14:41:47.8310700Z 
+stable (macos-latest)	test	2026-11-19T14:41:47.8311020Z test result: ok. 11 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.53s
+stable (macos-latest)	test	2026-11-19T14:41:47.8311300Z 
+stable (macos-latest)	test	2026-11-19T14:41:47.8329610Z ^[[1m^[[92m     Running^[[0m tests/menu_screens.rs (target/debug/build/cooee/93386fd96b12708e/out/menu_screens-93386fd96b12708e)
+stable (macos-latest)	test	2026-11-19T14:41:47.8402490Z 
+stable (macos-latest)	test	2026-11-19T14:41:47.8447960Z running 4 tests
+stable (macos-latest)	test	2026-11-19T14:41:48.1552470Z test the_attach_sheet_is_one_permissions_card ... ok
+stable (macos-latest)	test	2026-11-19T14:41:48.1566670Z test each_settings_screen_is_one_list_from_its_route ... ok
+stable (macos-latest)	test	2026-11-19T14:41:48.1982500Z test each_core_screen_is_on_the_wire_as_staging_served_it ... ok
+stable (macos-latest)	test	2026-11-19T14:41:48.4761460Z test the_menu_is_the_bundled_screen_valued_from_the_servers_data ... ok
+stable (macos-latest)	test	2026-11-19T14:41:48.4761880Z 
+stable (macos-latest)	test	2026-11-19T14:41:48.4762250Z test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.64s
+stable (macos-latest)	test	2026-11-19T14:41:48.4762650Z 
+stable (macos-latest)	test	2026-11-19T14:41:48.4765950Z ^[[1m^[[92m     Running^[[0m tests/model.rs (target/debug/build/cooee/20652695654584c8/out/model-20652695654584c8)
+stable (macos-latest)	test	2026-11-19T14:41:48.4813770Z 
+stable (macos-latest)	test	2026-11-19T14:41:48.4820530Z running 4 tests
+stable (macos-latest)	test	2026-11-19T14:41:48.7181200Z test a_day_old_list_is_asked_again ... ok
+stable (macos-latest)	test	2026-11-19T14:41:48.8999120Z test the_agent_list_carries_each_agents_efforts ... ok
+stable (macos-latest)	test	2026-11-19T14:41:48.9777960Z test row_34_a_thread_starts_on_its_pick_and_a_new_model_shows ... ok
+stable (macos-latest)	test	2026-11-19T14:41:49.0325270Z test a_gone_pin_falls_back_with_one_line_and_a_short_name_moves_on ... ok
+stable (macos-latest)	test	2026-11-19T14:41:49.0335880Z ^[[1m^[[92m     Running^[[0m tests/move_thread.rs (target/debug/build/cooee/fac7f3c7d6f75ddd/out/move_thread-fac7f3c7d6f75ddd)
+stable (macos-latest)	test	2026-11-19T14:41:49.0336960Z 
+stable (macos-latest)	test	2026-11-19T14:41:49.0337950Z test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.55s
+stable (macos-latest)	test	2026-11-19T14:41:49.0338610Z 
+stable (macos-latest)	test	2026-11-19T14:41:49.0656470Z 
+stable (macos-latest)	test	2026-11-19T14:41:49.0657310Z running 4 tests
+stable (macos-latest)	test	2026-11-19T14:41:49.3538940Z test a_move_to_a_machine_not_ready_is_refused_with_its_failed_checks_and_starts_nothing_there ... ok
+stable (macos-latest)	test	2026-11-19T14:41:49.4485000Z test a_move_is_refused_while_a_turn_works_and_goes_once_it_is_stopped ... ok
+stable (macos-latest)	test	2026-11-19T14:41:49.5297060Z test a_switch_starts_the_other_agent_with_the_brief_and_a_handoff_in_the_same_thread_and_keeps_the_persona ... ok
+stable (macos-latest)	test	2026-11-19T14:41:49.6384300Z test an_idle_thread_moves_after_box_is_checked_and_the_next_message_starts_there_with_a_hand_over ... ok
+stable (macos-latest)	test	2026-11-19T14:41:49.6403010Z ^[[1m^[[92m     Running^[[0m tests/pairing.rs (target/debug/build/cooee/dd7c0f518f099867/out/pairing-dd7c0f518f099867)
+stable (macos-latest)	test	2026-11-19T14:41:49.6404460Z 
+stable (macos-latest)	test	2026-11-19T14:41:49.6424840Z test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.57s
+stable (macos-latest)	test	2026-11-19T14:41:49.6425300Z 
+stable (macos-latest)	test	2026-11-19T14:41:49.6493230Z 
+stable (macos-latest)	test	2026-11-19T14:41:49.6494610Z running 16 tests
+stable (macos-latest)	test	2026-11-19T14:41:49.9797900Z test a_foreign_host_or_origin_is_refused_even_paired ... ok
+stable (macos-latest)	test	2026-11-19T14:41:49.9910290Z test a_declined_request_tells_the_new_device_who_said_no ... ok
+stable (macos-latest)	test	2026-11-19T14:41:50.2607680Z test a_new_device_asks_and_a_paired_one_approves_it_with_its_passkey ... ok
+stable (macos-latest)	test	2026-11-19T14:41:50.3234540Z test a_qr_codes_link_carries_a_code_that_pairs_at_once ... ok
+stable (macos-latest)	test	2026-11-19T14:41:50.3658420Z test a_passkey_signs_a_device_back_in_and_can_be_removed ... ok
+stable (macos-latest)	test	2026-11-19T14:41:50.4508710Z test a_report_is_kept_and_listed ... ok
+stable (macos-latest)	test	2026-11-19T14:41:50.5666370Z test a_wrong_expired_or_reused_code_says_so ... ok
+stable (macos-latest)	test	2026-11-19T14:41:50.6587520Z test alerts_status_test_and_off_are_this_devices ... ok
+stable (macos-latest)	test	2026-11-19T14:41:50.7785150Z test devices_are_listed_and_removed_from_the_phone ... ok
+stable (macos-latest)	test	2026-11-19T14:41:50.8426580Z test five_wrong_codes_a_minute_refuse_that_address ... ok
+stable (macos-latest)	test	2026-11-19T14:41:50.9104770Z test pair_use_remove_and_only_the_hash_on_disk ... ok
+stable (macos-latest)	test	2026-11-19T14:41:50.9788370Z test push_subscriptions_are_checked_and_tied_to_the_device ... ok
+stable (macos-latest)	test	2026-11-19T14:41:51.0984150Z test the_mac_declines_a_request_from_the_cli ... ok
+stable (macos-latest)	test	2026-11-19T14:41:51.1328370Z test the_new_calls_need_a_paired_device_but_pairing_requests_do_not ... ok
+stable (macos-latest)	test	2026-11-19T14:41:51.2079530Z test the_mac_lists_and_approves_a_request_from_the_cli ... ok
+stable (macos-latest)	test	2026-11-19T14:41:51.3350810Z test unpaired_reads_and_writes_are_refused ... ok
+stable (macos-latest)	test	2026-11-19T14:41:51.3453980Z ^[[1m^[[92m     Running^[[0m tests/perf.rs (target/debug/build/cooee/d3aa0c72e0afadeb/out/perf-d3aa0c72e0afadeb)
+stable (macos-latest)	test	2026-11-19T14:41:51.3456720Z 
+stable (macos-latest)	test	2026-11-19T14:41:51.3584050Z test result: ok. 16 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.69s
+stable (macos-latest)	test	2026-11-19T14:41:51.3699560Z 
+stable (macos-latest)	test	2026-11-19T14:41:51.3804470Z 
+stable (macos-latest)	test	2026-11-19T14:41:51.3906190Z running 6 tests
+stable (macos-latest)	test	2026-11-19T14:41:51.4023750Z test cooee_perf_turns_a_log_into_the_table ... ok
+stable (macos-latest)	test	2026-11-19T14:41:51.5641420Z test a_fast_request_under_the_default_threshold_is_debug_only ... ok
+stable (macos-latest)	test	2026-11-19T14:41:51.6014600Z test first_token_is_logged_once_per_prompt_and_nothing_private_is ... ok
+stable (macos-latest)	test	2026-11-19T14:41:51.7203070Z test requests_and_shed_calls_are_timed_by_route_and_method_and_slow_ones_warn ... ok
+stable (macos-latest)	test	2026-11-19T14:41:51.9026250Z test the_apps_timings_are_logged_and_a_p95_over_budget_fails_cooee_perf_budget ... ok
+stable (macos-latest)	test	2026-11-19T14:42:26.8284310Z test with_500_threads_of_1000_items_the_list_answers_within_300_ms_of_start ... FAILED
+stable (macos-latest)	test	2026-11-19T14:42:26.8387780Z ^[[1m^[[91merror^[[0m: test failed, to rerun pass `-p cooee --test perf`
+stable (macos-latest)	test	2026-11-19T14:42:26.8388910Z 
+stable (macos-latest)	test	2026-11-19T14:42:26.8490160Z failures:
+stable (macos-latest)	test	2026-11-19T14:42:26.8605880Z 
+stable (macos-latest)	test	2026-11-19T14:42:26.8633770Z ---- with_500_threads_of_1000_items_the_list_answers_within_300_ms_of_start stdout ----
+stable (macos-latest)	test	2026-11-19T14:42:26.8690910Z 
+stable (macos-latest)	test	2026-11-19T14:42:26.8729720Z thread 'with_500_threads_of_1000_items_the_list_answers_within_300_ms_of_start' (60357) panicked at crates/cooee/tests/perf.rs:302:5:
+stable (macos-latest)	test	2026-11-19T14:42:26.8776880Z GET /threads answered 409 ms after start
+stable (macos-latest)	test	2026-11-19T14:42:26.8804400Z note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+stable (macos-latest)	test	2026-11-19T14:42:26.8861450Z 
+stable (macos-latest)	test	2026-11-19T14:42:26.8883400Z 
+stable (macos-latest)	test	2026-11-19T14:42:26.8911450Z failures:
+stable (macos-latest)	test	2026-11-19T14:42:26.8918640Z     with_500_threads_of_1000_items_the_list_answers_within_300_ms_of_start
+stable (macos-latest)	test	2026-11-19T14:42:26.8932020Z 
+stable (macos-latest)	test	2026-11-19T14:42:26.8971060Z test result: FAILED. 5 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 35.48s
+stable (macos-latest)	test	2026-11-19T14:42:26.8998860Z 
+stable (macos-latest)	test	2026-11-19T14:42:26.9048640Z ##[error]Process completed with exit code 101.
