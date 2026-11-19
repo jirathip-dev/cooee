@@ -31,28 +31,28 @@ internal struct HomeFeatureTests {
         }
     }
 
-    @Test internal func homeReadsItsChatsEveryFewSecondsUntilTheServerForgetsThisDevice() async {
+    @Test internal func homeLoadsOnEachChangeTheServerSaysUntilTheServerForgetsThisDevice() async {
         let rows = [row("t1", state: "working"), row("old", archived: true)]
         let store = store([
             .rows(rows), .failure(APIError(status: 500, text: "Locked.")), .failure(APIError(status: 401, text: "")),
             .failure(APIError(status: 401, text: "")),
         ])
+        let (changes, changed) = AsyncStream.makeStream(of: Void.self)
+        store.dependencies.threads.changes = { _ in changes }
         await store.send(.task)
+        changed.yield()
         await store.receive(\.loaded) {
-            $0.screen = homeScreen
-            $0.rows = [rows[0]]
-            $0.personas = [coder]
+            ($0.screen, $0.rows, $0.personas, $0.plugins) = (homeScreen, [rows[0]], [coder], [drover])
             $0.loading = false
-            $0.plugins = [drover]
         }
-        await clock.advance(by: .seconds(5))
+        changed.yield()
         await store.receive(\.failed) {
             $0.error = "Locked."
             $0.sync = .reconnecting
         }
         await clock.advance(by: .seconds(3))
         await store.receive(\.toasted) { $0.error = nil }
-        await clock.advance(by: .seconds(2))
+        changed.yield()
         await clock.advance(by: .seconds(5))
         await store.receive(\.delegate.unauthorized)
         await store.finish()
@@ -173,5 +173,29 @@ extension HomeFeatureTests {
         await offline.receive(\.failed) { $0.sync = .offline }
         await clock.advance(by: .seconds(3))
         await offline.receive(\.toasted) { $0.error = nil }
+    }
+
+    @Test internal func anIdleHomeAsksNothingForAMinuteAndAnUnchangedAnswerChangesNothing() async {
+        let (asked, keptCopies) = (LockIsolated(0), LockIsolated(0))
+        let store = store([])
+        store.dependencies.threads.home = { _ in
+            asked.withValue { $0 += 1 }
+            return HomeAnswer(screen: homeScreen, threads: [row("t1")], personas: [coder])
+        }
+        store.dependencies.kept.keepHome = { _, _ in keptCopies.withValue { $0 += 1 } }
+        let (changes, changed) = AsyncStream.makeStream(of: Void.self)
+        store.dependencies.threads.changes = { _ in changes }
+        let task = await store.send(.task)
+        changed.yield()
+        await store.receive(\.loaded) {
+            ($0.screen, $0.rows, $0.personas, $0.plugins) = (homeScreen, [row("t1")], [coder], [drover])
+            $0.loading = false
+        }
+        await clock.advance(by: .seconds(60))
+        #expect(asked.value == 1)
+        changed.yield()
+        await store.receive(\.loaded)
+        #expect(asked.value == 2 && keptCopies.value == 1)
+        await task.cancel()
     }
 }

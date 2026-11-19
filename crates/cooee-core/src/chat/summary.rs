@@ -31,7 +31,7 @@ impl Turn {
 }
 
 /// One row of the thread list.
-#[derive(Debug, Clone, Default, Serialize)]
+#[derive(Debug, Clone, Default, PartialEq, Serialize)]
 pub struct Summary {
     /// The thread's id.
     pub id: String,

@@ -8,6 +8,7 @@ use std::{
     fmt::Write as _,
     fs, io,
     path::{Path, PathBuf},
+    time::SystemTime,
 };
 
 use serde::{Deserialize, Serialize};
@@ -398,6 +399,21 @@ pub fn list(config: Option<&Path>, data: &Path) -> Vec<Agent> {
     }
     out.sort_by(|a, b| a.id.cmp(&b.id));
     out
+}
+
+/// What [`list`] reads, each path with its modified time and size: an equal stamp lists the same agents.
+#[must_use]
+pub fn stamp(config: Option<&Path>, data: &Path) -> Vec<(PathBuf, Option<(SystemTime, u64)>)> {
+    let root = config.map(|c| c.join("agents"));
+    let dirs = root.iter().flat_map(fs::read_dir).flatten().flatten();
+    let files = dirs.flat_map(|d| FILES.map(|f| d.path().join(f)));
+    let paths = root.clone().into_iter().chain(files);
+    let seen = |p: PathBuf| {
+        let m = fs::metadata(&p).ok();
+        let m = m.and_then(|m| Some((m.modified().ok()?, m.len())));
+        (p, m)
+    };
+    paths.chain([plugins::lock_path(data)]).map(seen).collect()
 }
 
 /// The agents to start from: the owner's, then each enabled installed plugin's profiles lent as agents

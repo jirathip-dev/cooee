@@ -279,7 +279,7 @@ impl Hub {
         self.offers(&live.meta.agent, &live.meta.account, model)?;
         model.clone_into(&mut live.meta.model);
         effort.clone_into(&mut live.meta.effort);
-        self.store.save(&live.meta)?;
+        self.save(&live)?;
         let say = |what: &str, pick: &str| {
             format!("{what} {}", if pick.is_empty() { "default" } else { pick })
         };
