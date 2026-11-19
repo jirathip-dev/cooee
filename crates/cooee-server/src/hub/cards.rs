@@ -58,6 +58,11 @@ impl Hub {
             {
                 Ok(self.proposal_answer(id, item, option, value))
             }
+            Body::Approval { card, .. }
+                if card.form.as_deref() == Some(super::fallback::FALLBACK) =>
+            {
+                Ok(super::fallback::waited(option))
+            }
             Body::Approval { card, .. } if card.form.as_deref() == Some("persona") => {
                 Ok(self.persona_answer(id, item, option))
             }

@@ -210,6 +210,9 @@ pub struct Agent {
     /// shed's approval policy: `ask`, `allow` or `deny`.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub policy: Option<String>,
+    /// The agents its chats may continue on when this one hits a usage limit (#76), in the order offered.
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub fallback: Vec<Seat>,
     /// Its consolidation routine (#219); a save that leaves it out keeps it.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub consolidate: Option<Consolidate>,
@@ -226,6 +229,31 @@ pub struct Agent {
     /// Set for a plugin's profile read as an agent: read-only, no folder.
     #[serde(skip)]
     pub lent: Option<Lent>,
+}
+
+/// One agent and account of a fallback chain (#76).
+#[derive(Debug, Clone, Default, PartialEq, Eq, Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct Seat {
+    /// The ACP agent (`shed agents` id).
+    pub agent: String,
+    /// Its provider's account (none: the provider's default).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub account: Option<String>,
+}
+
+/// An agent and account a thread saw hit its usage limit (#76).
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct Capped {
+    /// The ACP agent.
+    pub agent: String,
+    /// Its account (empty: the system default).
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    pub account: String,
+    /// When it resets, as the harness said it (empty: not said).
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    pub resets: String,
 }
 
 /// What only a plugin's agent has.
@@ -531,6 +559,7 @@ pub fn save(config: &Path, data: &Path, mut a: Agent) -> io::Result<Agent> {
         mcp: old.mcp,
         sites: old.sites,
         policy: old.policy,
+        fallback: old.fallback,
         consolidate: a.consolidate.or(old.consolidate),
         heartbeat: a.heartbeat.or(old.heartbeat),
         spoken: a.spoken.or(old.spoken),

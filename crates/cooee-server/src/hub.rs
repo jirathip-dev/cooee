@@ -26,6 +26,7 @@ mod cards;
 mod chief;
 mod events;
 mod expire;
+mod fallback;
 mod folders;
 mod frames;
 mod glance;

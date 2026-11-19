@@ -24,7 +24,7 @@ use crate::{
     Hub, HubError, Out, Resume, Slice, Upload,
     http::{
         Answer, Created, Data, Name, Paired, allowed, blocking, hub, logins, plain, profiles,
-        provider_name, recipe, thread_id,
+        provider_name, recipe, seated, thread_id,
     },
     pairing, plugin,
 };
@@ -467,8 +467,14 @@ async fn approve(cx: &Cx, Json(a): Json<Approve>) -> Result<Response> {
         }
     }
     let by = request_context::<Paired>(cx).0.label.clone();
+    let (logins, data) = (logins(cx), app_context::<Data>(cx));
+    let (data, dir) = (data.0.clone(), data.1.clone());
     Answer(
         blocking(cx, move |hub| {
+            if let Some(seat) = hub.fallback_seat(&id, a.item, &a.option) {
+                let recipe = seated(hub, &logins, (&data, dir.as_deref()), &id, &seat)?;
+                return hub.fall_back((&id, a.item), &a.option, &recipe, &by);
+            }
             hub.approve(&id, a.item, &a.option, a.value.as_deref(), &by)
         })
         .await,
