@@ -173,3 +173,39 @@ fn the_supervisor_restarts_a_crashing_backend_then_turns_it_off_with_an_alert() 
     assert_eq!(log.matches("the backend stopped").count(), 5, "{log}");
     fs::remove_dir_all(&data).unwrap();
 }
+
+#[test]
+fn an_idle_supervisor_reads_the_lock_only_once_it_changed_within_five_seconds() {
+    let (data, _, m) = installed("idle", "exec sleep 600", 1);
+    m.tick(0);
+    assert_eq!(lock(&m.runs)["x"].state, "running");
+    let file = plugins::lock_path(&data);
+    let was = fs::metadata(&file).unwrap();
+    fs::write(&file, "x".repeat(usize::try_from(was.len()).unwrap())).unwrap();
+    let f = fs::File::options().write(true).open(&file).unwrap();
+    f.set_modified(was.modified().unwrap()).unwrap();
+    for at in 1..=20 {
+        m.tick(at * 500);
+        assert_eq!(lock(&m.runs)["x"].state, "running");
+    }
+    assert!(m.installed().is_err());
+    let x = Locked {
+        name: "x".into(),
+        commit: "c0".into(),
+        tabs: vec!["x".into()],
+        port: 1,
+        ..Locked::default()
+    };
+    plugins::write_lock(&data, &[x]).unwrap();
+    for at in 21..30 {
+        m.tick(at * 500);
+        assert!(lock(&m.runs).contains_key("x"), "{at}");
+    }
+    m.tick(15_000);
+    assert!(!lock(&m.runs).contains_key("x"));
+    m.enable("x", true).unwrap();
+    m.tick(15_001);
+    assert_eq!(lock(&m.runs)["x"].state, "running");
+    m.stop_all();
+    fs::remove_dir_all(&data).unwrap();
+}

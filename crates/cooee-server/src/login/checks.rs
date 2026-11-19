@@ -89,15 +89,21 @@ impl Logins {
         self.providers.iter().map(sheet).collect()
     }
 
-    pub(super) fn tick(self: &Arc<Self>) {
+    fn due(&self, at: u64) -> bool {
+        let checks = lock(&self.checks);
+        checks.is_empty()
+            || checks.values().any(|c| !c.busy && at >= c.next)
+            || (lock(&self.live).values()).any(|l| matches!(l, Login::Running(_)))
+    }
+
+    pub(super) fn tick(self: &Arc<Self>, at: u64) {
+        if !self.due(at) {
+            return;
+        }
         for p in self.providers.iter() {
             for a in self.accounts.list(&p.spec().name) {
                 let key = (p.spec().name.clone(), a.name.clone());
-                if !lock(&self.checks)
-                    .entry(key.clone())
-                    .or_default()
-                    .start(now())
-                {
+                if !lock(&self.checks).entry(key.clone()).or_default().start(at) {
                     continue;
                 }
                 let (logins, p) = (Arc::clone(self), Arc::clone(p));
@@ -137,6 +143,10 @@ impl Logins {
 
 #[cfg(test)]
 mod tests {
+    use std::{fs, path::PathBuf, sync::Mutex};
+
+    use cooee_core::{Accounts, Providers, Shed, Spec};
+
     use super::*;
 
     fn status(signed_in: bool, line: &str) -> Status {
@@ -199,5 +209,37 @@ mod tests {
         assert_eq!(age, Some(3));
         c.settle(status(false, "Not signed in"), 20_000);
         assert!(!c.known(20_000).0.signed_in && !c.known(20_000).0.unknown);
+    }
+
+    #[test]
+    fn an_idle_checker_lists_no_accounts_and_a_running_login_lists_them_within_a_second() {
+        let data = cooee_core::scratch::owned(
+            std::env::temp_dir().join(format!("cooee-idle-checker-{}", std::process::id())),
+        );
+        let spec = Spec {
+            name: "p".to_owned(),
+            ..Spec::default()
+        };
+        let logins = Arc::new(Logins {
+            shed: Shed::new(PathBuf::from("shed"), Some(data.join("shed"))),
+            providers: Providers::new(&[spec]),
+            accounts: Accounts::new(&data),
+            live: Mutex::default(),
+            checks: Mutex::default(),
+        });
+        let keys = || lock(&logins.checks).keys().cloned().collect::<Vec<_>>();
+        let t = now();
+        logins.tick(t);
+        let default = ("p".to_owned(), String::new());
+        assert_eq!(keys(), std::slice::from_ref(&default));
+        fs::create_dir_all(data.join("accounts/p/a")).unwrap();
+        for at in 1..=20 {
+            logins.tick(t + at * 500);
+        }
+        assert_eq!(keys(), std::slice::from_ref(&default));
+        let running = Login::Running("t".to_owned());
+        lock(&logins.live).insert("p".to_owned(), running);
+        logins.tick(t + 11_000);
+        assert_eq!(keys(), [default, ("p".to_owned(), "a".to_owned())]);
     }
 }
