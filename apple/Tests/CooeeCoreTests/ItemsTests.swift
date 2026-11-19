@@ -72,6 +72,27 @@ internal struct ItemsTests {
         )
     }
 
+    @Test internal func aChatStyleTurnFoldsItsPlanIntoTheTraceInOrderWithItsEntries() {
+        var plan = APIItem(id: 3, time: 3000, kind: "plan")
+        plan.entries = [
+            .object(["content": .string("Read the code"), "status": .string("completed")]),
+            .object(["content": .string("Fix the bug"), "status": .string("in_progress")]),
+        ]
+        let turn = [
+            APIItem(id: 1, time: 1000, kind: "you", text: "Fix it"),
+            APIItem(id: 2, time: 2000, kind: "tool", title: "Read a", status: "completed"),
+            plan,
+            APIItem(id: 4, time: 4000, kind: "tool", title: "Edit a", status: "failed"),
+            APIItem(id: 5, time: 5000, kind: "agent", text: "Fixed."),
+        ]
+        let entries = [PlanEntry("Read the code", done: true), PlanEntry("Fix the bug", done: false)]
+        let steps = [ToolRow("Read a", "done"), ToolRow("Plan", "done", plan: entries), ToolRow("Edit a", "failed")]
+        #expect(
+            ChatItems.build(turn, style: .chat).suffix(2) == [
+                .agent(id: 5, markdown: [.text("Fixed.")]), .trace(id: 2, steps: steps, seconds: 3),
+            ])
+    }
+
     @Test internal func aBrowserFrameIsADoneStepWithItsCaptionInTheThreadAndTheTrace() {
         var frame = APIItem(id: 2, time: 2000, kind: "frame", text: #"click "Sign in""#)
         frame.name = "f1"
@@ -151,5 +172,65 @@ extension ItemsTests {
             ])
         #expect(shot.plainText == nil && shot.id == 2)
         #expect(ScreenItem(APIItem(id: 6, time: 0, kind: "frame")) == nil)
+    }
+}
+
+internal struct CallItemsTests {
+    private static func voice(_ id: Int, _ time: Int64, _ text: String) -> APIItem {
+        var item = APIItem(id: id, time: time, kind: "you", text: text)
+        item.via = "voice"
+        return item
+    }
+
+    private let items = [
+        APIItem(id: 1, time: 0, kind: "you", text: "Find Birch."),
+        voice(2, 1_000, "What did the 10-Q say?"),
+        APIItem(id: 3, time: 2_000, kind: "tool", title: "fetch sec.gov", status: "completed"),
+        APIItem(id: 4, time: 3_000, kind: "agent", text: "Birch is 14%."),
+        voice(5, 4_000, "Why?"),
+        APIItem(id: 6, time: 5_000, kind: "tool", title: "read notes", status: "completed"),
+        APIItem(id: 7, time: 253_000, kind: "agent", text: "Deferred."),
+        APIItem(id: 8, time: 254_000, kind: "you", text: "Write it up."),
+    ]
+
+    private let call = Item.call(
+        Call(
+            id: 2, seconds: 252,
+            lines: [
+                Call.Line(you: true, text: "What did the 10-Q say?"), Call.Line(you: false, text: "Birch is 14%."),
+                Call.Line(you: true, text: "Why?"), Call.Line(you: false, text: "Deferred."),
+            ], tools: 2))
+
+    @Test internal func voiceTurnsGroupIntoOneCallBlockUntilATypedMessage() {
+        let rows = [ToolRow("fetch sec.gov", "done"), ToolRow("read notes", "done")]
+        #expect(
+            ChatItems.build(items)
+                == [
+                    .you(id: 1, text: "Find Birch."), call, .tools(id: 3, rows: rows),
+                    .you(id: 8, text: "Write it up."),
+                ])
+        #expect(
+            ChatItems.build(items, style: .chat)
+                == [
+                    .you(id: 1, text: "Find Birch."), call, .trace(id: 3, steps: rows, seconds: 3),
+                    .you(id: 8, text: "Write it up."),
+                ])
+        #expect(call.plainText == "What did the 10-Q say?\nBirch is 14%.\nWhy?\nDeferred.")
+    }
+}
+
+extension ItemsTests {
+    @Test internal func aHandoffsLinkLinesAreChipsThatOpenTheOtherThreadAndALinkWithoutOneIsDropped() throws {
+        let json = """
+            [{"id":2,"at":2000,"kind":"link","text":"","thread":"t6","title":"Fix the build","out":true},
+             {"id":3,"at":3000,"kind":"link","text":"filed #61","thread":"t5","title":"","out":false},
+             {"id":4,"at":4000,"kind":"link","text":"orphan","thread":""}]
+            """
+        let items = try JSONDecoder().decode([APIItem].self, from: Data(json.utf8))
+        let onward = ThreadLink(thread: "t6", title: "Fix the build", onward: true)
+        let back = ThreadLink(text: "filed #61", thread: "t5", title: "", onward: false)
+        #expect(ChatItems.build(items) == [.link(id: 2, onward), .link(id: 3, back)])
+        #expect(onward.chip == "continued in Fix the build" && back.chip == "from t5")
+        #expect(Item.link(id: 2, onward).plainText == nil && Item.link(id: 2, onward).id == 2)
     }
 }

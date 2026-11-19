@@ -38,6 +38,7 @@ internal struct ChatPluginsTests {
             }
             $0.plugins.installed = { _ in [Self.drover, Self.hello, Self.menuOnly] }
             $0.plugins.attach = { _, plugin, persona in calls.record("attach \(plugin) \(persona)") }
+            $0.plugins.events = { _, _, _ in AsyncThrowingStream { _ in } }
             $0.plugins.screen = { _, _, _ in
                 .object(["blocks": .array([.object(["type": .string("actions"), "rows": .array(Self.teach)])])])
             }
@@ -50,7 +51,7 @@ internal struct ChatPluginsTests {
 
     @Test internal func theHeaderStripLoadsItsChipsAndAChipOpensItsScreen() async {
         let store = store()
-        await store.send(.plugins(.load))
+        let load = await store.send(.plugins(.load))
         await store.receive(\.plugins.loaded) {
             $0.places = [Self.queue]
             $0.attachable = [Self.hello]
@@ -60,6 +61,7 @@ internal struct ChatPluginsTests {
             $0.screen = ScreenFeature.State(server: mini, place: Self.queue)
         }
         await store.send(.screen(.dismiss)) { $0.screen = nil }
+        await load.cancel()
     }
 
     @Test internal func attachingAPluginShowsItsSheetThenReloadsTheStrip() async {

@@ -58,4 +58,21 @@ internal struct SceneTests {
         let unknown = LaneHead(thread: "nobody", screen: try Self.fixture("queue.json"))
         #expect(unknown.lane == nil && unknown.line.isEmpty && unknown.pull == nil)
     }
+
+    @Test internal func theHostsLoadOverItsLimitSetsTheWeather() {
+        let loads: [Double?] = [nil, 0, 0.49, 0.5, 0.99, 1, 2.4]
+        #expect(loads.map(Weather.init) == [.clear, .clear, .clear, .cloudy, .cloudy, .storm, .storm])
+    }
+
+    @Test internal func nightRunsFromSevenInTheEveningToSevenInTheMorning() throws {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = try #require(TimeZone(identifier: "Australia/Sydney"))
+        let hours = [0, 6, 7, 12, 18, 19, 23].map { hour in
+            calendar.date(from: DateComponents(year: 2026, month: 11, day: 20, hour: hour, minute: 30))
+        }
+        #expect(
+            try hours.map { Weather.night(at: try #require($0), in: calendar) } == [
+                true, true, false, false, false, true, true,
+            ])
+    }
 }

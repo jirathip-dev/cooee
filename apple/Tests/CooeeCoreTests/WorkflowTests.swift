@@ -10,12 +10,12 @@ internal struct WorkflowTests {
         name: "drover", version: "1", commit: "c", places: [], claims: ["drover"], permissions: PluginPermissions()
     )
 
-    private func row(_ id: String, persona: String = "", state: String = "done", lane: WorkflowLabel? = nil)
-        -> ThreadRow
-    {
+    private func row(
+        _ id: String, persona: String = "", state: String = "done", lane: WorkflowLabel? = nil, note: String? = nil
+    ) -> ThreadRow {
         ThreadRow(
             id: id, title: "T \(id)", agent: "fake-acp", persona: persona, state: state, last: "", updated: 999_000_000,
-            unseen: 0, archived: false, workflow: lane
+            unseen: 0, archived: false, workflow: lane, note: note
         )
     }
 
@@ -54,6 +54,24 @@ internal struct WorkflowTests {
     @Test internal func thePersonaWithAClaimingPluginHasAnEmptySheetBeforeAnyLane() {
         let lists = Listing.home(rows: [], personas: [coder, conductor], plugins: [drover], now: now)
         #expect(lists.workflow == ["cond": []])
+    }
+
+    @Test internal func aParkedDeadOrOfflineSessionsRowReadsItsStateAndReasonButAPlainChatsNever() {
+        let sessions = Listing.chats(
+            rows: [
+                row("park", state: "parked", lane: lane("#1", "impl"), note: "waiting on #12"),
+                row("dead", state: "ended", lane: lane("#2", "impl"), note: "The agent exited (1)."),
+                row("off", state: "offline", lane: lane("#3", "impl")),
+                row("live", state: "blocked", lane: lane("#4", "rev"), note: "Edit a.rs"),
+                row("chat", state: "ended", note: "The thread was closed."),
+            ],
+            personas: [], now: now
+        )
+        #expect(
+            sessions.map(\.row.status) == [
+                "parked · waiting on #12", "dead · The agent exited (1).", "host offline", nil, nil,
+            ])
+        #expect(Workflow.status("parked", note: nil) == "parked")
     }
 
     @Test internal func theSheetHasOneRowPerIssueNeedsYouFirstWithItsRoundsOldestFirst() throws {

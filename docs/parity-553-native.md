@@ -51,10 +51,10 @@ action with an empty block id (→ #378).
 | 29 | Sticky header; older messages on scroll | | partial | `ChatHeader` above the scroll; `Endpoints` `messages(before: 50)` | older messages never load | #372 | Scroll to the top: older messages load |
 | 30 | Choice rows, "other" box, answered ✓ line | ● | done | `crates/cooee-core/src/blocks.rs` choice; `CooeeUI/BlockCards.swift` `ChoiceBlock` | — | — | Tap the recommended option: ✓ with who |
 | 31 | Conductor-answered asks keep [change] 30 min | | done | `blocks.rs` keeps the choice open until `until`; `ChoiceBlock` re-answers via `/threads/{id}/approve` | — | — | Re-tap another option on an answered ask: the new pick goes |
-| 32 | Config-proposal card | ● | partial | `blocks.rs` config card; `CardBlock` | no applying state, diff not coloured | #374 | Tap apply: "applying…", then "applied … doctor ✓" |
+| 32 | Config-proposal card | ● | done | `blocks.rs` config card (a `diff` fence); `CardBlock`, `CodeBlock.diff`; `ChatCards` applying… until the line | — | #374 | Tap apply: "applying…", then "applied … doctor ✓" |
 | 33 | Secret request card, masked input | ● | done | `CooeeUI/BlockFields.swift` `SecretBlock` | Face ID icon is dead (#240) | #240 | Save a value: "secret X set ✓" |
 | 34 | Harness pick; model/effort chip | | partial | `CooeeUI/Components.swift` `AgentChip` (no action); persona sets the agent | no per-thread model/effort (`POST /threads/{id}/model` unused) | #240, #230 | Tap the agent chip, pick effort low: "from the next turn" |
-| 35 | Handoff chips, flow-back lines, pick-a-thread | ● | partial | `/plugin/handoff`, `/plugin/line` → link items; `ChatItems` default branch | link items are plain notes, not tappable | #374 | Tap "continued in t6": t6 opens |
+| 35 | Handoff chips, flow-back lines, pick-a-thread | ● | done | `/plugin/handoff`, `/plugin/line` → link items; `ChatItems` → `ThreadLink`; `CooeeUI/ItemLines.swift` `LinkLine` | — | #374 | Tap "continued in t6": t6 opens |
 
 ## drover queue (rows 36–48)
 
@@ -94,7 +94,7 @@ Served by herdsman as the conductor's Queue header-strip screen (`screens.rs` `q
 | 59 | Stop, Kill with dry-run confirm, Clean with reasons | ● | partial | `WorkingPill` Stop; Queue live row long-press Stop | no Kill, no Clean | #380 | Long-press a lane, Kill: the confirm shows the unpushed/dirty line |
 | 60 | Lane figures animated by state | | partial | figure: scene sprite / ascii glyph / tone dot | not animated; herdsman sends no `coat` | #246 | A working lane's figure animates |
 | 61 | Herd scene: ranch, state bands, gate | | partial | `PinnedRow` `scene-strip` | no per-repo ranch, bands or gate | #181 | Scene: one figure per lane in its band |
-| 62 | Weather, day/night, repo switching | | missing | — | none of it | #382 | Tap [☾]: night; tap ›: next repo |
+| 62 | Weather, day/night, repo switching | | done | `LaneStage` `Sky`: the scene block's `load` → clear/cloudy/storm, night 19–07 or [☾] (`Settings.night`), › taps its `next` | — (the plugin sends `load` and `next`; no swipe) | #382 | Tap [☾]: night; tap ›: next repo |
 
 ## drover asks (rows 63–71) and run cards
 
@@ -179,6 +179,6 @@ Server tests are in `crates/cooee/tests/reliability.rs` unless named otherwise. 
 
 ## Totals and filed issues
 
-Rows 1–85 and run cards: 15 done, 39 partial, 29 missing, 3 n/a-web; 86–90 dropped. Reliability: 14 done, 8 partial,
-5 n/a-shed. Of the 28 gate rows, 8 are done (15, 18, 19, 30, 33, 42, 43, 85); the biggest blocker is #377.
+Rows 1–85 and run cards: 17 done, 37 partial, 29 missing, 3 n/a-web; 86–90 dropped. Reliability: 14 done, 8 partial,
+5 n/a-shed. Of the 28 gate rows, 10 are done (15, 18, 19, 30, 32, 33, 35, 42, 43, 85); the biggest blocker is #377.
 Filed by this audit: #369–#386.

@@ -1,9 +1,9 @@
-use std::path::PathBuf;
+use std::{path::PathBuf, sync::atomic::Ordering};
 
 use cooee_core::{Kind, Thread, Turn};
 use tokio::sync::broadcast;
 
-use super::{Hub, HubError, LAG, Out, Pending, Resume, Slice, lock, now, waits};
+use super::{Hub, HubError, LAG, Out, Pending, REV, Resume, Slice, lock, now, waits};
 
 impl Hub {
     /// Renames the thread.
@@ -66,15 +66,18 @@ impl Hub {
         Ok(self.shed.cancel(&terminal)?)
     }
 
-    /// Closes the thread: kills and removes its terminal. Its history stays.
+    /// Closes the thread: kills and removes its terminal, once. Its history stays; a Workflow session's is archived.
     ///
     /// # Errors
-    /// [`HubError::Shed`] when shed fails.
+    /// [`HubError::Refused`] for a live Workflow session a plugin claims; [`HubError::Shed`] when shed fails.
     pub fn close(&self, id: &str) -> Result<(), HubError> {
         let live = self.live(id)?;
         let terminal = {
             let l = lock(&live);
-            if l.meta.workflow.is_some() {
+            if l.meta.closed {
+                return Ok(());
+            }
+            if !self.closable(&l) {
                 return Err(HubError::Refused(
                     "the tool that started this session closes it".to_owned(),
                 ));
@@ -84,6 +87,7 @@ impl Hub {
         self.shed.close(&terminal)?;
         let mut live = lock(&live);
         live.meta.closed = true;
+        live.meta.archived |= live.meta.workflow.is_some();
         self.save(&live)?;
         if live.chat.turn.state != "ended" {
             let changes = live
@@ -142,7 +146,7 @@ impl Hub {
             skipped_before: from,
             skipped_after: items.len() - to.max(from),
             turn: live.chat.turn.clone(),
-            cursor: format!("{}.{}", self.boot, live.seq),
+            cursor: format!("{}.{}", self.boot, REV.load(Ordering::Relaxed)),
             pending: live.pending.clone().map(|text| Pending {
                 text,
                 random_id: live.meta.random_id.clone(),
@@ -153,7 +157,7 @@ impl Hub {
         })
     }
 
-    /// Subscribes to thread `id`'s page events after `cursor` (`<boot>.<seq>`), in one step under the thread's
+    /// Subscribes to thread `id`'s page events after `cursor` (`<boot>.<rev>`), in one step under the thread's
     /// lock, so nothing is missed or doubled.
     ///
     /// # Errors
@@ -165,17 +169,17 @@ impl Hub {
     ) -> Result<(Resume, broadcast::Receiver<Out>), HubError> {
         let live = self.live(id)?;
         let mut live = lock(&live);
-        let seq = cursor
+        let rev = cursor
             .strip_prefix(&self.boot)
             .and_then(|s| s.strip_prefix('.'))
             .and_then(|s| s.parse::<u64>().ok())
-            .filter(|s| *s <= live.seq);
-        let first = live.ring.front().map_or(live.seq + 1, |(_, o)| o.seq);
-        let resume = match seq {
+            .filter(|s| *s <= REV.load(Ordering::Relaxed));
+        let first = live.trimmed + 1;
+        let resume = match rev {
             Some(s) if s + 1 >= first => Resume::Replay(
                 live.ring
                     .iter()
-                    .filter(|(_, o)| o.seq > s)
+                    .filter(|(_, o)| o.rev > s)
                     .map(|(_, o)| o.clone())
                     .collect(),
             ),
@@ -188,6 +192,6 @@ impl Hub {
     /// The SSE id of a page event.
     #[must_use]
     pub fn event_id(&self, out: &Out) -> String {
-        format!("{}.{}", self.boot, out.seq)
+        format!("{}.{}", self.boot, out.rev)
     }
 }

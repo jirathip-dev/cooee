@@ -181,8 +181,22 @@ impl Runner {
                     .to_owned(),
             );
         }
+        self.make(id, ask, &from, now)?;
+        Ok(
+            "Made. The owner sees it in this chat and can change it in Settings › routines."
+                .to_owned(),
+        )
+    }
+
+    pub(crate) fn make(
+        &self,
+        id: &str,
+        ask: Ask,
+        from: &cooee_core::Thread,
+        now: u64,
+    ) -> Result<Routine, HubError> {
         let r = self.change(|b| {
-            let r = Routine::make(&b.routines, ask, &from, now).map_err(refused)?;
+            let r = Routine::make(&b.routines, ask, from, now).map_err(refused)?;
             b.routines.push(r.clone());
             Ok(r)
         })?;
@@ -193,10 +207,7 @@ impl Runner {
             place: placed(&r.place).to_owned(),
         };
         self.hub.say(id, body)?;
-        Ok(
-            "Made. The owner sees it in this chat and can change it in Settings › routines."
-                .to_owned(),
-        )
+        Ok(r)
     }
 
     /// Settings › routines' edit of routine `id`.
@@ -624,7 +635,7 @@ impl Runner {
         let ran = match &r.place {
             Place::Chat { thread } => self
                 .hub
-                .queue_as(thread, (text, key), &[], mark)
+                .queue_as(thread, (text, key), &[], (mark, None))
                 .map(|_| thread.clone()),
             Place::NewThread { who } => {
                 (self.start)(&self.hub, who).and_then(|(agent, name, folder, recipe)| {

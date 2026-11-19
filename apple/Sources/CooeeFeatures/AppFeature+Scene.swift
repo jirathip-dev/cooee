@@ -14,9 +14,10 @@ extension AppFeature {
 
     internal func taps(_ state: State) -> Effect<Action> {
         @Dependency(\.threads) var client
-        let (push, threads, server) = (push, client, state.home?.server)
+        let (push, threads, server, voice) = (push, client, state.home?.server, voice)
         return .merge(
             .run { send in for await thread in await push.opened() { await send(.open(thread)) } },
+            .run { send in for await persona in await voice.calls() { await send(.call(persona)) } },
             .run { send in
                 for await said in await push.said() {
                     guard let server else { continue }

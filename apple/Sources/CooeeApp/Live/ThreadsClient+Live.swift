@@ -28,6 +28,9 @@ extension ThreadsClient: DependencyKey {
         send: { server, thread, text, files, queue in
             try await client(server).send(thread, text: text, files: files, queue: queue)
         },
+        say: { server, thread, text, queue in
+            try await client(server).send(thread, text: text, queue: queue, voice: true)
+        },
         steer: { server, thread, randomID in try await client(server).steer(thread, randomID) },
         unqueue: { server, thread, randomID in try await client(server).unqueue(thread, randomID) },
         stop: { server, thread in try await client(server).cancel(thread) },
@@ -52,6 +55,7 @@ extension ThreadsClient: DependencyKey {
         topics: { server, owner in try await client(server).topics(of: owner) },
         retitle: { server, thread, title in try await client(server).retitle(thread, title) },
         archive: { server, thread, archived in try await client(server).archive(thread, archived) },
+        close: { server, thread in try await client(server).close(thread) },
         room: { server, title, members in try await client(server).newRoom(title: title, members: members) },
         seat: { server, room, persona, place, remove in
             try await client(server).seat(room, persona: persona, place: place, remove: remove)

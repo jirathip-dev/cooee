@@ -196,6 +196,15 @@ pub fn run(config: &Config, machine: &str, yes: bool) -> Result<(), String> {
     }
 }
 
+/// Machine `machine`'s checks that fail now (#664: what Chief's setup card fixes).
+#[must_use]
+pub fn failing(config: &Config, machine: &str) -> Vec<String> {
+    let lines = Ctx::new(config).check(machine, false).into_iter();
+    lines
+        .filter_map(|(ok, what)| (!ok).then_some(what))
+        .collect()
+}
+
 /// `cooee doctor`'s row per machine shed holds a link to or a persona runs on.
 #[must_use]
 pub fn rows(config: &Config) -> Vec<Line> {

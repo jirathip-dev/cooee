@@ -80,6 +80,7 @@ public struct Look: Sendable {
     public var still: Bool
     public var art: URL?
     public var moving = false
+    public var night: Bool?
     public var cast = Cast.farm
     public var sprites: [String: String] = [:]
     public var drawn: [String: PixelFigure] = [:]

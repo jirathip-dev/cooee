@@ -44,20 +44,29 @@ internal struct LaneStage: View {
 
     internal var body: some View {
         if let stage = look.stage {
-            Stage(height: 180) {
-                Scroller(axis: .horizontal) {
-                    HStack(alignment: .bottom, spacing: 2) {
-                        ForEach(SceneLane.placed(block.list("lanes"))) { lane in
-                            ActButton(source: lane.source) { LaneFigure(lane: lane, stage: stage) }
-                                .accessibilityLabel("\(lane.name), \(lane.state.word)")
-                        }
-                    }
-                    .padding(.horizontal, 8)
-                }
-                .frame(height: 140).padding(.bottom, 10)
+            TimelineView(.everyMinute) { context in
+                let night = look.night ?? Weather.night(at: context.date)
+                strip(stage)
+                    .overlay { Sky(weather: Weather(load: block["load"]?.number), night: night) }
+                    .overlay(alignment: .topTrailing) { SkyButtons(next: block["next"], night: night) }
             }
             .padding(.horizontal, -BlocksView.inset)
             .accessibilityElement(children: .contain).accessibilityLabel(block.string("label") ?? "")
+        }
+    }
+
+    private func strip(_ stage: CooeeCore.Stage) -> some View {
+        Stage(height: 180) {
+            Scroller(axis: .horizontal) {
+                HStack(alignment: .bottom, spacing: 2) {
+                    ForEach(SceneLane.placed(block.list("lanes"))) { lane in
+                        ActButton(source: lane.source) { LaneFigure(lane: lane, stage: stage) }
+                            .accessibilityLabel("\(lane.name), \(lane.state.word)")
+                    }
+                }
+                .padding(.horizontal, 8)
+            }
+            .frame(height: 140).padding(.bottom, 10)
         }
     }
 }

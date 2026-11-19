@@ -39,6 +39,7 @@ public struct ChatFeature: Sendable {
         public var exchange: Exchange?
         public var places: [Place] = []
         public var deck = PluginDeck()
+        public var strips: [String: LiveScreen] = [:]
         public var attachable: [PluginRow] = []
         public var teach: [JSONValue] = []
         public var panel = false
@@ -49,8 +50,11 @@ public struct ChatFeature: Sendable {
         public var workflowOpen = false
         public var unfolded: String?
         public var machine = MachineChip()
+        public var session: LaneSession?
         public var bar: TopicBar?
         public var browser: BrowserSheet?
+        public var dictation: Dictation?
+        public var call: Calling?
         @Presents public var screen: ScreenFeature.State?
         @Presents public var attaching: AttachFeature.State?
 
@@ -62,7 +66,8 @@ public struct ChatFeature: Sendable {
             if let exchange { return LinkedItems.build(items, exchange: exchange, outbox: outbox, now: since) }
             return
                 (room.map { RoomItems.build(items, names: $0.names, last: $0.round) + $0.cards }
-                ?? ChatItems.build(items, outbox: first + outbox, style: persona.api.style, working: working))
+                ?? ChatItems.build(items, outbox: first + outbox, style: persona.api.style, working: working)
+                .map(applying))
                 + deck.items
         }
 
@@ -105,22 +110,15 @@ public struct ChatFeature: Sendable {
         case attaching(PresentationAction<AttachFeature.Action>)
         case workflow(WorkflowAction)
         case machine(MachineAction)
+        case lane(LaneAction)
         case frame(String)
         case framed(String, Data)
         case photo(String)
         case photoed(String, Data)
         case topics(TopicAction)
         case browse(Browse)
-
-        @CasePathable
-        public enum Delegate: Sendable, Equatable {
-            case started(String)
-            case open(String)
-            case persona(String)
-            case start(String)
-            case round(String)
-            case topic(String)
-        }
+        case voice(Voice)
+        case call(CallAction)
     }
 
     @Dependency(\.threads) internal var threads
@@ -157,13 +155,27 @@ public struct ChatFeature: Sendable {
                 return listen(&state, action)
             }
         }
-        Reduce { state, action in agent(&state, action) }
+        Reduce { state, action in .merge(agent(&state, action), lane(&state, action)) }
+        Reduce { state, action in spoken(&state, action) }
         Reduce { state, action in frames(&state, action) }
         Reduce { state, action in browser(&state, action) }
         Reduce { state, action in plugins(&state, action) }
             .ifLet(\.$screen, action: \.screen) { ScreenFeature() }
             .ifLet(\.$attaching, action: \.attaching) { AttachFeature() }
             .keepsLeftScreens { $0.screen.map { [$0] } ?? [] }
+    }
+}
+
+extension ChatFeature.Action {
+    @CasePathable
+    public enum Delegate: Sendable, Equatable {
+        case started(String)
+        case open(String)
+        case persona(String)
+        case start(String)
+        case round(String)
+        case topic(String)
+        case closed
     }
 }
 
@@ -179,11 +191,7 @@ extension ChatFeature {
         case .older(let older):
             return self.older(&state, older)
         case .event(let event):
-            let timed = painted(state, event)
-            state.room?.hear(event, when: now)
-            apply(&state, event)
-            guard case .item = event else { return timed }
-            return .merge(timed, keepSlice(state))
+            return heard(&state, event)
         case .failed(let error):
             state.status.stopping = false
             return toast(&state, error)
@@ -195,12 +203,10 @@ extension ChatFeature {
         return .none
     }
 
-    private func apply(_ state: inout State, _ event: StreamEvent) {
+    internal func apply(_ state: inout State, _ event: StreamEvent) {
         switch event {
         case .item(let item):
             upsert(&state, item)
-        case .text(let text):
-            state.live.append(text, parse: markdown)
         case .state(let turn):
             if turn.state != state.turn.state { state.since = now }
             state.turn = Turn(text: nil, state: turn.state, note: turn.note)
@@ -209,7 +215,7 @@ extension ChatFeature {
             state.queue = queue
         case .sync(let sync):
             state.status.sync = sync
-        case .reset, .roomTurn, .roomStop, .roomAsk:
+        case .text, .reset, .roomTurn, .roomStop, .roomAsk:
             break
         }
     }

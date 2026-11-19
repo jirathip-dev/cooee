@@ -128,7 +128,9 @@ internal struct ChatRow: View {
             if row.state == .working && !look.textMarks {
                 Image(systemName: "ellipsis").font(.system(size: 13, weight: .bold)).foregroundStyle(palette.cyan)
             }
-            if word { Text("\(row.state.word) ·").ui(14, .regular, look).foregroundStyle(palette.state(row.state)) }
+            if let status = row.status ?? (word ? row.state.word : nil) {
+                Text("\(status) ·").ui(14, .regular, look).foregroundStyle(palette.state(row.state))
+            }
             if topics > 1 {
                 FolderGlyph(folder: folder, size: 11, slash: true).foregroundStyle(palette.mute)
                 Text("\(Text(row.title).fontWeight(.semibold)) · \(row.last)").ui(14, .regular, look)

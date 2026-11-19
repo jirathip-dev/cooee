@@ -7,6 +7,7 @@ public struct ChatStatus: Equatable, Sendable {
     public var sync = Sync.live
     public var asOf: Date?
     public var stopping = false
+    public var held: String?
 
     public init() {}
 }
@@ -17,6 +18,7 @@ extension ChatFeature.Action {
         case refresh
         case dropped(String, KeptSlice?)
         case toasted
+        case painted
     }
 }
 
@@ -38,6 +40,8 @@ extension ChatFeature {
         case .toasted:
             state.error = nil
             return .none
+        case .painted:
+            return nextFrame(&state)
         }
     }
 
@@ -85,6 +89,7 @@ extension ChatFeature {
         state.since = now
         state.pending = slice.pending?.text
         state.live = LiveReply(slice.turn.working ? slice.turn.text ?? "" : "", parse: markdown)
+        state.status.held = nil
         state.room?.heard(slice.asks ?? [], when: now)
         (state.status.sync, state.status.asOf) = (.live, nil)
         state.status.stopping = state.status.stopping && slice.turn.working

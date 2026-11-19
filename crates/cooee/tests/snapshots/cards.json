@@ -35,7 +35,7 @@
       "blocks": [
         {
           "type": "text",
-          "markdown": "```\n+max_impl = 3\n```"
+          "markdown": "```diff\n+max_impl = 3\n```"
         },
         {
           "type": "choice",
