@@ -46,6 +46,7 @@ public struct AppRoot: View {
             }
         }
         .onChange(of: phase) { _, phase in if phase != .inactive { store.send(.scene(active: phase == .active)) } }
+        .reporting(store)
         .task { await store.send(.launch).finish() }
         .task { await store.send(.retire).finish() }
         .task { await store.send(.taps).finish() }

@@ -31,7 +31,7 @@ internal struct WorkingPill: View {
             .buttonStyle(.plain).accessibilityLabel("Stop").disabled(actions.stopping)
         }
         .padding(.leading, 14).padding(.trailing, 6).frame(height: 40)
-        .surface(look, radius: 20)
+        .surface(look, radius: 20).reportable("working pill")
     }
 
     private func label(_ seconds: Int) -> some View {

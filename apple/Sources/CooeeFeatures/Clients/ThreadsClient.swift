@@ -7,6 +7,7 @@ public struct ThreadsClient: Sendable {
     public var home: @Sendable (_ server: Server) async throws -> HomeAnswer
     public var personas: @Sendable (_ server: Server) async throws -> [APIPersona]
     public var looks: @Sendable (_ server: Server) async throws -> Looks
+    public var report: @Sendable (_ server: Server, _ report: Report) async throws -> Void
     public var checkTheme: @Sendable (_ server: Server, _ draft: ThemeDraft) async throws -> [String: GateReport]
     public var saveTheme: @Sendable (_ server: Server, _ name: String, _ draft: ThemeDraft) async throws -> Void
     public var themeArt: @Sendable (_ server: Server, _ theme: String, _ file: String) async throws -> String

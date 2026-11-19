@@ -33,7 +33,7 @@ internal struct SlotView: View {
     }
 
     internal var body: some View {
-        placed.transition(node.transition.entering)
+        placed.transition(node.transition.entering).reportable(node.id)
     }
 }
 

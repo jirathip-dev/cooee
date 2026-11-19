@@ -18,6 +18,7 @@ public struct AppFeature: Sendable {
         public var terminal: TerminalFeature.State
         public var layout: LayoutFeature.State
         @Presents public var persona: PersonaFeature.State?
+        public var report: ReportFeature.State?
         public var notice: String?
         public var away: Date?
 
@@ -53,6 +54,8 @@ public struct AppFeature: Sendable {
         case back
         case path([String])
         case scene(active: Bool)
+        case reporting
+        case report(ReportFeature.Action)
     }
 
     @Dependency(\.serverStore) internal var serverStore
@@ -76,6 +79,9 @@ public struct AppFeature: Sendable {
                 serverStore.clear()
                 state = State(layout: state.layout.layout, server: nil, settings: state.menu.settings)
                 return .none
+            case .reporting, .report,
+                .back where state.report != nil:
+                return report(&state, action)
             case .launch, .launched, .keychainSilent:
                 return launch(&state, action)
             case .retire:
@@ -126,6 +132,7 @@ public struct AppFeature: Sendable {
         .ifLet(\.chat, action: \.chat) { ChatFeature() }
         .ifLet(\.newRoom, action: \.newRoom) { NewRoomFeature() }
         .ifLet(\.$persona, action: \.persona) { PersonaFeature() }
+        .ifLet(\.report, action: \.report) { ReportFeature() }
         Reduce { state, _ in
             if let chat = state.chat, case .thread(let id) = chat.target, chat.bar != nil {
                 state.home?.opened[chat.persona.id] = id
@@ -219,7 +226,7 @@ extension AppFeature {
             return topic(&state, thread)
         case .started(let thread):
             state.path = state.path.dropLast() + [thread]
-            state.chat = state.chat.map { Self.moved($0, to: .thread(thread), persona: $0.persona) }
+            state.chat = state.chat.map { Self.moved($0, to: .thread(thread)) }
             return .send(.home(.refresh))
         }
     }
@@ -233,10 +240,8 @@ extension AppFeature {
         return .none
     }
 
-    private static func moved(
-        _ chat: ChatFeature.State, to target: ChatFeature.Target, persona: Persona
-    ) -> ChatFeature.State {
-        var moved = ChatFeature.State(server: chat.server, target: target, persona: persona)
+    private static func moved(_ chat: ChatFeature.State, to target: ChatFeature.Target) -> ChatFeature.State {
+        var moved = ChatFeature.State(server: chat.server, target: target, persona: chat.persona)
         moved.machine = chat.machine
         moved.bar = chat.bar ?? moved.bar
         return moved
