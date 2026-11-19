@@ -32,4 +32,27 @@ extension ScreenFeature {
         }
         return .none
     }
+
+    internal func watch(_ state: State, filtered: String? = nil) -> Effect<Action> {
+        let (plugins, cache, clock, server, source) = (plugins, cache, clock, state.server, state.source)
+        let (path, key) = (state.current, state.key)
+        return .run { send in
+            while true {
+                do {
+                    var stream = filtered
+                    if stream == nil {
+                        let screen = try await plugins.screen(server, source, path)
+                        await send(.loaded(screen))
+                        stream = screen.string("stream")
+                    }
+                    guard let stream else { return }
+                    for try await event in plugins.events(server, source, stream) { await send(.event(event)) }
+                } catch {
+                    await send(.failed(Self.who(error, source: source), cache.load(key)))
+                }
+                try await clock.sleep(for: .seconds(5))
+            }
+        }
+        .cancellable(id: CancelID.follow, cancelInFlight: true)
+    }
 }

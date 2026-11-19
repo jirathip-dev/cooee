@@ -16,6 +16,7 @@ extension ChatFeature {
         case load
         case loaded([Place], [PluginRow])
         case teach([JSONValue])
+        case counted(String, JSONValue)
         case open(Place)
         case attach(PluginRow)
     }
@@ -55,6 +56,8 @@ extension ChatFeature {
             }
         case .teach(let rows):
             state.teach = rows
+        case .counted(let place, let event):
+            state.strips[place, default: LiveScreen(.null)].apply(event: event)
         case .open(let place):
             state.screen = ScreenFeature.State(server: state.server, place: place)
         case .attach(let plugin):
@@ -73,7 +76,7 @@ extension ChatFeature {
             await send(.plugins(.loaded(found, try await installed)))
             let screen = try await plugins.screen(server, .core, "/screens/persona/\(persona)")
             await send(.plugins(.teach(screen.list("blocks").first { $0.type == "actions" }?.list("rows") ?? [])))
-            await Self.deal(found.filter(\.cards), plugins, clock, server, send)
+            await Self.deal(found, plugins, clock, server, send)
         } catch: { error, send in
             await send(.failed(error.localizedDescription))
         }

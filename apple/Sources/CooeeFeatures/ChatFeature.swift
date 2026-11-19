@@ -39,6 +39,7 @@ public struct ChatFeature: Sendable {
         public var exchange: Exchange?
         public var places: [Place] = []
         public var deck = PluginDeck()
+        public var strips: [String: LiveScreen] = [:]
         public var attachable: [PluginRow] = []
         public var teach: [JSONValue] = []
         public var panel = false

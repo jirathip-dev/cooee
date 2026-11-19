@@ -71,8 +71,8 @@ public struct ScreenFeature: Sendable {
     internal enum CancelID { case follow, beside, keep, background, slow }
 
     @Dependency(\.plugins) internal var plugins
-    @Dependency(\.screenCache) private var cache
-    @Dependency(\.continuousClock) private var clock
+    @Dependency(\.screenCache) internal var cache
+    @Dependency(\.continuousClock) internal var clock
     @Dependency(\.date.now) private var now
     @Dependency(\.perf) private var perf
 
@@ -115,28 +115,11 @@ public struct ScreenFeature: Sendable {
 
 extension ScreenFeature {
     private func follow(_ state: State) -> Effect<Action> {
-        let (plugins, cache, clock, server, source) = (plugins, cache, clock, state.server, state.source)
-        let (path, key) = (state.current, state.key)
-        let follow = Effect<Action>.run { send in
-            while true {
-                do {
-                    let screen = try await plugins.screen(server, source, path)
-                    await send(.loaded(screen))
-                    guard let stream = screen.string("stream") else { return }
-                    for try await event in plugins.events(server, source, stream) { await send(.event(event)) }
-                } catch {
-                    await send(.failed(Self.who(error, source: source), cache.load(key)))
-                }
-                try await clock.sleep(for: .seconds(5))
-            }
-        }
-        let slow = Effect<Action>.run { send in
+        let slow = Effect<Action>.run { [clock] send in
             try await clock.sleep(for: .milliseconds(300))
             await send(.slow)
         }
-        return .merge(
-            follow.cancellable(id: CancelID.follow, cancelInFlight: true),
-            slow.cancellable(id: CancelID.slow, cancelInFlight: true))
+        return .merge(watch(state), slow.cancellable(id: CancelID.slow, cancelInFlight: true))
     }
 
     private func settled(_ state: inout State) -> Effect<Action> {
@@ -216,12 +199,17 @@ extension ScreenFeature {
     private func acted(_ state: inout State, _ answer: JSONValue?, _ error: String?) -> Effect<Action> {
         state.pending = Array(state.pending.dropFirst())
         state.said = error ?? answer?.string("toast")
+        let was = state.screen?.root.string("stream")
         let kept = answer.map { answer in
             state.screen?.apply(event: answer)
             return keep(&state)
         }
         let next = state.pending.first.map { send(state, $0) } ?? .none
-        guard let open = answer?.string("open") else { return .merge(next, kept ?? .none) }
+        guard let open = answer?.string("open") else {
+            let stream = state.screen?.root.string("stream")
+            let filtered = stream == was ? nil : stream.map { watch(state, filtered: $0) }
+            return .merge(next, kept ?? .none, filtered ?? .none)
+        }
         return .merge(next, navigate(&state, to: open))
     }
 

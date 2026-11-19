@@ -168,7 +168,7 @@ internal struct PluginDeckTests {
             """#)
     private let calls = Calls()
 
-    private func store(refusing: Bool = false) -> TestStoreOf<ChatFeature> {
+    private func store(refusing: Bool = false, badge: Int? = nil) -> TestStoreOf<ChatFeature> {
         let calls = calls
         let store = TestStore(
             initialState: ChatFeature.State(server: mini, target: .thread("a1"), persona: Persona(coder))
@@ -180,6 +180,7 @@ internal struct PluginDeckTests {
             $0.plugins.installed = { _ in [] }
             $0.plugins.screen = { _, _, _ in .object([:]) }
             $0.plugins.events = { _, source, path in
+                guard path != "/screens/queue/stream" else { return Self.counting(badge) }
                 calls.record("follow \(source.name) \(path)")
                 return Self.dealing()
             }
@@ -198,6 +199,15 @@ internal struct PluginDeckTests {
         AsyncThrowingStream {
             $0.yield(dealt)
             $0.finish()
+        }
+    }
+
+    nonisolated private static func counting(_ count: Int?) -> AsyncThrowingStream<JSONValue, any Error> {
+        AsyncThrowingStream {
+            if let count {
+                let badge: JSONValue = .object(["op": .string("badge"), "count": .number(Double(count))])
+                $0.yield(.object(["ops": .array([badge])]))
+            }
         }
     }
 
@@ -249,6 +259,14 @@ internal struct PluginDeckTests {
         await store.send(.cards(.answer(run, approve)))
         #expect(line(store, 1) == "card c1 expired" && store.state.error == nil)
         #expect(calls.all.filter { $0.hasPrefix("drover cards") } == ["drover cards run-card c1 approve"])
+        await load.cancel()
+    }
+
+    @Test internal func aStripChipShowsTheCountItsScreensStreamSends() async {
+        let store = store(badge: 4)
+        let load = await store.send(.plugins(.load))
+        await store.receive(\.plugins.counted)
+        #expect(store.state.chipCounts == [4])
         await load.cancel()
     }
 }
