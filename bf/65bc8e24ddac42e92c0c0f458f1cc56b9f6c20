@@ -1,0 +1,8 @@
+Decided: a store read waits for the writer only while its own thread has queued writes; a per-thread pending count in the writer decides
+Because: crates/cooee-core/src/store/writer.rs:84
+Decided: the busy-thread test keeps its 50 ms limit; the quiet thread's first open no longer waits behind the busy thread's 1000 commits
+Because: crates/cooee-core/src/store/items.rs:56
+Rejected: loading every thread's items at start again — the spec says "a thread's items load on its first open"
+Rejected: raising the test's limit — it would hide the head-of-line wait this round removed
+Check: cargo test -p cooee-server --lib passes the busy-thread test in the full parallel suite three runs out of three
+Owner: Opening one chat no longer waits for another busy chat's messages to be saved first.
