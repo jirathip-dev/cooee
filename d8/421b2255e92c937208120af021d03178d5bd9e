@@ -1,0 +1,14 @@
+Decided: older pages ask GET /threads/{id}/messages?before=50&around=<oldest id> and drop ids at or above the oldest held
+Because: crates/cooee-server/src/routes/threads.rs:47
+Rejected: before=<oldest id> as the issue words it — the server reads before as a count, so it would return the newest N again
+Decided: an empty page after that drop sets history to all and further loads do nothing
+Because: "Stops when the server returns no older messages"
+Decided: the scroller fires within one screen of the top and anchors size changes to the bottom while there
+Because: "preloading before the very top"
+Because: apple/Sources/CooeeUI/Layout.swift:91
+Rejected: scrollPosition(id:) — it would fight the existing pinned-to-bottom anchoring for new messages
+Decided: a reconnect's slice keeps the older items already loaded
+Because: apple/Sources/CooeeFeatures/ChatFeature.swift:218
+Check: ChatFeatureTests theTopLoadsOlderPagesUntilTheServerHasNoneAndAReloadKeepsThem asserts the before ids 5 then 3 and no third call
+Check: phone check on TestFlight is not done in the lane
+Owner: Scrolling up in a chat loads older messages without jumping, and stops at the first message.
