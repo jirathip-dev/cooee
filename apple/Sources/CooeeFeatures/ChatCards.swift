@@ -24,7 +24,7 @@ extension ChatFeature {
             state.deck.played(item, reply, line: line)
             return .none
         case .answered(let item, let error):
-            state.answering.remove(item)
+            if error != nil || !state.awaitsLine(item) { state.answering.remove(item) }
             return error.map { toast(&state, $0) } ?? .none
         }
     }
@@ -54,5 +54,21 @@ extension ChatFeature {
         } catch: { error, send in
             await send(.cards(.answered(item, error.localizedDescription)))
         }
+    }
+}
+
+extension ChatFeature.State {
+    internal func awaitsLine(_ id: Int) -> Bool {
+        items.contains { $0.id == id && $0.line == nil && $0.block?.string("kind") == "config" }
+    }
+
+    internal func applying(_ item: Item) -> Item {
+        guard case .card(let id, let poster, let block) = item, answering.contains(id), awaitsLine(id),
+            case .object(var card) = block
+        else { return item }
+        let note: JSONValue = .object(
+            ["type": .string("text"), "style": .string("footnote"), "markdown": .string("applying…")])
+        card["blocks"] = .array(Array(block.list("blocks").prefix(1)) + [note])
+        return .card(id: id, poster: poster, block: .object(card))
     }
 }
