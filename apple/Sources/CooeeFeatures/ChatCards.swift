@@ -29,8 +29,12 @@ extension ChatFeature {
         }
     }
 
-    private func answer(_ state: inout State, _ item: Int, _ action: BlockAction) -> Effect<Action> {
+    internal func answer(_ state: inout State, _ item: Int, _ action: BlockAction) -> Effect<Action> {
         guard case .thread(var thread) = state.target, let answer = action.answer else { return .none }
+        if answer.option == "say", answer.value == nil {
+            state.denying = item
+            return .none
+        }
         var asked = item
         if let ask = state.room?.ask(item) { (thread, asked) = (ask.session, ask.item.id) }
         state.answering.insert(item)

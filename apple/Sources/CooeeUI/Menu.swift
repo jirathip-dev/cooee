@@ -11,11 +11,11 @@ internal struct MenuHost: View {
 
     internal var body: some View {
         @Bindable var menu = store.scope(state: \.menu, action: \.menu)
-        let pages = rows.filter { $0.content == .component(.settings) }.flatMap { $0.config["pages"]?.items ?? [] }
+        let pages = rows.filter { $0.content == .component("settings") }.flatMap { $0.config["pages"]?.items ?? [] }
         NavigationStack(path: Binding(get: { menu.path }, set: { menu.send(.path($0)) })) {
             ScrollView {
                 VStack(spacing: 12) {
-                    ForEach(rows.filter { !$0.locked }, id: \.id) { SlotView(store: store, node: $0, compact: compact) }
+                    ForEach(rows, id: \.id) { SlotView(store: store, node: $0, compact: compact) }
                     ActionRow(symbol: "arrow.counterclockwise", title: "Reset layout") { store.send(.layout(.reset)) }
                     ActionRow(symbol: "exclamationmark.bubble", title: "Report") { store.send(.reporting) }
                     if !menu.timings.isEmpty { TimingRows(timings: menu.timings) }
@@ -24,9 +24,9 @@ internal struct MenuHost: View {
             }
             .background(look.palette.background)
             .navigationDestination(for: MenuFeature.Page.self) { page in
-                if page == .terminal, let node = rows.first(where: { $0.content == .component(.terminal) }) {
+                if page == .terminal, let node = rows.first(where: { $0.content == .component("terminal") }) {
                     TerminalSlot(
-                        store: store.scope(state: \.terminal, action: \.terminal), config: node.config
+                        store: store.scope(state: \.terminal, action: \.terminal), node: node
                     ) { menu.send(.path(menu.path.dropLast())) }
                     .toolbar(.hidden)
                 } else if page == .themeEditor, pages.contains(.string(page.rawValue)),

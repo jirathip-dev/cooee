@@ -76,12 +76,20 @@ impl Item {
                 Block::Run(Box::new(Run::new("answer", detail, sha).id(answer)))
             }
             _ => {
-                let shown = options.iter().map(|o| ChoiceOption {
-                    value: o.id.clone(),
-                    label: o.name.clone(),
+                let mut shown: Vec<_> = options
+                    .iter()
+                    .map(|o| ChoiceOption {
+                        value: o.id.clone(),
+                        label: o.name.clone(),
+                        ..ChoiceOption::default()
+                    })
+                    .collect();
+                shown.extend(self.sayable().map(|_| ChoiceOption {
+                    value: Item::SAY.to_owned(),
+                    label: "Deny and say…".to_owned(),
                     ..ChoiceOption::default()
-                });
-                let mut choice = Choice::new("answer", shown.collect::<Vec<_>>()).id(answer);
+                }));
+                let mut choice = Choice::new("answer", shown).id(answer);
                 let recommended = options.iter().find(|o| o.kind == "recommended");
                 choice.recommended = recommended.map(|r| r.id.clone());
                 if plugin.is_some() && card.form.is_none() {
@@ -104,7 +112,7 @@ impl Item {
                 .or(tapped.as_ref())
                 .map(|c| format!("✓ {c}{by}"))
         });
-        blocks.extend(line.map(|l| {
+        blocks.extend(line.into_iter().chain(card.said.clone()).map(|l| {
             Block::Text(Box::new(
                 Text::default().style(TextStyle::Footnote).markdown(l),
             ))

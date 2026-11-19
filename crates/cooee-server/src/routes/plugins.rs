@@ -424,6 +424,7 @@ async fn plugin_push(cx: &Cx, Json(b): Json<PluginPush>) -> Result<Response> {
         },
         url: format!("/p/{}{hash}", p.name),
         item: 0,
+        say: false,
     };
     hub(cx).push().send(&note);
     Json(note).into_response(cx)

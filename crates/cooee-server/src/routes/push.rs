@@ -147,6 +147,7 @@ async fn push_test(cx: &Cx) -> Result<Response> {
         tag: "test".to_owned(),
         url: "/".to_owned(),
         item: 0,
+        say: false,
     };
     hub.push().send_to(Some(&me), &note);
     plain(200, "test alert sent")

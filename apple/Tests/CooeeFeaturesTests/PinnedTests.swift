@@ -99,7 +99,25 @@ internal struct PinnedTests {
                 $0.finish()
             }
         }
+        store.dependencies.push.said = { .finished }
         await store.send(.taps)
         await store.receive(\.open, assert: opened("pushed"))
+    }
+
+    @Test internal func aPushDeniedWithTextAnswersItsCardWithoutOpeningTheTopic() async {
+        let store = store([thread("pushed", updated: 1, unseen: 0)])
+        let answers = Calls()
+        store.dependencies.push.opened = { .finished }
+        store.dependencies.push.said = {
+            AsyncStream {
+                $0.yield(PushSaid(thread: "pushed", item: 4, text: "use a branch"))
+                $0.finish()
+            }
+        }
+        store.dependencies.threads.answer = { _, thread, item, option, value in
+            answers.record("answer \(thread) \(item) \(option) \(value ?? "-")")
+        }
+        await store.send(.taps).finish()
+        #expect(answers.all == ["answer pushed 4 say use a branch"])
     }
 }

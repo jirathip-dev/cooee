@@ -60,7 +60,7 @@ public struct AppFeature: Sendable {
 
     @Dependency(\.serverStore) internal var serverStore
     @Dependency(\.loginItems) private var loginItems
-    @Dependency(\.push) private var push
+    @Dependency(\.push) internal var push
     @Dependency(\.surface) internal var surface
     @Dependency(\.date.now) internal var now
     @Dependency(\.continuousClock) internal var clock
@@ -92,9 +92,7 @@ public struct AppFeature: Sendable {
                 state.notice = Self.retired
                 return .none
             case .taps:
-                let push = push
-                return .merge(
-                    .run { send in for await thread in await push.opened() { await send(.open(thread)) } }, surfaces())
+                return .merge(taps(state), surfaces())
             case .persona(.presented(.delegate(.saved))), .persona(.presented(.delegate(.deleted))):
                 state.persona = nil
                 return .send(.home(.refresh))
