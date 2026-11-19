@@ -100,21 +100,24 @@ internal struct CardBlock: View {
 
     internal var body: some View {
         if CardTrust.draws(block.string("kind"), from: context.poster) {
-            card
+            Folding(block: block) { card }
         } else {
             MissingPoster(kind: block.string("kind") ?? "")
         }
     }
 
     @ViewBuilder private var card: some View {
-        let tint = kind?.tint ?? look.palette.tone(block.string("tone")) ?? look.palette.lead
+        let palette = look.palette
+        let tint =
+            kind?.tint ?? palette.fleet(block.string("color")) ?? palette.tone(block.string("tone")) ?? palette.lead
         VStack(alignment: .leading, spacing: 10) {
             header(tint)
             if let title = block.string("title") {
                 Text(title).ui(16, .semibold, look).foregroundStyle(look.palette.foreground)
             }
-            if let subtitle = block.string("subtitle") {
-                Text(subtitle).ui(13, .regular, look).foregroundStyle(look.palette.mute).lineLimit(2)
+            if let subtitle = block["subtitle"], let text = subtitle.string ?? subtitle.string("text") {
+                Text(text).ui(13, .regular, look).foregroundStyle(palette.tone(subtitle.string("tone")) ?? palette.mute)
+                    .lineLimit(2)
             }
             if !block.list("buttons").isEmpty {
                 HStack(spacing: 8) {
@@ -173,18 +176,6 @@ internal struct MissingPoster: View {
         Label(look.label(.kind, label), systemImage: "exclamationmark.octagon.fill")
             .labelStyle(.titleAndIcon).ui(11, .bold, look).foregroundStyle(look.palette.red)
             .frame(maxWidth: .infinity, alignment: .leading).padding(14).surface(look, radius: 20)
-    }
-}
-
-internal struct Pill: View {
-    @Environment(\.look) private var look
-    internal let badge: JSONValue
-
-    internal var body: some View {
-        let tint = look.palette.tone(badge.string("tone")) ?? look.palette.mute
-        Text(badge.string("text") ?? "").ui(11, .bold, look).foregroundStyle(tint)
-            .padding(.horizontal, 8).padding(.vertical, 3)
-            .background(tint.opacity(0.15), in: look.pill)
     }
 }
 
