@@ -16,6 +16,7 @@ internal struct SurfaceTests {
         } withDependencies: {
             $0.date.now = epoch
             $0.push.opened = { .finished }
+            $0.push.said = { .finished }
             $0.surface.routes = { [SurfaceRoute.thread("t1"), .start("coder")].async }
             $0.surface.tokens = { [(token: "ab", activity: nil), (token: "cd", activity: "a1")].async }
             $0.serverStore.load = { mini }
