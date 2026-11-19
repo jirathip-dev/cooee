@@ -377,7 +377,11 @@ fn a_github_routine_waits_for_face_id_then_a_signed_delivery_starts_its_thread_o
             .unwrap_or_else(|| panic!("no card for {name}: {items}"))["id"]
             .clone()
     };
-    let shown = items.as_array().unwrap().iter().find(|i| i["form"] == "routine");
+    let shown = items
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|i| i["form"] == "routine");
     assert_eq!(shown.unwrap()["block"]["kind"], "proposal");
     assert_eq!(
         shown.unwrap()["block"]["blocks"][0]["markdown"],

@@ -53,7 +53,7 @@ internal struct CardClientTests {
         let client = server.client()
         try await client.answer("a1b2", item: 4, option: "approve", value: nil, key: key)
         try await client.answer("a1b2", item: 5, option: "approve", value: nil, key: key)
-        let saved = try #require(try server.decoded("/passkeys", as: [String: String].self))
+        let saved = try server.decoded("/passkeys", as: [String: String].self)
         #expect(server.requests("/passkeys").count == 1 && saved["id"] == key.id)
         #expect(Self.bytes(saved["key"]).suffix(65) == signing.publicKey.x963Representation)
         let made = Self.client(saved["client"])
@@ -61,14 +61,17 @@ internal struct CardClientTests {
         let sent = try server.requests("/threads/a1b2/approve").map {
             try JSONDecoder().decode(Sent.self, from: try #require($0.httpBody))
         }
-        #expect(sent.map(\.item) == [4, 5])
+        #expect(sent.map(\.item) == [4, 5] && sent.compactMap(\.passkey).count == 2)
         for (proof, challenge) in zip(sent.compactMap(\.passkey), ["c2", "c3"]) {
-            let (data, auth) = (Self.bytes(proof["client"]), Self.bytes(proof["auth"]))
             #expect(Self.client(proof["client"])["challenge"] == challenge && proof["id"] == key.id)
-            #expect(auth.prefix(33) == Data(SHA256.hash(data: Data(server.host.utf8))) + [0x05])
-            let signature = try P256.Signing.ECDSASignature(derRepresentation: Self.bytes(proof["sig"]))
-            #expect(signing.publicKey.isValidSignature(signature, for: auth + SHA256.hash(data: data)))
+            try Self.signed(proof, by: signing.publicKey, for: server.host)
         }
-        #expect(sent.compactMap(\.passkey).count == 2)
+    }
+
+    private static func signed(_ proof: [String: String], by key: P256.Signing.PublicKey, for host: String) throws {
+        let (data, auth) = (bytes(proof["client"]), bytes(proof["auth"]))
+        #expect(auth.prefix(33) == Data(SHA256.hash(data: Data(host.utf8))) + [0x05])
+        let signature = try P256.Signing.ECDSASignature(derRepresentation: bytes(proof["sig"]))
+        #expect(key.isValidSignature(signature, for: auth + SHA256.hash(data: data)))
     }
 }
