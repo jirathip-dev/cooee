@@ -1,5 +1,4 @@
 import ComposableArchitecture
-import CooeeCore
 import CooeeFeatures
 import SwiftUI
 

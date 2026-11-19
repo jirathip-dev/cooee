@@ -1,7 +1,5 @@
-import CooeeCore
 import CooeeFeatures
 import CooeeUI
-import SwiftUI
 import Testing
 
 @Suite(.serialized)
