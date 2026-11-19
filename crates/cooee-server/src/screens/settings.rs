@@ -65,11 +65,29 @@ pub(super) async fn machine_rows(cx: &Cx) -> Result<Vec<Value>, HubError> {
         let cards = all.poll(cooee_machines::unix_now());
         let row = |c: cooee_machines::Card| {
             let state = if c.online { "online" } else { "offline" };
-            json!({ "type": "row", "id": c.name, "title": c.name, "subtitle": state })
+            let subtitle = std::iter::once(state).chain(c.tags.iter().map(String::as_str));
+            let subtitle = subtitle.collect::<Vec<_>>().join(" · ");
+            let mut row =
+                json!({ "type": "row", "id": c.name, "title": c.name, "subtitle": subtitle });
+            if let (Some(badge), Some(o)) = (spend_badge(&c), row.as_object_mut()) {
+                o.insert("badge".to_owned(), badge);
+            }
+            row
         };
         Ok(cards.into_iter().map(row).collect())
     })
     .await
+}
+
+fn spend_badge(c: &cooee_machines::Card) -> Option<Value> {
+    let over = c.spend.zip(c.budget).is_some_and(|(s, b)| s >= b);
+    let text = match (c.spend, c.budget) {
+        (Some(s), Some(b)) => format!("${s:.2} of ${b:.2} this month"),
+        (Some(s), None) => format!("${s:.2} this month"),
+        (None, Some(b)) => format!("budget ${b:.2}"),
+        (None, None) => return None,
+    };
+    Some(json!({ "text": text, "tone": if over { "bad" } else { "mute" } }))
 }
 
 pub(super) async fn plugin_rows(cx: &Cx) -> Result<Vec<Value>, HubError> {

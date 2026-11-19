@@ -21,6 +21,7 @@ use std::{
 
 use cooee_core::{
     Plugin,
+    hosts::Host,
     shed_proto::{MachineStats, Sample},
 };
 use serde_json::{Value, json};
@@ -51,6 +52,12 @@ pub struct Card {
     pub history: Vec<Sample>,
     /// Why shed couldn't be asked, if it couldn't.
     pub error: Option<String>,
+    /// Its tags (`[machines.<name>] tags`).
+    pub tags: Vec<String>,
+    /// What it spent this month in USD, as its `spend_cmd` last printed it.
+    pub spend: Option<f64>,
+    /// Its budget this month in USD.
+    pub budget: Option<f64>,
 }
 
 /// What puts a machine in alert.
@@ -111,6 +118,7 @@ pub struct Machines {
     shed: PathBuf,
     dir: Option<PathBuf>,
     local: String,
+    hosts: BTreeMap<String, Host>,
     cards: Mutex<Vec<Card>>,
     pushed: Mutex<BTreeMap<String, Vec<Problem>>>,
     dot: Mutex<Option<bool>>,
@@ -170,10 +178,17 @@ impl Machines {
             shed,
             dir,
             local,
+            hosts: BTreeMap::new(),
             cards: Mutex::default(),
             pushed: Mutex::default(),
             dot: Mutex::default(),
         }
+    }
+
+    /// The same plugin, each machine's card carrying what `hosts` says of it.
+    #[must_use]
+    pub fn with_hosts(self, hosts: BTreeMap<String, Host>) -> Self {
+        Self { hosts, ..self }
     }
 
     fn shed(&self, args: &[&str]) -> Result<Value, String> {
@@ -219,6 +234,9 @@ impl Machines {
                     name,
                     ..Card::default()
                 });
+                let host = self.hosts.get(&card.name).cloned().unwrap_or_default();
+                card.spend = spend(&host.spend_cmd);
+                (card.tags, card.budget) = (host.tags, host.budget);
                 card.history.retain(|s| s.at + DAY > now);
                 let after = card
                     .history
@@ -288,6 +306,13 @@ impl Machines {
             *was = Some(dot);
         }
     }
+}
+
+fn spend(cmd: &[String]) -> Option<f64> {
+    let (bin, args) = cmd.split_first()?;
+    let out = cooee_core::runner::command(bin).args(args).output().ok()?;
+    let text = String::from_utf8_lossy(&out.stdout);
+    text.trim().trim_start_matches('$').parse().ok()
 }
 
 /// Answers cooee's calls on `listener`, each with the plugin's `token` or refused (401): `GET /tab.js` (the module)

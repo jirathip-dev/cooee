@@ -1,4 +1,5 @@
 use std::{
+    collections::BTreeMap,
     env,
     ffi::OsString,
     fs, io,
@@ -75,6 +76,8 @@ pub struct Config {
     pub approval_expiry_minutes: u64,
     /// How long thread items stay in the hot store in full (`[history]`, #364).
     pub history: History,
+    /// What the Machines screen shows of each machine besides shed's health (`[machines.<name>]`, #383).
+    pub machines: BTreeMap<String, crate::hosts::Host>,
 }
 
 /// `[apns]`: the owner's APNs key's ids and the app it pushes to; none of it is secret.
@@ -184,6 +187,7 @@ impl Default for Config {
             auto_update: true,
             approval_expiry_minutes: 30,
             history: History::default(),
+            machines: BTreeMap::new(),
         }
     }
 }
