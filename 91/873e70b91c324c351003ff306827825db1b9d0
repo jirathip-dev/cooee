@@ -1,0 +1,8 @@
+Decided: one hub-wide REV counter replaces each thread's seq; cursors keep the <boot>.<rev> shape so no client changes
+Because: q714
+Decided: random_id is a Tag that refuses an empty value at the HTTP edge
+Because: crates/cooee-server/src/hub/events.rs:124
+Rejected: persisting the replay ring across restarts — reset reloads the slice losslessly; proposed as a follow-up in docs/sync.md
+Rejected: an all-threads GET /events?since= stream — a new feature, proposed as a follow-up issue
+Check: the chat.rs reconnect and retried-send tests fail with the server crate reverted to base and pass at head
+Owner: live updates now count up across all threads, and an untagged message is refused instead of silently dropped
