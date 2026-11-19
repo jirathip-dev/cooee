@@ -331,6 +331,7 @@ impl Hub {
     pub fn remember(&self, id: &str, token: &str, e: &memory::Edit) -> Result<String, HubError> {
         let home = self.home_of(id, token)?;
         let meta = self.token_of(id, token)?;
+        self.scan(id, "remember", e.text.iter())?;
         if meta.routine.is_some() {
             let what = match (&e.text, &e.replaces) {
                 (Some(_), Some(r)) => format!("replace {}'s note [{r}]", meta.profile),
@@ -359,6 +360,28 @@ impl Hub {
             "{what}; {used} of {} characters used.",
             memory::CAP
         ))
+    }
+
+    pub(super) fn scan<'a>(
+        &self,
+        id: &str,
+        what: &str,
+        mut texts: impl Iterator<Item = &'a String>,
+    ) -> Result<(), HubError> {
+        let Some((text, why)) = texts.find_map(|t| memory::refusal(t).map(|why| (t, why))) else {
+            return Ok(());
+        };
+        let text = format!(
+            "The agent tried to {what}: {} (refused: it {why})",
+            memory::shown(text)
+        );
+        let live = self.live(id)?;
+        let mut live = lock(&live);
+        let item = live.chat.push(now(), 0, Body::Note { text });
+        live.publish(self, vec![Change::Item(item)])?;
+        Err(HubError::Refused(format!(
+            "refused: it {why}. The owner sees it in the thread and can add it by hand."
+        )))
     }
 
     /// What persona `persona`'s threads said after line `mark` (#219), routine runs left out: none when the owner
