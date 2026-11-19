@@ -1,0 +1,12 @@
+Decided: Chief is the folder agents/chief/ with role chief, made by setup after asking for its agent and machine
+Because: q2346
+Decided: persona and routine tools apply at once; MCP, secrets, access, machine and config tools make a Face ID card holding the exact change
+Because: "anything touching secrets, MCP servers, machines or `config.toml`"
+Decided: Chief's tools and its widened ask_persona and history exist only in Chief's own chat
+Because: "No other persona gets Chief's tools."
+Decided: moved PluginDeckTests unchanged to its own file; staging's CardAnswerTests broke SwiftLint file_length
+Because: apple/Tests/CooeeFeaturesTests/PluginDeckTests.swift:8
+Rejected: a can_message wildcard for Chief — any persona could then set it
+Rejected: merging the wip snapshot — it re-adds the packs/themes files the previous commit untracked
+Check: apple CI is green at the head; tests/chief.rs denied cards change nothing
+Owner: Setup now makes a Chief persona that sets up personas and routines for you and asks Face ID for secrets, servers, machines and config.
