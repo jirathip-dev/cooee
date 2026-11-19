@@ -1,0 +1,29 @@
+apple	xcodebuild (iOS Simulator, macOS)	﻿2026-11-19T05:34:23.3329870Z ##[group]Run destinations=("platform=macOS,arch=arm64")
+apple	xcodebuild (iOS Simulator, macOS)	2026-11-19T05:34:23.3330610Z ^[[36;1mdestinations=("platform=macOS,arch=arm64")^[[0m
+apple	xcodebuild (iOS Simulator, macOS)	2026-11-19T05:34:23.3331230Z ^[[36;1m[ "$E2E" = true ] || destinations+=("platform=iOS Simulator,name=iPhone 17")^[[0m
+apple	xcodebuild (iOS Simulator, macOS)	2026-11-19T05:34:23.3331830Z ^[[36;1mfor destination in "${destinations[@]}"; do^[[0m
+apple	xcodebuild (iOS Simulator, macOS)	2026-11-19T05:34:23.3333180Z ^[[36;1m  xcodebuild -skipMacroValidation -project Cooee.xcodeproj -scheme Cooee -destination "$destination" \^[[0m
+apple	xcodebuild (iOS Simulator, macOS)	2026-11-19T05:34:23.3334220Z ^[[36;1m    -derivedDataPath "$APPLE_DERIVED/xcode" -clonedSourcePackagesDirPath "$APPLE_PACKAGES/xcode" \^[[0m
+apple	xcodebuild (iOS Simulator, macOS)	2026-11-19T05:34:23.3335000Z ^[[36;1m    CODE_SIGNING_ALLOWED=NO build^[[0m
+apple	xcodebuild (iOS Simulator, macOS)	2026-11-19T05:34:23.3335420Z ^[[36;1mdone^[[0m
+apple	xcodebuild (iOS Simulator, macOS)	2026-11-19T05:34:23.3489870Z shell: /bin/bash -e {0}
+apple	xcodebuild (iOS Simulator, macOS)	2026-11-19T05:34:23.3490260Z env:
+apple	xcodebuild (iOS Simulator, macOS)	2026-11-19T05:34:23.3490520Z   MAC: true
+apple	xcodebuild (iOS Simulator, macOS)	2026-11-19T05:34:23.3490730Z   FULL: true
+apple	xcodebuild (iOS Simulator, macOS)	2026-11-19T05:34:23.3490920Z   E2E: false
+apple	xcodebuild (iOS Simulator, macOS)	2026-11-19T05:34:23.3491150Z   ONLY: 
+apple	xcodebuild (iOS Simulator, macOS)	2026-11-19T05:34:23.3491390Z   TMPDIR: /tmp/air-cooee/
+apple	xcodebuild (iOS Simulator, macOS)	2026-11-19T05:34:23.3491940Z   CARGO_HOME: /Users/jirathip/services/actions-runner-cooee/_work/_tool/cooee/cargo
+apple	xcodebuild (iOS Simulator, macOS)	2026-11-19T05:34:23.3492630Z   RUSTUP_HOME: /Users/jirathip/services/actions-runner-cooee/_work/_tool/cooee/rustup
+apple	xcodebuild (iOS Simulator, macOS)	2026-11-19T05:34:23.3493320Z   GIT_CONFIG_GLOBAL: /Users/jirathip/services/actions-runner-cooee/_work/_temp/gitconfig
+apple	xcodebuild (iOS Simulator, macOS)	2026-11-19T05:34:23.3493840Z   GIT_CONFIG_NOSYSTEM: 1
+apple	xcodebuild (iOS Simulator, macOS)	2026-11-19T05:34:23.3494110Z   CARGO_NET_GIT_FETCH_WITH_CLI: true
+apple	xcodebuild (iOS Simulator, macOS)	2026-11-19T05:34:23.3494670Z   APPLE_DERIVED: /Users/jirathip/services/actions-runner-cooee/_work/_tool/cooee/apple-air-cooee/derived
+apple	xcodebuild (iOS Simulator, macOS)	2026-11-19T05:34:23.3495580Z   APPLE_PACKAGES: /Users/jirathip/services/actions-runner-cooee/_work/_tool/cooee/apple-air-cooee/packages
+apple	xcodebuild (iOS Simulator, macOS)	2026-11-19T05:34:23.3496260Z   DEVELOPER_DIR: /Applications/Xcode.app/Contents/Developer
+apple	xcodebuild (iOS Simulator, macOS)	2026-11-19T05:34:23.3496680Z   CARGO_INCREMENTAL: 0
+apple	xcodebuild (iOS Simulator, macOS)	2026-11-19T05:34:23.3496950Z   CARGO_TERM_COLOR: always
+apple	xcodebuild (iOS Simulator, macOS)	2026-11-19T05:34:23.3497230Z   CACHE_ON_FAILURE: false
+apple	xcodebuild (iOS Simulator, macOS)	2026-11-19T05:34:23.3497510Z ##[endgroup]
+apple	xcodebuild (iOS Simulator, macOS)	2026-11-19T05:34:26.1717530Z You have not agreed to the Xcode license agreements. Please run 'sudo xcodebuild -license' from within a Terminal window to review and agree to the Xcode and Apple SDKs license.
+apple	xcodebuild (iOS Simulator, macOS)	2026-11-19T05:34:26.7840670Z ##[error]Process completed with exit code 69.
