@@ -1,0 +1,15 @@
+Decided: at start each thread gets its meta and a list row from a few indexed SQL reads (approvals, the owner's last message, the last item, an unseen count); its items load on first open through the existing unload/load path
+Because: "At start the hub loads each thread's meta and summary only; a thread's items load on its first open"
+Decided: a new index items (thread, kind, id) keeps those reads off the item bodies; 500 threads went from about 650 ms to 70 ms in a debug build
+Because: crates/cooee-core/src/store/items.rs:95
+Decided: the agent list starts empty; the ticker fetches it once before its first sleep, and agents() waits up to 2 s on a condvar for that first fetch
+Because: "until then a request that needs the list waits for it with a short deadline"
+Decided: the port is bound with std before Hub::open and handed to tokio, so early requests queue instead of being refused
+Because: crates/cooee-server/src/serve.rs:205
+Decided: expire loads an unloaded thread whose row shows an open approval, so a routine's card from before a restart still expires
+Because: crates/cooee-server/src/hub/expire.rs:13
+Decided: the timing test measures from the server's perf start (the new start row) to the GET /threads answer; process launch and pairing of the debug binaries are outside it
+Because: "`cooee perf` gains a start-to-first-request row"
+Rejected: loading the summaries in a background thread after listening — GET /threads would still wait on the whole pass
+Check: on the base hub the 500x1000 test answers 1803 ms after start and fails; the agent-list tests wait for the ticker's first fetch before counting
+Owner: The server starts answering right away even with a long chat history; each chat's messages are read the first time you open it.
