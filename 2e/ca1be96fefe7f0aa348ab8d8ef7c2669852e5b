@@ -1,0 +1,27 @@
+Decided: tags, budget and spend_cmd live in config.toml [machines.<name>]; cooee-machines runs spend_cmd each poll and reads USD from its stdout
+Because: q2283
+Decided: the Host type sits in a new pub mod hosts, because root.rs is frozen in .drover/arch.toml
+Because: crates/cooee-core/src/hosts.rs:8
+Decided: the live Settings › Machines row puts tags after the state in its subtitle and spend of budget in its badge, red at or over budget
+Because: crates/cooee-server/src/screens/settings.rs:91
+Decided: one fixture, docs/design/screens-as-data/fixtures/machines.json, is both what the server test asserts the rows equal and what the machines-cloud frames draw
+Because: "a fixture cloud machine reports spend and budget; the card draws them (snapshot)"
+Rejected: drawing them on the MachinesView design preview — the phone's Settings › Machines opens the server-driven list, not that fixture view
+Rejected: waiting for shed to report tags or spend — shed knows a machine only as name and ssh target
+Check: cargo test -p cooee --test machines a_cloud_machine_reports_its_tags_spend_and_budget_on_its_settings_row fails on staging
+Check: the SettingsFrames machines-cloud-dark and machines-cloud-light frames match their PNGs
+Owner: The Machines screen now shows each machine's tags, and for a cloud machine this month's spend against its budget, set in cooee's config.
+
+Decided: tags only, read from drover's GET /api/v1/host (each host card's tags row); no spend, budget or cooee config
+Because: q2306
+Decided: the server finds drover as the [[plugins]] backend whose plugin is named drover and calls it with that plugin's token, 2 s deadline
+Because: crates/cooee-server/src/screens/settings.rs:115
+Decided: tags follow the state in the Settings › Machines row subtitle, joined with " · "; no drover or no tags row leaves it "online"/"offline"
+Because: crates/cooee-server/src/screens/settings.rs:83
+Decided: one fixture, docs/design/screens-as-data/fixtures/machines.json, is what the server test asserts the rows equal and what the machines-tags frames draw
+Because: "a fixture cloud machine reports spend and budget; the card draws them (snapshot)"
+Rejected: [machines.<name>] tags in cooee's config.toml — q2306 replaced q2283's option 1
+Rejected: tags on GET /machines and the cooee-machines Card — the phone's Settings › Machines reads the server-driven screen only
+Check: cargo test -p cooee --test machines each_machine_shows_its_drover_host_tags_on_its_settings_row fails on staging (subtitle "online") and passes at head
+Check: SettingsFrames machines-tags-dark and machines-tags-light match their PNGs
+Owner: Settings › Machines shows each machine's tags from drover's host list; no spend or budget.
