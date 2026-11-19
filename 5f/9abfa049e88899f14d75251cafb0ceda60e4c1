@@ -1,0 +1,7 @@
+Decided: merge origin/staging (9d341e1) with no conflicts; it touches only Rust crates, none of this branch's apple files
+Because: crates/cooee-server/src/hub/start.rs:1
+Decided: no code change for the FAIL; it was CI scope still queued at 48ae05e, and the fresh push reruns every check
+Because: apple/Sources/CooeeFeatures/AppFeature.swift:56
+Rejected: none
+Check: apple-check exit 0 and arch-check exit 0 at 5f9abfa; CI green at the new head
+Owner: The chat work now sits on the newest staging again; nothing in it changed.
