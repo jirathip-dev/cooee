@@ -1,0 +1,13 @@
+Decided: deny-and-say is the answer `say` with the text as its value on the existing approve route; the hub picks the agent's reject option itself (Item::deny, moved from expire.rs) and stores the text on the card
+Because: crates/cooee-server/src/hub/cards.rs:23
+Decided: the text goes through the thread's kept queue, marked with the card it denies, so it waits for the turn's end (or goes at once between turns) and survives a restart
+Because: "else as the next prompt, queued behind the turn's end"
+Rejected: steering it into the running turn — no agent reports whether it takes a mid-turn message, so the queue is the path that works for all of them
+Decided: a delivered denial text adds no message of its own; the card shows the reject line with the text under it
+Because: "The thread shows one item: the denial with the owner's text under it."
+Decided: the second and later taps hit the card's existing once-only tap and send nothing; an expired card is already tapped, so it cannot be denied again with text
+Because: crates/cooee-core/src/chat/apply.rs:139
+Decided: an approval push carries the `approval` category; the app registers a text-input action on it and answers the card from the reply
+Because: "It works from a push action too (a text-input notification action on iOS)."
+Check: cargo test -p cooee --test chat deny_and_say and cargo test -p cooee-server deny_and_say; the notification action is not tried on a device
+Owner: An approval card now has "Deny and say…": the owner types what the agent should do instead, from the chat or the notification, and it arrives once the agent's turn ends.
