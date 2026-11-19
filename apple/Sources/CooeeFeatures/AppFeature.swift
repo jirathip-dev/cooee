@@ -29,6 +29,9 @@ public struct AppFeature: Sendable {
     }
 
     public enum Action: Sendable {
+        case launch
+        case launched(Server?)
+        case keychainSilent
         case home(HomeFeature.Action)
         case pairing(PairingFeature.Action)
         case retire
@@ -49,10 +52,11 @@ public struct AppFeature: Sendable {
         case path([String])
     }
 
-    @Dependency(\.serverStore) private var serverStore
+    @Dependency(\.serverStore) internal var serverStore
     @Dependency(\.loginItems) private var loginItems
     @Dependency(\.push) private var push
     @Dependency(\.date.now) private var now
+    @Dependency(\.continuousClock) internal var clock
 
     public init() {}
 
@@ -69,6 +73,8 @@ public struct AppFeature: Sendable {
                 serverStore.clear()
                 state = State(layout: state.layout.layout, server: nil, settings: state.menu.settings)
                 return .none
+            case .launch, .launched, .keychainSilent:
+                return launch(&state, action)
             case .retire:
                 let loginItems = loginItems
                 return .run { send in if await loginItems.retire() { await send(.retired) } }

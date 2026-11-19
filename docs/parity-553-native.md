@@ -149,9 +149,9 @@ Server tests are in `crates/cooee/tests/reliability.rs` unless named otherwise. 
 
 | R | state | where | gap | issue | phone check |
 |---|---|---|---|---|---|
-| R1 | partial | `r1_a_hung_keychain_falls_through_to_a_new_key_and_blocks_nothing` | the app's `CooeeAPI/Keychain.swift` read has no deadline | #384 | — (a test row) |
+| R1 | done | `r1_a_hung_keychain_falls_through_to_a_new_key_and_blocks_nothing`; `AppFeatureTests` `aKeychainThatNeverAnswersIsAnErrorAfterFiveSeconds` | — | — | — (a test row) |
 | R2 | done | `crates/cooee-core/tests/upgrade_compat.rs` `every_earlier_release_config_loads` | — | — | — |
-| R3 | partial | `r3_a_store_error_is_a_503_not_unpaired_and_a_401_does_not_latch` | the app forgets its pairing on one 401 (`AppFeature` `.home(.delegate(.unauthorized))`) | #384 | Restart the host: the app stays on Home |
+| R3 | done | `r3_a_store_error_is_a_503_not_unpaired_and_a_401_does_not_latch`; `AppFeatureTests` `oneUnauthorizedAnswerThenAGoodOneKeepsHomeAndTheServer` | — | — | Restart the host: the app stays on Home |
 | R4 | partial | `Layout.swift` `defaultScrollAnchor`, `scrollDismissesKeyboard` | no native keyboard test | #385 | Tap the composer: flush on the keyboard, the thread keeps its place |
 | R5 | partial | `PluginSheets.swift` inline `ProgressView` | no 300 ms strip test | #385 | Slow network: a strip only, content tappable |
 | R6 | done | `crates/cooee-server/src/hub.rs` `r6_requests_over_a_long_log_are_within_budget`; `cooee-core` `chat.rs` `r6_…` | native 1,000-message chat | #337 | A 1,000-message thread opens without a stall |

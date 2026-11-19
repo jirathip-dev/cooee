@@ -11,9 +11,8 @@ public struct CooeeRoot: View {
         private static let mac = false
     #endif
     private static let live = Store(
-        initialState: AppFeature.State(
-            layout: (try? LayoutStore.liveValue.load()) ?? .bundled, server: ServerStore.liveValue.load(),
-            settings: SettingsStore.liveValue.load()
+        initialState: AppFeature.State.launching(
+            layout: (try? LayoutStore.liveValue.load()) ?? .bundled, settings: SettingsStore.liveValue.load()
         )
     ) { AppFeature() }
     private let store = Self.live
