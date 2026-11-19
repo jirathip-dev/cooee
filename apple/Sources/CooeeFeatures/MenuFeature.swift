@@ -154,7 +154,9 @@ public struct MenuFeature: Sendable {
         }
         settingsStore.save(state.settings)
     }
+}
 
+extension MenuFeature {
     private func pushed(_ state: inout State, _ action: Action) {
         state.busy = false
         switch action {
@@ -168,9 +170,7 @@ public struct MenuFeature: Sendable {
             break
         }
     }
-}
 
-extension MenuFeature {
     private func editing(_ state: inout State, _ action: Action) -> Effect<Action> {
         switch action {
         case .edit(let pack):
