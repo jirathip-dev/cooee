@@ -1,0 +1,9 @@
+Decided: Pictures is an actor; block images decode on it and assert its isolation with preconditionIsolated
+Because: apple/Sources/CooeeUI/Pictures.swift:52
+Rejected: precondition(!Thread.isMainThread) — swiftpm's test helper runs global-executor jobs on thread 0, so CI's full suite tripped it at random
+Decided: cache lookups and still sprite reads stay nonisolated so a view body draws them synchronously
+Because: apple/Sources/CooeeUI/Pictures.swift:28
+Decided: one NSCache keyed by sprite name or the data source's hash, 64 MB cost limit, cost = decoded bytes
+Because: apple/Sources/CooeeUI/Pictures.swift:63
+Check: the full CooeeUITests suite passes 4 of 4 runs, where the thread check failed 2 of 3
+Owner: Sprites and chat pictures are decoded once and kept, and big pictures decode in the background.
