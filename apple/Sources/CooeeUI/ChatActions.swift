@@ -37,6 +37,7 @@ public struct ChatActions {
     public var model: (String, String) -> Void = { _, _ in }
     public var frames = FrameImages()
     public var topics: TopicActions?
+    public var live: () -> LiveReply = { LiveReply() }
 
     public init(
         draft: Binding<String>? = nil,

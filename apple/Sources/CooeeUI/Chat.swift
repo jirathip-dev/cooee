@@ -28,17 +28,18 @@ public struct ChatView: View {
                 }
                 if let topics = actions.topics { StripRow(topics: topics, chips: chips, wide: !back, actions: actions) }
                 Scroller(end: end) {
-                    VStack(alignment: .leading, spacing: 14) {
+                    Transcript {
                         if let topics = actions.topics {
                             TopicOpening(topics: topics, chips: back ? chips : [], actions: actions)
                         } else if items.isEmpty {
                             BigSprite(loading: loading)
                         }
                         ForEach(items) { item in
-                            ItemView(item: item, retry: { actions.retry(item.id) }, view: actions.view)
+                            ItemView(item: item, retry: { actions.retry(item.id) }, view: actions.view).equatable()
                                 .environment(\.act) { actions.answer(item.id, $0) }
                                 .disabled(actions.answering.contains(item.id))
                         }
+                        LiveItem(reply: actions.live)
                     }
                     .padding(.horizontal, 16).padding(.top, actions.topics == nil ? 8 : 6).padding(.bottom, 16)
                 }
@@ -117,6 +118,28 @@ public struct ChatView: View {
     public static func moreCards() -> ChatView { ChatView(personaID: "res", items: Fixtures.moreCards) }
 
     public static func asked() -> ChatView { ChatView(personaID: "coder", items: Fixtures.asked) }
+}
+
+private struct Transcript<Content: View>: View {
+    @Environment(\.look) private var look
+    @ViewBuilder internal let content: Content
+
+    internal var body: some View {
+        if look.still {
+            VStack(alignment: .leading, spacing: 14) { content }
+        } else {
+            LazyVStack(alignment: .leading, spacing: 14) { content }
+        }
+    }
+}
+
+private struct LiveItem: View {
+    internal let reply: () -> LiveReply
+
+    internal var body: some View {
+        let live = reply()
+        if !live.isEmpty { ItemView(item: .agent(id: Int.max, markdown: live.blocks)) }
+    }
 }
 
 internal struct ChatHeader: View {
