@@ -1,0 +1,7 @@
+Decided: merge origin/staging (4e338bb) with no conflicts; it brings typed blocks and the Queue card changes beside this branch's apple files
+Because: apple/Sources/CooeeFeatures/AppFeature.swift:56
+Decided: no code change for the FAIL; actionlint failed only in a ci run that was canceled when a newer run at the same head replaced it, and this branch changes no workflow files
+Because: apple/Sources/CooeeFeatures/ChatFeature.swift:1
+Rejected: none
+Check: apple-check exit 0 and arch-check exit 0 at 048b21e; CI at the new head
+Owner: The chat work now sits on the newest staging again; nothing in it changed.
