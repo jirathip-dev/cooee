@@ -35,12 +35,15 @@ pub(super) fn run(inv: &Invocation) -> Result<(), Failed> {
     }
     let server = Server::of(&inv.config()?)?;
     let cursor = server.json("GET", &format!("/threads/{thread}/messages?before=0"), "")?;
-    let cursor = cursor["cursor"].as_str().unwrap_or_default().to_owned();
+    let cursor = at(&cursor, "cursor")
+        .as_str()
+        .unwrap_or_default()
+        .to_owned();
     let random_id = format!("cli-{}-{}", now(), std::process::id());
     let body = json!({ "text": text, "random_id": random_id }).to_string();
     let sent = server.json("POST", &format!("/threads/{thread}/send"), &body)?;
     let (state, item) = if inv.on("--wait") {
-        let sent = sent["id"].as_u64().unwrap_or_default();
+        let sent = at(&sent, "id").as_u64().unwrap_or_default();
         server.wait(thread, &cursor, sent, Duration::from_secs(secs))?
     } else {
         ("sent", Value::Null)
@@ -55,15 +58,15 @@ pub(super) fn run(inv: &Invocation) -> Result<(), Failed> {
 }
 
 fn report(thread: &str, state: &str, item: &Value, json: bool) -> Result<(), String> {
-    let options: Vec<&Value> = item["options"]
+    let options: Vec<&Value> = at(item, "options")
         .as_array()
         .into_iter()
         .flatten()
-        .map(|o| &o["id"])
+        .map(|o| at(o, "id"))
         .collect();
     let approval = (state == "approval")
-        .then(|| json!({ "item": item["id"], "tool": item["tool"], "options": options }));
-    let reply = (state == "done").then(|| &item["text"]);
+        .then(|| json!({ "item": at(item, "id"), "tool": at(item, "tool"), "options": options }));
+    let reply = (state == "done").then(|| at(item, "text"));
     if json {
         let out = json!({ "thread": thread, "state": state, "reply": reply,
             "stop_reason": item.get("stop_reason"), "approval": approval });
@@ -75,16 +78,16 @@ fn report(thread: &str, state: &str, item: &Value, json: bool) -> Result<(), Str
     }
     let word = |v: &Value| v.as_str().unwrap_or_default().to_owned();
     match state {
-        "done" => cooee_core::say!("{}", word(&item["text"])),
+        "done" => cooee_core::say!("{}", word(at(item, "text"))),
         "approval" => {
             let options: Vec<String> = options.into_iter().map(word).collect();
             cooee_core::say!(
                 "waiting on an approval: {} ({})",
-                word(&item["tool"]),
+                word(at(item, "tool")),
                 options.join(", ")
             );
         }
-        "ended" => cooee_core::note!("cooee: the session ended: {}", word(&item["text"])),
+        "ended" => cooee_core::note!("cooee: the session ended: {}", word(at(item, "text"))),
         "timeout" => cooee_core::note!("cooee: the turn did not end in time"),
         _ => {}
     }
@@ -126,7 +129,7 @@ impl Server {
         let mut r = BufReader::new(s);
         let (mut status, mut line) = (String::new(), String::from("-"));
         r.read_line(&mut status).map_err(down)?;
-        while line.trim_end().len() > 0 {
+        while !line.trim_end().is_empty() {
             line.clear();
             if r.read_line(&mut line).map_err(down)? == 0 {
                 break;
@@ -192,11 +195,11 @@ impl Server {
                 continue;
             };
             let item: Value = serde_json::from_str(item).map_err(|e| e.to_string())?;
-            if item["id"].as_u64().is_none_or(|id| id <= sent) {
+            if at(&item, "id").as_u64().is_none_or(|id| id <= sent) {
                 continue;
             }
             let open = item.get("chosen").is_none() && item.get("tapped").is_none();
-            match item["kind"].as_str() {
+            match at(&item, "kind").as_str() {
                 Some("agent") => return Ok(("done", item)),
                 Some("approval") if open => return Ok(("approval", item)),
                 Some("ended") => return Ok(("ended", item)),
@@ -227,4 +230,8 @@ fn token(config: &Config) -> Result<String, String> {
     }
     cooee_core::write_private(&path, token.as_bytes()).map_err(e)?;
     Ok(token)
+}
+
+fn at<'a>(v: &'a Value, key: &str) -> &'a Value {
+    v.get(key).unwrap_or(&Value::Null)
 }

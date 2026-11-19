@@ -1,5 +1,5 @@
 //! `cooee send` (#82) against `cooee serve` and the fake agent: each exit code from its case, and `--json`'s schema
-//! as docs/api.md gives it.
+//! as docs/scripting.md gives it.
 
 mod support;
 
