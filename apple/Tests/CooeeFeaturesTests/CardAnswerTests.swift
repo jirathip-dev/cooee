@@ -106,6 +106,40 @@ internal struct CardAnswerTests {
         #expect(calls.all == ["answer a1 4 say use a branch"])
     }
 
+    private static let diff: JSONValue = .object(
+        ["type": .string("text"), "markdown": .string("```diff\n+max = 2\n```")])
+
+    private static func config(_ blocks: JSONValue...) -> APIItem {
+        let block: JSONValue = .object(["type": .string("card"), "kind": .string("config"), "blocks": .array(blocks)])
+        return APIItem(id: 4, time: 0, kind: "approval", plugin: "drover", block: block)
+    }
+
+    @Test internal func aConfigCardSaysApplyingFromItsTapUntilTheBackendsLineArrives() async {
+        let store = store()
+        let card = Self.config(Self.diff, .object(["type": .string("choice"), "id": .string("4-answer")]))
+        await store.send(.loaded(Slice(items: [card], turn: Turn(), cursor: "", queue: []))) {
+            $0.loading = false
+            $0.items = [card]
+            $0.since = epoch
+        }
+        await store.send(.cards(.answer(4, BlockAction(action: "answer", values: ["choice": .string("apply")])))) {
+            $0.answering = [4]
+        }
+        await store.receive(\.cards.answered)
+        let note: JSONValue = .object(
+            ["type": .string("text"), "style": .string("footnote"), "markdown": .string("applying…")])
+        let waiting = Self.config(Self.diff, note).block ?? .null
+        #expect(store.state.drawn == [.card(id: 4, poster: "drover", block: waiting)])
+        let tapped = Self.config(Self.diff)
+        await store.send(.event(.item(tapped))) { $0.items = [tapped] }
+        #expect(store.state.drawn == [.card(id: 4, poster: "drover", block: waiting)])
+        var settled = tapped
+        settled.line = "applied, doctor ✓"
+        await store.send(.event(.item(settled))) { ($0.items, $0.answering) = ([settled], []) }
+        #expect(store.state.drawn == [.card(id: 4, poster: "drover", block: tapped.block ?? .null)])
+        #expect(calls.all == ["answer a1 4 apply -"])
+    }
+
     @Test internal func aRefusedAnswerSaysWhyAndTheCardCanBeTappedAgain() async {
         let store = store(failing: true)
         await store.send(.cards(.answer(4, run))) { $0.answering = [4] }
