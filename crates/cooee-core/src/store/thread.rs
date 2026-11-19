@@ -95,6 +95,9 @@ pub struct Thread {
     /// The agent's last reported session id, which a restart resumes (#613).
     #[serde(default, skip_serializing_if = "String::is_empty")]
     pub session: String,
+    /// The agents that hit a usage limit in it (#76), first capped first, each until it next replies.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub capped: Vec<crate::agents::Capped>,
 }
 
 /// What a [`Thread`] is.

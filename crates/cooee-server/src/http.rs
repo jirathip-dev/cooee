@@ -188,6 +188,29 @@ pub(crate) fn recipe(
     Ok((agent, folder, recipe))
 }
 
+pub(crate) fn seated(
+    hub: &Hub,
+    logins: &Logins,
+    (data, config): (&std::path::Path, Option<&std::path::Path>),
+    id: &str,
+    seat: &agents::Seat,
+) -> Result<Recipe, HubError> {
+    let (t, _) = hub.thread(id)?;
+    let mut list = profiles(hub, (data, config));
+    for p in list.iter_mut().filter(|p| p.id == t.profile) {
+        seat.agent.clone_into(&mut p.agent);
+        (p.account, p.model, p.effort) = (seat.account.clone(), String::new(), String::new());
+    }
+    let (_, _, recipe) = recipe(
+        logins,
+        (data, config, &list),
+        (&seat.agent, seat.account.as_deref(), &t.profile),
+        PathBuf::new(),
+        (Default::default(), t.setup),
+    )?;
+    Ok(recipe)
+}
+
 pub(crate) struct Data(pub(crate) PathBuf, pub(crate) Option<PathBuf>);
 
 pub(crate) fn profiles(
