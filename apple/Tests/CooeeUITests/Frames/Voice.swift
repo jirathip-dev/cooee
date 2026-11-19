@@ -84,6 +84,15 @@ private enum VoiceScreens {
             }
             .environment(\.asker, persona)
         }
+        .modifier(Inked())
+    }
+}
+
+private struct Inked: ViewModifier {
+    @Environment(\.look) private var look
+
+    fileprivate func body(content: Content) -> some View {
+        content.foregroundStyle(look.palette.foreground)
     }
 }
 

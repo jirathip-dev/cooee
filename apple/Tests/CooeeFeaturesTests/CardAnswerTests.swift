@@ -7,13 +7,10 @@ import Testing
 @MainActor
 internal struct CardAnswerTests {
     private let calls = Calls()
-    private let run = BlockAction(
-        action: "answer", values: ["choice": .string("approve"), "sha": .string("3b7e")])
+    private let run = BlockAction(action: "answer", values: ["choice": .string("approve"), "sha": .string("3b7e")])
 
-    private func store(
-        _ target: ChatFeature.Target = .thread("a1"),
-        failing: Bool = false
-    ) -> TestStoreOf<ChatFeature> {
+    private func store(_ target: ChatFeature.Target = .thread("a1"), failing: Bool = false) -> TestStoreOf<ChatFeature>
+    {
         let calls = calls
         return TestStore(initialState: ChatFeature.State(server: mini, target: target, persona: Persona(coder))) {
             ChatFeature()

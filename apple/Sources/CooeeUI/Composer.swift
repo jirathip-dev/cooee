@@ -169,6 +169,6 @@ extension Composer {
             .background(palette.link, in: look.square ? AnyShape(Rectangle()) : AnyShape(Circle()))
             .opacity(actions.voice.listening ? 0.35 : 1)
         }
-        .buttonStyle(.plain).accessibilityLabel("Send").disabled(actions.voice.listening)
+        .buttonStyle(.plain).accessibilityLabel("Send").allowsHitTesting(!actions.voice.listening)
     }
 }

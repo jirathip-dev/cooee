@@ -68,7 +68,8 @@ internal struct CallScreen: View {
                     Mark(text: LaneState.working.figure(frame: 0), size: 12) {
                         Circle().fill(palette.cyan).frame(width: 8, height: 8)
                     }
-                    Text(tool).font(.system(size: 12, design: .monospaced))
+                    Text(tool).font(
+                        .system(size: 12, design: look.stage == nil || look.type == .mono ? .monospaced : .default))
                 }
                 .foregroundStyle(palette.mute)
             }

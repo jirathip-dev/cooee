@@ -117,16 +117,6 @@ public struct ChatFeature: Sendable {
         case browse(Browse)
         case voice(Voice)
         case call(CallAction)
-
-        @CasePathable
-        public enum Delegate: Sendable, Equatable {
-            case started(String)
-            case open(String)
-            case persona(String)
-            case start(String)
-            case round(String)
-            case topic(String)
-        }
     }
 
     @Dependency(\.threads) internal var threads
@@ -171,6 +161,18 @@ public struct ChatFeature: Sendable {
             .ifLet(\.$screen, action: \.screen) { ScreenFeature() }
             .ifLet(\.$attaching, action: \.attaching) { AttachFeature() }
             .keepsLeftScreens { $0.screen.map { [$0] } ?? [] }
+    }
+}
+
+extension ChatFeature.Action {
+    @CasePathable
+    public enum Delegate: Sendable, Equatable {
+        case started(String)
+        case open(String)
+        case persona(String)
+        case start(String)
+        case round(String)
+        case topic(String)
     }
 }
 
