@@ -1,0 +1,92 @@
+<!doctype html><html lang=en><head><meta charset=utf-8>
+<meta name=viewport content="width=device-width,initial-scale=1">
+<title>cooee · bush theme pack: the sprite sheet (#22)</title>
+<link rel=icon href=icon/favicon-32.png>
+<!-- cooee#22 sprite sheet: every action in its looks and frame 2, the first design's 4 px art beside revision 1's 2 px,
+     the moments and the rail, the sign at its three levels and its Host mini, the row sprites, the icon, the ASCII
+     figures and the two schemes through cooee's gate. Drawn from art.mjs; ?s=light|dark pins the scheme. -->
+<link rel=stylesheet href=../../../design-system/app.css>
+<link rel=stylesheet href=bush.css>
+<style>
+.grid{display:grid;grid-template-columns:repeat(auto-fill,132px);gap:8px 12px;align-items:end}
+.grid figure,.flex figure{margin:0;display:flex;flex-direction:column;gap:4px;font-size:11px;color:var(--mute);min-width:0}
+.cell{width:132px;height:108px;display:flex;align-items:end;justify-content:center;border-radius:6px;background:linear-gradient(#0000 0 74%,#b5562e 74%),#e9d9b6}
+.night .cell{background:linear-gradient(#0000 0 74%,#5e3226 74%),#2a2850}
+.cell svg{width:132px;height:100px;display:block}
+.cell.x2{width:264px;height:216px}.cell.x2 svg{width:264px;height:200px}
+.act{margin:16px 0 6px;font-size:var(--fs-meta);font-weight:600}.act .m{font-weight:400}
+.flex{display:flex;flex-wrap:wrap;gap:12px 16px;align-items:flex-end}
+.sg{width:128px;height:124px;display:block}.sg.x1{width:64px;height:62px}
+.hm{width:144px;height:48px;image-rendering:pixelated;display:block}
+.x4{width:64px;height:64px;image-rendering:pixelated;border:1px solid var(--line);border-radius:4px}
+.icons img{display:block}.i512{width:180px;height:180px;border-radius:40px}.i192{width:96px;height:96px;border-radius:20px}.i180{width:60px;height:60px;border-radius:14px}.f32{width:64px;height:64px;image-rendering:pixelated}
+pre.as{margin:0;width:80px;padding:4px;border:1px solid var(--line);border-radius:4px;background:var(--card);color:var(--fg);font:11px/1.25 var(--mono)}
+.duos{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,390px),1fr));gap:16px}
+.duo{border:1px solid var(--edge);border-radius:var(--r-card);padding:8px 12px;min-width:0}.duo h3{margin:0 0 8px;font-size:var(--fs)}
+.duo .tk{display:flex;flex-wrap:wrap;gap:4px 12px;font-size:11px}.sw{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:4px;border:1px solid #0003;vertical-align:-1px}
+.duo table{border-collapse:collapse;font-size:11px;margin-top:8px}.duo td{padding:2px 8px 2px 0;border-bottom:1px solid var(--line)}
+</style></head>
+<body>
+<svg width=0 height=0 style="position:absolute" aria-hidden=true><defs id=defs></defs></svg>
+<header class=bar><img src=icon/icon-180.png alt="" width=28 height=28 style="border-radius:6px"><h1>bush · the sprite sheet</h1><small id=schn></small></header>
+<div class=doc>
+<h2>1 · finer pixels: the first design (4 px per art pixel) beside revision 1 (2 px)</h2>
+<p>Same compositions, double the grid: 66 × 50 art pixels in the 132 × 100 box. The new grid has room for an outline, fur and feather texture, a sunlit
+rim and shade underneath, a catch-light in each eye, bark streaks and leaf dither. Still whole pixels, no smoothing. Shown at 2×.</p>
+<div class=flex id=cmp></div>
+<h2>2 · the animals: role and state, eight looks, frame 2</h2>
+<p>132 × 100 at 1:1. The neckerchief is the repo colour; a look is one coat set for all four animals, so a lane keeps its colours from role to role.
+Each animal doubles as a cooee state sprite, so the pack's <code>sprites.svg</code> serves cooee's own chats too (the id after the role).</p>
+<div id=acts></div>
+<h2>3 · moments and the hollow-log rail</h2>
+<p>merged: the kangaroo clears the station fence, a kookaburra laughs (hop) · review FAIL: a magpie swoops (shake) · needs you: a cockatoo screeches on
+the log (pulse). Rail: a joey per queued issue; the egg is drawn as the alternative.</p>
+<div class=grid id=moms></div>
+<h2>4 · the Fire Danger Rating sign: small, about a kangaroo's height</h2>
+<p>32 × 22 art pixels on two posts (64 × 60 px), at the edge of each clearing; shown at 1:1 beside a bounding kangaroo, then at 2×. The needle wobbles 5° on
+frame 2; Reduce Motion keeps frame 1. No flames. The Host card's 48 × 16 mini is the dial alone (at 3× here).</p>
+<div class=flex id=signs></div>
+<h2>5 · row sprites (16 × 16 at 24 px, unchanged size) · icon · ASCII</h2>
+<div class=flex id=rows></div>
+<div class="flex icons" id=icons style="margin-top:16px"></div>
+<div class=flex id=ascii style="margin-top:16px"></div>
+<h2>6 · the two schemes, through cooee's gate</h2>
+<div class=duos id=duos></div>
+</div>
+<script type=module>
+import { mode, scheme } from './scheme.mjs';
+import { symbols, style, ACTIONS, ACT_WORD, ROWS, mini, LEVELS, signAlone, ASCII, ASCII_ROWS, ASCII_LOAD, ASCII_LOADING } from './art.mjs';
+import { gate } from '../look/gate.mjs';
+const $ = s => document.querySelector(s);
+if (new URLSearchParams(location.search).has('still')) document.body.classList.add('still');
+$('#defs').innerHTML = symbols();
+$('#schn').textContent = `bush-${mode()}`;
+const use = (id, st = '', vb = '0 0 132 100') => `<svg viewBox="${vb}" style="${st}"><use href="#${id}"/></svg>`;
+const ROLE = { bound: 'impl · s-edit', dig: 'fix', peer: 'rev · s-read', run: 'update · s-run', sleep: 'idle · s-idle', laugh: 'done · s-done', stuck: 'blocked · s-fail (scene)' };
+$('#cmp').innerHTML = ['bound', 'peer', 'run', 'laugh'].map(k => `<figure><span class="cell x2">${use('old-' + k, style(0, 'l'))}</span>${k} · first design, 4 px</figure><figure><span class="cell x2">${use('a-' + k, style(0, 'l'))}</span>${k} · revision 1, 2 px</figure>`).join('');
+const LK = [[0, 'l'], [1, 'p'], [2, 'g'], [0, 'l', 1], [3, 'c'], [4, 'a'], [5, 'l'], [6, 'p'], [7, 'g']];
+$('#acts').innerHTML = Object.keys(ACTIONS).map(k => `<p class=act>${ACT_WORD[k]} <span class=m>· ${ROLE[k]}</span></p><div class=grid>` +
+  LK.map(([l, fk, f2]) => `<figure><span class="cell${f2 ? ' f2v' : ''}">${use('a-' + k, style(l, fk))}</span>look ${l + 1}${f2 ? ' · frame 2' : ''}</figure>`).join('') + '</div>').join('');
+const M = [['m-clear', 0, 'merged · s-merged'], ['m-clear', 1, 'frame 2'], ['m-swoop', 0, 'FAIL'], ['m-swoop', 1, 'frame 2'], ['m-screech', 0, 'needs · s-needs'], ['m-screech', 1, 'frame 2'],
+  ['q-joey', 0, 'rail · joey'], ['q-joey', 1, 'frame 2'], ['q-egg', 0, 'rail · egg (alt)'], ['q-cocky', 0, 'rail · needs you'], ['loading', 0, 'loading · s-loading'], ['loading', 1, 'frame 2']];
+$('#moms').innerHTML = M.map(([id, f, t]) => `<figure><span class="cell${f ? ' f2v' : ''}">${use(id, style(1, 'c'))}</span>${t}</figure>`).join('');
+const SG = signAlone();
+$('#signs').innerHTML = `<figure><span class=cell style="width:220px;align-items:end;gap:8px"><span class="sign-high" style="margin-bottom:6px">${SG.replace('<svg', '<svg class="sg x1"')}</span>${use('a-bound', style(0, 'g')).replace('<svg', '<svg style="width:132px;height:100px;flex:none"')}</span>1:1 beside the kangaroo</figure>` +
+  LEVELS.flatMap(l => [0, 1].map(f => `<figure class="sign-${l}${f ? ' f2v' : ''}">${SG.replace('<svg', '<svg class=sg')}${l}${f ? ' · frame 2' : ''}</figure>`)).join('') +
+  LEVELS.map(l => `<figure>${mini(l)}mini · ${l}</figure>`).join('');
+const K = Object.keys(ROWS), px = (id, cls) => `<svg class="${cls}" viewBox="0 0 16 16" style="${style(0, 'g')}"><use href="#r-${id}"/></svg>`;
+$('#rows').innerHTML = K.map(k => `<figure class=loop>${px('r-' + k, 'px24').replace('#r-r-', '#r-')}${px(k, 'x4')}${k}</figure>`).join('');
+$('#icons').innerHTML = `<figure><img class=i512 src=icon/icon-512.png alt="">512</figure><figure><img class=i192 src=icon/icon-192.png alt="">192</figure><figure><img class=i180 src=icon/icon-180.png alt="">180</figure>` +
+  `<figure><img class=f32 src=icon/favicon-32.png alt="">favicon 32 (×2)</figure><figure><img src=icon/favicon-16.png alt="" width=16 height=16>16</figure>`;
+const esc = t => t.replace(/&/g, '&amp;').replace(/</g, '&lt;');
+$('#ascii').innerHTML = Object.entries(ASCII).map(([k, t]) => `<figure><pre class=as>${esc(t)}</pre>${k} · ${esc(ASCII_ROWS[k])}</figure>`).join('') +
+  Object.entries(ASCII_LOAD).map(([k, t]) => `<figure><pre class=as>${esc(t)}</pre>load · ${k}</figure>`).join('') + `<figure><pre class=as>${esc(ASCII_LOADING)}</pre>loading</figure>`;
+$('#duos').innerHTML = ['light', 'dark'].map(k => {
+  const s = scheme(k), rows = gate(s), ok = rows.every(r => r[1] >= r[2]), t = s.tokens;
+  return `<div class=duo style="background:${t['--bg']};color:${t['--fg']}"><h3>bush-${k} <span style="color:${t['--g']}">${ok ? 'PASS' : 'FAIL'}</span> <small style="color:${t['--mute']}">${rows.length} checks</small></h3>` +
+    `<div class=tk>${Object.entries(t).map(([n, v]) => `<span><i class=sw style="background:${v}"></i>${n} ${v}</span>`).join('')}</div>` +
+    `<table>${rows.sort((a, b) => a[1] / a[2] - b[1] / b[2]).slice(0, 6).map(([w, v, m]) => `<tr><td>${w}</td><td>${v.toFixed(2)}</td><td style="color:${t['--mute']}">min ${m}</td></tr>`).join('')}</table></div>`;
+}).join('');
+document.body.dataset.ready = 1;
+</script>
+</body></html>

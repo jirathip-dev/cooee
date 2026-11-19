@@ -1,0 +1,71 @@
+/* cooee#22 bush mockup only: the frame loop, day/night and sign levels, the moments, and the mockup's own framing.
+   Every colour outside the art is a scheme token. Impl maps the loops onto the pack's .f1/.f2 and the Scene's layers. */
+@property --o1{syntax:"<number>";inherits:true;initial-value:1}@property --o2{syntax:"<number>";inherits:true;initial-value:0}
+.f1{opacity:var(--o1,1)}.f2{opacity:var(--o2,0)}
+.loop{animation:bfr 1.2s infinite}
+@keyframes bfr{0%,49.9%{--o1:1;--o2:0}50%,100%{--o1:0;--o2:1}}
+.f2v{--o1:0;--o2:1}
+.sky-night{display:none}.night .sky-night{display:inline}.night .sky-day{display:none}
+.s-moderate,.s-high,.s-catastrophic,.s-up{display:none}
+.sign-moderate .s-moderate,.sign-high .s-high,.sign-catastrophic .s-catastrophic,.sign-high .s-up,.sign-catastrophic .s-up{display:inline}
+.mo-hop{animation:bhop .8s ease-in-out infinite}.mo-shake{animation:bshake .4s ease-in-out infinite}.mo-pulse{animation:bpulse .8s ease-in-out infinite}
+@keyframes bhop{50%{translate:0 -6px}}@keyframes bshake{25%{translate:-3px 0}75%{translate:3px 0}}@keyframes bpulse{50%{scale:1.15}}
+.still .loop,.still .mo-hop,.still .mo-shake,.still .mo-pulse,.still [data-mo]{animation:none}
+@media (prefers-reduced-motion:reduce){.loop,.mo-hop,.mo-shake,.mo-pulse,[data-mo]{animation:none}}
+svg{shape-rendering:crispEdges}
+.px24{width:24px;height:24px;image-rendering:pixelated;flex:none}
+
+/* framing */
+html,body{height:auto}
+.doc{max-width:1440px;margin:0 auto;padding:0 16px 32px}
+.doc>h2{margin:32px 0 4px;font-size:var(--fs-key)}
+.doc>p{margin:0 0 12px;color:var(--mute);font-size:var(--fs-meta);max-width:110ch}
+.row{display:flex;flex-wrap:wrap;gap:24px;align-items:flex-start}
+.ph{flex:0 0 390px;width:390px;max-width:100%;border:1px solid var(--edge);border-radius:var(--r-card);overflow:hidden;background:var(--bg)}
+.ph>.cap{margin:0;padding:6px 12px;background:var(--card);color:var(--mute);font-size:var(--fs-meta);border-bottom:1px solid var(--edge)}
+@media (max-width:420px){.doc{padding:0 0 24px}.doc>h2,.doc>p{padding:0 16px}.ph{flex:1 1 100%;border-radius:0;border-width:1px 0}}
+
+/* the Scene block in bush: the clearing, the sign at its left edge, the lanes standing on the red earth */
+.strip{position:relative;height:188px;overflow:hidden;background:#b5562e}
+.strip>.bk{position:absolute;inset:0}.strip>.bk>svg{display:block;width:100%;height:100%}
+.lanes{position:absolute;inset:0 0 0 72px;display:flex;overflow-x:auto;scrollbar-width:none}
+.lane{flex:0 0 132px;position:relative;height:188px;display:flex;flex-direction:column;justify-content:flex-end;color:var(--fg);text-decoration:none}
+.lane>svg{display:block;width:132px;height:100px;margin-bottom:-2px}
+.lane>.nc{margin:0 6px 6px;padding:1px 6px;border-radius:8px;background:#f7f1e3;color:#2b2118;font-size:11px;line-height:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;box-shadow:0 1px 2px #0005}
+.lane>.nc b{display:block;font-weight:600;overflow:hidden;text-overflow:ellipsis}
+.lane>.nc i{font-style:normal;color:#386826}.lane.r>.nc{box-shadow:0 0 0 2px #a3134d}.lane.r>.nc i{color:#a3134d}.lane.a>.nc i{color:#765700}
+.cap2{margin:0;padding:0 12px;min-height:28px;display:flex;align-items:center;gap:8px;font-size:var(--fs-meta);color:var(--mute);border-bottom:1px solid var(--line);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+i.fk{display:inline-block;width:10px;height:10px;border-radius:2px;flex:none}
+/* the hollow-log rail: one joey per queued issue, a cockatoo on the one that needs you */
+.rail{display:flex;overflow-x:auto;scrollbar-width:none}
+.rail figure{margin:0;flex:0 0 132px;position:relative}.rail svg{display:block;width:132px;height:100px}
+.rail figcaption{position:absolute;left:8px;bottom:6px;font-size:11px;color:#f4ecd8;text-shadow:0 1px 1px #000}
+.rail .n svg{animation:bfr 1.2s infinite,bpulse .8s ease-in-out infinite}.still .rail .n svg{animation:none}
+.rh{margin:0;padding:8px 12px 0;font-size:var(--fs-meta);font-weight:600;color:var(--mute)}
+/* rows: the sheet's fleet card */
+.card{margin:8px 12px 12px;border:1px solid var(--edge);border-radius:var(--r-card);background:var(--card);padding:0 12px}
+.card>.hd{display:flex;align-items:center;gap:8px;min-height:44px;font-weight:600}
+.qr{position:relative;display:grid;grid-template-columns:24px 4.5ch minmax(0,1fr) auto;column-gap:8px;align-items:center;min-height:52px;padding:4px 0;border-top:1px solid var(--line)}
+.qr>a{color:var(--link);text-decoration:none;font-size:var(--fs-meta)}
+.qr .st{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.qr .st b{font-weight:600}.qr .pw{color:var(--mute);font-size:var(--fs-meta)}
+.qr .ag{color:var(--mute);font-size:var(--fs-meta)}
+.qr .tl{grid-column:2/-1;color:var(--mute);font-size:var(--fs-meta);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.qr .asc{font:var(--fs-meta)/1 var(--mono);white-space:pre;color:var(--fg)}
+.qr[data-mo=merged] .px24{animation:bfr 1.2s infinite,bhop .8s ease-in-out infinite}
+.qr[data-mo=fail]{animation:bshake .4s ease-in-out infinite}
+.qr[data-mo=needs]{background:color-mix(in srgb,var(--r) 12%,transparent)}.qr[data-mo=needs] .px24{animation:bfr 1.2s infinite,bpulse .8s ease-in-out infinite}
+.mot{position:absolute;right:0;top:6px;font-style:normal;font-weight:700;font-size:11px;padding:0 6px;border-radius:6px;color:var(--bg);background:var(--g);white-space:nowrap}
+.qr[data-mo=fail] .mot,.qr[data-mo=needs] .mot{background:var(--r)}.qr[data-mo] .ag{visibility:hidden}
+/* 1440: the clearings along the track */
+.wide{border:1px solid var(--edge);border-radius:var(--r-card);overflow:hidden;background:var(--bg)}
+.line{display:flex;overflow:hidden;height:188px}.line>.strip{flex:0 0 200px}.line>.strip.lit{flex:1 1 640px}
+@media (max-width:700px){.line>.strip.off{display:none}}
+.line>.strip.off{filter:brightness(.62) saturate(.8)}
+.line>.strip>.rb{position:absolute;left:80px;top:8px;padding:0 6px;border-radius:4px;background:#3e2416d8;color:#f4ecd8;font-size:11px;border-left:4px solid var(--fk)}
+.cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,390px),1fr));gap:24px}
+.cols>section{border:1px solid var(--edge);border-radius:var(--r-card);background:var(--bg);min-width:0}
+.cols h3{margin:0;padding:10px 12px;font-size:var(--fs);border-bottom:1px solid var(--line)}
+.tm{font-family:var(--mono)}.tm .qr{grid-template-columns:3.5ch 4.5ch minmax(0,1fr) auto;min-height:44px}.tm .qr .st,.tm .qr .tl,.tm .qr>a,.tm .rh{font-size:11px}
+.tm .cells{display:grid;grid-template-columns:repeat(auto-fill,minmax(80px,1fr));gap:8px;padding:8px 12px 12px}
+.tm .cells figure{margin:0;display:flex;flex-direction:column;align-items:center;gap:4px;font-size:11px;color:var(--mute)}
+.tm .cells pre{margin:0;width:72px;padding:4px;border:1px solid var(--line);border-radius:4px;background:var(--card);color:var(--fg);font:11px/1.25 var(--mono)}
