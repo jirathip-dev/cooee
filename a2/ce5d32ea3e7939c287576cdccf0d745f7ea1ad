@@ -1,0 +1,5 @@
+Decided: merged origin/staging; FrameClientTests.swift keeps staging's sent-file test and this branch's restart test side by side
+Because: apple/Tests/CooeeAPITests/FrameClientTests.swift:13
+Rejected: none
+Check: apple-check and cargo test -p cooee --test chat pass at a2ce5d32e
+Owner: The branch now includes the latest staging; the restart feature itself is unchanged.
