@@ -252,6 +252,8 @@
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "$(inherited) @executable_path/../Frameworks";
 				INFOPLIST_KEY_CFBundleDisplayName = cooee;
 				INFOPLIST_KEY_NSCameraUsageDescription = "Scan the QR code your cooee server shows, to pair.";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Dictate messages, record voice notes and talk on calls with your personas.";
+				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "Turn what you say into text on this device, for dictation and calls.";
 				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "Find cooee servers on this network.";
 				INFOPLIST_KEY_NSBonjourServices = "_cooee._tcp";
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -289,6 +291,8 @@
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "$(inherited) @executable_path/../Frameworks";
 				INFOPLIST_KEY_CFBundleDisplayName = cooee;
 				INFOPLIST_KEY_NSCameraUsageDescription = "Scan the QR code your cooee server shows, to pair.";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Dictate messages, record voice notes and talk on calls with your personas.";
+				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "Turn what you say into text on this device, for dictation and calls.";
 				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "Find cooee servers on this network.";
 				INFOPLIST_KEY_NSBonjourServices = "_cooee._tcp";
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;

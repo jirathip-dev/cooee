@@ -33,6 +33,8 @@ pub enum Role {
     Plain,
     /// One of herdsman's orchestrators: an installed drover is attached to it.
     Orchestrator,
+    /// cooee's own persona (#664): only the folder `chief` has it.
+    Chief,
 }
 
 /// How an agent's native chat reads (#242).
@@ -58,6 +60,10 @@ make it with create_routine when they agree.";
 /// What a [`Style::Chat`] agent's new session is told after its brief.
 pub const PLAIN: &str =
     "Answer short, plain and conversational: summarise, and give the details only when asked.";
+
+/// What a call's utterance (#663) is told before it, unless its persona's `spoken` says otherwise.
+pub const SPOKEN: &str = "Spoken reply: answer in one to three short plain sentences, no markdown, lists or code; \
+it is read aloud.";
 
 /// The consolidation routine's mark on its runs (#219), and its watermark's key with the persona's id after a `-`.
 pub const CONSOLIDATE: &str = "consolidate";
@@ -210,6 +216,10 @@ pub struct Agent {
     /// Its heartbeat (#498); a save that leaves it out keeps it.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub heartbeat: Option<Heartbeat>,
+    /// What a call's utterance is told before it (#663), in place of [`SPOKEN`]; empty: nothing. A save that leaves
+    /// it out keeps it.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub spoken: Option<String>,
     /// Its files' [`disk::version`] when read; a save naming an older one is refused (#360), one naming none isn't.
     #[serde(skip_serializing_if = "String::is_empty")]
     pub version: String,
@@ -355,6 +365,9 @@ const FILES: [&str; 3] = ["agent.toml", "INSTRUCTIONS.md", "CHARACTER.md"];
 
 fn load(d: &Path, id: &str) -> Result<Agent, String> {
     let a = parse(&d.join("agent.toml"))?;
+    if a.role == Role::Chief && id != crate::chief::ID {
+        return Err("only cooee's own Chief, folder chief, has role chief".to_owned());
+    }
     let md = |n: &str| fs::read_to_string(d.join(n)).unwrap_or_default();
     let folder = match a.folder.as_str() {
         "" | "scratch" => a.folder.clone(),
@@ -520,9 +533,15 @@ pub fn save(config: &Path, data: &Path, mut a: Agent) -> io::Result<Agent> {
         policy: old.policy,
         consolidate: a.consolidate.or(old.consolidate),
         heartbeat: a.heartbeat.or(old.heartbeat),
+        spoken: a.spoken.or(old.spoken),
         lent: None,
         ..a
     };
+    if old.role == Role::Chief {
+        a.role = Role::Chief;
+    } else if a.role == Role::Chief {
+        return Err(refused("only cooee's own Chief has that role".to_owned()));
+    }
     a.check().map_err(|_| {
         refused("a persona needs a name, an agent, and an image or none as its avatar".to_owned())
     })?;
@@ -537,12 +556,18 @@ pub fn save(config: &Path, data: &Path, mut a: Agent) -> io::Result<Agent> {
     find(Some(config), data, &a.id)
 }
 
-/// Deletes agent `id`'s whole folder; its chats stay.
+/// Deletes agent `id`'s whole folder; its chats stay. Chief (#664) is never deleted.
 ///
 /// # Errors
-/// An unknown id, or a folder that can't be removed.
+/// An unknown id, Chief, or a folder that can't be removed.
 pub fn remove(config: &Path, id: &str) -> io::Result<()> {
-    fs::remove_dir_all(home(config, id)?.path())
+    let h = home(config, id)?;
+    if parse(&h.path().join("agent.toml")).is_ok_and(|a| a.role == Role::Chief) {
+        return Err(refused(
+            "Chief can't be deleted: rename it instead.".to_owned(),
+        ));
+    }
+    fs::remove_dir_all(h.path())
 }
 
 /// Agent `id`'s chat places: the `header-strip` and `chat-cards` places of its plugins, in its order and theirs.

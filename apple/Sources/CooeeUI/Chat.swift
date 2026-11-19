@@ -188,6 +188,10 @@ internal struct ChatHeader: View {
                     Button(action: screen) { RoundButton(symbol: "display", ascii: "scr", size: 40) }
                         .buttonStyle(.plain).accessibilityLabel("Screen")
                 }
+                if let call = actions.voice.call {
+                    Button(action: call) { RoundButton(symbol: "phone.fill", ascii: "c", size: 40) }
+                        .buttonStyle(.plain).accessibilityLabel("Call")
+                }
                 more
             }
             if let status = actions.status { LaneStatusRow(status: status, close: actions.close) }

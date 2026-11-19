@@ -171,7 +171,7 @@ async fn teach(
             id: act.to_owned(),
             name: name.to_owned(),
         };
-        let queued = hub.queue_as(&thread, (text, &key), &[], Some(mark))?;
+        let queued = hub.queue_as(&thread, (text, &key), &[], (Some(mark), None))?;
         serde_json::to_value(queued).map_err(refused)
     })
     .await

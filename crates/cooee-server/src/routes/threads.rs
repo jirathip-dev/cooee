@@ -274,6 +274,7 @@ struct Message {
     random_id: String,
     #[serde(default)]
     files: Vec<File>,
+    via: Option<cooee_core::Via>,
 }
 
 #[derive(Deserialize)]
@@ -300,7 +301,7 @@ async fn send(cx: &Cx, Json(m): Json<Message>) -> Result<Answer<cooee_core::Item
     let a = Again::of(cx);
     off(move || {
         let (send, files) = (
-            |f: &[_]| a.hub.send(&a.id, &m.text, &m.random_id, f),
+            |f: &[_]| a.hub.send(&a.id, &m.text, &m.random_id, f, m.via),
             m.uploads()?,
         );
         match send(&files) {
@@ -329,7 +330,7 @@ async fn queue(cx: &Cx, Json(m): Json<Message>) -> Result<Answer<Vec<cooee_core:
     let id = thread_id(cx);
     Ok(Answer(
         blocking(cx, move |hub| {
-            hub.queue(&id, &m.text, &m.random_id, &m.uploads()?)
+            hub.queue(&id, &m.text, &m.random_id, &m.uploads()?, m.via)
         })
         .await,
     ))

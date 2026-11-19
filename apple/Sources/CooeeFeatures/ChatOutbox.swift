@@ -13,7 +13,8 @@ extension ChatFeature {
 
     internal func send(_ state: inout State) -> Effect<Action> {
         let text = state.draft.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !text.isEmpty || !state.files.isEmpty else { return .none }
+        guard !text.isEmpty || !state.files.isEmpty, state.dictation?.listening != true else { return .none }
+        state.dictation = nil
         if let item = state.denying, !text.isEmpty {
             (state.denying, state.draft) = (nil, "")
             return answer(

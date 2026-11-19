@@ -23,6 +23,14 @@ pub struct Item {
     pub body: Body,
 }
 
+/// How the owner's message was sent, when not typed.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum Via {
+    /// Spoken in a call (#663): its reply is read aloud.
+    Voice,
+}
+
 /// What an [`Item`] holds; `kind` names it.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "kind", rename_all = "snake_case")]
@@ -39,6 +47,9 @@ pub enum Body {
         /// The routine that sent it (#75), not the owner.
         #[serde(default, skip_serializing_if = "Option::is_none")]
         routine: Option<crate::routines::Mark>,
+        /// How it was sent: `voice` for a call's utterance (#663), none when typed.
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        via: Option<Via>,
     },
     /// The agent's whole reply to a turn.
     Agent {

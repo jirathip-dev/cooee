@@ -140,8 +140,9 @@ extension Client {
         return Substring(text.hasSuffix("\r") ? String(text.dropLast()) : text)
     }
 
+    private static let decoder = JSONDecoder()
+
     internal static func decode(_ event: String, _ data: Data) throws -> StreamEvent? {
-        let decoder = JSONDecoder()
         switch event {
         case "item": return .item(try decoder.decode(APIItem.self, from: data))
         case "text": return .text(try decoder.decode(Chunk.self, from: data).text)
@@ -153,7 +154,6 @@ extension Client {
     }
 
     private static func room(_ event: String, _ data: Data) throws -> StreamEvent? {
-        let decoder = JSONDecoder()
         switch event {
         case "room-turn": return .roomTurn(try decoder.decode(Seat.self, from: data).member)
         case "room-stop": return .roomStop(try decoder.decode(Stop.self, from: data).reason)

@@ -58,6 +58,9 @@ pub(crate) fn doctor(config: &Config) -> Result<(), String> {
         cooee_core::say!("warn no roots configured\n     fix: add {ROOTS_FIX} to config.toml");
     }
     let data = config.data_dir().ok_or("no data folder")?;
+    if cooee_core::chief::find(config.dir.as_deref(), &data).is_none() {
+        cooee_core::say!("warn no Chief\n     fix: run cooee setup");
+    }
     match cooee_server::Push::new(&data)
         .with_apns(config.apns.clone())
         .apns_ready()

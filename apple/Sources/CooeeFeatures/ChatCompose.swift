@@ -25,6 +25,7 @@ extension ChatFeature {
         switch action {
         case .draftChanged(let text):
             state.draft = text
+            state.edited(text)
         case .attach(let files):
             state.files += files
         case .detach(let index):

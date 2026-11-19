@@ -1,12 +1,13 @@
 use std::{fs, sync::Mutex, time::Instant};
 
-use cooee_core::{Body, Change, Item, Kind, Queued, routines::Mark, shed_proto};
+use cooee_core::{Body, Change, Item, Kind, Queued, Via, agents, routines::Mark, shed_proto};
 
 use super::{Hub, HubError, Live, Upload, lock, now, refused};
 
 impl Hub {
-    /// Sends the owner's message with its `files`: once per `random_id` (a retry of a stored send returns it
-    /// again). The message is stored only once shed took it; the agent gets the files' paths under its text.
+    /// Sends the owner's message with its `files`, sent `via` voice or typed: once per `random_id` (a retry of a
+    /// stored send returns it again). The message is stored only once shed took it; the agent gets the files' paths
+    /// under its text, and a voice message the persona's spoken-reply hint above it.
     ///
     /// # Errors
     /// [`HubError::Refused`] for a closed thread, an empty message or a stopped agent; [`HubError::Shed`] when shed
@@ -17,12 +18,13 @@ impl Hub {
         text: &str,
         random_id: &str,
         files: &[Upload],
+        via: Option<Via>,
     ) -> Result<Item, HubError> {
         let live = self.live(id)?;
         if lock(&live).meta.kind == Kind::Room {
             return self.room_send(&live, text, random_id, files);
         }
-        self.send_after(id, text, random_id, files, "")
+        self.send_after(id, text, random_id, files, "", via)
     }
 
     pub(super) fn send_after(
@@ -32,6 +34,7 @@ impl Hub {
         random_id: &str,
         files: &[Upload],
         before: &str,
+        via: Option<Via>,
     ) -> Result<Item, HubError> {
         let live = self.live(id)?;
         let l = lock(&live);
@@ -43,7 +46,10 @@ impl Hub {
                 "that message is still on its way".to_owned(),
             ));
         }
-        let q = self.take(&l, text, random_id, files)?;
+        let q = Queued {
+            via,
+            ..self.take(&l, text, random_id, files)?
+        };
         drop(l);
         self.deliver(&live, q, before)
     }
@@ -114,10 +120,20 @@ impl Hub {
             } else {
                 super::ask::OWNER_NOTE
             };
+            let spoken = (q.via == Some(Via::Voice)).then(|| {
+                agents::find(self.config_dir(), &self.data, &l.meta.profile)
+                    .ok()
+                    .and_then(|a| a.spoken)
+                    .unwrap_or_else(|| agents::SPOKEN.to_owned())
+            });
+            let text = match spoken.filter(|s| !s.trim().is_empty()) {
+                Some(s) => format!("{}\n\n{}", s.trim_end(), q.text),
+                None => q.text.clone(),
+            };
             let mut prompt = if before.trim().is_empty() {
-                q.text.clone()
+                text
             } else {
-                format!("{}\n\n{}", before.trim_end(), q.text)
+                format!("{}\n\n{text}", before.trim_end())
             };
             if !q.files.is_empty() {
                 prompt.push_str("\n\nAttached files:");
@@ -194,6 +210,7 @@ impl Hub {
             random_id: q.random_id,
             files: q.files,
             routine: q.routine,
+            via: q.via,
         };
         let item = live.chat.push(now(), 0, body);
         if first {
@@ -233,8 +250,8 @@ impl Hub {
         Ok(())
     }
 
-    /// Queues the owner's message for when the turn ends (between turns it goes at once); once per `random_id`.
-    /// Returns the queue.
+    /// Queues the owner's message, sent `via` voice or typed, for when the turn ends (between turns it goes at once);
+    /// once per `random_id`. Returns the queue.
     ///
     /// # Errors
     /// As [`Hub::send`].
@@ -244,11 +261,12 @@ impl Hub {
         text: &str,
         random_id: &str,
         files: &[Upload],
+        via: Option<Via>,
     ) -> Result<Vec<Queued>, HubError> {
-        self.queue_as(id, (text, random_id), files, None)
+        self.queue_as(id, (text, random_id), files, (None, via))
     }
 
-    /// [`Hub::queue`] by `routine` (#75) when given, not the owner.
+    /// [`Hub::queue`] by `routine` (#75) when given, not the owner, sent `via` voice or typed.
     ///
     /// # Errors
     /// As [`Hub::send`].
@@ -257,11 +275,12 @@ impl Hub {
         id: &str,
         (text, random_id): (&str, &str),
         files: &[Upload],
-        routine: Option<Mark>,
+        (routine, via): (Option<Mark>, Option<Via>),
     ) -> Result<Vec<Queued>, HubError> {
         self.enqueue(id, random_id, |l| {
             Ok(Queued {
                 routine,
+                via,
                 ..self.take(l, text, random_id, files)?
             })
         })
