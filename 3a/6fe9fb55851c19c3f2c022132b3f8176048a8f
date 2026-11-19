@@ -1,0 +1,10 @@
+Decided: the pick is a scheme name in Settings, resolved against the server's looks each draw, so a deleted user file falls back to the theme's colours
+Because: "the 12 built-in colour schemes and user scheme files"
+Decided: palette and dark resolution move into MenuFeature.State extensions in CooeeUI so a TestStore test drives the real code AppRoot uses
+Because: apple/Sources/CooeeUI/Colours.swift:21
+Decided: a picked scheme forces its own light or dark mode; System/Light/Dark applies only to the theme's own colours
+Because: apple/Sources/CooeeUI/Root.swift:73
+Rejected: a list of scheme names hardcoded in the app — user scheme files would be missing
+Rejected: the test in MenuFeatureTests — that file is at SwiftLint's file and type length limits
+Check: Look › Colours lists every server scheme with a swatch; picking nord turns all screens nord and the setting survives a relaunch
+Owner: Look now has a Colours list; your pick repaints the whole app and stays after a relaunch.
