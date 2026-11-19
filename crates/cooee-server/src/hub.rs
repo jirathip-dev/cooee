@@ -19,6 +19,7 @@ use serde_json::json;
 use tokio::sync::broadcast;
 
 use crate::push::{Push, note};
+use glance::{Glance, glance, summary};
 
 mod ask;
 mod cards;
@@ -26,6 +27,7 @@ mod events;
 mod expire;
 mod folders;
 mod frames;
+mod glance;
 mod handoff;
 mod heartbeat;
 mod mcp;
@@ -125,80 +127,11 @@ struct Live {
     held: Vec<Event>,
 }
 
-#[derive(Clone)]
-struct Glance {
-    ask: Option<(String, String, String)>,
-    last: String,
-    speaker: String,
-    at: Option<u64>,
-    unseen: usize,
-    routine: String,
-}
-
-fn glance(live: &Live) -> Glance {
-    let items = &live.chat.items;
-    let from = items.partition_point(|i| i.id <= live.meta.read.unwrap_or(0));
-    let after = items.get(from..).unwrap_or_default().iter();
-    let unseen = after.filter(|i| !matches!(i.body, Body::You { .. }));
-    summary(&live.meta, items, unseen.count())
-}
-
-fn summary(meta: &Thread, items: &[Item], unseen: usize) -> Glance {
-    let ask = items.iter().find_map(|i| match &i.body {
-        Body::Approval {
-            tool,
-            tapped: None,
-            chosen: None,
-            card,
-            ..
-        } if card.line.is_none() => Some((meta.room.clone(), i.speaker.clone(), tool.clone())),
-        _ => None,
-    });
-    let last = items.last();
-    let text = last.map_or("", |i| match &i.body {
-        Body::Link { text, title, .. } if text.is_empty() => title,
-        Body::You { text, .. }
-        | Body::Agent { text, .. }
-        | Body::Note { text }
-        | Body::Frame { text, .. }
-        | Body::Link { text, .. }
-        | Body::Ask { text, .. }
-        | Body::Handoff { text, .. }
-        | Body::Ended { text } => text,
-        Body::Tool { title, .. } => title,
-        Body::Approval { tool, .. } => tool,
-        Body::Plan { .. } => "plan",
-        Body::Routine { name, .. } => name,
-    });
-    let waiting = items.iter().find_map(|i| match &i.body {
-        Body::Approval { tool, .. } if waits(&i.body) => Some(format!("{tool} waiting")),
-        _ => None,
-    });
-    Glance {
-        ask,
-        last: waiting
-            .unwrap_or_else(|| text.lines().last().unwrap_or("").chars().take(80).collect()),
-        at: last.map(|i| i.at),
-        speaker: last.map(|i| i.speaker.clone()).unwrap_or_default(),
-        unseen,
-        routine: routine_of(meta, items),
-    }
-}
-
 struct After {
     next: Result<Option<Queued>, HubError>,
     reply: Option<Body>,
     seat: (String, String),
     asked: String,
-}
-
-fn routine_of(meta: &Thread, items: &[Item]) -> String {
-    let you = items.iter().rev().find_map(|i| match &i.body {
-        Body::You { routine, .. } => Some(routine),
-        _ => None,
-    });
-    let mark = meta.routine.as_ref().or_else(|| you?.as_ref());
-    mark.map(|m| m.name.clone()).unwrap_or_default()
 }
 
 /// A slice of a thread's items, with the turn in progress and the page event it is current to.
