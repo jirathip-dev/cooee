@@ -1,0 +1,4 @@
+Decided: merged origin/staging; summary.rs derives both Default and PartialEq, Hub keeps this branch's surface and staging's home, hub/tests.rs keeps both sides' tests
+Because: crates/cooee-server/src/hub.rs:343
+Rejected: none
+Owner: The branch sits on staging again with both sides' changes kept.
