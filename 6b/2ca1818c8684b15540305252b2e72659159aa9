@@ -1,0 +1,13 @@
+Decided: one writer thread with its own SQLite connection takes every queued item and commits the lot in one transaction, so one sync per batch
+Because: "the writer takes what is queued and syncs once per batch"
+Decided: the store is SQLite now (one cooee.db, WAL, synchronous FULL), so the per-file handle and torn-line check of the spec map to the writer's held connection; SQLite's journal keeps the file readable after a kill
+Because: crates/cooee-core/src/store/files.rs:58
+Decided: the owner's message, the agent's reply and an answered approval (tapped or chosen) still wait for their sync; tool, plan, link, ask and other items are queued
+Because: "What must be on disk before it is acknowledged (the owner's message, an approval answer, a final reply) still waits for its sync"
+Decided: reads, remove and retain flush the queue first, so a reload after unload never misses a queued item
+Because: crates/cooee-core/src/store/items.rs:56
+Decided: a failed batch is retried item by item, so one bad item costs only itself and each waiter gets its own error
+Because: crates/cooee-core/src/store/writer.rs:86
+Rejected: one writer per thread — one database file serialises writers anyway; one writer gives the same batching with no per-thread threads
+Check: hub test a_busy_thread_does_not_hold_up_another_threads_event fails (about 140 ms) when every item waits for its sync
+Owner: A busy chat full of tool calls no longer slows down other chats; your messages, replies and approval answers are still saved before they are confirmed.
