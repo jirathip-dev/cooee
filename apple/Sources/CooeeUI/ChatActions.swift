@@ -46,6 +46,7 @@ public struct ChatActions {
     public var stopping = false
     public var denying = false
     public var older: (() -> Void)?
+    public var voice = VoiceActs()
 
     public init(
         draft: Binding<String>? = nil,

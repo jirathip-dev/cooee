@@ -300,6 +300,7 @@ mod tests {
             random_id: String::new(),
             files: Vec::new(),
             routine: None,
+            via: None,
         }
     }
 
@@ -430,6 +431,7 @@ mod tests {
                 id: "consolidate".to_owned(),
                 name: "Consolidation".to_owned(),
             }),
+            via: None,
         };
         s.append("t1", &item(1, 10, you("old"))).unwrap();
         s.append("t1", &item(2, 20, prompt)).unwrap();

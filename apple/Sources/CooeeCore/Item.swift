@@ -56,6 +56,7 @@ public enum Item: Identifiable, Sendable, Equatable {
     case divider(id: Int, text: String)
     case asked(id: Int, Ask)
     case screen(id: Int, ScreenItem)
+    case call(Call)
     case link(id: Int, ThreadLink)
 
     public var id: Int {
@@ -66,6 +67,8 @@ public enum Item: Identifiable, Sendable, Equatable {
             id
         case .outgoing(let message):
             message.id
+        case .call(let call):
+            call.id
         }
     }
 
@@ -75,6 +78,7 @@ public enum Item: Identifiable, Sendable, Equatable {
         case .you(_, let text, _): text
         case .outgoing(let message): message.text
         case .agent(_, let blocks), .said(_, _, _, let blocks): blocks.map(\.plainText).joined(separator: "\n\n")
+        case .call(let call): call.lines.map(\.text).joined(separator: "\n")
         case .tools, .trace, .card, .note, .divider, .asked, .screen, .link: nil
         }
     }
@@ -99,10 +103,13 @@ public enum ChatItems {
         working: Bool = false
     ) -> [Item] {
         var out: [Item] = []
-        if style == .chat {
-            folded(items, working: working, into: &out)
-        } else {
-            for item in items { append(item, to: &out) }
+        for part in Call.parts(items) {
+            if let call = part.call { out.append(.call(call)) }
+            if style == .chat {
+                folded(part.items, working: working && part.last, into: &out)
+            } else {
+                for item in part.items { append(item, to: &out) }
+            }
         }
         return out + outbox.map(Item.outgoing)
     }

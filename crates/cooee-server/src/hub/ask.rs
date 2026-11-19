@@ -65,7 +65,9 @@ impl Hub {
         let (rid, by) = (format!("ask-{key}-{}", now()), format!("[{}]:", asker.name));
         let start = cooee_core::clock::instant();
         let sent = match open {
-            Some(x) => self.send_after(&x, message, &rid, &[], &by).map(|_| x),
+            Some(x) => self
+                .send_after(&x, message, &rid, &[], &by, None)
+                .map(|_| x),
             None => self.seat(target, (message, &rid), |r| {
                 id.clone_into(&mut r.asked_by);
                 format!("{}\n\n{by}", r.instructions.trim_end())

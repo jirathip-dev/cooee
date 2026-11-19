@@ -52,6 +52,8 @@ public struct ChatFeature: Sendable {
         public var machine = MachineChip()
         public var bar: TopicBar?
         public var browser: BrowserSheet?
+        public var dictation: Dictation?
+        public var call: Calling?
         @Presents public var screen: ScreenFeature.State?
         @Presents public var attaching: AttachFeature.State?
 
@@ -113,16 +115,8 @@ public struct ChatFeature: Sendable {
         case photoed(String, Data)
         case topics(TopicAction)
         case browse(Browse)
-
-        @CasePathable
-        public enum Delegate: Sendable, Equatable {
-            case started(String)
-            case open(String)
-            case persona(String)
-            case start(String)
-            case round(String)
-            case topic(String)
-        }
+        case voice(Voice)
+        case call(CallAction)
     }
 
     @Dependency(\.threads) internal var threads
@@ -160,12 +154,25 @@ public struct ChatFeature: Sendable {
             }
         }
         Reduce { state, action in agent(&state, action) }
+        Reduce { state, action in spoken(&state, action) }
         Reduce { state, action in frames(&state, action) }
         Reduce { state, action in browser(&state, action) }
         Reduce { state, action in plugins(&state, action) }
             .ifLet(\.$screen, action: \.screen) { ScreenFeature() }
             .ifLet(\.$attaching, action: \.attaching) { AttachFeature() }
             .keepsLeftScreens { $0.screen.map { [$0] } ?? [] }
+    }
+}
+
+extension ChatFeature.Action {
+    @CasePathable
+    public enum Delegate: Sendable, Equatable {
+        case started(String)
+        case open(String)
+        case persona(String)
+        case start(String)
+        case round(String)
+        case topic(String)
     }
 }
 

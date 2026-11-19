@@ -635,7 +635,7 @@ impl Runner {
         let ran = match &r.place {
             Place::Chat { thread } => self
                 .hub
-                .queue_as(thread, (text, key), &[], mark)
+                .queue_as(thread, (text, key), &[], (mark, None))
                 .map(|_| thread.clone()),
             Place::NewThread { who } => {
                 (self.start)(&self.hub, who).and_then(|(agent, name, folder, recipe)| {

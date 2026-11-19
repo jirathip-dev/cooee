@@ -154,6 +154,50 @@ extension ItemsTests {
     }
 }
 
+internal struct CallItemsTests {
+    private static func voice(_ id: Int, _ time: Int64, _ text: String) -> APIItem {
+        var item = APIItem(id: id, time: time, kind: "you", text: text)
+        item.via = "voice"
+        return item
+    }
+
+    private let items = [
+        APIItem(id: 1, time: 0, kind: "you", text: "Find Birch."),
+        voice(2, 1_000, "What did the 10-Q say?"),
+        APIItem(id: 3, time: 2_000, kind: "tool", title: "fetch sec.gov", status: "completed"),
+        APIItem(id: 4, time: 3_000, kind: "agent", text: "Birch is 14%."),
+        voice(5, 4_000, "Why?"),
+        APIItem(id: 6, time: 5_000, kind: "tool", title: "read notes", status: "completed"),
+        APIItem(id: 7, time: 253_000, kind: "agent", text: "Deferred."),
+        APIItem(id: 8, time: 254_000, kind: "you", text: "Write it up."),
+    ]
+
+    private let call = Item.call(
+        Call(
+            id: 2, seconds: 252,
+            lines: [
+                Call.Line(you: true, text: "What did the 10-Q say?"), Call.Line(you: false, text: "Birch is 14%."),
+                Call.Line(you: true, text: "Why?"), Call.Line(you: false, text: "Deferred."),
+            ], tools: 2))
+
+    @Test internal func voiceTurnsGroupIntoOneCallBlockUntilATypedMessage() {
+        let rows = [ToolRow("fetch sec.gov", "done"), ToolRow("read notes", "done")]
+        #expect(
+            ChatItems.build(items)
+                == [
+                    .you(id: 1, text: "Find Birch."), call, .tools(id: 3, rows: rows),
+                    .you(id: 8, text: "Write it up."),
+                ])
+        #expect(
+            ChatItems.build(items, style: .chat)
+                == [
+                    .you(id: 1, text: "Find Birch."), call, .trace(id: 3, steps: rows, seconds: 3),
+                    .you(id: 8, text: "Write it up."),
+                ])
+        #expect(call.plainText == "What did the 10-Q say?\nBirch is 14%.\nWhy?\nDeferred.")
+    }
+}
+
 extension ItemsTests {
     @Test internal func aHandoffsLinkLinesAreChipsThatOpenTheOtherThreadAndALinkWithoutOneIsDropped() throws {
         let json = """

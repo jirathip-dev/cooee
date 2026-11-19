@@ -216,3 +216,12 @@ extension ClientTests {
         #expect(server.requests("/threads").last?.url?.query == "room=t1")
     }
 }
+
+internal struct VoiceSendTests {
+    @Test internal func aCallsUtteranceIsSentViaVoice() async throws {
+        let server = CannedServer(["/threads/a1b2/queue": [Answer(headers: json, chunks: ["null"])]])
+        try await server.client().send("a1b2", text: "Why the drop?", queue: true, voice: true, randomID: "r1")
+        let sent = try server.decoded("/threads/a1b2/queue", as: [String: String].self)
+        #expect(sent == ["text": "Why the drop?", "random_id": "r1", "via": "voice"])
+    }
+}

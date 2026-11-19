@@ -40,6 +40,7 @@ internal struct ChatScreen: View {
 
     private static func extras(_ store: StoreOf<ChatFeature>, _ chat: ChatActions) -> ChatActions {
         var actions = chat
+        actions.voice = voice(store)
         actions.workflow = store.workflow.map { Workflow.issues($0).count(where: \.needsYou) }
         actions.showWorkflow = { store.send(.workflow(.show(true))) }
         actions.workflowOpen = store.workflowOpen
@@ -102,7 +103,7 @@ internal struct ChatScreen: View {
         .task { await store.send(.pick(.load)).finish() }
         .task { await store.send(.machine(.load)).finish() }
         .task { await store.send(.topics(.load)).finish() }
-        .modifier(TopicSheets(store: store))
+        .modifier(TopicSheets(store: store)).modifier(CallCover(store: store))
         .modifier(BrowserPresenting(store: store, wide: !back && store.browser != nil))
         .sheet(item: $store.scope(state: \.screen, action: \.screen)) {
             PluginScreenSheet(store: $0).presentationDetents([.medium, .fraction(0.75), .large])
