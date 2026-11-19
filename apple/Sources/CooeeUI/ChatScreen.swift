@@ -35,12 +35,12 @@ internal struct ChatScreen: View {
         actions.new = store.persona.api.id.isEmpty || store.bar != nil ? nil : { store.send(.new) }
         actions.open = { store.send(.plugins(.open(places[$0]))) }
         actions.more = { store.send(.panel(.show(!store.panel))) }
-        actions.voice = voice(store)
         return extras(store, actions)
     }
 
     private static func extras(_ store: StoreOf<ChatFeature>, _ chat: ChatActions) -> ChatActions {
         var actions = chat
+        actions.voice = voice(store)
         actions.workflow = store.workflow.map { Workflow.issues($0).count(where: \.needsYou) }
         actions.showWorkflow = { store.send(.workflow(.show(true))) }
         actions.workflowOpen = store.workflowOpen

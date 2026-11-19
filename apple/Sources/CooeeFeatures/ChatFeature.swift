@@ -137,7 +137,6 @@ public struct ChatFeature: Sendable {
     @Dependency(\.markdown) internal var markdown
     @Dependency(\.drafts) internal var drafts
     @Dependency(\.kept) internal var kept
-    @Dependency(\.voice) internal var voice
 
     public init() {}
 

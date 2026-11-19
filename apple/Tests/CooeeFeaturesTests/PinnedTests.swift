@@ -46,6 +46,7 @@ internal struct PinnedTests {
             }
             $0.voice.calls = { AsyncStream { $0.finish() } }
             $0.push.opened = { AsyncStream { $0.finish() } }
+            $0.push.said = { AsyncStream { $0.finish() } }
         }
     }
 

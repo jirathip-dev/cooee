@@ -17,7 +17,7 @@ extension ChatFeature {
     private enum Calls: Hashable { case hearing, speaking }
 
     internal func call(_ state: inout State, _ action: CallAction) -> Effect<Action> {
-        let voice = voice
+        @Dependency(\.voice) var voice
         switch action {
         case .start where state.call != nil:
             state.call?.shown = true
@@ -48,7 +48,8 @@ extension ChatFeature {
             return state.call?.muted == true ? .cancel(id: Calls.hearing) : hear()
         case .speaker:
             state.call?.speaker.toggle()
-            return .run { [voice, loud = state.call?.speaker == true] _ in await voice.speaker(loud) }
+            @Dependency(\.voice) var voice
+            return .run { [loud = state.call?.speaker == true] _ in await voice.speaker(loud) }
         case .shown(let shown):
             state.call?.shown = shown
         default:
@@ -72,7 +73,7 @@ extension ChatFeature {
         let text = String(Markdown.inline(item.text ?? "").characters)
         state.call?.spoken = item.id
         state.call?.speaking = text
-        let voice = voice
+        @Dependency(\.voice) var voice
         return .run { send in
             await voice.speak(text)
             await send(.call(.spoken))
@@ -81,7 +82,7 @@ extension ChatFeature {
     }
 
     private func hear() -> Effect<Action> {
-        let voice = voice
+        @Dependency(\.voice) var voice
         return .run { send in
             for try await line in voice.hear() { await send(.call(.said(line))) }
         } catch: { error, send in

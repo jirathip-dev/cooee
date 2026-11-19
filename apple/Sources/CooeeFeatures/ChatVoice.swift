@@ -41,7 +41,7 @@ extension ChatFeature {
     private enum Listening: Hashable { case dictation }
 
     internal func voice(_ state: inout State, _ action: Voice) -> Effect<Action> {
-        let voice = voice
+        @Dependency(\.voice) var voice
         switch action {
         case .mic where state.dictation?.listening == true:
             settle(&state)
@@ -85,7 +85,7 @@ extension ChatFeature {
     }
 
     private func note(_ down: Bool) -> Effect<Action> {
-        let voice = voice
+        @Dependency(\.voice) var voice
         return .run { send in
             if down { try await voice.record() } else { await send(.voice(.noted(try await voice.recorded()))) }
         } catch: { error, send in
