@@ -1,0 +1,10 @@
+Decided: an optional `min_cooee` manifest field and cooee's `MIN_PLUGIN` constant, checked by `Manifest::fits` at plan (add, update), rollback and each supervisor start
+Because: "cooee and each plugin declare the oldest version of the other they accept (plugin manifest field, cooee's own constant)"
+Because: q720
+Decided: a start that doesn't fit turns the plugin off with the line as its note and one alert, so its tab goes (the hub shows enabled plugins only)
+Because: "a mismatch keeps the plugin off with one plain line naming the version needed, never a broken tab"
+Decided: `version` and `min_cooee` must be numbers and dots (a leading v allowed), checked at parse; test fixtures `f1` and `a1` became `v1`
+Rejected: a required `min_cooee` — drover's pinned manifest (another repo) has none and would stop loading
+Rejected: per-plugin minimums in cooee — the issue names one constant; every known plugin is 0.1.0
+Check: drover's first-party manifest lives in jirathip-dev/drover, so only the in-repo example plugins declare `min_cooee` here
+Owner: plugins and cooee now refuse each other when either is too old, and say which version is needed
