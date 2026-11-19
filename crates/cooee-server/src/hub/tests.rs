@@ -381,6 +381,7 @@ fn a_busy_thread_does_not_hold_up_another_threads_event() {
         seed(&dir, "busy", "");
         seed(&dir, "quiet", "");
         let hub = hub(&dir);
+        hub.agents().ok();
         let at = cooee_core::clock::instant();
         for n in 0..1000 {
             let status = ["pending", "in_progress", "completed"][usize::try_from(n % 3).unwrap()];
