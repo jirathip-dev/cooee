@@ -1,0 +1,9 @@
+Decided: a restart sets the chat's last applied shed event to 0, so the new shed's events, which number from 1 again, are applied
+Because: crates/cooee-server/src/hub/restart.rs:74
+Decided: after a cooee restart the chat's applied seq is the newest seq since its last "ended" line, not across old sheds
+Because: crates/cooee-core/src/chat/log.rs:42
+Decided: the fake shed's vanish now also restarts its event numbering, as a real shed restart does
+Because: crates/cooee/tests/support/shed.rs:292
+Rejected: a shed epoch in hello — shed has none; the ended line already marks where an old shed's numbering stops
+Check: the three gone tests hang at 2faf8d126 (tests only) and pass at the head; the restart test also answers after a cooee restart
+Owner: After a shed restart, the restarted agent's replies now show up in the chat again.
