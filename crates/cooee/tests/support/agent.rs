@@ -48,6 +48,10 @@ impl FakeShed {
                 prompt: prompt.clone(),
             };
             self.emit(name, turn);
+            if prompt.contains("long tool run") {
+                self.long_tool_run(name);
+                continue;
+            }
             let Some((events, stop)) = self.script(name, &prompt, rx) else {
                 continue;
             };
@@ -275,6 +279,20 @@ impl FakeShed {
         sleep.kill().unwrap();
         sleep.wait().unwrap();
         (vec![reply("", "cancelled")], "cancelled")
+    }
+
+    fn long_tool_run(&self, name: &str) {
+        self.report(name, "working", None);
+        let call = "cargo test --workspace";
+        self.emit(name, tool("t1", call, "pending"));
+        self.emit(name, tool("t1", call, "in_progress"));
+        for line in ["running 3 tests\n", "test a ... ok\n", "test b ... ok\n"] {
+            self.report(name, "working", Some(call));
+            self.emit(name, text(line));
+        }
+        self.emit(name, tool("t1", call, "completed"));
+        self.emit(name, reply("Tests pass.", "end_turn"));
+        self.report(name, "idle", None);
     }
 
     fn approval(&self, name: &str, rx: &Receiver<Input>) -> (Vec<EventKind>, &'static str) {

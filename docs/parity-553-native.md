@@ -157,7 +157,7 @@ Server tests are in `crates/cooee/tests/reliability.rs` unless named otherwise. 
 | R6 | done | `crates/cooee-server/src/hub.rs` `r6_requests_over_a_long_log_are_within_budget`; `cooee-core` `chat.rs` `r6_…` | native 1,000-message chat | #337 | A 1,000-message thread opens without a stall |
 | R7 | done | `r7_page_loads_run_no_subprocess` | — | — | — |
 | R8 | done | `crates/cooee-core/tests/group.rs` | — | — | — |
-| R9 | partial | `chat_first.rs` (sends reach the new terminal) | no ask-after-replace-then-answer test | #386 | — |
+| R9 | done | `r9_an_ask_after_the_terminal_is_replaced_is_answered_in_the_new_session`; `chat_first.rs` (sends reach the new terminal) | — | — | — |
 | R10 | done | `r10_an_ask_made_during_the_start_is_listed_and_answerable` | — | — | — |
 | R11 | done | `r11_a_slow_start_is_adopted_once` | — | — | — |
 | R12 | n/a-shed | — | — | — | — |
@@ -175,7 +175,7 @@ Server tests are in `crates/cooee/tests/reliability.rs` unless named otherwise. 
 | R24 | n/a-shed | — | — | — | — |
 | R25 | partial | `apple/Tests/CooeeUITests/SnapshotTests.swift` (static frames) | no sheet-close flash test | #385 | Open and close a plugin sheet: no flash |
 | R26 | n/a-shed | — | — | — | — |
-| R27 | partial | `hub.rs` reported state from shed | no scripted ACP working → idle test | #386 | A long tool run: the pill never flickers |
+| R27 | done | `r27_a_long_tool_run_is_working_until_its_turn_ends_and_reads_no_screen` | — | — | A long tool run: the pill never flickers |
 
 ## Totals and filed issues
 
