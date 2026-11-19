@@ -1,0 +1,7 @@
+Decided: the busy-thread timing test waits for the ticker's first agent-list fetch before it starts the clock
+Because: crates/cooee-server/src/hub.rs:588
+Decided: the fetch runs without any lock that apply takes, so the test still measures one thread's events holding up another's
+Because: crates/cooee-server/src/hub/tests.rs:384
+Rejected: raising the 50 ms limit — that would hide a real head-of-line regression
+Check: CI's ubuntu jobs pass the busy-thread test with the full parallel suite
+Owner: A timing test was thrown off by the new background agent-list fetch at start; it now waits for that fetch first.
