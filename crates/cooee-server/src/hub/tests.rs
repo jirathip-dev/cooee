@@ -396,3 +396,28 @@ fn a_busy_thread_does_not_hold_up_another_threads_event() {
     let took = (0..3).map(round).min().unwrap();
     assert!(took < Duration::from_millis(50), "{took:?}");
 }
+
+#[test]
+fn the_glance_shows_a_working_thread_as_running_then_its_ask() {
+    let dir = scratch("glance");
+    seed(&dir, "run", "");
+    let hub = hub(&dir);
+    let report = |seq, state: &str| {
+        let r = Reported {
+            state: state.to_owned(),
+            ..Reported::default()
+        };
+        hub.apply(event("run", seq, EventKind::State(Box::new(r))));
+    };
+    report(1, "working");
+    let first = hub.overview();
+    let running: Vec<&str> = first.running.iter().map(|r| r.thread.as_str()).collect();
+    assert_eq!((running, first.asks.len()), (vec!["run"], 0));
+    assert!(first.running[0].since <= first.at && first.at <= now());
+    report(2, "blocked");
+    let asked = hub.overview();
+    assert_eq!(
+        (asked.running.len(), asked.asks[0].thread.as_str()),
+        (0, "run")
+    );
+}
