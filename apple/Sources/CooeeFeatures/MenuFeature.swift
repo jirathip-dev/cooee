@@ -48,6 +48,7 @@ public struct MenuFeature: Sendable {
         case theme(String)
         case icon(AppIcon?)
         case motion(Bool)
+        case night(Bool)
         case sprite(String, String?)
         case pinRoom(String)
         case push(Bool)
@@ -81,6 +82,8 @@ public struct MenuFeature: Sendable {
                 return look(&state) { $0.icon = icon }
             case .motion(let motion):
                 return look(&state) { $0.motion = motion }
+            case .night(let night):
+                return look(&state) { $0.night = night }
             case .sprite(let seed, let coat):
                 return look(&state) { [theme = state.settings.theme] in $0.sprite(seed, coat, in: theme) }
             case .push(let enabled):

@@ -60,6 +60,7 @@ public struct AppRoot: View {
             if let room = store.scope(state: \.newRoom, action: \.newRoom) { NewRoomScreen(store: room) }
         }
         .environment(\.look, look)
+        .environment(\.pickNight) { store.send(.menu(.night($0))) }
         .preferredColorScheme(preferred)
     }
 
@@ -69,6 +70,7 @@ public struct AppRoot: View {
         var look = Look(
             palette: menu.palette(device: scheme == .dark), style: menu.style(for: theme) ?? .bundled, art: art)
         look.moving = menu.settings.moves(reduceMotion: reduceMotion)
+        look.night = menu.settings.night
         look.sprites = menu.settings.sprites(in: theme)
         return look
     }
