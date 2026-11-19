@@ -56,11 +56,13 @@ public enum Item: Identifiable, Sendable, Equatable {
     case divider(id: Int, text: String)
     case asked(id: Int, Ask)
     case screen(id: Int, ScreenItem)
+    case link(id: Int, ThreadLink)
 
     public var id: Int {
         switch self {
         case .you(let id, _, _), .agent(let id, _), .tools(let id, _), .trace(let id, _, _), .card(let id, _, _),
-            .note(let id, _), .said(let id, _, _, _), .divider(let id, _), .asked(let id, _), .screen(let id, _):
+            .note(let id, _), .said(let id, _, _, _), .divider(let id, _), .asked(let id, _), .screen(let id, _),
+            .link(let id, _):
             id
         case .outgoing(let message):
             message.id
@@ -73,7 +75,7 @@ public enum Item: Identifiable, Sendable, Equatable {
         case .you(_, let text, _): text
         case .outgoing(let message): message.text
         case .agent(_, let blocks), .said(_, _, _, let blocks): blocks.map(\.plainText).joined(separator: "\n\n")
-        case .tools, .trace, .card, .note, .divider, .asked, .screen: nil
+        case .tools, .trace, .card, .note, .divider, .asked, .screen, .link: nil
         }
     }
 }
@@ -116,6 +118,8 @@ public enum ChatItems {
             fold(item, into: &out)
         case "approval", "ask":
             if let card = card(item) { out.append(card) }
+        case "link":
+            if let link = ThreadLink(item) { out.append(.link(id: item.id, link)) }
         default:
             other(item, into: &out)
         }

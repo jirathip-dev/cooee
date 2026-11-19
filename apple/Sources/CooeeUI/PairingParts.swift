@@ -157,6 +157,6 @@ internal struct QRCode: View {
         filter.message = Data(text.utf8)
         filter.correctionLevel = "M"
         guard let output = filter.outputImage else { return nil }
-        return CIContext().createCGImage(output, from: output.extent)
+        return Pictures.context.createCGImage(output, from: output.extent)
     }
 }
