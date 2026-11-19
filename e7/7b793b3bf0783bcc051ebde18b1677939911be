@@ -1,0 +1,13 @@
+Decided: a plugin screen flags its load slow 300 ms after it starts on the clock; the sheet shows the existing LoadingBar only then, never a spinner
+Because: "slow fixture → strip after 300 ms (test clock)"
+Decided: the strip is an overlay that takes no taps, so rows already shown stay tappable during a refresh
+Because: apple/Sources/CooeeUI/PluginSheets.swift:67
+Decided: while typing on iPhone the composer's bottom margin drops from 26 to 8 pt, so it sits on the keyboard's suggestion bar
+Because: "it sits flush on the keyboard and the last message stays visible"
+Decided: the keyboard test drops its screen-width check; the topic-chat overflow it found is #654
+Because: q2314
+Decided: opened() and who() move to ScreenOpening.swift so ScreenFeature.swift stays under SwiftLint's 250 lines
+Because: apple/.swiftlint.yml:32
+Rejected: a view-level Task.sleep for the 300 ms — banned in Swift here and untestable on a test clock
+Check: ScreenFeatureTests and ChatFeatureTests pass; LiveReliabilityUITests passes in apple/e2e/run.sh, dark and light
+Owner: Slow plugin screens show a thin loading strip after a moment, the composer sits right on the keyboard, and new tests guard both plus sheet closing and repeated messages.
