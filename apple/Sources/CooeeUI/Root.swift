@@ -6,6 +6,7 @@ import SwiftUI
 public struct AppRoot: View {
     @Environment(\.colorScheme) private var scheme
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.scenePhase) private var phase
     #if os(iOS)
         @Environment(\.horizontalSizeClass) private var size
     #else
@@ -44,6 +45,7 @@ public struct AppRoot: View {
                 Text(Markdown.inline(notice)).ui(13, .regular, look).foregroundStyle(look.palette.mute).padding(8)
             }
         }
+        .onChange(of: phase) { _, phase in if phase != .inactive { store.send(.scene(active: phase == .active)) } }
         .reporting(store)
         .task { await store.send(.launch).finish() }
         .task { await store.send(.retire).finish() }

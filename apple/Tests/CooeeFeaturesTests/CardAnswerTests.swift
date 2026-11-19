@@ -19,6 +19,7 @@ internal struct CardAnswerTests {
             ChatFeature()
         } withDependencies: {
             $0.date.now = epoch
+            $0.continuousClock = ImmediateClock()
             $0.threads.answer = { _, thread, item, option, value in
                 if failing { throw APIError(status: 409, text: "Stale.") }
                 calls.record("answer \(thread) \(item) \(option) \(value ?? "-")")
@@ -56,6 +57,7 @@ internal struct CardAnswerTests {
             $0.answering = []
             $0.error = confirmed ? nil : "Not sent: it wasn't confirmed it's you."
         }
+        if !confirmed { await store.receive(\.link.toasted) { $0.error = nil } }
         await store.send(.cards(.answer(4, run))) { $0.answering = [4] }
         await store.receive(\.cards.answered) { $0.answering = [] }
         let sent = confirmed ? ["answer a1 6 save k3y"] : []
@@ -69,6 +71,7 @@ internal struct CardAnswerTests {
             $0.answering = []
             $0.error = "Stale."
         }
+        await store.receive(\.link.toasted) { $0.error = nil }
         #expect(calls.all.isEmpty)
     }
 }
