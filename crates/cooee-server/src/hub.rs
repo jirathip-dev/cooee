@@ -2,7 +2,11 @@ use std::{
     collections::{BTreeMap, HashMap, VecDeque},
     fs, io,
     path::{Path, PathBuf},
-    sync::{Arc, Condvar, Mutex, MutexGuard, OnceLock, PoisonError, atomic::AtomicBool, mpsc},
+    sync::{
+        Arc, Condvar, Mutex, MutexGuard, OnceLock, PoisonError,
+        atomic::{AtomicBool, AtomicU64, Ordering},
+        mpsc,
+    },
     thread,
     time::{Duration, Instant, UNIX_EPOCH},
 };
@@ -55,6 +59,8 @@ pub use rooms::Starter;
 pub use screen::{Input, Screen};
 pub use setup::Update;
 
+static REV: AtomicU64 = AtomicU64::new(0);
+
 const REPLAY: u64 = 5 * 60 * 1000;
 
 const LAG: usize = 256;
@@ -99,8 +105,8 @@ pub enum HubError {
 /// One page event: its number in the thread, its SSE event name and its JSON.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Out {
-    /// Counts up from 1 per thread since this server started.
-    pub seq: u64,
+    /// The hub-wide rev: counts up from 1 across every thread since this server started.
+    pub rev: u64,
     /// `item`, `text` or `state`.
     pub event: &'static str,
     /// The JSON data.
@@ -111,7 +117,6 @@ struct Live {
     meta: Thread,
     chat: Chat,
     applied: u64,
-    seq: u64,
     ring: VecDeque<(u64, Out)>,
     trimmed: u64,
     unsent: String,
@@ -149,7 +154,7 @@ pub struct Slice {
     pub skipped_after: usize,
     /// The turn in progress.
     pub turn: Turn,
-    /// Resume the event stream after this (`<boot>.<seq>`).
+    /// Resume the event stream after this (`<boot>.<rev>`).
     pub cursor: String,
     /// The first message while its thread connects, not yet an item.
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -334,7 +339,6 @@ impl Live {
             was: chat.turn.state.clone(),
             meta,
             chat,
-            seq: 0,
             ring: VecDeque::new(),
             trimmed: 0,
             unsent: String::new(),
@@ -356,7 +360,7 @@ impl Live {
 
     fn trim(&mut self, now: u64) {
         while let Some((_, out)) = self.ring.pop_front_if(|(at, _)| *at + REPLAY < now) {
-            self.trimmed = out.seq;
+            self.trimmed = out.rev;
         }
     }
 
@@ -413,9 +417,8 @@ impl Live {
         if event != "text" && !self.unsent.is_empty() {
             self.flush(now());
         }
-        self.seq += 1;
         let out = Out {
-            seq: self.seq,
+            rev: REV.fetch_add(1, Ordering::Relaxed) + 1,
             event,
             data,
         };
