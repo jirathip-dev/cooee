@@ -1,0 +1,9 @@
+Decided: merged origin/staging (#647 native chat offline copy, toasts, pull to refresh); no conflict, the restart feature is unchanged
+Because: crates/cooee-server/src/hub/restart.rs:74
+Decided: the merge pushed ChatFeature.outbox over 25 lines, so its retry case is its own function; the restart test expects #647's toast
+Because: apple/Sources/CooeeFeatures/ChatOutbox.swift:47
+Decided: no workflow change for the apple FAIL; xcodebuild found no "iPhone 17" simulator on the runner, a destination staging's workflow sets
+Because: .github/workflows/apple.yml:110
+Rejected: changing the workflow's simulator destination in this PR — every PR uses it; the runner's simulator runtime is a host fix for the owner
+Check: the apple job reruns on this push; if it again lists no iOS Simulator device, the runner Mac needs an iPhone 17 simulator (or its runtime) installed
+Owner: The branch now includes the latest staging; the CI Mac still has no iPhone 17 simulator, so the apple check may fail until one is installed there.
