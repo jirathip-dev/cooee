@@ -1,0 +1,13 @@
+Decided: only the owner's spoken message carries via voice; the app groups a run of voice turns, their replies and tools into one call block until a typed message
+Because: apple/Sources/CooeeCore/Call.swift:34
+Decided: the spoken-reply hint goes above a voice message's text; a persona's agent.toml `spoken` replaces it and an empty one drops it
+Because: "A spoken-reply hint (short, no markdown) that the persona's instructions can override"
+Decided: dictation and calls use SpeechAnalyzer's DictationTranscriber in the first preferred language it supports; replies use AVSpeechSynthesizer, a Thai voice for Thai text
+Because: apple/Sources/CooeeApp/Live/Ear.swift:95
+Decided: call-thread dark and light PNGs re-recorded: the R2 drawing predates #608's truncated header chip, and both again once the call lines took the palette's cream
+Because: q2377
+Rejected: a new package dependency — none needed; AppIntents, Speech and AVFoundation are system frameworks added to the layer table
+Decided: round 4: the red apple check was staging PicturesTests (NSCache image cache, #670) on a loaded runner; after merging staging, Chief passes no via to queue
+Because: crates/cooee-server/src/hub/chief.rs:65
+Check: CI green at the head; apple was green at 4cc74c52d and Swift is unchanged since
+Owner: Tap the mic to dictate into the message box (it never sends by itself), hold it for a voice note, and call a persona from a thread's phone button or Siri; the call stays in the thread as one block.
