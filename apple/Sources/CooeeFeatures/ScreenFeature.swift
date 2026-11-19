@@ -46,9 +46,10 @@ public struct ScreenFeature: Sendable {
     public enum Action: Sendable {
         case task
         case retry
+        case background
         case loaded(JSONValue)
         case event(JSONValue)
-        case failed(String)
+        case failed(String, KeptScreen?)
         case act(BlockAction)
         case acted(JSONValue?, String?)
         case navigate(String?)
@@ -65,28 +66,33 @@ public struct ScreenFeature: Sendable {
         }
     }
 
-    private enum CancelID { case follow, beside }
+    private enum CancelID { case follow, beside, keep, background }
 
     @Dependency(\.plugins) private var plugins
     @Dependency(\.screenCache) private var cache
     @Dependency(\.continuousClock) private var clock
     @Dependency(\.date.now) private var now
+    @Dependency(\.perf) private var perf
 
     public init() {}
 
     public var body: some ReducerOf<Self> {
         Reduce { state, action in
             switch action {
-            case .task, .retry:
+            case .task:
+                return .merge(follow(state), backgrounds())
+            case .retry:
                 return follow(state)
+            case .background:
+                return flush(state)
             case .loaded(let screen):
                 state.screen = LiveScreen(screen)
-                keep(&state)
+                return keep(&state)
             case .event(let event):
                 state.screen?.apply(event: event)
-                keep(&state)
-            case .failed(let who):
-                unreachable(&state, who)
+                return keep(&state)
+            case .failed(let who, let kept):
+                unreachable(&state, who, kept)
             case .act(let action):
                 return act(&state, action)
             case .acted(let answer, let error):
@@ -109,7 +115,8 @@ extension ScreenFeature {
     }
 
     private func follow(_ state: State) -> Effect<Action> {
-        let (plugins, clock, server, source, path) = (plugins, clock, state.server, state.source, state.current)
+        let (plugins, cache, clock, server, source) = (plugins, cache, clock, state.server, state.source)
+        let (path, key) = (state.current, state.key)
         return .run { send in
             while true {
                 do {
@@ -118,7 +125,7 @@ extension ScreenFeature {
                     guard let stream = screen.string("stream") else { return }
                     for try await event in plugins.events(server, source, stream) { await send(.event(event)) }
                 } catch {
-                    await send(.failed(Self.who(error, source: source)))
+                    await send(.failed(Self.who(error, source: source), cache.load(key)))
                 }
                 try await clock.sleep(for: .seconds(5))
             }
@@ -140,7 +147,7 @@ extension ScreenFeature {
             return .run { send in
                 await send(.besideLoaded(try await plugins.screen(server, source, path)))
             } catch: { error, send in
-                await send(.failed(Self.who(error, source: source)))
+                await send(.failed(Self.who(error, source: source), nil))
             }
             .cancellable(id: CancelID.beside, cancelInFlight: true)
         case .besideLoaded(let screen):
@@ -151,16 +158,52 @@ extension ScreenFeature {
         return .none
     }
 
-    private func keep(_ state: inout State) {
+    private func keep(_ state: inout State) -> Effect<Action> {
         state.asOf = now
         state.unreachable = nil
-        guard let screen = state.screen else { return }
-        cache.save(state.key, KeptScreen(screen: screen.root, kept: now))
+        let (clock, save) = (clock, save(state))
+        return .run { _ in
+            try await clock.sleep(for: .seconds(2))
+            save()
+        }
+        .cancellable(id: CancelID.keep, cancelInFlight: true)
     }
 
-    private func unreachable(_ state: inout State, _ who: String) {
+    private func backgrounds() -> Effect<Action> {
+        let cache = cache
+        return .run { send in
+            for await _ in cache.backgrounds() { await send(.background) }
+        }
+        .cancellable(id: CancelID.background, cancelInFlight: true)
+    }
+
+    private func flush(_ state: State) -> Effect<Action> {
+        .merge(.cancel(id: CancelID.keep), Self.flush([state]))
+    }
+
+    private func save(_ state: State) -> @Sendable () -> Void {
+        let (cache, kept) = (cache, Self.kept(state))
+        return { kept.map { cache.save($0.key, $0.screen) } }
+    }
+
+    private static func kept(_ state: State) -> (key: String, screen: KeptScreen)? {
+        guard let screen = state.screen?.root, let asOf = state.asOf else { return nil }
+        return (state.key, KeptScreen(screen: screen, kept: asOf))
+    }
+
+    /// Saves `screens` at once, off the main actor, so leaving them loses no pending save.
+    public static func flush<Action>(_ screens: [State]) -> Effect<Action> {
+        @Dependency(\.screenCache) var cache
+        let kept = screens.compactMap(kept)
+        guard !kept.isEmpty else { return .none }
+        return .run { [cache] _ in
+            for (key, screen) in kept { cache.save(key, screen) }
+        }
+    }
+
+    private func unreachable(_ state: inout State, _ who: String, _ kept: KeptScreen?) {
         state.unreachable = who
-        guard state.screen == nil, let kept = cache.load(state.key) else { return }
+        guard state.screen == nil, let kept else { return }
         state.screen = LiveScreen(kept.screen)
         state.asOf = kept.kept
     }
@@ -168,10 +211,13 @@ extension ScreenFeature {
     private func act(_ state: inout State, _ action: BlockAction) -> Effect<Action> {
         guard !state.offline, !state.acting else { return .none }
         state.acting = true
-        let (plugins, server, source) = (plugins, state.server, state.source)
+        let (plugins, server, source, clock, perf) = (plugins, state.server, state.source, clock, perf)
         let screen = state.screen?.root.string("id") ?? ""
         return .run { send in
-            await send(.acted(try await plugins.act(server, source, screen, action), nil))
+            let took = try await clock.measure {
+                await send(.acted(try await plugins.act(server, source, screen, action), nil))
+            }
+            perf.record(server, .tap, took)
         } catch: { error, send in
             await send(.acted(nil, error.localizedDescription))
         }
@@ -182,19 +228,20 @@ extension ScreenFeature {
         state.said = error ?? answer?.string("toast")
         guard let answer else { return .none }
         state.screen?.apply(event: answer)
-        keep(&state)
-        guard let open = answer.string("open") else { return .none }
+        let kept = keep(&state)
+        guard let open = answer.string("open") else { return kept }
         return navigate(&state, to: open)
     }
 
     private func navigate(_ state: inout State, to path: String?) -> Effect<Action> {
         let parts = path?.split(separator: "#", maxSplits: 1).map(String.init) ?? []
+        let left = flush(state)
         if let first = parts.first { state.path.append(first) } else if state.path.popLast() == nil { return .none }
         state.focus = parts.dropFirst().first
         state.beside = nil
         state.besideScreen = nil
         state.screen = nil
         state.unreachable = nil
-        return follow(state)
+        return .merge(left, follow(state))
     }
 }

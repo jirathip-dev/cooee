@@ -23,6 +23,7 @@ public struct MenuFeature: Sendable {
         public var busy = false
         public var error: String?
         public var notice: String?
+        public var timings = Timings()
 
         public init(server: Server?, settings: Settings) {
             self.server = server
@@ -58,6 +59,7 @@ public struct MenuFeature: Sendable {
     @Dependency(\.threads) private var threads
     @Dependency(\.appIcon) private var appIcon
     @Dependency(\.plugins) private var plugins
+    @Dependency(\.perf) private var perf
 
     public init() {}
 
@@ -89,6 +91,7 @@ public struct MenuFeature: Sendable {
         }
         .ifLet(\.$page, action: \.page) { ScreenFeature() }
         .ifLet(\.editor, action: \.editor) { ThemeEditorFeature() }
+        .keepsLeftScreens { $0.page.map { [$0] } ?? [] }
     }
 
     private func navigate(_ state: inout State, _ action: Action) -> Effect<Action> {
@@ -97,6 +100,7 @@ public struct MenuFeature: Sendable {
             state.open = open
             state.path = []
             state.page = nil
+            state.timings = perf.timings()
             guard open, let server = state.server else { return .none }
             let plugins = plugins
             return .concatenate(

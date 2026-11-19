@@ -111,4 +111,14 @@ internal struct ScreenTests {
         #expect(accounts.rowOrder(moving: "B", onto: "A") == ["B", "A", "C"])
         #expect(accounts.rowOrder(moving: "Z", onto: "A") == ["A", "C", "B"])
     }
+
+    @Test internal func aBlockIsKeyedByItsIdAndOnlyOneWithoutOrARepeatByPosition() {
+        let block = { (id: String?) in JSONValue.object(id.map { ["id": .string($0)] } ?? [:]) }
+        let before = [block("a"), block(nil), block("b")].keyed().map(\.id)
+        let after = [block("new"), block("a"), block(nil), block("b"), block("a")].keyed().map(\.id)
+        #expect(before == ["=a", "#1", "=b"])
+        #expect(after == ["=new", "=a", "#2", "=b", "#4"])
+        let fields = JSONValue.object(["name": .string("token")])
+        #expect([fields].keyed(by: "name").map(\.id) == ["=token"])
+    }
 }

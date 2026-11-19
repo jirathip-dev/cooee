@@ -55,9 +55,9 @@ internal struct ListBlock: View {
     internal var body: some View {
         let rows = block.list("rows")
         VStack(spacing: 0) {
-            ForEach(Array(rows.enumerated()), id: \.offset) { index, row in
-                RowView(row: row).modifier(Reordering(list: block, row: row))
-                if index < rows.count - 1 {
+            ForEach(rows.keyed()) { row in
+                RowView(row: row.element).modifier(Reordering(list: block, row: row.element))
+                if row.offset < rows.count - 1 {
                     Rectangle().fill(look.palette.line).frame(height: 0.5).padding(.leading, 12)
                 }
             }

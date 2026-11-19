@@ -32,7 +32,7 @@ pub fn agent(dir: &Path, id: &str, toml: &str, instructions: &str) -> PathBuf {
 }
 
 /// `cooee serve` on a free port with data in `dir/data`, the fake shed in `shed`, the root `dir/root` unless `extra`
-/// sets `roots`, its stderr in `dir/cooee.err` and no providers unless `extra` names some; paired (`cookie` goes with every request).
+/// sets `roots`, its stderr in `dir/cooee.err` and no providers unless `extra` says `providers`; paired (`cookie` goes with every request).
 pub struct Cooee {
     pub child: Child,
     pub addr: String,
@@ -95,7 +95,7 @@ impl Cooee {
         let root = dir.join("root");
         fs::create_dir_all(root.join("project")).unwrap();
         let q = |p: &Path| format!("{:?}", p.to_string_lossy());
-        let providers = if extra.contains("[[providers]]") {
+        let providers = if extra.contains("providers") {
             ""
         } else {
             "providers = []\n"

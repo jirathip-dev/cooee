@@ -100,6 +100,24 @@ public enum JSONValue: Sendable, Hashable, Codable {
     }
 }
 
+/// A list item with its `ForEach` key: its own id when it has one, else its position.
+public struct Keyed: Sendable, Hashable, Identifiable {
+    public let id: String
+    public let offset: Int
+    public let element: JSONValue
+}
+
+extension [JSONValue] {
+    /// Each item keyed by its `key` field (a block's `id`, a field's `name`); one without, or a repeat, by position.
+    public func keyed(by key: String = "id") -> [Keyed] {
+        var seen = Set<String>()
+        return enumerated().map { offset, item in
+            let own = item.string(key).map { "=" + $0 }.flatMap { seen.insert($0).inserted ? $0 : nil }
+            return Keyed(id: own ?? "#\(offset)", offset: offset, element: item)
+        }
+    }
+}
+
 public enum Relative {
     public static func text(_ seconds: TimeInterval) -> String {
         let minutes = Int(max(0, seconds)) / 60

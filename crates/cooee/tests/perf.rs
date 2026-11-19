@@ -194,3 +194,64 @@ fn cooee_perf_turns_a_log_into_the_table() {
         "{text}"
     );
 }
+
+#[test]
+fn the_apps_timings_are_logged_and_a_p95_over_budget_fails_cooee_perf_budget() {
+    let dir = scratch("perf-client");
+    let shed = FakeShed::start(&dir.join("shed"), version());
+    let cooee = Cooee::start(&dir, &shed.dir);
+    for ms in [20, 30, 40] {
+        assert_eq!(
+            cooee.post("/perf", &json!({ "name": "tap", "ms": ms })).0,
+            200
+        );
+    }
+    assert_eq!(
+        cooee
+            .post("/perf", &json!({ "name": "event", "ms": 400 }))
+            .0,
+        200
+    );
+    assert_eq!(
+        cooee.post("/perf", &json!({ "name": "boot", "ms": 1 })).0,
+        400
+    );
+    assert_eq!(
+        cooee
+            .post("/perf", &json!({ "name": "tap", "ms": 700_000 }))
+            .0,
+        400
+    );
+    let log = lines(&dir);
+    let taps: Vec<_> = named(&log, "client", "tap")
+        .iter()
+        .map(|l| l["ms"].clone())
+        .collect();
+    assert_eq!(taps, [json!(20), json!(30), json!(40)], "{log:?}");
+    assert!(named(&log, "client", "boot").is_empty(), "{log:?}");
+
+    let budget = || cooee.command().args(["perf", "--budget"]).output().unwrap();
+    let out = budget();
+    let err = String::from_utf8(out.stderr).unwrap();
+    assert!(!out.status.success(), "{err}");
+    assert!(
+        err.contains("over budget: event p95 400 ms > 150 ms"),
+        "{err}"
+    );
+    assert!(!err.contains("tap p95"), "{err}");
+    let table = String::from_utf8(out.stdout).unwrap();
+    assert!(
+        table.contains("| client | tap | 3 | 30 | 40 | 40 |"),
+        "{table}"
+    );
+
+    let path = dir.join("data/perf.log");
+    let text = fs::read_to_string(&path).unwrap();
+    let kept: String = text
+        .lines()
+        .filter(|l| !l.contains(r#""name":"event""#))
+        .fold(String::new(), |out, l| out + l + "\n");
+    fs::write(&path, kept).unwrap();
+    let out = budget();
+    assert!(out.status.success(), "{out:?}");
+}

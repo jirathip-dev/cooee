@@ -5,7 +5,7 @@
       "blocks": [ { "type": "text", "markdown": "3 lanes on **mini**." } ] } },
   { "name": "section", "note": "a header, blocks, a footer",
     "block": { "type": "section", "header": "machines", "footer": "Seen once a minute.",
-      "blocks": [ { "type": "list", "rows": [ { "type": "row", "title": "mini", "value": "online" } ] } ] } },
+      "blocks": [ { "type": "list", "rows": [ { "type": "row", "id": "mini", "title": "mini", "value": "online" } ] } ] } },
   { "name": "list + row", "note": "title, subtitle, badge, figure, value, accessory, swipe, tap",
     "block": { "type": "list", "id": "lanes", "rows": [
       { "type": "row", "id": "l-722", "figure": { "state": "working", "tool": "run" }, "title": "#722 spawn (shed)",
