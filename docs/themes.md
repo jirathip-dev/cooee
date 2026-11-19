@@ -28,20 +28,20 @@ working pill, the live line, a turn's end, push text), the plain word follows th
 **The theme gate** checks a pack: `theme.json` parses; its word keys are state keys; every scheme it holds or names is
 of the right mode and passes the contrast gate (WCAG AA, below); `sprites.svg` holds every required state; `scene.svg`
 is at most 400 × 320 with every layer; and no file is too big (`sprites.svg` 512 KiB, `scene.svg` and `icon.png` 256 KiB, the
-rest 16 KiB). `cooee theme check <path>...` runs it (CI runs it on the pinned first-party packs and `packs/starter`), and so does every load: `cooee serve`
+rest 16 KiB). `cooee theme check <path>...` runs it (CI runs it on the style packs and `packs/starter`; `cargo test` runs it on the first-party packs), and so does every load: `cooee serve`
 refuses a pack that fails it, and prints why.
 
 ## Where the first-party packs come from
 
 The first-party packs live in one repo that cooee and drover share, https://github.com/jirathip-dev/swag, as
-`packs/<name>/`. cooee pins one commit of it in `packs/swag.toml`, with the sha256 of every file it takes
-(`"farm/sprites.svg" = "…"`). The build fetches those files at that commit into `packs/themes/` (git-ignored) and into
-the binary, so an install with no network still has its themes. A file that doesn't match its sha256 is never installed,
-and `cargo test` fails on it. The theme gate runs on whatever is pinned (`just themes`, in CI), so a bad pack can't ship.
+`packs/<name>/`, with the 12 colour schemes in `schemes/`. swag is a Rust crate that compiles them in; cooee pins one
+commit of it in `Cargo.toml`, beside blocks (#622), so the binary carries them and an install with no network still has
+its themes. swag's own CI gates them with blocks' theme gate; cooee's `cargo test` runs its theme gate on every pinned
+pack, so a bad pack can't ship.
 
-**To bump the pin:** change the art in swag and merge it there. Then, in cooee, set `commit` in `packs/swag.toml` to
-that swag commit and put each changed file's `shasum -a 256` beside it. A new pack, such as bush, is one line per file.
-`cargo test` and `just themes` check the result. Nothing else in this repo changes.
+**To bump the pin:** change the art or a scheme in swag and merge it there. Then, in cooee, set swag's `rev` in
+`Cargo.toml` to that commit and run `cargo update -p swag`. `cargo test` checks the result; a changed scheme also needs
+`apple/Tests/schemes.json`, the Swift tests' copy, which a test keeps equal to what the server serves.
 
 ## Installing and removing themes
 
@@ -80,8 +80,8 @@ Look shows as one amber line.
 ## A scheme: `schemes/<name>.json`
 
 `label`, `color-scheme` (`dark` or `light`) and `tokens`: `--bg --card --edge --line --scrim --fg --mute --l --link
---g --a --r --p --c --fk-l --fk-p --fk-c --fk-g --fk-a`, each `#rrggbb`. Built in: the 12 in `design-system/schemes/`. Your own
-go in `<config dir>/schemes/`. Every scheme must pass herdsman's contrast gate (`gate` in `crates/cooee-server/src/look.rs`, ported from
+--g --a --r --p --c --fk-l --fk-p --fk-c --fk-g --fk-a`, each `#rrggbb`. Built in: swag's 12. Your own
+go in `<config dir>/schemes/`. Every scheme must pass herdsman's contrast gate (blocks' `theme::gate`, ported from
 `docs/design/look/gate.mjs`): text at 4.5:1 and state colours at 3:1 on the background, the cards and the needs-you and
 group tints, and the state colours at least ΔE2000 20 apart. A scheme that fails the gate is refused.
 
