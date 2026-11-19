@@ -1,0 +1,7 @@
+Decided: merge origin/staging (ca94eb9) with no conflicts; it adds ChatDeck.swift beside this branch's chat changes
+Because: apple/Sources/CooeeFeatures/ChatDeck.swift:1
+Decided: no code change for the FAIL; it was CI lessons still pending at 5f9abfa, and lessons then passed there
+Because: apple/Sources/CooeeFeatures/AppFeature.swift:56
+Rejected: chasing the macOS routines test failure — this branch has no crates/ changes and staging ci is green at the same base
+Check: apple-check exit 0 and arch-check exit 0 at 53d33f8; CI at the new head
+Owner: The chat work now sits on the newest staging again; nothing in it changed.
