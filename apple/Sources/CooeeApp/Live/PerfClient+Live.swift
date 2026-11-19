@@ -13,7 +13,7 @@ extension PerfClient: DependencyKey {
             let millis = Timings.millis(took)
             kept.withValue { $0.record(timing, millis: millis) }
             signposts.emitEvent("timing", "\(timing.rawValue, privacy: .public) \(millis) ms")
-            Task { try? await Client(server).perf(timing.rawValue, millis: millis) }
+            Task { try? await client(server).perf(timing.rawValue, millis: millis) }
         },
         timings: { kept.value }
     )
