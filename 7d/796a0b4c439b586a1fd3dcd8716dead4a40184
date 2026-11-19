@@ -1,0 +1,7 @@
+Decided: release profile uses lto = "fat", codegen-units = 1, strip = true
+Because: "try `lto = \"fat\"` and keep whichever `cooee perf` favours at an acceptable build time"
+Rejected: lto = "thin" — 8.5% slower on search by best p50 (343 vs 316 µs), over the 5% limit
+Because: Cargo.toml:65
+Check: PR body tables — fat no row slower by median, worst best-p50 row +1.3%; size 19.9 MB to 12.1 MB; build 67 s to 112 s
+Check: stripped binary ad-hoc signed with release-sign.sh flags verified (codesign -v --strict exit 0) and ran
+Owner: The installed server is about 39% smaller and no slower; release builds take about 45 s longer.
