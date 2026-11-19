@@ -474,7 +474,11 @@ impl Live {
             }
             match change {
                 Change::Item(item) => {
-                    store.append(&self.meta.id, &item)?;
+                    if acknowledged(&item.body) {
+                        store.append(&self.meta.id, &item)?;
+                    } else {
+                        store.queue(&self.meta.id, &item)?;
+                    }
                     self.emit("item", json!(item).to_string());
                 }
                 Change::Text(text) => self.emit("text", json!({ "text": text }).to_string()),
@@ -741,6 +745,14 @@ impl Hub {
 impl From<HubError> for io::Error {
     fn from(e: HubError) -> Self {
         io::Error::other(e.to_string())
+    }
+}
+
+fn acknowledged(body: &Body) -> bool {
+    match body {
+        Body::You { .. } | Body::Agent { .. } => true,
+        Body::Approval { tapped, chosen, .. } => tapped.is_some() || chosen.is_some(),
+        _ => false,
     }
 }
 
