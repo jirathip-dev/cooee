@@ -1,0 +1,10 @@
+Decided: a link item is its own chat item (ThreadLink) drawn as a chip; its tap uses the chat screen's openThread, which already opens a thread
+Because: apple/Sources/CooeeUI/ChatScreen.swift:98
+Decided: the app keeps a config card in answering until the item carries its line, and draws "applying…" in place of its buttons meanwhile
+Because: "the config card shows applying… until its line arrives"
+Decided: the server fences a config card's diff as `diff`; the app colours + lines green and - lines red in that fence only
+Because: crates/cooee-core/src/blocks.rs:62
+Rejected: a server-side "applying…" line from the tapped state — the app would still show the open card until the server's first publish, and the TestStore check asks for it in the app
+Rejected: a .card block with tap.thread for links — a link is no card, and CardTrust would mark it source unknown
+Check: aConfigCardSaysApplyingFromItsTapUntilTheBackendsLineArrives and aHandoffsLinkLinesAreChipsThatOpenTheOtherThreadAndALinkWithoutOneIsDropped pass in apple-check; the two phone checks are still manual
+Owner: In the app, "continued in" and "from" lines are now chips that open the other thread, and a config card says "applying…" after [apply] until its result shows, with its diff coloured.
