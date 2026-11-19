@@ -1,0 +1,22 @@
+   Compiling cooee-core v0.1.0 (/Users/jkmacmini/.local/share/drover/work/cooee/issue-601/crates/cooee-core)
+   Compiling cooee-machines v0.1.0 (/Users/jkmacmini/.local/share/drover/work/cooee/issue-601/crates/cooee-machines)
+   Compiling cooee-terminal v0.1.0 (/Users/jkmacmini/.local/share/drover/work/cooee/issue-601/crates/cooee-terminal)
+   Compiling cooee-server v0.1.0 (/Users/jkmacmini/.local/share/drover/work/cooee/issue-601/crates/cooee-server)
+   Compiling cooee v0.1.0 (/Users/jkmacmini/.local/share/drover/work/cooee/issue-601/crates/cooee)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 15.78s
+     Running tests/themes.rs (/Users/jkmacmini/.local/share/herdsman/work/.build/cooee-impl-601/debug/deps/themes-9109c53dfe5fd3c6)
+
+running 10 tests
+test check_passes_the_first_party_packs_and_fails_a_broken_one ... ok
+test a_built_in_style_pack_adds_and_a_broken_style_leaves_its_theme_served ... ok
+test an_imported_svg_kept_as_vector_in_a_figure_and_a_layer_passes_the_gate ... ok
+test the_editor_saves_drawn_figures_and_a_drawn_backdrop_that_pass_the_gate ... ok
+test the_gate_fails_active_content_in_a_packs_svg ... ok
+test add_remove_and_list_with_the_lock ... ok
+test the_editor_checks_colours_saves_a_pack_once_and_keeps_its_last_good_copy ... ok
+test an_old_full_clone_is_replaced_on_start_once_the_new_one_is_in_place ... ok
+test a_pack_with_a_symlink_is_never_installed ... ok
+test a_git_pack_is_a_shallow_clone_of_its_folder_alone ... ok
+
+test result: ok. 10 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.68s
+
