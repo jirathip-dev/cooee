@@ -1,0 +1,9 @@
+Decided: merge origin/staging keeping both sides: the scene action and foreground reload next to staging's report screen
+Because: apple/Sources/CooeeFeatures/AppFeature.swift:56
+Decided: navigate moved from the struct body into the file's extension so AppFeature stays under SwiftLint's 150-line body limit
+Because: apple/Sources/CooeeFeatures/AppFeature.swift:146
+Decided: moved() takes the chat's own persona instead of an argument its only caller filled with that same value
+Because: apple/Sources/CooeeFeatures/AppFeature.swift:243
+Rejected: a new file for navigate — it calls the file's private chat and pop helpers
+Check: apple-check exit 0 at 48ae05e; CI apple red only for the runner's unaccepted Xcode license (exit 69)
+Owner: The chat work now sits on the newest staging, alongside the new report screen.
