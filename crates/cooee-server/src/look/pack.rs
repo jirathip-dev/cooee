@@ -265,7 +265,7 @@ fn links(dir: &Path, at: &str, fails: &mut Vec<String>) {
 
 #[cfg(test)]
 mod tests {
-    use super::super::tests::{farm_with, packs, set, tmp};
+    use super::super::tests::{farm_with, first_party, packs, set, tmp};
     use super::*;
     use crate::look::Looks;
 
@@ -279,7 +279,7 @@ mod tests {
     #[test]
     fn a_load_scene_sign_needs_its_three_levels_and_a_theme_without_one_serves_as_before() {
         let theme = |dir: &Path| read_theme(dir, &builtin_schemes()).unwrap().unwrap().0;
-        let bush = theme(&packs().join("themes/bush"));
+        let bush = theme(&first_party("sign-bush").join("themes/bush"));
         let sign = Some(LoadScene {
             kind: LoadKind::Sign,
         });

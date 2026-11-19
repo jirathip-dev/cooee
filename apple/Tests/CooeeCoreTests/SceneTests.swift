@@ -71,10 +71,9 @@ internal struct SceneTests {
         #expect(loads.map(SignLevel.init) == [.moderate, .high, .catastrophic])
     }
 
-    @Test internal func theBushPackDrawsASignAndAThemeWithoutLoadSceneDoesNot() throws {
-        let pack = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent()
-            .deletingLastPathComponent().deletingLastPathComponent().appending(path: "packs/themes/bush/theme.json")
-        let bush = try JSONDecoder().decode(ThemePack.self, from: Data(contentsOf: pack))
+    @Test internal func aSignThemeDrawsASignAndAThemeWithoutLoadSceneDoesNot() throws {
+        let sign = #"{"label":"bush","scheme":{"dark":"a","light":"b"},"sprites":true,"load_scene":{"kind":"sign"}}"#
+        let bush = try JSONDecoder().decode(ThemePack.self, from: Data(sign.utf8))
         let plain = try JSONDecoder().decode(
             ThemePack.self, from: Data(#"{"label":"x","scheme":{"dark":"a","light":"b"},"sprites":true}"#.utf8))
         #expect(bush.sign && bush.loadScene?.kind == "sign")

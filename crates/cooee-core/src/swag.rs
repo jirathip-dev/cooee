@@ -58,7 +58,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn the_pin_is_the_locked_swag_commit_and_names_its_three_packs() {
+    fn the_pin_is_the_locked_swag_commit_and_names_its_four_packs() {
         let swag = Swag::pinned();
         assert_eq!(swag.url, "https://github.com/jirathip-dev/swag");
         assert_eq!(swag.commit.len(), 40, "{swag:?}");
@@ -66,7 +66,7 @@ mod tests {
             include_str!("../../../Cargo.toml").contains(&format!("rev = \"{}\"", swag.commit)),
             "{swag:?}"
         );
-        assert_eq!(swag.names(), ["farm", "garden", "kitchen"]);
+        assert_eq!(swag.names(), ["bush", "farm", "garden", "kitchen"]);
         for name in swag.names() {
             let mut names: Vec<_> = swag.files(name).unwrap().iter().map(|(f, _)| *f).collect();
             names.sort_unstable();
@@ -77,8 +77,8 @@ mod tests {
             );
         }
         assert_eq!(
-            swag.files("bush").unwrap_err().to_string(),
-            "swag has no pack bush"
+            swag.files("drover").unwrap_err().to_string(),
+            "swag has no pack drover"
         );
     }
 }

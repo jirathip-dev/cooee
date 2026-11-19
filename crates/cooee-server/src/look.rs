@@ -585,7 +585,7 @@ pub(crate) mod tests {
         assert_eq!(refused, Vec::<String>::new());
         assert_eq!(looks.default, "plain");
         assert_eq!(looks.themes.keys().collect::<Vec<_>>(), ["plain"]);
-        assert_eq!(looks.schemes.len(), 12);
+        assert_eq!(looks.schemes.len(), 14);
         for (name, s) in &looks.schemes {
             assert_eq!(gate(s), Ok(()), "{name}");
         }
@@ -594,7 +594,7 @@ pub(crate) mod tests {
         assert_eq!(looks.default, "farm");
         assert_eq!(
             looks.themes.keys().collect::<Vec<_>>(),
-            ["farm", "garden", "kitchen", "plain"]
+            ["bush", "farm", "garden", "kitchen", "plain"]
         );
         assert!(
             looks
@@ -616,7 +616,7 @@ pub(crate) mod tests {
             .unwrap()
             .map(|e| e.unwrap().path())
             .collect();
-        dirs.extend([packs().join("starter"), packs().join("themes/bush")]);
+        dirs.push(packs().join("starter"));
         assert_eq!(dirs.len(), 5, "{dirs:?}");
         for dir in dirs {
             assert_eq!(check(&dir), Ok("theme"), "{}", dir.display());

@@ -25,8 +25,8 @@ host load as a Fire Danger Rating sign. `sprites.svg` then holds `s-sign-moderat
 each a layer the size of `scene.svg` drawn over it (the sign at the clearing's edge, with its heat shimmer and
 cicadas). The Scene picks one from the drover scene block's `level`: `calm` moderate, `busy` high, `held`
 catastrophic. Without a `level` it uses the block's `load`, at the weather's thresholds. The sheet's `.f2` frames
-stay hidden, so the sign is still. The bush pack (`packs/themes/bush/`, written by `docs/design/bush/pack.mjs`) is
-the first to use it. It is not compiled in: add it by its folder.
+stay hidden, so the sign is still. swag's bush pack (its `packs/bush/`, from
+`design/bush/`) is the first to use it.
 
 `words` maps cooee's state keys to the theme's words: `working needs done fail idle ended merged loading
 empty-threads`. A missing key says the plain word (`working`, `needs you`, `done`, `failed`, …). The theme words dress
