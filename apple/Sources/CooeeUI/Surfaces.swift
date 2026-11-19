@@ -166,7 +166,9 @@ public struct LiveActivityCard: View {
                 ClockText(activity: activity).ui(15, .semibold, look).monospacedDigit()
                     .foregroundStyle(activity.asks ? palette.red : palette.cyan)
             }
-            Text(activity.line).font(.system(size: 13, design: activity.asks ? .default : .monospaced)).lineLimit(2)
+            Text(activity.line).font(
+                .system(size: 13, design: activity.asks && look.type != .mono ? .default : .monospaced)
+            ).lineLimit(2)
                 .foregroundStyle(activity.asks ? palette.foreground : palette.mute)
             HStack(spacing: 8) {
                 StateMark(state: activity.persona.state)

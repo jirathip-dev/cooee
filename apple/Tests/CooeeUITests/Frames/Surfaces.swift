@@ -258,7 +258,7 @@ internal struct SurfaceFrame: Sendable, CustomTestStringConvertible {
         let want = try #require(Pixels(design))
         #expect(got.width == want.width && got.height == want.height)
         let off = got.differing(from: want, by: 16)
-        #expect(off <= 0.025, "\(name): \(off * 100)% of pixels differ")
+        #expect(off <= 0.001, "\(name): \(off * 100)% of pixels differ")
     }
 }
 
