@@ -17,7 +17,7 @@ public struct IslandExpanded: View {
                     Text(activity.place).ui(13, .regular, look).foregroundStyle(palette.mute).lineLimit(1)
                 }
                 Spacer()
-                Text(activity.clock).ui(22, .semibold, look).monospacedDigit()
+                ClockText(activity: activity).ui(22, .semibold, look).monospacedDigit()
                     .foregroundStyle(activity.asks ? palette.red : palette.cyan)
             }
             Text(activity.line).font(.system(size: 13, design: .monospaced)).foregroundStyle(palette.mute).lineLimit(2)
@@ -47,16 +47,18 @@ public struct IslandMark: View {
 /// The compact island's trailing side: the clock, `ask` in red, or `replied`.
 public struct IslandTrailing: View {
     @Environment(\.look) private var look
+    private let activity: SurfaceActivity
     private let text: String
     private let alert: Bool
 
     public var body: some View {
         let palette = Palette.farmDark
-        Text(text).ui(14, .semibold, look).monospacedDigit().foregroundStyle(alert ? palette.red : palette.cyan)
+        Group { if text == activity.clock { ClockText(activity: activity) } else { Text(text) } }.ui(14, .semibold, look).monospacedDigit().foregroundStyle(alert ? palette.red : palette.cyan)
             .modifier(IslandLook())
     }
 
     public init(_ activity: SurfaceActivity) {
+        self.activity = activity
         text = activity.asks ? "ask" : activity.persona.state == .done ? "replied" : activity.clock
         alert = activity.asks || activity.persona.state == .fail
     }

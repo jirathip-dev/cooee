@@ -79,18 +79,28 @@ public struct Shown: Codable, Sendable, Hashable {
     }
 }
 
-/// The App Group copy the app writes and the widgets and intents read: the glance, the personas and the server.
+/// The App Group copy the app writes and the widgets and intents read: the glance, the personas, the recent threads,
+/// the server's host and the style drawn (none: Modern).
 public struct GlanceCache: Codable, Sendable, Equatable {
     public static let group = "group.com.jirathip.cooee"
 
     public var glance: Glance
     public var personas: [APIPersona]
+    public var threads: [GlanceRow]
     public var host: String
+    public var style: Style?
 
-    public init(glance: Glance, personas: [APIPersona], host: String) {
+    public init(glance: Glance, personas: [APIPersona], threads: [GlanceRow] = [], host: String, style: Style? = nil) {
         self.glance = glance
         self.personas = personas
+        self.threads = threads
         self.host = host
+        self.style = style
+    }
+
+    /// `persona`'s latest thread.
+    public func latest(of persona: String) -> GlanceRow? {
+        threads.filter { $0.persona == persona }.max { $0.since < $1.since }
     }
 
     public static func file(in folder: URL?) -> URL? { folder?.appendingPathComponent("glance.json") }

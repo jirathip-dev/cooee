@@ -1,3 +1,4 @@
+import AppIntents
 import CooeeCore
 import CooeeFeatures
 import SwiftUI
@@ -38,6 +39,7 @@ public struct SurfaceActivity: Sendable {
     public let foot: String
     public let more: String
     public let tools: Int
+    public var start: Date?
 
     public var asks: Bool { persona.state == .needs }
     public var running: Bool { persona.state == .working }
@@ -134,6 +136,18 @@ internal struct StateMark: View {
     }
 }
 
+internal struct ClockText: View {
+    internal let activity: SurfaceActivity
+
+    internal var body: some View {
+        if activity.running, let start = activity.start {
+            Text(timerInterval: start...Date.distantFuture, countsDown: false)
+        } else {
+            Text(activity.clock)
+        }
+    }
+}
+
 /// The Live Activity on the lock screen: one tap target that opens the thread or the ask; Stop on a running turn.
 public struct LiveActivityCard: View {
     @Environment(\.look) private var look
@@ -149,7 +163,7 @@ public struct LiveActivityCard: View {
                     Text(activity.place).ui(13, .regular, look).foregroundStyle(palette.mute)
                 }
                 Spacer(minLength: 4)
-                Text(activity.clock).ui(15, .semibold, look).monospacedDigit()
+                ClockText(activity: activity).ui(15, .semibold, look).monospacedDigit()
                     .foregroundStyle(activity.asks ? palette.red : palette.cyan)
             }
             Text(activity.line).font(.system(size: 13, design: activity.asks ? .default : .monospaced)).lineLimit(2)

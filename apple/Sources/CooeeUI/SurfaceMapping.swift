@@ -59,5 +59,6 @@ extension SurfaceActivity {
             headline: headline, place: place,
             clock: state == .working ? Since.clock(shown.since, now) : Since.wait(shown.since, now), line: shown.line,
             foot: foot, more: shown.more, tools: shown.tools)
+        start = Date(timeIntervalSince1970: Double(shown.since) / 1000)
     }
 }

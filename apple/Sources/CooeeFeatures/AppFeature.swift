@@ -61,6 +61,7 @@ public struct AppFeature: Sendable {
     @Dependency(\.serverStore) internal var serverStore
     @Dependency(\.loginItems) private var loginItems
     @Dependency(\.push) private var push
+    @Dependency(\.surface) internal var surface
     @Dependency(\.date.now) internal var now
     @Dependency(\.continuousClock) internal var clock
 
@@ -92,7 +93,8 @@ public struct AppFeature: Sendable {
                 return .none
             case .taps:
                 let push = push
-                return .run { send in for await thread in await push.opened() { await send(.open(thread)) } }
+                return .merge(
+                    .run { send in for await thread in await push.opened() { await send(.open(thread)) } }, surfaces())
             case .persona(.presented(.delegate(.saved))), .persona(.presented(.delegate(.deleted))):
                 state.persona = nil
                 return .send(.home(.refresh))
@@ -108,7 +110,7 @@ public struct AppFeature: Sendable {
             case .home(.loaded):
                 let workflow = state.home?.lists(now: now).workflow[state.chat?.persona.id ?? ""]
                 state.chat?.workflow = workflow
-                return .none
+                return keepGlance(state)
             case .room:
                 state.newRoom = state.home.map { NewRoomFeature.State(server: $0.server, personas: $0.personas) }
                 return .none
