@@ -13,6 +13,15 @@ internal struct Composer: View {
     internal var draft = ""
     internal var attachments: [String] = []
     internal var actions = ChatActions()
+    internal var rest: CGFloat = 0
+
+    private var lifted: Bool {
+        #if os(iOS)
+            typing
+        #else
+            false
+        #endif
+    }
 
     private var chips: [String] { actions.send == nil ? attachments : actions.files }
     private var shown: String { queued.isEmpty ? hint : "Queue a message" }
@@ -32,6 +41,7 @@ internal struct Composer: View {
                 sendButton
             }
         }
+        .padding(.bottom, lifted ? min(rest, 8) : rest)
         .fileImporter(isPresented: picking.projectedValue, allowedContentTypes: [.item], allowsMultipleSelection: true)
         { result in
             actions.attach(((try? result.get()) ?? []).compactMap(Self.attachment))

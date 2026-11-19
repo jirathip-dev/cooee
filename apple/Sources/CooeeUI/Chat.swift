@@ -56,10 +56,11 @@ public struct ChatView: View {
                         queued: queued,
                         draft: draft,
                         attachments: working && since == nil ? ["look-sheet.png"] : [],
-                        actions: actions
+                        actions: actions,
+                        rest: 26
                     )
                 }
-                .padding(.horizontal, 12).padding(.bottom, 26)
+                .padding(.horizontal, 12)
             }
             .overlayPreferenceValue(PressedChip.self) { anchor in
                 if let topics = actions.topics { TopicOverlays(topics: topics, anchor: anchor) }

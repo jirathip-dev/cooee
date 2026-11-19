@@ -64,6 +64,7 @@ internal struct PluginScreenSheet: View {
                     of: store.screen == nil
                 ) { scroll(proxy) }
             }
+            .overlay(alignment: .top) { if store.slow { LoadingBar() } }
             if let said = store.said { Text(said).ui(13, .regular, look).foregroundStyle(palette.mute).padding(8) }
             if let pending = store.screen?.root["pending"] {
                 PendingBar(pending: pending).environment(\.act, { store.send(.act($0)) })
@@ -98,8 +99,6 @@ internal struct PluginScreenSheet: View {
                 .environment(\.acting, store.pending).disabled(store.offline).opacity(store.offline ? 0.6 : 1)
             } else if store.offline {
                 Text("Nothing kept from \(store.label) yet.").foregroundStyle(palette.mute)
-            } else {
-                ProgressView()
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading).padding(BlocksView.inset)
