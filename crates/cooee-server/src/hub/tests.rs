@@ -282,7 +282,7 @@ fn a_thread_opened_right_after_start_has_its_items_and_its_row_matches() {
         json!({ "id": 5, "at": 5, "seq": 5, "kind": "tool", "call": "c", "title": "ls", "status": "completed" }),
         json!({ "id": 6, "at": 6, "seq": 6, "kind": "agent", "text": "first\nlast line", "stop_reason": "end_turn" }),
     ];
-    let jsonl: String = lines.iter().map(|l| format!("{l}\n")).collect();
+    let jsonl = lines.map(|l| l.to_string() + "\n").concat();
     seed(&dir, "a", &jsonl);
     let meta = json!({ "format": 1, "thread": { "id": "a", "title": "a", "messages": [], "terminal": "cooee-a", "read": 2 } });
     fs::write(dir.join("data/threads/a.json"), meta.to_string()).unwrap();

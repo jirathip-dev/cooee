@@ -65,7 +65,7 @@ fn write(log: &Log, mut line: Value, ms: u64) {
         o.insert("ms".to_owned(), ms.into());
     }
     let mut file = log.file.lock().unwrap_or_else(PoisonError::into_inner);
-    writeln!(file, "{line}").ok();
+    file.write_all(format!("{line}\n").as_bytes()).ok();
 }
 
 /// One HTTP request (or SSE stream opened) since `start`: its method, route pattern (`/threads/{id}`) and status.

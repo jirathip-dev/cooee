@@ -63,6 +63,8 @@ const CHANGE: u64 = 30 * 60 * 1000;
 const TICK: Duration = Duration::from_secs(30);
 const AGENTS_FOR: u64 = 60_000;
 const AGENTS_WAIT: Duration = Duration::from_secs(2);
+type Listed = Result<Vec<Agent>, String>;
+
 const SERVED_EVERY: Duration = Duration::from_secs(5);
 
 /// Why a thread action failed.
@@ -316,7 +318,7 @@ pub struct Hub {
     roots: Mutex<Vec<PathBuf>>,
     config: Option<PathBuf>,
     plugins: Mutex<Vec<Plugin>>,
-    agents: Mutex<(Option<Result<Vec<Agent>, String>>, u64)>,
+    agents: Mutex<(Option<Listed>, u64)>,
     listed: Condvar,
     served: Mutex<HashMap<String, Option<Vec<Profile>>>>,
     boot: String,
