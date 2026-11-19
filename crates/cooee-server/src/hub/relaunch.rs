@@ -147,7 +147,7 @@ impl Hub {
             live.meta.folder = Some(folder.to_owned());
         }
         machine.clone_into(&mut live.meta.machine);
-        self.store.save(&live.meta)?;
+        self.save(&live)?;
         let item = live.chat.push(now(), 0, Body::Note { text });
         live.publish(self, vec![Change::Item(item.clone())])?;
         drop(live);
