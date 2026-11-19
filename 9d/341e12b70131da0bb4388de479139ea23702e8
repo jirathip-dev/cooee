@@ -1,0 +1,32 @@
+Decided: at start each thread gets its meta and a list row from a few indexed SQL reads (approvals, the owner's last message, the last item, an unseen count); its items load on first open through the existing unload/load path
+Because: "At start the hub loads each thread's meta and summary only; a thread's items load on its first open"
+Decided: a new index items (thread, kind, id) keeps those reads off the item bodies; 500 threads went from about 650 ms to 70 ms in a debug build
+Because: crates/cooee-core/src/store/items.rs:95
+Decided: the agent list starts empty; the ticker fetches it once before its first sleep, and agents() waits up to 2 s on a condvar for that first fetch
+Because: "until then a request that needs the list waits for it with a short deadline"
+Decided: the port is bound with std before Hub::open and handed to tokio, so early requests queue instead of being refused
+Because: crates/cooee-server/src/serve.rs:205
+Decided: expire loads an unloaded thread whose row shows an open approval, so a routine's card from before a restart still expires
+Because: crates/cooee-server/src/hub/expire.rs:13
+Decided: the timing test measures from the server's perf start (the new start row) to the GET /threads answer; process launch and pairing of the debug binaries are outside it
+Because: "`cooee perf` gains a start-to-first-request row"
+Rejected: loading the summaries in a background thread after listening — GET /threads would still wait on the whole pass
+Check: on the base hub the 500x1000 test answers 1803 ms after start and fails; the agent-list tests wait for the ticker's first fetch before counting
+Owner: The server starts answering right away even with a long chat history; each chat's messages are read the first time you open it.
+
+Decided: the busy-thread timing test waits for the ticker's first agent-list fetch before it starts the clock
+Because: crates/cooee-server/src/hub.rs:588
+Decided: the fetch runs without any lock that apply takes, so the test still measures one thread's events holding up another's
+Because: crates/cooee-server/src/hub/tests.rs:384
+Rejected: raising the 50 ms limit — that would hide a real head-of-line regression
+Check: CI's ubuntu jobs pass the busy-thread test with the full parallel suite
+Owner: A timing test was thrown off by the new background agent-list fetch at start; it now waits for that fetch first.
+
+Decided: a store read waits for the writer only while its own thread has queued writes; a per-thread pending count in the writer decides
+Because: crates/cooee-core/src/store/writer.rs:84
+Decided: the busy-thread test keeps its 50 ms limit; the quiet thread's first open no longer waits behind the busy thread's 1000 commits
+Because: crates/cooee-core/src/store/items.rs:56
+Rejected: loading every thread's items at start again — the spec says "a thread's items load on its first open"
+Rejected: raising the test's limit — it would hide the head-of-line wait this round removed
+Check: cargo test -p cooee-server --lib passes the busy-thread test in the full parallel suite three runs out of three
+Owner: Opening one chat no longer waits for another busy chat's messages to be saved first.
