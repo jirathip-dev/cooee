@@ -1,0 +1,12 @@
+Decided: one worker thread per Push with a 64-note queue; a waiting note for the same thread and target is replaced in place
+Because: "a note for a thread that already has one queued replaces it"
+Decided: APNs and web push go out in one curl -K invocation with parallel; curl multiplexes the APNs transfers on one HTTP/2 connection, so no new dependency
+Because: "one `curl` invocation for all of them, or an HTTP/2 client if a dependency is acceptable"
+Rejected: parallel-immediate — it opens a connection per transfer instead of sharing the APNs one
+Rejected: an HTTP/2 client crate — a new dependency needs the owner, and curl already does it
+Decided: push.json and apns.p8 are cached under their inode, mtime and size; a chmod keeps the cache
+Because: crates/cooee-server/src/push/subs.rs:53
+Decided: cooee update's failure alert uses the synchronous send_now, as it waited on send_to's handle before
+Because: crates/cooee/src/update.rs:134
+Check: the burst test sees one request in flight and the key file's 0644 kept; the parallel test fails with parallel-max forced to 1
+Owner: Alerts go out from one background sender, all devices at once, so one dead push service no longer delays the rest.
