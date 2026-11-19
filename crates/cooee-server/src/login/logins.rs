@@ -41,7 +41,7 @@ impl Logins {
         let checker = Arc::clone(&logins);
         thread::spawn(move || {
             loop {
-                checker.tick();
+                checker.tick(crate::hub::now());
                 cooee_core::clock::sleep(Duration::from_secs(1));
             }
         });

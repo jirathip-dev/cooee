@@ -31,6 +31,7 @@ const HEALTH: Duration = Duration::from_secs(30);
 const CHECK_EVERY: u64 = 10_000;
 const CHECK_WAIT: Duration = Duration::from_secs(2);
 const MISSES: u32 = 3;
+const LOOK_EVERY: u64 = 5000;
 
 const BACKEND: &str =
     "exec 3<&0 </dev/null; (cat <&3 >/dev/null; kill -TERM 0) & exec 3<&-; exec sh -c \"$1\"";
@@ -107,6 +108,17 @@ impl Backoff {
     }
 }
 
+type Stamp = [Option<(std::time::SystemTime, u64)>; 2];
+
+#[derive(Default)]
+struct Seen {
+    fresh: bool,
+    next: u64,
+    stamp: Stamp,
+    lock: Vec<Locked>,
+    tabs: Option<Vec<Plugin>>,
+}
+
 /// The installed plugins of one instance, and their backends while `cooee serve` runs.
 pub struct Manager {
     data: PathBuf,
@@ -116,6 +128,7 @@ pub struct Manager {
     runs: Mutex<BTreeMap<String, Run>>,
     jobs: Mutex<BTreeMap<String, String>>,
     ops: Mutex<()>,
+    seen: Mutex<Seen>,
     stopping: AtomicBool,
 }
 
@@ -234,6 +247,7 @@ impl Manager {
             runs: Mutex::default(),
             jobs: Mutex::default(),
             ops: Mutex::default(),
+            seen: Mutex::default(),
             stopping: AtomicBool::new(false),
         }))
     }
@@ -279,7 +293,45 @@ impl Manager {
         let mut all = self.installed()?;
         let l = all.iter_mut().find(|l| l.name == name);
         f(l.ok_or_else(|| other(format!("{name} isn't installed")))?);
-        plugins::write_lock(&self.data, &all)
+        self.write_lock(&all)
+    }
+
+    fn write_lock(&self, all: &[Locked]) -> io::Result<()> {
+        let wrote = plugins::write_lock(&self.data, all);
+        lock(&self.seen).fresh = false;
+        wrote
+    }
+
+    fn write_entries(&self, all: &[Plugin]) -> io::Result<()> {
+        let wrote = plugins::write_entries(&self.data, all);
+        lock(&self.seen).fresh = false;
+        wrote
+    }
+
+    fn stamp(&self) -> Stamp {
+        let at = |p: PathBuf| {
+            let m = fs::metadata(p).ok()?;
+            Some((m.modified().ok()?, m.len()))
+        };
+        [
+            at(plugins::lock_path(&self.data)),
+            at(plugins::entries_path(&self.data)),
+        ]
+    }
+
+    fn look(&self, now: u64) -> Vec<Locked> {
+        let mut s = lock(&self.seen);
+        if s.fresh && now < s.next {
+            return s.lock.clone();
+        }
+        s.next = now + LOOK_EVERY;
+        let stamp = self.stamp();
+        if !s.fresh || stamp != s.stamp {
+            (s.fresh, s.stamp) = (true, stamp);
+            s.lock = self.installed().unwrap_or_default();
+            s.tabs = Some(self.tabs());
+        }
+        s.lock.clone()
     }
 
     fn token(&self, l: &Locked) -> io::Result<String> {
@@ -561,7 +613,7 @@ impl Manager {
         let mut all = plugins::read_entries(&self.data)?;
         all.extend(entries(&m, port, &token));
         crate::plugin::check(&[self.fixed.as_slice(), &all].concat())?;
-        plugins::write_entries(&self.data, &all)?;
+        self.write_entries(&all)?;
         let mut lock = self.installed()?;
         lock.push(Locked {
             name: m.name.clone(),
@@ -577,7 +629,7 @@ impl Manager {
             enabled: true,
             ..Locked::default()
         });
-        plugins::write_lock(&self.data, &lock)
+        self.write_lock(&lock)
     }
 
     /// What updating plugin `name` would run: the index's pinned commit, or for a plugin added by URL the latest on
@@ -615,7 +667,7 @@ impl Manager {
         all.retain(|p| !l.tabs.contains(&p.name));
         all.extend(entries(m, l.port, &token));
         crate::plugin::check(&[self.fixed.as_slice(), &all].concat())?;
-        plugins::write_entries(&self.data, &all)?;
+        self.write_entries(&all)?;
         self.change(&l.name, |l| {
             l.previous = Some(std::mem::replace(&mut l.commit, commit.to_owned()));
             l.version.clone_from(&m.version);
@@ -658,10 +710,10 @@ impl Manager {
         let l = self.locked(name)?;
         let mut all = plugins::read_entries(&self.data)?;
         all.retain(|p| !l.tabs.contains(&p.name));
-        plugins::write_entries(&self.data, &all)?;
+        self.write_entries(&all)?;
         let mut lock = self.installed()?;
         lock.retain(|x| x.name != name);
-        plugins::write_lock(&self.data, &lock)?;
+        self.write_lock(&lock)?;
         if purge {
             fs::remove_dir_all(self.dir(name))?;
         }
@@ -867,7 +919,7 @@ impl Manager {
         if self.stopping.load(Ordering::SeqCst) {
             return Vec::new();
         }
-        let installed = self.installed().unwrap_or_default();
+        let installed = self.look(now);
         let checks = self.checks(&installed, now);
         let mut runs = lock(&self.runs);
         runs.retain(|name, run| {
@@ -963,8 +1015,11 @@ impl Manager {
         let m = Arc::clone(self);
         thread::spawn(move || {
             loop {
-                hub.set_plugins(m.tabs());
-                for body in m.tick(now()) {
+                let alerts = m.tick(now());
+                if let Some(tabs) = lock(&m.seen).tabs.take() {
+                    hub.set_plugins(tabs);
+                }
+                for body in alerts {
                     let tag = "plugins".to_owned();
                     let url = "/#settings/plugins".to_owned();
                     let title = "cooee".to_owned();
