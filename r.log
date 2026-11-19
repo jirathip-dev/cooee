@@ -1,0 +1,24 @@
+   Compiling cooee v0.1.0 (/Users/jkmacmini/.local/share/drover/work/cooee/issue-386/crates/cooee)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.79s
+     Running tests/reliability.rs (/Users/jkmacmini/.local/share/herdsman/work/.build/cooee-impl-386/debug/deps/reliability-3946c7cbf3004c60)
+
+running 1 test
+test r27_a_long_tool_run_is_working_until_its_turn_ends_and_reads_no_screen ... FAILED
+
+failures:
+
+---- r27_a_long_tool_run_is_working_until_its_turn_ends_and_reads_no_screen stdout ----
+
+thread 'r27_a_long_tool_run_is_working_until_its_turn_ends_and_reads_no_screen' (918590987) panicked at crates/cooee/tests/reliability.rs:715:5:
+assertion `left == right` failed: ["working", "working", "working", "working", "working", "done", "idle"]
+  left: ["working", "done", "idle"]
+ right: ["working", "idle"]
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    r27_a_long_tool_run_is_working_until_its_turn_ends_and_reads_no_screen
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 18 filtered out; finished in 1.40s
+
+error: test failed, to rerun pass `-p cooee --test reliability`
