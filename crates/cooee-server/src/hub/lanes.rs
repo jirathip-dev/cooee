@@ -49,7 +49,6 @@ impl Hub {
         }
     }
 
-    /// Whether the owner may close this Workflow session (#381): it ended, or no installed plugin claims its source.
     pub(super) fn closable(&self, live: &Live) -> bool {
         let Some(source) = live.meta.workflow.as_ref().map(|w| w.source.as_str()) else {
             return true;
