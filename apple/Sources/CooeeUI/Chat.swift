@@ -190,6 +190,7 @@ internal struct ChatHeader: View {
                 }
                 more
             }
+            if let status = actions.status { LaneStatusRow(status: status, close: actions.close) }
             if plugged && (!chips.isEmpty || actions.workflow != nil) { plugins }
         }
         .padding(.horizontal, 14).padding(.vertical, 8)

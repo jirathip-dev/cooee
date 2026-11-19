@@ -17,6 +17,7 @@ internal struct WorkflowNavigationTests {
             AppFeature()
         } withDependencies: {
             $0.date.now = epoch
+            $0.continuousClock = ImmediateClock()
         }
     }
 
@@ -59,6 +60,7 @@ internal struct WorkflowNavigationTests {
         await store.receive(\.chat.delegate.round) {
             $0.path = ["new:cond", "l1"]
             $0.chat = ChatFeature.State(server: mini, target: .thread("l1"), persona: sessions[0].persona)
+            $0.chat?.session = LaneSession(foreign: false)
         }
     }
 
@@ -76,6 +78,7 @@ internal struct WorkflowNavigationTests {
         await store.send(.chat(.delegate(.round("l1")))) {
             $0.path = ["new:cond", "l1"]
             $0.chat = ChatFeature.State(server: mini, target: .thread("l1"), persona: sessions[0].persona)
+            $0.chat?.session = LaneSession(foreign: false)
         }
         #expect(sessions[0].persona.name == "cooee #33 · impl 1" && sessions[0].persona.api.agent == "drover")
         await store.send(.path(["new:cond"])) {
@@ -84,5 +87,46 @@ internal struct WorkflowNavigationTests {
             $0.chat?.workflowOpen = true
             $0.chat?.unfolded = "cooee #33"
         }
+    }
+
+    private func closing(_ calls: Calls) -> TestStoreOf<AppFeature> {
+        let store = store(
+            rows: [lane("l1", state: "ended"), lane("l2", item: "#34")], personas: [conductor], plugins: [drover])
+        store.dependencies.threads.close = { _, thread in calls.record("close \(thread)") }
+        store.dependencies.threads.home = { _ in
+            var closed = lane("l1", state: "ended")
+            closed.archived = true
+            return HomeAnswer(screen: homeScreen, threads: [closed, lane("l2", item: "#34")], personas: [conductor])
+        }
+        store.dependencies.plugins.installed = { _ in [drover] }
+        store.exhaustivity = .off
+        return store
+    }
+
+    @Test internal func aLiveLaneItsPluginClaimsHasNoStatusAndNeverCloses() async {
+        let calls = Calls()
+        let store = closing(calls)
+        await store.send(.open("l2"))
+        #expect(store.state.chat?.session == LaneSession(foreign: false) && store.state.chat?.laneStatus == nil)
+        await store.send(.chat(.lane(.ask(true))))
+        await store.send(.chat(.lane(.close)))
+        #expect(store.state.chat?.session?.confirming == false && calls.all.isEmpty)
+    }
+
+    @Test internal func aDeadLaneReadsDeadClosesOnceAfterAskingAndLeavesTheList() async {
+        let calls = Calls()
+        let store = closing(calls)
+        await store.send(.open("l1"))
+        await store.send(.chat(.event(.state(Turn(state: "ended", note: "The agent exited (1).")))))
+        #expect(store.state.chat?.laneStatus == "dead · The agent exited (1)." && store.state.chat?.closable == true)
+        await store.send(.chat(.lane(.ask(true)))) { $0.chat?.session?.confirming = true }
+        await store.send(.chat(.lane(.close))) {
+            $0.chat?.session?.confirming = false
+            $0.chat?.session?.closing = true
+        }
+        await store.receive(\.chat.delegate.closed)
+        await store.skipReceivedActions()
+        #expect(calls.all == ["close l1"] && store.state.path.isEmpty && store.state.chat == nil)
+        #expect(store.state.home?.lists(now: epoch).all.map(\.id) == ["l2"])
     }
 }

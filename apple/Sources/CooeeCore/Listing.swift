@@ -63,11 +63,12 @@ public enum Listing {
         let state = LaneState(api: thread.state)
         let owner = personas.first { $0.id == thread.persona }
         let persona = owner.map { Persona($0, state: state) } ?? stranger(thread, state: state)
-        let row = Row(
+        var row = Row(
             id: thread.id, persona: persona.id,
             title: owner == nil && thread.workflow == nil && thread.members.isEmpty ? thread.agent : thread.title,
             last: thread.last, ago: ago(thread.updated, now: now), unseen: thread.unseen, state: state
         )
+        row.status = thread.workflow == nil ? nil : Workflow.status(thread.state, note: thread.note)
         let cast = everyone(personas: personas, rows: rows)
         let members = thread.members.map { id in cast.first { $0.id == id } ?? Persona(named(id)) }
         let asker = rows.first { $0.id == thread.askedBy }.map { from in

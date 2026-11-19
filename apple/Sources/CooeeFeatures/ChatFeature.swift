@@ -50,6 +50,7 @@ public struct ChatFeature: Sendable {
         public var workflowOpen = false
         public var unfolded: String?
         public var machine = MachineChip()
+        public var session: LaneSession?
         public var bar: TopicBar?
         public var browser: BrowserSheet?
         @Presents public var screen: ScreenFeature.State?
@@ -107,6 +108,7 @@ public struct ChatFeature: Sendable {
         case attaching(PresentationAction<AttachFeature.Action>)
         case workflow(WorkflowAction)
         case machine(MachineAction)
+        case lane(LaneAction)
         case frame(String)
         case framed(String, Data)
         case photo(String)
@@ -122,6 +124,7 @@ public struct ChatFeature: Sendable {
             case start(String)
             case round(String)
             case topic(String)
+            case closed
         }
     }
 
@@ -159,7 +162,7 @@ public struct ChatFeature: Sendable {
                 return listen(&state, action)
             }
         }
-        Reduce { state, action in agent(&state, action) }
+        Reduce { state, action in .merge(agent(&state, action), lane(&state, action)) }
         Reduce { state, action in frames(&state, action) }
         Reduce { state, action in browser(&state, action) }
         Reduce { state, action in plugins(&state, action) }

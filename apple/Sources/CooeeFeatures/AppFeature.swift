@@ -203,7 +203,7 @@ extension AppFeature {
             chat = ChatFeature.State(server: home.server, target: .thread(id), persona: persona)
             chat.machine.current = home.rows.first { $0.id == id }?.machine ?? ""
         }
-        chat.workflow = lists.workflow[chat.persona.id]
+        chat.place(in: lists)
         return chat
     }
 }
@@ -227,6 +227,8 @@ extension AppFeature {
             state.path = state.path.dropLast() + [thread]
             state.chat = state.chat.map { Self.moved($0, to: .thread(thread)) }
             return .send(.home(.refresh))
+        case .closed:
+            return .merge(.send(.back), .send(.home(.refresh)))
         }
     }
 

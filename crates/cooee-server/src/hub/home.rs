@@ -45,6 +45,7 @@ fn row(live: &Live) -> Row {
             folder: meta.folder.clone().unwrap_or_default(),
             machine: meta.machine.clone(),
             state: live.chat.turn.state.clone(),
+            note: live.chat.turn.note.clone(),
             last: g.last,
             at: g.at,
             unread: g.unseen > 0,

@@ -10,10 +10,8 @@ internal struct CardAnswerTests {
     private let run = BlockAction(
         action: "answer", values: ["choice": .string("approve"), "sha": .string("3b7e")])
 
-    private func store(
-        _ target: ChatFeature.Target = .thread("a1"),
-        failing: Bool = false
-    ) -> TestStoreOf<ChatFeature> {
+    private func store(_ target: ChatFeature.Target = .thread("a1"), failing: Bool = false) -> TestStoreOf<ChatFeature>
+    {
         let calls = calls
         return TestStore(initialState: ChatFeature.State(server: mini, target: target, persona: Persona(coder))) {
             ChatFeature()
@@ -46,7 +44,6 @@ internal struct CardAnswerTests {
             $0.items = [secret]
             $0.since = epoch
         }
-        let calls = calls
         store.dependencies.ownerCheck.confirm = { reason in
             calls.record("check \(reason)")
             return confirmed
@@ -77,7 +74,6 @@ internal struct CardAnswerTests {
             $0.items = items
             $0.since = epoch
         }
-        let calls = calls
         store.dependencies.threads.approve = { _, thread, item, value in
             calls.record("approve \(thread) \(item) \(value ?? "-")")
         }

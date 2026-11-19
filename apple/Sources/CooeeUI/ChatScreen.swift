@@ -68,6 +68,8 @@ internal struct ChatScreen: View {
         (actions.sync, actions.asOf, actions.stopping) = (store.status.sync, store.status.asOf, store.status.stopping)
         actions.edit = { store.send(.compose(.edit($0))) }
         actions.older = { store.send(.older(.load)) }
+        actions.status = store.laneStatus
+        actions.close = store.closable ? { store.send(.lane(.ask(true))) } : nil
         actions.message.photos = FrameImages(images: store.photos) { store.send(.photo($0)) }
         actions.message.source = { store.state.source($0) }
         actions.message.quote = { store.send(.compose(.quote($0))) }
@@ -103,6 +105,15 @@ internal struct ChatScreen: View {
         .task { await store.send(.machine(.load)).finish() }
         .task { await store.send(.topics(.load)).finish() }
         .modifier(TopicSheets(store: store))
+        .confirmationDialog(
+            "Close this session?",
+            isPresented: Binding(
+                get: { store.session?.confirming == true }, set: { store.send(.lane(.ask($0))) })
+        ) {
+            Button("Close session", role: .destructive) { store.send(.lane(.close)) }
+        } message: {
+            Text("It ends and its thread is archived.")
+        }
         .modifier(BrowserPresenting(store: store, wide: !back && store.browser != nil))
         .sheet(item: $store.scope(state: \.screen, action: \.screen)) {
             PluginScreenSheet(store: $0).presentationDetents([.medium, .fraction(0.75), .large])
