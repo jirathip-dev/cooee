@@ -1,0 +1,11 @@
+Decided: report mode lives in a ReportFeature reducer under AppFeature; send posts through the threads client's report seam
+Because: "TestStore with the client mocked at the `@Dependency` seam"
+Decided: the tapped element is the smallest view tagged reportable under the tap; blocks, layout slots and the working pill are tagged
+Because: apple/Sources/CooeeUI/ReportMode.swift:51
+Decided: while reporting, Back only leaves report mode and does not navigate
+Because: "Back or [cancel] leaves report mode"
+Decided: no screenshot is sent: the server's POST /report takes note, path, target, html, look and viewport only
+Because: crates/cooee-server/src/routes/report.rs:11
+Rejected: adding an image field and storage to the server — server scope and storage the acceptance does not check
+Check: ReportFeatureTests send test asserts the posted Report built from the picked element and the note; apple-check passes at the head
+Owner: The avatar menu gets Report: tap the thing that is wrong, type a note, Send; the screenshot part is not done yet.
