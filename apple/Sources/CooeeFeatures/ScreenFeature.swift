@@ -20,6 +20,7 @@ public struct ScreenFeature: Sendable {
         public var focus: String?
         public var beside: String?
         public var besideScreen: JSONValue?
+        public var slow = false
         @Presents public var lane: ChatFeature.State?
 
         public var offline: Bool { unreachable != nil }
@@ -57,6 +58,7 @@ public struct ScreenFeature: Sendable {
         case push(String)
         case beside(String)
         case besideLoaded(JSONValue)
+        case slow
         case lane(PresentationAction<ChatFeature.Action>)
         case delegate(Delegate)
 
@@ -66,9 +68,9 @@ public struct ScreenFeature: Sendable {
         }
     }
 
-    private enum CancelID { case follow, beside, keep, background }
+    internal enum CancelID { case follow, beside, keep, background, slow }
 
-    @Dependency(\.plugins) private var plugins
+    @Dependency(\.plugins) internal var plugins
     @Dependency(\.screenCache) private var cache
     @Dependency(\.continuousClock) private var clock
     @Dependency(\.date.now) private var now
@@ -87,12 +89,15 @@ public struct ScreenFeature: Sendable {
                 return flush(state)
             case .loaded(let screen):
                 state.screen = LiveScreen(screen)
-                return keep(&state)
+                return .merge(keep(&state), settled(&state))
             case .event(let event):
                 state.screen?.apply(event: event)
                 return keep(&state)
             case .failed(let who, let kept):
                 unreachable(&state, who, kept)
+                return settled(&state)
+            case .slow:
+                state.slow = true
             case .act(let action):
                 return act(&state, action)
             case .acted(let answer, let error):
@@ -109,15 +114,10 @@ public struct ScreenFeature: Sendable {
 }
 
 extension ScreenFeature {
-    internal static func who(_ error: any Error, source: LayoutSource) -> String {
-        guard let error = error as? APIError, error.status > 0 else { return "Mac unreachable" }
-        return "\(source.name) isn't answering"
-    }
-
     private func follow(_ state: State) -> Effect<Action> {
         let (plugins, cache, clock, server, source) = (plugins, cache, clock, state.server, state.source)
         let (path, key) = (state.current, state.key)
-        return .run { send in
+        let follow = Effect<Action>.run { send in
             while true {
                 do {
                     let screen = try await plugins.screen(server, source, path)
@@ -130,32 +130,18 @@ extension ScreenFeature {
                 try await clock.sleep(for: .seconds(5))
             }
         }
-        .cancellable(id: CancelID.follow, cancelInFlight: true)
+        let slow = Effect<Action>.run { send in
+            try await clock.sleep(for: .milliseconds(300))
+            await send(.slow)
+        }
+        return .merge(
+            follow.cancellable(id: CancelID.follow, cancelInFlight: true),
+            slow.cancellable(id: CancelID.slow, cancelInFlight: true))
     }
 
-    private func opened(_ state: inout State, _ action: Action) -> Effect<Action> {
-        switch action {
-        case .open(let thread):
-            return .send(.delegate(.open(thread)))
-        case .push(let thread):
-            let persona = Persona(APIPersona(id: "", name: thread, agent: ""))
-            state.lane = ChatFeature.State(server: state.server, target: .thread(thread), persona: persona)
-        case .beside(let path):
-            state.beside = path
-            state.besideScreen = nil
-            let (plugins, server, source) = (plugins, state.server, state.source)
-            return .run { send in
-                await send(.besideLoaded(try await plugins.screen(server, source, path)))
-            } catch: { error, send in
-                await send(.failed(Self.who(error, source: source), nil))
-            }
-            .cancellable(id: CancelID.beside, cancelInFlight: true)
-        case .besideLoaded(let screen):
-            state.besideScreen = screen
-        default:
-            break
-        }
-        return .none
+    private func settled(_ state: inout State) -> Effect<Action> {
+        state.slow = false
+        return .cancel(id: CancelID.slow)
     }
 
     private func keep(_ state: inout State) -> Effect<Action> {

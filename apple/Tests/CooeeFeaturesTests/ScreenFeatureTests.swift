@@ -206,3 +206,43 @@ extension ScreenFeatureTests {
         #expect(calls.all == ["keep https://mini.local|core|/screens/home"])
     }
 }
+
+extension ScreenFeatureTests {
+    @Test internal func aSlowLoadShowsAStripAfter300msAndTheShownScreenStaysTappable() async {
+        let store = store {
+            $0.screenCache.load = { _ in nil }
+            $0.plugins.screen = { [clock] _, _, _ in
+                try await clock.sleep(for: .seconds(2))
+                return Self.screen
+            }
+            $0.plugins.events = { _, _, _ in AsyncThrowingStream { _ in } }
+            $0.plugins.act = { [calls] _, _, screen, action in
+                calls.record("act \(screen) \(action.action)")
+                return .null
+            }
+        }
+        let task = await store.send(.task)
+        await clock.advance(by: .milliseconds(299))
+        await clock.advance(by: .milliseconds(1))
+        await store.receive(\.slow) { $0.slow = true }
+        await clock.advance(by: .milliseconds(1_700))
+        await store.receive(\.loaded) {
+            $0.screen = LiveScreen(Self.screen)
+            $0.asOf = epoch
+            $0.slow = false
+        }
+        let retry = await store.send(.retry)
+        await clock.advance(by: .milliseconds(300))
+        await store.receive(\.slow) { $0.slow = true }
+        await store.send(.act(BlockAction(action: "drive", values: [:]))) {
+            $0.pending = [BlockAction(action: "drive", values: [:])]
+        }
+        await store.receive(\.acted) { $0.pending = [] }
+        await clock.advance(by: .milliseconds(1_700))
+        await store.receive(\.loaded) { $0.slow = false }
+        await clock.advance(by: .seconds(2))
+        #expect(calls.all == ["act queue drive", "keep https://mini.local|drover|/screens/queue true"])
+        await retry.cancel()
+        await task.cancel()
+    }
+}

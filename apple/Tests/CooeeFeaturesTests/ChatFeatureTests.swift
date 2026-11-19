@@ -216,4 +216,20 @@ extension ChatFeatureTests {
         await store.receive(\.delegate.started)
         #expect(calls.all == ["start coder  hi setup"])
     }
+
+    @Test internal func aRepeatedIdRefreshedFiveTimesStaysOneRow() async {
+        let store = store()
+        let row = { (n: Int) in APIItem(id: 7, time: 7, kind: "agent", text: "v\(n)") }
+        await store.send(.event(.item(row(0)))) { $0.items = [row(0)] }
+        for n in 1...4 {
+            await store.send(.event(.item(row(n)))) { $0.items = [row(n)] }
+        }
+        await store.send(.loaded(Slice(items: [row(5)], turn: Turn(), cursor: "b.7", queue: []))) {
+            $0.items = [row(5)]
+            $0.since = epoch
+            $0.loading = false
+        }
+        await store.send(.event(.item(row(6)))) { $0.items = [row(6)] }
+        #expect(store.state.drawn.count == 1)
+    }
 }

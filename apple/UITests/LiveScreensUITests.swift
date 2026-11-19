@@ -40,7 +40,7 @@
         }
 
         @MainActor
-        internal func opensDroversScreens(_ app: XCUIApplication, _ new: XCUIElement) {
+        internal func droverChat(_ app: XCUIApplication, _ new: XCUIElement) -> XCUIElement {
             XCTAssert(new.waitForExistence(timeout: 10))
             new.tap()
             app.buttons["Conductor"].firstMatch.tap()
@@ -53,6 +53,12 @@
                 app.buttons["Attach"].firstMatch.tap()
             }
             XCTAssert(queue.waitForExistence(timeout: 20))
+            return queue
+        }
+
+        @MainActor
+        internal func opensDroversScreens(_ app: XCUIApplication, _ new: XCUIElement) {
+            let queue = droverChat(app, new)
             personaPanel(app)
             app.buttons["Events"].firstMatch.tap()
             XCTAssert(labelled(app, "merged").waitForExistence(timeout: 20))
