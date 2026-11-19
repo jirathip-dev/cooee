@@ -10,6 +10,7 @@ use cooee_core::{
     Config, Kind,
     agents::{self, Agent},
     library, memory,
+    plugins::PlaceKind,
     routines::{Mark, Place, Routine},
     skills,
 };
@@ -258,6 +259,7 @@ async fn fill(cx: &Cx, id: String) -> Result<Block, HubError> {
         let places = agents::places(config.as_deref(), &data, &p.id).map_err(refused)?;
         let places: Vec<PlaceRow> = places
             .iter()
+            .filter(|pl| pl.kind == PlaceKind::HeaderStrip)
             .map(|pl| PlaceRow {
                 id: &pl.id,
                 plugin: &pl.plugin,
