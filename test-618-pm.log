@@ -1,0 +1,18 @@
+   Compiling cooee-terminal v0.1.0 (/Users/jkmacmini/.local/share/drover/work/cooee/issue-618/crates/cooee-terminal)
+   Compiling cooee-server v0.1.0 (/Users/jkmacmini/.local/share/drover/work/cooee/issue-618/crates/cooee-server)
+   Compiling cooee v0.1.0 (/Users/jkmacmini/.local/share/drover/work/cooee/issue-618/crates/cooee)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 7.86s
+     Running tests/plugin_manager.rs (/Users/jkmacmini/.local/share/herdsman/work/.build/cooee-impl-618/debug/deps/plugin_manager-7b141d26d25d944c)
+
+running 8 tests
+test add_from_the_index_clones_builds_writes_the_entry_and_token_starts_it_and_locks_it ... ok
+test only_a_paired_device_may_add_and_a_first_party_plugin_is_improved_via_an_issue ... ok
+test a_backend_ends_when_cooee_is_killed_and_a_restart_starts_it_again ... ok
+test an_index_plugin_has_no_warning_and_a_url_plugin_is_not_reviewed ... ok
+test an_attach_backend_that_answers_is_used_and_run_only_starts_once_it_is_gone ... ok
+test a_failed_update_keeps_the_old_build_and_a_good_one_swaps_in ... ok
+test remove_stops_it_and_keeps_the_checkout_unless_purged ... ok
+test improve_makes_a_branch_an_approval_builds_and_swaps_it_in_and_it_rolls_back ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 3.25s
+

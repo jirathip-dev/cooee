@@ -1,0 +1,24 @@
+   Compiling cooee-server v0.1.0 (/Users/jkmacmini/.local/share/drover/work/cooee/issue-618/crates/cooee-server)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.17s
+     Running unittests src/lib.rs (/Users/jkmacmini/.local/share/herdsman/work/.build/cooee-impl-618/debug/deps/cooee_server-db6a49a1ece4f215)
+
+running 1 test
+test manage::tests::a_backend_failing_with_address_in_use_while_its_attach_port_is_up_ends_attached ... FAILED
+
+failures:
+
+---- manage::tests::a_backend_failing_with_address_in_use_while_its_attach_port_is_up_ends_attached stdout ----
+
+thread 'manage::tests::a_backend_failing_with_address_in_use_while_its_attach_port_is_up_ends_attached' (777020290) panicked at crates/cooee-server/src/manage.rs:1130:9:
+assertion `left == right` failed
+  left: "crashed (exit status: 1), restarting"
+ right: "attached"
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    manage::tests::a_backend_failing_with_address_in_use_while_its_attach_port_is_up_ends_attached
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 55 filtered out; finished in 0.05s
+
+error: test failed, to rerun pass `-p cooee-server --lib`

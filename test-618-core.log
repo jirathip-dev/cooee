@@ -1,0 +1,43 @@
+   Compiling proc-macro2 v1.0.107
+   Compiling serde_core v1.0.229
+   Compiling hybrid-array v0.4.15
+   Compiling ctutils v0.4.8
+   Compiling winnow v1.0.5
+   Compiling crypto-common v0.2.2
+   Compiling block-buffer v0.12.1
+   Compiling toml_parser v1.1.5+spec-1.1.0
+   Compiling digest v0.11.3
+   Compiling memchr v2.8.3
+   Compiling hmac v0.13.0
+   Compiling quote v1.0.47
+   Compiling smallvec v1.16.4
+   Compiling serde_json v1.0.154
+   Compiling syn v3.0.9
+   Compiling rusqlite v0.41.1
+   Compiling toml_datetime v1.1.2+spec-1.1.0
+   Compiling serde_spanned v1.1.2
+   Compiling sha2 v0.11.1
+   Compiling hkdf v0.13.0
+   Compiling toml v1.2.0+spec-1.1.0
+   Compiling serde_derive_internals v0.30.0
+   Compiling ref-cast-impl v1.0.27
+   Compiling serde_derive v1.0.229
+   Compiling schemars_derive v1.2.3
+   Compiling cooee-core v0.1.0 (/Users/jkmacmini/.local/share/drover/work/cooee/issue-618/crates/cooee-core)
+   Compiling ref-cast v1.0.27
+   Compiling thiserror-impl v2.0.21
+   Compiling thiserror v2.0.21
+   Compiling serde v1.0.229
+   Compiling schemars v1.2.3
+   Compiling shed-proto v0.0.0 (https://github.com/jirathip-dev/shed?rev=4ac443dbbcb51227dc9df2fb55e2f0834d6a91eb#4ac443db)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 8.10s
+     Running unittests src/lib.rs (/Users/jkmacmini/.local/share/herdsman/work/.build/cooee-impl-618/debug/deps/cooee_core-4fea4ca7b76db187)
+
+running 4 tests
+test plugins::tests::the_built_in_index_parses ... ok
+test chat::apply::tests::shed_answers_its_own_approval_never_a_plugins_card ... ok
+test plugins::tests::a_manifest_needs_a_name_a_tab_or_a_permitted_place ... ok
+test plugins::tests::entries_round_trip ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 84 filtered out; finished in 0.01s
+

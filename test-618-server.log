@@ -1,0 +1,63 @@
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.08s
+     Running unittests src/lib.rs (/Users/jkmacmini/.local/share/herdsman/work/.build/cooee-impl-618/debug/deps/cooee_server-db6a49a1ece4f215)
+
+running 56 tests
+test connectors::tests::a_token_is_pasted_once_and_sent_in_its_header ... ok
+test hub::tests::an_idle_threads_chat_unloads_and_reloads_intact ... ok
+test hub::tests::a_thread_with_no_messages_sends_no_age ... ok
+test hub::tests::a_reply_ends_the_rows_turn ... ok
+test hub::tests::a_rooms_turns_stop_at_the_deadline ... ok
+test hub::rooms::tests::a_rooms_row_names_its_last_speaker ... ok
+test hub::frames::tests::a_frame_is_encrypted_on_disk_shown_in_the_thread_and_deleted_after_14_days ... ok
+test hub::tests::a_members_ask_shows_in_its_room_and_pauses_its_deadline ... ok
+test connectors::tests::signs_in_with_pkce_refreshes_before_expiry_and_signs_out_with_a_revoke ... ok
+test connectors::tests::a_stale_unknown_or_unchecked_sign_in_is_refused_and_a_refused_refresh_needs_sign_in ... ok
+test login::checks::tests::a_hanging_check_starts_once_per_growing_interval ... ok
+test login::checks::tests::a_timeout_keeps_a_signed_in_account_signed_in_as_unknown ... ok
+test look::tests::gate_numbers_match_herdsmans ... ok
+test hub::expire::tests::a_connectors_write_card_in_a_routines_run_expires_as_deny_and_the_owners_waits ... ok
+test look::tests::a_theme_with_sprites_needs_its_sheet ... ok
+test hub::tests::prune_drops_only_the_workflow_sessions_shed_no_longer_lists ... ok
+test hub::expire::tests::a_routines_approval_expires_as_deny_and_the_owners_never_does ... ok
+test hub::tests::r15_a_turn_idle_30_minutes_is_surfaced_as_needs_you ... ok
+test look::tests::only_plain_is_built_in_and_the_first_party_packs_load_installed ... ok
+test look::pack::tests::a_broken_style_is_reported_and_leaves_its_packs_theme_served ... ok
+test look::tests::own_themes_and_schemes_load_and_a_failing_scheme_is_refused ... ok
+test look::tests::push_body_says_the_theme_word_and_the_plain_word ... ok
+test look::pack::tests::a_style_is_checked_against_its_own_theme_and_name ... ok
+test manage::tests::backoff_doubles_and_the_fifth_crash_in_ten_minutes_turns_it_off ... ok
+test hub::tests::only_a_stop_cancels_a_members_session_as_it_starts ... ok
+test net::tests::a_redirect_is_answered_not_followed ... ok
+test look::tests::the_theme_gate_passes_the_first_party_packs_and_the_starter ... ok
+test net::tests::a_binary_body_arrives_whole ... ok
+test pairing::tests::a_der_signature_over_the_data_checks_out_and_a_changed_one_does_not ... ok
+test passkey::tests::der_signatures_pad_and_trim_their_integers ... ok
+test look::pack::tests::the_gate_passes_both_style_packs_and_each_fixture_as_its_name_says ... ok
+test passkey::tests::an_unlock_needs_this_passkeys_signature_and_a_fresh_challenge ... ok
+test passkey::tests::registration_keeps_the_point_and_wants_face_id_and_this_origin ... ok
+test plugin::tests::a_silent_backend_stream_is_closed_after_idle ... ok
+test passkey::tests::ten_idle_minutes_lock_and_face_id_unlocks_again ... ok
+test push::apns::tests::the_apns_jwt_has_the_key_id_and_team_and_lasts_under_an_hour ... ok
+test push::crypto::tests::encrypt_matches_rfc_8291_vector ... ok
+test push::crypto::tests::jwt_is_signed_by_the_key_for_the_endpoint_origin ... ok
+test push::key::tests::a_0644_key_file_is_tightened ... ok
+test manage::tests::a_backend_failing_with_address_in_use_while_its_attach_port_is_up_ends_attached ... ok
+test push::apns::tests::a_renewed_vapid_key_keeps_apns_tokens ... ok
+test look::tests::the_theme_gate_fails_a_missing_state_low_contrast_an_oversize_scene_and_more ... ok
+test push::apns::tests::without_the_key_or_apns_table_nothing_goes_to_apns ... ok
+test push::key::tests::the_key_is_made_in_a_0600_file ... ok
+test push::key::tests::an_old_key_is_adopted_once ... ok
+test routines::tests::an_offset_reads_as_minutes ... ok
+test push::note::tests::a_push_for_each_trigger_and_none_otherwise ... ok
+test push::key::tests::a_renewed_key_asks_each_device_to_subscribe_again ... ok
+test manage::tests::the_supervisor_never_restarts_a_healthy_backend ... ok
+test manage::tests::the_supervisor_restarts_a_crashing_backend_then_turns_it_off_with_an_alert ... ok
+test push::send::tests::a_push_to_one_device_reaches_only_its_endpoint ... ok
+test hub::tests::the_agent_list_is_refreshed_at_most_once_a_minute ... ok
+test push::apns::tests::a_push_goes_to_each_apns_token_and_a_410_drops_it ... ok
+test hub::tests::r6_requests_over_a_long_log_are_within_budget ... ok
+test plugin::tests::a_trickling_backend_fails_at_the_deadline ... ok
+test manage::tests::the_supervisor_restarts_a_hung_backend_after_three_failed_checks ... ok
+
+test result: ok. 56 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 6.77s
+

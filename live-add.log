@@ -1,0 +1,9 @@
+drover 0.1.0 from https://github.com/jirathip-dev/drover
+commit 8e7536e925cd54b929ed698e37476863b93db6ec
+build: true
+run: exec drover serve --addr 127.0.0.1:$PORT
+  (its backend runs as you on this Mac)
+tabs: 
+screens: 5 places; actions: filter, drive, pause, drive-all, force, later, top, limit, answer, unpark, run-card, needs-human, save-fleets, stop, drop, remove-fleet, kill, clean, close, send, move, queue, config-card, secret-card
+needs: drover
+added drover: cooee serve runs it
