@@ -2,6 +2,7 @@ import ComposableArchitecture
 import CooeeAPI
 import CooeeCore
 import CooeeFeatures
+import CooeeUI
 import Foundation
 import WidgetKit
 

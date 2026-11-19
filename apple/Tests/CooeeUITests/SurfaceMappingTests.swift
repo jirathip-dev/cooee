@@ -15,7 +15,7 @@ internal struct SurfaceMappingTests {
 
     @Test internal func theWidgetsRowsReadTheGlanceAsDrawn() {
         let glance = Glance(
-            at: 0, asks: [row("a", "Researcher", "Kestrel", "Allow fetch on sec.gov?")],
+            time: 0, asks: [row("a", "Researcher", "Kestrel", "Allow fetch on sec.gov?")],
             blocked: [row("b", "Am", "cooee#218 · impl lane", "needs a secret", lane: true)],
             running: [
                 row("r1", "Coder", "Export for Kestrel", "$ cargo"), row("r2", "Cond", "cooee queue", "…"),

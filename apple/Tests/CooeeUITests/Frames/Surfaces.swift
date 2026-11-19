@@ -43,11 +43,11 @@ extension SurfaceActivity {
 
 private struct Device<Content: View>: View {
     @Environment(\.look) private var look
-    var lock = false
-    var island: AnyView = AnyView(Capsule().fill(.black).frame(width: 124, height: 36))
-    @ViewBuilder let content: Content
+    fileprivate var lock = false
+    fileprivate var island: AnyView = AnyView(Capsule().fill(.black).frame(width: 124, height: 36))
+    @ViewBuilder fileprivate let content: Content
 
-    var body: some View {
+    fileprivate var body: some View {
         let foreground = look.palette.foreground
         ZStack(alignment: .top) {
             content.padding(.top, 54)
@@ -74,7 +74,7 @@ private struct Device<Content: View>: View {
 private struct Wallpaper: View {
     @Environment(\.look) private var look
 
-    var body: some View {
+    fileprivate var body: some View {
         let palette = look.palette
         ZStack {
             palette.background
@@ -91,7 +91,7 @@ private struct Wallpaper: View {
 private struct LockScreen: View {
     @Environment(\.look) private var look
 
-    var body: some View {
+    fileprivate var body: some View {
         let (palette, mono) = (look.palette, look.type == .mono)
         ZStack {
             Wallpaper()
@@ -124,7 +124,7 @@ private struct LockScreen: View {
 private struct IslandScreen: View {
     @Environment(\.look) private var look
 
-    var body: some View {
+    fileprivate var body: some View {
         ZStack(alignment: .top) {
             Backdrop()
             others.opacity(0.35)
@@ -182,7 +182,7 @@ extension SurfaceActivity {
 private struct Expanded: View {
     @Environment(\.look) private var look
 
-    var body: some View {
+    fileprivate var body: some View {
         IslandExpanded(.running).padding(.horizontal, 20).padding(.vertical, 16).frame(width: 384)
             .background(.black, in: .rect(cornerRadius: look.type == .mono ? 0 : 44))
     }
@@ -191,7 +191,7 @@ private struct Expanded: View {
 private struct HomeWidgets: View {
     @Environment(\.look) private var look
 
-    var body: some View {
+    fileprivate var body: some View {
         let glance = SurfaceGlance.drawn
         ZStack(alignment: .top) {
             Wallpaper()

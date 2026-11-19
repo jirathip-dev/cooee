@@ -1,6 +1,11 @@
 import AppIntents
 import ComposableArchitecture
 import CooeeCore
+import CooeeFeatures
+
+#if os(iOS)
+    import ActivityKit
+#endif
 
 #if os(iOS)
     public typealias StopIntent = LiveActivityIntent
@@ -32,5 +37,14 @@ public struct StopTurnIntent: StopIntent {
     }
 }
 
+#if os(iOS)
+    /// The one Live Activity: its state is what the hub pushes.
+    public struct CooeeActivity: ActivityAttributes {
+        public typealias ContentState = Shown
+
+        public init() {}
+    }
+#endif
+
 /// The intents of this module, for the app's `AppIntentsPackage`.
-public struct FeatureIntents: AppIntentsPackage {}
+public struct UIIntents: AppIntentsPackage {}

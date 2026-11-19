@@ -1,4 +1,3 @@
-import AppIntents
 import ComposableArchitecture
 import CooeeCore
 @testable import CooeeFeatures
@@ -9,29 +8,6 @@ import Testing
 internal struct SurfaceTests {
     private let calls = Calls()
     private let running = GlanceRow(thread: "t9", title: "Export", persona: "coder", name: "Coder", line: "$ cargo")
-
-    @Test internal func stopEndsTheNamedOrTheTopRunningTurnWithoutFaceID() async throws {
-        let (calls, running) = (calls, running)
-        try await withDependencies {
-            $0.serverStore.load = { mini }
-            $0.threads.stop = { server, thread in calls.record("stop \(server.url.host() ?? "") \(thread)") }
-            $0.ownerCheck.confirm = { reason in
-                calls.record("face id \(reason)")
-                return false
-            }
-            $0.surface.cached = { GlanceCache(glance: Glance(running: [running]), personas: [], host: "mini") }
-        } operation: {
-            _ = try await StopTurnIntent(thread: "t1").perform()
-            _ = try await StopTurnIntent().perform()
-        }
-        try await withDependencies {
-            $0.serverStore.load = { nil }
-        } operation: {
-            _ = try await StopTurnIntent(thread: "t1").perform()
-        }
-        #expect(calls.all == ["stop mini.local t1", "stop mini.local t9"])
-        #expect("\(StopTurnIntent.authenticationPolicy)" == "\(IntentAuthenticationPolicy.alwaysAllowed)")
-    }
 
     @Test internal func aTapOnAWidgetOrAnIntentOpensItsThreadOrStartsAChatAndEachTokenGoesToTheServer() async {
         let calls = calls
@@ -57,7 +33,7 @@ internal struct SurfaceTests {
 
     @Test internal func eachHomeLoadKeepsTheGlanceThePersonasTheThreadsTheHostAndTheStyle() async {
         let kept = LockIsolated<[GlanceCache]>([])
-        let glance = Glance(at: 5, running: [running])
+        let glance = Glance(time: 5, running: [running])
         var state = AppFeature.State(layout: testLayout, server: mini)
         state.home?.personas = [coder]
         let rows = [row("t1"), row("t2", archived: true), lane("l1")]

@@ -12,7 +12,7 @@ internal struct GlanceTests {
         let file = GlanceCache.file(in: folder)
         #expect(GlanceCache.read(file) == nil)
         let cache = GlanceCache(
-            glance: Glance(at: 9, asks: [ask]), personas: [APIPersona(id: "res", name: "Researcher", agent: "x")],
+            glance: Glance(time: 9, asks: [ask]), personas: [APIPersona(id: "res", name: "Researcher", agent: "x")],
             host: "mini")
         try cache.write(file)
         #expect(GlanceCache.read(file) == cache)
@@ -23,8 +23,8 @@ internal struct GlanceTests {
     @Test internal func itsAgeLineNamesTheTimeAndTheServer() throws {
         var calendar = Calendar(identifier: .gregorian)
         calendar.timeZone = try #require(TimeZone(identifier: "UTC"))
-        let at = (9 * 60 + 41) * 60_000
-        let cache = GlanceCache(glance: Glance(at: at), personas: [], host: "mini")
+        let time = (9 * 60 + 41) * 60_000
+        let cache = GlanceCache(glance: Glance(time: time), personas: [], host: "mini")
         #expect(cache.asOf(calendar) == "as of 9:41 · mini")
         var bare = cache
         bare.host = ""

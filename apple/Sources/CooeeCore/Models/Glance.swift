@@ -1,9 +1,5 @@
 import Foundation
 
-#if os(iOS)
-    import ActivityKit
-#endif
-
 /// One row of `GET /glance`: a thread or a lane that needs you or runs.
 public struct GlanceRow: Codable, Sendable, Equatable, Identifiable {
     public var thread: String
@@ -32,17 +28,22 @@ public struct GlanceRow: Codable, Sendable, Equatable, Identifiable {
     }
 }
 
-/// What the widgets show: the asks, the blocked lanes and what runs, as of `at` (Unix milliseconds).
+/// What the widgets show: the asks, the blocked lanes and what runs, as of `time` (Unix milliseconds).
 public struct Glance: Codable, Sendable, Equatable {
-    public var at: Int
+    private enum CodingKeys: String, CodingKey {
+        case time = "at"
+        case asks, blocked, running
+    }
+
+    public var time: Int
     public var asks: [GlanceRow]
     public var blocked: [GlanceRow]
     public var running: [GlanceRow]
 
     public var needs: [GlanceRow] { asks + blocked }
 
-    public init(at: Int = 0, asks: [GlanceRow] = [], blocked: [GlanceRow] = [], running: [GlanceRow] = []) {
-        self.at = at
+    public init(time: Int = 0, asks: [GlanceRow] = [], blocked: [GlanceRow] = [], running: [GlanceRow] = []) {
+        self.time = time
         self.asks = asks
         self.blocked = blocked
         self.running = running
@@ -116,7 +117,7 @@ public struct GlanceCache: Codable, Sendable, Equatable {
 
     /// The age line: `as of 9:41 · mini`.
     public func asOf(_ calendar: Calendar = .current) -> String {
-        let time = Date(timeIntervalSince1970: Double(glance.at) / 1000)
+        let time = Date(timeIntervalSince1970: Double(glance.time) / 1000)
         let parts = calendar.dateComponents([.hour, .minute], from: time)
         let clock = String(format: "%d:%02d", parts.hour ?? 0, parts.minute ?? 0)
         return host.isEmpty ? "as of \(clock)" : "as of \(clock) · \(host)"
@@ -135,12 +136,3 @@ public enum Since {
         return minutes < 60 ? "\(minutes)m" : "\(minutes / 60)h"
     }
 }
-
-#if os(iOS)
-    /// The one Live Activity: its state is what the hub pushes.
-    public struct CooeeActivity: ActivityAttributes {
-        public typealias ContentState = Shown
-
-        public init() {}
-    }
-#endif

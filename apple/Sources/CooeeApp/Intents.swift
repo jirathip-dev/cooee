@@ -2,10 +2,11 @@ import AppIntents
 import ComposableArchitecture
 import CooeeCore
 import CooeeFeatures
+import CooeeUI
 
 /// The surfaces' intents (#662), for the app target's `AppIntentsPackage`.
 public struct SurfaceIntents: AppIntentsPackage {
-    public static var includedPackages: [any AppIntentsPackage.Type] { [FeatureIntents.self] }
+    public static var includedPackages: [any AppIntentsPackage.Type] { [UIIntents.self] }
 }
 
 /// A persona, over the App Group copy the app keeps.

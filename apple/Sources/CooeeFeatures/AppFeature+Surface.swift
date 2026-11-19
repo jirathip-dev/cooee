@@ -2,7 +2,6 @@ import ComposableArchitecture
 import CooeeCore
 
 extension AppFeature {
-    /// The routes an intent, a widget or the Live Activity opens, and each Live Activity token sent to the server.
     internal func surfaces() -> Effect<Action> {
         let (surface, serverStore) = (surface, serverStore)
         return .merge(
@@ -23,7 +22,6 @@ extension AppFeature {
         )
     }
 
-    /// The App Group copy the widgets and intents read, written after each Home load.
     internal func keepGlance(_ state: State) -> Effect<Action> {
         guard let home = state.home else { return .none }
         let (surface, server, personas, style) = (surface, home.server, home.personas, state.menu.settings.style.kept)

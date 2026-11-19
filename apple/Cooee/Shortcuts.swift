@@ -1,6 +1,6 @@
 import AppIntents
 import CooeeApp
-import CooeeFeatures
+import CooeeUI
 
 internal struct CooeeIntents: AppIntentsPackage {
     internal static var includedPackages: [any AppIntentsPackage.Type] { [SurfaceIntents.self] }

@@ -16,17 +16,17 @@ public struct SendSnippet: View {
 
 private struct SnippetCard: View {
     @Environment(\.look) private var look
-    let persona: Persona
-    let place: String
-    let text: String
+    private let persona: Persona
+    private let place: String
+    private let text: String
 
-    nonisolated init(persona: Persona, place: String, text: String) {
+    nonisolated fileprivate init(persona: Persona, place: String, text: String) {
         self.persona = persona
         self.place = place
         self.text = text
     }
 
-    var body: some View {
+    fileprivate var body: some View {
         let palette = look.palette
         VStack(alignment: .leading, spacing: 12) {
             Kicker(text: "cooee")
@@ -44,9 +44,9 @@ private struct SnippetCard: View {
 
 private struct SurfaceLook: ViewModifier {
     @Environment(\.colorScheme) private var scheme
-    let style: Style?
+    fileprivate let style: Style?
 
-    func body(content: Content) -> some View {
+    fileprivate func body(content: Content) -> some View {
         let palette: Palette = scheme == .dark ? .farmDark : .farmLight
         return content.environment(\.look, Look(palette: palette, style: style ?? .bundled, still: true))
     }

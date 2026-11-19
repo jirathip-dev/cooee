@@ -1,5 +1,5 @@
 import CooeeCore
-import Foundation
+import SwiftUI
 
 extension SurfaceGlance {
     /// The widgets' rows from the App Group copy, with clocks at `now` (Unix milliseconds).
@@ -24,17 +24,19 @@ extension SurfaceGlance {
         }
         self.init(
             needs: asks + blocked, running: running,
-            counts: Self.counted([(glance.asks.count, "ask", "asks"), (glance.blocked.count, "blocked", "blocked")]),
+            counts: Self.counted([(glance.asks.count, ("ask", "asks")), (glance.blocked.count, ("blocked", "blocked"))]
+            ),
             rest: Self.rest(Array(glance.running.dropFirst(2))), asOf: cache.asOf())
     }
 
-    private static func counted(_ parts: [(Int, String, String)]) -> String {
-        parts.filter { $0.0 > 0 }.map { "\($0.0) \($0.0 == 1 ? $0.1 : $0.2)" }.joined(separator: " · ")
+    private static func counted(_ parts: [(count: Int, words: (one: String, many: String))]) -> String {
+        let shown = parts.filter { $0.count > 0 }
+        return shown.map { "\($0.count) \($0.count == 1 ? $0.words.one : $0.words.many)" }.joined(separator: " · ")
     }
 
     private static func rest(_ rows: [GlanceRow]) -> String {
         let lanes = rows.count { $0.lane }
-        let parts = counted([(rows.count - lanes, "turn", "turns"), (lanes, "lane", "lanes")])
+        let parts = counted([(rows.count - lanes, ("turn", "turns")), (lanes, ("lane", "lanes"))])
         return parts.isEmpty ? "" : "+" + parts.replacingOccurrences(of: " · ", with: " · +")
     }
 }
