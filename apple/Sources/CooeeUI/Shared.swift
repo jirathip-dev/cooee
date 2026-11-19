@@ -4,20 +4,8 @@ import WebKit
 
 #if canImport(UIKit)
     import UIKit
-
-    internal typealias PlatformImage = UIImage
-
-    extension Image {
-        internal init(platform: PlatformImage) { self.init(uiImage: platform) }
-    }
 #else
     import AppKit
-
-    internal typealias PlatformImage = NSImage
-
-    extension Image {
-        internal init(platform: PlatformImage) { self.init(nsImage: platform) }
-    }
 #endif
 
 internal struct Sprite: View {
@@ -33,12 +21,12 @@ internal struct Sprite: View {
             PackArt(art: look.art ?? URL(filePath: "/"), path: "", markup: svg)
         } else if let pack, let art = look.art {
             PackArt(art: art, path: pack)
-        } else if let url = Bundle.module.url(forResource: name, withExtension: "png", subdirectory: "Sprites"),
-            let image = PlatformImage(contentsOfFile: url.path)
-        {
-            Image(platform: image).resizable().interpolation(.high).scaledToFit()
         } else {
-            Color.clear
+            Decoded(source: .sprite(name)) {
+                Image(decorative: $0, scale: 1).resizable().interpolation(.high).scaledToFit()
+            } waiting: {
+                Color.clear
+            }
         }
     }
 }
