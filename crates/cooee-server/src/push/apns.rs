@@ -1,14 +1,11 @@
 use std::{io, sync::PoisonError};
 
+use crate::net::Post;
+
 use cooee_core::{Apns, ApnsEnv};
 use p256::SecretKey;
 
-use super::{
-    Note, Push, Sub, apns_jwt,
-    crypto::p8_key,
-    key::read_private,
-    send::{now, sent},
-};
+use super::{Note, Push, Sub, apns_jwt, crypto::p8_key, key::read_private, send::now, subs::stamp};
 
 impl Push {
     /// This push state sending to APNs tokens too, with `apns` (none: it sends to none).
@@ -21,9 +18,21 @@ impl Push {
     pub(super) fn apns_key(&self) -> Result<(&Apns, SecretKey), String> {
         let a = self.apns.as_ref().ok_or("no [apns] in config.toml")?;
         let path = self.data.join("apns.p8");
+        let (at, mut cache) = (
+            stamp(&path),
+            self.p8.lock().unwrap_or_else(PoisonError::into_inner),
+        );
+        if let Some((was, k)) = cache.as_ref()
+            && Some(*was) == at
+        {
+            return Ok((a, k.clone()));
+        }
         match read_private(&path) {
             Ok(Some(pem)) => p8_key(&pem)
-                .map(|k| (a, k))
+                .map(|k| {
+                    *cache = at.map(|at| (at, k.clone()));
+                    (a, k)
+                })
                 .ok_or_else(|| format!("{} is not an APNs key (.p8)", path.display())),
             Ok(None) => Err(format!(
                 "no {} (Apple Developer › Keys, APNs)",
@@ -74,7 +83,7 @@ impl Push {
         env: ApnsEnv,
         s: &Sub,
         note: &Note,
-    ) -> io::Result<(u16, String)> {
+    ) -> Post {
         let host = a.url.as_deref().unwrap_or(match env {
             ApnsEnv::Sandbox => "https://api.sandbox.push.apple.com",
             ApnsEnv::Production => "https://api.push.apple.com",
@@ -93,12 +102,12 @@ impl Push {
             "content-type: application/json".to_owned(),
         ];
         let url = format!("{host}/3/device/{}", s.endpoint);
-        sent(&url, &h, body.to_string().as_bytes())
+        (url, h.to_vec(), body.to_string().into_bytes())
     }
 }
 
 #[cfg(test)]
-mod tests {
+pub(super) mod tests {
     use std::{io::Write, os::unix::fs::PermissionsExt, path::Path, thread};
 
     use base64::{
@@ -120,7 +129,7 @@ mod tests {
         format!("-----BEGIN {p}\n{body}\n-----END {p}\n")
     }
 
-    fn p8(k: &SecretKey) -> String {
+    pub(in crate::push) fn p8(k: &SecretKey) -> String {
         let head = "308187020100301306072a8648ce3d020106082a8648ce3d030107046d306b0201010420";
         let hex = |h: &str| {
             (0..h.len())
@@ -137,7 +146,7 @@ mod tests {
         pem(&STANDARD.encode(der))
     }
 
-    fn apns(url: &str) -> Apns {
+    pub(in crate::push) fn apns(url: &str) -> Apns {
         Apns {
             key_id: "KEY1234567".to_owned(),
             team_id: "TEAM123456".to_owned(),
@@ -180,7 +189,7 @@ mod tests {
         (url, rx)
     }
 
-    fn paired(dir: &Path, n: u64) -> Vec<String> {
+    pub(in crate::push) fn paired(dir: &Path, n: u64) -> Vec<String> {
         let devices = Devices::new(dir);
         (0..n)
             .map(|i| {
