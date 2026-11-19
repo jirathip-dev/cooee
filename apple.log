@@ -1,0 +1,1590 @@
+
+== swift format
+
+== anti-slop
+no violations
+
+== TODO(#N) names an open issue
+every TODO names an open issue
+
+== SwiftLint 0.65.1
+swift bans test ok
+no violations
+
+== build (Swift 6, complete concurrency, warnings as errors)
+
+== tests with coverage
+Test Suite 'All tests' started at 2569-11-19 19:23:21.588.
+Test Suite 'All tests' passed at 2569-11-19 19:23:21.589.
+	 Executed 0 tests, with 0 failures (0 unexpected) in 0.000 (0.001) seconds
+Test Suite 'All tests' started at 2569-11-19 19:23:22.408.
+Test Suite 'All tests' passed at 2569-11-19 19:23:22.422.
+	 Executed 0 tests, with 0 failures (0 unexpected) in 0.000 (0.014) seconds
+Test Suite 'All tests' started at 2569-11-19 19:23:23.205.
+Test Suite 'All tests' passed at 2569-11-19 19:23:23.206.
+	 Executed 0 tests, with 0 failures (0 unexpected) in 0.000 (0.001) seconds
+Test Suite 'All tests' started at 2569-11-19 19:23:24.233.
+Test Suite 'All tests' passed at 2569-11-19 19:23:24.255.
+	 Executed 0 tests, with 0 failures (0 unexpected) in 0.000 (0.022) seconds
+Test Suite 'All tests' started at 2569-11-19 19:23:25.012.
+Test Suite 'All tests' passed at 2569-11-19 19:23:25.021.
+	 Executed 0 tests, with 0 failures (0 unexpected) in 0.000 (0.009) seconds
+◇ Test run started.
+↳ Testing Library Version: 2403
+↳ Target Platform: arm64e-apple-macos14.0
+◇ Suite RoomFrames started.
+◇ Suite MenuRenderTests started.
+◇ Suite AdditionFrames started.
+◇ Suite TopicFrames started.
+◇ Suite SnapshotTests started.
+◇ Suite PackFrames started.
+◇ Suite TrustFrames started.
+◇ Suite DefaultLayoutTests started.
+◇ Suite SidebarRenderTests started.
+◇ Suite BlockIdentityTests started.
+◇ Suite PaletteTests started.
+◇ Suite DiagramFrames started.
+◇ Suite TrustRenderTests started.
+◇ Suite HeaderRenderTests started.
+◇ Suite HomeFrames started.
+◇ Suite PersonaRenderTests started.
+◇ Suite ThemeImportTests started.
+◇ Suite ThemeFrames started.
+◇ Suite BlockRenderTests started.
+◇ Suite QueueFrames started.
+◇ Suite SettingsFrames started.
+◇ Test matchesTheDesign(_:) started.
+◇ Test aPageFillsTheSheetWithItsBackground(_:) started.
+◇ Test matchesTheDesign(_:) started.
+◇ Test matchesTheDesign(_:) started.
+◇ Test aViewWiderThanItsFrameIsCaught() started.
+◇ Test matchesThePack(_:) started.
+◇ Test matchesTheDesign(_:) started.
+◇ Test theBundledHomeDrawsItsPinnedRowThenItsChats() started.
+◇ Test everyLabelOfTheWidestStyleKeepsItsWholeText() started.
+◇ Test theDefaultPassesCooeesContractAndPlacesNoLockedScreen() started.
+◇ Test aStyleWhoseLabelAddsWordsIsRefused(_:) started.
+◇ Test theBundledStyleAndBothPacksDecodeToTheirTokens() started.
+◇ Test theDefaultResolvesTodaysPlacesOnEachSize() started.
+◇ Test aPluginScreenMovedToTheSidebarIsDrawnInItsColumnAndNowhereElse() started.
+◇ Test aFieldKeepsItsTextAndFocusWhenARowIsInsertedAboveIt() started.
+◇ Test aPacksSchemeIsItsPalette() started.
+◇ Test aSchemeMissingATokenIsNoPalette() started.
+◇ Test farmsSchemesAreTheDefaultPalettes() started.
+◇ Test pickingASchemeRepaintsEveryScreenInItsOwnModeAndIsKeptUntilTheServerDropsIt() started.
+◇ Test matchesTheDesign(_:) started.
+◇ Test aPluginsPermissionsCardIsRefused() started.
+◇ Test theJSONCanNeitherSetNorFakeTheSourceLineInAnyStyle(_:_:) started.
+◇ Test theHomeLoadingLineSitsOnTheHeaderBottomEdge() started.
+◇ Test aThreadIsNoWiderThanItsWindow(_:) started.
+◇ Test theGoneLineDrawsRestartOnlyWhileTheAgentIsGone() started.
+◇ Test aPlacesCountDrawsOnItsChip() started.
+◇ Test theHeaderDrawsPlusOnlyWhenItCanStartAChat() started.
+◇ Test matchesTheDesign(_:) started.
+◇ Test initialsAndAColourDrawInsteadOfTheSymbol() started.
+◇ Test memoryDrawsOnlyTheNewestThreeNotes() started.
+◇ Test aPickedPhotoIsShrunkToAJpegAndDrawnAsTheAvatar() started.
+◇ Test aPngOrPhotoSnapsOntoTheGridAndAnSvgStaysVector() started.
+◇ Test matchesTheDesign(_:) started.
+◇ Test aPausedFleetsCardFoldsToOneLineAndDrawsInItsOwnColour() started.
+◇ Test everyScreenDraws(_:) started.
+◇ Test anEditorShowsEachErrorUnderItsLine() started.
+◇ Test theQueueDrawsItsStreamsOps() started.
+◇ Test everyFleetsConfigScreenDraws(_:) started.
+◇ Test everyCatalogueBlockDrawsAndAnUnknownOneIsSkipped() started.
+◇ Test everyProposalCardDraws() started.
+◇ Test theSceneStripDrawsOnlyInTheSceneLook() started.
+◇ Test aDiffDrawsEveryLineOfEveryHunk() started.
+◇ Test aRowWhoseCurrentRoundNeedsYouOpensItsRoundsOthersStayFolded() started.
+◇ Test aReplyKeepsEachLineOnItsOwnLine(_:) started.
+◇ Test everyCardDraws(_:) started.
+◇ Test theQueueInSceneDrawsInEveryLook(_:) started.
+◇ Test matchesTheDesign(_:) started.
+◇ Test matchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → room-dark to matchesTheDesign(_:) started.
+◇ Test case passing 1 argument page → .look to aPageFillsTheSheetWithItsBackground(_:) started.
+◇ Test case passing 1 argument page → .notifications to aPageFillsTheSheetWithItsBackground(_:) started.
+◇ Test case passing 1 argument page → .appIcon to aPageFillsTheSheetWithItsBackground(_:) started.
+◇ Test case passing 1 argument page → .terminal to aPageFillsTheSheetWithItsBackground(_:) started.
+◇ Test case passing 1 argument page → .themeEditor to aPageFillsTheSheetWithItsBackground(_:) started.
+◇ Test case passing 1 argument frame → additions-swipe to matchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → chat-modern-dark to matchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → style-terminal-home-dark to matchesThePack(_:) started.
+◇ Test case passing 1 argument frame → missing-poster-confirm@modern to matchesTheDesign(_:) started.
+◇ Test case passing 1 argument name → "bad-prefix.json" to aStyleWhoseLabelAddsWordsIsRefused(_:) started.
+◇ Test case passing 1 argument name → "bad-suffix.json" to aStyleWhoseLabelAddsWordsIsRefused(_:) started.
+◇ Test case passing 1 argument frame → workflow-map-dark to matchesTheDesign(_:) started.
+◇ Test case passing 2 arguments kind → "confirm", style → Style(format: 1, label: "Modern", icon: Optional(CooeeCore.IconSet.modern), type: CooeeCore.TypeDesign.default, radius: 1.0, surface: CooeeCore.Surface.glass, fills: CooeeCore.Fills.tint, marks: CooeeCore.Marks.symbols, figures: CooeeCore.Figures.avatar, sections: CooeeCore.Sections.title, labels: [CooeeCore.LabelRole.kind: CooeeCore.StyleLabel(prefix: "", suffix: "", case: CooeeCore.LabelCase.upper), CooeeCore.LabelRole.back: CooeeCore.StyleLabel(prefix: "‹ ", suffix: "", case: CooeeCore.LabelCase.asIs), CooeeCore.LabelRole.group: CooeeCore.StyleLabel(prefix: "", suffix: "", case: CooeeCore.LabelCase.upper), CooeeCore.LabelRole.header: CooeeCore.StyleLabel(prefix: "", suffix: "", case: CooeeCore.LabelCase.upper)], stage: nil) to theJSONCanNeitherSetNorFakeTheSourceLineInAnyStyle(_:_:) started.
+◇ Test case passing 2 arguments kind → "confirm", style → Style(format: 1, label: "Terminal", icon: Optional(CooeeCore.IconSet.terminal), type: CooeeCore.TypeDesign.mono, radius: 0.0, surface: CooeeCore.Surface.dashed, fills: CooeeCore.Fills.outline, marks: CooeeCore.Marks.text, figures: CooeeCore.Figures.ascii, sections: CooeeCore.Sections.quiet, labels: [CooeeCore.LabelRole.button: CooeeCore.StyleLabel(prefix: "[ ", suffix: " ]", case: CooeeCore.LabelCase.asIs), CooeeCore.LabelRole.kind: CooeeCore.StyleLabel(prefix: "## ", suffix: "", case: CooeeCore.LabelCase.asIs), CooeeCore.LabelRole.group: CooeeCore.StyleLabel(prefix: "# ", suffix: "", case: CooeeCore.LabelCase.lower), CooeeCore.LabelRole.picked: CooeeCore.StyleLabel(prefix: "> ", suffix: "", case: CooeeCore.LabelCase.lower), CooeeCore.LabelRole.section: CooeeCore.StyleLabel(prefix: "# ", suffix: "", case: CooeeCore.LabelCase.lower), CooeeCore.LabelRole.chip: CooeeCore.StyleLabel(prefix: "[", suffix: "]", case: CooeeCore.LabelCase.lower), CooeeCore.LabelRole.title: CooeeCore.StyleLabel(prefix: "~/", suffix: "", case: CooeeCore.LabelCase.asIs), CooeeCore.LabelRole.back: CooeeCore.StyleLabel(prefix: "< ", suffix: "", case: CooeeCore.LabelCase.lower), CooeeCore.LabelRole.said: CooeeCore.StyleLabel(prefix: "> ", suffix: "", case: CooeeCore.LabelCase.asIs), CooeeCore.LabelRole.header: CooeeCore.StyleLabel(prefix: "## ", suffix: "", case: CooeeCore.LabelCase.asIs)], stage: nil) to theJSONCanNeitherSetNorFakeTheSourceLineInAnyStyle(_:_:) started.
+◇ Test case passing 2 arguments kind → "permissions", style → Style(format: 1, label: "Modern", icon: Optional(CooeeCore.IconSet.modern), type: CooeeCore.TypeDesign.default, radius: 1.0, surface: CooeeCore.Surface.glass, fills: CooeeCore.Fills.tint, marks: CooeeCore.Marks.symbols, figures: CooeeCore.Figures.avatar, sections: CooeeCore.Sections.title, labels: [CooeeCore.LabelRole.kind: CooeeCore.StyleLabel(prefix: "", suffix: "", case: CooeeCore.LabelCase.upper), CooeeCore.LabelRole.back: CooeeCore.StyleLabel(prefix: "‹ ", suffix: "", case: CooeeCore.LabelCase.asIs), CooeeCore.LabelRole.group: CooeeCore.StyleLabel(prefix: "", suffix: "", case: CooeeCore.LabelCase.upper), CooeeCore.LabelRole.header: CooeeCore.StyleLabel(prefix: "", suffix: "", case: CooeeCore.LabelCase.upper)], stage: nil) to theJSONCanNeitherSetNorFakeTheSourceLineInAnyStyle(_:_:) started.
+◇ Test case passing 2 arguments kind → "permissions", style → Style(format: 1, label: "Worst case, 24 chars max", icon: nil, type: CooeeCore.TypeDesign.mono, radius: 0.0, surface: CooeeCore.Surface.dashed, fills: CooeeCore.Fills.outline, marks: CooeeCore.Marks.text, figures: CooeeCore.Figures.ascii, sections: CooeeCore.Sections.quiet, labels: [CooeeCore.LabelRole.kind: CooeeCore.StyleLabel(prefix: "[## ", suffix: " ##]", case: CooeeCore.LabelCase.upper), CooeeCore.LabelRole.chip: CooeeCore.StyleLabel(prefix: "((((", suffix: "))))", case: CooeeCore.LabelCase.asIs), CooeeCore.LabelRole.title: CooeeCore.StyleLabel(prefix: "~/~/", suffix: "/~/~", case: CooeeCore.LabelCase.asIs), CooeeCore.LabelRole.picked: CooeeCore.StyleLabel(prefix: "*** ", suffix: " ***", case: CooeeCore.LabelCase.asIs), CooeeCore.LabelRole.header: CooeeCore.StyleLabel(prefix: "<<<<", suffix: ">>>>", case: CooeeCore.LabelCase.asIs), CooeeCore.LabelRole.button: CooeeCore.StyleLabel(prefix: "[[[ ", suffix: " ]]]", case: CooeeCore.LabelCase.asIs), CooeeCore.LabelRole.group: CooeeCore.StyleLabel(prefix: "‹‹‹‹", suffix: "››››", case: CooeeCore.LabelCase.lower), CooeeCore.LabelRole.back: CooeeCore.StyleLabel(prefix: "<-- ", suffix: " -->", case: CooeeCore.LabelCase.asIs), CooeeCore.LabelRole.section: CooeeCore.StyleLabel(prefix: "•·•·", suffix: "·•·•", case: CooeeCore.LabelCase.asIs), CooeeCore.LabelRole.said: CooeeCore.StyleLabel(prefix: ">>> ", suffix: " <<<", case: CooeeCore.LabelCase.asIs)], stage: nil) to theJSONCanNeitherSetNorFakeTheSourceLineInAnyStyle(_:_:) started.
+◇ Test case passing 2 arguments kind → "permissions", style → Style(format: 1, label: "Terminal", icon: Optional(CooeeCore.IconSet.terminal), type: CooeeCore.TypeDesign.mono, radius: 0.0, surface: CooeeCore.Surface.dashed, fills: CooeeCore.Fills.outline, marks: CooeeCore.Marks.text, figures: CooeeCore.Figures.ascii, sections: CooeeCore.Sections.quiet, labels: [CooeeCore.LabelRole.button: CooeeCore.StyleLabel(prefix: "[ ", suffix: " ]", case: CooeeCore.LabelCase.asIs), CooeeCore.LabelRole.kind: CooeeCore.StyleLabel(prefix: "## ", suffix: "", case: CooeeCore.LabelCase.asIs), CooeeCore.LabelRole.group: CooeeCore.StyleLabel(prefix: "# ", suffix: "", case: CooeeCore.LabelCase.lower), CooeeCore.LabelRole.picked: CooeeCore.StyleLabel(prefix: "> ", suffix: "", case: CooeeCore.LabelCase.lower), CooeeCore.LabelRole.section: CooeeCore.StyleLabel(prefix: "# ", suffix: "", case: CooeeCore.LabelCase.lower), CooeeCore.LabelRole.chip: CooeeCore.StyleLabel(prefix: "[", suffix: "]", case: CooeeCore.LabelCase.lower), CooeeCore.LabelRole.title: CooeeCore.StyleLabel(prefix: "~/", suffix: "", case: CooeeCore.LabelCase.asIs), CooeeCore.LabelRole.back: CooeeCore.StyleLabel(prefix: "< ", suffix: "", case: CooeeCore.LabelCase.lower), CooeeCore.LabelRole.said: CooeeCore.StyleLabel(prefix: "> ", suffix: "", case: CooeeCore.LabelCase.asIs), CooeeCore.LabelRole.header: CooeeCore.StyleLabel(prefix: "## ", suffix: "", case: CooeeCore.LabelCase.asIs)], stage: nil) to theJSONCanNeitherSetNorFakeTheSourceLineInAnyStyle(_:_:) started.
+◇ Test case passing 2 arguments kind → "run", style → Style(format: 1, label: "Modern", icon: Optional(CooeeCore.IconSet.modern), type: CooeeCore.TypeDesign.default, radius: 1.0, surface: CooeeCore.Surface.glass, fills: CooeeCore.Fills.tint, marks: CooeeCore.Marks.symbols, figures: CooeeCore.Figures.avatar, sections: CooeeCore.Sections.title, labels: [CooeeCore.LabelRole.kind: CooeeCore.StyleLabel(prefix: "", suffix: "", case: CooeeCore.LabelCase.upper), CooeeCore.LabelRole.back: CooeeCore.StyleLabel(prefix: "‹ ", suffix: "", case: CooeeCore.LabelCase.asIs), CooeeCore.LabelRole.group: CooeeCore.StyleLabel(prefix: "", suffix: "", case: CooeeCore.LabelCase.upper), CooeeCore.LabelRole.header: CooeeCore.StyleLabel(prefix: "", suffix: "", case: CooeeCore.LabelCase.upper)], stage: nil) to theJSONCanNeitherSetNorFakeTheSourceLineInAnyStyle(_:_:) started.
+◇ Test case passing 2 arguments kind → "confirm", style → Style(format: 1, label: "Worst case, 24 chars max", icon: nil, type: CooeeCore.TypeDesign.mono, radius: 0.0, surface: CooeeCore.Surface.dashed, fills: CooeeCore.Fills.outline, marks: CooeeCore.Marks.text, figures: CooeeCore.Figures.ascii, sections: CooeeCore.Sections.quiet, labels: [CooeeCore.LabelRole.kind: CooeeCore.StyleLabel(prefix: "[## ", suffix: " ##]", case: CooeeCore.LabelCase.upper), CooeeCore.LabelRole.chip: CooeeCore.StyleLabel(prefix: "((((", suffix: "))))", case: CooeeCore.LabelCase.asIs), CooeeCore.LabelRole.title: CooeeCore.StyleLabel(prefix: "~/~/", suffix: "/~/~", case: CooeeCore.LabelCase.asIs), CooeeCore.LabelRole.picked: CooeeCore.StyleLabel(prefix: "*** ", suffix: " ***", case: CooeeCore.LabelCase.asIs), CooeeCore.LabelRole.header: CooeeCore.StyleLabel(prefix: "<<<<", suffix: ">>>>", case: CooeeCore.LabelCase.asIs), CooeeCore.LabelRole.button: CooeeCore.StyleLabel(prefix: "[[[ ", suffix: " ]]]", case: CooeeCore.LabelCase.asIs), CooeeCore.LabelRole.group: CooeeCore.StyleLabel(prefix: "‹‹‹‹", suffix: "››››", case: CooeeCore.LabelCase.lower), CooeeCore.LabelRole.back: CooeeCore.StyleLabel(prefix: "<-- ", suffix: " -->", case: CooeeCore.LabelCase.asIs), CooeeCore.LabelRole.section: CooeeCore.StyleLabel(prefix: "•·•·", suffix: "·•·•", case: CooeeCore.LabelCase.asIs), CooeeCore.LabelRole.said: CooeeCore.StyleLabel(prefix: ">>> ", suffix: " <<<", case: CooeeCore.LabelCase.asIs)], stage: nil) to theJSONCanNeitherSetNorFakeTheSourceLineInAnyStyle(_:_:) started.
+◇ Test case passing 2 arguments kind → "permissions", style → Style(format: 1, label: "Scene", icon: Optional(CooeeCore.IconSet.farm), type: CooeeCore.TypeDesign.default, radius: 1.0, surface: CooeeCore.Surface.solid, fills: CooeeCore.Fills.tint, marks: CooeeCore.Marks.symbols, figures: CooeeCore.Figures.sprite, sections: CooeeCore.Sections.title, labels: [CooeeCore.LabelRole.header: CooeeCore.StyleLabel(prefix: "", suffix: "", case: CooeeCore.LabelCase.upper), CooeeCore.LabelRole.back: CooeeCore.StyleLabel(prefix: "‹ ", suffix: "", case: CooeeCore.LabelCase.asIs), CooeeCore.LabelRole.kind: CooeeCore.StyleLabel(prefix: "", suffix: "", case: CooeeCore.LabelCase.upper), CooeeCore.LabelRole.group: CooeeCore.StyleLabel(prefix: "", suffix: "", case: CooeeCore.LabelCase.upper)], stage: Optional(CooeeCore.Stage(ink: "#29251a", paper: "#f5efda", edge: "#7a5634", alert: "#b81d3c", alertPaper: "#f8dede"))) to theJSONCanNeitherSetNorFakeTheSourceLineInAnyStyle(_:_:) started.
+◇ Test case passing 2 arguments kind → "confirm", style → Style(format: 1, label: "Scene", icon: Optional(CooeeCore.IconSet.farm), type: CooeeCore.TypeDesign.default, radius: 1.0, surface: CooeeCore.Surface.solid, fills: CooeeCore.Fills.tint, marks: CooeeCore.Marks.symbols, figures: CooeeCore.Figures.sprite, sections: CooeeCore.Sections.title, labels: [CooeeCore.LabelRole.header: CooeeCore.StyleLabel(prefix: "", suffix: "", case: CooeeCore.LabelCase.upper), CooeeCore.LabelRole.back: CooeeCore.StyleLabel(prefix: "‹ ", suffix: "", case: CooeeCore.LabelCase.asIs), CooeeCore.LabelRole.kind: CooeeCore.StyleLabel(prefix: "", suffix: "", case: CooeeCore.LabelCase.upper), CooeeCore.LabelRole.group: CooeeCore.StyleLabel(prefix: "", suffix: "", case: CooeeCore.LabelCase.upper)], stage: Optional(CooeeCore.Stage(ink: "#29251a", paper: "#f5efda", edge: "#7a5634", alert: "#b81d3c", alertPaper: "#f8dede"))) to theJSONCanNeitherSetNorFakeTheSourceLineInAnyStyle(_:_:) started.
+◇ Test case passing 2 arguments kind → "run", style → Style(format: 1, label: "Terminal", icon: Optional(CooeeCore.IconSet.terminal), type: CooeeCore.TypeDesign.mono, radius: 0.0, surface: CooeeCore.Surface.dashed, fills: CooeeCore.Fills.outline, marks: CooeeCore.Marks.text, figures: CooeeCore.Figures.ascii, sections: CooeeCore.Sections.quiet, labels: [CooeeCore.LabelRole.button: CooeeCore.StyleLabel(prefix: "[ ", suffix: " ]", case: CooeeCore.LabelCase.asIs), CooeeCore.LabelRole.kind: CooeeCore.StyleLabel(prefix: "## ", suffix: "", case: CooeeCore.LabelCase.asIs), CooeeCore.LabelRole.group: CooeeCore.StyleLabel(prefix: "# ", suffix: "", case: CooeeCore.LabelCase.lower), CooeeCore.LabelRole.picked: CooeeCore.StyleLabel(prefix: "> ", suffix: "", case: CooeeCore.LabelCase.lower), CooeeCore.LabelRole.section: CooeeCore.StyleLabel(prefix: "# ", suffix: "", case: CooeeCore.LabelCase.lower), CooeeCore.LabelRole.chip: CooeeCore.StyleLabel(prefix: "[", suffix: "]", case: CooeeCore.LabelCase.lower), CooeeCore.LabelRole.title: CooeeCore.StyleLabel(prefix: "~/", suffix: "", case: CooeeCore.LabelCase.asIs), CooeeCore.LabelRole.back: CooeeCore.StyleLabel(prefix: "< ", suffix: "", case: CooeeCore.LabelCase.lower), CooeeCore.LabelRole.said: CooeeCore.StyleLabel(prefix: "> ", suffix: "", case: CooeeCore.LabelCase.asIs), CooeeCore.LabelRole.header: CooeeCore.StyleLabel(prefix: "## ", suffix: "", case: CooeeCore.LabelCase.asIs)], stage: nil) to theJSONCanNeitherSetNorFakeTheSourceLineInAnyStyle(_:_:) started.
+◇ Test case passing 2 arguments kind → "run", style → Style(format: 1, label: "Worst case, 24 chars max", icon: nil, type: CooeeCore.TypeDesign.mono, radius: 0.0, surface: CooeeCore.Surface.dashed, fills: CooeeCore.Fills.outline, marks: CooeeCore.Marks.text, figures: CooeeCore.Figures.ascii, sections: CooeeCore.Sections.quiet, labels: [CooeeCore.LabelRole.kind: CooeeCore.StyleLabel(prefix: "[## ", suffix: " ##]", case: CooeeCore.LabelCase.upper), CooeeCore.LabelRole.chip: CooeeCore.StyleLabel(prefix: "((((", suffix: "))))", case: CooeeCore.LabelCase.asIs), CooeeCore.LabelRole.title: CooeeCore.StyleLabel(prefix: "~/~/", suffix: "/~/~", case: CooeeCore.LabelCase.asIs), CooeeCore.LabelRole.picked: CooeeCore.StyleLabel(prefix: "*** ", suffix: " ***", case: CooeeCore.LabelCase.asIs), CooeeCore.LabelRole.header: CooeeCore.StyleLabel(prefix: "<<<<", suffix: ">>>>", case: CooeeCore.LabelCase.asIs), CooeeCore.LabelRole.button: CooeeCore.StyleLabel(prefix: "[[[ ", suffix: " ]]]", case: CooeeCore.LabelCase.asIs), CooeeCore.LabelRole.group: CooeeCore.StyleLabel(prefix: "‹‹‹‹", suffix: "››››", case: CooeeCore.LabelCase.lower), CooeeCore.LabelRole.back: CooeeCore.StyleLabel(prefix: "<-- ", suffix: " -->", case: CooeeCore.LabelCase.asIs), CooeeCore.LabelRole.section: CooeeCore.StyleLabel(prefix: "•·•·", suffix: "·•·•", case: CooeeCore.LabelCase.asIs), CooeeCore.LabelRole.said: CooeeCore.StyleLabel(prefix: ">>> ", suffix: " <<<", case: CooeeCore.LabelCase.asIs)], stage: nil) to theJSONCanNeitherSetNorFakeTheSourceLineInAnyStyle(_:_:) started.
+◇ Test case passing 2 arguments kind → "run", style → Style(format: 1, label: "Scene", icon: Optional(CooeeCore.IconSet.farm), type: CooeeCore.TypeDesign.default, radius: 1.0, surface: CooeeCore.Surface.solid, fills: CooeeCore.Fills.tint, marks: CooeeCore.Marks.symbols, figures: CooeeCore.Figures.sprite, sections: CooeeCore.Sections.title, labels: [CooeeCore.LabelRole.header: CooeeCore.StyleLabel(prefix: "", suffix: "", case: CooeeCore.LabelCase.upper), CooeeCore.LabelRole.back: CooeeCore.StyleLabel(prefix: "‹ ", suffix: "", case: CooeeCore.LabelCase.asIs), CooeeCore.LabelRole.kind: CooeeCore.StyleLabel(prefix: "", suffix: "", case: CooeeCore.LabelCase.upper), CooeeCore.LabelRole.group: CooeeCore.StyleLabel(prefix: "", suffix: "", case: CooeeCore.LabelCase.upper)], stage: Optional(CooeeCore.Stage(ink: "#29251a", paper: "#f5efda", edge: "#7a5634", alert: "#b81d3c", alertPaper: "#f8dede"))) to theJSONCanNeitherSetNorFakeTheSourceLineInAnyStyle(_:_:) started.
+◇ Test case passing 2 arguments kind → "secret", style → Style(format: 1, label: "Modern", icon: Optional(CooeeCore.IconSet.modern), type: CooeeCore.TypeDesign.default, radius: 1.0, surface: CooeeCore.Surface.glass, fills: CooeeCore.Fills.tint, marks: CooeeCore.Marks.symbols, figures: CooeeCore.Figures.avatar, sections: CooeeCore.Sections.title, labels: [CooeeCore.LabelRole.kind: CooeeCore.StyleLabel(prefix: "", suffix: "", case: CooeeCore.LabelCase.upper), CooeeCore.LabelRole.back: CooeeCore.StyleLabel(prefix: "‹ ", suffix: "", case: CooeeCore.LabelCase.asIs), CooeeCore.LabelRole.group: CooeeCore.StyleLabel(prefix: "", suffix: "", case: CooeeCore.LabelCase.upper), CooeeCore.LabelRole.header: CooeeCore.StyleLabel(prefix: "", suffix: "", case: CooeeCore.LabelCase.upper)], stage: nil) to theJSONCanNeitherSetNorFakeTheSourceLineInAnyStyle(_:_:) started.
+◇ Test case passing 2 arguments kind → "secret", style → Style(format: 1, label: "Scene", icon: Optional(CooeeCore.IconSet.farm), type: CooeeCore.TypeDesign.default, radius: 1.0, surface: CooeeCore.Surface.solid, fills: CooeeCore.Fills.tint, marks: CooeeCore.Marks.symbols, figures: CooeeCore.Figures.sprite, sections: CooeeCore.Sections.title, labels: [CooeeCore.LabelRole.header: CooeeCore.StyleLabel(prefix: "", suffix: "", case: CooeeCore.LabelCase.upper), CooeeCore.LabelRole.back: CooeeCore.StyleLabel(prefix: "‹ ", suffix: "", case: CooeeCore.LabelCase.asIs), CooeeCore.LabelRole.kind: CooeeCore.StyleLabel(prefix: "", suffix: "", case: CooeeCore.LabelCase.upper), CooeeCore.LabelRole.group: CooeeCore.StyleLabel(prefix: "", suffix: "", case: CooeeCore.LabelCase.upper)], stage: Optional(CooeeCore.Stage(ink: "#29251a", paper: "#f5efda", edge: "#7a5634", alert: "#b81d3c", alertPaper: "#f8dede"))) to theJSONCanNeitherSetNorFakeTheSourceLineInAnyStyle(_:_:) started.
+◇ Test case passing 2 arguments kind → "secret", style → Style(format: 1, label: "Worst case, 24 chars max", icon: nil, type: CooeeCore.TypeDesign.mono, radius: 0.0, surface: CooeeCore.Surface.dashed, fills: CooeeCore.Fills.outline, marks: CooeeCore.Marks.text, figures: CooeeCore.Figures.ascii, sections: CooeeCore.Sections.quiet, labels: [CooeeCore.LabelRole.kind: CooeeCore.StyleLabel(prefix: "[## ", suffix: " ##]", case: CooeeCore.LabelCase.upper), CooeeCore.LabelRole.chip: CooeeCore.StyleLabel(prefix: "((((", suffix: "))))", case: CooeeCore.LabelCase.asIs), CooeeCore.LabelRole.title: CooeeCore.StyleLabel(prefix: "~/~/", suffix: "/~/~", case: CooeeCore.LabelCase.asIs), CooeeCore.LabelRole.picked: CooeeCore.StyleLabel(prefix: "*** ", suffix: " ***", case: CooeeCore.LabelCase.asIs), CooeeCore.LabelRole.header: CooeeCore.StyleLabel(prefix: "<<<<", suffix: ">>>>", case: CooeeCore.LabelCase.asIs), CooeeCore.LabelRole.button: CooeeCore.StyleLabel(prefix: "[[[ ", suffix: " ]]]", case: CooeeCore.LabelCase.asIs), CooeeCore.LabelRole.group: CooeeCore.StyleLabel(prefix: "‹‹‹‹", suffix: "››››", case: CooeeCore.LabelCase.lower), CooeeCore.LabelRole.back: CooeeCore.StyleLabel(prefix: "<-- ", suffix: " -->", case: CooeeCore.LabelCase.asIs), CooeeCore.LabelRole.section: CooeeCore.StyleLabel(prefix: "•·•·", suffix: "·•·•", case: CooeeCore.LabelCase.asIs), CooeeCore.LabelRole.said: CooeeCore.StyleLabel(prefix: ">>> ", suffix: " <<<", case: CooeeCore.LabelCase.asIs)], stage: nil) to theJSONCanNeitherSetNorFakeTheSourceLineInAnyStyle(_:_:) started.
+◇ Test case passing 1 argument window → 1440.0 to aThreadIsNoWiderThanItsWindow(_:) started.
+◇ Test case passing 2 arguments kind → "secret", style → Style(format: 1, label: "Terminal", icon: Optional(CooeeCore.IconSet.terminal), type: CooeeCore.TypeDesign.mono, radius: 0.0, surface: CooeeCore.Surface.dashed, fills: CooeeCore.Fills.outline, marks: CooeeCore.Marks.text, figures: CooeeCore.Figures.ascii, sections: CooeeCore.Sections.quiet, labels: [CooeeCore.LabelRole.button: CooeeCore.StyleLabel(prefix: "[ ", suffix: " ]", case: CooeeCore.LabelCase.asIs), CooeeCore.LabelRole.kind: CooeeCore.StyleLabel(prefix: "## ", suffix: "", case: CooeeCore.LabelCase.asIs), CooeeCore.LabelRole.group: CooeeCore.StyleLabel(prefix: "# ", suffix: "", case: CooeeCore.LabelCase.lower), CooeeCore.LabelRole.picked: CooeeCore.StyleLabel(prefix: "> ", suffix: "", case: CooeeCore.LabelCase.lower), CooeeCore.LabelRole.section: CooeeCore.StyleLabel(prefix: "# ", suffix: "", case: CooeeCore.LabelCase.lower), CooeeCore.LabelRole.chip: CooeeCore.StyleLabel(prefix: "[", suffix: "]", case: CooeeCore.LabelCase.lower), CooeeCore.LabelRole.title: CooeeCore.StyleLabel(prefix: "~/", suffix: "", case: CooeeCore.LabelCase.asIs), CooeeCore.LabelRole.back: CooeeCore.StyleLabel(prefix: "< ", suffix: "", case: CooeeCore.LabelCase.lower), CooeeCore.LabelRole.said: CooeeCore.StyleLabel(prefix: "> ", suffix: "", case: CooeeCore.LabelCase.asIs), CooeeCore.LabelRole.header: CooeeCore.StyleLabel(prefix: "## ", suffix: "", case: CooeeCore.LabelCase.asIs)], stage: nil) to theJSONCanNeitherSetNorFakeTheSourceLineInAnyStyle(_:_:) started.
+◇ Test case passing 1 argument frame → theme-look-modern to matchesTheDesign(_:) started.
+◇ Test case passing 1 argument name → "queue.json" to everyScreenDraws(_:) started.
+◇ Test case passing 1 argument name → "events.json" to everyScreenDraws(_:) started.
+◇ Test case passing 1 argument name → "fleets.json" to everyScreenDraws(_:) started.
+◇ Test case passing 1 argument name → "hello.json" to everyScreenDraws(_:) started.
+◇ Test case passing 1 argument window → 390.0 to aThreadIsNoWiderThanItsWindow(_:) started.
+◇ Test case passing 1 argument name → "fleets.json" to everyFleetsConfigScreenDraws(_:) started.
+◇ Test case passing 1 argument name → "fleet.json" to everyFleetsConfigScreenDraws(_:) started.
+◇ Test case passing 1 argument name → "role.json" to everyFleetsConfigScreenDraws(_:) started.
+◇ Test case passing 1 argument name → "global.json" to everyFleetsConfigScreenDraws(_:) started.
+◇ Test case passing 1 argument name → "text.json" to everyFleetsConfigScreenDraws(_:) started.
+◇ Test case passing 1 argument name → "review.json" to everyFleetsConfigScreenDraws(_:) started.
+◇ Test case passing 1 argument name → "stale.json" to everyFleetsConfigScreenDraws(_:) started.
+◇ Test case passing 1 argument markdown → "Questions for you:
+**HTML or SwiftUI?**" to aReplyKeepsEachLineOnItsOwnLine(_:) started.
+◇ Test case passing 1 argument markdown → "Questions for you:
+1. **HTML or SwiftUI?**" to aReplyKeepsEachLineOnItsOwnLine(_:) started.
+◇ Test case passing 1 argument markdown → "fill with them.
+> **Call voice:**" to aReplyKeepsEachLineOnItsOwnLine(_:) started.
+◇ Test case passing 1 argument name → "own-cards.json" to everyCardDraws(_:) started.
+◇ Test case passing 1 argument name → "cards.json" to everyCardDraws(_:) started.
+◇ Test case passing 1 argument markdown → "the iOS target building.
+## Answering an ask" to aReplyKeepsEachLineOnItsOwnLine(_:) started.
+◇ Test case passing 1 argument style → Style(format: 1, label: "Modern", icon: Optional(CooeeCore.IconSet.modern), type: CooeeCore.TypeDesign.default, radius: 1.0, surface: CooeeCore.Surface.glass, fills: CooeeCore.Fills.tint, marks: CooeeCore.Marks.symbols, figures: CooeeCore.Figures.avatar, sections: CooeeCore.Sections.title, labels: [CooeeCore.LabelRole.kind: CooeeCore.StyleLabel(prefix: "", suffix: "", case: CooeeCore.LabelCase.upper), CooeeCore.LabelRole.back: CooeeCore.StyleLabel(prefix: "‹ ", suffix: "", case: CooeeCore.LabelCase.asIs), CooeeCore.LabelRole.group: CooeeCore.StyleLabel(prefix: "", suffix: "", case: CooeeCore.LabelCase.upper), CooeeCore.LabelRole.header: CooeeCore.StyleLabel(prefix: "", suffix: "", case: CooeeCore.LabelCase.upper)], stage: nil) to theQueueInSceneDrawsInEveryLook(_:) started.
+◇ Test case passing 1 argument frame → queue-modern-dark to matchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → sign-ins-dark to matchesTheDesign(_:) started.
+◇ Test case passing 1 argument style → Style(format: 1, label: "Scene", icon: Optional(CooeeCore.IconSet.farm), type: CooeeCore.TypeDesign.default, radius: 1.0, surface: CooeeCore.Surface.solid, fills: CooeeCore.Fills.tint, marks: CooeeCore.Marks.symbols, figures: CooeeCore.Figures.sprite, sections: CooeeCore.Sections.title, labels: [CooeeCore.LabelRole.header: CooeeCore.StyleLabel(prefix: "", suffix: "", case: CooeeCore.LabelCase.upper), CooeeCore.LabelRole.back: CooeeCore.StyleLabel(prefix: "‹ ", suffix: "", case: CooeeCore.LabelCase.asIs), CooeeCore.LabelRole.kind: CooeeCore.StyleLabel(prefix: "", suffix: "", case: CooeeCore.LabelCase.upper), CooeeCore.LabelRole.group: CooeeCore.StyleLabel(prefix: "", suffix: "", case: CooeeCore.LabelCase.upper)], stage: Optional(CooeeCore.Stage(ink: "#29251a", paper: "#f5efda", edge: "#7a5634", alert: "#b81d3c", alertPaper: "#f8dede"))) to theQueueInSceneDrawsInEveryLook(_:) started.
+✔ Test theBundledHomeDrawsItsPinnedRowThenItsChats() passed after 0.007 seconds.
+✔ Test theBundledStyleAndBothPacksDecodeToTheirTokens() passed after 0.007 seconds.
+✔ Test farmsSchemesAreTheDefaultPalettes() passed after 0.006 seconds.
+✔ Test aPacksSchemeIsItsPalette() passed after 0.007 seconds.
+✔ Test aSchemeMissingATokenIsNoPalette() passed after 0.007 seconds.
+✔ Test aStyleWhoseLabelAddsWordsIsRefused(_:) with 2 test cases passed after 0.007 seconds.
+◇ Test case passing 1 argument style → Style(format: 1, label: "Terminal", icon: Optional(CooeeCore.IconSet.terminal), type: CooeeCore.TypeDesign.mono, radius: 0.0, surface: CooeeCore.Surface.dashed, fills: CooeeCore.Fills.outline, marks: CooeeCore.Marks.text, figures: CooeeCore.Figures.ascii, sections: CooeeCore.Sections.quiet, labels: [CooeeCore.LabelRole.button: CooeeCore.StyleLabel(prefix: "[ ", suffix: " ]", case: CooeeCore.LabelCase.asIs), CooeeCore.LabelRole.kind: CooeeCore.StyleLabel(prefix: "## ", suffix: "", case: CooeeCore.LabelCase.asIs), CooeeCore.LabelRole.group: CooeeCore.StyleLabel(prefix: "# ", suffix: "", case: CooeeCore.LabelCase.lower), CooeeCore.LabelRole.picked: CooeeCore.StyleLabel(prefix: "> ", suffix: "", case: CooeeCore.LabelCase.lower), CooeeCore.LabelRole.section: CooeeCore.StyleLabel(prefix: "# ", suffix: "", case: CooeeCore.LabelCase.lower), CooeeCore.LabelRole.chip: CooeeCore.StyleLabel(prefix: "[", suffix: "]", case: CooeeCore.LabelCase.lower), CooeeCore.LabelRole.title: CooeeCore.StyleLabel(prefix: "~/", suffix: "", case: CooeeCore.LabelCase.asIs), CooeeCore.LabelRole.back: CooeeCore.StyleLabel(prefix: "< ", suffix: "", case: CooeeCore.LabelCase.lower), CooeeCore.LabelRole.said: CooeeCore.StyleLabel(prefix: "> ", suffix: "", case: CooeeCore.LabelCase.asIs), CooeeCore.LabelRole.header: CooeeCore.StyleLabel(prefix: "## ", suffix: "", case: CooeeCore.LabelCase.asIs)], stage: nil) to theQueueInSceneDrawsInEveryLook(_:) started.
+◇ Test case passing 1 argument frame → home-dark to matchesTheDesign(_:) started.
+◇ Test case passing 1 argument name → "add.json" to everyFleetsConfigScreenDraws(_:) started.
+✔ Test everyLabelOfTheWidestStyleKeepsItsWholeText() passed after 0.007 seconds.
+✔ Test theDefaultPassesCooeesContractAndPlacesNoLockedScreen() passed after 0.007 seconds.
+✔ Test theDefaultResolvesTodaysPlacesOnEachSize() passed after 0.007 seconds.
+✔ Suite DefaultLayoutTests passed after 0.008 seconds.
+✔ Test aPngOrPhotoSnapsOntoTheGridAndAnSvgStaysVector() passed after 0.052 seconds.
+✔ Suite ThemeImportTests passed after 0.053 seconds.
+◇ Test case passing 1 argument frame → room-light to matchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → additions-menu to matchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → new-modern-dark to matchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → style-terminal-chat-dark to matchesThePack(_:) started.
+◇ Test case passing 1 argument frame → missing-poster-permissions@modern to matchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → workflow-map-light to matchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → theme-pack-modern to matchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → queue-modern-light to matchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → sign-ins-light to matchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → chat-streaming-dark to matchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → room-create-dark to matchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → additions-refresh to matchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → list-modern-dark to matchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → style-terminal-card-dark to matchesThePack(_:) started.
+◇ Test case passing 1 argument frame → missing-poster-run@modern to matchesTheDesign(_:) started.
+✔ Test aViewWiderThanItsFrameIsCaught() passed after 34.578 seconds.
+✔ Test aFieldKeepsItsTextAndFocusWhenARowIsInsertedAboveIt() passed after 36.092 seconds.
+✔ Test aPluginScreenMovedToTheSidebarIsDrawnInItsColumnAndNowhereElse() passed after 36.092 seconds.
+✔ Test aPluginsPermissionsCardIsRefused() passed after 36.100 seconds.
+✔ Test theHomeLoadingLineSitsOnTheHeaderBottomEdge() passed after 36.099 seconds.
+✔ Test theGoneLineDrawsRestartOnlyWhileTheAgentIsGone() passed after 36.099 seconds.
+✔ Test aPlacesCountDrawsOnItsChip() passed after 36.099 seconds.
+✔ Test theHeaderDrawsPlusOnlyWhenItCanStartAChat() passed after 36.099 seconds.
+✔ Test memoryDrawsOnlyTheNewestThreeNotes() passed after 36.099 seconds.
+✔ Test aPickedPhotoIsShrunkToAJpegAndDrawnAsTheAvatar() passed after 36.099 seconds.
+✔ Test aPausedFleetsCardFoldsToOneLineAndDrawsInItsOwnColour() passed after 36.099 seconds.
+✔ Test anEditorShowsEachErrorUnderItsLine() passed after 36.099 seconds.
+✔ Test theQueueDrawsItsStreamsOps() passed after 36.099 seconds.
+✔ Test initialsAndAColourDrawInsteadOfTheSymbol() passed after 36.099 seconds.
+✔ Test everyCatalogueBlockDrawsAndAnUnknownOneIsSkipped() passed after 36.099 seconds.
+✔ Test everyProposalCardDraws() passed after 36.099 seconds.
+✔ Test theSceneStripDrawsOnlyInTheSceneLook() passed after 36.099 seconds.
+✔ Test aDiffDrawsEveryLineOfEveryHunk() passed after 36.099 seconds.
+✔ Test aRowWhoseCurrentRoundNeedsYouOpensItsRoundsOthersStayFolded() passed after 36.099 seconds.
+✔ Test aThreadIsNoWiderThanItsWindow(_:) with 2 test cases passed after 36.100 seconds.
+✔ Test everyCardDraws(_:) with 2 test cases passed after 36.099 seconds.
+✔ Test theQueueInSceneDrawsInEveryLook(_:) with 3 test cases passed after 36.100 seconds.
+✔ Test aPageFillsTheSheetWithItsBackground(_:) with 5 test cases passed after 36.101 seconds.
+✔ Test everyScreenDraws(_:) with 4 test cases passed after 36.100 seconds.
+✔ Test aReplyKeepsEachLineOnItsOwnLine(_:) with 4 test cases passed after 36.100 seconds.
+◇ Test case passing 1 argument frame → workflow-map-mac-dark to matchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → theme-colours-modern to matchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → queue-mac-modern-dark to matchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → devices-dark to matchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → chat-card-dark to matchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → room-create-light to matchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → additions-transition to matchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → home-persona-modern-dark to matchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → persona-panel-terminal-dark to matchesThePack(_:) started.
+◇ Test case passing 1 argument frame → missing-poster-secret@modern to matchesTheDesign(_:) started.
+✔ Test everyFleetsConfigScreenDraws(_:) with 8 test cases passed after 36.103 seconds.
+✔ Suite SnapshotTests passed after 36.104 seconds.
+✔ Suite BlockIdentityTests passed after 36.104 seconds.
+✔ Suite SidebarRenderTests passed after 36.104 seconds.
+✔ Suite PersonaRenderTests passed after 38.959 seconds.
+✔ Suite MenuRenderTests passed after 48.103 seconds.
+✔ Suite HeaderRenderTests passed after 48.103 seconds.
+✔ Test theJSONCanNeitherSetNorFakeTheSourceLineInAnyStyle(_:_:) with 16 test cases passed after 48.103 seconds.
+◇ Test case passing 1 argument frame → workflow-map-mac-split-dark to matchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → theme-draw-modern to matchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → queue-figures-modern-dark to matchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → devices-light to matchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → chat-cards-more-dark to matchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → room-member-dark to matchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → chat-modern-light to matchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → missing-poster-confirm@terminal to matchesThePack(_:) started.
+✔ Suite BlockRenderTests passed after 48.105 seconds.
+✔ Suite TrustRenderTests passed after 50.878 seconds.
+✔ Test matchesTheDesign(_:) with 4 test cases passed after 55.563 seconds.
+✔ Test matchesTheDesign(_:) with 4 test cases passed after 55.563 seconds.
+◇ Test case passing 1 argument frame → workflow-live-dark to matchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → theme-mac-modern to matchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → machines-dark to matchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → chat-conductor-dark to matchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → room-home-dark to matchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → new-modern-light to matchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → missing-poster-permissions@terminal to matchesThePack(_:) started.
+✔ Suite AdditionFrames passed after 55.564 seconds.
+✔ Suite TrustFrames passed after 55.564 seconds.
+✔ Test matchesTheDesign(_:) with 4 test cases passed after 63.221 seconds.
+◇ Test case passing 1 argument frame → workflow-state-dark to matchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → theme-look-scene to matchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → machines-light to matchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → persona-dark to matchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → room-pinned-dark to matchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → list-modern-light to matchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → missing-poster-run@terminal to matchesThePack(_:) started.
+✔ Suite QueueFrames passed after 63.223 seconds.
+◇ Test case passing 1 argument frame → workflow-timer-dark to matchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → theme-pack-scene to matchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → plugins-dark to matchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → avatar-menu-dark to matchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → room-mention-dark to matchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → home-persona-modern-light to matchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → missing-poster-secret@terminal to matchesThePack(_:) started.
+◇ Test case passing 1 argument frame → theme-colours-scene to matchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → plugins-light to matchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → persona-panel-dark to matchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → room-ask-dark to matchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → scrolled-modern-dark to matchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → style-scene-home-light to matchesThePack(_:) started.
+✔ Test matchesTheDesign(_:) with 7 test cases passed after 78.627 seconds.
+◇ Test case passing 1 argument frame → theme-draw-scene to matchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → mac-sign-ins to matchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → pair-welcome-dark to matchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → room-wide-dark to matchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → press-modern-dark to matchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → style-scene-chat-light to matchesThePack(_:) started.
+✔ Suite DiagramFrames passed after 78.628 seconds.
+◇ Test case passing 1 argument frame → theme-mac-scene to matchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → mac-devices to matchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → pair-scan-dark to matchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → asked-dark to matchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → style-scene-card-light to matchesThePack(_:) started.
+✔ Test matchesTheDesign(_:) with 10 test cases passed after 93.236 seconds.
+◇ Test case passing 1 argument frame → theme-look-broken-modern to matchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → mac-machines to matchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → pair-nearby-dark to matchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → asked-light to matchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → persona-panel-scene-light to matchesThePack(_:) started.
+✔ Suite TopicFrames passed after 93.237 seconds.
+◇ Test case passing 1 argument frame → look-colours-nord to matchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → mac-plugins to matchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → pair-address-dark to matchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → linked-dark to matchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → missing-poster-confirm@scene to matchesThePack(_:) started.
+✔ Test matchesTheDesign(_:) with 12 test cases passed after 104.161 seconds.
+◇ Test case passing 1 argument frame → terminal-dark to matchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → pair-waiting-dark to matchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → linked-wide-light to matchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → missing-poster-permissions@scene to matchesThePack(_:) started.
+✔ Test pickingASchemeRepaintsEveryScreenInItsOwnModeAndIsKeptUntilTheServerDropsIt() passed after 104.162 seconds.
+✔ Suite PaletteTests passed after 104.163 seconds.
+✔ Suite ThemeFrames passed after 104.163 seconds.
+◇ Test case passing 1 argument frame → you-terminal-dark to matchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → pair-paired-dark to matchesTheDesign(_:) started.
+✔ Test matchesTheDesign(_:) with 14 test cases passed after 127.857 seconds.
+◇ Test fitsInEveryPack(_:) started.
+◇ Test case passing 1 argument frame → room-dark to fitsInEveryPack(_:) started.
+◇ Test case passing 1 argument frame → missing-poster-run@scene to matchesThePack(_:) started.
+◇ Test case passing 1 argument frame → mac-plugins-light to matchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → home-light to matchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → room-light to fitsInEveryPack(_:) started.
+◇ Test case passing 1 argument frame → missing-poster-secret@scene to matchesThePack(_:) started.
+◇ Test case passing 1 argument frame → machines-tags-dark to matchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → chat-streaming-light to matchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → room-create-dark to fitsInEveryPack(_:) started.
+✔ Test matchesThePack(_:) with 16 test cases passed after 146.372 seconds.
+✔ Suite PackFrames passed after 146.373 seconds.
+◇ Test case passing 1 argument frame → machines-tags-light to matchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → chat-card-light to matchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → room-create-light to fitsInEveryPack(_:) started.
+✔ Test matchesTheDesign(_:) with 17 test cases passed after 152.044 seconds.
+✔ Suite SettingsFrames passed after 152.046 seconds.
+◇ Test case passing 1 argument frame → chat-cards-more-light to matchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → room-member-dark to fitsInEveryPack(_:) started.
+◇ Test case passing 1 argument frame → chat-conductor-light to matchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → room-home-dark to fitsInEveryPack(_:) started.
+◇ Test case passing 1 argument frame → persona-light to matchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → room-pinned-dark to fitsInEveryPack(_:) started.
+◇ Test case passing 1 argument frame → avatar-menu-light to matchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → room-mention-dark to fitsInEveryPack(_:) started.
+◇ Test case passing 1 argument frame → persona-panel-light to matchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → room-ask-dark to fitsInEveryPack(_:) started.
+◇ Test case passing 1 argument frame → pair-welcome-light to matchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → room-wide-dark to fitsInEveryPack(_:) started.
+◇ Test case passing 1 argument frame → pair-scan-light to matchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → asked-dark to fitsInEveryPack(_:) started.
+◇ Test case passing 1 argument frame → pair-nearby-light to matchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → asked-light to fitsInEveryPack(_:) started.
+◇ Test case passing 1 argument frame → pair-address-light to matchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → linked-dark to fitsInEveryPack(_:) started.
+◇ Test case passing 1 argument frame → pair-waiting-light to matchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → linked-wide-light to fitsInEveryPack(_:) started.
+◇ Test case passing 1 argument frame → pair-paired-light to matchesTheDesign(_:) started.
+✔ Test fitsInEveryPack(_:) with 14 test cases passed after 46.222 seconds.
+✔ Suite RoomFrames passed after 174.080 seconds.
+◇ Test case passing 1 argument frame → mac-connect to matchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → mac-window-dark to matchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → mac-window-light to matchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → mac-persona-panel-dark to matchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → persona-panel-end-dark to matchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → persona-panel-empty-dark to matchesTheDesign(_:) started.
+✔ Test matchesTheDesign(_:) with 34 test cases passed after 191.611 seconds.
+◇ Test fitsInEveryPack(_:) started.
+◇ Test case passing 1 argument frame → home-dark to fitsInEveryPack(_:) started.
+◇ Test case passing 1 argument frame → chat-streaming-dark to fitsInEveryPack(_:) started.
+◇ Test case passing 1 argument frame → chat-card-dark to fitsInEveryPack(_:) started.
+◇ Test case passing 1 argument frame → chat-cards-more-dark to fitsInEveryPack(_:) started.
+◇ Test case passing 1 argument frame → chat-conductor-dark to fitsInEveryPack(_:) started.
+◇ Test case passing 1 argument frame → persona-dark to fitsInEveryPack(_:) started.
+◇ Test case passing 1 argument frame → avatar-menu-dark to fitsInEveryPack(_:) started.
+◇ Test case passing 1 argument frame → persona-panel-dark to fitsInEveryPack(_:) started.
+◇ Test case passing 1 argument frame → pair-welcome-dark to fitsInEveryPack(_:) started.
+◇ Test case passing 1 argument frame → pair-scan-dark to fitsInEveryPack(_:) started.
+◇ Test case passing 1 argument frame → pair-nearby-dark to fitsInEveryPack(_:) started.
+◇ Test case passing 1 argument frame → pair-address-dark to fitsInEveryPack(_:) started.
+◇ Test case passing 1 argument frame → pair-waiting-dark to fitsInEveryPack(_:) started.
+◇ Test case passing 1 argument frame → pair-paired-dark to fitsInEveryPack(_:) started.
+◇ Test case passing 1 argument frame → home-light to fitsInEveryPack(_:) started.
+◇ Test case passing 1 argument frame → chat-streaming-light to fitsInEveryPack(_:) started.
+◇ Test case passing 1 argument frame → chat-card-light to fitsInEveryPack(_:) started.
+◇ Test case passing 1 argument frame → chat-cards-more-light to fitsInEveryPack(_:) started.
+◇ Test case passing 1 argument frame → chat-conductor-light to fitsInEveryPack(_:) started.
+◇ Test case passing 1 argument frame → persona-light to fitsInEveryPack(_:) started.
+◇ Test case passing 1 argument frame → avatar-menu-light to fitsInEveryPack(_:) started.
+◇ Test case passing 1 argument frame → persona-panel-light to fitsInEveryPack(_:) started.
+◇ Test case passing 1 argument frame → pair-welcome-light to fitsInEveryPack(_:) started.
+◇ Test case passing 1 argument frame → pair-scan-light to fitsInEveryPack(_:) started.
+◇ Test case passing 1 argument frame → pair-nearby-light to fitsInEveryPack(_:) started.
+◇ Test case passing 1 argument frame → pair-address-light to fitsInEveryPack(_:) started.
+◇ Test case passing 1 argument frame → pair-waiting-light to fitsInEveryPack(_:) started.
+◇ Test case passing 1 argument frame → pair-paired-light to fitsInEveryPack(_:) started.
+◇ Test case passing 1 argument frame → mac-connect to fitsInEveryPack(_:) started.
+◇ Test case passing 1 argument frame → mac-window-dark to fitsInEveryPack(_:) started.
+◇ Test case passing 1 argument frame → mac-window-light to fitsInEveryPack(_:) started.
+◇ Test case passing 1 argument frame → mac-persona-panel-dark to fitsInEveryPack(_:) started.
+✔ Test fitsInEveryPack(_:) with 32 test cases passed after 16.115 seconds.
+✔ Suite HomeFrames passed after 207.728 seconds.
+✔ Test run with 50 tests in 21 suites passed after 207.728 seconds.
+◇ Test run started.
+↳ Testing Library Version: 2403
+↳ Target Platform: arm64e-apple-macos14.0
+◇ Suite ChatBrowserTests started.
+◇ Suite RoomPinTests started.
+◇ Suite ChatStreamingTests started.
+◇ Suite ChatPanelTests started.
+◇ Suite SidebarLayoutTests started.
+◇ Suite RoomFeatureTests started.
+◇ Suite MenuFeatureTests started.
+◇ Suite ChatMachineTests started.
+◇ Suite ChatAgentTests started.
+◇ Suite ChatPluginsTests started.
+◇ Suite ThemeEditorFeatureTests started.
+◇ Suite WorkflowNavigationTests started.
+◇ Suite ChatComposeTests started.
+◇ Suite RoomTopicsTests started.
+◇ Suite PluginNavigationTests started.
+◇ Suite ChatFramesTests started.
+◇ Suite ChatFeatureTests started.
+◇ Suite LayoutFeatureTests started.
+◇ Suite ReportFeatureTests started.
+◇ Suite ChatOutboxTests started.
+◇ Suite TopicSwitchTests started.
+◇ Suite PinnedTests started.
+◇ Suite PersonaFeatureTests started.
+◇ Suite PluginDeckTests started.
+◇ Suite RoomAskTests started.
+◇ Suite PersonaControlsTests started.
+◇ Suite HomeFeatureTests started.
+◇ Suite TimingTests started.
+◇ Suite LinkedFeatureTests started.
+◇ Suite PairingFeatureTests started.
+◇ Suite ChatTopicsTests started.
+◇ Suite AppFeatureTests started.
+◇ Test theLeaseCountsDownAndReturnsToTheAgentAtZero() started.
+◇ Test withNoHandoffWaitingHandBackOnlyReturnsTheBrowser() started.
+◇ Suite TerminalFeatureTests started.
+◇ Test aRoomIsAChatWithItsMembersAndLastSpeakerNeverInOthers() started.
+◇ Suite ThemeEditorMenuTests started.
+◇ Suite CardAnswerTests started.
+◇ Test pinningARoomPutsItAfterThePinnedPersonasAndUnpinningTakesItOut() started.
+◇ Test aTextChunkParsesOnlyTheLiveReplyNotTheLoadedItems() started.
+◇ Test editOpensThePersonaSheetAndNewTopicOpensNewWithThePersona() started.
+◇ Test handBackCarriesTheNoteAndARefusedInputSaysWhy() started.
+◇ Test theSheetShowsEachLiveFrameAndWhyTheBrowserIsGone() started.
+◇ Test aRoomsStreamRunsItsRoundAndItsItemsAreAttributed() started.
+◇ Suite ScreenFeatureTests started.
+◇ Test allIssuesOpensTheWorkflowSheetOnceThePanelHasGone() started.
+◇ Test aPickInTheSheetRunsOnceTheSheetHasGone() started.
+◇ Test aWaitingHandoffResumesWithTheNoteOnHandBackOrDone() started.
+◇ Test aNewRoomPicksUpToFiveInOrderAndIsMade() started.
+◇ Test aMemberIsInspectedMovedAddedAndTakenOut() started.
+◇ Test aRoomIsMadeFromHomeAndOpensFromTheList() started.
+◇ Test offlineTheMenuKeepsTheBundledOneAndWithoutAServerOpensNothing() started.
+◇ Test aScreenMovedToTheSidebarIsFollowedThereAndASkippedNodeIsReported() started.
+◇ Test addRoutineAsksForOneInTheComposeOnceThePanelHasGone() started.
+◇ Test aPinnedRoomIsKeptAcrossLaunchesAndAChatIsNeverPinnedAsARoom() started.
+◇ Test aThemeWithoutSpritesDrawsModernAndHidesTheSceneRowButKeepsThePick() started.
+◇ Test aRefusedRoomSaysWhy() started.
+◇ Test aRefusedIconChangeSaysWhichTileToTapAgain() started.
+◇ Test anUnreadableOrBrokenStyleKeepsTheLastGoodTokens(_:_:_:) started.
+◇ Test aRefusedPushStaysOffWithTheReason() started.
+◇ Test aServerRowOpensCoresScreenAndClosingTheMenuKeepsAndDropsIt() started.
+◇ Test theColumnOpensAPlaceOrAttachesAPluginAtOnce() started.
+◇ Test anOwnerMessageNamingAMemberQueuesOnlyThatMember() started.
+◇ Test aChatRunsOnItsThreadsMachineAndANewOneKeepsItsPickOnceStarted() started.
+◇ Test theLooksLoadOnlyWithAServerAndKeepFarmWhenTheReadFails() started.
+◇ Test aMachineGoneFromTheListShowsOfflineAndARoomHasNoChip() started.
+◇ Test pushOnRegistersTheDeviceTokenAndOffRemovesIt() started.
+◇ Test aPickedIconStaysThroughStyleChangesUntilTheLookIsFollowedAgain() started.
+◇ Test theMotionSwitchAndAPickedSpriteAreKept() started.
+◇ Test aNewChatsFirstMessageRunsOnThePickedAgentModelAndEffort() started.
+◇ Test aNewChatsPickIsItsMachineOverrideAndNothingMoves() started.
+◇ Test aPackTheServerNoLongerHasFallsBackToModernAndSaysSo() started.
+◇ Test theChipShowsTheThreadsMachineAndAMoveWaitsUntilItIsReady() started.
+◇ Test theLookIsPickedAndKept() started.
+◇ Test aPickedRowTakesThePacksTokensOrModern() started.
+◇ Test withoutAServerPushDoesNothing() started.
+◇ Test aLaunchDrawsTheKeptTokensOrModernAndAnUpgradedPickSaysItIsAPackNow() started.
+◇ Test aDrawnFigureAndBackdropGoInTheSavedDraft() started.
+◇ Test theHeaderStripLoadsItsChipsAndAChipOpensItsScreen() started.
+◇ Test attachingAPluginShowsItsSheetThenReloadsTheStrip() started.
+◇ Test theWorkflowSheetOpensAndUnfoldsOneIssueAtATime() started.
+◇ Test anAnswerWithThePacksStyleKeepsItsTokensAndClearsTheLine() started.
+◇ Test aFailedAttachSaysWhyAndCanBeTriedAgain() started.
+◇ Test theChipListsTheLiveAgentsAndAModelPickGoesToTheThreadsNextTurn() started.
+◇ Test anOwnPackIsEditedInPlaceAndABuiltInIsCopied() started.
+◇ Test aThreadActionAsksThisThreadsPersonaAndARefusalSaysWhy() started.
+◇ Test theAttachSheetIsCoresPermissionsScreenForThatPluginAndPersona() started.
+◇ Test aRoomListsItsTopicsAndSwitchesAndNewSeatsTheSameMembers() started.
+◇ Test conductorsChatCarriesItsWorkflowAndARoundOpensAsAChat() started.
+◇ Test aDraftAndItsFilesComeBackWhenTheChatIsBuiltAgainAndGoOnceSent() started.
+◇ Test aStartingSchemeLabelStyleAndPreviewChangeTheDraft() started.
+◇ Test anOthersChatHasNoStrip() started.
+◇ Test aRoomHasNoChipToLoadAndTheHeaderTapAsksForTheSheet() started.
+◇ Test aThreadTappedOnAScreenClosesItAndOpensThatChat() started.
+◇ Test editingAQueuedMessageSendsOneReplacement() started.
+◇ Test aStateThatFailsToLoadBesideTheMapSaysWhoIsUnreachable() started.
+◇ Test aTimerTapPushesItsSettingsScreenFocusedOnItsFieldAndBackClearsTheFocus() started.
+◇ Test aQuotePutsTheMessagesMarkdownAsQuotedLinesInTheDraft() started.
+◇ Test saveWaitsForTheGateAndTheOneTapFixFreesIt() started.
+◇ Test aRefusedSaveShowsWhy() started.
+◇ Test anotherAgentInAThreadSwitchesThatThreadToIt() started.
+◇ Test aRoundOpensAsANamedChatAndBackReturnsToTheOpenWorkflowSheet() started.
+◇ Test offlineTheKeptTokensDrawAndNothingIsShown() started.
+◇ Test aSetupChatStartsInSetupMode() started.
+◇ Test aSentPhotoLoadsOnceFromTheThreadsFiles() started.
+◇ Test aThreadThatCannotLoadDrawsTheSliceItLastLoadedWithItsTime() started.
+◇ Test aLaneTappedOnTheStripPushesItsChatAndQueueReturnsToTheSameStrip() started.
+◇ Test aRefusedReportStaysOpenWithTheReasonAndBackLeavesWithoutNavigating() started.
+◇ Test aRepeatedIdRefreshedFiveTimesStaysOneRow() started.
+◇ Test aFrameLoadsOnceAndOneGoneAfterItsDaysIsNotAskedForAgain() started.
+◇ Test othersOpensAsAListAndItsChatsOpenAboveIt() started.
+◇ Test sendPostsTheScreenTheTappedElementAndTheNoteThenLeavesReportMode() started.
+◇ Test aFailedLoadToastsOnceGoesOfflineAndTriesAgain() started.
+◇ Test anAnswersOpenPushesThatScreen() started.
+◇ Test aFetchedLayoutIsDrawnAndKept() started.
+◇ Test queuedMessagesAreSteeredOrTakenBack() started.
+◇ Test aNewChatHasNoFramesToLoad() started.
+◇ Test aLayoutTheAppCantReadKeepsTheLastGoodAndSaysWhy() started.
+◇ Test aBrokenFileOnTheMacKeepsTheLastGoodUntilAGoodWrite() started.
+◇ Test aChangeToTheLayoutAlreadyDrawnFetchesNothing() started.
+◇ Test resetAppliesTheMacsAnswer() started.
+◇ Test aStopReadsStoppingUntilTheTurnEnds() started.
+◇ Test aChatLoadsItsSliceThenFollowsItsStream() started.
+◇ Test aLayoutThatReplacesPairingIsRefusedAndTheLastGoodKept() started.
+◇ Test theTopLoadsOlderPagesUntilTheServerHasNoneAndAReloadKeepsThem() started.
+◇ Test aChatStyleTurnFoldsItsStepsAndThePillNamesTheCurrentOne() started.
+◇ Test aFailedCallToastsWhyUntilItsTimeIsUp() started.
+◇ Test cancelLeavesReportMode() started.
+◇ Test aSendQueuesWhileATurnRuns() started.
+◇ Test aRefusalShowsTheServersReason() started.
+◇ Test aFailedOlderPageSaysWhyAndCanBeTriedAgain() started.
+◇ Test aStateTappedOnTheMacLoadsItsIssuesBesideTheMapAndAPushClearsThem() started.
+◇ Test aStaleSaveSaysReloadAndKeepsTheUnsavedText() started.
+◇ Test aChipOpensItsThreadAndKeepsTheStrip() started.
+◇ Test aTappedSheetPushesItsScreenAndBackReturnsToTheOneUnder() started.
+◇ Test resetOfflineDrawsTheBundledDefaultAndForgetsTheLastGood() started.
+◇ Test aPushDeniedWithTextAnswersItsCardWithoutOpeningTheTopic() started.
+◇ Test anEditReadsItsScreenAndSavesTheChangedPersonaThroughIt() started.
+◇ Test theFirstMessageStartsANewChat() started.
+◇ Test aPushOpensItsOwnTopicOverAnUnreadOne() started.
+◇ Test aNewPersonaIsPostedAndReadsNoMemory() started.
+◇ Test setUpByChatSavesThePersonaThenAsksForItsChat() started.
+◇ Test theClockPausesWhileTheAskIsOpenAndResumesOnItsAnswer() started.
+◇ Test aChatWithNoPersonaLoadsNoStripAndAFailedLoadSaysWhy() started.
+◇ Test theChatHeaderOpensItsPersonasSheet() started.
+◇ Test aRefusedRunCardClosesWithItsLineAndIsNeverSentAgain() started.
+◇ Test unreadInAnOlderTopicWinsOverANewerReadOne() started.
+◇ Test aChatCardsPlacesCardsShowInTheThreadAndATapGoesToItsPluginWithItsBlock() started.
+◇ Test deleteAsksFirstThenRemovesOnlyThePersona() started.
+◇ Test aMembersAskIsItsCardAndIsAnsweredInItsSession() started.
+◇ Test anIdleHomeAsksNothingForAMinuteAndAnUnchangedAnswerChangesNothing() started.
+◇ Test theAgentChipsListsComeFromTheServerAndAnotherAgentReloadsThem() started.
+◇ Test offlineHomeHoldsNoScreenSoTheBundledOneDraws() started.
+◇ Test aPinWithNoThreadStartsANewChat() started.
+◇ Test aPinOpensThePersonasNewestThreadAndReadsIt() started.
+◇ Test aRefreshLoadsOnceAndClearsTheError() started.
+◇ Test aPersonasRowCountsAndSumsAsTheServerDoesAndNamesTheTopicATapOpens() started.
+◇ Test aSentMessageRecordsSendToEcho() started.
+◇ Test aBlockActionRecordsTapToPaintedOnceItsAnswerIsApplied() started.
+◇ Test aNewStreamItemRecordsEventToPaintedAndAnUpdateDoesNot() started.
+◇ Test theFolderBrowserNeverLeavesTheRoots() started.
+◇ Test theChatHeadersPlusStartsANewChatWithItsPersona() started.
+◇ Test homeLoadsOnEachChangeTheServerSaysUntilTheServerForgetsThisDevice() started.
+◇ Test withNothingUnreadThePinOpensTheTopicLastOpenNotTheNewest() started.
+◇ Test aLinkedThreadOpensAsTheExchangeAndItsLinksOpenTheChatsAndThePersona() started.
+◇ Test aDeletedPersonaClosesItsSheetAndHomeReloadsWithItsChats() started.
+◇ Test aPickedAvatarSavesWithThePersonaAndShowAllOpensEveryNote() started.
+◇ Test anAddressAsksThenWaitsForApproval() started.
+◇ Test homeListsPersonasChatsOnlyAndALaneFallsIntoOthersUntilAPluginClaimsIt() started.
+◇ Test aRoomOpensWithItsMembersOpenAsks() started.
+◇ Test aDeclineGoesBackToTheAddressWithWhy() started.
+◇ Test offlineHomeDrawsTheListItLastLoadedWithItsTimeAndToastsOnlyTheFirstFailure() started.
+◇ Test stepsTheAddressAndNearbyServers() started.
+◇ Test aLinkWithACodePairsAndGoesHome() started.
+◇ Test aBadAddressOrAFailedAskSaysWhy() started.
+◇ Test newWithAPickedFolderStartsTheThreadInIt() started.
+◇ Test theOrderHoldsWhileTheChatIsOnScreen() started.
+◇ Test anArchivedTopicIsRestoredAfterTheToastGoes() started.
+◇ Test theOwnersNoteGoesStraightToTheAnswererMidTurnNotIntoTheQueue() started.
+◇ Test archiveThenUndoWithinFiveSecondsKeepsTheTopic() started.
+◇ Test renameSavesTheTitleAndTheChipShowsIt() started.
+◇ Test theSeventhTopicFoldsIntoTheListButton() started.
+◇ Test cancelTakesBackTheAskAndGoesToTheWelcome() started.
+◇ Test theSavedServerIsReadAtLaunchThenHomeShows() started.
+◇ Test theLookOutlivesPairingAgain() started.
+◇ Test aNewChatBecomesItsThreadOnceStarted() started.
+◇ Test oneUnauthorizedAnswerThenAGoodOneKeepsHomeAndTheServer() started.
+◇ Test twoUnauthorizedAnswersInARowPairAgain() started.
+◇ Test aSavedPersonaClosesItsSheetAndHomeReloads() started.
+◇ Test aKeychainThatNeverAnswersIsAnErrorAfterFiveSeconds() started.
+◇ Test refineByChatOpensASetupChat() started.
+◇ Test aNewPersonaStartsBlankOnTheFirstPersonasAgent() started.
+◇ Test withoutHomeNoChatOrPersonaOpens() started.
+◇ Test aForgottenDevicePairsAgain() started.
+◇ Test aChatAskingToOpenAThreadOpensIt() started.
+◇ Test anUnpairedAppPairsThenShowsHome() started.
+◇ Test aChatOpensFromTheListWithItsPersona() started.
+◇ Test aMacThatRanTheServerRetiresItsLoginItemsAndSaysSo() started.
+◇ Test homeAndTheOpenChatReloadWhenTheAppComesBackAfterThirtySecondsAway() started.
+◇ Test case passing 3 arguments styles → [:], broken → ["terminal": "style.json: surface \"blur\": not one of glass dashed solid"], line → "terminal/style.json: surface "blur": not one of glass dashed solid · last good style kept" to anUnreadableOrBrokenStyleKeepsTheLastGoodTokens(_:_:_:) started.
+◇ Test case passing 3 arguments styles → ["terminal": CooeeCore.ServedStyle(style: nil)], broken → nil, line → "terminal needs a newer app · last good style kept" to anUnreadableOrBrokenStyleKeepsTheLastGoodTokens(_:_:_:) started.
+◇ Test restartOnTheGoneLineStartsTheAgentAgain() started.
+◇ Test aFirstMessageWhoseAgentCannotStartKeepsItsBubbleWithWhy() started.
+◇ Test aFailedFirstMessageStaysOnItsBubble() started.
+◇ Test whatIsTypedNeverShowsInAnActionOrStateDump() started.
+◇ Test opensTheShellSizesItDrawsItsScreenAndLetsGoWhenItCloses() started.
+◇ Test aRetryTheServerRefusesSaysWhy() started.
+◇ Test anAgentsTerminalIsWatchedButTakesNoKeys() started.
+◇ Test denyAndSayOpensTheComposerAndItsSendAnswersTheCardWithTheText() started.
+◇ Test aLockedDeviceIsToldWhyAndHowToGoOn() started.
+◇ Test retryStartsTheAgentAgainAndItsMessageTakesTheBubble() started.
+◇ Test aNewShellOpensOnceStarted() started.
+◇ Test aCardsAnswerGoesBackAsItsItemsChoiceWhileTheCardWaits() started.
+◇ Test aRefusedAnswerSaysWhyAndTheCardCanBeTappedAgain() started.
+◇ Test leavingAScreenKeepsItAtOnce() started.
+◇ Test theMenuOpensTheEditorAndASavedPackIsAppliedWithNoRestart() started.
+◇ Test typingGoesInTheOrderTypedAndCtrlMakesTheNextLetterAControlKey() started.
+◇ Test aTapDuringAnActionIsPendingAtOnceThenSentInOrder() started.
+◇ Test aLaneTapAsksTheChatToOpenItsThread() started.
+◇ Test aSlowLoadShowsAStripAfter300msAndTheShownScreenStaysTappable() started.
+◇ Test anUnreachableMacShowsTheKeptAnswerWithItsAgeThenRetries() started.
+◇ Test aScreenLoadsFollowsItsStreamAndIsKept() started.
+◇ Test anActionAppliesItsAnswersOpsAndSaysItsToast() started.
+◇ Test goingToTheBackgroundKeepsTheScreenAtOnce() started.
+◇ Test aCoreScreenIsFetchedFromCoreAndKeptUnderCore() started.
+◇ Test aHundredEventsInASecondAreKeptOnceTwoSecondsAfterTheLast() started.
+◇ Test aSecretIsSentOnlyOnceTheOwnerIsConfirmed(_:) started.
+◇ Test aMessageTheAgentNeverGotKeepsItsBubbleAndComesBack() started.
+◇ Test aRefusedActionSaysWhy() started.
+◇ Test case passing 1 argument confirmed → false to aSecretIsSentOnlyOnceTheOwnerIsConfirmed(_:) started.
+◇ Test case passing 1 argument confirmed → true to aSecretIsSentOnlyOnceTheOwnerIsConfirmed(_:) started.
+◇ Test aScreenWithNoStreamStopsAfterItsAnswer() started.
+✔ Test aPinnedRoomIsKeptAcrossLaunchesAndAChatIsNeverPinnedAsARoom() passed after 1.131 seconds.
+✔ Test aRoomIsAChatWithItsMembersAndLastSpeakerNeverInOthers() passed after 1.149 seconds.
+✔ Test anOwnPackIsEditedInPlaceAndABuiltInIsCopied() passed after 1.149 seconds.
+✔ Test aLaunchDrawsTheKeptTokensOrModernAndAnUpgradedPickSaysItIsAPackNow() passed after 1.149 seconds.
+✔ Test aChatStyleTurnFoldsItsStepsAndThePillNamesTheCurrentOne() passed after 1.149 seconds.
+✔ Test whatIsTypedNeverShowsInAnActionOrStateDump() passed after 1.149 seconds.
+✔ Test anOwnerMessageNamingAMemberQueuesOnlyThatMember() passed after 2.776 seconds.
+✔ Test withoutAServerPushDoesNothing() passed after 2.776 seconds.
+✔ Test offlineTheKeptTokensDrawAndNothingIsShown() passed after 2.775 seconds.
+✔ Test anotherAgentInAThreadSwitchesThatThreadToIt() passed after 2.776 seconds.
+✔ Test aChangeToTheLayoutAlreadyDrawnFetchesNothing() passed after 2.775 seconds.
+✔ Test aNewChatHasNoFramesToLoad() passed after 2.777 seconds.
+✔ Test unreadInAnOlderTopicWinsOverANewerReadOne() passed after 2.777 seconds.
+✔ Test aPinWithNoThreadStartsANewChat() passed after 2.778 seconds.
+✔ Test aRoomOpensWithItsMembersOpenAsks() passed after 2.778 seconds.
+✔ Test aForgottenDevicePairsAgain() passed after 2.778 seconds.
+✔ Test anUnpairedAppPairsThenShowsHome() passed after 2.778 seconds.
+✔ Test anUnreadableOrBrokenStyleKeepsTheLastGoodTokens(_:_:_:) with 2 test cases passed after 2.787 seconds.
+✔ Test aRefusedRoomSaysWhy() passed after 2.794 seconds.
+✔ Test aRefusedPushStaysOffWithTheReason() passed after 2.794 seconds.
+✔ Test aRefusedIconChangeSaysWhichTileToTapAgain() passed after 2.794 seconds.
+✔ Test theAttachSheetIsCoresPermissionsScreenForThatPluginAndPersona() passed after 2.793 seconds.
+✔ Test aStateThatFailsToLoadBesideTheMapSaysWhoIsUnreachable() passed after 2.793 seconds.
+✔ Test aFetchedLayoutIsDrawnAndKept() passed after 2.793 seconds.
+✔ Test aLayoutThatReplacesPairingIsRefusedAndTheLastGoodKept() passed after 2.793 seconds.
+✔ Test aFailedAttachSaysWhyAndCanBeTriedAgain() passed after 2.794 seconds.
+✔ Test resetAppliesTheMacsAnswer() passed after 2.793 seconds.
+✔ Test resetOfflineDrawsTheBundledDefaultAndForgetsTheLastGood() passed after 2.793 seconds.
+✔ Test aPushOpensItsOwnTopicOverAnUnreadOne() passed after 2.793 seconds.
+✔ Test aLayoutTheAppCantReadKeepsTheLastGoodAndSaysWhy() passed after 2.793 seconds.
+✔ Test aPersonasRowCountsAndSumsAsTheServerDoesAndNamesTheTopicATapOpens() passed after 2.793 seconds.
+✔ Test theSeventhTopicFoldsIntoTheListButton() passed after 2.793 seconds.
+✔ Test aLockedDeviceIsToldWhyAndHowToGoOn() passed after 2.792 seconds.
+✔ Test aLaneTapAsksTheChatToOpenItsThread() passed after 2.792 seconds.
+✔ Test aRefusedActionSaysWhy() passed after 2.792 seconds.
+✔ Test aDeclineGoesBackToTheAddressWithWhy() passed after 2.801 seconds.
+✔ Test aNewShellOpensOnceStarted() passed after 2.800 seconds.
+✔ Test aBrokenFileOnTheMacKeepsTheLastGoodUntilAGoodWrite() passed after 2.816 seconds.
+✔ Test opensTheShellSizesItDrawsItsScreenAndLetsGoWhenItCloses() passed after 2.817 seconds.
+✔ Suite LayoutFeatureTests passed after 2.843 seconds.
+✔ Test pinningARoomPutsItAfterThePinnedPersonasAndUnpinningTakesItOut() passed after 2.872 seconds.
+✔ Suite RoomPinTests passed after 2.872 seconds.
+✔ Test anAnswerWithThePacksStyleKeepsItsTokensAndClearsTheLine() passed after 2.978 seconds.
+✔ Test aPackTheServerNoLongerHasFallsBackToModernAndSaysSo() passed after 2.979 seconds.
+✔ Test aTextChunkParsesOnlyTheLiveReplyNotTheLoadedItems() passed after 2.993 seconds.
+✔ Test theLooksLoadOnlyWithAServerAndKeepFarmWhenTheReadFails() passed after 2.993 seconds.
+✔ Test aThemeWithoutSpritesDrawsModernAndHidesTheSceneRowButKeepsThePick() passed after 2.993 seconds.
+✔ Test anOthersChatHasNoStrip() passed after 2.993 seconds.
+✔ Test theClockPausesWhileTheAskIsOpenAndResumesOnItsAnswer() passed after 2.993 seconds.
+✔ Test theLookOutlivesPairingAgain() passed after 2.992 seconds.
+✔ Test withoutHomeNoChatOrPersonaOpens() passed after 2.993 seconds.
+✔ Test anAgentsTerminalIsWatchedButTakesNoKeys() passed after 2.992 seconds.
+✔ Test aScreenMovedToTheSidebarIsFollowedThereAndASkippedNodeIsReported() passed after 2.997 seconds.
+✔ Test aRoomHasNoChipToLoadAndTheHeaderTapAsksForTheSheet() passed after 2.997 seconds.
+✔ Test aThreadTappedOnAScreenClosesItAndOpensThatChat() passed after 2.997 seconds.
+✔ Test aFailedOlderPageSaysWhyAndCanBeTriedAgain() passed after 2.997 seconds.
+✔ Test setUpByChatSavesThePersonaThenAsksForItsChat() passed after 2.997 seconds.
+✔ Test aStaleSaveSaysReloadAndKeepsTheUnsavedText() passed after 2.997 seconds.
+✔ Test aMembersAskIsItsCardAndIsAnsweredInItsSession() passed after 2.996 seconds.
+✔ Test cancelLeavesReportMode() passed after 2.997 seconds.
+✔ Test homeListsPersonasChatsOnlyAndALaneFallsIntoOthersUntilAPluginClaimsIt() passed after 2.996 seconds.
+✔ Test aBadAddressOrAFailedAskSaysWhy() passed after 2.996 seconds.
+✔ Test theOrderHoldsWhileTheChatIsOnScreen() passed after 2.996 seconds.
+✔ Test theSavedServerIsReadAtLaunchThenHomeShows() passed after 2.996 seconds.
+✔ Test aChatAskingToOpenAThreadOpensIt() passed after 2.996 seconds.
+✔ Test aMacThatRanTheServerRetiresItsLoginItemsAndSaysSo() passed after 2.996 seconds.
+✔ Test aSetupChatStartsInSetupMode() passed after 3.000 seconds.
+✔ Test theChatHeadersPlusStartsANewChatWithItsPersona() passed after 2.999 seconds.
+✔ Test attachingAPluginShowsItsSheetThenReloadsTheStrip() passed after 3.004 seconds.
+✔ Test aLinkWithACodePairsAndGoesHome() passed after 3.003 seconds.
+✔ Suite ChatStreamingTests passed after 3.005 seconds.
+✔ Suite SidebarLayoutTests passed after 3.006 seconds.
+✔ Suite RoomAskTests passed after 3.006 seconds.
+✔ Test aPushDeniedWithTextAnswersItsCardWithoutOpeningTheTopic() passed after 3.006 seconds.
+✔ Test aNewStreamItemRecordsEventToPaintedAndAnUpdateDoesNot() passed after 3.069 seconds.
+✔ Test aRefusedAnswerSaysWhyAndTheCardCanBeTappedAgain() passed after 3.075 seconds.
+✔ Test theMotionSwitchAndAPickedSpriteAreKept() passed after 3.077 seconds.
+✔ Test othersOpensAsAListAndItsChatsOpenAboveIt() passed after 3.076 seconds.
+✔ Test aRoundOpensAsANamedChatAndBackReturnsToTheOpenWorkflowSheet() passed after 3.076 seconds.
+✔ Test withNothingUnreadThePinOpensTheTopicLastOpenNotTheNewest() passed after 3.076 seconds.
+✔ Test withNoHandoffWaitingHandBackOnlyReturnsTheBrowser() passed after 3.081 seconds.
+✔ Test allIssuesOpensTheWorkflowSheetOnceThePanelHasGone() passed after 3.081 seconds.
+✔ Test offlineTheMenuKeepsTheBundledOneAndWithoutAServerOpensNothing() passed after 3.081 seconds.
+✔ Test addRoutineAsksForOneInTheComposeOnceThePanelHasGone() passed after 3.081 seconds.
+✔ Test theChipListsTheLiveAgentsAndAModelPickGoesToTheThreadsNextTurn() passed after 3.080 seconds.
+✔ Test theOwnersNoteGoesStraightToTheAnswererMidTurnNotIntoTheQueue() passed after 3.080 seconds.
+✔ Test aNewPersonaStartsBlankOnTheFirstPersonasAgent() passed after 3.079 seconds.
+✔ Test denyAndSayOpensTheComposerAndItsSendAnswersTheCardWithTheText() passed after 3.079 seconds.
+✔ Test aCardsAnswerGoesBackAsItsItemsChoiceWhileTheCardWaits() passed after 3.079 seconds.
+✔ Test pushOnRegistersTheDeviceTokenAndOffRemovesIt() passed after 3.083 seconds.
+✔ Test theHeaderStripLoadsItsChipsAndAChipOpensItsScreen() passed after 3.083 seconds.
+✔ Test aSentPhotoLoadsOnceFromTheThreadsFiles() passed after 3.083 seconds.
+✔ Test aNewChatBecomesItsThreadOnceStarted() passed after 3.082 seconds.
+✔ Test aRefusedSaveShowsWhy() passed after 3.084 seconds.
+✔ Test aDeletedPersonaClosesItsSheetAndHomeReloadsWithItsChats() passed after 3.083 seconds.
+✔ Test aSavedPersonaClosesItsSheetAndHomeReloads() passed after 3.083 seconds.
+✔ Test theMenuOpensTheEditorAndASavedPackIsAppliedWithNoRestart() passed after 3.083 seconds.
+✔ Test aRefusalShowsTheServersReason() passed after 3.084 seconds.
+✔ Suite ThemeEditorMenuTests passed after 3.085 seconds.
+✔ Test twoUnauthorizedAnswersInARowPairAgain() passed after 3.108 seconds.
+✔ Test aNewPersonaIsPostedAndReadsNoMemory() passed after 3.147 seconds.
+✔ Test aChatWithNoPersonaLoadsNoStripAndAFailedLoadSaysWhy() passed after 3.148 seconds.
+✔ Test aRetryTheServerRefusesSaysWhy() passed after 3.148 seconds.
+✔ Test restartOnTheGoneLineStartsTheAgentAgain() passed after 3.148 seconds.
+✔ Test aPickedIconStaysThroughStyleChangesUntilTheLookIsFollowedAgain() passed after 3.149 seconds.
+✔ Test aStopReadsStoppingUntilTheTurnEnds() passed after 3.149 seconds.
+✔ Test retryStartsTheAgentAgainAndItsMessageTakesTheBubble() passed after 3.148 seconds.
+✔ Test aPickInTheSheetRunsOnceTheSheetHasGone() passed after 3.153 seconds.
+✔ Test editingAQueuedMessageSendsOneReplacement() passed after 3.153 seconds.
+✔ Test deleteAsksFirstThenRemovesOnlyThePersona() passed after 3.153 seconds.
+✔ Test aPickedAvatarSavesWithThePersonaAndShowAllOpensEveryNote() passed after 3.153 seconds.
+✔ Test aNewChatsPickIsItsMachineOverrideAndNothingMoves() passed after 3.156 seconds.
+✔ Test aNewChatsFirstMessageRunsOnThePickedAgentModelAndEffort() passed after 3.156 seconds.
+✔ Test aFrameLoadsOnceAndOneGoneAfterItsDaysIsNotAskedForAgain() passed after 3.156 seconds.
+✔ Test aRoomListsItsTopicsAndSwitchesAndNewSeatsTheSameMembers() passed after 3.156 seconds.
+✔ Suite ChatAgentTests passed after 3.158 seconds.
+✔ Suite ChatFramesTests passed after 3.158 seconds.
+✔ Suite RoomTopicsTests passed after 3.158 seconds.
+✔ Test aPickedRowTakesThePacksTokensOrModern() passed after 3.189 seconds.
+✔ Test aServerRowOpensCoresScreenAndClosingTheMenuKeepsAndDropsIt() passed after 3.207 seconds.
+✔ Test aChatRunsOnItsThreadsMachineAndANewOneKeepsItsPickOnceStarted() passed after 3.207 seconds.
+✔ Test aFirstMessageWhoseAgentCannotStartKeepsItsBubbleWithWhy() passed after 3.205 seconds.
+✔ Test aLaneTappedOnTheStripPushesItsChatAndQueueReturnsToTheSameStrip() passed after 3.209 seconds.
+✔ Test aFailedFirstMessageStaysOnItsBubble() passed after 3.207 seconds.
+✔ Test aRoomsStreamRunsItsRoundAndItsItemsAreAttributed() passed after 3.209 seconds.
+✔ Test theWorkflowSheetOpensAndUnfoldsOneIssueAtATime() passed after 3.209 seconds.
+✔ Test aChatOpensFromTheListWithItsPersona() passed after 3.208 seconds.
+✔ Test aMachineGoneFromTheListShowsOfflineAndARoomHasNoChip() passed after 3.209 seconds.
+✔ Test aSecretIsSentOnlyOnceTheOwnerIsConfirmed(_:) with 2 test cases passed after 3.208 seconds.
+✔ Test conductorsChatCarriesItsWorkflowAndARoundOpensAsAChat() passed after 3.209 seconds.
+✔ Test renameSavesTheTitleAndTheChipShowsIt() passed after 3.209 seconds.
+✔ Test refineByChatOpensASetupChat() passed after 3.209 seconds.
+✔ Test aWaitingHandoffResumesWithTheNoteOnHandBackOrDone() passed after 3.210 seconds.
+✔ Test aRefusedReportStaysOpenWithTheReasonAndBackLeavesWithoutNavigating() passed after 3.210 seconds.
+✔ Test sendPostsTheScreenTheTappedElementAndTheNoteThenLeavesReportMode() passed after 3.210 seconds.
+✔ Test theTopLoadsOlderPagesUntilTheServerHasNoneAndAReloadKeepsThem() passed after 3.210 seconds.
+✔ Test aChipOpensItsThreadAndKeepsTheStrip() passed after 3.210 seconds.
+✔ Test theChipShowsTheThreadsMachineAndAMoveWaitsUntilItIsReady() passed after 3.211 seconds.
+✔ Test typingGoesInTheOrderTypedAndCtrlMakesTheNextLetterAControlKey() passed after 3.209 seconds.
+✔ Suite CardAnswerTests passed after 3.212 seconds.
+✔ Suite WorkflowNavigationTests passed after 3.212 seconds.
+✔ Suite TopicSwitchTests passed after 3.213 seconds.
+✔ Suite ReportFeatureTests passed after 3.213 seconds.
+✔ Suite ChatMachineTests passed after 3.213 seconds.
+✔ Suite TerminalFeatureTests passed after 3.213 seconds.
+✔ Test aKeychainThatNeverAnswersIsAnErrorAfterFiveSeconds() passed after 3.219 seconds.
+✔ Test anActionAppliesItsAnswersOpsAndSaysItsToast() passed after 3.221 seconds.
+✔ Test aCoreScreenIsFetchedFromCoreAndKeptUnderCore() passed after 3.221 seconds.
+✔ Test aScreenWithNoStreamStopsAfterItsAnswer() passed after 3.221 seconds.
+✔ Test aSentMessageRecordsSendToEcho() passed after 3.224 seconds.
+✔ Test offlineHomeHoldsNoScreenSoTheBundledOneDraws() passed after 3.226 seconds.
+✔ Test oneUnauthorizedAnswerThenAGoodOneKeepsHomeAndTheServer() passed after 3.226 seconds.
+✔ Test anAddressAsksThenWaitsForApproval() passed after 3.227 seconds.
+✔ Test cancelTakesBackTheAskAndGoesToTheWelcome() passed after 3.232 seconds.
+✔ Test theChatHeaderOpensItsPersonasSheet() passed after 3.232 seconds.
+✔ Test aThreadActionAsksThisThreadsPersonaAndARefusalSaysWhy() passed after 3.233 seconds.
+✔ Test queuedMessagesAreSteeredOrTakenBack() passed after 3.235 seconds.
+✔ Test aPinOpensThePersonasNewestThreadAndReadsIt() passed after 3.235 seconds.
+✔ Suite PersonaControlsTests passed after 3.239 seconds.
+✔ Test aMessageTheAgentNeverGotKeepsItsBubbleAndComesBack() passed after 3.236 seconds.
+✔ Test aDrawnFigureAndBackdropGoInTheSavedDraft() passed after 3.238 seconds.
+✔ Test aStartingSchemeLabelStyleAndPreviewChangeTheDraft() passed after 3.238 seconds.
+✔ Suite ChatPluginsTests passed after 3.239 seconds.
+✔ Test theFirstMessageStartsANewChat() passed after 3.239 seconds.
+✔ Suite PinnedTests passed after 3.240 seconds.
+✔ Suite ChatOutboxTests passed after 3.240 seconds.
+✔ Test theAgentChipsListsComeFromTheServerAndAnotherAgentReloadsThem() passed after 3.239 seconds.
+✔ Test anEditReadsItsScreenAndSavesTheChangedPersonaThroughIt() passed after 3.239 seconds.
+✔ Test leavingAScreenKeepsItAtOnce() passed after 3.252 seconds.
+✔ Test archiveThenUndoWithinFiveSecondsKeepsTheTopic() passed after 3.253 seconds.
+✔ Test aStateTappedOnTheMacLoadsItsIssuesBesideTheMapAndAPushClearsThem() passed after 3.255 seconds.
+✔ Test anIdleHomeAsksNothingForAMinuteAndAnUnchangedAnswerChangesNothing() passed after 3.255 seconds.
+✔ Test goingToTheBackgroundKeepsTheScreenAtOnce() passed after 3.254 seconds.
+✔ Test homeAndTheOpenChatReloadWhenTheAppComesBackAfterThirtySecondsAway() passed after 3.257 seconds.
+✔ Test anArchivedTopicIsRestoredAfterTheToastGoes() passed after 3.258 seconds.
+✔ Test theColumnOpensAPlaceOrAttachesAPluginAtOnce() passed after 3.263 seconds.
+✔ Test aLinkedThreadOpensAsTheExchangeAndItsLinksOpenTheChatsAndThePersona() passed after 3.262 seconds.
+✔ Test aRefusedRunCardClosesWithItsLineAndIsNeverSentAgain() passed after 3.265 seconds.
+✔ Suite AppFeatureTests passed after 3.269 seconds.
+✔ Test aQuotePutsTheMessagesMarkdownAsQuotedLinesInTheDraft() passed after 3.268 seconds.
+✔ Test aRepeatedIdRefreshedFiveTimesStaysOneRow() passed after 3.269 seconds.
+✔ Suite LinkedFeatureTests passed after 3.270 seconds.
+✔ Test aRoomIsMadeFromHomeAndOpensFromTheList() passed after 3.270 seconds.
+✔ Test handBackCarriesTheNoteAndARefusedInputSaysWhy() passed after 3.270 seconds.
+✔ Test aMemberIsInspectedMovedAddedAndTakenOut() passed after 3.270 seconds.
+✔ Test theLookIsPickedAndKept() passed after 3.270 seconds.
+✔ Test newWithAPickedFolderStartsTheThreadInIt() passed after 3.269 seconds.
+✔ Test saveWaitsForTheGateAndTheOneTapFixFreesIt() passed after 3.270 seconds.
+✔ Suite MenuFeatureTests passed after 3.271 seconds.
+✔ Suite ChatTopicsTests passed after 3.271 seconds.
+✔ Suite ThemeEditorFeatureTests passed after 3.271 seconds.
+✔ Test anAnswersOpenPushesThatScreen() passed after 3.276 seconds.
+✔ Test aRefreshLoadsOnceAndClearsTheError() passed after 3.285 seconds.
+✔ Test aThreadThatCannotLoadDrawsTheSliceItLastLoadedWithItsTime() passed after 3.285 seconds.
+✔ Test theFolderBrowserNeverLeavesTheRoots() passed after 3.298 seconds.
+✔ Suite PersonaFeatureTests passed after 3.299 seconds.
+✔ Test aTimerTapPushesItsSettingsScreenFocusedOnItsFieldAndBackClearsTheFocus() passed after 3.305 seconds.
+✔ Test editOpensThePersonaSheetAndNewTopicOpensNewWithThePersona() passed after 3.309 seconds.
+✔ Test aSendQueuesWhileATurnRuns() passed after 3.309 seconds.
+✔ Suite ChatPanelTests passed after 3.310 seconds.
+✔ Test aBlockActionRecordsTapToPaintedOnceItsAnswerIsApplied() passed after 3.311 seconds.
+✔ Suite TimingTests passed after 3.316 seconds.
+✔ Test aScreenLoadsFollowsItsStreamAndIsKept() passed after 3.317 seconds.
+✔ Test aTappedSheetPushesItsScreenAndBackReturnsToTheOneUnder() passed after 3.319 seconds.
+✔ Test offlineHomeDrawsTheListItLastLoadedWithItsTimeAndToastsOnlyTheFirstFailure() passed after 3.319 seconds.
+✔ Suite PluginNavigationTests passed after 3.321 seconds.
+✔ Test theSheetShowsEachLiveFrameAndWhyTheBrowserIsGone() passed after 3.322 seconds.
+✔ Test stepsTheAddressAndNearbyServers() passed after 3.325 seconds.
+✔ Suite PairingFeatureTests passed after 3.326 seconds.
+✔ Test aChatCardsPlacesCardsShowInTheThreadAndATapGoesToItsPluginWithItsBlock() passed after 3.336 seconds.
+✔ Suite PluginDeckTests passed after 3.338 seconds.
+✔ Test anUnreachableMacShowsTheKeptAnswerWithItsAgeThenRetries() passed after 3.341 seconds.
+✔ Test aTapDuringAnActionIsPendingAtOnceThenSentInOrder() passed after 3.366 seconds.
+✔ Test aFailedCallToastsWhyUntilItsTimeIsUp() passed after 3.367 seconds.
+✔ Test aFailedLoadToastsOnceGoesOfflineAndTriesAgain() passed after 3.367 seconds.
+✔ Test homeLoadsOnEachChangeTheServerSaysUntilTheServerForgetsThisDevice() passed after 3.376 seconds.
+✔ Suite HomeFeatureTests passed after 3.378 seconds.
+✔ Test aNewRoomPicksUpToFiveInOrderAndIsMade() passed after 3.382 seconds.
+✔ Suite RoomFeatureTests passed after 3.383 seconds.
+✔ Test aDraftAndItsFilesComeBackWhenTheChatIsBuiltAgainAndGoOnceSent() passed after 3.402 seconds.
+✔ Suite ChatComposeTests passed after 3.404 seconds.
+✔ Test theLeaseCountsDownAndReturnsToTheAgentAtZero() passed after 3.456 seconds.
+✔ Suite ChatBrowserTests passed after 3.457 seconds.
+✔ Test aChatLoadsItsSliceThenFollowsItsStream() passed after 3.462 seconds.
+✔ Suite ChatFeatureTests passed after 3.463 seconds.
+✔ Test aSlowLoadShowsAStripAfter300msAndTheShownScreenStaysTappable() passed after 3.536 seconds.
+✔ Test aHundredEventsInASecondAreKeptOnceTwoSecondsAfterTheLast() passed after 3.895 seconds.
+✔ Suite ScreenFeatureTests passed after 3.898 seconds.
+✔ Test run with 192 tests in 36 suites passed after 3.898 seconds.
+◇ Test run started.
+↳ Testing Library Version: 2403
+↳ Target Platform: arm64e-apple-macos14.0
+◇ Suite CardTrustTests started.
+◇ Suite ActionTests started.
+◇ Suite MentionTests started.
+◇ Suite ModelsTests started.
+◇ Suite DiagramTests started.
+◇ Suite AppIconTests started.
+◇ Suite ItemsTests started.
+◇ Suite PluginsTests started.
+◇ Suite FolderListingTests started.
+◇ Suite SidebarTests started.
+◇ Suite SceneTests started.
+◇ Suite ExchangeTests started.
+◇ Suite LiveReplyTests started.
+◇ Suite WorkflowTests started.
+◇ Suite DrawingTests started.
+◇ Suite RoomTests started.
+◇ Suite MotionTests started.
+◇ Suite ScreenTests started.
+◇ Suite MachineRowTests started.
+◇ Suite TerminalTests started.
+◇ Suite TimingsTests started.
+◇ Suite ThemeDraftTests started.
+◇ Suite ListingTests started.
+◇ Test aGuardedCardWithNoPosterIsNotDrawn(_:) started.
+◇ Test onlyCorePostsPermissions() started.
+◇ Test anUnguardedCardDrawsFromAnyone() started.
+◇ Test aTapSendsItsActionWithTheTapsTheSourcesAndTheGivenValues() started.
+◇ Test aSheetSendsEveryFormsFieldsAndAFieldsOwnValueWins() started.
+◇ Test membersReplyInMentionOrderOnceEachByNameOrId() started.
+◇ Test theWordBeingTypedPicksTheFirstMemberNotYetNamed() started.
+◇ Test theLineSaysWhoRepliesInOrder() started.
+◇ Test pickingAMemberReplacesTheWordBeingTypedWithItsToken() started.
+◇ Test aDraftNamingMembersQueuesThemUpNextAndWaitsTheOthers() started.
+◇ Test aThreadsStateIsALanesState(_:_:) started.
+◇ Test anInitialsAvatarDrawsItsInitialsInThePickedTint() started.
+◇ Test aServerPersonaGetsInitialsATintAndItsIDAsItsSpriteSeed() started.
+◇ Test aTurnIsWorkingWhileItRunsOrConnects() started.
+◇ Test backEdgesGoRightLeavingEdgesGoLeftAndAnOrphanGoesUnderItsPredecessors() started.
+◇ Test commentsLabelsAndUnknownLinesAreSkipped() started.
+◇ Test aMergeOpUpdatesTheMapsCountsInPlace() started.
+◇ Test aPairBothWaysIsOneLineAndASpineJumpIsNotDrawn() started.
+◇ Test drovesMapIsOneSpineWithItsSkippedStatesOptional() started.
+◇ Test aPickedIconAndTheKeptTokensSurviveARelaunchAndAnOldPickNamesItsPack() started.
+◇ Test followingShowsTheFirstIconOfTheKeptStylesSet() started.
+◇ Test everyIconIsInTheAssetCatalogAsAnAppIconAndAPreview() started.
+◇ Test theSameNoteTwiceInARowIsOneRow() started.
+◇ Test aMessageCopiesAsPlainText() started.
+◇ Test aFrameTheAgentAskedForIsAScreenBlockAndAHandoffACard() started.
+◇ Test aChatStyleTurnIsItsReplyAndOneFoldedRowWithApprovalsAndErrorsInline() started.
+◇ Test aBrowserFrameIsADoneStepWithItsCaptionInTheThreadAndTheTrace() started.
+◇ Test aWorkingChatStyleTurnHidesItsStepsAndNamesTheCurrentOne() started.
+◇ Test toolsFoldCardsAreBlocksAndNotesShow() started.
+◇ Test markdownKeepsAnOpenFenceAndSplitsParagraphsFromBullets() started.
+◇ Test theOfflineLineSaysWhoAndHowOld() started.
+◇ Test aPlaceKeepsItsIdAsItsKey() started.
+◇ Test aSubFolderGoesUpToItsParentAndItsSearchMatchesNamesOnly() started.
+◇ Test theSidebarIsAColumnOnWideAndItsNodesAreMenuRowsOnCompact() started.
+◇ Test aSidebarNotPlacedForTheSizeLendsNoRows() started.
+◇ Test aMergeOrANewRoundUpdatesTheStripAndTheRowInPlace() started.
+◇ Test lanesStandInTheirPlacesGateFirstAndKeepTheirOrderWithinOne() started.
+◇ Test aHorseKeepsItsIssuesCoatInTheStripAndItsRow() started.
+◇ Test aLanesHeadIsItsHorseItsLiveRoundsLaneAndItsPR() started.
+◇ Test anAskIsACardThatSaysItsOutcome() started.
+◇ Test aRowAndAnAskDecodeFromTheServersJSON() started.
+◇ Test aDestructiveTapIsAlwaysConfirmedTitledWithItsLabel() started.
+◇ Test anotherDayIsNamedByItsDate() started.
+◇ Test aLinkedThreadAttributesTheQuestionTheToolsTheNoteAndTheReply() started.
+◇ Test anExchangeKnowsItsAskerItsDepthAndTheAnswerersOwnChat() started.
+◇ Test aLongReplyInManyChunksParsesLinearlyInItsLength() started.
+◇ Test homeListsOnlyPersonasChatsAndALaneGoesToThePersonaItsClaimingPluginIsAttachedTo() started.
+◇ Test othersSplitsChatsWithNoPersonaFromEachUnclaimedSourceAndNamesNeitherByItsAgent() started.
+◇ Test aLaneNoPluginClaimsFallsIntoOthers() started.
+◇ Test othersNotesSayWhereEachSourcesSessionsWent() started.
+◇ Test aRoundsURLLinksItsPullRequestOrIssue() started.
+◇ Test theSheetHasOneRowPerIssueNeedsYouFirstWithItsRoundsOldestFirst() started.
+◇ Test thePersonaWithAClaimingPluginHasAnEmptySheetBeforeAnyLane() started.
+◇ Test anImportedSvgStaysVectorScaledIntoTheSymbolsBoxAndLayer() started.
+◇ Test aFigureIsOneSymbolOfRectRunsAndReadsBack() started.
+◇ Test fillEraseAndLineDoWhatTheySay() started.
+◇ Test anImportedPictureSnapsToTheGridInTheNearestPaletteColours() started.
+◇ Test aStateIs24SquareAndTheRestAre132By100() started.
+◇ Test aSecondFrameCopiesTheFirstAndUndoTakesBackEachStep() started.
+◇ Test theBackdropIsItsFourLayersAndTheNightLook() started.
+◇ Test thePenJoinsItsTouchesAndMirrorPaintsBothSides() started.
+◇ Test aDraftTakesTheDrawnStatesAsSymbolsAndTheLayersAsItsScene() started.
+◇ Test aRoomRowCarriesItsMembersInRoomOrder() started.
+◇ Test theClockReadsHoursAndMinutesAndTheRoundsMinutesAndSeconds() started.
+◇ Test aMentionWaitsTheOthersAndStopKeepsTheReplies() started.
+◇ Test aRoundShowsWhoRepliedPassedAndReplies() started.
+◇ Test roomItemsAreAttributedWithADividerAfterEachRound() started.
+◇ Test aPersonaKeepsItsSpriteAndPersonasDiffer() started.
+◇ Test theReplySoFarParsesLikeTheWholeTextWithItsCaretHoweverItIsChunked() started.
+◇ Test theWalkSwapsGaitFramesAndTheLoopsRun() started.
+◇ Test aThemeSwitchRepicksFromTheNewCastWithTheSameSeed() started.
+◇ Test doneHopsNeedsPulsesAndTintsFailShakesThenTheyRest() started.
+◇ Test terminalFiguresHaveTwoFrames() started.
+◇ Test eachRowStateMapsToItsMotion() started.
+◇ Test timesAreRelativeToNow() started.
+◇ Test anOverrideWinsInItsOwnThemeOnly() started.
+◇ Test everyFixtureDecodesAndEncodesBackTheSame() started.
+◇ Test aDraggedAccountTakesThePlaceOfTheRowItIsDroppedOn() started.
+◇ Test insertGoesBeforeAfterOrAtTheEndAndScreenAndDotReplaceTheWhole() started.
+◇ Test queueStreamOpsPatchTheQueueByID() started.
+◇ Test jsonTextParsesAndAStampReadsBackAsItsDate() started.
+◇ Test aBlockIsKeyedByItsIdAndOnlyOneWithoutOrARepeatByPosition() started.
+◇ Test theDotAndProblemsSayWhetherAMachineIsReady() started.
+◇ Test thisHostIsNamedByItsHostAndThePickerGroupsComputersAndDesks() started.
+◇ Test aMemberMovesInRoomOrderAndItsPlaceReads() started.
+◇ Test keystrokesNeverShowInADescriptionOrADump() started.
+◇ Test motionIsOnByDefaultAndOffWithReduceMotionOrTheSwitch() started.
+◇ Test p50AndP95AreOverTheLastHundredRunsOnly() started.
+◇ Test aShadeMovesByHueAndLight() started.
+◇ Test aMarkPassesAtItsMinimum() started.
+◇ Test aShadeKeepsItsColour(_:) started.
+◇ Test aLabelNamesItsFolder() started.
+◇ Test aRowWithNoMessagesShowsNoAge() started.
+◇ Test memoryListsTheNewestNoteFirstWithWhoAddedIt() started.
+◇ Test theChatListDrawsEachRowWithItsPersonaOrItsTitleAndAgent() started.
+◇ Test eachPinnedPersonaIsInItsNewestChatsState() started.
+◇ Test aTypedAddressOrALinkIsAServer() started.
+◇ Test agoIsShort(_:_:) started.
+◇ Test aChatWithNoPersonaSeedsItsSpriteByItsThread() started.
+◇ Test homesRowIsThePinnedPersonasOrEveryoneWhileNoneIsPinned() started.
+◇ Test case passing 1 argument kind → "secret" to aGuardedCardWithNoPosterIsNotDrawn(_:) started.
+◇ Test case passing 1 argument kind → "run" to aGuardedCardWithNoPosterIsNotDrawn(_:) started.
+◇ Test case passing 1 argument kind → "confirm" to aGuardedCardWithNoPosterIsNotDrawn(_:) started.
+◇ Test case passing 1 argument kind → "permissions" to aGuardedCardWithNoPosterIsNotDrawn(_:) started.
+◇ Test aFullUpdateDrawsEveryRowAndTheCursor() started.
+◇ Test aPartialUpdateChangesOnlyItsRows() started.
+◇ Test anActionAnswersWithItsChoiceOrOtherTextAndItsOneValue() started.
+◇ Test case passing 2 arguments api → "working", state → .working to aThreadsStateIsALanesState(_:_:) started.
+◇ Test case passing 2 arguments api → "done", state → .done to aThreadsStateIsALanesState(_:_:) started.
+◇ Test case passing 2 arguments api → "error", state → .fail to aThreadsStateIsALanesState(_:_:) started.
+◇ Test case passing 2 arguments api → "unconnected", state → .fail to aThreadsStateIsALanesState(_:_:) started.
+◇ Test case passing 2 arguments api → "blocked", state → .needs to aThreadsStateIsALanesState(_:_:) started.
+◇ Test case passing 2 arguments api → "", state → .idle to aThreadsStateIsALanesState(_:_:) started.
+◇ Test case passing 2 arguments api → "ended", state → .idle to aThreadsStateIsALanesState(_:_:) started.
+◇ Test case passing 2 arguments api → "connecting", state → .working to aThreadsStateIsALanesState(_:_:) started.
+◇ Test case passing 1 argument hex → "#a88a2a" to aShadeKeepsItsColour(_:) started.
+◇ Test case passing 1 argument hex → "#c0203f" to aShadeKeepsItsColour(_:) started.
+◇ Test case passing 1 argument hex → "#1f7a45" to aShadeKeepsItsColour(_:) started.
+◇ Test case passing 1 argument hex → "#13262d" to aShadeKeepsItsColour(_:) started.
+◇ Test case passing 1 argument hex → "#ffffff" to aShadeKeepsItsColour(_:) started.
+◇ Test case passing 1 argument hex → "#000000" to aShadeKeepsItsColour(_:) started.
+◇ Test case passing 1 argument hex → "#7a4aa8" to aShadeKeepsItsColour(_:) started.
+◇ Test case passing 1 argument hex → "#1c6e70" to aShadeKeepsItsColour(_:) started.
+◇ Test case passing 2 arguments seconds → 999970, text → "now" to agoIsShort(_:_:) started.
+◇ Test case passing 2 arguments seconds → 999000, text → "16m" to agoIsShort(_:_:) started.
+◇ Test case passing 2 arguments seconds → 990000, text → "2h" to agoIsShort(_:_:) started.
+◇ Test case passing 2 arguments seconds → 800000, text → "2d" to agoIsShort(_:_:) started.
+◇ Test case passing 2 arguments seconds → 1000500, text → "now" to agoIsShort(_:_:) started.
+✔ Test aGuardedCardWithNoPosterIsNotDrawn(_:) with 4 test cases passed after 0.040 seconds.
+✔ Test onlyCorePostsPermissions() passed after 0.040 seconds.
+✔ Test anUnguardedCardDrawsFromAnyone() passed after 0.040 seconds.
+✔ Test theLineSaysWhoRepliesInOrder() passed after 0.040 seconds.
+✔ Test aServerPersonaGetsInitialsATintAndItsIDAsItsSpriteSeed() passed after 0.040 seconds.
+✔ Test aTapSendsItsActionWithTheTapsTheSourcesAndTheGivenValues() passed after 0.040 seconds.
+✔ Test anInitialsAvatarDrawsItsInitialsInThePickedTint() passed after 0.040 seconds.
+✔ Test aThreadsStateIsALanesState(_:_:) with 8 test cases passed after 0.040 seconds.
+✔ Test aTurnIsWorkingWhileItRunsOrConnects() passed after 0.040 seconds.
+✔ Test membersReplyInMentionOrderOnceEachByNameOrId() passed after 0.040 seconds.
+✔ Test pickingAMemberReplacesTheWordBeingTypedWithItsToken() passed after 0.040 seconds.
+✔ Test theWordBeingTypedPicksTheFirstMemberNotYetNamed() passed after 0.040 seconds.
+✔ Test aDraftNamingMembersQueuesThemUpNextAndWaitsTheOthers() passed after 0.040 seconds.
+✔ Test aSheetSendsEveryFormsFieldsAndAFieldsOwnValueWins() passed after 0.040 seconds.
+✔ Test theSameNoteTwiceInARowIsOneRow() passed after 0.040 seconds.
+✔ Test aFrameTheAgentAskedForIsAScreenBlockAndAHandoffACard() passed after 0.040 seconds.
+✔ Test aChatStyleTurnIsItsReplyAndOneFoldedRowWithApprovalsAndErrorsInline() passed after 0.040 seconds.
+✔ Test aBrowserFrameIsADoneStepWithItsCaptionInTheThreadAndTheTrace() passed after 0.040 seconds.
+✔ Test toolsFoldCardsAreBlocksAndNotesShow() passed after 0.040 seconds.
+✔ Test markdownKeepsAnOpenFenceAndSplitsParagraphsFromBullets() passed after 0.040 seconds.
+✔ Test theOfflineLineSaysWhoAndHowOld() passed after 0.040 seconds.
+✔ Test aWorkingChatStyleTurnHidesItsStepsAndNamesTheCurrentOne() passed after 0.040 seconds.
+✔ Test aPickedIconAndTheKeptTokensSurviveARelaunchAndAnOldPickNamesItsPack() passed after 0.040 seconds.
+✔ Test aMessageCopiesAsPlainText() passed after 0.040 seconds.
+✔ Test followingShowsTheFirstIconOfTheKeptStylesSet() passed after 0.040 seconds.
+✔ Test commentsLabelsAndUnknownLinesAreSkipped() passed after 0.040 seconds.
+✔ Test aHorseKeepsItsIssuesCoatInTheStripAndItsRow() passed after 0.040 seconds.
+✔ Test aPlaceKeepsItsIdAsItsKey() passed after 0.040 seconds.
+✔ Test anAskIsACardThatSaysItsOutcome() passed after 0.040 seconds.
+✔ Test backEdgesGoRightLeavingEdgesGoLeftAndAnOrphanGoesUnderItsPredecessors() passed after 0.040 seconds.
+✔ Test drovesMapIsOneSpineWithItsSkippedStatesOptional() passed after 0.040 seconds.
+✔ Test aDestructiveTapIsAlwaysConfirmedTitledWithItsLabel() passed after 0.040 seconds.
+✔ Test aRowAndAnAskDecodeFromTheServersJSON() passed after 0.040 seconds.
+✔ Test aPairBothWaysIsOneLineAndASpineJumpIsNotDrawn() passed after 0.040 seconds.
+✔ Test anExchangeKnowsItsAskerItsDepthAndTheAnswerersOwnChat() passed after 0.040 seconds.
+✔ Test homeListsOnlyPersonasChatsAndALaneGoesToThePersonaItsClaimingPluginIsAttachedTo() passed after 0.040 seconds.
+✔ Test othersSplitsChatsWithNoPersonaFromEachUnclaimedSourceAndNamesNeitherByItsAgent() passed after 0.040 seconds.
+✔ Test aLaneNoPluginClaimsFallsIntoOthers() passed after 0.040 seconds.
+✔ Test anotherDayIsNamedByItsDate() passed after 0.040 seconds.
+✔ Test aRoundsURLLinksItsPullRequestOrIssue() passed after 0.040 seconds.
+✔ Test theSheetHasOneRowPerIssueNeedsYouFirstWithItsRoundsOldestFirst() passed after 0.040 seconds.
+✔ Test thePersonaWithAClaimingPluginHasAnEmptySheetBeforeAnyLane() passed after 0.040 seconds.
+✔ Test lanesStandInTheirPlacesGateFirstAndKeepTheirOrderWithinOne() passed after 0.040 seconds.
+✔ Test othersNotesSayWhereEachSourcesSessionsWent() passed after 0.040 seconds.
+✔ Test fillEraseAndLineDoWhatTheySay() passed after 0.040 seconds.
+✔ Test aFigureIsOneSymbolOfRectRunsAndReadsBack() passed after 0.040 seconds.
+✔ Test anImportedPictureSnapsToTheGridInTheNearestPaletteColours() passed after 0.040 seconds.
+✔ Test aStateIs24SquareAndTheRestAre132By100() passed after 0.041 seconds.
+✔ Test aSecondFrameCopiesTheFirstAndUndoTakesBackEachStep() passed after 0.041 seconds.
+✔ Test aSidebarNotPlacedForTheSizeLendsNoRows() passed after 0.041 seconds.
+✔ Test aMergeOpUpdatesTheMapsCountsInPlace() passed after 0.042 seconds.
+✔ Test aRoomRowCarriesItsMembersInRoomOrder() passed after 0.041 seconds.
+✔ Test thePenJoinsItsTouchesAndMirrorPaintsBothSides() passed after 0.041 seconds.
+✔ Test aMentionWaitsTheOthersAndStopKeepsTheReplies() passed after 0.041 seconds.
+✔ Test aRoundShowsWhoRepliedPassedAndReplies() passed after 0.041 seconds.
+✔ Test theClockReadsHoursAndMinutesAndTheRoundsMinutesAndSeconds() passed after 0.041 seconds.
+✔ Test aPersonaKeepsItsSpriteAndPersonasDiffer() passed after 0.041 seconds.
+✔ Test roomItemsAreAttributedWithADividerAfterEachRound() passed after 0.041 seconds.
+✔ Test theWalkSwapsGaitFramesAndTheLoopsRun() passed after 0.041 seconds.
+✔ Test aThemeSwitchRepicksFromTheNewCastWithTheSameSeed() passed after 0.041 seconds.
+✔ Test doneHopsNeedsPulsesAndTintsFailShakesThenTheyRest() passed after 0.041 seconds.
+✔ Test terminalFiguresHaveTwoFrames() passed after 0.041 seconds.
+✔ Test eachRowStateMapsToItsMotion() passed after 0.041 seconds.
+✔ Test theSidebarIsAColumnOnWideAndItsNodesAreMenuRowsOnCompact() passed after 0.042 seconds.
+✔ Test aLinkedThreadAttributesTheQuestionTheToolsTheNoteAndTheReply() passed after 0.042 seconds.
+✔ Test anOverrideWinsInItsOwnThemeOnly() passed after 0.041 seconds.
+✔ Test theReplySoFarParsesLikeTheWholeTextWithItsCaretHoweverItIsChunked() passed after 0.041 seconds.
+✔ Test anImportedSvgStaysVectorScaledIntoTheSymbolsBoxAndLayer() passed after 0.041 seconds.
+✔ Test aDraggedAccountTakesThePlaceOfTheRowItIsDroppedOn() passed after 0.041 seconds.
+✔ Test aLanesHeadIsItsHorseItsLiveRoundsLaneAndItsPR() passed after 0.042 seconds.
+✔ Test jsonTextParsesAndAStampReadsBackAsItsDate() passed after 0.041 seconds.
+✔ Test aBlockIsKeyedByItsIdAndOnlyOneWithoutOrARepeatByPosition() passed after 0.041 seconds.
+✔ Test thisHostIsNamedByItsHostAndThePickerGroupsComputersAndDesks() passed after 0.041 seconds.
+✔ Test aMemberMovesInRoomOrderAndItsPlaceReads() passed after 0.041 seconds.
+✔ Test keystrokesNeverShowInADescriptionOrADump() passed after 0.041 seconds.
+✔ Test motionIsOnByDefaultAndOffWithReduceMotionOrTheSwitch() passed after 0.041 seconds.
+✔ Test p50AndP95AreOverTheLastHundredRunsOnly() passed after 0.041 seconds.
+✔ Test aShadeMovesByHueAndLight() passed after 0.041 seconds.
+✔ Test aMarkPassesAtItsMinimum() passed after 0.041 seconds.
+✔ Test aShadeKeepsItsColour(_:) with 8 test cases passed after 0.041 seconds.
+✔ Test aLabelNamesItsFolder() passed after 0.041 seconds.
+✔ Test aRowWithNoMessagesShowsNoAge() passed after 0.041 seconds.
+✔ Test memoryListsTheNewestNoteFirstWithWhoAddedIt() passed after 0.041 seconds.
+✔ Test theChatListDrawsEachRowWithItsPersonaOrItsTitleAndAgent() passed after 0.041 seconds.
+✔ Test eachPinnedPersonaIsInItsNewestChatsState() passed after 0.041 seconds.
+✔ Test aTypedAddressOrALinkIsAServer() passed after 0.041 seconds.
+✔ Test aChatWithNoPersonaSeedsItsSpriteByItsThread() passed after 0.041 seconds.
+✔ Test homesRowIsThePinnedPersonasOrEveryoneWhileNoneIsPinned() passed after 0.041 seconds.
+✔ Test agoIsShort(_:_:) with 5 test cases passed after 0.041 seconds.
+✔ Test aFullUpdateDrawsEveryRowAndTheCursor() passed after 0.041 seconds.
+✔ Test aPartialUpdateChangesOnlyItsRows() passed after 0.041 seconds.
+✔ Test anActionAnswersWithItsChoiceOrOtherTextAndItsOneValue() passed after 0.041 seconds.
+✔ Suite CardTrustTests passed after 0.043 seconds.
+✔ Suite MentionTests passed after 0.043 seconds.
+✔ Suite ActionTests passed after 0.043 seconds.
+✔ Suite ModelsTests passed after 0.043 seconds.
+✔ Suite ItemsTests passed after 0.043 seconds.
+✔ Suite PluginsTests passed after 0.043 seconds.
+✔ Suite DiagramTests passed after 0.043 seconds.
+✔ Suite ExchangeTests passed after 0.043 seconds.
+✔ Suite WorkflowTests passed after 0.043 seconds.
+✔ Suite SidebarTests passed after 0.043 seconds.
+✔ Suite RoomTests passed after 0.043 seconds.
+✔ Suite TerminalTests passed after 0.043 seconds.
+✔ Suite TimingsTests passed after 0.043 seconds.
+✔ Suite MotionTests passed after 0.043 seconds.
+✔ Suite ThemeDraftTests passed after 0.043 seconds.
+✔ Test insertGoesBeforeAfterOrAtTheEndAndScreenAndDotReplaceTheWhole() passed after 0.042 seconds.
+✔ Suite ListingTests passed after 0.043 seconds.
+✔ Test theDotAndProblemsSayWhetherAMachineIsReady() passed after 0.045 seconds.
+✔ Suite MachineRowTests passed after 0.046 seconds.
+✔ Test theBackdropIsItsFourLayersAndTheNightLook() passed after 0.051 seconds.
+✔ Test aDraftTakesTheDrawnStatesAsSymbolsAndTheLayersAsItsScene() passed after 0.055 seconds.
+✔ Suite DrawingTests passed after 0.057 seconds.
+✔ Test everyIconIsInTheAssetCatalogAsAnAppIconAndAPreview() passed after 0.056 seconds.
+✔ Suite AppIconTests passed after 0.057 seconds.
+✔ Test aSubFolderGoesUpToItsParentAndItsSearchMatchesNamesOnly() passed after 0.057 seconds.
+✔ Suite FolderListingTests passed after 0.058 seconds.
+✔ Test timesAreRelativeToNow() passed after 0.057 seconds.
+✔ Test queueStreamOpsPatchTheQueueByID() passed after 0.057 seconds.
+✔ Test aMergeOrANewRoundUpdatesTheStripAndTheRowInPlace() passed after 0.059 seconds.
+✔ Suite SceneTests passed after 0.060 seconds.
+✔ Test aLongReplyInManyChunksParsesLinearlyInItsLength() passed after 0.063 seconds.
+✔ Suite LiveReplyTests passed after 0.064 seconds.
+✔ Test everyFixtureDecodesAndEncodesBackTheSame() passed after 0.076 seconds.
+✔ Suite ScreenTests passed after 0.077 seconds.
+✔ Test run with 103 tests in 23 suites passed after 0.077 seconds.
+◇ Test run started.
+↳ Testing Library Version: 2403
+↳ Target Platform: arm64e-apple-macos14.0
+◇ Suite CooeeRootTests started.
+◇ Test rebuildingTheRootKeepsItsStore() started.
+✔ Test rebuildingTheRootKeepsItsStore() passed after 0.035 seconds.
+✔ Suite CooeeRootTests passed after 0.035 seconds.
+✔ Test run with 1 test in 1 suite passed after 0.035 seconds.
+◇ Test run started.
+↳ Testing Library Version: 2403
+↳ Target Platform: arm64e-apple-macos14.0
+◇ Suite ClientsTests started.
+◇ Suite EventsTests started.
+◇ Suite TerminalClientTests started.
+◇ Suite ClientTests started.
+◇ Suite LocalTests started.
+◇ Suite MachinesTests started.
+◇ Suite ScreensTests started.
+◇ Suite PersonasTests started.
+➜ Suite LivePersonaTests skipped.
+◇ Suite LooksClientTests started.
+◇ Suite DeviceTests started.
+◇ Suite CardClientTests started.
+◇ Suite LayoutsTests started.
+◇ Suite RoomClientTests started.
+◇ Suite ScreenClientTests started.
+◇ Suite FrameClientTests started.
+➜ Suite LiveTests skipped.
+◇ Test aRefusedStreamEnds() started.
+◇ Test fiftyCallsToOneServerMakeOneSession() started.
+◇ Test switchingServerInvalidatesTheOldSession() started.
+◇ Test aCancelledStreamStops() started.
+◇ Test homeHearsAChangeOnConnectOnEachChangedAndAfterAFailedAttempt() started.
+◇ Test aDroppedStreamReconnectsWithLastEventIDAndGetsWhatItMissed() started.
+◇ Test aServerErrorABadEventOrNoNetworkIsRetriedAndSaysSoUntilItIsBack() started.
+◇ Test watchingYieldsScreenUpdatesUntilTheShellCloses() started.
+◇ Test anOlderPageAsksForTheMessagesBeforeTheOldestID() started.
+◇ Test listsStartsAndTypesThroughTheTerminalPlugin() started.
+◇ Test aDeclinedOrGoneClaimSaysWhy() started.
+◇ Test aNewThreadStartsForAPersonaOnTheMachinePicked() started.
+◇ Test aPersonasTopicsListRetitleArchiveAndStartInAFolder() started.
+◇ Test aSetupChatSaysSo() started.
+◇ Test aClientForAServerCarriesItsCookie() started.
+◇ Test aCodePairsAndAClaimWaitsThenPairs() started.
+◇ Test homePersonasAndASliceDecodeAsDocumented() started.
+◇ Test sseFramesFollowTheSpec() started.
+◇ Test aCommandThatHangsIsStopped() started.
+◇ Test sendQueueAndTheTurnsCallsPostTheirBodies() started.
+◇ Test aRefusedCodeSaysWhy(_:_:) started.
+◇ Test cooeesOwnSentenceIsTheError() started.
+◇ Test thePortIsTheConfigsTopLevelOne() started.
+◇ Test anActionPostsTheScreenTheActionAndItsValuesAndGetsOps() started.
+◇ Test machinesDecodeAndAMovePostsTheMachine() started.
+◇ Test placesPluginsAndAScreenComeThroughCooee() started.
+◇ Test aKeptScreenIsReadBackByItsKey() started.
+◇ Test attachingAddsThePluginToThePersonaOnce() started.
+◇ Test aScreenStreamYieldsEachEventsOps() started.
+◇ Test aRefusedActionThrowsItsStatus() started.
+◇ Test anEditSavesEveryFieldThroughItsScreenSoNothingTheAppDoesNotDrawIsLost() started.
+◇ Test theAgentChipsListsAndTheFoldersDecodeFromTheServer() started.
+◇ Test aNewThreadCarriesThePickedModelAndEffort() started.
+◇ Test aCommandReturnsItsOutputOrFailsWithItsError() started.
+◇ Test pushOnPostsTheDeviceTokenAndOffDeletesIt() started.
+◇ Test aTimingIsPostedByNameAndMs() started.
+➜ Test aPersonaRoundTripsAndTheSimulatorsPersonasAreOnTheServer() skipped.
+◇ Test aDeleteRemovesThePersonaAndAModelPickGoesToItsThread() started.
+◇ Test theLooksReadEachPacksSchemesAndSprites() started.
+◇ Test theEditorChecksColoursAndSavesAPackByName() started.
+◇ Test theEditorReadsAPacksArtAsText() started.
+◇ Test aCooeeAnsweringOnThisMacIsFoundFirstAsThisMac() started.
+◇ Test aServerAdvertisedOnTheLANIsFoundAtItsAddress() started.
+◇ Test resetPostsAndAnswersTheNewLayout() started.
+◇ Test aRefusedSaveCarriesTheServersReason() started.
+◇ Test theLastGoodLayoutIsKeptOnDiskUntilForgotten() started.
+◇ Test refusedLayoutEventsThrowTheirStatus() started.
+◇ Test theKeychainKeepsOneServer() started.
+◇ Test aMembersAskIsARoomEvent() started.
+◇ Test aMemberMovesInRoomOrder() started.
+◇ Test layoutEventsAreChangedAndBrokenWithItsLine() started.
+◇ Test aTapAndTextGoAsTheServersInput() started.
+◇ Test handingBackAThreadPostsTheNoteOnce() started.
+◇ Test theLeaseIsTheOwnersUntilItsEndAndTheAgentsOtherwise() started.
+◇ Test theLiveViewStreamsFramesAndGoneUntilRefused() started.
+◇ Test aTapOnTheFitPageIsItsCSSPoint() started.
+◇ Test aRoomsTurnsAndItsEndAreEvents() started.
+◇ Test aRoomIsMadeOfItsMembersInRoomOrder() started.
+◇ Test restartPostsToTheThreadsRestart() started.
+◇ Test aReplayFrameIsItsBytesWithTheCookie() started.
+◇ Test aSentFileIsItsBytesFromTheThreadsFiles() started.
+◇ Test aReportPostsTheScreenTheElementAsTargetAndTheNote() started.
+➜ Test pairsListsAndStreamsAReply() skipped.
+◇ Test aResolvedServerIsAnHTTPAddress() started.
+◇ Test aCardComesAsItsBlockAndItsAnswerPostsTheItemsChoice() started.
+◇ Test aLayoutIsAskedForByItsEtagAndUnchangedIsNil() started.
+◇ Test case passing 2 arguments location → "/pair?bad=wrong&left=4", why → "That code is wrong." to aRefusedCodeSaysWhy(_:_:) started.
+◇ Test case passing 2 arguments location → "/pair?bad=expired", why → "That code ran out: get a new one." to aRefusedCodeSaysWhy(_:_:) started.
+◇ Test case passing 2 arguments location → "/pair?bad=limit&wait=30", why → "Too many wrong codes: wait a minute." to aRefusedCodeSaysWhy(_:_:) started.
+✔ Test sseFramesFollowTheSpec() passed after 0.010 seconds.
+✔ Test aTapOnTheFitPageIsItsCSSPoint() passed after 0.010 seconds.
+✔ Test aResolvedServerIsAnHTTPAddress() passed after 0.009 seconds.
+✔ Test aClientForAServerCarriesItsCookie() passed after 0.010 seconds.
+✔ Test thePortIsTheConfigsTopLevelOne() passed after 0.011 seconds.
+✔ Test aKeptScreenIsReadBackByItsKey() passed after 0.012 seconds.
+✔ Test theLastGoodLayoutIsKeptOnDiskUntilForgotten() passed after 0.012 seconds.
+✔ Test aRefusedStreamEnds() passed after 0.023 seconds.
+✔ Test resetPostsAndAnswersTheNewLayout() passed after 0.023 seconds.
+✔ Test anEditSavesEveryFieldThroughItsScreenSoNothingTheAppDoesNotDrawIsLost() passed after 0.025 seconds.
+✔ Test aRefusedActionThrowsItsStatus() passed after 0.027 seconds.
+✔ Test anOlderPageAsksForTheMessagesBeforeTheOldestID() passed after 0.029 seconds.
+✔ Test aTimingIsPostedByNameAndMs() passed after 0.037 seconds.
+✔ Test aCooeeAnsweringOnThisMacIsFoundFirstAsThisMac() passed after 0.042 seconds.
+✔ Test pushOnPostsTheDeviceTokenAndOffDeletesIt() passed after 0.048 seconds.
+✔ Test aSentFileIsItsBytesFromTheThreadsFiles() passed after 0.049 seconds.
+✔ Test anActionPostsTheScreenTheActionAndItsValuesAndGetsOps() passed after 0.050 seconds.
+✔ Test handingBackAThreadPostsTheNoteOnce() passed after 0.049 seconds.
+✔ Test aReportPostsTheScreenTheElementAsTargetAndTheNote() passed after 0.050 seconds.
+✔ Test aNewThreadStartsForAPersonaOnTheMachinePicked() passed after 0.050 seconds.
+✔ Test theEditorReadsAPacksArtAsText() passed after 0.050 seconds.
+✔ Test theKeychainKeepsOneServer() passed after 0.051 seconds.
+✔ Test machinesDecodeAndAMovePostsTheMachine() passed after 0.059 seconds.
+✔ Suite MachinesTests passed after 0.060 seconds.
+✔ Test switchingServerInvalidatesTheOldSession() passed after 0.081 seconds.
+✔ Test aReplayFrameIsItsBytesWithTheCookie() passed after 0.080 seconds.
+✔ Test restartPostsToTheThreadsRestart() passed after 0.080 seconds.
+✔ Suite FrameClientTests passed after 0.081 seconds.
+✔ Test aMemberMovesInRoomOrder() passed after 0.081 seconds.
+✔ Test aRefusedSaveCarriesTheServersReason() passed after 0.081 seconds.
+✔ Test aNewThreadCarriesThePickedModelAndEffort() passed after 0.081 seconds.
+✔ Test attachingAddsThePluginToThePersonaOnce() passed after 0.081 seconds.
+✔ Test aRoomsTurnsAndItsEndAreEvents() passed after 0.081 seconds.
+✔ Test cooeesOwnSentenceIsTheError() passed after 0.082 seconds.
+✔ Test theLooksReadEachPacksSchemesAndSprites() passed after 0.082 seconds.
+✔ Test aMembersAskIsARoomEvent() passed after 0.082 seconds.
+✔ Test aRefusedCodeSaysWhy(_:_:) with 3 test cases passed after 0.082 seconds.
+✔ Test layoutEventsAreChangedAndBrokenWithItsLine() passed after 0.083 seconds.
+✔ Test refusedLayoutEventsThrowTheirStatus() passed after 0.083 seconds.
+✔ Test aSetupChatSaysSo() passed after 0.084 seconds.
+✔ Test watchingYieldsScreenUpdatesUntilTheShellCloses() passed after 0.084 seconds.
+✔ Test aDroppedStreamReconnectsWithLastEventIDAndGetsWhatItMissed() passed after 0.100 seconds.
+✔ Test aRoomIsMadeOfItsMembersInRoomOrder() passed after 0.102 seconds.
+✔ Suite RoomClientTests passed after 0.103 seconds.
+✔ Test aCommandReturnsItsOutputOrFailsWithItsError() passed after 0.201 seconds.
+✔ Test aTapAndTextGoAsTheServersInput() passed after 0.211 seconds.
+✔ Test aCardComesAsItsBlockAndItsAnswerPostsTheItemsChoice() passed after 0.210 seconds.
+✔ Suite CardClientTests passed after 0.212 seconds.
+✔ Test theLiveViewStreamsFramesAndGoneUntilRefused() passed after 0.212 seconds.
+✔ Test aScreenStreamYieldsEachEventsOps() passed after 0.212 seconds.
+✔ Test aLayoutIsAskedForByItsEtagAndUnchangedIsNil() passed after 0.263 seconds.
+✔ Test aDeclinedOrGoneClaimSaysWhy() passed after 0.263 seconds.
+✔ Suite LayoutsTests passed after 0.263 seconds.
+✔ Test aServerErrorABadEventOrNoNetworkIsRetriedAndSaysSoUntilItIsBack() passed after 0.303 seconds.
+✔ Test placesPluginsAndAScreenComeThroughCooee() passed after 0.310 seconds.
+✔ Suite ScreensTests passed after 0.311 seconds.
+✔ Test theEditorChecksColoursAndSavesAPackByName() passed after 0.314 seconds.
+✔ Suite LooksClientTests passed after 0.315 seconds.
+✔ Test homeHearsAChangeOnConnectOnEachChangedAndAfterAFailedAttempt() passed after 0.323 seconds.
+✔ Test homePersonasAndASliceDecodeAsDocumented() passed after 0.323 seconds.
+✔ Test theLeaseIsTheOwnersUntilItsEndAndTheAgentsOtherwise() passed after 0.377 seconds.
+✔ Suite ScreenClientTests passed after 0.379 seconds.
+✔ Test aDeleteRemovesThePersonaAndAModelPickGoesToItsThread() passed after 0.421 seconds.
+✔ Test theAgentChipsListsAndTheFoldersDecodeFromTheServer() passed after 0.442 seconds.
+✔ Suite PersonasTests passed after 0.443 seconds.
+✔ Test listsStartsAndTypesThroughTheTerminalPlugin() passed after 0.455 seconds.
+✔ Suite TerminalClientTests passed after 0.456 seconds.
+✔ Test aCodePairsAndAClaimWaitsThenPairs() passed after 0.462 seconds.
+✔ Test aPersonasTopicsListRetitleArchiveAndStartInAFolder() passed after 0.462 seconds.
+✔ Test sendQueueAndTheTurnsCallsPostTheirBodies() passed after 0.583 seconds.
+✔ Suite ClientTests passed after 0.583 seconds.
+✔ Test aServerAdvertisedOnTheLANIsFoundAtItsAddress() passed after 0.840 seconds.
+✔ Suite DeviceTests passed after 0.840 seconds.
+✔ Test fiftyCallsToOneServerMakeOneSession() passed after 0.852 seconds.
+✔ Suite ClientsTests passed after 0.853 seconds.
+✔ Test aCommandThatHangsIsStopped() passed after 1.021 seconds.
+✔ Suite LocalTests passed after 1.022 seconds.
+✔ Test aCancelledStreamStops() passed after 6.302 seconds.
+✔ Suite EventsTests passed after 6.303 seconds.
+✔ Test run with 66 tests in 17 suites passed after 6.303 seconds.
+ok   CooeeCore: 97.2% of 2374 lines (minimum 95%)
+ok   CooeeAPI: 97.8% of 1039 lines (minimum 95%)
+
+== anti-slop's own tests
+Test Suite 'All tests' started at 2569-11-19 19:27:35.833.
+Test Suite 'All tests' passed at 2569-11-19 19:27:35.834.
+	 Executed 0 tests, with 0 failures (0 unexpected) in 0.000 (0.001) seconds
+Test Suite 'All tests' started at 2569-11-19 19:27:36.328.
+Test Suite 'AntiSlopTests.xctest' started at 2569-11-19 19:27:36.329.
+Test Suite 'AntiSlopConfigTests' started at 2569-11-19 19:27:36.329.
+Test Case '-[AntiSlopTests.AntiSlopConfigTests testFindsConfigInStartingDirectory]' started.
+Test Case '-[AntiSlopTests.AntiSlopConfigTests testFindsConfigInStartingDirectory]' passed (0.002 seconds).
+Test Case '-[AntiSlopTests.AntiSlopConfigTests testLoadsDisabledRules]' started.
+Test Case '-[AntiSlopTests.AntiSlopConfigTests testLoadsDisabledRules]' passed (0.001 seconds).
+Test Case '-[AntiSlopTests.AntiSlopConfigTests testMalformedJSONThrows]' started.
+Test Case '-[AntiSlopTests.AntiSlopConfigTests testMalformedJSONThrows]' passed (0.001 seconds).
+Test Case '-[AntiSlopTests.AntiSlopConfigTests testMissingDisabledArrayThrows]' started.
+Test Case '-[AntiSlopTests.AntiSlopConfigTests testMissingDisabledArrayThrows]' passed (0.001 seconds).
+Test Case '-[AntiSlopTests.AntiSlopConfigTests testReturnsNilWhenNoConfigExists]' started.
+Test Case '-[AntiSlopTests.AntiSlopConfigTests testReturnsNilWhenNoConfigExists]' passed (0.001 seconds).
+Test Case '-[AntiSlopTests.AntiSlopConfigTests testUnknownKeysAreIgnored]' started.
+Test Case '-[AntiSlopTests.AntiSlopConfigTests testUnknownKeysAreIgnored]' passed (0.001 seconds).
+Test Case '-[AntiSlopTests.AntiSlopConfigTests testWalksUpToParentDirectory]' started.
+Test Case '-[AntiSlopTests.AntiSlopConfigTests testWalksUpToParentDirectory]' passed (0.001 seconds).
+Test Suite 'AntiSlopConfigTests' passed at 2569-11-19 19:27:36.335.
+	 Executed 7 tests, with 0 failures (0 unexpected) in 0.006 (0.006) seconds
+Test Suite 'AntiSlopTests' started at 2569-11-19 19:27:36.335.
+Test Case '-[AntiSlopTests.AntiSlopTests testAnyDictionaryValueIsRejected]' started.
+Test Case '-[AntiSlopTests.AntiSlopTests testAnyDictionaryValueIsRejected]' passed (0.002 seconds).
+Test Case '-[AntiSlopTests.AntiSlopTests testAnyErrorParameterIsExempt]' started.
+Test Case '-[AntiSlopTests.AntiSlopTests testAnyErrorParameterIsExempt]' passed (0.001 seconds).
+Test Case '-[AntiSlopTests.AntiSlopTests testAnyObjectParameterIsRejected]' started.
+Test Case '-[AntiSlopTests.AntiSlopTests testAnyObjectParameterIsRejected]' passed (0.000 seconds).
+Test Case '-[AntiSlopTests.AntiSlopTests testAnyObjectTypealiasIsRejected]' started.
+Test Case '-[AntiSlopTests.AntiSlopTests testAnyObjectTypealiasIsRejected]' passed (0.000 seconds).
+Test Case '-[AntiSlopTests.AntiSlopTests testAnyParameterIsRejected]' started.
+Test Case '-[AntiSlopTests.AntiSlopTests testAnyParameterIsRejected]' passed (0.000 seconds).
+Test Case '-[AntiSlopTests.AntiSlopTests testAnyReturnIsRejected]' started.
+Test Case '-[AntiSlopTests.AntiSlopTests testAnyReturnIsRejected]' passed (0.000 seconds).
+Test Case '-[AntiSlopTests.AntiSlopTests testAnyTypealiasIsRejected]' started.
+Test Case '-[AntiSlopTests.AntiSlopTests testAnyTypealiasIsRejected]' passed (0.000 seconds).
+Test Case '-[AntiSlopTests.AntiSlopTests testChainedConditionalCastIsRejected]' started.
+Test Case '-[AntiSlopTests.AntiSlopTests testChainedConditionalCastIsRejected]' passed (0.001 seconds).
+Test Case '-[AntiSlopTests.AntiSlopTests testChainedForcedCastIsRejected]' started.
+Test Case '-[AntiSlopTests.AntiSlopTests testChainedForcedCastIsRejected]' passed (0.000 seconds).
+Test Case '-[AntiSlopTests.AntiSlopTests testConcreteDictionaryValueIsClean]' started.
+Test Case '-[AntiSlopTests.AntiSlopTests testConcreteDictionaryValueIsClean]' passed (0.000 seconds).
+Test Case '-[AntiSlopTests.AntiSlopTests testConcreteParameterIsClean]' started.
+Test Case '-[AntiSlopTests.AntiSlopTests testConcreteParameterIsClean]' passed (0.000 seconds).
+Test Case '-[AntiSlopTests.AntiSlopTests testConcreteReturnIsClean]' started.
+Test Case '-[AntiSlopTests.AntiSlopTests testConcreteReturnIsClean]' passed (0.000 seconds).
+Test Case '-[AntiSlopTests.AntiSlopTests testConcreteTypealiasIsClean]' started.
+Test Case '-[AntiSlopTests.AntiSlopTests testConcreteTypealiasIsClean]' passed (0.000 seconds).
+Test Case '-[AntiSlopTests.AntiSlopTests testForcedCastWithoutSafetyCommentIsRejected]' started.
+Test Case '-[AntiSlopTests.AntiSlopTests testForcedCastWithoutSafetyCommentIsRejected]' passed (0.000 seconds).
+Test Case '-[AntiSlopTests.AntiSlopTests testForcedCastWithSafetyCommentIsClean]' started.
+Test Case '-[AntiSlopTests.AntiSlopTests testForcedCastWithSafetyCommentIsClean]' passed (0.000 seconds).
+Test Case '-[AntiSlopTests.AntiSlopTests testForceTryWithoutSafetyCommentIsRejected]' started.
+Test Case '-[AntiSlopTests.AntiSlopTests testForceTryWithoutSafetyCommentIsRejected]' passed (0.000 seconds).
+Test Case '-[AntiSlopTests.AntiSlopTests testForceTryWithSafetyCommentIsClean]' started.
+Test Case '-[AntiSlopTests.AntiSlopTests testForceTryWithSafetyCommentIsClean]' passed (0.000 seconds).
+Test Case '-[AntiSlopTests.AntiSlopTests testForceUnwrapWithoutSafetyCommentIsRejected]' started.
+Test Case '-[AntiSlopTests.AntiSlopTests testForceUnwrapWithoutSafetyCommentIsRejected]' passed (0.000 seconds).
+Test Case '-[AntiSlopTests.AntiSlopTests testForceUnwrapWithSafetyCommentIsClean]' started.
+Test Case '-[AntiSlopTests.AntiSlopTests testForceUnwrapWithSafetyCommentIsClean]' passed (0.000 seconds).
+Test Case '-[AntiSlopTests.AntiSlopTests testGuardLetIsClean]' started.
+Test Case '-[AntiSlopTests.AntiSlopTests testGuardLetIsClean]' passed (0.001 seconds).
+Test Case '-[AntiSlopTests.AntiSlopTests testMultipleRulesReportTogether]' started.
+Test Case '-[AntiSlopTests.AntiSlopTests testMultipleRulesReportTogether]' passed (0.001 seconds).
+Test Case '-[AntiSlopTests.AntiSlopTests testNonShapeSymbolsAreClean]' started.
+Test Case '-[AntiSlopTests.AntiSlopTests testNonShapeSymbolsAreClean]' passed (0.000 seconds).
+Test Case '-[AntiSlopTests.AntiSlopTests testNotEqualsOperatorIsNotForceUnwrap]' started.
+Test Case '-[AntiSlopTests.AntiSlopTests testNotEqualsOperatorIsNotForceUnwrap]' passed (0.000 seconds).
+Test Case '-[AntiSlopTests.AntiSlopTests testOrdinaryDescribingIsClean]' started.
+Test Case '-[AntiSlopTests.AntiSlopTests testOrdinaryDescribingIsClean]' passed (0.000 seconds).
+Test Case '-[AntiSlopTests.AntiSlopTests testPerformSelectorIsRejected]' started.
+Test Case '-[AntiSlopTests.AntiSlopTests testPerformSelectorIsRejected]' passed (0.000 seconds).
+Test Case '-[AntiSlopTests.AntiSlopTests testPlainTryIsClean]' started.
+Test Case '-[AntiSlopTests.AntiSlopTests testPlainTryIsClean]' passed (0.000 seconds).
+Test Case '-[AntiSlopTests.AntiSlopTests testSafetyCommentBeyondBlankLineDoesNotCount]' started.
+Test Case '-[AntiSlopTests.AntiSlopTests testSafetyCommentBeyondBlankLineDoesNotCount]' passed (0.000 seconds).
+Test Case '-[AntiSlopTests.AntiSlopTests testSelectorPerformIsStillRejected]' started.
+Test Case '-[AntiSlopTests.AntiSlopTests testSelectorPerformIsStillRejected]' passed (0.000 seconds).
+Test Case '-[AntiSlopTests.AntiSlopTests testSetNilValueForKeyWithUnlabeledArgumentIsRejected]' started.
+Test Case '-[AntiSlopTests.AntiSlopTests testSetNilValueForKeyWithUnlabeledArgumentIsRejected]' passed (0.000 seconds).
+Test Case '-[AntiSlopTests.AntiSlopTests testSetValueForKeyIsRejected]' started.
+Test Case '-[AntiSlopTests.AntiSlopTests testSetValueForKeyIsRejected]' passed (0.000 seconds).
+Test Case '-[AntiSlopTests.AntiSlopTests testSetValueWithoutKeyLabelIsClean]' started.
+Test Case '-[AntiSlopTests.AntiSlopTests testSetValueWithoutKeyLabelIsClean]' passed (0.000 seconds).
+Test Case '-[AntiSlopTests.AntiSlopTests testShapeInsideLongerWordIsRejectedCaseInsensitively]' started.
+Test Case '-[AntiSlopTests.AntiSlopTests testShapeInsideLongerWordIsRejectedCaseInsensitively]' passed (0.000 seconds).
+Test Case '-[AntiSlopTests.AntiSlopTests testShapeInTypeNameIsRejected]' started.
+Test Case '-[AntiSlopTests.AntiSlopTests testShapeInTypeNameIsRejected]' passed (0.000 seconds).
+Test Case '-[AntiSlopTests.AntiSlopTests testSingleCastIsClean]' started.
+Test Case '-[AntiSlopTests.AntiSlopTests testSingleCastIsClean]' passed (0.000 seconds).
+Test Case '-[AntiSlopTests.AntiSlopTests testStringDescribingTypeOfIsRejected]' started.
+Test Case '-[AntiSlopTests.AntiSlopTests testStringDescribingTypeOfIsRejected]' passed (0.000 seconds).
+Test Case '-[AntiSlopTests.AntiSlopTests testStringReflectingTypeOfIsRejected]' started.
+Test Case '-[AntiSlopTests.AntiSlopTests testStringReflectingTypeOfIsRejected]' passed (0.000 seconds).
+Test Case '-[AntiSlopTests.AntiSlopTests testTypedPropertyAccessIsClean]' started.
+Test Case '-[AntiSlopTests.AntiSlopTests testTypedPropertyAccessIsClean]' passed (0.000 seconds).
+Test Case '-[AntiSlopTests.AntiSlopTests testTypedSelectorDispatchIsClean]' started.
+Test Case '-[AntiSlopTests.AntiSlopTests testTypedSelectorDispatchIsClean]' passed (0.000 seconds).
+Test Case '-[AntiSlopTests.AntiSlopTests testValueForKeyIsRejected]' started.
+Test Case '-[AntiSlopTests.AntiSlopTests testValueForKeyIsRejected]' passed (0.000 seconds).
+Test Suite 'AntiSlopTests' passed at 2569-11-19 19:27:36.353.
+	 Executed 39 tests, with 0 failures (0 unexpected) in 0.015 (0.017) seconds
+Test Suite 'DumpTests' started at 2569-11-19 19:27:36.353.
+Test Case '-[AntiSlopTests.DumpTests testDump]' started.
+Test Case '-[AntiSlopTests.DumpTests testDump]' passed (0.000 seconds).
+Test Suite 'DumpTests' passed at 2569-11-19 19:27:36.353.
+	 Executed 1 test, with 0 failures (0 unexpected) in 0.000 (0.001) seconds
+Test Suite 'SwiftSlopRuleTests' started at 2569-11-19 19:27:36.353.
+Test Case '-[AntiSlopTests.SwiftSlopRuleTests testAsAnyObjectWithoutSafetyCommentIsRejected]' started.
+Test Case '-[AntiSlopTests.SwiftSlopRuleTests testAsAnyObjectWithoutSafetyCommentIsRejected]' passed (0.000 seconds).
+Test Case '-[AntiSlopTests.SwiftSlopRuleTests testAsAnyWithoutSafetyCommentIsRejected]' started.
+Test Case '-[AntiSlopTests.SwiftSlopRuleTests testAsAnyWithoutSafetyCommentIsRejected]' passed (0.000 seconds).
+Test Case '-[AntiSlopTests.SwiftSlopRuleTests testAsAnyWithSafetyCommentIsClean]' started.
+Test Case '-[AntiSlopTests.SwiftSlopRuleTests testAsAnyWithSafetyCommentIsClean]' passed (0.000 seconds).
+Test Case '-[AntiSlopTests.SwiftSlopRuleTests testBinaryBoolLiteralComparisonsAreAllowed]' started.
+Test Case '-[AntiSlopTests.SwiftSlopRuleTests testBinaryBoolLiteralComparisonsAreAllowed]' passed (0.000 seconds).
+Test Case '-[AntiSlopTests.SwiftSlopRuleTests testCommentOnlyCatchIsStillEmpty]' started.
+Test Case '-[AntiSlopTests.SwiftSlopRuleTests testCommentOnlyCatchIsStillEmpty]' passed (0.000 seconds).
+Test Case '-[AntiSlopTests.SwiftSlopRuleTests testConcreteCastIsClean]' started.
+Test Case '-[AntiSlopTests.SwiftSlopRuleTests testConcreteCastIsClean]' passed (0.000 seconds).
+Test Case '-[AntiSlopTests.SwiftSlopRuleTests testDirectConditionIsClean]' started.
+Test Case '-[AntiSlopTests.SwiftSlopRuleTests testDirectConditionIsClean]' passed (0.000 seconds).
+Test Case '-[AntiSlopTests.SwiftSlopRuleTests testEmptyAndInterpolatedStringsAreClean]' started.
+Test Case '-[AntiSlopTests.SwiftSlopRuleTests testEmptyAndInterpolatedStringsAreClean]' passed (0.001 seconds).
+Test Case '-[AntiSlopTests.SwiftSlopRuleTests testEmptyCatchIsRejected]' started.
+Test Case '-[AntiSlopTests.SwiftSlopRuleTests testEmptyCatchIsRejected]' passed (0.000 seconds).
+Test Case '-[AntiSlopTests.SwiftSlopRuleTests testEnvironmentLookupIsClean]' started.
+Test Case '-[AntiSlopTests.SwiftSlopRuleTests testEnvironmentLookupIsClean]' passed (0.000 seconds).
+Test Case '-[AntiSlopTests.SwiftSlopRuleTests testEnvironmentVariableNameLiteralsAreClean]' started.
+Test Case '-[AntiSlopTests.SwiftSlopRuleTests testEnvironmentVariableNameLiteralsAreClean]' passed (0.000 seconds).
+Test Case '-[AntiSlopTests.SwiftSlopRuleTests testFatalErrorWithoutSafetyCommentIsRejected]' started.
+Test Case '-[AntiSlopTests.SwiftSlopRuleTests testFatalErrorWithoutSafetyCommentIsRejected]' passed (0.000 seconds).
+Test Case '-[AntiSlopTests.SwiftSlopRuleTests testFatalErrorWithSafetyCommentIsClean]' started.
+Test Case '-[AntiSlopTests.SwiftSlopRuleTests testFatalErrorWithSafetyCommentIsClean]' passed (0.000 seconds).
+Test Case '-[AntiSlopTests.SwiftSlopRuleTests testHandlingCatchIsClean]' started.
+Test Case '-[AntiSlopTests.SwiftSlopRuleTests testHandlingCatchIsClean]' passed (0.000 seconds).
+Test Case '-[AntiSlopTests.SwiftSlopRuleTests testHardcodedAPIKeyIsRejected]' started.
+Test Case '-[AntiSlopTests.SwiftSlopRuleTests testHardcodedAPIKeyIsRejected]' passed (0.000 seconds).
+Test Case '-[AntiSlopTests.SwiftSlopRuleTests testHardcodedPasswordIsRejected]' started.
+Test Case '-[AntiSlopTests.SwiftSlopRuleTests testHardcodedPasswordIsRejected]' passed (0.000 seconds).
+Test Case '-[AntiSlopTests.SwiftSlopRuleTests testIBOutletIsExempt]' started.
+Test Case '-[AntiSlopTests.SwiftSlopRuleTests testIBOutletIsExempt]' passed (0.000 seconds).
+Test Case '-[AntiSlopTests.SwiftSlopRuleTests testIdentifierShapedLiteralsWithKeyLikeNamesAreClean]' started.
+Test Case '-[AntiSlopTests.SwiftSlopRuleTests testIdentifierShapedLiteralsWithKeyLikeNamesAreClean]' passed (0.000 seconds).
+Test Case '-[AntiSlopTests.SwiftSlopRuleTests testIdentifierShapedLiteralsWithoutKeyLikeNamesStayFlagged]' started.
+Test Case '-[AntiSlopTests.SwiftSlopRuleTests testIdentifierShapedLiteralsWithoutKeyLikeNamesStayFlagged]' passed (0.000 seconds).
+Test Case '-[AntiSlopTests.SwiftSlopRuleTests testInnocentTokenNamesAreClean]' started.
+Test Case '-[AntiSlopTests.SwiftSlopRuleTests testInnocentTokenNamesAreClean]' passed (0.000 seconds).
+Test Case '-[AntiSlopTests.SwiftSlopRuleTests testIUOReturnTypeIsRejected]' started.
+Test Case '-[AntiSlopTests.SwiftSlopRuleTests testIUOReturnTypeIsRejected]' passed (0.000 seconds).
+Test Case '-[AntiSlopTests.SwiftSlopRuleTests testIUOVariableIsRejected]' started.
+Test Case '-[AntiSlopTests.SwiftSlopRuleTests testIUOVariableIsRejected]' passed (0.000 seconds).
+Test Case '-[AntiSlopTests.SwiftSlopRuleTests testMixedAlphanumericValuesStayFlagged]' started.
+Test Case '-[AntiSlopTests.SwiftSlopRuleTests testMixedAlphanumericValuesStayFlagged]' passed (0.000 seconds).
+Test Case '-[AntiSlopTests.SwiftSlopRuleTests testOrdinaryCallsAreClean]' started.
+Test Case '-[AntiSlopTests.SwiftSlopRuleTests testOrdinaryCallsAreClean]' passed (0.000 seconds).
+Test Case '-[AntiSlopTests.SwiftSlopRuleTests testPlainOptionalsAreClean]' started.
+Test Case '-[AntiSlopTests.SwiftSlopRuleTests testPlainOptionalsAreClean]' passed (0.000 seconds).
+Test Case '-[AntiSlopTests.SwiftSlopRuleTests testPreconditionFailureIsRejected]' started.
+Test Case '-[AntiSlopTests.SwiftSlopRuleTests testPreconditionFailureIsRejected]' passed (0.000 seconds).
+Test Case '-[AntiSlopTests.SwiftSlopRuleTests testRethrowingCatchIsClean]' started.
+Test Case '-[AntiSlopTests.SwiftSlopRuleTests testRethrowingCatchIsClean]' passed (0.001 seconds).
+Test Case '-[AntiSlopTests.SwiftSlopRuleTests testSafetyCommentSuppressesSecretFinding]' started.
+Test Case '-[AntiSlopTests.SwiftSlopRuleTests testSafetyCommentSuppressesSecretFinding]' passed (0.000 seconds).
+Test Case '-[AntiSlopTests.SwiftSlopRuleTests testShortGenericPasswordsStayFlagged]' started.
+Test Case '-[AntiSlopTests.SwiftSlopRuleTests testShortGenericPasswordsStayFlagged]' passed (0.000 seconds).
+Test Case '-[AntiSlopTests.SwiftSlopRuleTests testTernaryOfLiteralsIsRejected]' started.
+Test Case '-[AntiSlopTests.SwiftSlopRuleTests testTernaryOfLiteralsIsRejected]' passed (0.000 seconds).
+Test Case '-[AntiSlopTests.SwiftSlopRuleTests testValueComparisonAgainstBoolVariableIsClean]' started.
+Test Case '-[AntiSlopTests.SwiftSlopRuleTests testValueComparisonAgainstBoolVariableIsClean]' passed (0.000 seconds).
+Test Suite 'SwiftSlopRuleTests' passed at 2569-11-19 19:27:36.365.
+	 Executed 31 tests, with 0 failures (0 unexpected) in 0.010 (0.012) seconds
+Test Suite 'WideningRuleTests' started at 2569-11-19 19:27:36.365.
+Test Case '-[AntiSlopTests.WideningRuleTests testAnyAnnotationOnArrayLiteralIsRejected]' started.
+Test Case '-[AntiSlopTests.WideningRuleTests testAnyAnnotationOnArrayLiteralIsRejected]' passed (0.000 seconds).
+Test Case '-[AntiSlopTests.WideningRuleTests testAnyAnnotationOnLiteralIsRejected]' started.
+Test Case '-[AntiSlopTests.WideningRuleTests testAnyAnnotationOnLiteralIsRejected]' passed (0.000 seconds).
+Test Case '-[AntiSlopTests.WideningRuleTests testCallExpressionInitializerIsClean]' started.
+Test Case '-[AntiSlopTests.WideningRuleTests testCallExpressionInitializerIsClean]' passed (0.000 seconds).
+Test Case '-[AntiSlopTests.WideningRuleTests testCastBeforeDeclarationDoesNotFire]' started.
+Test Case '-[AntiSlopTests.WideningRuleTests testCastBeforeDeclarationDoesNotFire]' passed (0.000 seconds).
+Test Case '-[AntiSlopTests.WideningRuleTests testCastViaAsAnyInitializerIsRejected]' started.
+Test Case '-[AntiSlopTests.WideningRuleTests testCastViaAsAnyInitializerIsRejected]' passed (0.001 seconds).
+Test Case '-[AntiSlopTests.WideningRuleTests testDynamicTypeComparedToDynamicTypeIsRejected]' started.
+Test Case '-[AntiSlopTests.WideningRuleTests testDynamicTypeComparedToDynamicTypeIsRejected]' passed (0.000 seconds).
+Test Case '-[AntiSlopTests.WideningRuleTests testDynamicTypeEqualityIsRejected]' started.
+Test Case '-[AntiSlopTests.WideningRuleTests testDynamicTypeEqualityIsRejected]' passed (0.000 seconds).
+Test Case '-[AntiSlopTests.WideningRuleTests testDynamicTypeEqualityWithSafetyCommentIsClean]' started.
+Test Case '-[AntiSlopTests.WideningRuleTests testDynamicTypeEqualityWithSafetyCommentIsClean]' passed (0.000 seconds).
+Test Case '-[AntiSlopTests.WideningRuleTests testEmptyDictionaryAccumulatorIsClean]' started.
+Test Case '-[AntiSlopTests.WideningRuleTests testEmptyDictionaryAccumulatorIsClean]' passed (0.000 seconds).
+Test Case '-[AntiSlopTests.WideningRuleTests testIdentifierInitializerIsClean]' started.
+Test Case '-[AntiSlopTests.WideningRuleTests testIdentifierInitializerIsClean]' passed (0.000 seconds).
+Test Case '-[AntiSlopTests.WideningRuleTests testInferredDictionaryIsClean]' started.
+Test Case '-[AntiSlopTests.WideningRuleTests testInferredDictionaryIsClean]' passed (0.000 seconds).
+Test Case '-[AntiSlopTests.WideningRuleTests testNarrowBindingWithCastIsClean]' started.
+Test Case '-[AntiSlopTests.WideningRuleTests testNarrowBindingWithCastIsClean]' passed (0.000 seconds).
+Test Case '-[AntiSlopTests.WideningRuleTests testNonLiteralKeysAreClean]' started.
+Test Case '-[AntiSlopTests.WideningRuleTests testNonLiteralKeysAreClean]' passed (0.000 seconds).
+Test Case '-[AntiSlopTests.WideningRuleTests testOpenDictionaryAnnotationWithKnownKeysIsAllowed]' started.
+Test Case '-[AntiSlopTests.WideningRuleTests testOpenDictionaryAnnotationWithKnownKeysIsAllowed]' passed (0.000 seconds).
+Test Case '-[AntiSlopTests.WideningRuleTests testOptionalNilInitializerIsClean]' started.
+Test Case '-[AntiSlopTests.WideningRuleTests testOptionalNilInitializerIsClean]' passed (0.000 seconds).
+Test Case '-[AntiSlopTests.WideningRuleTests testOrdinaryEqualityChecksAreClean]' started.
+Test Case '-[AntiSlopTests.WideningRuleTests testOrdinaryEqualityChecksAreClean]' passed (0.000 seconds).
+Test Case '-[AntiSlopTests.WideningRuleTests testQualifiedFoundationAnyIsRejected]' started.
+Test Case '-[AntiSlopTests.WideningRuleTests testQualifiedFoundationAnyIsRejected]' passed (0.001 seconds).
+Test Case '-[AntiSlopTests.WideningRuleTests testQualifiedOtherMemberTypeIsClean]' started.
+Test Case '-[AntiSlopTests.WideningRuleTests testQualifiedOtherMemberTypeIsClean]' passed (0.000 seconds).
+Test Case '-[AntiSlopTests.WideningRuleTests testShadowedNameDoesNotFire]' started.
+Test Case '-[AntiSlopTests.WideningRuleTests testShadowedNameDoesNotFire]' passed (0.001 seconds).
+Test Case '-[AntiSlopTests.WideningRuleTests testWidenedBindingWithoutLaterCastIsClean]' started.
+Test Case '-[AntiSlopTests.WideningRuleTests testWidenedBindingWithoutLaterCastIsClean]' passed (0.000 seconds).
+Test Case '-[AntiSlopTests.WideningRuleTests testWidenThenConditionalCastIsRejected]' started.
+Test Case '-[AntiSlopTests.WideningRuleTests testWidenThenConditionalCastIsRejected]' passed (0.000 seconds).
+Test Case '-[AntiSlopTests.WideningRuleTests testWidenThenForceCastIsRejected]' started.
+Test Case '-[AntiSlopTests.WideningRuleTests testWidenThenForceCastIsRejected]' passed (0.000 seconds).
+Test Suite 'WideningRuleTests' passed at 2569-11-19 19:27:36.374.
+	 Executed 22 tests, with 0 failures (0 unexpected) in 0.008 (0.009) seconds
+Test Suite 'AntiSlopTests.xctest' passed at 2569-11-19 19:27:36.374.
+	 Executed 100 tests, with 0 failures (0 unexpected) in 0.039 (0.045) seconds
+Test Suite 'All tests' passed at 2569-11-19 19:27:36.374.
+	 Executed 100 tests, with 0 failures (0 unexpected) in 0.039 (0.046) seconds
+TREE_START
+sourceFile
+  codeBlockItemList
+    codeBlockItem
+      variableDecl
+        attributeList
+        declModifierList
+        token
+        patternBindingList
+          patternBinding
+            identifierPattern
+              token
+            initializerClause
+              token
+              infixOperatorExpr
+                declReferenceExpr
+                  token
+                binaryOperatorExpr
+                  token
+                booleanLiteralExpr
+                  token
+  token
+TREE_END
+◇ Test run started.
+↳ Testing Library Version: 2403
+↳ Target Platform: arm64e-apple-macos14.0
+✔ Test run with 8 tests in 1 suite passed after 0.005 seconds.
+◇ Test run started.
+↳ Testing Library Version: 2403
+↳ Target Platform: arm64e-apple-macos14.0
+✔ Test run with 0 tests in 0 suites passed after 0.001 seconds.
+
+apple-check: ok
+
+| step | time |
+|---|---|
+| swift format | 1s |
+| anti-slop | 4s |
+| TODO(#N) names an open issue | 0s |
+| SwiftLint 0.65.1 | 2s |
+| build (Swift 6, complete concurrency, warnings as errors) | 82s |
+| tests with coverage | 232s |
+| anti-slop's own tests | 31s |
+| total | 352s |
+exit=0
