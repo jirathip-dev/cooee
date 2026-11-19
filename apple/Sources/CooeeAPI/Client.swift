@@ -29,20 +29,33 @@ public final class Client: Sendable {
     internal let retry: Duration
     internal let clock: any _Concurrency.Clock<Duration>
 
-    public init(
+    internal init(
+        base: URL,
+        token: String?,
+        session: URLSession,
+        retry: Duration = .seconds(2),
+        clock: any _Concurrency.Clock<Duration> = ContinuousClock()
+    ) {
+        self.base = base
+        self.token = token
+        self.session = session
+        self.retry = retry
+        self.clock = clock
+    }
+
+    public convenience init(
         base: URL,
         token: String? = nil,
         configuration: URLSessionConfiguration = .ephemeral,
         retry: Duration = .seconds(2),
         clock: any _Concurrency.Clock<Duration> = ContinuousClock()
     ) {
-        self.base = base
-        self.token = token
-        self.retry = retry
-        self.clock = clock
         configuration.httpShouldSetCookies = false
-        session = URLSession(configuration: configuration)
+        self.init(
+            base: base, token: token, session: URLSession(configuration: configuration), retry: retry, clock: clock)
     }
+
+    deinit { session.finishTasksAndInvalidate() }
 
     public convenience init(_ server: Server) {
         self.init(base: server.url, token: server.token)
