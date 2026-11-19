@@ -1,0 +1,7 @@
+Decided: merged origin/staging (#651, #652, #653); no conflict, Rust gates, chat tests and apple-check green at the merge
+Because: crates/cooee-server/src/hub/restart.rs:74
+Decided: no code change for the apple FAIL; the runner's CoreSimulator (1051.55.0) is older than its Xcode needs, so no iPhone 17 simulator exists there
+Because: apple/Sources/CooeeUI/Items.swift:36
+Rejected: changing the workflow's simulator destination — the runner's simulator runtime needs updating on the host, an owner call
+Check: the apple job reruns on this push; if xcodebuild again says CoreSimulator is out of date, the runner Mac needs its Xcode components or simulator runtime updated
+Owner: The branch now includes the latest staging; the CI Mac's iPhone simulator is out of date and may need updating before the apple check can pass.
