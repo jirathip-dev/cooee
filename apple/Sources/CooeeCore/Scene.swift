@@ -1,3 +1,5 @@
+import Foundation
+
 public struct SceneLane: Identifiable, Sendable, Equatable {
     public let id: String
     public let title: String
@@ -49,4 +51,23 @@ public struct LaneHead: Sendable, Equatable {
 
 extension JSONValue {
     fileprivate var tree: [Self] { [self] + (items + fields.values).flatMap(\.tree) }
+}
+
+/// A scene's weather from its host's load over its limit: clear under half, cloudy from there, a storm at the limit.
+public enum Weather: String, Sendable, Equatable {
+    case clear, cloudy, storm
+
+    public init(load: Double?) {
+        switch load ?? 0 {
+        case ..<0.5: self = .clear
+        case ..<1: self = .cloudy
+        default: self = .storm
+        }
+    }
+
+    /// Night from 19:00 to 07:00 on the local clock.
+    public static func night(at date: Date, in calendar: Calendar = .current) -> Bool {
+        let hour = calendar.component(.hour, from: date)
+        return hour >= 19 || hour < 7
+    }
 }
