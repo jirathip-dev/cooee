@@ -1,0 +1,4 @@
+Decided: merge origin/staging; the closed chat delegate case and its relay move into staging's new AppRelay.swift
+Because: apple/Sources/CooeeFeatures/AppRelay.swift:31
+Rejected: none
+Owner: Brought the branch up to date with staging; no behaviour change.
