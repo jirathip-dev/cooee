@@ -1,0 +1,9 @@
+Decided: staging build fix; the card.fold fixture's subtitle becomes a plain string, because the pinned blocks schema that plugin check now uses only takes a string
+Because: docs/design/screens-as-data/fixtures/blocks.json:24
+Decided: merge origin/staging (4e338bb) with no conflicts beside this branch's apple files
+Because: apple/Sources/CooeeFeatures/AppFeature.swift:56
+Rejected: bumping the blocks crate to allow a toned subtitle — a dependency change outside this issue
+Rejected: none for the actionlint FAIL; it came from a canceled, superseded ci run and passes at the new head
+Because: apple/Sources/CooeeFeatures/ChatFeature.swift:1
+Check: cargo test -p cooee --test plugins exit 0 and apple-check exit 0 at a65c6d5
+Owner: Staging's design-check test was broken by two merges that crossed; one sample card now uses a plain subtitle so it passes again.
