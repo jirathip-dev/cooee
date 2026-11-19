@@ -26,14 +26,8 @@ public struct LayoutStore: Sendable {
 }
 
 extension Layout {
-    fileprivate init(_ answer: LayoutAnswer) throws(LayoutError) {
-        do {
-            try self.init(json: JSONEncoder().encode(answer.layout), etag: answer.etag)
-        } catch let error as LayoutError {
-            throw error
-        } catch {
-            throw .json(error.localizedDescription)
-        }
+    fileprivate init(_ answer: LayoutAnswer) throws {
+        try self.init(json: JSONEncoder().encode(answer.layout), etag: answer.etag)
     }
 }
 
@@ -55,7 +49,8 @@ public struct LayoutFeature: Sendable {
         fileprivate mutating func place() {
             guard let server else { return }
             let fresh = layout.resolved(for: .wide).sidebarRows(on: .wide).compactMap { node -> ScreenFeature.State? in
-                guard node.place == .column, case .screen(let source, let path) = node.content else { return nil }
+                guard node.place == .column, case .screen(let name, let path) = node.content else { return nil }
+                let source = LayoutSource(name)
                 return screens[id: ScreenFeature.State.id(source, path)]
                     ?? ScreenFeature.State(server: server, source: source, path: path, label: node.label ?? "")
             }
@@ -116,7 +111,8 @@ public struct LayoutFeature: Sendable {
             state.broken = answer.skipped?.first.map { "layout.json \($0) · not drawn" }
             store.save(answer)
         } catch {
-            state.broken = "app can't read this layout: \(error) · last good layout kept"
+            let why = (error as? LayoutBroken)?.why ?? error.localizedDescription
+            state.broken = "app can't read this layout: \(why) · last good layout kept"
         }
     }
 

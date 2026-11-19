@@ -14,6 +14,11 @@ extension ChatFeature {
     internal func send(_ state: inout State) -> Effect<Action> {
         let text = state.draft.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !text.isEmpty || !state.files.isEmpty else { return .none }
+        if let item = state.denying, !text.isEmpty {
+            (state.denying, state.draft) = (nil, "")
+            return answer(
+                &state, item, BlockAction(action: "answer", values: ["choice": .string("say"), "text": .string(text)]))
+        }
         let message = Outgoing(id: (state.outbox.map(\.id).min() ?? 0) - 1, text: text, files: state.files)
         state.outbox.append(message)
         state.draft = ""

@@ -55,6 +55,7 @@ impl Hub {
                 tag: meta.id.clone(),
                 url: format!("/t/{}", meta.id),
                 item: chat.items.last().map_or(0, |i| i.id),
+                say: false,
             });
         }
         if let Err(e) = ended {

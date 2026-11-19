@@ -33,6 +33,7 @@ public struct ChatFeature: Sendable {
         public var outbox: [Outgoing] = []
         public var pending: String?
         public var answering: Set<Int> = []
+        public var denying: Int?
         public var loading: Bool
         public var room: Room?
         public var exchange: Exchange?

@@ -126,12 +126,12 @@ public struct TerminalView: View {
 
 internal struct TerminalSlot: View {
     internal let store: StoreOf<TerminalFeature>
-    internal let config: [String: JSONValue]
+    internal let node: LayoutNode<LayoutPlace>
     internal let back: () -> Void
 
     internal var body: some View {
         let shells = store.shells
-        let machine = config["machine"]?.string ?? store.server?.url.host() ?? "this Mac"
+        let machine = node.config["machine"]?.string ?? store.server?.url.host() ?? "this Mac"
         var actions = TerminalActions(back: back, newShell: { store.send(.newShell) })
         actions.pick = { store.send(.open(shells[$0].name)) }
         actions.type = store.current?.owner == true ? { store.send(.type(Keystrokes($0))) } : nil
@@ -147,6 +147,7 @@ internal struct TerminalSlot: View {
     }
 
     private var size: TerminalSize? {
-        TerminalSize(cols: config["cols"]?.number.map(Int.init), rows: config["rows"]?.number.map(Int.init))
+        TerminalSize(
+            cols: node.config["cols"]?.number.map(Int.init), rows: node.config["rows"]?.number.map(Int.init))
     }
 }

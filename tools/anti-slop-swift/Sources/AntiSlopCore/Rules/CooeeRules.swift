@@ -157,7 +157,7 @@ public final class LayerImportsRule: SlopRule {
     }
 
     public static let layers: [String: Set<String>] = [
-        "CooeeCore": ["Foundation"],
+        "CooeeCore": ["Blocks", "Foundation"],
         "CooeeAPI": ["CooeeCore", "Foundation", "Network", "Security", "Synchronization"],
         "CooeeFeatures": ["ComposableArchitecture", "CooeeAPI", "CooeeCore", "Foundation"],
         "CooeeUI": [

@@ -64,6 +64,22 @@ internal struct CardAnswerTests {
         #expect(calls.all == ["check Send the secret to its plugin"] + sent + ["answer a1 4 approve 3b7e"])
     }
 
+    @Test internal func denyAndSayOpensTheComposerAndItsSendAnswersTheCardWithTheText() async {
+        let store = store()
+        store.dependencies.threads.send = { _, _, text, _, _ in calls.record("send \(text)") }
+        await store.send(.cards(.answer(4, BlockAction(action: "answer", values: ["choice": .string("say")])))) {
+            $0.denying = 4
+        }
+        await store.send(.compose(.draftChanged(" use a branch "))) { $0.draft = " use a branch " }
+        await store.send(.compose(.send)) {
+            $0.denying = nil
+            $0.draft = ""
+            $0.answering = [4]
+        }
+        await store.receive(\.cards.answered) { $0.answering = [] }
+        #expect(calls.all == ["answer a1 4 say use a branch"])
+    }
+
     @Test internal func aRefusedAnswerSaysWhyAndTheCardCanBeTappedAgain() async {
         let store = store(failing: true)
         await store.send(.cards(.answer(4, run))) { $0.answering = [4] }
