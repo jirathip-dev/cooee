@@ -1,0 +1,7 @@
+Decided: a chat-style turn's plan folds into its trace row as one Plan step, its entries listed in the sheet
+Because: "tool calls, diffs and plans of a turn fold into one trace row under it"
+Because: apple/Sources/CooeeCore/Item.swift:167
+Rejected: per-step output tail and diff — shed's ToolCall event carries only id, title, status and kind; that needs a shed protocol change first
+Rejected: redoing the folded row, the sheet and inline approvals — #242 shipped them, with ItemsTests covering each
+Check: ItemsTests aChatStyleTurnFoldsItsPlanIntoTheTraceInOrderWithItsEntries, and the trace screenshot from LiveChatStyleUITests
+Owner: Plans now show inside a turn's steps sheet; showing each tool's output or diff needs shed to send them first
