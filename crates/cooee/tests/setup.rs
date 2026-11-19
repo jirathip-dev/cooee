@@ -99,7 +99,12 @@ impl Mac {
     }
 
     fn setup(&self, args: &[&str]) -> Output {
-        self.cooee(&[&["setup", "--port", &self.port.to_string()], args].concat())
+        let chief = ["--chief-agent", "claude-acp", "--chief-machine", "here"];
+        self.cooee(&[&["setup", "--port", &self.port.to_string()], args, &chief].concat())
+    }
+
+    fn chief(&self) -> PathBuf {
+        self.config().with_file_name("agents/chief/agent.toml")
     }
 
     fn cooee(&self, args: &[&str]) -> Output {
@@ -241,6 +246,11 @@ fn a_fresh_machine_runs_every_step_once_in_order_and_a_second_run_skips_them() {
             && timer.contains("<key>StartInterval</key>\n  <integer>900</integer>"),
         "{timer}"
     );
+    let chief = fs::read_to_string(mac.chief()).unwrap();
+    assert!(
+        chief.contains("role = \"chief\"") && chief.contains("agent = \"claude-acp\""),
+        "{chief}"
+    );
     assert!(
         stdout.contains("doctor:\nok   service dev.cooee.cooee loaded")
             && stdout.contains(&format!(
@@ -257,6 +267,7 @@ fn a_fresh_machine_runs_every_step_once_in_order_and_a_second_run_skips_them() {
         &format!("shed protocol {SHED_MIN_PROTOCOL}+"),
         &format!("config {}", mac.config().display()),
         "agents",
+        "chief",
         "cooee service dev.cooee.cooee",
         "cooee service dev.cooee.cooee.update",
         &format!("tailscale serve {port}"),
@@ -270,6 +281,22 @@ fn a_fresh_machine_runs_every_step_once_in_order_and_a_second_run_skips_them() {
         stdout.contains("pair your phone:\nType the link") && stdout.contains("\ncode  "),
         "{stdout}"
     );
+    assert_eq!(fs::read_to_string(mac.chief()).unwrap(), chief);
+}
+
+#[test]
+fn yes_with_no_chief_and_no_picks_fails_before_any_step_and_changes_nothing() {
+    let mac = Mac::new("su-chief-yes", true);
+    let before = files(&mac.home);
+    let out = mac.cooee(&["setup", "--port", &mac.port.to_string(), "--yes"]);
+    assert_eq!(out.status.code(), Some(1), "{out:?}");
+    let stderr = String::from_utf8_lossy(&out.stderr);
+    assert!(
+        stderr.contains("there is no Chief yet and --yes can't pick for you: add --chief-agent <id> --chief-machine <name|here>\nnothing was changed"),
+        "{stderr}"
+    );
+    assert_eq!(files(&mac.home), before);
+    assert_eq!(mac.changes(), Vec::<String>::new());
 }
 
 #[test]
@@ -435,7 +462,7 @@ fn setup_installs_the_first_party_themes_chosen_with_no_network() {
     )
     .unwrap();
     let args = ["setup", "--port", &mac.port.to_string()];
-    let out = mac.cooee_typing(&args, Some("kitchen\n\n\n"));
+    let out = mac.cooee_typing(&args, Some("kitchen\n\n\n1\n1\n"));
     let stdout = String::from_utf8_lossy(&out.stdout);
     assert!(out.status.success(), "{out:?}");
     assert!(
@@ -443,6 +470,15 @@ fn setup_installs_the_first_party_themes_chosen_with_no_network() {
             "themes:\n  themes to install, or none [garden kitchen]:\n  installed theme farm\n  installed theme scene\n  installed theme terminal\n  installed theme kitchen\n"
         ),
         "{stdout}"
+    );
+    assert!(
+        stdout.contains("chief:\n  Chief is cooee's own persona: it sets up personas and routines for you.\n  its agent:  1 claude-acp\n  its machine:  1 here\n"),
+        "{stdout}"
+    );
+    let chief = fs::read_to_string(mac.chief()).unwrap();
+    assert!(
+        chief.contains("agent = \"claude-acp\"") && !chief.contains("machine"),
+        "{chief}"
     );
     let themes = mac.config().parent().unwrap().join("themes");
     assert_eq!(

@@ -1,3 +1,4 @@
+mod chief;
 mod connectors;
 mod devices;
 mod folders;
@@ -18,6 +19,7 @@ mod threads;
 use topcoat::router::RouterBuilder;
 
 pub(crate) fn routes(b: RouterBuilder) -> RouterBuilder {
+    let b = chief::routes(b);
     let b = connectors::routes(b);
     let b = devices::routes(b);
     let b = folders::routes(b);
