@@ -65,6 +65,7 @@ internal struct ChatScreen: View {
         actions.live = { store.live }
         (actions.sync, actions.asOf, actions.stopping) = (store.status.sync, store.status.asOf, store.status.stopping)
         actions.edit = { store.send(.compose(.edit($0))) }
+        actions.older = { store.send(.older(.load)) }
         actions.message.photos = FrameImages(images: store.photos) { store.send(.photo($0)) }
         actions.message.source = { store.state.source($0) }
         actions.message.quote = { store.send(.compose(.quote($0))) }

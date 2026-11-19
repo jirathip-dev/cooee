@@ -43,6 +43,7 @@ public struct MenuFeature: Sendable {
         case load
         case looks(Looks)
         case scheme(LookScheme)
+        case colours(String?)
         case style(String)
         case theme(String)
         case icon(AppIcon?)
@@ -133,6 +134,8 @@ public struct MenuFeature: Sendable {
         switch action {
         case .scheme(let scheme):
             state.settings.scheme = scheme
+        case .colours(let name):
+            state.settings.colours = name
         case .theme(let theme):
             state.settings.theme = theme
             let looks = state.looks

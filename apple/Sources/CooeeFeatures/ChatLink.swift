@@ -79,7 +79,7 @@ extension ChatFeature {
 
     internal func load(_ state: inout State, _ slice: Slice) {
         state.loading = false
-        state.items = slice.items
+        state.items = state.items.filter { $0.id < slice.items.first?.id ?? 0 } + slice.items
         state.queue = slice.queue
         state.turn = slice.turn
         state.since = now

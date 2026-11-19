@@ -2,20 +2,23 @@ import ComposableArchitecture
 import CooeeCore
 import Foundation
 
-@Reducer
-public struct ChatFeature: Sendable {
+extension ChatFeature {
     public enum Target: Equatable, Sendable {
         case thread(String)
         case new(APIPersona)
         case setup(APIPersona)
     }
+}
 
+@Reducer
+public struct ChatFeature: Sendable {
     @ObservableState
     public struct State: Equatable {
         public let server: Server
         public let target: Target
         public var persona: Persona
         public var items: [APIItem] = []
+        public var history = History.more
         public var frames: [String: Data] = [:]
         public var photos: [String: Data] = [:]
         public var turn = Turn()
@@ -80,6 +83,7 @@ public struct ChatFeature: Sendable {
     public enum Action: Sendable {
         case task
         case loaded(Slice)
+        case older(Older)
         case event(StreamEvent)
         case failed(String)
         case link(Link)
@@ -168,6 +172,8 @@ extension ChatFeature {
         case .loaded(let slice):
             load(&state, slice)
             return keepSlice(state)
+        case .older(let older):
+            return self.older(&state, older)
         case .event(let event):
             let timed = painted(state, event)
             state.room?.hear(event, when: now)

@@ -27,7 +27,7 @@ public struct ChatView: View {
                     .overlay(alignment: .bottom) { if loading { SlowStrip().offset(y: 2) } }
                 }
                 if let topics = actions.topics { StripRow(topics: topics, chips: chips, wide: !back, actions: actions) }
-                Scroller(end: end) {
+                Scroller(end: end, top: actions.older) {
                     Transcript {
                         if let topics = actions.topics {
                             TopicOpening(topics: topics, chips: back ? chips : [], actions: actions)
