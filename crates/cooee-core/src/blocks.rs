@@ -59,7 +59,12 @@ impl Item {
         };
         let mut blocks = Vec::new();
         if matches!(kind, CardKind::Config | CardKind::Proposal) {
-            let diff = Text::default().markdown(format!("```\n{detail}\n```"));
+            let lang = if matches!(kind, CardKind::Config) {
+                "diff"
+            } else {
+                ""
+            };
+            let diff = Text::default().markdown(format!("```{lang}\n{detail}\n```"));
             blocks.push(Block::Text(Box::new(diff)));
         }
         let answer = format!("{id}-answer");

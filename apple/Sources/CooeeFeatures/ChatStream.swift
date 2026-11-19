@@ -29,6 +29,7 @@ extension ChatFeature {
         } else {
             state.items.append(item)
         }
+        if item.line != nil { state.answering.remove(item.id) }
         if item.kind == "you" { state.pending = nil }
         if item.kind == "agent" { state.live = LiveReply() }
     }

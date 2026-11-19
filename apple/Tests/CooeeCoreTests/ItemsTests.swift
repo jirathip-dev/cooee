@@ -153,3 +153,19 @@ extension ItemsTests {
         #expect(ScreenItem(APIItem(id: 6, time: 0, kind: "frame")) == nil)
     }
 }
+
+extension ItemsTests {
+    @Test internal func aHandoffsLinkLinesAreChipsThatOpenTheOtherThreadAndALinkWithoutOneIsDropped() throws {
+        let json = """
+            [{"id":2,"at":2000,"kind":"link","text":"","thread":"t6","title":"Fix the build","out":true},
+             {"id":3,"at":3000,"kind":"link","text":"filed #61","thread":"t5","title":"","out":false},
+             {"id":4,"at":4000,"kind":"link","text":"orphan","thread":""}]
+            """
+        let items = try JSONDecoder().decode([APIItem].self, from: Data(json.utf8))
+        let onward = ThreadLink(thread: "t6", title: "Fix the build", onward: true)
+        let back = ThreadLink(text: "filed #61", thread: "t5", title: "", onward: false)
+        #expect(ChatItems.build(items) == [.link(id: 2, onward), .link(id: 3, back)])
+        #expect(onward.chip == "continued in Fix the build" && back.chip == "from t5")
+        #expect(Item.link(id: 2, onward).plainText == nil && Item.link(id: 2, onward).id == 2)
+    }
+}
