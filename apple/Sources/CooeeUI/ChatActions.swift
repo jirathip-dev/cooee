@@ -40,6 +40,9 @@ public struct ChatActions {
     public var frames = FrameImages()
     public var topics: TopicActions?
     public var live: () -> LiveReply = { LiveReply() }
+    public var sync: Sync?
+    public var asOf: Date?
+    public var stopping = false
     public var older: (() -> Void)?
 
     public init(

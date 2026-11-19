@@ -29,10 +29,12 @@ extension ChatFeature {
         case .undelivered(let id, let failure):
             guard let index = state.outbox.firstIndex(where: { $0.id == id }) else { return .none }
             state.outbox[index].failure = failure
-            guard state.draft.isEmpty, state.files.isEmpty else { return .none }
-            state.draft = state.outbox[index].text
-            state.files = state.outbox[index].files
-            keep(state)
+            if state.draft.isEmpty, state.files.isEmpty {
+                state.draft = state.outbox[index].text
+                state.files = state.outbox[index].files
+                keep(state)
+            }
+            return toast(&state, failure)
         case .retry(let id):
             guard let index = state.outbox.firstIndex(where: { $0.id == id && $0.failure != nil }) else {
                 return id == 0 ? restart(state) : .none

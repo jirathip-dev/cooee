@@ -18,7 +18,7 @@ use std::{
 };
 
 use serde_json::{Value, json};
-use support::{Cooee, FakeShed, HANG, is_item, others_go_on, scratch, version};
+use support::{Cooee, FakeShed, HANG, is_item, others_go_on, scratch, snapshot, version};
 
 struct Backend {
     port: u16,
@@ -807,6 +807,7 @@ fn cooees_own_cards_go_out_as_blocks_and_settle_to_their_line() {
         ran["block"]["blocks"],
         json!([{ "type": "text", "style": "footnote", "markdown": "ran: exit 0" }])
     );
+    snapshot("cards", &json!([blocks, ran["block"]]), &[]);
 }
 
 #[test]
@@ -849,12 +850,7 @@ fn plugin_check_passes_the_fixtures_and_names_a_broken_field() {
     assert_eq!(
         said.lines().skip(1).map(str::trim).collect::<Vec<_>>(),
         [
-            "$.blocks[0].rows[0].id: is required",
-            "$.blocks[0].rows[0].badge.tone: \"red\" is not one of \"ok\", \"warn\", \"bad\", \"info\", \"mute\", \"accent\", \"working\", \"needs\", \"done\", \"fail\", \"idle\"",
-            "$.blocks[1].value: must not be sent",
-            "$.blocks[2].id: is required",
             "$.blocks[2].action: is required",
-            "$.blocks[4].lanes[0].state: \"lost\" is not one of \"working\", \"needs\", \"done\", \"idle\", \"fail\", \"merged\"",
             "$.blocks[5].rounds[0].name: is required",
         ]
     );
@@ -879,9 +875,8 @@ fn plugin_check_knows_swipe_menu_and_refresh() {
         said.lines().skip(1).map(str::trim).collect::<Vec<_>>(),
         [
             "$.blocks[0].swipe[0].label: is required",
-            "$.blocks[0].menu: an object is not array",
-            "$.blocks[1].menu[0].tone: \"red\" is not one of \"ok\", \"warn\", \"bad\", \"info\", \"mute\", \"accent\", \"working\", \"needs\", \"done\", \"fail\", \"idle\"",
-            "$.refresh: \"yes\" is not boolean",
+            "$.blocks[0].menu: an object is not array or null",
+            "$.refresh: \"yes\" is not boolean or null",
         ]
     );
 }

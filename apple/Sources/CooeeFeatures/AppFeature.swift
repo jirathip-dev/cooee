@@ -1,5 +1,6 @@
 import ComposableArchitecture
 import CooeeCore
+import Foundation
 
 @Reducer
 public struct AppFeature: Sendable {
@@ -19,6 +20,7 @@ public struct AppFeature: Sendable {
         @Presents public var persona: PersonaFeature.State?
         public var report: ReportFeature.State?
         public var notice: String?
+        public var away: Date?
 
         public init(layout: Layout, server: Server?, settings: Settings = Settings()) {
             self.layout = LayoutFeature.State(server: server, layout: layout)
@@ -51,6 +53,7 @@ public struct AppFeature: Sendable {
         case start(String)
         case back
         case path([String])
+        case scene(active: Bool)
         case reporting
         case report(ReportFeature.Action)
     }
@@ -58,7 +61,7 @@ public struct AppFeature: Sendable {
     @Dependency(\.serverStore) internal var serverStore
     @Dependency(\.loginItems) private var loginItems
     @Dependency(\.push) private var push
-    @Dependency(\.date.now) private var now
+    @Dependency(\.date.now) internal var now
     @Dependency(\.continuousClock) internal var clock
 
     public init() {}
@@ -118,6 +121,8 @@ public struct AppFeature: Sendable {
             case .newRoom(.delegate(.cancel)):
                 state.newRoom = nil
                 return .none
+            case .scene(let active):
+                return scene(&state, active: active)
             default:
                 return navigate(&state, action)
             }
@@ -135,7 +140,9 @@ public struct AppFeature: Sendable {
             return .none
         }
     }
+}
 
+extension AppFeature {
     private func navigate(_ state: inout State, _ action: Action) -> Effect<Action> {
         switch action {
         case .open(let thread):
@@ -158,9 +165,7 @@ public struct AppFeature: Sendable {
         }
         return .none
     }
-}
 
-extension AppFeature {
     private func pop(_ state: inout State, to path: [String]) {
         let round = state.home?.lists(now: now).all.first { $0.id == state.path.last }?.workflow
         state.path = path
@@ -221,7 +226,7 @@ extension AppFeature {
             return topic(&state, thread)
         case .started(let thread):
             state.path = state.path.dropLast() + [thread]
-            state.chat = state.chat.map { Self.moved($0, to: .thread(thread), persona: $0.persona) }
+            state.chat = state.chat.map { Self.moved($0, to: .thread(thread)) }
             return .send(.home(.refresh))
         }
     }
@@ -235,10 +240,8 @@ extension AppFeature {
         return .none
     }
 
-    private static func moved(
-        _ chat: ChatFeature.State, to target: ChatFeature.Target, persona: Persona
-    ) -> ChatFeature.State {
-        var moved = ChatFeature.State(server: chat.server, target: target, persona: persona)
+    private static func moved(_ chat: ChatFeature.State, to target: ChatFeature.Target) -> ChatFeature.State {
+        var moved = ChatFeature.State(server: chat.server, target: target, persona: chat.persona)
         moved.machine = chat.machine
         moved.bar = chat.bar ?? moved.bar
         return moved

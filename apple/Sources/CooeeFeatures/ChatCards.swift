@@ -25,8 +25,7 @@ extension ChatFeature {
             return .none
         case .answered(let item, let error):
             state.answering.remove(item)
-            state.error = error ?? state.error
-            return .none
+            return error.map { toast(&state, $0) } ?? .none
         }
     }
 

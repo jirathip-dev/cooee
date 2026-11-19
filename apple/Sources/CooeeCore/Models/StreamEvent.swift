@@ -7,4 +7,5 @@ public enum StreamEvent: Sendable, Equatable {
     case roomStop(String)
     case roomAsk(RoomAsk)
     case reset
+    case sync(Sync)
 }

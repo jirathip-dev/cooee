@@ -1,0 +1,39 @@
+{
+  "type": "screen",
+  "id": "home",
+  "title": "cooee",
+  "blocks": [
+    {
+      "type": "pinned",
+      "id": "pinned"
+    },
+    {
+      "type": "chats",
+      "id": "chats"
+    }
+  ],
+  "threads": [],
+  "personas": [
+    {
+      "id": "coder",
+      "name": "Coder",
+      "role": "",
+      "style": "chat",
+      "fleets": [],
+      "character": "",
+      "instructions": "",
+      "folder": "",
+      "agent": "fake-acp",
+      "model": "",
+      "effort": "",
+      "machine": "",
+      "plugins": [],
+      "can_message": [],
+      "pinned": false,
+      "version": "<version>",
+      "topics": 0,
+      "unread": 0
+    }
+  ],
+  "source": "core"
+}
