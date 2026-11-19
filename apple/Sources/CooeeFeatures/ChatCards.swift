@@ -6,12 +6,23 @@ extension ChatFeature {
     public enum Cards: Sendable, Equatable {
         case answer(Int, BlockAction)
         case answered(Int, String?)
+        case heard(String, JSONValue)
+        case played(Int, JSONValue, String?)
     }
 
     internal func cards(_ state: inout State, _ action: Cards) -> Effect<Action> {
         switch action {
+        case .answer(let item, let action) where state.deck.holds(item):
+            return play(&state, item, action)
         case .answer(let item, let action):
             return answer(&state, item, action)
+        case .heard(let plugin, let event):
+            state.deck.heard(plugin, event)
+            return .none
+        case .played(let item, let reply, let line):
+            state.answering.remove(item)
+            state.deck.played(item, reply, line: line)
+            return .none
         case .answered(let item, let error):
             state.answering.remove(item)
             return error.map { toast(&state, $0) } ?? .none

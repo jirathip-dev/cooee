@@ -34,7 +34,7 @@ extension Client {
     }
 
     public func act(_ source: LayoutSource, screen: String, _ action: BlockAction) async throws -> JSONValue {
-        let body = ScreenAction(screen: screen, block: "", action: action.action, values: action.values)
+        let body = ScreenAction(screen: screen, block: action.block, action: action.action, values: action.values)
         let path = source == .core ? "/screens/action" : "/p/\(source.name)/action"
         return try await call("POST", path, body)
     }

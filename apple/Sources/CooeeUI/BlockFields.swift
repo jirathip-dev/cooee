@@ -36,7 +36,7 @@ internal struct RunBlock: View {
         var values: [String: JSONValue] = ["choice": .string(choice)]
         if choice == "approve" { values["sha"] = block["sha"] }
         let content = label()
-        return ActButton(action: block.string("action"), source: source, values: values) {
+        return ActButton(action: block.string("action"), block: block.id, source: source, values: values) {
             content
         }
     }

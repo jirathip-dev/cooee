@@ -10,6 +10,7 @@ internal struct ActButton<Label: View>: View {
     @Environment(\.acting) private var acting
     @State private var pending: JSONValue?
     internal var action: String?
+    internal var block: String?
     internal let source: JSONValue
     internal var values: [String: JSONValue] = [:]
     @ViewBuilder internal let label: Label
@@ -26,7 +27,7 @@ internal struct ActButton<Label: View>: View {
     }
 
     private var waiting: Bool {
-        BlockAction(action: action, source: source, values: values).map(acting.contains) ?? false
+        BlockAction(action: action, source: source, values: values, block: block).map(acting.contains) ?? false
     }
 
     private func fire() {
@@ -38,7 +39,7 @@ internal struct ActButton<Label: View>: View {
             openBeside(path)
         } else if let tap = source["tap"], let path = tap.string("sheet") ?? tap.string("open") {
             open(tap.string("focus").map { "\(path)#\($0)" } ?? path)
-        } else if let action = BlockAction(action: action, source: source, values: values) {
+        } else if let action = BlockAction(action: action, source: source, values: values, block: block) {
             act(action)
         }
     }
@@ -216,7 +217,7 @@ internal struct ChoiceBlock: View {
         VStack(alignment: .leading, spacing: 8) {
             if let question = block.string("question") { Text(question).ui(15, .semibold, look) }
             ForEach(Array(options.enumerated()), id: \.offset) { index, option in
-                ActButton(action: block.string("action"), source: option, values: values(option)) {
+                ActButton(action: block.string("action"), block: block.id, source: option, values: values(option)) {
                     CardButton(
                         title: title(option),
                         primary: option.string("value") == block.string("recommended"),

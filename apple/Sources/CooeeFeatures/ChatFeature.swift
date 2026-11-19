@@ -37,6 +37,7 @@ public struct ChatFeature: Sendable {
         public var room: Room?
         public var exchange: Exchange?
         public var places: [Place] = []
+        public var deck = PluginDeck()
         public var attachable: [PluginRow] = []
         public var teach: [JSONValue] = []
         public var panel = false
@@ -58,8 +59,10 @@ public struct ChatFeature: Sendable {
         public var efforts: [String] { agents.first { $0.id == persona.api.agent }?.efforts ?? [] }
         public var drawn: [Item] {
             if let exchange { return LinkedItems.build(items, exchange: exchange, outbox: outbox, now: since) }
-            return room.map { RoomItems.build(items, names: $0.names, last: $0.round) + $0.cards }
-                ?? ChatItems.build(items, outbox: first + outbox, style: persona.api.style, working: working)
+            return
+                (room.map { RoomItems.build(items, names: $0.names, last: $0.round) + $0.cards }
+                ?? ChatItems.build(items, outbox: first + outbox, style: persona.api.style, working: working))
+                + deck.items
         }
 
         private var first: [Outgoing] {

@@ -96,7 +96,7 @@ pub struct Place {
     /// A menu row's second line.
     #[serde(default, skip_serializing_if = "String::is_empty")]
     pub subtitle: String,
-    /// Its screen's path on the backend, under `/screens/`.
+    /// Its screen's path on the backend, under `/screens/` (a `chat-cards` place's defaults to `/screens/cards`).
     #[serde(default)]
     pub screen: String,
 }
@@ -208,7 +208,13 @@ impl Manifest {
     /// # Errors
     /// When it isn't valid TOML for a manifest or breaks a rule.
     pub fn parse(text: &str) -> io::Result<Self> {
-        let m: Self = toml::from_str(text).map_err(|e| bad(format!("cooee-plugin.toml: {e}")))?;
+        let mut m: Self =
+            toml::from_str(text).map_err(|e| bad(format!("cooee-plugin.toml: {e}")))?;
+        for p in &mut m.places {
+            if p.kind == PlaceKind::ChatCards && p.screen.is_empty() {
+                "/screens/cards".clone_into(&mut p.screen);
+            }
+        }
         let ok = |b: u8| b.is_ascii_lowercase() || b.is_ascii_digit() || b == b'-';
         if m.name.is_empty() || !m.name.bytes().all(ok) {
             return Err(bad(
