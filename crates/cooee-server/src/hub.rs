@@ -479,7 +479,7 @@ impl Live {
                     } else {
                         store.queue(&self.meta.id, &item)?;
                     }
-                    self.emit("item", json!(item).to_string());
+                    self.emit("item", serde_json::to_string(&item).unwrap_or_default());
                 }
                 Change::Text(text) => self.emit("text", json!({ "text": text }).to_string()),
                 Change::State(turn) => self.emit("state", json!(turn).to_string()),

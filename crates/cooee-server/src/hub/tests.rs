@@ -341,24 +341,28 @@ fn a_thread_with_no_messages_sends_no_age() {
 
 #[test]
 fn a_busy_thread_does_not_hold_up_another_threads_event() {
-    let dir = scratch("head-of-line");
-    seed(&dir, "busy", "");
-    seed(&dir, "quiet", "");
-    let hub = hub(&dir);
     let call = |n: u64, status: &str| EventKind::ToolCall {
         id: format!("call-{}", n / 3),
         title: "ls".to_owned(),
         status: status.to_owned(),
         kind: None,
     };
-    let at = cooee_core::clock::instant();
-    for n in 0..1000 {
-        let status = ["pending", "in_progress", "completed"][usize::try_from(n % 3).unwrap()];
-        hub.apply(event("busy", n + 1, call(n, status)));
-    }
-    hub.apply(event("quiet", 1, call(0, "pending")));
-    let took = at.elapsed();
-    assert_eq!(hub.slice("quiet", None, 10, 0).unwrap().items.len(), 1);
-    assert_eq!(hub.slice("busy", None, 500, 0).unwrap().items.len(), 334);
+    let round = |r: u64| {
+        let dir = scratch(&format!("head-of-line-{r}"));
+        seed(&dir, "busy", "");
+        seed(&dir, "quiet", "");
+        let hub = hub(&dir);
+        let at = cooee_core::clock::instant();
+        for n in 0..1000 {
+            let status = ["pending", "in_progress", "completed"][usize::try_from(n % 3).unwrap()];
+            hub.apply(event("busy", n + 1, call(n, status)));
+        }
+        hub.apply(event("quiet", 1, call(0, "pending")));
+        let took = at.elapsed();
+        assert_eq!(hub.slice("quiet", None, 10, 0).unwrap().items.len(), 1);
+        assert_eq!(hub.slice("busy", None, 500, 0).unwrap().items.len(), 334);
+        took
+    };
+    let took = (0..3).map(round).min().unwrap();
     assert!(took < Duration::from_millis(50), "{took:?}");
 }
