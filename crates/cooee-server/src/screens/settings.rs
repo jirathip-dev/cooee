@@ -1,10 +1,11 @@
 //! `GET /screens/settings/{devices,signins,machines,plugins}` (#312): each one list of rows from the data its JSON
 //! route reads (`GET /devices`, the sign-ins sheet, `GET /machines`, `GET /plugins`).
 
-use std::sync::Arc;
+use std::{collections::HashMap, sync::Arc, time::Duration};
 
 use blocks::{Block, Label, List, Row, Screen, Tone, Toned};
 use cooee_machines::Machines;
+use serde::Deserialize;
 use topcoat::{
     Result,
     context::{Cx, app_context, request_context},
@@ -12,10 +13,12 @@ use topcoat::{
 };
 
 use crate::{
-    HubError,
+    Hub, HubError,
     http::{Answer, Paired, blocking, manager, on_logins, refused},
-    pairing,
+    pairing, plugin,
 };
+
+const DROVER: Duration = Duration::from_secs(2);
 
 fn list(id: &str, title: &str, rows: Vec<Row>) -> Block {
     let rows: Vec<Block> = rows.into_iter().map(|r| Block::Row(Box::new(r))).collect();
@@ -72,15 +75,70 @@ pub(super) async fn signin_rows(cx: &Cx) -> Result<Vec<Row>, HubError> {
 
 pub(super) async fn machine_rows(cx: &Cx) -> Result<Vec<Row>, HubError> {
     let all = Arc::clone(app_context::<Arc<Machines>>(cx));
-    blocking(cx, move |_| {
+    blocking(cx, move |hub| {
         let cards = all.poll(cooee_machines::unix_now());
+        let mut tags = drover_tags(hub);
         let row = |c: cooee_machines::Card| {
             let state = if c.online { "online" } else { "offline" };
-            row(c.name.clone(), c.name, state)
+            let subtitle = match tags.remove(&c.name) {
+                Some(t) => format!("{state} · {}", t.join(" · ")),
+                None => state.to_owned(),
+            };
+            row(c.name.clone(), c.name, subtitle)
         };
         Ok(cards.into_iter().map(row).collect())
     })
     .await
+}
+
+#[derive(Deserialize, Default)]
+#[serde(default)]
+struct HostTab {
+    hosts: Vec<HostCard>,
+}
+
+#[derive(Deserialize, Default)]
+#[serde(default)]
+struct HostCard {
+    name: String,
+    rows: Vec<Cell>,
+}
+
+#[derive(Deserialize, Default)]
+#[serde(default)]
+struct Cell {
+    k: String,
+    notes: Vec<String>,
+}
+
+fn drover_tags(hub: &Hub) -> HashMap<String, Vec<String>> {
+    let drover = hub
+        .plugins()
+        .into_iter()
+        .find(|p| hub.plugin_of(&p.name) == "drover");
+    let Some(reply) =
+        drover.and_then(|p| plugin::call(&p, "GET", "/api/v1/host", &[], &[], DROVER).ok())
+    else {
+        return HashMap::new();
+    };
+    let ok = reply.status == 200;
+    let tab: HostTab = reply
+        .bytes()
+        .ok()
+        .filter(|_| ok)
+        .and_then(|b| serde_json::from_slice(&b).ok())
+        .unwrap_or_default();
+    let tags = |h: HostCard| {
+        let row = h.rows.into_iter().find(|r| r.k == "tags")?;
+        let tags: Vec<String> = row
+            .notes
+            .iter()
+            .flat_map(|n| n.split_whitespace())
+            .map(str::to_owned)
+            .collect();
+        (!tags.is_empty()).then_some((h.name, tags))
+    };
+    tab.hosts.into_iter().filter_map(tags).collect()
 }
 
 pub(super) async fn plugin_rows(cx: &Cx) -> Result<Vec<Row>, HubError> {
