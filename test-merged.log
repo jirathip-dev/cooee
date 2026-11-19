@@ -1,0 +1,46 @@
+   Compiling cooee v0.1.0 (/Users/jkmacmini/.local/share/drover/work/cooee/issue-383/crates/cooee)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 2.48s
+     Running tests/machines.rs (/Users/jkmacmini/.local/share/herdsman/work/.build/cooee-impl-383/debug/deps/machines-caa44ba9699d01e7)
+
+running 2 tests
+test the_machines_plugin_serves_each_machine_card_and_marks_one_offline ... ok
+test a_cloud_machine_reports_its_tags_spend_and_budget_on_its_settings_row ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.25s
+
+     Running tests/menu_screens.rs (/Users/jkmacmini/.local/share/herdsman/work/.build/cooee-impl-383/debug/deps/menu_screens-ebebc284110a5c61)
+
+running 4 tests
+test the_attach_sheet_is_one_permissions_card ... ok
+test the_menu_is_the_bundled_screen_valued_from_the_servers_data ... ok
+test each_settings_screen_is_one_list_from_its_route ... ok
+test each_core_screen_is_on_the_wire_as_staging_served_it ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.43s
+
+     Running tests/plugins.rs (/Users/jkmacmini/.local/share/herdsman/work/.build/cooee-impl-383/debug/deps/plugins-e3f7da3377672851)
+
+running 20 tests
+test a_plugin_with_no_token_configured_does_not_start ... ok
+test a_backends_event_stream_comes_through_the_proxy ... ok
+test plugin_check_knows_swipe_menu_and_refresh ... ok
+test plugin_check_checks_a_manifest ... ok
+test a_plugin_without_its_token_is_refused ... ok
+test a_plugin_names_its_push_tag_and_sets_its_dot_only_with_its_token ... ok
+test a_closed_page_closes_its_backend_stream ... ok
+test a_choice_card_goes_into_the_thread_and_its_answer_to_its_own_plugin ... ok
+test cooees_own_cards_go_out_as_blocks_and_settle_to_their_line ... ok
+test plugin_check_passes_the_fixtures_and_names_a_broken_field ... ok
+test a_run_card_approves_once_with_its_sha_and_shows_the_tail ... ok
+test a_hanging_plugin_answer_never_holds_another_thread ... ok
+test row_30_choice_rows_recommended_first_other_text_and_who_and_when ... ok
+test a_card_to_a_thread_of_a_persona_its_plugin_isnt_attached_to_is_refused ... ok
+test row_32_config_card_waits_applies_with_the_plugins_line_or_goes_stale ... ok
+test row_31_a_conductors_answer_takes_one_change_from_the_owner ... ok
+test the_proxy_sends_the_plugins_own_token_and_never_the_cookie ... ok
+test row_33_a_secrets_value_reaches_its_plugin_only ... ok
+test a_hung_plugin_holds_only_its_own_calls ... ok
+test row_35_handoff_chips_flow_back_lines_and_pick_a_thread ... ok
+
+test result: ok. 20 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.24s
+
