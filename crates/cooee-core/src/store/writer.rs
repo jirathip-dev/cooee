@@ -1,9 +1,10 @@
 use std::{
+    collections::HashMap,
     io,
     path::{Path, PathBuf},
     slice,
     sync::{
-        Arc,
+        Arc, Mutex, PoisonError,
         atomic::{AtomicU64, Ordering},
         mpsc,
     },
@@ -17,6 +18,7 @@ use super::{StoreError, error::db_err, items::put};
 use crate::Item;
 
 type Done = mpsc::Sender<Result<(), StoreError>>;
+type Pending = Arc<Mutex<HashMap<String, usize>>>;
 
 #[derive(Debug)]
 struct Job {
@@ -28,6 +30,7 @@ struct Job {
 pub(super) struct Writer {
     jobs: mpsc::Sender<Job>,
     path: PathBuf,
+    pending: Pending,
     #[cfg(test)]
     commits: Arc<AtomicU64>,
 }
@@ -42,10 +45,13 @@ impl Writer {
         let commits = Arc::new(AtomicU64::new(0));
         let counted = Arc::clone(&commits);
         let at = path.to_owned();
-        thread::spawn(move || run(db, &at, &next, &counted));
+        let pending = Pending::default();
+        let queued = Arc::clone(&pending);
+        thread::spawn(move || run(db, &at, &next, &counted, &queued));
         Ok(Self {
             jobs,
             path: path.to_owned(),
+            pending,
             #[cfg(test)]
             commits,
         })
@@ -61,6 +67,9 @@ impl Writer {
             path: self.path.clone(),
             source: io::Error::other("the store's writer stopped"),
         };
+        if let Some((id, _)) = &job.write {
+            *lock(&self.pending).entry(id.clone()).or_default() += 1;
+        }
         self.jobs.send(job).map_err(|_| stopped())?;
         if wait {
             return got.recv().map_err(|_| stopped())?;
@@ -71,13 +80,38 @@ impl Writer {
     pub(super) fn flush(&self) {
         self.send(None, true).ok();
     }
+
+    pub(super) fn flush_thread(&self, id: &str) {
+        if lock(&self.pending).get(id).is_some_and(|n| *n > 0) {
+            self.flush();
+        }
+    }
 }
 
-fn run(mut db: Connection, path: &Path, next: &mpsc::Receiver<Job>, commits: &AtomicU64) {
+fn lock(pending: &Pending) -> std::sync::MutexGuard<'_, HashMap<String, usize>> {
+    pending.lock().unwrap_or_else(PoisonError::into_inner)
+}
+
+fn run(
+    mut db: Connection,
+    path: &Path,
+    next: &mpsc::Receiver<Job>,
+    commits: &AtomicU64,
+    pending: &Pending,
+) {
     while let Ok(first) = next.recv() {
         let jobs: Vec<Job> = std::iter::once(first).chain(next.try_iter()).collect();
         let writes: Vec<&(String, Item)> = jobs.iter().filter_map(|j| j.write.as_ref()).collect();
+        let done = |writes: &[&(String, Item)]| {
+            let mut pending = lock(pending);
+            for (id, _) in writes {
+                if let Some(n) = pending.get_mut(id) {
+                    *n = n.saturating_sub(1);
+                }
+            }
+        };
         if writes.is_empty() || commit(&mut db, path, &writes, commits).is_ok() {
+            done(&writes);
             for done in jobs.iter().filter_map(|j| j.done.as_ref()) {
                 done.send(Ok(())).ok();
             }
@@ -85,7 +119,9 @@ fn run(mut db: Connection, path: &Path, next: &mpsc::Receiver<Job>, commits: &At
         }
         for job in &jobs {
             let r = job.write.as_ref().map_or(Ok(()), |w| {
-                commit(&mut db, path, slice::from_ref(&w), commits)
+                let r = commit(&mut db, path, slice::from_ref(&w), commits);
+                done(slice::from_ref(&w));
+                r
             });
             if let Some(done) = &job.done {
                 done.send(r).ok();

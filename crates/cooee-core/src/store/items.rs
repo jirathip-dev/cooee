@@ -3,7 +3,7 @@ use std::path::Path;
 use rusqlite::{Connection, Transaction, params};
 
 use super::{Store, StoreError, error::db_err};
-use crate::{Item, history};
+use crate::{Body, Item, history};
 
 /// Where a [`Store::page`] read starts.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -53,7 +53,7 @@ impl Store {
     /// Returns [`StoreError`] if the id is invalid or the items can't be read.
     pub fn page(&self, id: &str, from: Page, n: usize) -> Result<Vec<Item>, StoreError> {
         self.path(id)?;
-        self.writer.flush();
+        self.writer.flush_thread(id);
         let db = self.db();
         if let Some(mut all) = self.moved(&db, id)? {
             for item in self.bodies(&db, "thread = ?1", params![id])? {
@@ -84,6 +84,45 @@ impl Store {
             items.reverse();
         }
         Ok(items)
+    }
+
+    /// What thread `id`'s list row needs without reading it whole (#346): its approvals, the owner's newest message and
+    /// its newest item, oldest first, with how many items after `read` are not the owner's.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`StoreError`] if the id is invalid or the items can't be read.
+    pub fn glance(&self, id: &str, read: u64) -> Result<(Vec<Item>, usize), StoreError> {
+        self.path(id)?;
+        self.writer.flush_thread(id);
+        let db = self.db();
+        if self.moved(&db, id)?.is_some() {
+            drop(db);
+            let items = self.items(id)?;
+            let after = items.iter().filter(|i| i.id > read);
+            let unseen = after
+                .filter(|i| !matches!(i.body, Body::You { .. }))
+                .count();
+            return Ok((items, unseen));
+        }
+        let mut items = Vec::new();
+        for filter in [
+            "kind = 'approval'",
+            "kind = 'you' ORDER BY id DESC LIMIT 1",
+            "1 ORDER BY id DESC LIMIT 1",
+        ] {
+            items.extend(self.bodies(&db, &format!("thread = ?1 AND {filter}"), params![id])?);
+        }
+        items.sort_by_key(|i| i.id);
+        items.dedup_by_key(|i| i.id);
+        let unseen: i64 = db
+            .prepare_cached(
+                "SELECT (SELECT count(*) FROM items WHERE thread = ?1 AND id > ?2)
+                 - (SELECT count(*) FROM items WHERE thread = ?1 AND kind = 'you' AND id > ?2)",
+            )
+            .and_then(|mut q| q.query_row(params![id, int(read)], |r| r.get(0)))
+            .map_err(db_err(&self.path))?;
+        Ok((items, usize::try_from(unseen).unwrap_or(0)))
     }
 
     pub(super) fn bodies<P: rusqlite::Params>(
