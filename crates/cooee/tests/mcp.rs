@@ -394,6 +394,11 @@ fn propose_server_shows_the_exact_command_runs_nothing_and_needs_face_id_to_add_
         .clone();
     let exact = format!("{} --port '9 9'", web.display());
     assert_eq!(card["detail"], exact.as_str());
+    assert_eq!(card["block"]["kind"], "proposal");
+    assert_eq!(
+        card["block"]["blocks"][0]["markdown"],
+        format!("```\n{exact}\n```")
+    );
     assert!(
         card["tool"]
             .as_str()
