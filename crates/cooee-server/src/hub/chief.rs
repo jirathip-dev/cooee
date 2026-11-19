@@ -62,7 +62,8 @@ impl Hub {
             Ok(_) => format!("[cooee] declined: {}", c.title),
             Err(why) => format!("[cooee] failed: {}: {why}", c.title),
         };
-        self.queue(id, &line, &format!("change-{item}"), &[]).ok();
+        self.queue(id, &line, &format!("change-{item}"), &[], None)
+            .ok();
         done
     }
 
