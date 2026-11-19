@@ -22,6 +22,22 @@ use crate::{Hub, HubError, Logins, Manager, Recipe};
 
 pub(crate) const COOKIE: &str = "cooee";
 
+#[derive(Deserialize)]
+#[serde(try_from = "String")]
+pub(crate) struct Tag(pub(crate) String);
+
+impl TryFrom<String> for Tag {
+    type Error = &'static str;
+
+    fn try_from(s: String) -> Result<Self, Self::Error> {
+        if s.is_empty() {
+            Err("random_id is empty")
+        } else {
+            Ok(Self(s))
+        }
+    }
+}
+
 pub(crate) fn now() -> u64 {
     cooee_core::clock::now()
         .duration_since(UNIX_EPOCH)

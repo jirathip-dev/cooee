@@ -319,13 +319,14 @@ fn an_idle_threads_chat_unloads_and_reloads_intact() {
     hub.apply(event("a", 3, EventKind::State(done.clone())));
     hub.apply(event("a", 4, EventKind::State(done)));
     let replayed = |hub: &Hub, cursor: &str| match hub.subscribe("a", cursor).unwrap().0 {
-        Resume::Replay(outs) => Some(outs.iter().map(|o| o.seq).collect::<Vec<_>>()),
+        Resume::Replay(outs) => Some(outs.iter().map(|o| o.rev).collect::<Vec<_>>()),
         Resume::Reset => None,
     };
 
     hub.unload(t0 + REPLAY - 1_000);
     assert!(!unloaded(&hub));
-    assert_eq!(replayed(&hub, &before.cursor), Some(vec![1, 2]));
+    let revs = replayed(&hub, &before.cursor).unwrap();
+    assert!(revs.len() == 2 && revs[0] < revs[1], "{revs:?}");
 
     let row = json!(hub.list());
     hub.unload(t0 + IDLE + REPLAY);

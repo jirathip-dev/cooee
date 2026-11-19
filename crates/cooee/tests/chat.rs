@@ -144,10 +144,16 @@ fn a_tool_call_is_one_row_updated_in_place_and_a_retried_send_is_stored_once() {
     assert_eq!(status, 200, "{first}");
     let (_, again) = s.send(&id, "use a tool", "r1");
     assert_eq!(first, again);
+    let (status, body) = s.send(&id, "untagged", "");
+    assert_eq!(status, 400, "{body}");
     let prompts = s.shed.sent(&terminal(&id));
     assert_eq!(
         prompts.iter().filter(|t| t.contains("use a tool")).count(),
         1
+    );
+    assert!(
+        !prompts.iter().any(|t| t.contains("untagged")),
+        "{prompts:?}"
     );
 
     let events = events.until(|e| is_item(e, "agent"));
@@ -271,7 +277,8 @@ fn cancel_ends_the_turn_and_writes_back_the_tool_call_in_progress() {
 }
 
 #[test]
-fn a_reconnect_with_last_event_id_replays_without_gaps_or_duplicates() {
+fn a_reconnect_with_last_event_id_replays_without_gaps_or_duplicates_and_revs_count_up_across_threads()
+ {
     let s = setup("reconnect");
     let id = s.create("use a tool");
     let all = s.events(&id).until(|e| is_item(e, "agent"));
@@ -290,6 +297,11 @@ fn a_reconnect_with_last_event_id_replays_without_gaps_or_duplicates() {
     for stale in ["0.0".to_owned(), format!("{boot}.99999")] {
         assert_eq!(s.cooee.events(&id, &stale, true).next().event, "reset");
     }
+    let other = s.create("hi");
+    let theirs = s.events(&other).until(|e| is_item(e, "agent"));
+    let rev = |e: &Sse| e.id.rsplit_once('.').unwrap().1.parse::<u64>().unwrap();
+    let revs: Vec<u64> = all.iter().chain(&theirs).map(rev).collect();
+    assert!(revs.windows(2).all(|w| w[0] < w[1]), "{revs:?}");
 }
 
 #[test]
