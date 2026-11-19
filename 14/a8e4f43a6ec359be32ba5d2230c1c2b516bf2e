@@ -1,0 +1,9 @@
+Decided: the plugin supervisor caches the lock and tabs; its own writes mark them stale, else a 5 s stat of the two files decides
+Because: "Each loop reloads when its own write path changed something, and otherwise checks one directory mtime at a longer interval"
+Rejected: a data folder mtime — the store's own writes there would wake it; the two files' (mtime, len) are exact
+Decided: the login checker lists accounts only with a login running, a check due, or none made yet
+Because: "A login in progress keeps its 1 s check; with none in progress the checker sleeps."
+Decided: no theme change: the stamp walk left with the web client in #189
+Because: crates/cooee-core/src/gitignore.rs:19
+Check: both new tests fail with tick reading self.installed() again and with the due gate skipped
+Owner: An idle server stops reading plugin and sign-in files every second; changes still show within 5 s, at once from the app.
