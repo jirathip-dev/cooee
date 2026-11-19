@@ -1,0 +1,9 @@
+Decided: deliver the design as one ADR file, no code, since the issue is a design note
+Because: "A design note, not work to queue"
+Decided: relayed pushes are always content-free; direct sends keep text unless the owner opts in
+Because: "Content-free pushes as an option, then the default for relayed sends"
+Decided: the relay is a third sender kind inside Push::deliver, picked per Sub
+Because: crates/cooee-server/src/push/send.rs:30
+Rejected: building the content-free form and its test now — no relayed push exists yet to test
+Check: the ADR's code facts match push/apns.rs, push/note.rs, push/worker.rs and push/send.rs
+Owner: A design note on alerts for people who run their own cooee server; nothing changes yet.
