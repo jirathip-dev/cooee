@@ -1,0 +1,18 @@
+Decided: drop fixedSize on the agent and machine chips so they truncate; the header no longer sets the screen width
+Because: "Some child, likely the topics strip or a long status line, sets the screen's width instead of wrapping inside it."
+Check: apple/Tests/CooeeUITests/HeaderRenderTests.swift renders the thread at 390 and 1440; it fails at 390 (691 wide) without the change
+Rejected: a live XCUITest in apple/UITests — the e2e Coder persona has a short agent and no model, so it would pass without the fix
+Rejected: clipping the root view — it would hide the overflow, not fix the header that caused it
+Owner: long agent, model or machine names now shorten with an ellipsis instead of pushing the thread off screen
+
+Decided: the render test's machine host is 203.0.113.7, the denylist's documented placeholder, instead of a private IP
+Because: ci/denylist.txt:3
+Check: scripts/hygiene.sh exits 0 and HeaderRenderTests still passes at 390 and 1440
+Rejected: allowlisting the IP in the hygiene script — the denylist exists to keep setup-specific addresses out of the repo
+Owner: fixed the failing public-hygiene check; the screen fix itself is unchanged
+
+Decided: merge origin/staging into the branch; no change to the fix or its test
+Because: ci/denylist.txt:3
+Check: scripts/hygiene.sh exits 0 and HeaderRenderTests passes at 390 and 1440 on the merged head
+Rejected: leaving the branch behind staging — the PR would be reviewed against an old base
+Owner: brought the branch up to date with staging; the screen fix itself is unchanged
