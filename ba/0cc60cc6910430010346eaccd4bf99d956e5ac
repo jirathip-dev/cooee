@@ -1,0 +1,7 @@
+Decided: one Clients holder in CooeeApp keeps a single Client per server; a new server or token replaces it
+Because: "One `Client` (one session) per server, held by the dependency and reused"
+Decided: Client invalidates its session in deinit, so an open stream keeps its session until the stream ends
+Because: "The event stream keeps its own long-lived session or task as needed."
+Rejected: invalidating the old session when the server switches — a reconnecting stream then crashes with NSGenericException
+Check: switchingServerInvalidatesTheOldSession fails (time limit) with the deinit removed
+Owner: The app reuses one connection per server and drops it when you switch servers.
