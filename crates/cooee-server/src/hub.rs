@@ -407,7 +407,7 @@ impl Live {
     }
 
     fn emit(&mut self, event: &'static str, data: String) {
-        if event != "text" {
+        if event != "text" && !self.unsent.is_empty() {
             self.flush(now());
         }
         self.seq += 1;
