@@ -181,11 +181,7 @@ extension ChatFeature {
         case .older(let older):
             return self.older(&state, older)
         case .event(let event):
-            let timed = painted(state, event)
-            state.room?.hear(event, when: now)
-            apply(&state, event)
-            guard case .item = event else { return timed }
-            return .merge(timed, keepSlice(state))
+            return heard(&state, event)
         case .failed(let error):
             state.status.stopping = false
             return toast(&state, error)
@@ -197,12 +193,10 @@ extension ChatFeature {
         return .none
     }
 
-    private func apply(_ state: inout State, _ event: StreamEvent) {
+    internal func apply(_ state: inout State, _ event: StreamEvent) {
         switch event {
         case .item(let item):
             upsert(&state, item)
-        case .text(let text):
-            state.live.append(text, parse: markdown)
         case .state(let turn):
             if turn.state != state.turn.state { state.since = now }
             state.turn = Turn(text: nil, state: turn.state, note: turn.note)
@@ -211,7 +205,7 @@ extension ChatFeature {
             state.queue = queue
         case .sync(let sync):
             state.status.sync = sync
-        case .reset, .roomTurn, .roomStop, .roomAsk:
+        case .text, .reset, .roomTurn, .roomStop, .roomAsk:
             break
         }
     }

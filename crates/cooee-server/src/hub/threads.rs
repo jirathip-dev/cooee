@@ -170,7 +170,7 @@ impl Hub {
             .and_then(|s| s.strip_prefix('.'))
             .and_then(|s| s.parse::<u64>().ok())
             .filter(|s| *s <= live.seq);
-        let first = live.ring.front().map_or(live.seq + 1, |(_, o)| o.seq);
+        let first = live.trimmed + 1;
         let resume = match seq {
             Some(s) if s + 1 >= first => Resume::Replay(
                 live.ring
