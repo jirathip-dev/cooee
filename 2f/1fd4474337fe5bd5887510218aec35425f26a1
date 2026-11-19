@@ -1,0 +1,10 @@
+Decided: the hub buffers a thread's chunks and sends one text event per 40 ms tick; the first chunk after a quiet tick goes at once, and any other event flushes what is held first
+Because: "the first chunk goes at once, the rest on the tick, and whatever is pending is flushed before the turn's final item"
+Decided: an agent item drops the ring's text events; resume reads the first replayable seq from a trimmed counter
+Because: crates/cooee-server/src/hub/threads.rs:173
+Decided: the thread glance moved unchanged into hub/glance.rs so hub.rs stays under arch.toml's 800-line limit
+Because: .drover/arch.toml:9
+Rejected: bytes.lines in Events.swift — it skips empty lines, and a blank line ends each SSE frame
+Rejected: measuring cooee perf in the lane — it reads timings a live server records; the first chunk is never delayed (a_held_chunk_goes_out_on_the_tick)
+Check: drover arch-check 0 violations; hub tests five_hundred_chunks…, a_reply_delivers_its_text_before_its_item_and_replays_only_the_item
+Owner: Streaming replies now reach the phone in fewer, larger pieces (about 25 a second at most), so long answers scroll smoothly and reconnects no longer replay every fragment.
