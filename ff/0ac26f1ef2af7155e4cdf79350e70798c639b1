@@ -1,0 +1,12 @@
+Decided: the hub buffers a thread's chunks and sends one text event per 40 ms tick; the first chunk after a quiet tick goes at once, and any other event flushes what is held first
+Because: "the first chunk goes at once, the rest on the tick, and whatever is pending is flushed before the turn's final item"
+Decided: one flusher thread takes thread ids from a channel and sleeps on the core clock until the tick is due, so a held tail goes out without another chunk arriving
+Because: crates/cooee-server/src/hub.rs:690
+Decided: an agent item drops the ring's text events; resume reads the first replayable seq from a trimmed counter, since the ring front no longer marks it
+Because: crates/cooee-server/src/hub/threads.rs:228
+Decided: the app reuses one static decoder and draws at most one text update per 16 ms frame; later chunks wait in status.held, and any non-text event draws them first
+Because: apple/Sources/CooeeFeatures/ChatStream.swift:36
+Rejected: bytes.lines in Events.swift — it skips empty lines (checked with URL.lines on "a\n\nb\n\n": it yields only a and b), and a blank line ends each SSE frame
+Rejected: measuring cooee perf in the lane — it reads timings a live server records; the first chunk is never delayed (a_held_chunk_goes_out_on_the_tick)
+Check: hub tests five_hundred_chunks…, a_held_chunk_goes_out_on_the_tick, a_reply_delivers_its_text_before_its_item_and_replays_only_the_item; ChatStreamingTests chunksWithinAFrame…
+Owner: Streaming replies now reach the phone in fewer, larger pieces (about 25 a second at most), so long answers scroll smoothly and reconnects no longer replay every fragment.
