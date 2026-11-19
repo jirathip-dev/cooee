@@ -53,7 +53,7 @@ impl Store {
     /// Returns [`StoreError`] if the id is invalid or the items can't be read.
     pub fn page(&self, id: &str, from: Page, n: usize) -> Result<Vec<Item>, StoreError> {
         self.path(id)?;
-        self.writer.flush();
+        self.writer.flush_thread(id);
         let db = self.db();
         if let Some(mut all) = self.moved(&db, id)? {
             for item in self.bodies(&db, "thread = ?1", params![id])? {
@@ -94,7 +94,7 @@ impl Store {
     /// Returns [`StoreError`] if the id is invalid or the items can't be read.
     pub fn glance(&self, id: &str, read: u64) -> Result<(Vec<Item>, usize), StoreError> {
         self.path(id)?;
-        self.writer.flush();
+        self.writer.flush_thread(id);
         let db = self.db();
         if self.moved(&db, id)?.is_some() {
             drop(db);
