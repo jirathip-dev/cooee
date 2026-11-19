@@ -71,6 +71,7 @@ impl Hub {
         }
         let (terminal, ready) = started?;
         let mut l = lock(&live);
+        l.applied = 0;
         l.meta.terminal.clone_from(&terminal);
         self.retarget(&old, &terminal);
         let mut changes = Vec::new();
