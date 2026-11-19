@@ -1,0 +1,9 @@
+   Compiling cooee v0.1.0 (/Users/jkmacmini/.local/share/drover/work/cooee/issue-351/crates/cooee)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 5.32s
+     Running tests/perf.rs (/Users/jkmacmini/.local/share/herdsman/work/.build/cooee-impl-351/debug/deps/perf-2695d99efd60bbcc)
+
+running 1 test
+test with_500_threads_of_1000_items_the_list_answers_within_300_ms_of_start ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 5 filtered out; finished in 55.99s
+
