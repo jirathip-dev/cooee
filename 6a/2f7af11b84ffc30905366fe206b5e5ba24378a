@@ -1,0 +1,8 @@
+Decided: the Live Activity's line is monospaced unless it is an ask in a non-mono look, so Terminal draws the ask in SF Mono like every other text in the card
+Because: apple/Sources/CooeeUI/Surfaces.swift:170
+Decided: the surface snapshots allow at most 0.1 % of pixels to differ; the eight other frames sit at 0.08 % or less, and the old Terminal line measured 0.72 %
+Because: apple/Tests/CooeeUITests/Frames/Surfaces.swift:261
+Rejected: a siri and shortcuts snapshot in this round — the review marked it non-blocking, and SurfaceSnippet has no matching frame at the design's size
+Check: SurfaceFrames passes at head; with the old font line restored it fails on lock-terminal-dark
+Check: phone check (TestFlight) is not done: the App Group and widget bundle id need the cloud signing to register them
+Owner: On the Terminal look, the lock screen's ask line now uses the same typewriter font as the rest of the card.
