@@ -13,6 +13,8 @@ use serde::{Deserialize, Serialize};
 use super::{
     StoreError, Thread,
     error::{db_err, io_err},
+    items::put,
+    writer::Writer,
 };
 
 /// The on-disk format version this build writes. A file with a newer one is refused, not guessed at.
@@ -33,6 +35,7 @@ pub struct Store {
     db: Mutex<Connection>,
     pub(super) path: PathBuf,
     locks: Mutex<HashMap<String, Arc<Mutex<()>>>>,
+    pub(super) writer: Writer,
 }
 
 impl Store {
@@ -61,12 +64,14 @@ impl Store {
                 )
             })
             .map_err(db_err(&path))?;
+        let writer = Writer::open(&path)?;
         let store = Self {
             threads,
             archive: dir.join("archive"),
             db: Mutex::new(db),
             path,
             locks: Mutex::default(),
+            writer,
         };
         for entry in fs::read_dir(&store.threads).map_err(io_err(&store.threads))? {
             let file = entry.map_err(io_err(&store.threads))?.path();
@@ -94,7 +99,7 @@ impl Store {
             .split(|b| *b == b'\n')
             .filter_map(|l| serde_json::from_slice(l).ok())
         {
-            self.put(&tx, &id, &item)?;
+            put(&tx, &self.path, &id, &item)?;
         }
         tx.commit().map_err(db_err(&self.path))?;
         drop(db);
@@ -192,6 +197,7 @@ impl Store {
         let path = self.path(id)?;
         let lock = self.lock(id);
         let _held = lock.lock().unwrap_or_else(PoisonError::into_inner);
+        self.writer.flush();
         let db = self.db();
         db.execute(
             "DELETE FROM said WHERE rowid IN (SELECT rowid FROM items WHERE thread = ?1)",
@@ -357,12 +363,12 @@ pub(super) mod tests {
         let mut db = store.db();
         let tx = db.transaction().unwrap();
         for n in 1..=50 {
-            store.put(&tx, "a", &item(n, "you", "a")).unwrap();
+            put(&tx, &store.path, "a", &item(n, "you", "a")).unwrap();
         }
         tx.commit().unwrap();
         let tx = db.transaction().unwrap();
         for n in 1..=25 {
-            store.put(&tx, "b", &item(n, "you", "b")).unwrap();
+            put(&tx, &store.path, "b", &item(n, "you", "b")).unwrap();
         }
         std::process::abort();
     }
