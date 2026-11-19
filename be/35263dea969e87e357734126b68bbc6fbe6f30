@@ -1,0 +1,14 @@
+Decided: personas are cached in the hub behind a stamp (each agent file's and the plugins lock's modified time and size); a save or a hand edit changes the stamp, so one check covers both
+Because: "Personas are cached in the hub and dropped on a save or a file change."
+Decided: each thread's list row is kept in the hub's own map, rebuilt when the thread publishes or saves its meta; list reads only that map and the persona cache
+Because: crates/cooee-server/src/hub/home.rs:110
+Decided: GET /home/events says changed on connect and each time a kept row or the personas change; the app reloads Home on each, so the first load and every reconnect need no extra path
+Because: "the app loads once and after a reconnect"
+Rejected: the If-None-Match fallback — the event stream ships, so a 304 path would be a second way to do one thing
+Decided: an answer equal to what Home shows changes no state and writes no kept copy
+Because: "The app does not assign an equal value to state."
+Decided: fix round drops the doc line on the private home events route; the macOS perf miss (314 ms) is runner noise, head measures faster than base locally
+Because: "Every gate is green and the line cap holds."
+Check: hub tests: 100 lists after a same-stamp rewrite still show the old name; list returns while the test holds all 200 thread locks; an approval sends a home message at once
+Check: crates/cooee/tests/home_screen.rs drives the real /home/events stream: the approval's change arrives within 1 s of the approval item
+Owner: Home no longer asks the server every 5 seconds; it updates the moment a chat changes, and the server answers the list without rereading persona files.
