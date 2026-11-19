@@ -1,0 +1,7 @@
+Decided: merged origin/staging (#645 startup, #650 report mode); no conflict, Rust gates and apple-check green at the merge
+Because: crates/cooee-server/src/hub/restart.rs:74
+Decided: no code change for the apple FAIL; the CI runner stopped at the Xcode license prompt (exit 69) before building
+Because: apple/Sources/CooeeUI/Items.swift:36
+Rejected: changing the workflow to accept the license — it needs sudo on the runner host, an owner call
+Check: the apple job reruns on this push; if it fails again at the license step, the runner needs `sudo xcodebuild -license accept`
+Owner: The branch now includes the latest staging; the CI Mac's Xcode license may still need accepting on the runner.
