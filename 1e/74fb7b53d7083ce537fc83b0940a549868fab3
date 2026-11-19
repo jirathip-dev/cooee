@@ -1,0 +1,4 @@
+Decided: merged origin/staging; the one conflict, the App layer's allowed imports, keeps this branch's ActivityKit, AppIntents and WidgetKit and staging's Security
+Because: tools/anti-slop-swift/Sources/AntiSlopCore/Rules/CooeeRules.swift:170
+Rejected: none
+Owner: The branch now sits on top of staging with nothing of either side lost.
