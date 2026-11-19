@@ -168,6 +168,12 @@ internal struct ClientTests {
 }
 
 extension ClientTests {
+    @Test internal func anOlderPageAsksForTheMessagesBeforeTheOldestID() async throws {
+        let server = CannedServer(["/threads/a1b2/messages": [try Fixture.answer("messages.json")]])
+        #expect(try await server.client().messages("a1b2", around: 7).items.count == 9)
+        #expect(server.requests("/threads/a1b2/messages").first?.url?.query == "before=50&around=7")
+    }
+
     @Test internal func aSetupChatSaysSo() async throws {
         let server = CannedServer(["/threads": [Answer(headers: json, chunks: [#"{"id":"n2"}"#])]])
         let persona = APIPersona(id: "coder", name: "Coder", agent: "fake-acp")

@@ -40,6 +40,7 @@ public struct ChatActions {
     public var frames = FrameImages()
     public var topics: TopicActions?
     public var live: () -> LiveReply = { LiveReply() }
+    public var older: (() -> Void)?
 
     public init(
         draft: Binding<String>? = nil,
