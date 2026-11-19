@@ -1,0 +1,26 @@
+Decided: one writer thread with its own SQLite connection takes every queued item and commits the lot in one transaction, so one sync per batch
+Because: "the writer takes what is queued and syncs once per batch"
+Decided: the store is SQLite now (one cooee.db, WAL, synchronous FULL), so the per-file handle and torn-line check of the spec map to the writer's held connection; SQLite's journal keeps the file readable after a kill
+Because: crates/cooee-core/src/store/files.rs:58
+Decided: the owner's message, the agent's reply and an answered approval (tapped or chosen) still wait for their sync; tool, plan, link, ask and other items are queued
+Because: "What must be on disk before it is acknowledged (the owner's message, an approval answer, a final reply) still waits for its sync"
+Decided: reads, remove and retain flush the queue first, so a reload after unload never misses a queued item
+Because: crates/cooee-core/src/store/items.rs:56
+Decided: a failed batch is retried item by item, so one bad item costs only itself and each waiter gets its own error
+Because: crates/cooee-core/src/store/writer.rs:86
+Rejected: one writer per thread — one database file serialises writers anyway; one writer gives the same batching with no per-thread threads
+Check: hub test a_busy_thread_does_not_hold_up_another_threads_event fails (about 140 ms) when every item waits for its sync
+Owner: A busy chat full of tool calls no longer slows down other chats; your messages, replies and approval answers are still saved before they are confirmed.
+
+Decided: one writer thread with its own SQLite connection takes every queued item and commits the lot in one transaction, so one sync per batch
+Because: "the writer takes what is queued and syncs once per batch"
+Decided: the owner's message, the agent's reply and an answered approval still wait for their sync; tool, plan, link, ask and other items are queued
+Because: "What must be on disk before it is acknowledged (the owner's message, an approval answer, a final reply) still waits for its sync"
+Decided: an item goes on the event stream serialised straight to a string, not through a sorted JSON value first; that was about 40% of each event's hub CPU in a profile
+Because: crates/cooee-server/src/hub.rs:482
+Decided: the head-of-line test takes the fastest of three fresh rounds, so a burst of CI runner load (82 ms on msrv, green on stable at the same head) does not fail it
+Because: crates/cooee-server/src/hub/tests.rs:366
+Rejected: a per-thread flush so a reload waits only for its own thread's queue — measured, the quiet event's apply is 12 µs either way, the cost was the hub's own CPU
+Rejected: raising the test's opt-level — a build config change outside this issue
+Check: with store.queue swapped for store.append in Live::publish the test still fails (fastest round 170 ms here)
+Owner: A busy chat full of tool calls no longer slows down other chats; your messages, replies and approval answers are still saved before they are confirmed.
