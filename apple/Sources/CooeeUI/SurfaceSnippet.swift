@@ -47,7 +47,8 @@ private struct SurfaceLook: ViewModifier {
     let style: Style?
 
     func body(content: Content) -> some View {
-        content.environment(\.look, Look(palette: scheme == .dark ? .farmDark : .farmLight, style: style ?? .bundled, still: true))
+        let palette: Palette = scheme == .dark ? .farmDark : .farmLight
+        return content.environment(\.look, Look(palette: palette, style: style ?? .bundled, still: true))
     }
 }
 

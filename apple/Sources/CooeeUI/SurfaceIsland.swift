@@ -48,18 +48,19 @@ public struct IslandMark: View {
 public struct IslandTrailing: View {
     @Environment(\.look) private var look
     private let activity: SurfaceActivity
-    private let text: String
-    private let alert: Bool
 
     public var body: some View {
-        let palette = Palette.farmDark
-        Group { if text == activity.clock { ClockText(activity: activity) } else { Text(text) } }.ui(14, .semibold, look).monospacedDigit().foregroundStyle(alert ? palette.red : palette.cyan)
-            .modifier(IslandLook())
+        let (palette, state) = (Palette.farmDark, activity.persona.state)
+        Group {
+            switch state {
+            case .needs: Text("ask")
+            case .done: Text("replied")
+            default: ClockText(activity: activity)
+            }
+        }
+        .ui(14, .semibold, look).monospacedDigit()
+        .foregroundStyle(state == .needs || state == .fail ? palette.red : palette.cyan).modifier(IslandLook())
     }
 
-    public init(_ activity: SurfaceActivity) {
-        self.activity = activity
-        text = activity.asks ? "ask" : activity.persona.state == .done ? "replied" : activity.clock
-        alert = activity.asks || activity.persona.state == .fail
-    }
+    public init(_ activity: SurfaceActivity) { self.activity = activity }
 }

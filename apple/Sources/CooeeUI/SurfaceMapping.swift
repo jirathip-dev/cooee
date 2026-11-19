@@ -5,9 +5,12 @@ extension SurfaceGlance {
     /// The widgets' rows from the App Group copy, with clocks at `now` (Unix milliseconds).
     public init(_ cache: GlanceCache, now: Int) {
         let glance = cache.glance
-        let who = { (row: GlanceRow, state: LaneState) in Persona.of(row.persona, row.name, state, in: cache.personas) }
+        let who = { (row: GlanceRow, state: LaneState) in
+            Persona.of(row.persona, row.name, state, in: cache.personas)
+        }
         let asks = glance.asks.map {
-            SurfaceRow(thread: $0.thread, persona: who($0, .needs), title: "\($0.name) asks", detail: $0.line, trailing: "ask")
+            SurfaceRow(
+                thread: $0.thread, persona: who($0, .needs), title: "\($0.name) asks", detail: $0.line, trailing: "ask")
         }
         let blocked = glance.blocked.map {
             SurfaceRow(

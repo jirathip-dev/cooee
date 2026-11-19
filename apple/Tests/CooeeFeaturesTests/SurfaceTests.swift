@@ -40,10 +40,8 @@ internal struct SurfaceTests {
         } withDependencies: {
             $0.date.now = epoch
             $0.push.opened = { .finished }
-            $0.surface.routes = { AsyncStream { $0.yield(.thread("t1")); $0.yield(.start("coder")); $0.finish() } }
-            $0.surface.tokens = {
-                AsyncStream { $0.yield((token: "ab", activity: nil)); $0.yield((token: "cd", activity: "a1")); $0.finish() }
-            }
+            $0.surface.routes = { [SurfaceRoute.thread("t1"), .start("coder")].async }
+            $0.surface.tokens = { [(token: "ab", activity: nil), (token: "cd", activity: "a1")].async }
             $0.serverStore.load = { mini }
             $0.surface.register = { server, token, activity in
                 calls.record("\(server.url.host() ?? "") \(token) \(activity ?? "start")")
@@ -73,7 +71,17 @@ internal struct SurfaceTests {
         store.exhaustivity = .off
         await store.send(.home(.loaded(HomeAnswer(screen: homeScreen, threads: rows, personas: [coder]), [])))
         await store.finish()
-        let thread = GlanceRow(thread: "t1", title: "T t1", persona: "coder", name: "Coder", line: "", since: 999_000_000)
+        let thread = GlanceRow(
+            thread: "t1", title: "T t1", persona: "coder", name: "Coder", line: "", since: 999_000_000)
         #expect(kept.value == [GlanceCache(glance: glance, personas: [coder], threads: [thread], host: "mini")])
+    }
+}
+
+extension Array where Element: Sendable {
+    fileprivate var async: AsyncStream<Element> {
+        AsyncStream { continuation in
+            for element in self { continuation.yield(element) }
+            continuation.finish()
+        }
     }
 }

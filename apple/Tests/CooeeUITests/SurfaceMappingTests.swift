@@ -9,8 +9,8 @@ internal struct SurfaceMappingTests {
 
     private func row(_ id: String, _ name: String, _ title: String, _ line: String, lane: Bool = false) -> GlanceRow {
         GlanceRow(
-            thread: id, title: title, persona: String(name.lowercased().prefix(3)), name: name, line: line, since: Self.now - 134_000,
-            lane: lane)
+            thread: id, title: title, persona: String(name.lowercased().prefix(3)), name: name, line: line,
+            since: Self.now - 134_000, lane: lane)
     }
 
     @Test internal func theWidgetsRowsReadTheGlanceAsDrawn() {
@@ -30,7 +30,9 @@ internal struct SurfaceMappingTests {
                 ["Coder", "Export for Kestrel", "2:14"], ["Cond", "cooee queue", "2:14"],
                 ["cooee#231 · review", "rev lane", "2:14"],
             ])
-        #expect(surface.needs.map(\.persona.state) == [.needs, .fail] && surface.top?.url.absoluteString == "cooee://thread/a")
+        #expect(
+            surface.needs.map(\.persona.state) == [.needs, .fail]
+                && surface.top?.url.absoluteString == "cooee://thread/a")
         #expect(surface.needs[0].persona.api == researcher && surface.running[0].persona.name == "Coder")
         #expect((surface.counts, surface.rest) == ("1 ask · 1 blocked", "+1 lane"))
         let two = SurfaceGlance(
@@ -48,8 +50,12 @@ internal struct SurfaceMappingTests {
             let activity = SurfaceActivity(state, personas: [researcher], now: Self.now)
             return [activity.headline, activity.place, activity.clock, activity.foot, activity.more]
         }
-        #expect(card("ask") == ["Researcher asks you", "Kestrel filings · mini", "12m", "Tap to open the ask", "+2 running"])
-        #expect(card("running") == ["Researcher", "Kestrel filings · mini", "12:00", "working · 6 tools", "+2 running"])
+        #expect(
+            card("ask") == [
+                "Researcher asks you", "Kestrel filings · mini", "12m", "Tap to open the ask", "+2 running",
+            ])
+        #expect(
+            card("running") == ["Researcher", "Kestrel filings · mini", "12:00", "working · 6 tools", "+2 running"])
         #expect(card("failed") == ["Researcher failed", "Kestrel filings · mini", "12m", "Tap to open", "+2 running"])
         #expect(card("ended") == ["Researcher", "Kestrel filings · mini", "12m", "replied", "+2 running"])
         let activity = SurfaceActivity(shown, personas: [], now: Self.now)

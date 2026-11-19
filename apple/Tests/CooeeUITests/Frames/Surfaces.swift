@@ -9,7 +9,8 @@ private func who(_ id: String, _ state: LaneState? = nil) -> Persona {
     return Persona(api: persona.api, look: persona.look, state: state ?? persona.state)
 }
 
-private func row(_ id: String, _ state: LaneState?, _ title: String, _ detail: String, _ trailing: String) -> SurfaceRow {
+private func row(_ id: String, _ state: LaneState?, _ title: String, _ detail: String, _ trailing: String) -> SurfaceRow
+{
     SurfaceRow(thread: title, persona: who(id, state), title: title, detail: detail, trailing: trailing)
 }
 

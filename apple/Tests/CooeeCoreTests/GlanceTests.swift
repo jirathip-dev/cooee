@@ -46,7 +46,8 @@ internal struct GlanceTests {
     @Test internal func whatNeedsYouIsTheAsksThenTheBlockedLanesAndTheHubsStateDecodes() throws {
         let lane = GlanceRow(thread: "l", title: "cooee#218", persona: "", name: "", line: "needs a secret", lane: true)
         #expect(Glance(asks: [ask], blocked: [lane]).needs == [ask, lane])
-        let pushed = #"{"kind":"running","thread":"t","title":"Export","persona":"coder","name":"Coder","#
+        let pushed =
+            #"{"kind":"running","thread":"t","title":"Export","persona":"coder","name":"Coder","#
             + #""machine":"studio","line":"wrote 412 rows","since":7,"more":"+2 running","tools":6}"#
         let shown = try JSONDecoder().decode(Shown.self, from: Data(pushed.utf8))
         #expect(

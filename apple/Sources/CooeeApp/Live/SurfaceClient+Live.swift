@@ -62,12 +62,8 @@ internal enum Tokens {
                             continuation.yield((hex(data), nil))
                         }
                     }()
-                    await withTaskGroup(of: Void.self) { group in
-                        for await activity in Activity<CooeeActivity>.activityUpdates {
-                            group.addTask {
-                                for await data in activity.pushTokenUpdates { continuation.yield((hex(data), activity.id)) }
-                            }
-                        }
+                    for await activity in Activity<CooeeActivity>.activityUpdates {
+                        for await data in activity.pushTokenUpdates { continuation.yield((hex(data), activity.id)) }
                     }
                     await starts
                 }

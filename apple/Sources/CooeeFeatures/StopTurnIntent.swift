@@ -31,3 +31,6 @@ public struct StopTurnIntent: StopIntent {
         return .result()
     }
 }
+
+/// The intents of this module, for the app's `AppIntentsPackage`.
+public struct FeatureIntents: AppIntentsPackage {}

@@ -9,6 +9,8 @@ internal struct CooeeMain: App {
         @NSApplicationDelegateAdaptor(PushDelegate.self) private var delegate
     #endif
 
+    internal init() { CooeeShortcuts.updateAppShortcutParameters() }
+
     internal var body: some Scene {
         WindowGroup { CooeeRoot() }
     }

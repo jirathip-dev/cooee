@@ -128,7 +128,8 @@ internal struct PersonasTests {
     }
 
     @Test internal func theGlanceDecodesTheServersRowsAndEachActivityTokenIsPostedWithItsActivity() async throws {
-        let row = #"{"thread":"a","title":"Kestrel","persona":"res","name":"Researcher","machine":"mini","#
+        let row =
+            #"{"thread":"a","title":"Kestrel","persona":"res","name":"Researcher","machine":"mini","#
             + #""line":"Allow fetch?","since":7,"lane":false}"#
         let glance = #"{"at":42,"asks":[\#(row)],"blocked":[],"running":[]}"#
         let posted = Answer(chunks: ["live activity on"])

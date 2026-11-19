@@ -3,6 +3,11 @@ import ComposableArchitecture
 import CooeeCore
 import CooeeFeatures
 
+/// The surfaces' intents (#662), for the app target's `AppIntentsPackage`.
+public struct SurfaceIntents: AppIntentsPackage {
+    public static var includedPackages: [any AppIntentsPackage.Type] { [FeatureIntents.self] }
+}
+
 /// A persona, over the App Group copy the app keeps.
 public struct PersonaEntity: AppEntity {
     public static let typeDisplayRepresentation: TypeDisplayRepresentation = "Persona"
