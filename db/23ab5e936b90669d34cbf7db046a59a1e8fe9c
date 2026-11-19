@@ -1,0 +1,90 @@
+Decided: a send refused because the terminal is gone restarts the chat's agent (same persona, folder, machine) under a new terminal name, then sends again once.
+Because: "Sending a message in a chat whose agent is gone starts a fresh agent for that chat"
+Decided: the agent's ACP session id is saved on the thread each time a session comes up, and a restart passes it as shed's --resume; a failed resume falls back to a fresh start with one note.
+Because: crates/cooee-server/src/hub/models.rs:58
+Decided: replayed events from a resumed session are skipped, so the old turns aren't stored a second time.
+Because: crates/cooee-server/src/hub/events.rs:103
+Decided: POST /threads/{id}/restart runs the same restart; it does nothing while the agent runs, so a second tap is harmless.
+Because: crates/cooee-server/src/hub/restart.rs:17
+Decided: the app shows Restart on the "The agent is gone" line only while the chat is ended, the same way the "Updated" line shows View.
+Because: apple/Sources/CooeeUI/Items.swift:36
+Rejected: restarting on every ended chat — an agent that exited or a closed chat still refuses a send, as before.
+Rejected: a hub-side recipe starter — the route already builds the thread's recipe for retry; restart and send reuse it.
+Check: chat.rs's three gone_* tests fail at the first commit and pass at the head; r21 still gets 410 for an approval tap.
+Owner: When shed restarts and a chat's agent is lost, sending a message or tapping Restart brings it back, picking up the old session when it can.
+
+Decided: merged origin/staging; its HeaderRenderTests.swift change and this branch's both kept, apple-check green on the merge
+Because: apple/Tests/CooeeUITests/HeaderRenderTests.swift:40
+Decided: a send refused because the terminal is gone restarts the chat's agent (same persona, folder, machine), then sends again once.
+Because: "Sending a message in a chat whose agent is gone starts a fresh agent for that chat"
+Decided: the agent's ACP session id is saved on the thread and a restart passes it as --resume; a failed resume starts fresh with one note.
+Because: crates/cooee-server/src/hub/models.rs:58
+Decided: replayed events from a resumed session are skipped, so old turns aren't stored twice.
+Because: crates/cooee-server/src/hub/events.rs:103
+Decided: Restart shows on the gone line only while the chat is ended; the restart does nothing while the agent runs.
+Because: apple/Sources/CooeeUI/Items.swift:36
+Rejected: restarting on every ended chat — an exited agent or a closed chat still refuses a send, as before.
+Check: chat.rs's three gone tests fail at ca3bd3ceb and pass at the head.
+Owner: The branch now includes the latest staging; the restart feature itself is unchanged.
+
+Decided: merged origin/staging again; it changed only a doc comment in config.rs and docs/configuration.md, no conflict
+Because: crates/cooee-core/src/config.rs:1
+Decided: a send refused because the terminal is gone restarts the chat's agent (same persona, folder, machine), then sends again once.
+Because: "Sending a message in a chat whose agent is gone starts a fresh agent for that chat"
+Decided: the agent's ACP session id is saved on the thread and a restart passes it as --resume; a failed resume starts fresh with one note.
+Because: crates/cooee-server/src/hub/models.rs:58
+Decided: Restart shows on the gone line only while the chat is ended; the restart does nothing while the agent runs.
+Because: apple/Sources/CooeeUI/Items.swift:36
+Rejected: restarting on every ended chat — an exited agent or a closed chat still refuses a send, as before.
+Check: cargo test -p cooee --test chat passes at the merge head; the three gone tests fail at ca3bd3ceb.
+Owner: The branch now includes the latest staging; the restart feature itself is unchanged.
+
+Decided: merged origin/staging; ItemView keeps staging's equatable() and this branch's restart, and == also compares whether Restart is offered
+Because: apple/Sources/CooeeUI/Items.swift:11
+Decided: the live threads client uses staging's shared client(server) for restart too
+Because: apple/Sources/CooeeApp/Live/ThreadsClient+Live.swift:43
+Rejected: none
+Check: the Restart button disappears after a restart even though the gone item itself is unchanged; apple-check and cargo test -p cooee --test chat pass at the head
+Owner: The branch now includes the latest staging; the restart feature itself is unchanged.
+
+Decided: merged origin/staging; FrameClientTests.swift keeps staging's sent-file test and this branch's restart test side by side
+Because: apple/Tests/CooeeAPITests/FrameClientTests.swift:13
+Rejected: none
+Check: apple-check and cargo test -p cooee --test chat pass at a2ce5d32e
+Owner: The branch now includes the latest staging; the restart feature itself is unchanged.
+
+Decided: a restart sets the chat's last applied shed event to 0, so the new shed's events, which number from 1 again, are applied
+Because: crates/cooee-server/src/hub/restart.rs:74
+Decided: after a cooee restart the chat's applied seq is the newest seq since its last "ended" line, not across old sheds
+Because: crates/cooee-core/src/chat/log.rs:42
+Decided: the fake shed's vanish now also restarts its event numbering, as a real shed restart does
+Because: crates/cooee/tests/support/shed.rs:292
+Rejected: a shed epoch in hello — shed has none; the ended line already marks where an old shed's numbering stops
+Check: the three gone tests hang at 2faf8d126 (tests only) and pass at the head; the restart test also answers after a cooee restart
+Owner: After a shed restart, the restarted agent's replies now show up in the chat again.
+
+Decided: merged origin/staging (#645 startup, #650 report mode); no conflict, Rust gates and apple-check green at the merge
+Because: crates/cooee-server/src/hub/restart.rs:74
+Decided: no code change for the apple FAIL; the CI runner stopped at the Xcode license prompt (exit 69) before building
+Because: apple/Sources/CooeeUI/Items.swift:36
+Rejected: changing the workflow to accept the license — it needs sudo on the runner host, an owner call
+Check: the apple job reruns on this push; if it fails again at the license step, the runner needs `sudo xcodebuild -license accept`
+Owner: The branch now includes the latest staging; the CI Mac's Xcode license may still need accepting on the runner.
+
+Decided: merged origin/staging (#651, #652, #653); no conflict, Rust gates, chat tests and apple-check green at the merge
+Because: crates/cooee-server/src/hub/restart.rs:74
+Decided: no code change for the apple FAIL; the runner's CoreSimulator (1051.55.0) is older than its Xcode needs, so no iPhone 17 simulator exists there
+Because: apple/Sources/CooeeUI/Items.swift:36
+Rejected: changing the workflow's simulator destination — the runner's simulator runtime needs updating on the host, an owner call
+Check: the apple job reruns on this push; if xcodebuild again says CoreSimulator is out of date, the runner Mac needs its Xcode components or simulator runtime updated
+Owner: The branch now includes the latest staging; the CI Mac's iPhone simulator is out of date and may need updating before the apple check can pass.
+
+Decided: merged origin/staging (#647 native chat offline copy, toasts, pull to refresh); no conflict, the restart feature is unchanged
+Because: crates/cooee-server/src/hub/restart.rs:74
+Decided: the merge pushed ChatFeature.outbox over 25 lines, so its retry case is its own function; the restart test expects #647's toast
+Because: apple/Sources/CooeeFeatures/ChatOutbox.swift:47
+Decided: no workflow change for the apple FAIL; xcodebuild found no "iPhone 17" simulator on the runner, a destination staging's workflow sets
+Because: .github/workflows/apple.yml:110
+Rejected: changing the workflow's simulator destination in this PR — every PR uses it; the runner's simulator runtime is a host fix for the owner
+Check: the apple job reruns on this push; if it again lists no iOS Simulator device, the runner Mac needs an iPhone 17 simulator (or its runtime) installed
+Owner: The branch now includes the latest staging; the CI Mac still has no iPhone 17 simulator, so the apple check may fail until one is installed there.
