@@ -13,6 +13,7 @@ internal struct Frame: Sendable, CustomTestStringConvertible {
     internal let palette: Palette
     internal let phone: Bool
     internal var folder = "v1"
+    internal var chrome = true
     internal let view: @MainActor @Sendable () -> AnyView
 
     internal var testDescription: String { name }
@@ -21,7 +22,13 @@ internal struct Frame: Sendable, CustomTestStringConvertible {
     internal func render(_ style: Style = .bundled, margin: CGFloat = 0, around: Color = .clear) -> CGImage? {
         let look = Look(palette: palette, style: style, still: true)
         let content = Group {
-            if phone { PhoneChrome { view() } } else { MacChrome { view() } }
+            if !chrome {
+                view()
+            } else if phone {
+                PhoneChrome { view() }
+            } else {
+                MacChrome { view() }
+            }
         }
         .frame(width: width, height: height).background(palette.background)
         .environment(\.look, look).environment(\.colorScheme, palette.dark ? .dark : .light)
@@ -44,6 +51,12 @@ internal struct Frame: Sendable, CustomTestStringConvertible {
         _ view: @escaping @MainActor @Sendable () -> some View
     ) -> Frame {
         Frame(name: name, width: width, height: height, palette: palette, phone: false, view: { AnyView(view()) })
+    }
+
+    internal func bare() -> Frame {
+        var frame = self
+        frame.chrome = false
+        return frame
     }
 
     internal func filed(_ folder: String) -> Frame {
