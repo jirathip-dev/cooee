@@ -101,7 +101,7 @@ impl FakeShed {
             let said = "Questions for you:\n1. **HTML or SwiftUI?**\n\n**Call voice:** the iOS target building.";
             (vec![reply(said, "end_turn")], "end_turn")
         } else if prompt.contains("commands") {
-            let mut events = Vec::new();
+            let mut events = vec![plan("Run the checks", "in_progress")];
             for (id, title) in [
                 ("k1", "$ cargo fmt"),
                 ("k2", "$ cargo clippy"),
@@ -381,6 +381,13 @@ fn tool(id: &str, title: &str, status: &str) -> EventKind {
         title: title.to_owned(),
         status: status.to_owned(),
         kind: None,
+    }
+}
+
+fn plan(content: &str, status: &str) -> EventKind {
+    let entry = json!({ "content": content, "priority": "high", "status": status });
+    EventKind::Plan {
+        entries: vec![entry],
     }
 }
 
