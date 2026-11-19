@@ -464,7 +464,7 @@ fn a_reply_delivers_its_text_before_its_item_and_replays_only_the_item() {
     let item = outs.iter().position(|o| o.event == "item").unwrap();
     assert_eq!(joined(outs.get(..item).unwrap()), "Done.");
     assert_eq!(joined(outs.get(item..).unwrap()), "");
-    assert!(lock(&lock(&hub.threads)["t"]).unsent.is_empty());
+    assert_eq!(lock(&lock(&hub.threads)["t"]).unsent, "");
 
     let Resume::Replay(replayed) = hub.subscribe("t", &before).unwrap().0 else {
         panic!("reset");
