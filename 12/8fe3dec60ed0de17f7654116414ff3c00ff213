@@ -1,0 +1,10 @@
+Decided: weather reads the scene block's optional load (host load over its limit): under 0.5 clear, under 1 cloudy, 1 and up storm
+Because: "Scene weather follows host load (clear / cloudy / storm thresholds)"
+Decided: night is 19:00 to 07:00 local, and the [☾] pick saved in Settings.night overrides it
+Because: apple/Sources/CooeeCore/Settings.swift:59
+Decided: › is an ActButton on the scene block's optional next tap, so the plugin names the next repo's action
+Because: apple/Sources/CooeeUI/Sky.swift:52
+Rejected: a swipe gesture — the lanes strip already scrolls sideways, so a swipe would fight it; › is enough for "Swipe or ›"
+Rejected: the pick-night key in Blocks.swift — it would push that file over SwiftLint's 250 lines
+Check: scene-sky-{clear,cloudy,storm,night}-light snapshots in apple/design/packs/scene and the TestStore .night(true) save
+Owner: In Scene style the lanes strip shows weather from the Mac's load, goes dark at night (the moon button switches it and is remembered), and › goes to the next repo.
