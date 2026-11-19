@@ -1,0 +1,23 @@
+Decided: one NSCache keyed by sprite name or the data source's hash, 64 MB cost limit, cost = decoded bytes
+Because: apple/Sources/CooeeUI/Pictures.swift:63
+Decided: decoding runs in a @concurrent function; the block-image decoder asserts it is off the main thread
+Because: apple/Sources/CooeeUI/Pictures.swift:52
+Decided: still renders read sprites synchronously through the same cache, as ImageRenderer runs no .task
+Because: apple/Sources/CooeeUI/Pictures.swift:29
+Rejected: async-only sprites — every design snapshot with a horse would draw blank
+Decided: the NSCache is nonisolated(unsafe) with no comment: NSCache is thread-safe and anti-slop refuses a SAFETY line there
+Because: apple/Sources/CooeeUI/Pictures.swift:20
+Decided: QR codes share the one CIContext; the unused PlatformImage alias is deleted
+Because: "One shared `CIContext`."
+Check: PicturesTests fails with 100 reads when the cache lookup in sprite() is removed
+Owner: Sprites and chat pictures are decoded once and kept, and big pictures no longer decode on the main thread.
+
+Decided: Pictures is an actor; block images decode on it and assert its isolation with preconditionIsolated
+Because: apple/Sources/CooeeUI/Pictures.swift:52
+Rejected: precondition(!Thread.isMainThread) — swiftpm's test helper runs global-executor jobs on thread 0, so CI's full suite tripped it at random
+Decided: cache lookups and still sprite reads stay nonisolated so a view body draws them synchronously
+Because: apple/Sources/CooeeUI/Pictures.swift:28
+Decided: one NSCache keyed by sprite name or the data source's hash, 64 MB cost limit, cost = decoded bytes
+Because: apple/Sources/CooeeUI/Pictures.swift:63
+Check: the full CooeeUITests suite passes 4 of 4 runs, where the thread check failed 2 of 3
+Owner: Sprites and chat pictures are decoded once and kept, and big pictures decode in the background.
