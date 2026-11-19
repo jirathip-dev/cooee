@@ -1,13 +1,34 @@
 use std::fs;
 
 use cooee_core::plugins::Manifest;
-use serde_json::Value;
+use serde_json::{Value, json};
 
-const SCHEMA: &str = include_str!("../../../docs/plugins/screens.schema.json");
+fn schema() -> Value {
+    let defs = blocks::codegen::schema().get("$defs").cloned();
+    let places = json!({ "type": "array", "items": { "type": "object", "required": ["type"], "properties": {
+        "type": { "enum": ["header-strip", "chat-cards", "menu-row"] }, "id": { "type": "string" },
+        "persona": { "type": "string" }, "label": { "type": "string" }, "subtitle": { "type": "string" },
+        "screen": { "type": "string" } } } });
+    let strings = json!({ "type": "array", "items": { "type": "string" } });
+    let permissions = json!({ "type": "object", "properties": { "places": strings, "push": { "type": "boolean" },
+        "chat_cards": { "type": "boolean" }, "actions": strings, "destructive": strings, "network": strings } });
+    let answer = json!({ "seq": { "type": "integer" }, "ops": { "type": "array", "items": { "$ref": "#/$defs/Op" } },
+        "toast": { "type": "string" }, "close": { "type": "boolean" }, "open": { "type": "string" } });
+    let when = |key: &str, then: Value| json!({ "if": { "type": "object", "required": [key] }, "then": then });
+    json!({ "$defs": defs, "allOf": [
+        { "if": { "type": "array" }, "then": { "items": { "$ref": "#" } } },
+        when("type", json!({ "$ref": "#/$defs/Block" })),
+        when("ops", json!({ "properties": answer })),
+        when("places", json!({ "properties": { "places": places, "claims": strings } })),
+        when("permissions", json!({ "properties": { "permissions": permissions } })),
+        when("block", json!({ "properties": { "block": { "$ref": "#/$defs/Block" } } })),
+        { "type": ["array", "object"] },
+    ] })
+}
 
 /// Checks each file (`what`: `plugin` or `layout`), printing `ok` or `FAIL` and its `$.path: why` lines.
 pub fn run(what: &str, paths: &[&str]) -> Result<(), String> {
-    let schema: Value = serde_json::from_str(SCHEMA).map_err(|e| format!("the schema: {e}"))?;
+    let schema = schema();
     let mut failed = 0;
     for p in paths {
         let read = fs::read_to_string(p).map_err(|e| e.to_string());
@@ -73,10 +94,11 @@ fn list<'a>(s: &'a Value, key: &str) -> impl Iterator<Item = &'a Value> {
 
 fn check(root: &Value, s: &Value, v: &Value, at: &str, out: &mut Vec<String>) {
     if let Some(r) = s.get("$ref").and_then(Value::as_str) {
-        let target = r
-            .strip_prefix("#/$defs/")
-            .and_then(|d| root.get("$defs")?.get(d))
-            .unwrap_or(&Value::Null);
+        let target = match r.strip_prefix("#/$defs/") {
+            Some(d) => root.get("$defs").and_then(|defs| defs.get(d)),
+            None => (r == "#").then_some(root),
+        };
+        let target = target.unwrap_or(&Value::Null);
         check(root, target, v, at, out);
     }
     if let Some(t) = s.get("type") {
@@ -102,27 +124,53 @@ fn check(root: &Value, s: &Value, v: &Value, at: &str, out: &mut Vec<String>) {
     for sub in list(s, "allOf") {
         check(root, sub, v, at, out);
     }
-    let tries: Vec<Vec<String>> = list(s, "anyOf").map(|b| errors(root, b, v, at)).collect();
-    if !tries.is_empty() && tries.iter().all(|e| !e.is_empty()) {
-        let each: Vec<String> = tries.iter().map(|e| e.join(", ")).collect();
-        out.push(format!(
-            "{at}: matches none of its forms ({})",
-            each.join(" | ")
-        ));
+    let forms: Vec<&Value> = list(s, "anyOf").chain(list(s, "oneOf")).collect();
+    let mut fit: Vec<&Value> = forms.iter().copied().filter(|f| fits(f, v)).collect();
+    if fit.iter().any(|f| named(f)) {
+        fit.retain(|f| named(f));
+    }
+    let tries: Vec<Vec<String>> = (if fit.is_empty() { &forms } else { &fit })
+        .iter()
+        .map(|b| errors(root, b, v, at))
+        .collect();
+    match tries.as_slice() {
+        [one] => out.extend(one.iter().cloned()),
+        _ if tries.iter().all(|e| !e.is_empty()) && !tries.is_empty() => {
+            let each: Vec<String> = tries.iter().map(|e| e.join(", ")).collect();
+            out.push(format!(
+                "{at}: matches none of its forms ({})",
+                each.join(" | ")
+            ));
+        }
+        _ => {}
     }
     if s.get("not")
         .is_some_and(|n| errors(root, n, v, at).is_empty())
     {
-        out.extend(
-            list(&s["not"], "required")
-                .map(|k| format!("{at}.{}: must not be sent", k.as_str().unwrap_or(""))),
-        );
+        out.push(format!("{at}: {} is not allowed", short(v)));
     }
     if let (Some(cond), Some(then)) = (s.get("if"), s.get("then"))
         && errors(root, cond, v, at).is_empty()
     {
         check(root, then, v, at, out);
     }
+}
+
+fn consts(form: &Value) -> impl Iterator<Item = (&String, &Value)> {
+    let props = form.get("properties").and_then(Value::as_object);
+    props
+        .into_iter()
+        .flatten()
+        .filter_map(|(k, p)| Some((k, p.get("const")?)))
+}
+
+fn named(form: &Value) -> bool {
+    consts(form).next().is_some()
+}
+
+fn fits(form: &Value, v: &Value) -> bool {
+    let typed = form.get("type").and_then(Value::as_str);
+    typed.is_none_or(|t| is(v, t)) && consts(form).all(|(k, c)| v.get(k) == Some(c))
 }
 
 fn fields(root: &Value, s: &Value, v: &Value, at: &str, out: &mut Vec<String>) {

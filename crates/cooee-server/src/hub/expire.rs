@@ -176,7 +176,7 @@ mod tests {
         hub.watch(t0 + 2 * EXPIRY);
         for id in ["chat", "run"] {
             assert_eq!(denials(&sent, id), 1, "{id}");
-            let block = card(&hub, id).block().unwrap();
+            let block = serde_json::to_value(card(&hub, id).block()).unwrap();
             let line = block["blocks"].as_array().unwrap().last().unwrap()["markdown"].clone();
             assert_eq!(line, "✓ reject · expired", "{id}");
         }
@@ -225,7 +225,7 @@ mod tests {
             waiting[0].try_recv(),
             Err(std::sync::mpsc::TryRecvError::Disconnected)
         );
-        let block = card(&hub, "run").block().unwrap();
+        let block = serde_json::to_value(card(&hub, "run").block()).unwrap();
         let line = block["blocks"].as_array().unwrap().last().unwrap()["markdown"].clone();
         assert_eq!(line, "declined");
         assert_eq!(

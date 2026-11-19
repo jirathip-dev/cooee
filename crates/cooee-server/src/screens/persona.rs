@@ -5,6 +5,7 @@
 
 use std::sync::Arc;
 
+use blocks::{AppBlock, Block};
 use cooee_core::{
     Config, Kind,
     agents::{self, Agent},
@@ -12,8 +13,8 @@ use cooee_core::{
     routines::{Mark, Place, Routine},
     skills,
 };
-use serde::Deserialize;
-use serde_json::{Map, Value, json};
+use serde::{Deserialize, Serialize};
+use serde_json::{Map, Value};
 use topcoat::{
     Result,
     context::{Cx, app_context},
@@ -81,7 +82,9 @@ pub async fn action(cx: &Cx, Json(a): Json<Act>) -> Result<Answer<Value>> {
         "save" => match serde_json::from_value::<Agent>(Value::Object(a.values)) {
             Ok(p) => {
                 let Answer(saved) = persona_save(cx, Agent { id, ..p }).await?;
-                Ok(Answer(saved.map(|p| json!(p))))
+                Ok(Answer(
+                    saved.and_then(|p| serde_json::to_value(p).map_err(refused)),
+                ))
             }
             Err(e) => Ok(Answer(Err(refused(e)))),
         },
@@ -95,7 +98,7 @@ pub async fn action(cx: &Cx, Json(a): Json<Act>) -> Result<Answer<Value>> {
                 .to_owned();
             let tested = routines::on(cx, move |r| r.test(&routine, crate::hub::now())).await;
             Ok(Answer(match tested {
-                Ok(_) => fill(cx, id).await,
+                Ok(_) => screen(cx, id).await,
                 Err(e) => Err(e),
             }))
         }
@@ -129,7 +132,7 @@ async fn clear(cx: &Cx, id: String) -> Result<Value, HubError> {
         Ok(id)
     })
     .await?;
-    fill(cx, id).await
+    screen(cx, id).await
 }
 
 async fn teach(
@@ -167,12 +170,8 @@ async fn teach(
             id: act.to_owned(),
             name: name.to_owned(),
         };
-        Ok(json!(hub.queue_as(
-            &thread,
-            (text, &key),
-            &[],
-            Some(mark)
-        )?))
+        let queued = hub.queue_as(&thread, (text, &key), &[], Some(mark))?;
+        serde_json::to_value(queued).map_err(refused)
     })
     .await
 }
@@ -188,7 +187,41 @@ async fn add_skill(cx: &Cx, id: String, name: String) -> Result<Value, HubError>
         library::add(&home, &sources, &name, &data.join("skills-fetch")).map_err(refused)
     })
     .await?;
-    fill(cx, id).await
+    screen(cx, id).await
+}
+
+async fn screen(cx: &Cx, id: String) -> Result<Value, HubError> {
+    serde_json::to_value(fill(cx, id).await?).map_err(refused)
+}
+
+#[derive(Serialize)]
+struct RoutineRow<'a> {
+    id: &'a str,
+    name: &'a str,
+    when: String,
+    on: bool,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    url: Option<&'a str>,
+}
+
+#[derive(Serialize)]
+struct PlaceRow<'a> {
+    id: &'a str,
+    plugin: &'a str,
+    title: &'a str,
+    open: &'a str,
+}
+
+#[derive(Serialize)]
+struct Skill {
+    name: String,
+    description: String,
+}
+
+#[derive(Serialize)]
+struct Teach {
+    label: &'static str,
+    action: &'static str,
 }
 
 fn data(cx: &Cx) -> (std::path::PathBuf, Option<std::path::PathBuf>) {
@@ -196,7 +229,7 @@ fn data(cx: &Cx) -> (std::path::PathBuf, Option<std::path::PathBuf>) {
     (d.0.clone(), d.1.clone())
 }
 
-async fn fill(cx: &Cx, id: String) -> Result<Value, HubError> {
+async fn fill(cx: &Cx, id: String) -> Result<Block, HubError> {
     let all = routines::on(cx, |r| {
         Ok(r.list()?
             .into_iter()
@@ -210,7 +243,12 @@ async fn fill(cx: &Cx, id: String) -> Result<Value, HubError> {
     let (data, config) = data(cx);
     blocking(cx, move |hub| {
         let p = agents::find(config.as_deref(), &data, &id).map_err(refused)?;
-        let chats: Vec<String> = hub.list().into_iter().filter(|t| t.persona == p.id).map(|t| t.id).collect();
+        let chats: Vec<String> = hub
+            .list()
+            .into_iter()
+            .filter(|t| t.persona == p.id)
+            .map(|t| t.id)
+            .collect();
         let mine = |(_, r): &&(Option<String>, Routine)| match &r.place {
             Place::Chat { thread } => chats.contains(thread),
             Place::NewThread { who } => who.profile == p.id,
@@ -218,72 +256,94 @@ async fn fill(cx: &Cx, id: String) -> Result<Value, HubError> {
         let mut routines: Vec<Value> = all.iter().filter(mine).map(routine).collect();
         routines.extend(beat);
         let places = agents::places(config.as_deref(), &data, &p.id).map_err(refused)?;
-        let places: Vec<Value> = places
+        let places: Vec<PlaceRow> = places
             .iter()
-            .map(|pl| json!({ "id": pl.id, "plugin": pl.plugin, "title": pl.label, "open": pl.screen }))
+            .map(|pl| PlaceRow {
+                id: &pl.id,
+                plugin: &pl.plugin,
+                title: &pl.label,
+                open: &pl.screen,
+            })
             .collect();
         let home = config.as_deref().and_then(|c| agents::home(c, &p.id).ok());
         let notes = home.as_ref().map(memory::notes).unwrap_or_default();
         let skills = home.as_ref().map(skills_block).unwrap_or_default();
         let library = library_rows(index.as_deref(), &skills);
-        let mut screen: Value = serde_json::from_str(BUNDLED).map_err(refused)?;
-        if let Some(o) = screen.as_object_mut() {
-            o.insert("title".to_owned(), json!(p.name));
-        }
-        for block in screen.get_mut("blocks").and_then(Value::as_array_mut).into_iter().flatten() {
-            match block["type"].as_str() {
-                Some("routines") => block["rows"] = json!(routines),
-                Some("places") => block["rows"] = json!(places),
-                Some("skills") => {
-                    block["rows"] = json!(skills);
-                    block["library"] = json!(library);
+        let mut screen = super::bundled(BUNDLED)?.title(p.name);
+        let blocks = screen.blocks.get_or_insert_default();
+        for block in blocks.iter_mut() {
+            let Block::App(block) = block else { continue };
+            let more = &mut block.more;
+            let mut put = |key: &str, value: Value| more.insert(key.to_owned(), value);
+            match block.kind.as_str() {
+                "routines" => put("rows", Value::from(routines.clone())),
+                "places" => put("rows", to_value(&places)?),
+                "skills" => {
+                    put("rows", to_value(&skills)?);
+                    put("library", to_value(&library)?)
                 }
-                Some("memory") => {
-                    block["count"] = json!(notes.len());
-                    block["notes"] = json!(notes);
+                "memory" => {
+                    put("count", Value::from(notes.len()));
+                    put("notes", to_value(&notes)?)
                 }
-                _ => {}
-            }
+                _ => None,
+            };
         }
-        let rows: Vec<Value> = TEACH
+        let rows = TEACH
             .iter()
-            .map(|(act, label, _)| json!({ "label": label, "action": act }))
-            .collect();
-        if let Some(blocks) = screen.get_mut("blocks").and_then(Value::as_array_mut) {
-            blocks.push(json!({ "type": "actions", "id": "actions", "rows": rows }));
-        }
+            .map(|&(act, label, _)| Teach { label, action: act });
+        let actions = AppBlock {
+            kind: "actions".to_owned(),
+            id: Some("actions".to_owned()),
+            fallback: None,
+            more: Map::from_iter([("rows".to_owned(), to_value(&rows.collect::<Vec<_>>())?)]),
+        };
+        blocks.push(Block::App(Box::new(actions)));
         Ok(super::core(screen))
     })
     .await
 }
 
-fn skills_block(home: &agents::Home) -> Vec<Value> {
+fn to_value(v: &impl Serialize) -> Result<Value, HubError> {
+    serde_json::to_value(v).map_err(refused)
+}
+
+fn skills_block(home: &agents::Home) -> Vec<Skill> {
     let all = cooee_core::skills::list(home);
     all.iter()
-        .map(|s| json!({ "name": s.name, "description": s.description }))
+        .map(|s| Skill {
+            name: s.name.clone(),
+            description: s.description.clone(),
+        })
         .collect()
 }
 
-fn library_rows(index: Option<&std::path::Path>, mine: &[Value]) -> Vec<Value> {
+fn library_rows(index: Option<&std::path::Path>, mine: &[Skill]) -> Vec<Skill> {
     let starter = library::starter();
     let sources = library::index(index).unwrap_or_default();
     let names = sources.iter().flat_map(|s| s.skills.iter());
     names
-        .filter(|n| !mine.iter().any(|m| m["name"] == n.as_str()))
+        .filter(|n| !mine.iter().any(|m| &m.name == *n))
         .map(|n| {
             let about = starter
                 .iter()
                 .find(|s| &s.name == n)
-                .map(|s| s.description.as_str());
-            json!({ "name": n, "description": about.unwrap_or_default() })
+                .map(|s| s.description.clone());
+            Skill {
+                name: n.clone(),
+                description: about.unwrap_or_default(),
+            }
         })
         .collect()
 }
 
 fn routine((url, r): &(Option<String>, Routine)) -> Value {
-    let mut row = json!({ "id": r.id, "name": r.name, "when": r.when(), "on": r.paused.is_none() });
-    if let (Some(url), Some(o)) = (url, row.as_object_mut()) {
-        o.insert("url".to_owned(), json!(url));
-    }
-    row
+    let row = RoutineRow {
+        id: &r.id,
+        name: &r.name,
+        when: r.when(),
+        on: r.paused.is_none(),
+        url: url.as_deref(),
+    };
+    serde_json::to_value(row).unwrap_or_default()
 }
