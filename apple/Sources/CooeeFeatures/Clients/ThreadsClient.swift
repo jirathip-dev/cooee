@@ -22,6 +22,7 @@ public struct ThreadsClient: Sendable {
     public var input: @Sendable (_ server: Server, _ persona: String, _ input: BrowserInput) async throws -> Void
     public var live: @Sendable (_ server: Server, _ persona: String) -> AsyncThrowingStream<LiveEvent, any Error> =
         { _, _ in .finished() }
+    public var changes: @Sendable (_ server: Server) -> AsyncStream<Void> = { _ in .finished }
     public var events:
         @Sendable (_ server: Server, _ thread: String, _ since: String) -> AsyncThrowingStream<StreamEvent, any Error> =
             { _, _, _ in .finished() }

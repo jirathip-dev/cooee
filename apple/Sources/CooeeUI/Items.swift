@@ -54,6 +54,8 @@ internal struct ItemView: View, Equatable {
             ScreenItemView(screen: screen)
         case .call(let call):
             CallBlock(call: call)
+        case .link(_, let link):
+            LinkLine(link: link)
         }
     }
 }
@@ -182,7 +184,8 @@ internal struct CodeBlock: View {
             }
             .padding(.horizontal, 12).frame(height: 32)
             .background(palette.edge.opacity(0.35))
-            Text(code).font(.system(size: 13, design: .monospaced)).foregroundStyle(palette.foreground)
+            Text(lang == "diff" ? Self.diff(code, palette) : AttributedString(code))
+                .font(.system(size: 13, design: .monospaced)).foregroundStyle(palette.foreground)
                 .padding(12).frame(maxWidth: .infinity, alignment: .leading)
                 .fixedSize(horizontal: false, vertical: true)
         }

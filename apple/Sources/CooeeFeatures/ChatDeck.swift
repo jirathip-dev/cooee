@@ -91,7 +91,7 @@ extension ChatFeature.State {
         places.enumerated().map { index, place in
             let first = places.firstIndex { $0.plugin == place.plugin } == index
             let waiting = deck.needsYou(place.plugin)
-            return place.count ?? (first && waiting > 0 ? waiting : nil)
+            return strips[place.id]?.count ?? place.count ?? (first && waiting > 0 ? waiting : nil)
         }
     }
 }
@@ -117,10 +117,10 @@ extension ChatFeature {
         let source = LayoutSource.plugin(place.plugin)
         do {
             for try await event in plugins.events(server, source, place.screen + "/stream") {
-                await send(.cards(.heard(place.plugin, event)))
+                await send(place.cards ? .cards(.heard(place.plugin, event)) : .plugins(.counted(place.id, event)))
             }
         } catch {
-            guard let screen = try? await plugins.screen(server, source, place.screen) else { return }
+            guard place.cards, let screen = try? await plugins.screen(server, source, place.screen) else { return }
             let whole: JSONValue = .object(["op": .string("screen"), "screen": screen])
             await send(.cards(.heard(place.plugin, .object(["ops": .array([whole])]))))
         }

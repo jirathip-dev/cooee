@@ -1,5 +1,4 @@
 import CooeeCore
-import CoreImage
 import SwiftUI
 
 internal struct ImagesBlock: View {
@@ -49,8 +48,12 @@ private struct Picture: View {
 
     fileprivate var body: some View {
         let src = item.string("src") ?? ""
-        if let image = Self.decoded(src) {
-            Image(decorative: image, scale: 1).resizable().aspectRatio(contentMode: fit ? .fit : .fill)
+        if src.hasPrefix("data:image/") {
+            Decoded(source: .data(src)) {
+                Image(decorative: $0, scale: 1).resizable().aspectRatio(contentMode: fit ? .fit : .fill)
+            } waiting: {
+                alt
+            }
         } else if let url = URL(string: src), url.scheme == "https" || url.scheme == "http" {
             AsyncImage(url: url) {
                 $0.resizable().aspectRatio(contentMode: fit ? .fit : .fill)
@@ -65,13 +68,5 @@ private struct Picture: View {
     private var alt: some View {
         Text(item.string("alt") ?? "").ui(12, .regular, look).foregroundStyle(look.palette.mute)
             .frame(maxWidth: .infinity, maxHeight: .infinity).background(look.palette.card)
-    }
-
-    private static func decoded(_ src: String) -> CGImage? {
-        guard src.hasPrefix("data:image/"), let comma = src.firstIndex(of: ","),
-            let data = Data(base64Encoded: String(src[src.index(after: comma)...])),
-            let image = CIImage(data: data)
-        else { return nil }
-        return CIContext().createCGImage(image, from: image.extent)
     }
 }

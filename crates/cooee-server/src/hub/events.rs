@@ -211,7 +211,7 @@ impl Hub {
     }
 
     pub(super) fn queued(&self, live: &mut Live) -> Result<(), HubError> {
-        self.store.save(&live.meta)?;
+        self.save(live)?;
         let data = json!(live.meta.queue).to_string();
         live.emit("queue", data);
         Ok(())

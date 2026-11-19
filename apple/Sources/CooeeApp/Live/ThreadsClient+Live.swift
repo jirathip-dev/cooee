@@ -23,6 +23,7 @@ extension ThreadsClient: DependencyKey {
         resume: { server, thread, note in try await client(server).resumeHandoff(thread, note: note) },
         input: { server, persona, input in try await client(server).input(persona, input) },
         live: { server, persona in client(server).live(persona) },
+        changes: { server in client(server).homeChanges() },
         events: { server, thread, since in client(server).events(thread, since: since) },
         send: { server, thread, text, files, queue in
             try await client(server).send(thread, text: text, files: files, queue: queue)

@@ -90,6 +90,19 @@ async fn events(cx: &Cx) -> Result<Sse<impl Stream<Item = Result<Event>> + use<>
     Ok(Sse::new(stream::iter(first.into_iter().map(Ok)).chain(rest)).keep_alive(KeepAlive::new()))
 }
 
+#[route(GET "/home/events")]
+async fn home_events(cx: &Cx) -> Result<Sse<impl Stream<Item = Result<Event>> + use<>>> {
+    let rest = stream::unfold(hub(cx).home(), |mut rx| async move {
+        match rx.recv().await {
+            Ok(()) | Err(RecvError::Lagged(_)) => Some(((), rx)),
+            Err(RecvError::Closed) => None,
+        }
+    });
+    let all = stream::iter([()]).chain(rest);
+    let all = all.map(|()| Ok(Event::new().event("changed").data("{}")));
+    Ok(Sse::new(all).keep_alive(KeepAlive::new()))
+}
+
 #[derive(Deserialize)]
 struct Of {
     persona: Option<String>,
@@ -511,6 +524,7 @@ pub(super) fn routes(b: RouterBuilder) -> RouterBuilder {
     b.route(thread_list)
         .route(messages)
         .route(events)
+        .route(home_events)
         .route(create)
         .route(retry)
         .route(restart)
