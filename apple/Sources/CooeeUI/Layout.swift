@@ -70,8 +70,10 @@ internal struct Scroller<Content: View>: View {
     @Environment(\.look) private var look
     internal var axis: Axis.Set = .vertical
     internal var end = false
+    internal var top: (() -> Void)?
     @ViewBuilder internal var content: Content
     @State private var pinned = true
+    @State private var high = false
 
     internal var body: some View {
         if look.still {
@@ -86,11 +88,17 @@ internal struct Scroller<Content: View>: View {
             }
             .defaultScrollAnchor(end ? .bottom : .top, for: .initialOffset)
             .defaultScrollAnchor(end ? .bottom : .top, for: .alignment)
-            .defaultScrollAnchor(end && pinned ? .bottom : .top, for: .sizeChanges)
+            .defaultScrollAnchor(end && (pinned || high) ? .bottom : .top, for: .sizeChanges)
             .onScrollGeometryChange(for: Bool.self) {
                 $0.visibleRect.maxY >= $0.contentSize.height - 24
             } action: {
                 pinned = $1
+            }
+            .onScrollGeometryChange(for: CGFloat?.self) {
+                $0.contentOffset.y < $0.containerSize.height ? $0.contentSize.height : nil
+            } action: {
+                high = $1 != nil && top != nil
+                if high { top?() }
             }
             .scrollDismissesKeyboard(.interactively)
         }
