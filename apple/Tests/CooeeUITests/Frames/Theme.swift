@@ -125,6 +125,14 @@ internal struct ThemeFrames {
             .frame(maxHeight: .infinity, alignment: .top)
     }
 
+    private static var nord: MenuFeature.State {
+        var state = MenuFeature.State(server: server, settings: Settings(theme: "tidepool"))
+        state.looks = looks("modern")
+        state.looks.schemes["nord"] = decode(scheme("nord"))
+        state.settings.colours = "nord"
+        return state
+    }
+
     internal static func editor(_ style: String) -> [Frame] {
         [
             frame("look", style) { look(menu(style, broken: false)) },
@@ -136,7 +144,14 @@ internal struct ThemeFrames {
     }
 
     internal static var all: [Frame] {
-        editor("modern") + editor("scene") + [frame("look-broken", "modern") { look(menu("modern", broken: true)) }]
+        editor("modern") + editor("scene") + [
+            frame("look-broken", "modern") { look(menu("modern", broken: true)) },
+            Frame.phone("look-colours-nord", nord.palette(device: false)) {
+                ColourPicks(store: Store(initialState: nord) { EmptyReducer() }).padding(16).padding(.top, 54)
+                    .frame(maxHeight: .infinity, alignment: .top)
+            }
+            .filed("v5-colours"),
+        ]
     }
 
     @MainActor @Test(arguments: all)

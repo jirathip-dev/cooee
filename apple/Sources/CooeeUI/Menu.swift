@@ -122,6 +122,7 @@ internal struct MenuPage: View {
                 }
             }
         }
+        ColourPicks(store: store)
         Group2(header: "Style") {
             ForEach(store.offered, id: \.name) { style in
                 pick(style.label, selected: store.settings.style.name == style.name) { store.send(.style(style.name)) }

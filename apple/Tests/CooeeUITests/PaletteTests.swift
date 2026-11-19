@@ -1,3 +1,6 @@
+import ComposableArchitecture
+import CooeeCore
+import CooeeFeatures
 import CooeeUI
 import Foundation
 import SwiftUI
@@ -37,5 +40,30 @@ internal struct PaletteTests {
         #expect(Palette(tokens: tokens, dark: true) == nil)
         tokens["--fg"] = "#abc"
         #expect(Palette(tokens: tokens, dark: true) == nil)
+    }
+
+    @MainActor @Test
+    internal func pickingASchemeRepaintsEveryScreenInItsOwnModeAndIsKeptUntilTheServerDropsIt() async throws {
+        let nord = try JSONDecoder().decode(
+            ThemeScheme.self, from: Data(contentsOf: Self.schemes.appendingPathComponent("nord.json")))
+        var state = MenuFeature.State(server: nil, settings: Settings(scheme: .light))
+        state.looks.schemes["nord"] = nord
+        let kept = LockIsolated<CooeeCore.Settings?>(nil)
+        let store = TestStore(initialState: state) {
+            MenuFeature()
+        } withDependencies: {
+            $0.settingsStore.save = { kept.setValue($0) }
+        }
+        #expect(store.state.palette(device: true) == .farmLight)
+        await store.send(.colours("nord")) { $0.settings.colours = "nord" }
+        #expect(store.state.palette(device: false) == Palette(tokens: nord.tokens, dark: true))
+        #expect(store.state.dark(device: false))
+        let relaunched = try JSONDecoder().decode(CooeeCore.Settings.self, from: JSONEncoder().encode(kept.value))
+        #expect(relaunched.colours == "nord" && relaunched == store.state.settings)
+        var dropped = store.state
+        dropped.looks.schemes["nord"] = nil
+        #expect(dropped.palette(device: false) == .farmLight)
+        await store.send(.colours(nil)) { $0.settings.colours = nil }
+        #expect(kept.value?.colours == nil && store.state.palette(device: true) == .farmLight)
     }
 }
