@@ -1,0 +1,4 @@
+Decided: merge origin/staging (1b1a94c) keeping both sides; staging's older-page and setup-mode tests moved unchanged into their own file
+Because: apple/Tests/CooeeFeaturesTests/ChatOlderTests.swift:7
+Rejected: trimming test bodies to fit 250 lines — that would weaken staging's assertions
+Owner: The chat work now sits on the newest staging, including loading older messages and colour schemes.
