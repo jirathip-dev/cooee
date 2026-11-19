@@ -1,6 +1,6 @@
 # cooee rules (impl and rev briefs carry these; each names its enforcer)
 
-- Don't comment Rust, Swift or TypeScript code (tests included) except `///` (TS `/** */`, Rust crate-root or `pub mod` `//!`) on public API, `// SAFETY:` above a forced or unsafe operation, `// TODO(#N)` on an open issue and `// biome-ignore <rule>: <why>` — scripts/comments.py (ci/gates/comments.sh), anti-slop no-comments, apple-check TODO step
+- Don't comment Rust or Swift code (tests included) except `///` (Rust crate-root or `pub mod` `//!`) on public API, `// SAFETY:` above a forced or unsafe operation and `// TODO(#N)` on an open issue — scripts/comments.py (ci/gates/comments.sh), anti-slop no-comments, apple-check TODO step
 - Don't leave Swift imports unsorted or unused — anti-slop sorted-imports, swiftlint analyze unused_import (nightly, not the PR)
 - Don't import across Swift layers (Core → API → Features → UI → App) beyond apple/Package.swift's table — anti-slop layer-imports
 - Don't use `Any` or `AnyObject` as a Swift type — anti-slop no-any
@@ -22,6 +22,5 @@
 - Don't leave a temp folder behind a test, pass or fail — ci/gates/test.sh (fresh TMPDIR, ci/test-gate-test.sh)
 - Don't unwrap, expect, panic, `todo!`, `unimplemented!`, `dbg!`, index or slice, `as`-cast, print outside `cooee_core::out` (`say!`, `note!`), `let _ =` a must-use value, allow without a reason or write `unsafe` in Rust (tests may unwrap, expect, panic and index) — clippy deny lints in Cargo.toml (ci/gates/clippy.sh, fixtures in ci/bans-test.sh)
 - Don't sleep or read the clock outside crates/cooee-core/src/clock.rs, or the environment outside crates/cooee-core/src/config.rs (`env_var`) — CI arch-check `thread::sleep`, `SystemTime::now`, `Instant::now`, `env::var` bans (ci/drover-checks-test.sh)
-- Don't use `any`, non-null `!`, `as` but `as const`, `@ts-ignore`/`@ts-expect-error`, `innerHTML`/`outerHTML`/`insertAdjacentHTML`, `eval`/`new Function`, `console.log`, default exports or `enum` in TypeScript, or TypeScript outside a strict tsconfig — scripts/ts-bans.py (ci/gates/bans.sh, fixtures in ci/bans-test.sh)
 - Don't `print(`, use `DispatchQueue` (but Nearby.swift's Network browser), `UserDefaults.standard` outside CooeeApp/Live.swift's client values, `Task.sleep` instead of a clock dependency, `T!`, or `fatalError` without a `// SAFETY:` line right above it in Swift — apple/.swiftlint.yml (ci/swift-bans-test.sh in apple-check)
 - Don't keep a test that would catch no real regression (the areas that must have them: pairing and device trust, approvals and secrets, the hub's message keeping, routines firing once, the MCP proxy's allowlist, layout last-good, plugin isolation): no tests of copy, wording, constants or configuration, no mock that returns what it was told, and extend an area's test file before adding one — review (a tautological test is a blocking rev finding)

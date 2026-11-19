@@ -5,7 +5,7 @@ on:
     types: [opened, edited, synchronize, reopened]
 
 jobs:
-  # #323, #202: drover's lesson-check runs each lesson check in .herdsman/rules.md (#510): a shadow one's failure goes
+  # #323, #202: drover's lesson-check runs each lesson check in .drover/rules.md (#510): a shadow one's failure goes
   # to the job summary and never fails the job, an active one's fails it. The checkers' fixture tests fail it too.
   lessons:
     runs-on: ubuntu-latest
@@ -22,4 +22,4 @@ jobs:
       - name: lesson checks
         env:
           GH_TOKEN: ${{ github.token }}
-        run: drover lesson-check --rules .herdsman/rules.md
+        run: drover lesson-check --rules .drover/rules.md
