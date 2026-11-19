@@ -3,9 +3,9 @@ import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-const [chrome] = process.argv.slice(2);
+const [chrome, swag = '../swag'] = process.argv.slice(2);
 const out = 'apple/Sources/CooeeUI/Sprites', tmp = mkdtempSync(join(tmpdir(), 'spr'));
-const sprites = readFileSync('packs/themes/farm/sprites.svg', 'utf8');
+const sprites = readFileSync(join(swag, 'packs/farm/sprites.svg'), 'utf8');
 const COATS = {
   ch: '--c:#c89a56;--d:#a37a3c;--m:#e8dcc0;--b:#efe7dc', bay: '--c:#8a5a35;--d:#6b4426;--m:#2e231c;--b:#efe7dc',
   gry: '--c:#b9b3a8;--d:#958e83;--m:#ece8e0;--b:#f4f1ea', blk: '--c:#4a4038;--d:#3a322b;--m:#241e19;--b:#efe7dc',
@@ -42,6 +42,6 @@ for (const id of ['edit', 'read', 'run', 'idle', 'done', 'needs', 'fail', 'merge
   shoot(`<style>html,body{margin:0;background:transparent}svg{display:block}.kf2{display:none}</style>
   <svg width=${w} height=${h} viewBox="${box}">${body}</svg>`, w, h, `row-${id}.png`);
 }
-shoot(`<style>html,body{margin:0}svg{display:block;width:402px;height:300px}</style>${readFileSync('packs/themes/farm/scene.svg', 'utf8')}`,
+shoot(`<style>html,body{margin:0}svg{display:block;width:402px;height:300px}</style>${readFileSync(join(swag, 'packs/farm/scene.svg'), 'utf8')}`,
   402, 300, 'scene-strip.png');
 console.log('ok');
