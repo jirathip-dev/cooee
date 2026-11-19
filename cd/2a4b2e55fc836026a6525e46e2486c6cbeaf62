@@ -1,0 +1,7 @@
+Decided: share the existing per-screen stream route in cooee (one upstream per backend and path, broadcast to clients, last screen kept) instead of moving to drover's per-device /stream.
+Because: "3 clients on one screen use 1 upstream stream (or whatever #1318's ADR sets)" and that ADR keeps cooee's old route until drover's slice 5, which has not landed.
+Because: "Shared upstream streams fanned out to clients, with the last screen kept for replay"
+Rejected: wait for drover's /stream — only slice 1 of #1318 is on drover staging; the AC can be met now and the feed is the piece that later multiplexes keys onto /stream.
+Rejected: a hand-written op applier — the pinned blocks crate's Op and apply are reused.
+Check: crates/cooee-server/src/plugin.rs:454 share — the reopen after an end, and the feed removed only under the FEEDS lock when no receiver is left.
+Owner: several phones on one plugin screen now use one plugin connection, and a quiet stream reconnects without the app reloading.
