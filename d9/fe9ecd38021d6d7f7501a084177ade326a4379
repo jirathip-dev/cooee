@@ -1,0 +1,15 @@
+Decided: a DraftStore client saves the thread's text and picked files on every composer change and the chat restores them on .task; sending clears them
+Because: "A draft per thread (text and picked files) kept on the device across back and relaunch, cleared on send"
+Decided: the live store writes one JSON file per server and thread under Application Support, not UserDefaults, since picked photos can be megabytes
+Because: apple/Sources/CooeeApp/Live/DraftStore+Live.swift:6
+Decided: editing a queued chip keeps it queued until send; the send unqueues it and queues the new text in one effect
+Because: "Tap a queued chip: its text returns to the composer for editing; sending replaces it."
+Decided: Quote and Copy as markdown read the raw item text from the reducer's items, so the source is the markdown as written, not the parsed blocks
+Because: apple/Sources/CooeeFeatures/ChatCompose.swift:93
+Decided: photos load through the frames fetch path, generalised to a key path, into their own photos map
+Because: apple/Sources/CooeeFeatures/ChatFrames.swift:26
+Decided: stream helpers painted and upsert moved to ChatStream.swift so ChatFeature.swift stays under SwiftLint's 250 lines
+Because: apple/.swiftlint.yml:31
+Rejected: a debounced draft save on the clock — every existing compose test would end with a pending sleep
+Check: ChatComposeTests fail without restore(), the edit replacement and quote; phone checks 2 and 3 need the TestFlight build
+Owner: photos you send show as thumbnails that open full screen, queued messages can be edited, drafts survive relaunch, and long-press offers Copy as markdown and Quote.
