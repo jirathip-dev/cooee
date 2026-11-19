@@ -1,0 +1,13 @@
+Decided: bush comes from swag at bf9a2c6 (swag#7); cooee's pin moves there and packs/themes/bush/ is deleted
+Because: q2407
+Decided: docs/design/bush/ is deleted too; swag's design/bush/ holds the same sources and its pack.mjs wrote into the deleted folder
+Because: "swag#7 adds packs/bush and the bush-light/bush-dark schemes from PR #687"
+Decided: load_scene.kind "sign" stays the only kind; its levels are sprites.svg's s-sign-moderate/high/catastrophic
+Because: crates/cooee-server/src/look/pack.rs:282
+Decided: the level is the scene block's level (calm, busy, held), else its load at the weather's thresholds
+Because: q2376
+Decided: the sign and the pack's s-scene figures switch on only for a sign theme
+Because: "Farm, kitchen and garden stay pixel-identical."
+Rejected: keeping a cooee copy of the bush pack for the Swift test — two sources of one pack; the test decodes a literal sign theme instead
+Check: swag's bush passes cooee's gate at the pin (look.rs the_theme_gate_passes_the_first_party_packs_and_the_starter) and the sign test reads it
+Owner: The bush theme now comes from swag like farm, kitchen and garden; its picture frames wait on the follow-up you chose in q2404.
