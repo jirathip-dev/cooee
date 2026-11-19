@@ -1,0 +1,11 @@
+Decided: pin blocks at d0882093 and build cards and core screens with its typed kinds; cooee-only persona parts are AppBlocks filled from small serde structs
+Because: q2236
+Decided: the plugin check validates against blocks::codegen::schema() (the schema feature), as the pinned crate exports no SCHEMA const; cooee wraps it with its own answer, places and permissions envelope
+Because: crates/cooee/src/check.rs:6
+Decided: the check picks the anyOf/oneOf form whose const discriminator matches, so a broken row names its field instead of failing every kind
+Because: crates/cooee/src/check.rs:128
+Decided: the plugin check no longer fails an unknown tone or lane word, a missing row or editor id, or a secret's extra value: the blocks schema allows them
+Because: "the plugin check validates against blocks::SCHEMA"
+Rejected: keep cooee's stricter id and secret rules as an overlay — a second hand-kept schema is what the issue removes
+Check: crates/cooee/tests/snapshots were written at staging 5dfa03a4 (commit 1) and every core screen and chat card still matches them
+Owner: Screens and chat cards look the same; cooee now takes its block definitions from the shared blocks library, and plugin check is a little more lenient where that library is.
