@@ -52,6 +52,8 @@ internal struct ItemView: View, Equatable {
             AskCard(ask: ask)
         case .screen(_, let screen):
             ScreenItemView(screen: screen)
+        case .call(let call):
+            CallBlock(call: call)
         }
     }
 }

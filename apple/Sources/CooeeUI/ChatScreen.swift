@@ -34,6 +34,7 @@ internal struct ChatScreen: View {
         actions.new = store.persona.api.id.isEmpty || store.bar != nil ? nil : { store.send(.new) }
         actions.open = { store.send(.plugins(.open(places[$0]))) }
         actions.more = { store.send(.panel(.show(!store.panel))) }
+        actions.voice = voice(store)
         return extras(store, actions)
     }
 
@@ -101,7 +102,7 @@ internal struct ChatScreen: View {
         .task { await store.send(.pick(.load)).finish() }
         .task { await store.send(.machine(.load)).finish() }
         .task { await store.send(.topics(.load)).finish() }
-        .modifier(TopicSheets(store: store))
+        .modifier(TopicSheets(store: store)).modifier(CallCover(store: store))
         .modifier(BrowserPresenting(store: store, wide: !back && store.browser != nil))
         .sheet(item: $store.scope(state: \.screen, action: \.screen)) { PluginScreenSheet(store: $0) }
         .sheet(item: $store.scope(state: \.attaching, action: \.attaching)) { AttachScreen(store: $0) }

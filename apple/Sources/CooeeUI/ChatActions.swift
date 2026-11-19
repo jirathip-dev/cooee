@@ -45,6 +45,7 @@ public struct ChatActions {
     public var asOf: Date?
     public var stopping = false
     public var older: (() -> Void)?
+    public var voice = VoiceActs()
 
     public init(
         draft: Binding<String>? = nil,

@@ -145,6 +145,7 @@ pub(super) mod tests {
                 random_id: "r".to_owned(),
                 files: Vec::new(),
                 routine: None,
+                via: None,
             },
         );
         chat.push(

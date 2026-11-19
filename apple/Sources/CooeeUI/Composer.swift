@@ -25,11 +25,15 @@ internal struct Composer: View {
 
     private var chips: [String] { actions.send == nil ? attachments : actions.files }
     private var shown: String { queued.isEmpty ? hint : "Queue a message" }
+    private var overlaid: Bool { !members.isEmpty || !(actions.voice.dictation?.heard.unsure.isEmpty ?? true) }
 
     internal var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             ForEach(Array(queued.enumerated()), id: \.offset) { index, text in queuedRow(index, text) }
             if !chips.isEmpty { chipRow }
+            if let unsure = actions.voice.dictation?.heard.unsure.first, !actions.voice.listening {
+                Alternatives(unsure: unsure, pick: actions.voice.pick)
+            }
             HStack(alignment: .bottom, spacing: 8) {
                 Button {
                     picking.wrappedValue = true
@@ -50,49 +54,36 @@ internal struct Composer: View {
 
     private var field: some View {
         let palette = look.palette
-        return HStack {
-            if let text = actions.draft {
+        let dictating = actions.voice.dictation != nil
+        return HStack(alignment: dictating ? .top : .center) {
+            if let dictation = actions.voice.dictation, dictation.listening {
+                DictationWords(dictation: dictation)
+            } else if let text = actions.draft {
                 TextField(members.isEmpty ? shown : "", text: text, axis: .vertical).ui(16, .regular, look)
                     .lineLimit(1...5).textFieldStyle(.plain).onSubmit(send).focused($typing)
                     .onChange(of: typing) { _, now in if !now && sending.wrappedValue { post() } }
-                    .foregroundStyle(members.isEmpty ? palette.foreground : .clear).accessibilityLabel(shown)
+                    .foregroundStyle(overlaid ? .clear : palette.foreground).accessibilityLabel(shown)
                     .overlay(alignment: .topLeading) {
-                        if !members.isEmpty { tokens(text.wrappedValue).allowsHitTesting(false) }
+                        if overlaid { tokens(text.wrappedValue).allowsHitTesting(false) }
                     }
             } else {
                 tokens(draft)
             }
             Spacer()
-            if members.isEmpty { Image(systemName: "mic").foregroundStyle(palette.mute) }
+            if members.isEmpty { MicButton(voice: actions.voice) }
         }
-        .padding(.horizontal, 16).frame(minHeight: 42)
+        .padding(.leading, 16).padding(.trailing, dictating ? 8 : 16).padding(.vertical, dictating ? 8 : 0)
+        .frame(minHeight: 42)
         .surface(look, radius: 21)
     }
 
     private func tokens(_ text: String) -> some View {
         let palette = look.palette
         let token = palette.link.opacity(0.2)
-        return Text(
-            BlockView.mentioned(AttributedString(text.isEmpty ? shown : text), members, palette.link, token: token)
-        )
-        .ui(16, .regular, look).foregroundStyle(text.isEmpty ? palette.mute : palette.foreground)
-    }
-
-    private var sendButton: some View {
-        let palette = look.palette
-        return Button(action: send) {
-            Group {
-                if actions.sending {
-                    Spinner()
-                } else {
-                    Image(systemName: "arrow.up").font(.system(size: 17, weight: .bold))
-                }
-            }
-            .foregroundStyle(palette.dark ? Color.black : .white)
-            .frame(width: 42, height: 42)
-            .background(palette.link, in: look.square ? AnyShape(Rectangle()) : AnyShape(Circle()))
-        }
-        .buttonStyle(.plain).accessibilityLabel("Send")
+        let mentioned = BlockView.mentioned(
+            AttributedString(text.isEmpty ? shown : text), members, palette.link, token: token)
+        return Text(DictationWords.underlined(mentioned, actions.voice.dictation, palette.amber))
+            .ui(16, .regular, look).foregroundStyle(text.isEmpty ? palette.mute : palette.foreground)
     }
 
     private var chipRow: some View {
@@ -158,5 +149,25 @@ internal struct Composer: View {
         let scoped = url.startAccessingSecurityScopedResource()
         defer { if scoped { url.stopAccessingSecurityScopedResource() } }
         return (try? Data(contentsOf: url)).map { Attachment(name: url.lastPathComponent, bytes: $0) }
+    }
+}
+
+extension Composer {
+    private var sendButton: some View {
+        let palette = look.palette
+        return Button(action: send) {
+            Group {
+                if actions.sending {
+                    Spinner()
+                } else {
+                    Image(systemName: "arrow.up").font(.system(size: 17, weight: .bold))
+                }
+            }
+            .foregroundStyle(palette.dark ? Color.black : .white)
+            .frame(width: 42, height: 42)
+            .background(palette.link, in: look.square ? AnyShape(Rectangle()) : AnyShape(Circle()))
+            .opacity(actions.voice.listening ? 0.35 : 1)
+        }
+        .buttonStyle(.plain).accessibilityLabel("Send").disabled(actions.voice.listening)
     }
 }

@@ -132,6 +132,9 @@ pub struct Queued {
     /// The routine that sent it (#75).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub routine: Option<crate::routines::Mark>,
+    /// How it was sent (#663).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub via: Option<crate::Via>,
 }
 
 /// One message in a thread.

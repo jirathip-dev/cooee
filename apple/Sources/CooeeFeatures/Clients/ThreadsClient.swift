@@ -28,6 +28,7 @@ public struct ThreadsClient: Sendable {
     public var send:
         @Sendable (_ server: Server, _ thread: String, _ text: String, _ files: [Attachment], _ queue: Bool)
             async throws -> Void
+    public var say: @Sendable (_ server: Server, _ thread: String, _ text: String, _ queue: Bool) async throws -> Void
     public var steer: @Sendable (_ server: Server, _ thread: String, _ randomID: String) async throws -> Void
     public var unqueue: @Sendable (_ server: Server, _ thread: String, _ randomID: String) async throws -> Void
     public var stop: @Sendable (_ server: Server, _ thread: String) async throws -> Void

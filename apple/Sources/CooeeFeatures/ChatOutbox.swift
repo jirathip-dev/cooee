@@ -13,7 +13,8 @@ extension ChatFeature {
 
     internal func send(_ state: inout State) -> Effect<Action> {
         let text = state.draft.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !text.isEmpty || !state.files.isEmpty else { return .none }
+        guard !text.isEmpty || !state.files.isEmpty, state.dictation?.listening != true else { return .none }
+        state.dictation = nil
         let message = Outgoing(id: (state.outbox.map(\.id).min() ?? 0) - 1, text: text, files: state.files)
         state.outbox.append(message)
         state.draft = ""

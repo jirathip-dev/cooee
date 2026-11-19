@@ -27,6 +27,9 @@ extension ThreadsClient: DependencyKey {
         send: { server, thread, text, files, queue in
             try await client(server).send(thread, text: text, files: files, queue: queue)
         },
+        say: { server, thread, text, queue in
+            try await client(server).send(thread, text: text, queue: queue, voice: true)
+        },
         steer: { server, thread, randomID in try await client(server).steer(thread, randomID) },
         unqueue: { server, thread, randomID in try await client(server).unqueue(thread, randomID) },
         stop: { server, thread in try await client(server).cancel(thread) },

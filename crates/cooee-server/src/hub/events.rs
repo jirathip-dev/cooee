@@ -125,6 +125,7 @@ impl Hub {
                     random_id: String::new(),
                     files: Vec::new(),
                     routine: None,
+                    via: None,
                 };
                 changes.push(Change::Item(live.chat.push(now(), event.seq, body)));
             }

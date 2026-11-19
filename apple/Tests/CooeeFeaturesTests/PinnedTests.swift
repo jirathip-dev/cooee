@@ -44,6 +44,8 @@ internal struct PinnedTests {
             $0.threads.events = { _, _, _ in
                 AsyncThrowingStream { $0.finish(throwing: APIError(status: 404, text: "Gone.")) }
             }
+            $0.voice.calls = { AsyncStream { $0.finish() } }
+            $0.push.opened = { AsyncStream { $0.finish() } }
         }
     }
 
@@ -101,5 +103,19 @@ internal struct PinnedTests {
         }
         await store.send(.taps)
         await store.receive(\.open, assert: opened("pushed"))
+    }
+
+    @Test internal func aCallFromSiriOpensThePersonasNewestTopicAndStartsTheCall() async {
+        let store = store([thread("old", updated: 1, unseen: 0), thread("new", updated: 3, unseen: 0)])
+        store.dependencies.voice.calls = {
+            AsyncStream {
+                $0.yield("Coder")
+                $0.finish()
+            }
+        }
+        store.dependencies.voice.hear = { AsyncThrowingStream { $0.finish() } }
+        await store.send(.taps)
+        await store.receive(\.call, assert: opened("new"))
+        await store.receive(\.chat.call.start) { $0.chat?.call = Calling(started: epoch, from: 0, spoken: 0) }
     }
 }

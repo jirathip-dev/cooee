@@ -50,6 +50,8 @@ public struct ChatFeature: Sendable {
         public var machine = MachineChip()
         public var bar: TopicBar?
         public var browser: BrowserSheet?
+        public var dictation: Dictation?
+        public var call: Calling?
         @Presents public var screen: ScreenFeature.State?
         @Presents public var attaching: AttachFeature.State?
 
@@ -110,6 +112,8 @@ public struct ChatFeature: Sendable {
         case photoed(String, Data)
         case topics(TopicAction)
         case browse(Browse)
+        case voice(Voice)
+        case call(CallAction)
 
         @CasePathable
         public enum Delegate: Sendable, Equatable {
@@ -132,6 +136,7 @@ public struct ChatFeature: Sendable {
     @Dependency(\.markdown) internal var markdown
     @Dependency(\.drafts) internal var drafts
     @Dependency(\.kept) internal var kept
+    @Dependency(\.voice) internal var voice
 
     public init() {}
 
@@ -157,6 +162,7 @@ public struct ChatFeature: Sendable {
             }
         }
         Reduce { state, action in agent(&state, action) }
+        Reduce { state, action in spoken(&state, action) }
         Reduce { state, action in frames(&state, action) }
         Reduce { state, action in browser(&state, action) }
         Reduce { state, action in plugins(&state, action) }

@@ -58,6 +58,10 @@ make it with create_routine when they agree.";
 pub const PLAIN: &str =
     "Answer short, plain and conversational: summarise, and give the details only when asked.";
 
+/// What a call's utterance (#663) is told before it, unless its persona's `spoken` says otherwise.
+pub const SPOKEN: &str = "Spoken reply: answer in one to three short plain sentences, no markdown, lists or code; \
+it is read aloud.";
+
 /// The consolidation routine's mark on its runs (#219), and its watermark's key with the persona's id after a `-`.
 pub const CONSOLIDATE: &str = "consolidate";
 
@@ -209,6 +213,10 @@ pub struct Agent {
     /// Its heartbeat (#498); a save that leaves it out keeps it.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub heartbeat: Option<Heartbeat>,
+    /// What a call's utterance is told before it (#663), in place of [`SPOKEN`]; empty: nothing. A save that leaves
+    /// it out keeps it.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub spoken: Option<String>,
     /// Its files' [`disk::version`] when read; a save naming an older one is refused (#360), one naming none isn't.
     #[serde(skip_serializing_if = "String::is_empty")]
     pub version: String,
@@ -504,6 +512,7 @@ pub fn save(config: &Path, data: &Path, mut a: Agent) -> io::Result<Agent> {
         policy: old.policy,
         consolidate: a.consolidate.or(old.consolidate),
         heartbeat: a.heartbeat.or(old.heartbeat),
+        spoken: a.spoken.or(old.spoken),
         lent: None,
         ..a
     };

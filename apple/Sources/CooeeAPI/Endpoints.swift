@@ -4,13 +4,14 @@ import Foundation
 extension Client {
     private struct Message: Encodable {
         private enum CodingKeys: String, CodingKey {
-            case text, files
+            case text, files, via
             case randomID = "random_id"
         }
 
         fileprivate let text: String
         fileprivate let randomID: String
         fileprivate let files: [Attachment]?
+        fileprivate let via: String?
     }
 
     private struct NewThread: Encodable {
@@ -140,9 +141,11 @@ extension Client {
         text: String,
         files: [Attachment] = [],
         queue: Bool = false,
+        voice: Bool = false,
         randomID: String = UUID().uuidString
     ) async throws {
-        let message = Message(text: text, randomID: randomID, files: files.isEmpty ? nil : files)
+        let message = Message(
+            text: text, randomID: randomID, files: files.isEmpty ? nil : files, via: voice ? "voice" : nil)
         try await post("/threads/\(id)/\(queue ? "queue" : "send")", message)
     }
 
