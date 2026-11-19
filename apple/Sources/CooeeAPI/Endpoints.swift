@@ -150,6 +150,10 @@ extension Client {
         try await post("/threads/\(id)/retry", [String: String]())
     }
 
+    public func restart(_ id: String) async throws {
+        try await post("/threads/\(id)/restart", [String: String]())
+    }
+
     public func steer(_ id: String, _ randomID: String) async throws {
         try await post("/threads/\(id)/steer", ["random_id": randomID])
     }

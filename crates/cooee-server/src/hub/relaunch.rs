@@ -127,11 +127,7 @@ impl Hub {
         let handover = format!("{}\n\n{story}", recipe.instructions.trim_end());
         handover.trim_start().clone_into(&mut live.meta.handover);
         live.meta.terminal.clone_from(&terminal);
-        {
-            let mut terminals = lock(&self.terminals);
-            let me = terminals.remove(&old);
-            terminals.extend(me.map(|l| (terminal.clone(), l)));
-        }
+        self.retarget(&old, &terminal);
         let text = if handoff.is_some() {
             agent.clone_into(&mut live.meta.agent);
             live.meta.account.clone_from(&recipe.account);
@@ -164,6 +160,14 @@ impl Hub {
             cooee_core::note!("cooee: {e}");
         }
         Ok(item)
+    }
+}
+
+impl Hub {
+    pub(super) fn retarget(&self, old: &str, terminal: &str) {
+        let mut terminals = lock(&self.terminals);
+        let me = terminals.remove(old);
+        terminals.extend(me.map(|l| (terminal.to_owned(), l)));
     }
 }
 

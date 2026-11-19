@@ -92,6 +92,9 @@ pub struct Thread {
     /// The routine whose run started it (#75).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub routine: Option<crate::routines::Mark>,
+    /// The agent's last reported session id, which a restart resumes (#613).
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    pub session: String,
 }
 
 /// What a [`Thread`] is.

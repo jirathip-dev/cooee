@@ -288,9 +288,12 @@ impl FakeShed {
         procs.insert(name.to_owned(), Proc::default());
     }
 
-    /// Terminal `name` is gone, as after a shed restart.
+    /// Terminal `name` is gone and event seqs start again from 1, as after a shed restart.
     pub fn vanish(&self, name: &str) {
-        self.shared.lock().unwrap().gone.insert(name.to_owned());
+        let mut s = self.shared.lock().unwrap();
+        s.gone.insert(name.to_owned());
+        (s.seq, s.floor) = (0, 0);
+        s.ring.clear();
     }
 
     /// The variables the fake adapter last ran with, as `env` printed them.

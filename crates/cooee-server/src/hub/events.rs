@@ -100,6 +100,9 @@ impl Hub {
             return None;
         }
         live.applied = event.seq;
+        if event.replay {
+            return None;
+        }
         live.moved = now();
         let mut changes = Vec::new();
         if live.stuck {

@@ -1,10 +1,6 @@
 use std::{fs, sync::Mutex, time::Instant};
 
-use cooee_core::{
-    Body, Change, Item, Kind, Queued,
-    routines::Mark,
-    shed_proto::{self, TerminalInfo},
-};
+use cooee_core::{Body, Change, Item, Kind, Queued, routines::Mark, shed_proto};
 
 use super::{Hub, HubError, Live, Upload, lock, now, refused};
 
@@ -208,11 +204,19 @@ impl Hub {
         ended: bool,
         prompt: &str,
     ) -> Result<(), HubError> {
-        let runs = |t: TerminalInfo| t.state == shed_proto::State::Running;
-        if ended && !self.shed.get(terminal).is_ok_and(runs) {
-            return Err(HubError::Refused(
-                "the agent stopped, so it can't take the message".to_owned(),
-            ));
+        let got = ended.then(|| self.shed.get(terminal));
+        match got {
+            Some(Err(e)) if e.no_such_terminal() => return Err(e.into()),
+            Some(t)
+                if !t
+                    .as_ref()
+                    .is_ok_and(|t| t.state == shed_proto::State::Running) =>
+            {
+                return Err(HubError::Refused(
+                    "the agent stopped, so it can't take the message".to_owned(),
+                ));
+            }
+            _ => {}
         }
         if let Err(e) = self.shed.prompt(terminal, prompt) {
             if e.no_link() {

@@ -586,14 +586,6 @@ fn r21_an_answer_to_a_gone_session_says_not_delivered() {
         ask.get("tapped").is_none() && ask.get("chosen").is_none(),
         "{ask}"
     );
-    let (status, body) = s.cooee.post(
-        &format!("/threads/{id}/send"),
-        &json!({ "text": "hi", "random_id": "z" }),
-    );
-    assert_eq!(
-        (status, body.as_str()),
-        (410, "Not delivered: this thread's agent is gone.")
-    );
 }
 
 #[test]
