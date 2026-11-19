@@ -204,10 +204,8 @@ internal struct PluginDeckTests {
 
     nonisolated private static func counting(_ count: Int?) -> AsyncThrowingStream<JSONValue, any Error> {
         AsyncThrowingStream {
-            if let count {
-                let badge: JSONValue = .object(["op": .string("badge"), "count": .number(Double(count))])
-                $0.yield(.object(["ops": .array([badge])]))
-            }
+            guard let count else { return }
+            $0.yield(JSONValue(json: #"{"ops": [{"op": "badge", "count": \#(count)}]}"#))
         }
     }
 
@@ -241,10 +239,8 @@ internal struct PluginDeckTests {
             .cards(.answer(run, BlockAction(action: "run-card", values: ["choice": .string("deny")], block: "c1"))))
         #expect(line(store, 0) == "✓ answered q7" && line(store, 1) == "✓ exit 0\n```\nok\n```")
         #expect(store.state.chipCounts == [nil] && store.state.answering.isEmpty)
-        #expect(
-            calls.all == [
-                "follow drover /screens/cards/stream", "drover cards answer q7 2", "drover cards run-card c1 approve",
-            ])
+        let follow = "follow drover /screens/cards/stream"
+        #expect(calls.all == [follow, "drover cards answer q7 2", "drover cards run-card c1 approve"])
         await load.cancel()
     }
 
