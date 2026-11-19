@@ -1,7 +1,6 @@
 import CooeeCore
 @testable import CooeeUI
 import Foundation
-import SwiftUI
 import Testing
 
 extension Style {
