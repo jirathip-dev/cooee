@@ -1,0 +1,5 @@
+Decided: drop the 13 packs/themes files and packs/themes.commit that an earlier staging merge brought back after #661 deleted them
+Because: "Build the approved frames"
+Rejected: keeping them — they are not part of #662 and would bring the deleted packs back on staging
+Check: git diff origin/staging...HEAD -- packs is empty
+Owner: The branch no longer brings back the old theme packs that staging removed.
