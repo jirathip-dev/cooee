@@ -1,0 +1,9 @@
+Decided: a filter answer whose screen names a new stream reopens the stream on that path; reconnects keep it and skip the unfiltered GET
+Because: "A filter re-opens the screen's stream with the filtered query"
+Decided: the chat follows header-strip places' streams; a badge op's count wins over the places count
+Because: apple/Sources/CooeeFeatures/ChatDeck.swift:93
+Decided: plugin sheets snap at medium, 75% and large
+Because: "Plugin sheets get medium / large / full detents"
+Rejected: re-implementing tap.thread, tap.open and block ids — already on staging (BlockCards.swift:36, Screens.swift:35) with tests
+Check: aFilterReopensTheStreamWithItsQueryAndALiveUpdateStaysFiltered and aStripChipShowsTheCountItsScreensStreamSends pass in apple-check
+Owner: Filters hold through live updates, strip chips show live counts, plugin sheets drag to 3 heights.
