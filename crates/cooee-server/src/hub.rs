@@ -30,6 +30,7 @@ mod frames;
 mod glance;
 mod handoff;
 mod heartbeat;
+mod home;
 mod mcp;
 mod models;
 mod plugins;
@@ -278,6 +279,7 @@ pub struct Hub {
     models: Mutex<Vec<cooee_core::models::Offered>>,
     expiry: u64,
     desks: screen::Desks,
+    home: home::Home,
 }
 
 pub(crate) fn now() -> u64 {
@@ -472,6 +474,7 @@ impl Live {
                 Change::State(turn) => self.emit("state", json!(turn).to_string()),
             }
         }
+        hub.relist(self);
         Ok(())
     }
 }
@@ -519,6 +522,7 @@ impl Hub {
         let (turns, next) = mpsc::channel();
         let (texts, unsent) = mpsc::channel();
         let hub = Arc::new(Self {
+            home: home::Home::new(&threads),
             agents: Mutex::new((None, 0)),
             listed: Condvar::new(),
             served: Mutex::default(),
@@ -580,6 +584,7 @@ impl Hub {
             loop {
                 cooee_core::clock::sleep(TICK);
                 ticker.refresh(now(), false);
+                ticker.personas();
                 ticker.watch(now());
                 ticker.unload(now());
                 let at = now();
@@ -638,12 +643,14 @@ impl Hub {
     fn insert(&self, id: String, terminal: String, live: &Arc<Mutex<Live>>) {
         lock(&self.terminals).insert(terminal, Arc::clone(live));
         lock(&self.threads).insert(id, Arc::clone(live));
+        self.relist(&lock(live));
     }
 
     fn remove(&self, id: &str) {
         if let Some(live) = lock(&self.threads).remove(id) {
             lock(&self.terminals).retain(|_, l| !Arc::ptr_eq(l, &live));
         }
+        self.home.forget(id);
     }
 
     fn reattach(&self) -> Result<Option<u64>, ShedError> {

@@ -475,3 +475,81 @@ fn a_reply_delivers_its_text_before_its_item_and_replays_only_the_item() {
         "{events:?}"
     );
 }
+
+#[test]
+fn a_hundred_lists_with_nothing_changed_read_no_persona_file_after_the_first() {
+    let dir = scratch("personas-kept");
+    let toml = dir.join("config/agents/ada/agent.toml");
+    fs::create_dir_all(toml.parent().unwrap()).unwrap();
+    fs::write(&toml, "name = \"Ada\"\nagent = \"x\"\n").unwrap();
+    let meta = json!({ "format": 1, "thread": { "id": "a", "title": "a", "messages": [], "terminal": "cooee-a", "profile": "ada" } });
+    fs::write(dir.join("data/threads/a.json"), meta.to_string()).unwrap();
+    fs::write(dir.join("data/threads/a.jsonl"), "").unwrap();
+    let shed = Shed::new(dir.join("no-shed"), Some(dir.join("no-shed-dir")));
+    let (looks, _) = crate::look::Looks::load(None, None);
+    let theme = looks.themes[&looks.default].clone();
+    let config = (Vec::new(), Some(dir.join("config/config.toml")));
+    let hub = Hub::open(shed, &dir.join("data"), config, theme, Vec::new(), None, 0).unwrap();
+    let name = |hub: &Hub| hub.list()[0].persona_name.clone();
+    assert_eq!(name(&hub), "Ada");
+    let was = fs::metadata(&toml).unwrap().modified().unwrap();
+    fs::write(&toml, "name = \"Bob\"\nagent = \"x\"\n").unwrap();
+    let file = fs::File::options().write(true).open(&toml).unwrap();
+    file.set_modified(was).unwrap();
+    for _ in 0..100 {
+        assert_eq!(name(&hub), "Ada", "an unchanged stamp read the file again");
+    }
+    fs::write(&toml, "name = \"Cyd\"\nagent = \"x\"\n").unwrap();
+    file.set_modified(was + Duration::from_secs(1)).unwrap();
+    assert_eq!(name(&hub), "Cyd");
+}
+
+#[test]
+fn the_list_over_200_threads_of_500_items_takes_no_threads_lock() {
+    let dir = scratch("list-unlocked");
+    let item = |id: u64| {
+        json!({ "id": id, "at": id, "seq": id, "kind": "agent", "text": "hi", "stop_reason": "end_turn" })
+            .to_string()
+            + "\n"
+    };
+    let items: String = (1..=500).map(item).collect();
+    for t in 0..200 {
+        seed(&dir, &format!("t{t}"), &items);
+    }
+    let hub = hub(&dir);
+    hub.slice("t0", None, 10, 0).unwrap();
+    let held: Vec<_> = hub.all();
+    let guards: Vec<_> = held.iter().map(|l| lock(l)).collect();
+    let (tx, rx) = mpsc::channel();
+    let lister = Arc::clone(&hub);
+    thread::spawn(move || tx.send(lister.list()).unwrap());
+    let rows = rx
+        .recv_timeout(Duration::from_secs(10))
+        .expect("list waited on a thread's lock");
+    drop(guards);
+    assert_eq!(rows.len(), 200);
+    assert!(rows.iter().all(|r| r.at == Some(500) && r.unseen == 500));
+}
+
+#[test]
+fn an_approval_in_a_background_thread_tells_home_at_once() {
+    let dir = scratch("home-told");
+    seed(&dir, "bg", "");
+    seed(&dir, "fg", "");
+    let hub = hub(&dir);
+    let mut home = hub.home();
+    hub.apply(event("bg", 1, EventKind::Text { text: "w".into() }));
+    while home.try_recv().is_ok() {}
+    hub.apply(event("bg", 2, EventKind::Text { text: "w".into() }));
+    assert!(home.try_recv().is_err(), "an unchanged row told home");
+    let option = ApprovalOption {
+        id: "once".into(),
+        name: "Allow once".into(),
+        kind: "allow_once".into(),
+    };
+    let (tool, options) = ("Edit a.rs".to_owned(), vec![option]);
+    hub.apply(event("bg", 3, EventKind::ApprovalRequest { tool, options }));
+    assert!(home.try_recv().is_ok(), "the approval did not tell home");
+    let row = hub.list().into_iter().find(|r| r.id == "bg").unwrap();
+    assert_eq!((row.last.as_str(), row.unseen), ("Edit a.rs", 1));
+}

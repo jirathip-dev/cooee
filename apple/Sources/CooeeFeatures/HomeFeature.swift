@@ -42,6 +42,12 @@ public struct HomeFeature: Sendable {
         public func persona(_ id: String) -> APIPersona? {
             personas.first { $0.id == id }
         }
+
+        fileprivate func shows(_ answer: HomeAnswer, _ plugins: [PluginRow]) -> Bool {
+            !loading && sync == .live && error == nil && asOf == nil && screen == answer.screen
+                && rows == answer.threads.filter { !$0.archived } && personas == answer.personas
+                && counts == answer.counts && self.plugins == plugins
+        }
     }
 
     public enum Action: Sendable {
@@ -76,10 +82,11 @@ public struct HomeFeature: Sendable {
         Reduce { state, action in
             switch action {
             case .task:
-                return poll(state.server)
+                return watch(state.server)
             case .refresh:
                 return refresh(state.server)
             case .loaded(let answer, let plugins):
+                guard !state.shows(answer, plugins) else { return .none }
                 show(&state, answer, plugins)
                 (state.error, state.sync, state.asOf) = (nil, .live, nil)
                 let (kept, server, copy) = (kept, state.server, KeptHome(answer, plugins: plugins, kept: now))
@@ -120,14 +127,13 @@ public struct HomeFeature: Sendable {
         return .clears(.home, after: clock, with: .toasted)
     }
 
-    private func poll(_ server: Server) -> Effect<Action> {
+    private func watch(_ server: Server) -> Effect<Action> {
         let (threads, plugins, clock, kept) = (threads, plugins, clock, kept)
         return .run { send in
-            while true {
+            for await _ in threads.changes(server) {
                 let outcome = try await Self.check(server, threads, plugins, kept, clock)
                 await Self.report(outcome, send)
                 if case .unauthorized = outcome { return }
-                try await clock.sleep(for: .seconds(5))
             }
         }
     }

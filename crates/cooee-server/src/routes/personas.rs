@@ -58,7 +58,8 @@ async fn model_list(cx: &Cx) -> Result<Answer<Vec<ModelList>>> {
 
 #[route(GET "/personas")]
 async fn persona_list(cx: &Cx) -> Result<Answer<Vec<Agent>>> {
-    on_personas(cx, |d, c| Ok(agents::list(Some(c), d))).await
+    let hub = hub(cx);
+    on_personas(cx, move |_, _| Ok(hub.personas().to_vec())).await
 }
 
 #[route(POST "/personas")]

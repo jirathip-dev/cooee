@@ -189,6 +189,7 @@ extension AppFeatureTests {
     private func polling(_ answers: [Int]) -> (TestStoreOf<AppFeature>, TestClock<Duration>) {
         let (store, clock, queue) = (store(paired()), TestClock(), Queue(answers))
         store.dependencies.continuousClock = clock
+        store.dependencies.threads.changes = { _ in AsyncStream { $0.yield() } }
         store.dependencies.threads.home = { _ in
             if let status = queue.next() { throw APIError(status: status, text: "") }
             return HomeAnswer(screen: homeScreen, threads: [row("n1")], personas: [coder])

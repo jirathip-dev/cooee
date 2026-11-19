@@ -1,15 +1,10 @@
 //! `GET /screens/home` (#311): the app's bundled home, its blocks filled with the threads and personas they draw.
 
 use blocks::Block;
-use cooee_core::agents;
 use serde_json::Value;
-use topcoat::{
-    Result,
-    context::{Cx, app_context},
-    router::route,
-};
+use topcoat::{Result, context::Cx, router::route};
 
-use crate::http::{Answer, Data, blocking};
+use crate::http::{Answer, blocking};
 
 const BUNDLED: &str = include_str!("../../../../apple/Sources/CooeeUI/Default/screens/home.json");
 
@@ -17,15 +12,10 @@ const BUNDLED: &str = include_str!("../../../../apple/Sources/CooeeUI/Default/sc
 /// `GET /personas` with each one's open `topics` and their summed `unread`.
 #[route(GET "/screens/home")]
 pub async fn home(cx: &Cx) -> Result<Answer<Block>> {
-    let d = app_context::<Data>(cx);
-    let (data, config) = (d.0.clone(), d.1.clone());
     let screen = blocking(cx, move |hub| {
         let mut screen = super::bundled(BUNDLED)?;
         let threads = hub.list();
-        let mut personas: Vec<_> = agents::list(config.as_deref(), &data)
-            .iter()
-            .map(super::fields)
-            .collect();
+        let mut personas: Vec<_> = hub.personas().iter().map(super::fields).collect();
         for p in &mut personas {
             let open = threads
                 .iter()

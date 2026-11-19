@@ -1,9 +1,9 @@
 use std::path::PathBuf;
 
-use cooee_core::{Kind, Summary, Thread, Turn, agents};
+use cooee_core::{Kind, Thread, Turn};
 use tokio::sync::broadcast;
 
-use super::{Hub, HubError, LAG, Out, Pending, Resume, Slice, glance, lock, now, rooms, waits};
+use super::{Hub, HubError, LAG, Out, Pending, Resume, Slice, lock, now, waits};
 
 impl Hub {
     /// Renames the thread.
@@ -18,7 +18,7 @@ impl Hub {
         let live = self.live(id)?;
         let mut live = lock(&live);
         live.meta.title = title;
-        Ok(self.store.save(&live.meta)?)
+        Ok(self.save(&live)?)
     }
 
     /// Archives the thread (`on`) or restores it.
@@ -29,7 +29,7 @@ impl Hub {
         let live = self.live(id)?;
         let mut live = lock(&live);
         live.meta.archived = on;
-        Ok(self.store.save(&live.meta)?)
+        Ok(self.save(&live)?)
     }
 
     /// File `name` sent in thread `id`: its path, if it is one of that thread's.
@@ -84,7 +84,7 @@ impl Hub {
         self.shed.close(&terminal)?;
         let mut live = lock(&live);
         live.meta.closed = true;
-        self.store.save(&live.meta)?;
+        self.save(&live)?;
         if live.chat.turn.state != "ended" {
             let changes = live
                 .chat
@@ -105,62 +105,7 @@ impl Hub {
             return Ok(());
         }
         live.meta.read = Some(item);
-        Ok(self.store.save(&live.meta)?)
-    }
-
-    /// The thread list, newest first.
-    #[must_use]
-    pub fn list(&self) -> Vec<Summary> {
-        let personas = agents::list(self.config_dir(), &self.data);
-        let mut asks = Vec::new();
-        let mut rows: Vec<Summary> = self
-            .all()
-            .iter()
-            .filter_map(|live| {
-                let live = lock(live);
-                let g = live.unloaded.clone().unwrap_or_else(|| glance(&live));
-                if !live.meta.room.is_empty() {
-                    asks.extend(g.ask);
-                    return None;
-                }
-                let persona = personas.iter().find(|p| p.id == live.meta.profile);
-                Some(Summary {
-                    id: live.meta.id.clone(),
-                    title: live.meta.title.clone(),
-                    agent: live.meta.agent.clone(),
-                    account: live.meta.account.clone(),
-                    profile: live.meta.profile.clone(),
-                    persona: persona.map(|p| p.id.clone()).unwrap_or_default(),
-                    persona_name: persona.map(|p| p.name.clone()).unwrap_or_default(),
-                    persona_role: persona.map(|p| p.role).unwrap_or_default(),
-                    folder: live.meta.folder.clone().unwrap_or_default(),
-                    machine: live.meta.machine.clone(),
-                    state: live.chat.turn.state.clone(),
-                    last: rooms::said(&personas, &g.speaker, g.last),
-                    at: g.at,
-                    unread: g.unseen > 0,
-                    unseen: g.unseen,
-                    archived: live.meta.archived,
-                    setup: live.meta.setup,
-                    workflow: live.meta.workflow.clone(),
-                    routine: g.routine,
-                    members: rooms::seated(&live.meta),
-                    asked_by: live.meta.asked_by.clone(),
-                })
-            })
-            .collect();
-        for (room, persona, tool) in asks {
-            let Some(row) = rows.iter_mut().find(|r| r.id == room) else {
-                continue;
-            };
-            let name = personas.iter().find(|p| p.id == persona);
-            let name = name.map_or(persona.as_str(), |p| p.name.as_str());
-            row.last = format!("{name}: {tool} waiting");
-            row.unseen += 1;
-            row.unread = true;
-        }
-        rows.sort_by_key(|r| std::cmp::Reverse(r.at));
-        rows
+        Ok(self.save(&live)?)
     }
 
     /// The thread's meta.
