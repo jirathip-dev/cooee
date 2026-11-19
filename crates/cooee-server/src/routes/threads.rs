@@ -90,7 +90,6 @@ async fn events(cx: &Cx) -> Result<Sse<impl Stream<Item = Result<Event>> + use<>
     Ok(Sse::new(stream::iter(first.into_iter().map(Ok)).chain(rest)).keep_alive(KeepAlive::new()))
 }
 
-/// SSE: `changed` on connect, then each time a row of `GET /threads` may have changed (#340).
 #[route(GET "/home/events")]
 async fn home_events(cx: &Cx) -> Result<Sse<impl Stream<Item = Result<Event>> + use<>>> {
     let rest = stream::unfold(hub(cx).home(), |mut rx| async move {
