@@ -1,0 +1,5 @@
+Decided: delete every import swiftlint analyze flags, the nightly's one red step for this issue
+Because: apple/Sources/CooeeUI/TopicSheets.swift:3
+Rejected: fixing the Periphery findings too — another gate, outside "apple-check unused imports (swiftlint analyze)"
+Check: scripts/apple-check.sh --nightly prints "no unused imports" for the analyze step
+Owner: The nightly still goes red at Periphery (3 unused-code findings) and needs its own issue.
