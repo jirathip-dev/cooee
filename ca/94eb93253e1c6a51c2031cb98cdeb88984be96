@@ -1,0 +1,14 @@
+Decided: cooee reads a chat-cards place's screen (default /screens/cards) and follows its /stream; /plugin/card stays for plugins that push cards
+Because: "cooee reads a `chat-cards` place's cards (or the plugin posts them to `/plugin/card`; pick one, delete the other)"
+Because: crates/cooee-core/src/plugins.rs:213
+Rejected: deleting /plugin/card — hello, the e2e cards and every hub card test use it; drover's cards never went through it, so drover now has one path
+Decided: a tap sends the tapped choice or run block's id as block; Client.act no longer sends ""
+Because: apple/Sources/CooeeCore/Screen.swift:82
+Decided: a 2xx settles the card to "✓ <toast>", a 409 to its line, until the plugin sends a changed card; a settled card takes no second tap
+Because: "run-card approve/deny with its sha (409 → the stale line)"
+Decided: the persona's first chip of that plugin shows the open-card count; [later] goes to the plugin, which hides by fingerprint
+Because: apple/Sources/CooeeFeatures/ChatDeck.swift:90
+Rejected: a phone-local later list — drover already hides until the card's fingerprint changes
+Check: PluginDeckTests and ScreensTests' block assert fail on staging; cargo test -p cooee --test screens: /p/hello/screens/cards was 403 before
+Check: row 71's undelivered push needs drover to call /plugin/push; cooee shows a failed answer as the chat's error line only
+Owner: drover's asks, needs-human, design and run cards now show as cards in the conductor chat, and taps reach drover.
