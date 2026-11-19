@@ -64,6 +64,32 @@ internal struct CardAnswerTests {
         #expect(calls.all == ["check Send the secret to its plugin"] + sent + ["answer a1 4 approve 3b7e"])
     }
 
+    @Test internal func approvingCooeesOwnProposalOrSecretSignsWithTheDeviceKeyAndDenyingOrAPluginsDoesNot() async {
+        let store = store()
+        let card = { (id: Int, kind: String, plugin: String?) in
+            APIItem(
+                id: id, time: 0, kind: "approval", plugin: plugin,
+                block: .object(["type": .string("card"), "kind": .string(kind)]))
+        }
+        let items = [card(6, "proposal", nil), card(7, "secret", nil), card(8, "proposal", "drover")]
+        await store.send(.loaded(Slice(items: items, turn: Turn(), cursor: "", queue: []))) {
+            $0.loading = false
+            $0.items = items
+            $0.since = epoch
+        }
+        let calls = calls
+        store.dependencies.threads.approve = { _, thread, item, value in
+            calls.record("approve \(thread) \(item) \(value ?? "-")")
+        }
+        let tap = { (choice: String) in BlockAction(action: "answer", values: ["choice": .string(choice)]) }
+        for (item, choice) in [(6, "approve"), (6, "decline"), (7, "approve"), (8, "approve")] {
+            await store.send(.cards(.answer(item, tap(choice)))) { $0.answering = [item] }
+            await store.receive(\.cards.answered) { $0.answering = [] }
+        }
+        #expect(
+            calls.all == ["approve a1 6 -", "answer a1 6 decline -", "approve a1 7 -", "answer a1 8 approve -"])
+    }
+
     @Test internal func denyAndSayOpensTheComposerAndItsSendAnswersTheCardWithTheText() async {
         let store = store()
         store.dependencies.threads.send = { _, _, text, _, _ in calls.record("send \(text)") }

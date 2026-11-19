@@ -158,7 +158,7 @@ public final class LayerImportsRule: SlopRule {
 
     public static let layers: [String: Set<String>] = [
         "CooeeCore": ["Blocks", "Foundation"],
-        "CooeeAPI": ["CooeeCore", "Foundation", "Network", "Security", "Synchronization"],
+        "CooeeAPI": ["CooeeCore", "CryptoKit", "Foundation", "Network", "Security", "Synchronization"],
         "CooeeFeatures": ["ComposableArchitecture", "CooeeAPI", "CooeeCore", "Foundation"],
         "CooeeUI": [
             "ActivityKit", "AppIntents", "AppKit", "AVFoundation", "ComposableArchitecture", "CooeeCore",
@@ -167,7 +167,7 @@ public final class LayerImportsRule: SlopRule {
         ],
         "CooeeApp": [
             "ActivityKit", "AppIntents", "AppKit", "ComposableArchitecture", "CooeeAPI", "CooeeCore", "CooeeFeatures",
-            "CooeeUI", "Foundation", "LocalAuthentication", "os", "ServiceManagement", "SwiftUI", "UIKit",
+            "CooeeUI", "Foundation", "LocalAuthentication", "os", "Security", "ServiceManagement", "SwiftUI", "UIKit",
             "UserNotifications", "WidgetKit",
         ],
         "Cooee": ["AppIntents", "CooeeApp", "CooeeUI", "SwiftUI"],
