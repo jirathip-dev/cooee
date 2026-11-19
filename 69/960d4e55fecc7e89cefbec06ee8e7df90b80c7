@@ -1,0 +1,7 @@
+Decided: merged origin/staging; ItemView keeps staging's equatable() and this branch's restart, and == also compares whether Restart is offered
+Because: apple/Sources/CooeeUI/Items.swift:11
+Decided: the live threads client uses staging's shared client(server) for restart too
+Because: apple/Sources/CooeeApp/Live/ThreadsClient+Live.swift:43
+Rejected: none
+Check: the Restart button disappears after a restart even though the gone item itself is unchanged; apple-check and cargo test -p cooee --test chat pass at the head
+Owner: The branch now includes the latest staging; the restart feature itself is unchanged.
