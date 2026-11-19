@@ -1,0 +1,6 @@
+Decided: merge origin/staging keeping both sides; the thread-copy helper is renamed keepSlice so it no longer clashes with staging's draft keep
+Because: apple/Sources/CooeeFeatures/ChatLink.swift:93
+Decided: staging's ChatComposeTests expect this branch's link.dropped on a failed load, and four State computed properties moved to an extension so the struct stays under 150 lines
+Because: apple/Sources/CooeeFeatures/ChatFeature.swift:208
+Rejected: none
+Owner: The chat changes now sit on top of the latest staging, with saved drafts and offline copies both kept.
