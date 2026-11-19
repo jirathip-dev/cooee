@@ -21,7 +21,7 @@ action with an empty block id (→ #378).
 | # | feature | gate | state | where | gap | issue | phone check |
 |---|---|---|---|---|---|---|---|
 | 1 | Home Screen app, offline paint | ● | n/a-web | native: the app itself, `AppIconPicker.swift`; kept copy only for plugin sheets (`KeptScreens.swift`) | native offline copy of Home and chat missing | #369 | Airplane mode, open the app: the last Home and thread show with "as of Xm ago" |
-| 2 | Live stream, sync dot, gapless reconnect, no scroll jump | ● | partial | `CooeeAPI/Events.swift` `Client.events` (SSE, Last-Event-ID); `CooeeUI/Layout.swift` `Scroller` | no sync dot; Home polls every 5 s | #369 | Toggle airplane mode in a thread: dot amber then green, no message missing |
+| 2 | Live stream, sync dot, gapless reconnect, no scroll jump | ● | partial | `CooeeAPI/Events.swift` `Client.events` (SSE, Last-Event-ID); `CooeeUI/Shared.swift` `Scroller` | no sync dot; Home polls every 5 s | #369 | Toggle airplane mode in a thread: dot amber then green, no message missing |
 | 3 | Themed loading strip, "as of Xm ago" | | partial | `CooeeUI/PluginSheets.swift` (plugin sheets only) | no strip or age on Home and chat | #369 | Slow network, open a thread: a thin strip, content stays tappable |
 | 4 | Short self-clearing toasts | | missing | `ChatFeature`/`HomeFeature` set `state.error`, no view draws it | errors are silent; no toasts | #369 | Tap any action: a short toast, then it clears |
 | 5 | Pull to refresh, ↻, reload on resume | | partial | `HomeFeature` `poll`; `ChatFeature` reconnect loop | no `.refreshable`, no ↻, no reload on foreground | #369 | Pull down on Home: it reloads |

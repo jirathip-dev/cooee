@@ -1,1 +1,0 @@
-{"format": 1, "root": {"type": "nav", "slots": {"menu": [{"type": "screen", "source": "core", "path": "/screens/menu", "place": "sheet", "transition": "spin"}]}}}

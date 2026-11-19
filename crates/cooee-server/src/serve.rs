@@ -248,7 +248,7 @@ pub fn serve(config: &Config, ready: impl FnOnce(SocketAddr)) -> io::Result<()> 
         (&data, config.dir.as_deref()),
         config.bind,
         &config.allowed_hosts,
-        Layouts::watch(config.dir.clone()),
+        Layouts::watch(config.dir.clone()).map_err(|b| io::Error::other(b.why))?,
     );
     let served = tokio::runtime::Builder::new_multi_thread()
         .enable_all()

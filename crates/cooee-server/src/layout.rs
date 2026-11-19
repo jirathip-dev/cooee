@@ -1,13 +1,14 @@
+pub use blocks::layout::Broken;
 use std::{
-    collections::HashSet,
     fs, io,
     path::PathBuf,
     sync::{Arc, Mutex},
     time::Duration,
 };
 
+use blocks::layout::{self, Component, Content, Contract, Layout, Node, Place, PlaceEntry};
 use futures_util::{Stream, StreamExt, stream};
-use serde_json::{Value, json};
+use serde_json::json;
 use tokio::sync::broadcast;
 use topcoat::{
     Result,
@@ -29,222 +30,83 @@ use crate::{
 
 const DEFAULT: &str = include_str!("../../../apple/Sources/CooeeUI/Default/layout.json");
 
-const KINDS: [(&str, &[&str], &[&str]); 8] = [
-    ("nav", &["side", "main", "menu"], &[]),
-    ("sidebar", &["top", "list"], &["width", "pinned"]),
-    ("chat", &["strip", "cards"], &["composer", "stop", "back"]),
-    ("composer", &[], &["attach", "queue", "hint"]),
-    ("terminal", &[], &["rows", "cols", "machine"]),
-    ("scanner", &[], &[]),
-    ("menu-host", &["rows"], &[]),
-    ("settings", &[], &["pages"]),
-];
-const PLACES: [&str; 9] = [
-    "push", "sheet", "panel", "column", "strip", "cards", "menu", "inline", "hidden",
-];
-const TRANSITIONS: [&str; 4] = ["push", "sheet", "fade", "none"];
-const LOCKED: [&str; 2] = ["/screens/pairing", "/screens/reset-layout"];
+static COOEE: Contract = Contract {
+    components: &[
+        Component {
+            kind: "sidebar",
+            slots: &["top", "list"],
+            config: &["width", "pinned"],
+        },
+        Component {
+            kind: "chat",
+            slots: &["strip", "cards"],
+            config: &["composer", "stop", "back"],
+        },
+        Component {
+            kind: "composer",
+            slots: &[],
+            config: &["attach", "queue", "hint"],
+        },
+        Component {
+            kind: "terminal",
+            slots: &[],
+            config: &["rows", "cols", "machine"],
+        },
+        Component {
+            kind: "scanner",
+            slots: &[],
+            config: &[],
+        },
+        Component {
+            kind: "menu-host",
+            slots: &["rows"],
+            config: &[],
+        },
+        Component {
+            kind: "settings",
+            slots: &[],
+            config: &["pages"],
+        },
+    ],
+    locked: &["/screens/pairing", "/screens/reset-layout"],
+};
 
-/// Why a layout was refused, and where: `line` and `col` count from 1.
-#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize)]
-pub struct Broken {
-    /// The line at fault.
-    pub line: usize,
-    /// Its column.
-    pub col: usize,
-    /// The rule it breaks, with the node's JSON path.
-    pub why: String,
-}
-
-/// `text` as a layout, refused by the app's rules; a refusal points at the offending text.
+/// `text` as a layout, refused by `blocks::layout`'s rules with cooee's contract; a refusal points at the offending text.
 ///
 /// # Errors
 /// The first rule `text` breaks.
-pub fn check(text: &str) -> Result<Value, Broken> {
-    let at = |needle: &str, nth: usize, why: String| {
-        let i = text.match_indices(needle).nth(nth).map_or(0, |(i, _)| i);
-        let line = text[..i].matches('\n').count() + 1;
-        let col = i - text[..i].rfind('\n').map_or(0, |n| n + 1) + 1;
-        Broken { line, col, why }
-    };
-    if text.len() > 64 * 1024 {
-        return Err(at("", 0, "over 65536 bytes".into()));
-    }
-    let file: Value = serde_json::from_str(text).map_err(|e| Broken {
-        line: e.line(),
-        col: e.column(),
-        why: e.to_string(),
-    })?;
-    let format = file.get("format").unwrap_or(&Value::Null);
-    if format.as_f64() != Some(1.0) {
-        return Err(at("\"format\"", 0, format!("format {format} is not 1")));
-    }
-    let root = file.get("root").unwrap_or(&Value::Null);
-    if root.get("type").is_none_or(|t| t != "nav") {
-        return Err(at("\"root\"", 0, "root: not a nav".into()));
-    }
-    let place = &root["place"];
-    if [place, &place["compact"], &place["wide"]].contains(&&json!("hidden")) {
-        return Err(at(
-            "\"root\"",
-            0,
-            "root: hidden hides the locked screens".into(),
-        ));
-    }
-    let mut ids: HashSet<String> = ["pairing", "reset-layout"].map(str::to_owned).into();
-    node(root, "root", 1, &mut ids).map_err(|(why, bad, nth)| at(&format!("{bad:?}"), nth, why))?;
-    Ok(file)
+pub fn check(text: &str) -> Result<Layout, Broken> {
+    layout::check(text, &COOEE)
 }
 
-fn node(
-    n: &Value,
-    path: &str,
-    depth: usize,
-    ids: &mut HashSet<String>,
-) -> Result<(), (String, String, usize)> {
-    let fail = |what: &str, bad: &str| Err((format!("{path}: {what} {bad:?}"), bad.to_owned(), 0));
-    if depth > 6 || ids.len() > 201 {
-        return fail("over 6 deep or 200 nodes at", "type");
-    }
-    let kind = n["type"].as_str().unwrap_or_default();
-    let source = n["source"].as_str().unwrap_or_default();
-    let screen = n["path"].as_str().unwrap_or_default();
-    let (slots, config) = if kind == "screen" {
-        if source.is_empty() || !screen.starts_with("/screens/") {
-            return fail(
-                "a screen needs a source and a path under /screens/:",
-                "screen",
-            );
-        }
-        if LOCKED.contains(&screen) {
-            return fail("a locked screen can't be placed:", screen);
-        }
-        (&[][..], &[][..])
-    } else {
-        match KINDS.iter().find(|k| k.0 == kind) {
-            Some((_, slots, config)) => (*slots, *config),
-            None => return fail("unknown type", kind),
-        }
-    };
-    let fallback = if kind == "screen" {
-        format!("{source}:{screen}")
-    } else {
-        kind.to_owned()
-    };
-    let id = n["id"].as_str().map_or(fallback, str::to_owned);
-    if !ids.insert(id.clone()) {
-        return Err((format!("{path}: id {id:?} is taken"), id, 1));
-    }
-    let place = &n["place"];
-    let named = [place, &place["compact"], &place["wide"]].map(Value::as_str);
-    if let Some(p) = named.iter().flatten().find(|p| !PLACES.contains(p)) {
-        return fail("unknown place", p);
-    }
-    if !place.is_null() && named == [None; 3] {
-        return fail("no place in", "place");
-    }
-    if let Some(t) = n.get("transition") {
-        let name = t.as_str().unwrap_or_default();
-        if !TRANSITIONS.contains(&name) {
-            return fail(
-                "unknown transition",
-                if name.is_empty() { "transition" } else { name },
-            );
-        }
-    }
-    for k in n["config"].as_object().into_iter().flat_map(|o| o.keys()) {
-        if !config.contains(&k.as_str()) {
-            return fail("unknown config", k);
-        }
-    }
-    for (slot, children) in n["slots"].as_object().into_iter().flatten() {
-        if !slots.contains(&slot.as_str()) {
-            return fail("unknown slot", slot);
-        }
-        for (i, child) in children.as_array().into_iter().flatten().enumerate() {
-            node(child, &format!("{path}.slots.{slot}[{i}]"), depth + 1, ids)?;
-        }
-    }
-    Ok(())
+fn merged(l: Layout, plugins: &[Manifest]) -> (Layout, Vec<String>) {
+    let places: Vec<PlaceEntry> = plugins
+        .iter()
+        .flat_map(|m| {
+            let screens = m
+                .places
+                .iter()
+                .filter(|p| p.screen.starts_with("/screens/"));
+            screens.enumerate().map(|(i, p)| PlaceEntry {
+                kind: match p.kind {
+                    PlaceKind::HeaderStrip => layout::PlaceKind::HeaderStrip,
+                    PlaceKind::ChatCards => layout::PlaceKind::ChatCards,
+                    PlaceKind::MenuRow => layout::PlaceKind::MenuRow,
+                },
+                source: m.name.clone(),
+                id: format!("{}-{i}", m.name),
+                label: Some(p.label.clone()),
+                screen: p.screen.clone(),
+            })
+        })
+        .collect();
+    let (mut l, mut skipped) = layout::merge(l, &places, &COOEE);
+    prune(&mut l.root, "root", plugins, &mut skipped);
+    (l, skipped)
 }
 
-fn merged(mut layout: Value, plugins: &[Manifest]) -> (Value, Vec<String>) {
-    let mut placed = Vec::new();
-    sources(layout.get("root").unwrap_or(&Value::Null), &mut placed);
-    for m in plugins.iter().filter(|m| !placed.contains(&m.name)) {
-        let screens = m
-            .places
-            .iter()
-            .filter(|p| p.screen.starts_with("/screens/"));
-        for (i, p) in screens.enumerate() {
-            let (kind, slot, place) = match p.kind {
-                PlaceKind::HeaderStrip => ("chat", "strip", "strip"),
-                PlaceKind::ChatCards => ("chat", "cards", "cards"),
-                PlaceKind::MenuRow => ("nav", "menu", "menu"),
-            };
-            let Some(host) = layout.get_mut("root").and_then(|r| find(r, kind)) else {
-                continue;
-            };
-            let Some(slots) = host
-                .as_object_mut()
-                .map(|h| h.entry("slots").or_insert(Value::Null))
-            else {
-                continue;
-            };
-            if slots.is_null() {
-                *slots = json!({});
-            }
-            let Some(list) = slots
-                .as_object_mut()
-                .map(|s| s.entry(slot).or_insert(Value::Null))
-            else {
-                continue;
-            };
-            if list.is_null() {
-                *list = json!([]);
-            }
-            if let Some(list) = list.as_array_mut() {
-                list.push(
-                    json!({ "type": "screen", "id": format!("{}-{i}", m.name), "source": m.name,
-                                  "path": p.screen, "label": p.label, "place": place }),
-                );
-            }
-        }
-    }
-    let mut skipped = Vec::new();
-    if let Some(root) = layout.get_mut("root") {
-        prune(root, "root", plugins, &mut skipped);
-    }
-    (layout, skipped)
-}
-
-fn sources(n: &Value, out: &mut Vec<String>) {
-    out.extend(n["source"].as_str().map(str::to_owned));
-    for children in n["slots"].as_object().into_iter().flat_map(|o| o.values()) {
-        for child in children.as_array().into_iter().flatten() {
-            sources(child, out);
-        }
-    }
-}
-
-fn find<'a>(n: &'a mut Value, kind: &str) -> Option<&'a mut Value> {
-    if n["type"] == kind {
-        return Some(n);
-    }
-    let slots = n.get_mut("slots")?.as_object_mut()?.values_mut();
-    slots
-        .flat_map(|c| c.as_array_mut().into_iter().flatten())
-        .find_map(|c| find(c, kind))
-}
-
-fn prune(n: &mut Value, path: &str, plugins: &[Manifest], skipped: &mut Vec<String>) {
-    let Some(slots) = n.get_mut("slots").and_then(Value::as_object_mut) else {
-        return;
-    };
-    for (slot, children) in slots {
-        let Some(list) = children.as_array_mut() else {
-            continue;
-        };
+fn prune(n: &mut Node, path: &str, plugins: &[Manifest], skipped: &mut Vec<String>) {
+    for (slot, list) in &mut n.slots {
         let mut i = 0;
         list.retain_mut(|child| {
             let at = format!("{path}.slots.{slot}[{i}]");
@@ -259,38 +121,32 @@ fn prune(n: &mut Value, path: &str, plugins: &[Manifest], skipped: &mut Vec<Stri
     }
 }
 
-fn refused(n: &Value, plugins: &[Manifest]) -> Option<String> {
-    let source = n["source"]
-        .as_str()
-        .filter(|s| n["type"] == "screen" && *s != "core")?;
-    let Some(m) = plugins.iter().find(|m| m.name == source) else {
+fn refused(n: &Node, plugins: &[Manifest]) -> Option<String> {
+    let Content::Screen { source, .. } = &n.content else {
+        return None;
+    };
+    if source == "core" {
+        return None;
+    }
+    let Some(m) = plugins.iter().find(|m| &m.name == source) else {
         return Some(format!("no enabled plugin {source:?}"));
     };
-    let place = &n["place"];
-    let named: Vec<&str> = [place, &place["compact"], &place["wide"]]
-        .iter()
-        .filter_map(|p| p.as_str())
-        .collect();
-    let needs = |p: &str| match p {
-        "hidden" => None,
-        "cards" => Some(PlaceKind::ChatCards),
-        "menu" => Some(PlaceKind::MenuRow),
+    let needs = |p: Place| match p {
+        Place::Hidden => None,
+        Place::Cards => Some(PlaceKind::ChatCards),
+        Place::Menu => Some(PlaceKind::MenuRow),
         _ => Some(PlaceKind::HeaderStrip),
     };
-    let places = if named.is_empty() {
-        vec!["inline"]
-    } else {
-        named
-    };
-    let bad = places
+    let bad = [n.place.compact, n.place.wide]
         .into_iter()
-        .find(|p| needs(p).is_some_and(|k| !m.permissions.places.contains(&k)))?;
-    Some(format!("{source} may not be placed {bad:?}"))
+        .find(|p| needs(*p).is_some_and(|k| !m.permissions.places.contains(&k)))?;
+    let bad = serde_json::to_string(&bad).unwrap_or_default();
+    Some(format!("{source} may not be placed {bad}"))
 }
 
 struct Served {
     etag: String,
-    layout: Value,
+    layout: Layout,
     broken: Option<Broken>,
     seen: Option<String>,
 }
@@ -304,13 +160,15 @@ pub struct Layouts {
 
 impl Layouts {
     /// `layout.json` in `dir`, read now and every second from now on.
-    #[must_use]
-    pub fn watch(dir: Option<PathBuf>) -> Arc<Self> {
+    ///
+    /// # Errors
+    /// The bundled default breaks a rule.
+    pub fn watch(dir: Option<PathBuf>) -> Result<Arc<Self>, Broken> {
         let me = Arc::new(Self {
             file: dir.map(|d| d.join("layout.json")),
             served: Mutex::new(Served {
                 etag: cooee_core::sha256(DEFAULT.as_bytes()),
-                layout: check(DEFAULT).unwrap_or_default(),
+                layout: check(DEFAULT)?,
                 broken: None,
                 seen: None,
             }),
@@ -323,7 +181,7 @@ impl Layouts {
                 cooee_core::clock::sleep(Duration::from_secs(1));
             }
         });
-        me
+        Ok(me)
     }
 
     fn reload(&self) {
@@ -386,7 +244,8 @@ fn answer(cx: &Cx) -> Result<Response> {
     let etag = if layout == s.layout {
         s.etag.clone()
     } else {
-        cooee_core::sha256(format!("{}{layout}", s.etag).as_bytes())
+        let json = serde_json::to_string(&layout).unwrap_or_default();
+        cooee_core::sha256(format!("{}{json}", s.etag).as_bytes())
     };
     let tag = format!("\"{etag}\"");
     let same = header(cx, "if-none-match").is_some_and(|m| m.split(',').any(|m| m.trim() == tag));
