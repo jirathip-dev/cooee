@@ -64,13 +64,13 @@ internal struct ChatFeatureTests {
             $0.queue = slice.queue
             $0.turn = slice.turn
             $0.since = epoch
-            $0.live = "Hel"
+            $0.live = LiveReply("Hel")
             $0.loading = false
         }
-        await store.receive(\.event) { $0.live = "Hello" }
+        await store.receive(\.event) { $0.live = LiveReply("Hello") }
         await store.receive(\.event) {
             $0.items.append(APIItem(id: 2, time: 2, kind: "agent", text: "Hello"))
-            $0.live = ""
+            $0.live = LiveReply()
         }
         await store.receive(\.event) { $0.items[0] = APIItem(id: 1, time: 1, kind: "you") }
         await store.receive(\.event) { $0.turn = Turn(state: "done", note: "ok") }

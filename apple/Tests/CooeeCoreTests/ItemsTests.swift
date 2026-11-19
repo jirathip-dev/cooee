@@ -19,7 +19,7 @@ internal struct ItemsTests {
     ]
 
     @Test internal func toolsFoldCardsAreBlocksAndNotesShow() {
-        let drawn = ChatItems.build(items, live: "")
+        let drawn = ChatItems.build(items)
         #expect(
             drawn == [
                 .you(id: 1, text: "Fix it", files: ["1-0-log.txt"]),
@@ -52,7 +52,7 @@ internal struct ItemsTests {
 
     @Test internal func aChatStyleTurnIsItsReplyAndOneFoldedRowWithApprovalsAndErrorsInline() {
         #expect(
-            ChatItems.build(Self.turn, live: "", style: .chat) == [
+            ChatItems.build(Self.turn, style: .chat) == [
                 .you(id: 1, text: "Fix it", files: []),
                 .card(id: 7, poster: nil, block: Self.card),
                 .note(id: 8, text: "The agent exited (1)."),
@@ -61,7 +61,7 @@ internal struct ItemsTests {
             ]
         )
         #expect(
-            ChatItems.build(Self.turn, live: "") == [
+            ChatItems.build(Self.turn) == [
                 .you(id: 1, text: "Fix it", files: []),
                 .tools(id: 2, rows: Array(Self.steps[0..<3])),
                 .card(id: 7, poster: nil, block: Self.card),
@@ -79,39 +79,24 @@ internal struct ItemsTests {
         let items = [you, frame, APIItem(id: 3, time: 3000, kind: "agent", text: "Done.")]
         let row = ToolRow(#"click "Sign in""#, "done", frame: "f1")
         let (asked, done) = (Item.you(id: 1, text: "Go", files: []), Item.agent(id: 3, markdown: [.text("Done.")]))
-        #expect(ChatItems.build(items, live: "") == [asked, .tools(id: 2, rows: [row]), done])
+        #expect(ChatItems.build(items) == [asked, .tools(id: 2, rows: [row]), done])
         #expect(
-            ChatItems.build(items, live: "", style: .chat) == [asked, done, .trace(id: 2, steps: [row], seconds: 1)])
+            ChatItems.build(items, style: .chat) == [asked, done, .trace(id: 2, steps: [row], seconds: 1)])
     }
 
     @Test internal func aWorkingChatStyleTurnHidesItsStepsAndNamesTheCurrentOne() {
         let working = Array(Self.turn.dropLast(2))
         #expect(
-            ChatItems.build(working, live: "", style: .chat, working: true) == [
+            ChatItems.build(working, style: .chat, working: true) == [
                 .you(id: 1, text: "Fix it", files: []), .card(id: 7, poster: nil, block: Self.card),
             ])
         let again = APIItem(id: 10, time: 9000, kind: "you", text: "Again")
         #expect(
-            ChatItems.build(working + [again], live: "", style: .chat).suffix(2) == [
+            ChatItems.build(working + [again], style: .chat).suffix(2) == [
                 .trace(id: 2, steps: Self.steps, seconds: 4), .you(id: 10, text: "Again", files: []),
             ])
         #expect(ChatItems.step(working) == "Step 6")
         #expect(ChatItems.step(Self.turn) == nil)
-    }
-
-    @Test internal func theReplySoFarIsDrawnLastWithItsCaret() {
-        let drawn = ChatItems.build([], live: "Done:\n\n```ts\nawait x();\n```\n- one\n* two\nafter\n\nlast")
-        #expect(
-            drawn == [
-                .agent(
-                    id: Int.max,
-                    markdown: [
-                        .text("Done:"), .code(lang: "ts", "await x();"), .bullets(["one", "two"]), .text("after"),
-                        .text("last ▍"),
-                    ]
-                )
-            ]
-        )
     }
 
     @Test internal func markdownKeepsAnOpenFenceAndSplitsParagraphsFromBullets() {
@@ -137,7 +122,7 @@ internal struct ItemsTests {
             APIItem(id: 5, time: 5, kind: "ended", text: "The agent stopped."),
         ]
         #expect(
-            ChatItems.build(stopped, live: "") == [
+            ChatItems.build(stopped) == [
                 .note(id: 1, text: "The agent stopped."), .you(id: 4, text: "Again"),
                 .note(id: 5, text: "The agent stopped."),
             ]
@@ -159,9 +144,9 @@ extension ItemsTests {
         let waiting = Item.screen(id: 4, .handoff(what: "Sign in to a.com", waiting: true, note: ""))
         let back = Item.screen(id: 5, .handoff(what: "2FA", waiting: false, note: "done it"))
         let row = ToolRow("click", "done", frame: "f3")
-        #expect(ChatItems.build(items, live: "") == [shot, .tools(id: 3, rows: [row]), waiting, back])
+        #expect(ChatItems.build(items) == [shot, .tools(id: 3, rows: [row]), waiting, back])
         #expect(
-            ChatItems.build(items, live: "", style: .chat) == [
+            ChatItems.build(items, style: .chat) == [
                 shot, waiting, back, .trace(id: 3, steps: [row], seconds: 0),
             ])
         #expect(shot.plainText == nil && shot.id == 2)

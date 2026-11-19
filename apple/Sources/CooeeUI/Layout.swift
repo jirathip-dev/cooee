@@ -71,6 +71,7 @@ internal struct Scroller<Content: View>: View {
     internal var axis: Axis.Set = .vertical
     internal var end = false
     @ViewBuilder internal var content: Content
+    @State private var pinned = true
 
     internal var body: some View {
         if look.still {
@@ -83,7 +84,14 @@ internal struct Scroller<Content: View>: View {
             ScrollView {
                 VStack(spacing: 0) { content }
             }
-            .defaultScrollAnchor(end ? .bottom : .top)
+            .defaultScrollAnchor(end ? .bottom : .top, for: .initialOffset)
+            .defaultScrollAnchor(end ? .bottom : .top, for: .alignment)
+            .defaultScrollAnchor(end && pinned ? .bottom : .top, for: .sizeChanges)
+            .onScrollGeometryChange(for: Bool.self) {
+                $0.visibleRect.maxY >= $0.contentSize.height - 24
+            } action: {
+                pinned = $1
+            }
             .scrollDismissesKeyboard(.interactively)
         }
     }

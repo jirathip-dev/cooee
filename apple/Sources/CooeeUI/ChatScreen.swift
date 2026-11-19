@@ -62,6 +62,7 @@ internal struct ChatScreen: View {
         actions.machine = store.machine.shown
         actions.showMachine = { store.send(.machine(.show(true))) }
         actions.topics = store.bar.map { Self.topics(store, $0) }
+        actions.live = { store.live }
         return actions
     }
 
