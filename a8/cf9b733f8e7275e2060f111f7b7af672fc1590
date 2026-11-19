@@ -1,0 +1,8 @@
+Decided: one Gzip layer for every route, buffering text, JSON and SVG replies and gzipping those over 1 KB
+Because: q2045
+Rejected: brotli — q2045 says gzip only
+Rejected: gzipping SSE — the layer buffers the whole body, so a live event stream would never be sent; it needs per-event flushing
+Decided: strong ETag on look art, weakened by the Gzip layer; If-None-Match matches either form
+Because: crates/cooee-server/src/themes.rs:573
+Check: crates/cooee/tests/themes.rs gzips_and_revalidates drives the real server for gzip and 304
+Owner: Sprite sheets now download gzipped, and a repeat fetch gets a 304 instead of the full file.
