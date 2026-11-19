@@ -1,0 +1,14 @@
+Decided: the bush pack is packs/themes/bush/, written by docs/design/bush/pack.mjs from the approved art.mjs; it is not compiled in
+Because: "It is not compiled into the binary (owner, q522)"
+Decided: load_scene.kind "sign" is the only kind; its levels are sprites.svg's s-sign-moderate/high/catastrophic, layers the size of scene.svg, drawn over the clearing
+Because: crates/cooee-server/src/look.rs:348
+Decided: the level is the scene block's level (calm, busy, held), else its load at the weather's thresholds
+Because: q2376
+Decided: the sign and the pack's own s-scene lane figures switch on only for a sign theme, so farm, kitchen and garden draw as before
+Because: "Farm, kitchen and garden stay pixel-identical."
+Rejected: a native frame of the bush strip — Frames render with ImageRenderer, which can't draw PackArt's WebView, so pack SVG never shows in a PNG
+Rejected: listing bush in a curated theme index — cooee has none, and a pack in cooee's own repo has no reviewed commit to pin before its merge
+Decided: the design scripts lost their // comments, which the repo's comments gate refuses; the README keeps the explanation
+Because: scripts/comments.py:16
+Check: cargo run -p cooee -- theme check packs/themes/bush passes; CI's themes gate now runs it
+Owner: The bush theme pack is in the repo with its Fire Danger sign; the app's picture tests can't show pack art yet, so that check needs your call.
