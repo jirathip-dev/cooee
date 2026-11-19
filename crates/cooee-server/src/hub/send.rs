@@ -179,7 +179,7 @@ impl Hub {
     ) -> Result<Item, HubError> {
         if !handover.is_empty() && live.meta.handover == handover {
             live.meta.handover.clear();
-            self.store.save(&live.meta)?;
+            self.save(live)?;
         }
         live.sent = Some(start);
         if let Some(card) = q

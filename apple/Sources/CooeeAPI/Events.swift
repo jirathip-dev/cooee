@@ -162,3 +162,26 @@ extension Client {
         }
     }
 }
+
+extension Client {
+    /// Yields each time Home may have changed: on connect, on each `changed` and after each failed attempt (#340).
+    public func homeChanges() -> AsyncStream<Void> {
+        AsyncStream(bufferingPolicy: .bufferingNewest(1)) { continuation in
+            let task = Task {
+                while !Task.isCancelled {
+                    do {
+                        _ = try await sse(try request("GET", "/home/events"), id: "") { _ in
+                            continuation.yield()
+                            return false
+                        }
+                    } catch {
+                        continuation.yield()
+                    }
+                    try? await clock.sleep(for: retry)
+                }
+                continuation.finish()
+            }
+            continuation.onTermination = { _ in task.cancel() }
+        }
+    }
+}
