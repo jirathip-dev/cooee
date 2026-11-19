@@ -1,0 +1,12 @@
+Decided: the server checks and merges with blocks::layout and cooee's Contract; the watch, routes, reset and the plugin-permission prune stay cooee's
+Because: crates/cooee-server/src/layout.rs:78
+Decided: CooeeCore alone imports Blocks and re-exports only the layout types as typealiases
+Because: apple/Sources/CooeeCore/CooeeLayout.swift:4
+Rejected: @_exported import Blocks — its Screen, Style, Text and Image clash with CooeeCore's and SwiftUI's until #620
+Decided: the locked pairing and reset screens leave the tree; the UI already filtered them out and draws both itself
+Because: apple/Sources/CooeeUI/Menu.swift:19
+Decided: the SwiftPM pin equals the Cargo pin, held by a test
+Because: crates/cooee/tests/layout.rs:287
+Rejected: keep cooee's fixture copies — blocks' fixtures/layouts are byte-identical and blocks tests each refusal with cooee's contract
+Check: GET /layout now serves blocks' form (place as {compact, wide}, ids and transitions filled) and the app reads it
+Owner: cooee's app and server now read layout.json with the shared blocks rules; what you see is unchanged.
