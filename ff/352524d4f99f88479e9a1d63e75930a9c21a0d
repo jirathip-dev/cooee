@@ -1,0 +1,7 @@
+Decided: fix round: no code change; the red ubuntu check was perf.rs timing the thread list at 657 ms on a busy runner, a path this PR doesn't touch
+Because: crates/cooee-core/src/blocks.rs:57
+Decided: merged origin/staging for a fresh CI run; the perf, mcp and routines tests pass locally at the new head
+Because: "The server draws `mcp` and `routine` cards as proposal cards"
+Rejected: loosening or skipping the perf test — it guards the thread list, and the issue says to keep the server tests as they are
+Check: CI's stable (ubuntu-latest) and apple checks are green at ff352524d
+Owner: Nothing new for you: the build check failed on an unrelated slow timing test, so this round only brings the branch up to date and re-runs it.
