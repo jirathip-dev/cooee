@@ -7,6 +7,8 @@ mod thread;
 mod workflow;
 mod writer;
 
+pub(crate) use thread::is_zero;
+
 pub use error::*;
 pub use files::*;
 pub use items::*;

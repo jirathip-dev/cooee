@@ -251,10 +251,26 @@ impl Runner {
             .filter(|r| r.made_at == 0)
             .map(|r| r.made_at = now)
             .collect();
-        if !made.is_empty()
+        let quiet: Vec<(Routine, u64)> = book
+            .routines
+            .iter_mut()
+            .filter_map(|r| r.silence(now).map(|m| (r.clone(), m)))
+            .collect();
+        if !(made.is_empty() && quiet.is_empty())
             && let Err(e) = self.file.save(&book)
         {
             cooee_core::note!("cooee: routines: {e}");
+        }
+        for (r, m) in quiet {
+            self.hub.push().send(&Note {
+                title: format!("Routine {} is silent", r.name),
+                body: format!("no signed POST for {m} min"),
+                tag: r.id.clone(),
+                url: "/routines".to_owned(),
+                item: 0,
+                say: false,
+            });
+            self.note(&r, &format!("no signed POST for {m} min"));
         }
         for at in 0..book.routines.len() {
             let Some(r) = book.routines.get_mut(at) else {
@@ -271,6 +287,41 @@ impl Runner {
             if let Err(e) = self.file.save(&book) {
                 cooee_core::note!("cooee: routines: {e}");
             }
+        }
+    }
+
+    fn note(&self, r: &Routine, line: &str) {
+        let text = format!("⟳ {}: {line}", r.name);
+        if let Err(e) = self.hub.say(&r.made_in, Body::Note { text }) {
+            cooee_core::note!("cooee: routines: {}: {e}", r.id);
+        }
+    }
+
+    /// Routine `r`'s last signed POST, as its row shows it, when it has a silence rule.
+    #[must_use]
+    pub fn heard(&self, r: &Routine, now: u64) -> Option<String> {
+        let Trigger::Webhook(h) = &r.trigger else {
+            return None;
+        };
+        h.silence?;
+        Some(match r.heard {
+            0 => "no signed POST yet".to_owned(),
+            at => format!("last POST {}", local(at, self.offset(now))),
+        })
+    }
+
+    pub(crate) fn hear(&self, id: &str, now: u64) {
+        let back = self.change(|b| {
+            let r = b.routines.iter_mut().find(|r| r.id == id);
+            Ok(r.and_then(|r| r.hear(now).map(|m| (r.clone(), m))))
+        });
+        match back {
+            Ok(Some((r, m))) => self.note(
+                &r,
+                &format!("signed POSTs are back after {m} min of silence"),
+            ),
+            Ok(None) => {}
+            Err(e) => cooee_core::note!("cooee: routines: {id}: {e}"),
         }
     }
 

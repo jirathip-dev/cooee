@@ -203,6 +203,8 @@ struct RoutineRow<'a> {
     on: bool,
     #[serde(skip_serializing_if = "Option::is_none")]
     url: Option<&'a str>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    next: Option<&'a str>,
 }
 
 #[derive(Serialize)]
@@ -234,7 +236,7 @@ async fn fill(cx: &Cx, id: String) -> Result<Block, HubError> {
     let all = routines::on(cx, |r| {
         Ok(r.list()?
             .into_iter()
-            .map(|x| (r.url(&x), x))
+            .map(|x| ((r.url(&x), r.heard(&x, crate::hub::now())), x))
             .collect::<Vec<_>>())
     })
     .await?;
@@ -250,7 +252,7 @@ async fn fill(cx: &Cx, id: String) -> Result<Block, HubError> {
             .filter(|t| t.persona == p.id)
             .map(|t| t.id)
             .collect();
-        let mine = |(_, r): &&(Option<String>, Routine)| match &r.place {
+        let mine = |(_, r): &&(Shown, Routine)| match &r.place {
             Place::Chat { thread } => chats.contains(thread),
             Place::NewThread { who } => who.profile == p.id,
         };
@@ -339,13 +341,16 @@ fn library_rows(index: Option<&std::path::Path>, mine: &[Skill]) -> Vec<Skill> {
         .collect()
 }
 
-fn routine((url, r): &(Option<String>, Routine)) -> Value {
+type Shown = (Option<String>, Option<String>);
+
+fn routine(((url, next), r): &(Shown, Routine)) -> Value {
     let row = RoutineRow {
         id: &r.id,
         name: &r.name,
         when: r.when(),
         on: r.paused.is_none(),
         url: url.as_deref(),
+        next: next.as_deref(),
     };
     serde_json::to_value(row).unwrap_or_default()
 }

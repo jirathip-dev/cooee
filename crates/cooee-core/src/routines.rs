@@ -27,6 +27,8 @@ pub const RATE: usize = 6;
 
 const RUNS_FORMAT: u32 = 1;
 
+const MINUTE: u64 = 60_000;
+
 const HOUR: u64 = 3_600_000;
 
 const KEEP: u64 = 96 * HOUR;
@@ -70,6 +72,12 @@ pub struct Routine {
     /// When events ran it in the last hour (ms), for [`RATE`].
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub recent: Vec<u64>,
+    /// Its last signed POST (ms), for a webhook's silence rule.
+    #[serde(default, skip_serializing_if = "crate::store::is_zero")]
+    pub heard: u64,
+    /// Its silence alert went out, and no signed POST came since.
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub silent: bool,
 }
 
 /// When a routine runs.
@@ -248,6 +256,8 @@ impl Routine {
             last_due: 0,
             last_run: None,
             recent: Vec::new(),
+            heard: 0,
+            silent: false,
         };
         r.edit(
             Edit {
@@ -310,8 +320,38 @@ impl Routine {
         match &self.trigger {
             Trigger::Schedule(s) => s.describe(),
             Trigger::Github(g) => format!("on {} in {}", g.events.join(", "), g.repo),
-            Trigger::Webhook(h) => format!("on a POST signed with secret:{}", h.secret),
+            Trigger::Webhook(h) => match h.silence {
+                Some(m) => format!(
+                    "on a POST signed with secret:{}, alert after {m} min without one",
+                    h.secret
+                ),
+                None => format!("on a POST signed with secret:{}", h.secret),
+            },
         }
+    }
+
+    /// Its silence alert at `now`, once per silence: the minutes since its last signed POST (else its making), when
+    /// that is past its webhook's `silence` and it isn't paused.
+    pub fn silence(&mut self, now: u64) -> Option<u64> {
+        let Trigger::Webhook(Webhook {
+            silence: Some(min), ..
+        }) = &self.trigger
+        else {
+            return None;
+        };
+        let quiet = now.saturating_sub(self.heard.max(self.made_at));
+        if self.silent || self.paused.is_some() || self.made_at == 0 || quiet < min * MINUTE {
+            return None;
+        }
+        self.silent = true;
+        Some(quiet / MINUTE)
+    }
+
+    /// A signed POST at `now`: the minutes it was silent, when its silence alert went out.
+    pub fn hear(&mut self, now: u64) -> Option<u64> {
+        let quiet = now.saturating_sub(self.heard.max(self.made_at));
+        self.heard = now;
+        std::mem::take(&mut self.silent).then_some(quiet / MINUTE)
     }
 
     /// The due time to run at `now` (ms, in UTC offset `offset_min`): the newest one past both its last run and its
@@ -446,6 +486,10 @@ struct State {
     chat_gone: Option<String>,
     #[serde(skip_serializing_if = "Vec::is_empty")]
     recent: Vec<u64>,
+    #[serde(skip_serializing_if = "crate::store::is_zero")]
+    heard: u64,
+    #[serde(skip_serializing_if = "std::ops::Not::not")]
+    silent: bool,
 }
 
 pub(crate) fn files(routines: &[Routine], seen: &[(String, u64)]) -> (String, Vec<u8>) {
@@ -482,6 +526,8 @@ pub(crate) fn files(routines: &[Routine], seen: &[(String, u64)]) -> (String, Ve
             last_run: r.last_run.clone(),
             chat_gone,
             recent: r.recent.clone(),
+            heard: r.heard,
+            silent: r.silent,
         };
         runs.runs.insert(r.id.clone(), state);
     }
@@ -563,6 +609,8 @@ impl Routines {
                 last_due: s.last_due,
                 last_run: s.last_run,
                 recent: s.recent,
+                heard: s.heard,
+                silent: s.silent,
                 id: d.id,
                 name: d.name,
                 place: d.place,

@@ -38,7 +38,10 @@ impl Runner {
             Err(e) => return (503, e.to_string()),
         };
         match Inbound::signed(headers, body, secret.as_bytes()) {
-            Ok(i) => self.accept(id, &i, now),
+            Ok(i) => {
+                self.hear(id, now);
+                self.accept(id, &i, now)
+            }
             Err(e) => (e.status(), e.to_string()),
         }
     }
