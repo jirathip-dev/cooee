@@ -143,7 +143,7 @@ fn plain_adds_nothing_a_file_profile_is_applied_at_spawn_a_guard_that_cant_run_i
     let data = s.dir.join("data");
     let work = data.join("accounts/fake/work");
     let settings = s.dir.join("agents/coder/settings.json");
-    assert!(line.contains(" --policy allow "), "{line}");
+    assert!(line.contains(" --policy ask "), "{line}");
     let terminal = format!("cooee-{id}");
     let meta = s.shed.meta(&terminal).expect("#320: no personal setup");
     claude_switches(&meta, &format!("Follow the house rules.\n\n{PLAIN}"));
@@ -650,6 +650,13 @@ fn claude_switches(meta: &Value, brief: &str) {
         "{meta}"
     );
     assert_eq!(options["settings"]["autoMemoryEnabled"], false, "{meta}");
+    let permissions = &options["settings"]["permissions"];
+    assert_eq!(permissions["defaultMode"], "default", "{meta}");
+    assert_eq!(permissions["disableAutoMode"], "disable", "{meta}");
+    let ask = permissions["ask"].as_array().unwrap();
+    for t in ["Read", "Grep", "Bash", "Edit", "WebFetch"] {
+        assert!(ask.contains(&json!(t)), "#503: {t} asks: {meta}");
+    }
     let tools = options["tools"].as_array().unwrap();
     for off in ["Agent", "Skill", "WebSearch"] {
         assert_eq!(

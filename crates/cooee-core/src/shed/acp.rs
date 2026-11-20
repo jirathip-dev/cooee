@@ -87,12 +87,21 @@ impl Shed {
         })
     }
 
-    /// Answers the oldest permission request of ACP terminal `name` with `option` (`shed approve`).
+    /// Answers ACP terminal `name`'s permission request `request` (none: its oldest) with `option` (`shed approve`).
     ///
     /// # Errors
     /// [`ShedError`] when the call fails.
-    pub fn approve(&self, name: &str, option: &str) -> Result<(), ShedError> {
-        self.with(|conn| conn.input(name, &json!({ "approve": option })))
+    pub fn approve(
+        &self,
+        name: &str,
+        option: &str,
+        request: Option<&str>,
+    ) -> Result<(), ShedError> {
+        let line = match request.filter(|r| !r.is_empty()) {
+            Some(r) => json!({ "approve": option, "request": r }),
+            None => json!({ "approve": option }),
+        };
+        self.with(|conn| conn.input(name, &line))
     }
 
     /// Cancels ACP terminal `name`'s turn (`shed cancel`).

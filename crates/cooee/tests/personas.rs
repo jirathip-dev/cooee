@@ -245,7 +245,7 @@ fn an_agents_launch_keys_are_read_only_and_an_edit_keeps_them() {
     let check = |prompt: &str| {
         let (id, line, sent) = s.start("coder");
         assert!(
-            line.contains(" --policy allow ") && line.contains(" MODE=review "),
+            line.contains(" --policy ask ") && line.contains(" MODE=review "),
             "{line}"
         );
         assert_eq!(sent, prompt);

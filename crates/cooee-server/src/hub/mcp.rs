@@ -301,6 +301,8 @@ impl Hub {
                 "tool {tool} isn't allowed in this thread (its profile's tools for {server})"
             )));
         }
+        let folder = self.token_of(id, token)?.folder.unwrap_or_default();
+        self.denied_tool(&persona, &folder, (server, tool))?;
         if server != browser::SERVER {
             return Ok(Called::default());
         }

@@ -19,7 +19,7 @@ pub(crate) fn persona(
     let want = Want {
         brief: &brief,
         off: &off,
-        ask_all: false,
+        ask_all: true,
         run: &run,
     };
     let setup = logins.session(&a.agent, &want);
@@ -32,6 +32,7 @@ pub(crate) fn persona(
             .map_err(|e| HubError::Refused(format!("{}: {e}", file.display())))?;
     }
     launch.meta = setup.meta;
+    launch.policy = Some("ask".to_owned());
     launch.env.extend(setup.env);
     launch.args.extend(setup.args);
     let own = signed && account.is_empty();

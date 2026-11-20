@@ -322,6 +322,7 @@ mod tests {
             action: crate::action::Kind::Other,
             status: "completed".to_owned(),
             ended: None,
+            ruled: None,
         }
     }
 
