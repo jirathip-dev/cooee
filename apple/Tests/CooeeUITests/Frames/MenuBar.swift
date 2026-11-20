@@ -43,15 +43,15 @@ internal struct MenuBarFrames {
         "unpaired": (379, Glance(link: .unpaired)),
     ]
 
-    internal static var frames: [Frame] {
-        states.flatMap { name, panel in
-            [("dark", Palette.farmDark), ("light", Palette.farmLight)].map { mode, palette in
-                Frame.mac("\(name)-390-\(mode)", 390, panel.0, palette) { MenuPanel(panel.1).padding(25) }
-                    .bare().filed("menu-bar")
-            }
-        }
+    @MainActor @Test(arguments: states.keys.sorted(), ["dark", "light"])
+    internal func matchesTheDesign(_ state: String, _ mode: String) throws {
+        let (height, glance) = try #require(Self.states[state])
+        let palette: Palette = mode == "dark" ? .farmDark : .farmLight
+        let panel = MenuPanel(glance).padding(25).frame(width: 390, height: height).background(palette.background)
+            .environment(\.look, Look(palette: palette, style: .bundled, still: true))
+            .environment(\.colorScheme, palette.dark ? .dark : .light)
+        let renderer = ImageRenderer(content: panel)
+        renderer.scale = 2
+        try Frame.matches(try #require(renderer.cgImage), "\(state)-390-\(mode)", in: "menu-bar")
     }
-
-    @MainActor @Test(arguments: frames)
-    internal func matchesTheDesign(_ frame: Frame) throws { try frame.matchesItsDesign() }
 }
