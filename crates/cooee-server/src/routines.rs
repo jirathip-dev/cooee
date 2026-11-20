@@ -224,7 +224,6 @@ impl Runner {
         ))
     }
 
-    /// Routine `r`'s trigger and end in words, as the chat and the persona panel show them.
     pub(crate) fn when(&self, r: &Routine, now: u64) -> String {
         let until = r.until(self.offset(now));
         if until.is_empty() {
