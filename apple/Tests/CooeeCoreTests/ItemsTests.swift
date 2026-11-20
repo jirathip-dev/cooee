@@ -40,20 +40,6 @@ internal struct ItemsTests {
         #expect(ToolRow(.run, "b", "running").running && !ToolRow(.read, "a", "done").running)
     }
 
-    @Test internal func aToolRowDrawsTheServersActionAndAnUnknownOneAsOther() throws {
-        let wire = #"""
-            [{"id": 2, "at": 2, "kind": "tool", "call": "c1", "title": "src/lib.rs", "action": "read", "status": "completed"},
-             {"id": 3, "at": 3, "kind": "tool", "call": "c2", "title": "cooee/remember", "action": "tool", "status": "failed"},
-             {"id": 4, "at": 4, "kind": "tool", "call": "c3", "title": "Look", "action": "browse", "status": "pending"}]
-            """#
-        let items = try JSONDecoder().decode([APIItem].self, from: Data(wire.utf8))
-        let rows = [
-            ToolRow(.read, "src/lib.rs", "done"), ToolRow(.tool, "cooee/remember", "failed"),
-            ToolRow(.other, "Look", "running"),
-        ]
-        #expect(ChatItems.build(items) == [.tools(id: 2, rows: rows)])
-    }
-
     private static let card = JSONValue.object(["type": .string("card")])
     private static let steps = (2...6).map { ToolRow(.other, "Step \($0)", "done") }
     private static let turn: [APIItem] = {
@@ -253,5 +239,19 @@ extension ItemsTests {
         #expect(ChatItems.build(items) == [.link(id: 2, onward), .link(id: 3, back)])
         #expect(onward.chip == "continued in Fix the build" && back.chip == "from t5")
         #expect(Item.link(id: 2, onward).plainText == nil && Item.link(id: 2, onward).id == 2)
+    }
+
+    @Test internal func aToolRowDrawsTheServersActionAndAnUnknownOneAsOther() throws {
+        let wire = #"""
+            [{"id": 2, "at": 2, "kind": "tool", "call": "c1", "title": "src/lib.rs", "action": "read", "status": "completed"},
+             {"id": 3, "at": 3, "kind": "tool", "call": "c2", "title": "cooee/remember", "action": "tool", "status": "failed"},
+             {"id": 4, "at": 4, "kind": "tool", "call": "c3", "title": "Look", "action": "browse", "status": "pending"}]
+            """#
+        let items = try JSONDecoder().decode([APIItem].self, from: Data(wire.utf8))
+        let rows = [
+            ToolRow(.read, "src/lib.rs", "done"), ToolRow(.tool, "cooee/remember", "failed"),
+            ToolRow(.other, "Look", "running"),
+        ]
+        #expect(ChatItems.build(items) == [.tools(id: 2, rows: rows)])
     }
 }

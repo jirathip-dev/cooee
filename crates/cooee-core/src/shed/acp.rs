@@ -12,14 +12,14 @@ use super::{Agent, Launch, Listed, Record, Shed, ShedError, client::CALL};
 #[derive(Debug)]
 pub enum Streamed {
     /// An event.
-    Event(Event),
+    Event(Box<Event>),
     /// The events up to this seq are gone; resume after it.
     Reset(u64),
 }
 
 fn streamed(line: &str) -> Result<Streamed, serde_json::Error> {
     serde_json::from_str(line)
-        .map(Streamed::Event)
+        .map(|e| Streamed::Event(Box::new(e)))
         .or_else(|e| {
             let note: Request = serde_json::from_str(line)?;
             match (

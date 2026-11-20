@@ -30,7 +30,7 @@ impl Hub {
                         match item {
                             Streamed::Event(event) => {
                                 last = Some(event.seq);
-                                self.apply(event);
+                                self.apply(*event);
                             }
                             Streamed::Reset(seq) => {
                                 last = Some(seq);

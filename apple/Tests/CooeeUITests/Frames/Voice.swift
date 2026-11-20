@@ -54,7 +54,8 @@ private enum VoiceScreens {
             .you(id: 1, text: "Find what the Q3 10-Q says about Birch."),
             .call(Call(id: 2, seconds: 252, lines: lines, tools: 2)),
             .tools(
-                id: 3, rows: [ToolRow(.fetch, "sec.gov/…/kestrel-10q-q3.htm", "ok"), ToolRow(.read, "notes, p. 14", "ok")]),
+                id: 3,
+                rows: [ToolRow(.fetch, "sec.gov/…/kestrel-10q-q3.htm", "ok"), ToolRow(.read, "notes, p. 14", "ok")]),
             .agent(
                 id: 4,
                 markdown: [
