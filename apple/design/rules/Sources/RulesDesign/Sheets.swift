@@ -81,7 +81,7 @@ internal struct Field: View {
 
 internal struct AddRuleSheet: View {
     @Environment(\.look) private var look
-    internal var folder = "~/work"
+    internal var folder = "~/src/cooee"
 
     private static let kinds = ToolKind.allCases
 
@@ -112,7 +112,7 @@ internal struct AddRuleSheet: View {
                     .padding(.horizontal, 12).frame(height: 44)
                     .chip(look, fill: palette.card, edge: palette.edge, radius: look.radius(10), paper: palette.card))
             }
-            Field(label: "In", hint: "A rule for one folder applies there and in its sub-folders.") {
+            Field(label: "In") {
                 AnyView(
                     HStack(spacing: 8) {
                         Choice(title: folder, symbol: "folder", picked: true)

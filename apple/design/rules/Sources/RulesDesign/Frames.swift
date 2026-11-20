@@ -20,7 +20,7 @@ public enum RulesFrames {
         ZStack(alignment: .bottom) {
             RulesPage(swiped: "3f")
             Dim()
-            RemoveSheet(rule: Story.chief[2])
+            RemoveSheet(rule: Story.coder[2])
         }
     }
 
@@ -48,8 +48,6 @@ internal struct MacRules: View {
             VStack(alignment: .leading, spacing: 0) {
                 Text(look.label(.section, "Coder's rules")).ui(26, .bold, look)
                     .padding(.horizontal, 28).padding(.top, 48).padding(.bottom, 4)
-                Text("Codex · 3 of these never come up: it doesn't ask before reads, searches or commands in its sandbox.")
-                    .ui(13, .regular, look).foregroundStyle(palette.amber).padding(.horizontal, 28)
                 Scroller {
                     RulesBody(name: "Coder", rules: Story.coder, agent: "Codex", hover: "5c")
                         .frame(maxWidth: 720, alignment: .leading).padding(.horizontal, 28).padding(.vertical, 18)

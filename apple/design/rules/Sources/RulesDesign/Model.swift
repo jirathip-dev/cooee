@@ -38,23 +38,18 @@ internal struct AgentFixture: Sendable, Identifiable {
 }
 
 internal enum Story {
-    internal static let chief: [RuleFixture] = [
-        RuleFixture(id: "a1", effect: .deny, kind: .tool, words: "Deny using github/delete_repo", from: "added here · 12 Nov"),
-        RuleFixture(id: "07", effect: .ask, kind: .run, words: "Ask before running git push … in ~/work", from: "added here · 14 Nov"),
-        RuleFixture(id: "3f", effect: .allow, kind: .run, words: "Allow running cargo test … in ~/work", from: "from a card · 18 Nov"),
-        RuleFixture(id: "5c", effect: .allow, kind: .fetch, words: "Allow fetching from docs.rs", from: "from a card · 19 Nov"),
-        RuleFixture(id: "9e", effect: .allow, kind: .edit, words: "Allow editing notes/** in ~/work", from: "added here · 20 Nov"),
-        RuleFixture(id: "01", effect: .allow, kind: .read, words: "Allow reading any file in ~/work", from: "starter rule"),
-        RuleFixture(id: "02", effect: .allow, kind: .search, words: "Allow searching any file in ~/work", from: "starter rule"),
-    ]
-
-
     internal static let coder: [RuleFixture] = [
         RuleFixture(id: "a1", effect: .deny, kind: .tool, words: "Deny using github/delete_repo", from: "added here · 12 Nov"),
-        RuleFixture(id: "5c", effect: .allow, kind: .fetch, words: "Allow fetching from docs.rs", from: "from a card · 19 Nov"),
+        RuleFixture(
+            id: "07", effect: .ask, kind: .run, words: "Ask before running git push … in ~/src/cooee",
+            from: "added here · 14 Nov"),
         RuleFixture(
             id: "3f", effect: .allow, kind: .run, words: "Allow running cargo test … in ~/src/cooee",
             from: "from a card · 18 Nov", silent: true),
+        RuleFixture(id: "5c", effect: .allow, kind: .fetch, words: "Allow fetching from docs.rs", from: "from a card · 19 Nov"),
+        RuleFixture(
+            id: "9e", effect: .allow, kind: .edit, words: "Allow editing notes/** in ~/src/cooee",
+            from: "added here · 20 Nov"),
         RuleFixture(
             id: "01", effect: .allow, kind: .read, words: "Allow reading any file in ~/src/cooee", from: "starter rule",
             silent: true),

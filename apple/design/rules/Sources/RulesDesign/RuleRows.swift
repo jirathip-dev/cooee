@@ -76,15 +76,11 @@ internal struct RulesBody: View {
     internal var body: some View {
         let palette = look.palette
         VStack(alignment: .leading, spacing: 22) {
-            VStack(alignment: .leading, spacing: 8) {
-                Group2(header: "\(name)'s rules") {
-                    ForEach(rules) { rule in
-                        line(rule).background(rule.id == fresh ? palette.green.opacity(0.10) : .clear)
-                    }
-                    AddRuleRow()
+            Group2(header: "\(name)'s rules") {
+                ForEach(rules) { rule in
+                    line(rule).background(rule.id == fresh ? palette.green.opacity(0.10) : .clear)
                 }
-                Text("When several match, the strictest wins: deny, then ask, then allow.")
-                    .ui(12.5, .regular, look).foregroundStyle(palette.mute).padding(.horizontal, 16)
+                AddRuleRow()
             }
             Group2(header: "Anything else") {
                 HStack {
@@ -130,15 +126,15 @@ internal struct BackBar: View {
 
 internal struct RulesPage: View {
     @Environment(\.look) private var look
-    internal var rules = Story.chief
+    internal var rules = Story.coder
     internal var fresh: String?
     internal var swiped: String?
 
     internal var body: some View {
         VStack(spacing: 0) {
-            BackBar(back: "Chief", title: "Rules")
+            BackBar(back: "Coder", title: "Rules")
             Scroller {
-                RulesBody(name: "Chief", rules: rules, fresh: fresh, swiped: swiped)
+                RulesBody(name: "Coder", rules: rules, agent: "Codex", fresh: fresh, swiped: swiped)
                     .padding(.horizontal, 16).padding(.vertical, 12)
             }
         }

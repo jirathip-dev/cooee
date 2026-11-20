@@ -7,21 +7,13 @@ internal struct GapLines: View {
     internal let gaps: [String]
 
     internal var body: some View {
-        let palette = look.palette
         VStack(alignment: .leading, spacing: 4) {
-            if gaps.isEmpty {
-                HStack(alignment: .firstTextBaseline, spacing: 6) {
-                    Glyph(symbol: "checkmark.circle.fill", ascii: "ok", size: 11)
-                    Text("Asks before everything; your rules answer it")
-                }
-                .foregroundStyle(palette.green)
-            }
             ForEach(gaps, id: \.self) { gap in
                 HStack(alignment: .firstTextBaseline, spacing: 6) {
                     Glyph(symbol: "exclamationmark.triangle.fill", ascii: "!", size: 11)
                     Text(gap).fixedSize(horizontal: false, vertical: true)
                 }
-                .foregroundStyle(palette.amber)
+                .foregroundStyle(look.palette.amber)
             }
         }
         .ui(13, .regular, look)
@@ -68,15 +60,10 @@ internal struct AgentSheet: View {
         let palette = look.palette
         BottomSheet {
             SheetBar(title: "Coder's agent", done: "Done")
-            VStack(alignment: .leading, spacing: 8) {
-                Group2(header: "Agent") {
-                    ForEach(Story.agents) { agent in
-                        AgentLine(agent: agent, picked: agent.id == "Codex", divider: agent.id != "Gemini")
-                    }
+            Group2(header: "Agent") {
+                ForEach(Story.agents) { agent in
+                    AgentLine(agent: agent, picked: agent.id == "Codex", divider: agent.id != "Gemini")
                 }
-                Text("A gap is something cooee can't tell that agent. Your rules still answer whatever it asks.")
-                    .ui(12.5, .regular, look).foregroundStyle(palette.mute).padding(.horizontal, 16)
-                    .fixedSize(horizontal: false, vertical: true)
             }
             Group2 {
                 SettingRow(symbol: "cpu", title: "Model", tint: palette.purple, value: "gpt-5.5")
@@ -110,7 +97,7 @@ internal struct PersonaSheet: View {
                 Group2(header: "Agent") {
                     SettingRow(
                         symbol: "sparkles", title: "Codex · gpt-5.5", tint: palette.lead, value: "4 gaps", warn: true)
-                    SettingRow(symbol: "checkmark.shield.fill", title: "Rules", tint: palette.green, value: "5", divider: false)
+                    SettingRow(symbol: "checkmark.shield.fill", title: "Rules", tint: palette.green, value: "7", divider: false)
                         .background(rulesPicked ? palette.link.opacity(0.14) : .clear)
                 }
                 Group2 {
