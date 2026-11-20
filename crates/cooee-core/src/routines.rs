@@ -4,20 +4,19 @@
 //! (#359). Pure: the server's runner gives `now`, the Mac's UTC offset and each delivery.
 mod cron;
 mod end;
+mod file;
 mod github;
 mod script;
 mod webhook;
 
-use std::{
-    collections::BTreeMap,
-    fs, io,
-    path::{Path, PathBuf},
-};
+use std::path::PathBuf;
 
 use serde::{Deserialize, Serialize};
 
 pub use cron::{Schedule, local, parse_local};
 pub use end::{End, Ended};
+pub use file::Routines;
+pub(crate) use file::files;
 pub use github::{Delivery, Fields, Github, Hooks, Rejected, Skip};
 pub use script::{Mode, Script};
 pub use webhook::{Inbound, Webhook};
@@ -29,8 +28,6 @@ pub const MAX: usize = 50;
 
 /// How many times an event may run one routine in an hour.
 pub const RATE: usize = 6;
-
-const RUNS_FORMAT: u32 = 1;
 
 const HOUR: u64 = 3_600_000;
 
@@ -442,224 +439,156 @@ impl Book {
     }
 }
 
-#[derive(Debug, Default, Serialize, Deserialize)]
-#[serde(deny_unknown_fields)]
-struct Settings {
-    #[serde(default)]
-    routine: Vec<Def>,
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-#[serde(deny_unknown_fields)]
-struct Def {
-    id: String,
-    name: String,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    when: Option<Schedule>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    github: Option<Github>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    webhook: Option<Webhook>,
-    #[serde(default)]
-    prompt: String,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    script: Option<Script>,
-    #[serde(default)]
-    paused: bool,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    ends_at: Option<u64>,
-    place: Place,
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-struct RunFile {
-    format: u32,
-    #[serde(default)]
-    runs: BTreeMap<String, State>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    seen: Vec<(String, u64)>,
-}
-
-#[derive(Debug, Clone, Default, Serialize, Deserialize)]
-#[serde(default)]
-struct State {
-    made_in: String,
-    made_at: u64,
-    last_due: u64,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    last_run: Option<Run>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    chat_gone: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    ended: Option<Ended>,
-    #[serde(skip_serializing_if = "Vec::is_empty")]
-    recent: Vec<u64>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    heard: Option<u64>,
-    #[serde(skip_serializing_if = "std::ops::Not::not")]
-    silent: bool,
-}
-
-pub(crate) fn files(routines: &[Routine], seen: &[(String, u64)]) -> (String, Vec<u8>) {
-    let mut settings = Settings::default();
-    let mut runs = RunFile {
-        format: RUNS_FORMAT,
-        runs: BTreeMap::new(),
-        seen: seen.to_vec(),
-    };
-    for r in routines {
-        let (when, github, webhook) = match r.trigger.clone() {
-            Trigger::Schedule(s) => (Some(s), None, None),
-            Trigger::Github(g) => (None, Some(g), None),
-            Trigger::Webhook(h) => (None, None, Some(h)),
-        };
-        let (chat_gone, ended) = match &r.paused {
-            Some(Paused::ChatGone { thread }) => (Some(thread.clone()), None),
-            Some(Paused::Ended(e)) => (None, Some(*e)),
-            _ => (None, None),
-        };
-        settings.routine.push(Def {
-            id: r.id.clone(),
-            name: r.name.clone(),
-            when,
-            github,
-            webhook,
-            prompt: r.prompt.clone(),
-            script: r.script.clone(),
-            paused: r.paused == Some(Paused::Owner),
-            ends_at: r.ends_at,
-            place: r.place.clone(),
-        });
-        let state = State {
-            made_in: r.made_in.clone(),
-            made_at: r.made_at,
-            last_due: r.last_due,
-            last_run: r.last_run.clone(),
-            chat_gone,
-            ended,
-            recent: r.recent.clone(),
-            heard: r.heard,
-            silent: r.silent,
-        };
-        runs.runs.insert(r.id.clone(), state);
-    }
-    let toml = crate::toml_text(&serde_json::to_value(&settings).unwrap_or_default());
-    (toml, serde_json::to_vec_pretty(&runs).unwrap_or_default())
-}
-
-fn read(path: &Path) -> io::Result<Option<Vec<u8>>> {
-    match fs::read(path) {
-        Err(e) if e.kind() == io::ErrorKind::NotFound => Ok(None),
-        read => read.map(Some),
-    }
-}
-
-/// The routines' two files.
-#[derive(Debug, Clone)]
-pub struct Routines {
-    settings: PathBuf,
-    runs: PathBuf,
-}
-
-impl Routines {
-    /// The routines of config folder `config`, their run state in data folder `data`.
-    #[must_use]
-    pub fn new(config: &Path, data: &Path) -> Self {
-        Self {
-            settings: config.join("routines.toml"),
-            runs: data.join("routine-runs.json"),
-        }
-    }
-
-    /// Every routine (none before the first), its settings joined with its run state, and the deliveries seen.
-    ///
-    /// # Errors
-    /// When a file can't be read, isn't what it should be, or the run state is a newer format.
-    pub fn load(&self) -> io::Result<Book> {
-        let text = String::from_utf8(read(&self.settings)?.unwrap_or_default())
-            .map_err(io::Error::other)?;
-        let bad = |e: toml::de::Error| {
-            io::Error::other(format!("{}: {}", self.settings.display(), e.message()))
-        };
-        let settings: Settings = toml::from_str(&text).map_err(bad)?;
-        let runs: RunFile = match read(&self.runs)? {
-            Some(bytes) => serde_json::from_slice(&bytes)?,
-            None => RunFile {
-                format: RUNS_FORMAT,
-                runs: BTreeMap::new(),
-                seen: Vec::new(),
-            },
-        };
-        if runs.format > RUNS_FORMAT {
-            return Err(io::Error::other(format!(
-                "{} is format {}, newer than this cooee",
-                self.runs.display(),
-                runs.format
-            )));
-        }
-        let mut routines = Vec::new();
-        for d in settings.routine {
-            let s = runs.runs.get(&d.id).cloned().unwrap_or_default();
-            let gone = s
-                .ended
-                .map(Paused::Ended)
-                .or_else(|| s.chat_gone.map(|thread| Paused::ChatGone { thread }));
-            let trigger = match (d.when, d.github, d.webhook) {
-                (Some(w), None, None) => Trigger::Schedule(w),
-                (None, Some(g), None) => Trigger::Github(g),
-                (None, None, Some(h)) => Trigger::Webhook(h),
-                _ => {
-                    return Err(io::Error::other(format!(
-                        "{}: routine {} needs when, github or webhook, one of them",
-                        self.settings.display(),
-                        d.id
-                    )));
-                }
-            };
-            routines.push(Routine {
-                trigger,
-                paused: if d.paused { Some(Paused::Owner) } else { gone },
-                ends_at: d.ends_at,
-                made_in: s.made_in,
-                made_at: s.made_at,
-                last_due: s.last_due,
-                last_run: s.last_run,
-                recent: s.recent,
-                heard: s.heard,
-                silent: s.silent,
-                id: d.id,
-                name: d.name,
-                place: d.place,
-                prompt: d.prompt,
-                script: d.script,
-            });
-        }
-        Ok(Book {
-            routines,
-            seen: runs.seen,
-        })
-    }
-
-    /// Writes `book` (write-temp, fsync, rename), each file only when its part changed; `routines.toml` changes
-    /// only in the keys that differ (#360), its comments and layout kept.
-    ///
-    /// # Errors
-    /// When it can't be read or written.
-    pub fn save(&self, book: &Book) -> io::Result<()> {
-        let (toml, runs) = files(&book.routines, &book.seen);
-        let text = String::from_utf8(read(&self.settings)?.unwrap_or_default())
-            .map_err(io::Error::other)?;
-        let was: Settings = toml::from_str(&text).map_err(io::Error::other)?;
-        let was = crate::toml_text(&serde_json::to_value(&was).unwrap_or_default());
-        let toml = crate::disk::patch(&text, &was, &toml)?;
-        for (path, bytes) in [(&self.settings, toml.as_bytes()), (&self.runs, &runs[..])] {
-            if read(path)?.as_deref() != Some(bytes) {
-                crate::write_private(path, bytes)?;
-            }
-        }
-        Ok(())
-    }
-}
-
 #[cfg(test)]
-mod tests;
+mod tests {
+    use super::*;
+
+    const MIN: u64 = 60_000;
+    const MON: u64 = 1_731_283_200_000;
+
+    fn ask(when: &str, place: &str) -> Ask {
+        Ask {
+            name: " Monday renewals ".to_owned(),
+            when: Some(when.to_owned()),
+            github: None,
+            webhook: None,
+            prompt: "Renewals due {{due}}?".to_owned(),
+            script: None,
+            place: place.to_owned(),
+            until: None,
+        }
+    }
+
+    fn chat() -> Thread {
+        Thread {
+            id: "t-1".to_owned(),
+            agent: "fake-acp".to_owned(),
+            model: "m".to_owned(),
+            ..Thread::default()
+        }
+    }
+
+    #[test]
+    fn a_routine_is_due_once_per_due_time_after_it_was_made() {
+        let made = MON - 3 * 1440 * MIN;
+        let mut r = Routine::make(&[], ask("0 9 * * 1", ""), &chat(), (made, 0)).unwrap();
+        assert_eq!(
+            (r.name.as_str(), r.when().as_str(), &r.place),
+            (
+                "Monday renewals",
+                "Mondays 09:00",
+                &Place::Chat {
+                    thread: "t-1".to_owned()
+                }
+            )
+        );
+        let nine = MON + 9 * 60 * MIN;
+        assert_eq!(r.due(nine - MIN, 0), None);
+        assert_eq!(r.due(nine + 5 * MIN, 0), Some(nine));
+        assert_eq!(
+            r.text(&Fields::Due(nine, 0)),
+            "Renewals due 2024-11-11 09:00?"
+        );
+        r.last_due = nine;
+        assert_eq!(r.due(nine + 5 * MIN, 0), None);
+        assert_eq!(
+            r.due(nine + 14 * 1440 * MIN, 0),
+            Some(nine + 14 * 1440 * MIN)
+        );
+        assert_eq!(r.key(nine), format!("routine-{}-{nine}", r.id));
+    }
+
+    #[test]
+    fn make_and_edit_refuse_what_is_wrong_and_change_nothing() {
+        let list = vec![Routine::make(&[], ask("0 9 * * 1", ""), &chat(), (MON, 0)).unwrap()];
+        let other =
+            Routine::make(&list, ask("0 9 * * 1", "new_thread"), &chat(), (MON, 0)).unwrap();
+        assert_ne!(other.id, list[0].id);
+        let Place::NewThread { who } = &other.place else {
+            panic!("{:?}", other.place)
+        };
+        assert_eq!((who.agent.as_str(), who.model.as_str()), ("fake-acp", "m"));
+        for (a, why) in [
+            (ask("*/5 * * * *", ""), "BAD_SCHEDULE"),
+            (ask("0 9 * * 1", "somewhere"), "BAD_PLACE"),
+            (
+                Ask {
+                    name: " ".to_owned(),
+                    ..ask("0 9 * * 1", "")
+                },
+                "BAD_NAME",
+            ),
+        ] {
+            let e = Routine::make(&list, a, &chat(), (MON, 0)).unwrap_err();
+            assert!(e.starts_with(why), "{e}");
+        }
+        let full = vec![list[0].clone(); MAX];
+        let e = Routine::make(&full, ask("0 9 * * 1", ""), &chat(), (MON, 0)).unwrap_err();
+        assert!(e.starts_with("TOO_MANY"), "{e}");
+        let mut r = list[0].clone();
+        let bad = Edit {
+            name: Some("x".repeat(61)),
+            ..Edit::default()
+        };
+        assert!(r.edit(bad, MON + 1).is_err());
+        assert_eq!(r, list[0]);
+        let e = Edit {
+            when: Some("30 18 * * *".to_owned()),
+            paused: Some(true),
+            ..Edit::default()
+        };
+        r.edit(e, MON + 1).unwrap();
+        assert_eq!(
+            (r.when().as_str(), r.last_due),
+            ("every day 18:30", MON + 1)
+        );
+        assert_eq!(r.paused, Some(Paused::Owner));
+    }
+
+    #[test]
+    fn the_file_round_trips_and_refuses_a_newer_format() {
+        let dir = crate::scratch::owned(
+            std::env::temp_dir().join(format!("cooee-routines-{}", std::process::id())),
+        );
+        let file = Routines::new(&dir, &dir);
+        assert_eq!(file.load().unwrap(), Book::default());
+        let mut r = Routine::make(&[], ask("0 9 * * 1", ""), &chat(), (MON, 0)).unwrap();
+        r.last_run = Some(Run {
+            at: MON,
+            key: r.key(MON),
+            outcome: Outcome::Ran {
+                thread: "t-1".to_owned(),
+            },
+        });
+        let github = Ask {
+            when: None,
+            github: serde_json::from_value(serde_json::json!({
+                "repo": "o/app", "events": ["push"], "match": { "ref": "refs/heads/main" } }))
+            .unwrap(),
+            ..ask("", "")
+        };
+        let mut g = Routine::make(&[], github, &chat(), (MON + 1, 0)).unwrap();
+        g.recent = vec![MON];
+        g.ends_at = Some(MON + HOUR);
+        g.paused = Some(Paused::Ended(Ended {
+            at: MON,
+            by: End::StopRoutine,
+        }));
+        let mut book = Book {
+            routines: vec![r, g],
+            ..Book::default()
+        };
+        assert!(book.see("g-1", MON) && !book.see("g-1", MON + 1));
+        file.save(&book).unwrap();
+        let text = std::fs::read_to_string(dir.join("routines.toml")).unwrap();
+        assert!(text.contains("when = \"0 9 * * 1\""), "{text}");
+        assert!(text.contains("[routine.github.match]"), "{text}");
+        let runs = std::fs::read_to_string(dir.join("routine-runs.json")).unwrap();
+        assert!(runs.contains("\"outcome\": \"ran\""), "{runs}");
+        assert!(runs.contains("\"g-1\""), "{runs}");
+        assert_eq!(file.load().unwrap(), book);
+        std::fs::write(dir.join("routine-runs.json"), r#"{"format":9,"runs":{}}"#).unwrap();
+        assert!(file.load().is_err());
+        std::fs::remove_dir_all(&dir).unwrap();
+    }
+}
