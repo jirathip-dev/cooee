@@ -1,4 +1,3 @@
-//! A routine's end (#689): an optional end time, or its maker's `stop_routine`.
 use serde::{Deserialize, Serialize};
 
 use super::{Paused, Routine, local, parse_local};

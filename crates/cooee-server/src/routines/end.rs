@@ -1,4 +1,3 @@
-//! A routine's end (#689): its maker's `stop_routine`, and its end shown after its trigger.
 use cooee_core::{
     Body,
     routines::{End, Ended, Paused, Routine},
