@@ -1,3 +1,4 @@
+mod builtin;
 mod calls;
 #[cfg(test)]
 mod tests;
@@ -15,7 +16,8 @@ use base64::{Engine as _, engine::general_purpose::URL_SAFE_NO_PAD as B64};
 use cooee_core::{
     agents::Agent,
     connectors::{
-        self as core, Auth, Client as Kind, Endpoints, HttpsUrl, Name, Target, Tools, Transport,
+        self as core, Auth, Builtin, Client as Kind, Endpoints, HttpsUrl, Name, Target, Tools,
+        Transport,
     },
     mcp::{Pick, Server, Source},
 };
@@ -117,18 +119,37 @@ fn random(n: usize) -> Result<String, String> {
     cooee_core::random(n).map(|b| B64.encode(b)).map_err(text)
 }
 
-fn target(s: &Server) -> Result<(HttpsUrl, Transport, Auth), String> {
+#[derive(Clone, Copy)]
+enum Way {
+    Mcp(Transport),
+    Builtin(Builtin),
+}
+
+impl Way {
+    fn resource(self, url: &HttpsUrl) -> &str {
+        match self {
+            Self::Mcp(_) => url.as_str(),
+            Self::Builtin(_) => "",
+        }
+    }
+}
+
+fn target(s: &Server) -> Result<(HttpsUrl, Way, Auth), String> {
     match s.source()? {
         Source::Catalogue(e) => match &e.target {
-            Target::Url { url, transport } => Ok((url.clone(), *transport, e.auth.clone())),
-            Target::Builtin(b) => match *b {},
+            Target::Url { url, transport } => {
+                Ok((url.clone(), Way::Mcp(*transport), e.auth.clone()))
+            }
+            Target::Builtin { builtin, url } => {
+                Ok((url.clone(), Way::Builtin(*builtin), e.auth.clone()))
+            }
         },
         Source::Typed {
             url,
             transport,
             auth,
             ..
-        } => Ok((url, transport, auth)),
+        } => Ok((url, Way::Mcp(transport), auth)),
         Source::Command { .. } => Err(format!("{} runs on the Mac: it has no sign-in", s.name)),
     }
 }
@@ -158,8 +179,14 @@ fn endpoints(issuer: &HttpsUrl) -> Result<Endpoints, String> {
     Endpoints::read(issuer, &doc.json())
 }
 
-fn discover(url: &HttpsUrl, pinned: Option<&HttpsUrl>) -> Result<(HttpsUrl, Endpoints), String> {
-    let named = first_ok(&core::resource_metadata(url)).map(|r| core::issuer_of(&r.json()));
+fn discover(
+    (url, way): (&HttpsUrl, Way),
+    pinned: Option<&HttpsUrl>,
+) -> Result<(HttpsUrl, Endpoints), String> {
+    let named = match way {
+        Way::Mcp(_) => first_ok(&core::resource_metadata(url)).map(|r| core::issuer_of(&r.json())),
+        Way::Builtin(_) => None,
+    };
     let same = |a: &HttpsUrl, b: &HttpsUrl| {
         a.as_str().trim_end_matches('/') == b.as_str().trim_end_matches('/')
     };
@@ -296,14 +323,14 @@ impl Connectors {
         id: &str,
         secret: Option<&str>,
     ) -> Result<String, String> {
-        let (url, _, auth) = target(s)?;
+        let (url, way, auth) = target(s)?;
         let Auth::OAuth { issuer, .. } = auth else {
             return Err(format!("{} doesn't sign in with OAuth", s.name));
         };
         if id.is_empty() || id.contains(char::is_control) {
             return Err("a client id is one line".to_owned());
         }
-        let (issuer, _) = discover(&url, issuer.as_ref())?;
+        let (issuer, _) = discover((&url, way), issuer.as_ref())?;
         let reg = Registration {
             issuer: issuer.as_str().to_owned(),
             redirect: String::new(),
@@ -328,7 +355,7 @@ impl Connectors {
         now: u64,
     ) -> Result<Value, String> {
         let account = Name::try_from(account)?.as_str().to_owned();
-        let (url, _, auth) = target(s)?;
+        let (url, way, auth) = target(s)?;
         let id = random(16)?;
         let flow = |pending| Flow {
             id: id.clone(),
@@ -351,7 +378,7 @@ impl Connectors {
             } => (issuer, scopes, client),
         };
         let redirect = redirect(origin, host)?;
-        let (issuer, ends) = discover(&url, issuer.as_ref())?;
+        let (issuer, ends) = discover((&url, way), issuer.as_ref())?;
         let client = match (
             self.registered(issuer.as_str(), &redirect)?,
             kind,
@@ -369,13 +396,17 @@ impl Connectors {
         };
         let (verifier, challenge) = core::pkce(&cooee_core::random(32).map_err(text)?);
         let state = random(24)?;
-        let open = core::authorize_url(
+        let resource = way.resource(&url).to_owned();
+        let mut open = core::authorize_url(
             &ends.authorize,
             (&client.client_id, &redirect),
             (&state, &challenge),
             &scopes,
-            url.as_str(),
+            &resource,
         );
+        if let Way::Builtin(b) = way {
+            open = format!("{open}&{}", core::form(b.authorize_extra()));
+        }
         self.start(
             flow(Pending::OAuth(Box::new(Started {
                 state: Secret::new(state),
@@ -384,7 +415,7 @@ impl Connectors {
                 issuer: issuer.as_str().to_owned(),
                 token: ends.token,
                 client,
-                resource: url.as_str().to_owned(),
+                resource,
                 scopes,
             }))),
             now,
@@ -548,7 +579,7 @@ impl Connectors {
         account: &str,
         now: u64,
     ) -> Result<(String, String), String> {
-        let (url, _, auth) = target(s)?;
+        let (url, way, auth) = target(s)?;
         let item = tokens::item(&s.name, account);
         let needs = || format!("{} ({account}) needs sign-in", s.name);
         let read = || {
@@ -587,7 +618,7 @@ impl Connectors {
         let fresh = tokens::refresh(
             &endpoints(&issuer)?.token,
             &self.client_for(&a)?,
-            (old, url.as_str()),
+            (old, way.resource(&url)),
             now,
         );
         match fresh {
@@ -736,8 +767,7 @@ fn auth_kind(a: &Auth) -> &'static str {
 
 fn shown(e: &core::Entry) -> Shown<'_> {
     let url = match &e.target {
-        Target::Url { url, .. } => url.as_str().to_owned(),
-        Target::Builtin(b) => match *b {},
+        Target::Url { url, .. } | Target::Builtin { url, .. } => url.as_str().to_owned(),
     };
     let how = ("catalogue", url, auth_kind(&e.auth));
     (e.name.as_str().to_owned(), Some(e), how)

@@ -5,7 +5,7 @@ use std::{
 
 use cooee_core::{
     agents::Agent,
-    connectors::{Class, Tools},
+    connectors::{Class, Target, Tools},
     mcp::{Pick, Server, Source},
 };
 use serde_json::Value;
@@ -41,10 +41,11 @@ pub(super) fn tools(s: &Server) -> Tools {
 }
 
 pub(super) fn decide(s: &Server, tool: &str) -> Decision {
+    let builtin = matches!(s.source(), Ok(Source::Catalogue(e)) if matches!(e.target, Target::Builtin { .. }));
     match tools(s).class(tool) {
         Class::Read => Decision::Allow,
-        Class::Write => Decision::Ask,
-        Class::Never => Decision::Deny,
+        Class::Write if !builtin => Decision::Ask,
+        Class::Write | Class::Never => Decision::Deny,
     }
 }
 
