@@ -37,10 +37,16 @@ impl Chat {
         chat
     }
 
-    /// The newest shed event seq the items reflect.
+    /// The newest shed event seq the items since the agent last ended reflect.
     #[must_use]
     pub fn seq(&self) -> u64 {
-        self.items.iter().map(|i| i.seq).max().unwrap_or(0)
+        let ended = self
+            .items
+            .iter()
+            .rposition(|i| matches!(i.body, Body::Ended { .. }));
+        let since = ended.map_or(0, |at| at + 1);
+        let tail = self.items.get(since..).unwrap_or_default();
+        tail.iter().map(|i| i.seq).max().unwrap_or(0)
     }
 
     fn put(&mut self, item: Item) -> Item {
@@ -92,8 +98,7 @@ impl Chat {
     }
 
     pub(super) fn state(&mut self, state: &str, note: Option<String>) -> Change {
-        state.clone_into(&mut self.turn.state);
-        self.turn.note = note;
+        self.turn.report(state, note);
         Change::State(self.turn.clone())
     }
 
@@ -168,6 +173,7 @@ mod tests {
                 random_id: "r".to_owned(),
                 files: Vec::new(),
                 routine: None,
+                via: None,
             },
         };
         let chat = Chat::from_versions((0..5).map(|i| you(&format!("v{i}"))).collect());

@@ -21,8 +21,8 @@ internal struct BlockRenderTests {
                 .appendingPathComponent("fleets-config/fixtures"))
     }
 
-    private static func height(_ block: JSONValue, _ style: LookStyle = .modern) -> Int {
-        let look = Look(palette: .farmLight, style: .bundled(style), still: true)
+    private static func height(_ block: JSONValue, _ style: Style = .bundled) -> Int {
+        let look = Look(palette: .farmLight, style: style, still: true)
         let view = BlocksView(block, source: .plugin("edgar")).frame(width: 402).environment(\.look, look)
         return ImageRenderer(content: view).cgImage?.height ?? 0
     }
@@ -56,6 +56,29 @@ internal struct BlockRenderTests {
         #expect(Self.height(.object(["type": .string("a-newer-block")])) == 0)
     }
 
+    private static func middle(_ block: JSONValue) throws -> [Int] {
+        let look = Look(palette: .farmLight, style: .bundled, still: true)
+        let view = BlocksView(block, source: .plugin("drover")).frame(width: 402).environment(\.look, look)
+        let pixels = try #require(ImageRenderer(content: view).cgImage.flatMap(Pixels.init))
+        let start = pixels.height / 2 * pixels.width * 4
+        return pixels.bytes[start..<start + pixels.width * 4].map(Int.init)
+    }
+
+    private static func apart(_ one: [Int], _ other: [Int]) -> Int {
+        zip(one, other).map { abs($0 - $1) }.max() ?? 0
+    }
+
+    @Test internal func aPausedFleetsCardFoldsToOneLineAndDrawsInItsOwnColour() throws {
+        let entry = try Self.fixture("blocks.json").items.first { $0.string("name") == "card.fold" }
+        let folded = try #require(entry?["block"])
+        let open = JSONValue.object(folded.fields.filter { $0.key != "fold" })
+        #expect(Self.height(folded) > 0 && Self.height(folded) * 2 < Self.height(open))
+        let amber = JSONValue.object(open.fields.merging(["color": .string("a")]) { $1 })
+        let purple = try Self.middle(open)
+        #expect(Self.apart(purple, try Self.middle(open)) < 16)
+        #expect(Self.apart(purple, try Self.middle(amber)) > 60)
+    }
+
     @Test internal func theQueueDrawsItsStreamsOps() throws {
         let screen = try Self.fixture("queue.json")
         var queue = LiveScreen(screen)
@@ -68,7 +91,7 @@ internal struct BlockRenderTests {
         let scene = try #require(Self.sceneQueue().list("blocks").first)
         #expect(scene.type == "scene")
         #expect(Self.height(scene, .scene) == 180)
-        #expect(Self.height(scene, .modern) == 0 && Self.height(scene, .terminal) == 0)
+        #expect(Self.height(scene, .bundled) == 0 && Self.height(scene, .terminal) == 0)
     }
 
     @Test internal func aRowWhoseCurrentRoundNeedsYouOpensItsRoundsOthersStayFolded() {
@@ -79,8 +102,8 @@ internal struct BlockRenderTests {
             Self.height(Self.row(current: "working"), .terminal) < Self.height(Self.row(current: "needs"), .terminal))
     }
 
-    @Test(arguments: [LookStyle.modern, .terminal, .scene])
-    internal func theQueueInSceneDrawsInEveryLook(_ style: LookStyle) throws {
+    @Test(arguments: [Style.bundled] + Style.packs)
+    internal func theQueueInSceneDrawsInEveryLook(_ style: Style) throws {
         #expect(Self.height(try Self.sceneQueue(), style) > 1000)
     }
 

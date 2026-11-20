@@ -25,20 +25,12 @@ first in Nearby, as This Mac. The server on a Mac is the CLI install (`cooee set
 (`com.jirathip.cooee.serve`, `.shed`) has them unregistered on the new version's first launch, which says so once;
 `cooee setup` then reuses the same config and data folders.
 
-Download: `.github/workflows/apple-mac.yml` builds `cooee.dmg` (`scripts/mac-app.sh`), the client app with no binaries inside. To sign and notarize it, the
-owner adds these secrets to the `mac-release` environment (staging and main only); without them the .dmg is unsigned
-and the job names the missing ones:
-
-- `MAC_CERT_P12`, `MAC_CERT_PASSWORD`: a "Developer ID Application" certificate with its key, exported as .p12
-  (base64) and its password (Apple Developer membership → Certificates).
-- `NOTARY_KEY_P8`, `NOTARY_KEY_ID`, `NOTARY_ISSUER_ID`: an App Store Connect API key (Developer role) for
-  `notarytool`: the .p8 (base64), its key id and the issuer id.
-
-TestFlight: CI uploads each `staging` change to `apple/` (`.github/workflows/apple-testflight.yml`); see `docs/testflight.md`.
+TestFlight: a merge to `main` that touches `apple/` uploads the iPhone and the Mac app, sandboxed
+(`Cooee-mac.entitlements`), in one run of `.github/workflows/apple-testflight.yml`; see `docs/testflight.md`.
 
 ## Rules
 
 The checks are the rules: `just apple-check` (`scripts/apple-check.sh`, in CI job `apple`) runs `swift format`
 (`.swift-format`), anti-slop (`tools/anti-slop-swift`, cooee's rules in `CooeeRules.swift`), SwiftLint
 (`.swiftlint.yml`), the tests, coverage (`scripts/apple-coverage.swift`) and Periphery (`.periphery.yml`).
-`.herdsman/rules.md` lists them in one line each.
+`.drover/rules.md` lists them in one line each.

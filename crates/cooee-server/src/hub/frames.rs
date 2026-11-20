@@ -36,7 +36,8 @@ impl Hub {
 
     /// Thread `id`'s proxy's replay frame (#161): `image` (base64) with `caption`, kept encrypted on this host as
     /// `<data>/frames/<id>/<name>` and shown in the thread; dropped while the persona's browser has a page open on
-    /// a site it may not frame (a `no_frames` one, or one off its allowlist).
+    /// a site it may not frame (a `no_frames` one, or one off its allowlist). One the agent `asked` for (#166) is
+    /// captioned with the page's address.
     ///
     /// # Errors
     /// [`HubError::Refused`] as [`Hub::token_of`], or when the frame can't be sealed or stored.
@@ -45,6 +46,7 @@ impl Hub {
         (id, token): (&str, &str),
         caption: &str,
         image: &str,
+        asked: bool,
     ) -> Result<(), HubError> {
         let persona = self.persona(&self.token_of(id, token)?.profile);
         let profile = browser::profile(&self.data, &persona.id);
@@ -57,10 +59,14 @@ impl Hub {
         let image = STANDARD
             .decode(image)
             .map_err(|e| HubError::Refused(format!("a frame isn't base64: {e}")))?;
-        self.seal(id, caption, &image)
+        let caption = match pages.first() {
+            Some(page) if asked => page.as_str(),
+            _ => caption,
+        };
+        self.seal(id, (caption, asked), &image)
     }
 
-    fn seal(&self, id: &str, caption: &str, image: &[u8]) -> Result<(), HubError> {
+    fn seal(&self, id: &str, (caption, asked): (&str, bool), image: &[u8]) -> Result<(), HubError> {
         let dir = self.frames().join(id);
         let sealed = random(NONCE).and_then(|nonce| {
             let mut out = self
@@ -85,6 +91,7 @@ impl Hub {
             Body::Frame {
                 text: caption.to_owned(),
                 name,
+                asked,
             },
         )
         .map(drop)
@@ -148,9 +155,10 @@ mod tests {
         fs::write(secrets.join(KEY), STANDARD.encode([7u8; 32])).unwrap();
         let hub = hub(&dir);
         let t0 = now();
-        hub.seal("t", "click \"Sign in\"", b"the-pixels").unwrap();
+        hub.seal("t", ("click \"Sign in\"", false), b"the-pixels")
+            .unwrap();
         let items = hub.slice("t", None, 50, 0).unwrap().items;
-        let Some(Body::Frame { text, name }) = items.last().map(|i| i.body.clone()) else {
+        let Some(Body::Frame { text, name, .. }) = items.last().map(|i| i.body.clone()) else {
             panic!("{items:?}");
         };
         assert_eq!(text, "click \"Sign in\"");

@@ -10,12 +10,15 @@ public struct ChatActions {
     public var stop: () -> Void
     public var steer: (Int) -> Void
     public var unqueue: (Int) -> Void
+    public var edit: (Int) -> Void = { _ in }
+    public var message = MessageActs()
     public var answer: (Int, BlockAction) -> Void
     public var answering: Set<Int>
     public var sending = false
     public var back: () -> Void
     public var retry: (Int) -> Void = { _ in }
     public var view: () -> Void = {}
+    public var restart: (() -> Void)?
     public var places: [String] = []
     public var counts: [Int?] = []
     public var new: (() -> Void)?
@@ -29,11 +32,23 @@ public struct ChatActions {
     public var machine: MachineRow?
     public var showMachine: () -> Void = {}
     public var persona: (() -> Void)?
+    public var screen: (() -> Void)?
+    public var waits: Date?
+    internal var screenActs = ScreenActs()
     internal var choices: PersonaChoices?
     public var agent: @MainActor @Sendable (String) -> Void = { _ in }
     public var model: (String, String) -> Void = { _, _ in }
     public var frames = FrameImages()
     public var topics: TopicActions?
+    public var live: () -> LiveReply = { LiveReply() }
+    public var sync: Sync?
+    public var asOf: Date?
+    public var stopping = false
+    public var denying = false
+    public var older: (() -> Void)?
+    public var status: String?
+    public var close: (() -> Void)?
+    public var voice = VoiceActs()
 
     public init(
         draft: Binding<String>? = nil,

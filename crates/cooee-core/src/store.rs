@@ -5,6 +5,7 @@ mod items;
 mod room;
 mod thread;
 mod workflow;
+mod writer;
 
 pub use error::*;
 pub use files::*;

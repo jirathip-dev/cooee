@@ -6,7 +6,7 @@ internal struct MemberStrip: View {
     internal let scene: RoomScene
     internal var inspect: (String?) -> Void = { _ in }
 
-    private var stage: CooeeCore.Stage? { look.style.stage }
+    private var stage: CooeeCore.Stage? { look.stage }
 
     internal var body: some View {
         Stage(height: 150) {
@@ -37,7 +37,7 @@ internal struct MemberStrip: View {
                 }
             Text(member.name).ui(13, .semibold, look).lineLimit(1).card(
                 stage, stage?.color(\.ink) ?? palette.foreground)
-            Text(stage == nil ? state.rawValue : member.word).ui(12, .regular, look).lineLimit(1)
+            Text(stage == nil ? state.rawValue : look.word(member.state)).ui(12, .regular, look).lineLimit(1)
                 .foregroundStyle(state.color(palette)).card(stage, state.color(palette))
         }
         .padding(.vertical, 6).padding(.horizontal, 2).frame(maxWidth: .infinity)

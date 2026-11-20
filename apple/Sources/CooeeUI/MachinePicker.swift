@@ -52,7 +52,7 @@ internal struct MachineChipLabel: View {
             MachineDot(dot: machine.dot)
             Text(machine.title)
         }
-        .ui(12, .regular, look).foregroundStyle(look.palette.mute).lineLimit(1).fixedSize()
+        .ui(12, .regular, look).foregroundStyle(look.palette.mute).lineLimit(1)
         .padding(.horizontal, 9).padding(.vertical, 4)
         .background(look.palette.edge.opacity(0.35), in: .capsule)
     }

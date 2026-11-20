@@ -12,8 +12,8 @@ The phone frames are 402 × 874 pt (iPhone 17) at 2×, with the status bar, isla
 frames are the window's content at 2× with its traffic lights drawn. Simulator screenshots come from the CI job
 (`.github/workflows/apple.yml`) or a Mac with Xcode 26.
 
-Look: farm scheme (`design-system/schemes/farm.json`, `farm-light.json`). Scene uses the farm pack's own horses
-(`packs/themes/farm/sprites.svg`, `s-scene-*`), rasterised in each persona's coat by `apple/design/sprites.mjs`.
+Look: farm scheme (swag's `schemes/farm.json`, `farm-light.json`). Scene uses the farm pack's own horses
+(swag's `packs/farm/sprites.svg`, `s-scene-*`), rasterised in each persona's coat by `apple/design/sprites.mjs`.
 
 ## iPhone 17, dark and light (`-dark.png`, `-light.png`)
 
@@ -35,9 +35,11 @@ Look: farm scheme (`design-system/schemes/farm.json`, `farm-light.json`). Scene 
 
 ## Styles (q947, #141)
 
-Every frame above also renders in all three styles: `CooeeUITests`' `frameFitsInEveryStyle` draws each one in Modern,
-Terminal and Scene and fails if anything spills outside the frame (CI keeps the renders as the `snapshots` artifact).
-These are the style frames kept as designs:
+Every frame above is drawn in Modern, the one built-in style; `fitsInEveryPack` also draws each one under the
+Terminal and Scene packs and fails if anything spills outside the frame (CI keeps the renders as the `snapshots`
+artifact). The pack frames below now live in `apple/design/packs/<pack>/`, drawn by the `Packs` suite (#488, #513).
+Since #514 each pack keeps one sheet: home, chat, a card, the persona panel and the four trust cards; the other
+rows below and in the area READMEs name frames that are no longer recorded:
 
 | PNG | shows |
 |---|---|

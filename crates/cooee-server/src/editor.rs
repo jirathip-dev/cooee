@@ -16,7 +16,7 @@ use topcoat::{
 use crate::{
     contrast,
     http::{Answer, Data, Name, blocking, refused},
-    look::{LookStyle, Looks, Pair, Scheme, Theme},
+    look::{LookStyle, Looks, Pair, Theme},
     themes::Themes,
 };
 
@@ -77,19 +77,14 @@ pub struct Report {
     pub marks: BTreeMap<String, Mark>,
 }
 
-fn scheme(label: &str, mode: &str, tokens: &BTreeMap<String, String>) -> Scheme {
-    Scheme {
-        label: format!("{label} {mode}"),
-        mode: mode.to_owned(),
-        tokens: tokens.clone(),
-    }
+fn scheme(label: &str, mode: &str, tokens: &BTreeMap<String, String>) -> serde_json::Value {
+    serde_json::json!({"label": format!("{label} {mode}"), "color-scheme": mode, "tokens": tokens})
 }
 
 /// The gate on `tokens`, token by token, with a fix for each that fails.
 #[must_use]
 pub fn report(tokens: &BTreeMap<String, String>) -> Report {
-    let s = scheme("", "", tokens);
-    let all = match contrast::checks(&s) {
+    let all = match contrast::checks(tokens) {
         Ok(all) => all,
         Err(e) => {
             return Report {
@@ -105,9 +100,9 @@ pub fn report(tokens: &BTreeMap<String, String>) -> Report {
             .is_none_or(|m: &Mark| c.value / c.min < m.value / m.min);
         if worse {
             let fix = (c.value < c.min)
-                .then(|| contrast::fix(&s, c.token))
+                .then(|| contrast::fix(tokens, c.token))
                 .flatten();
-            let fixed = fix.as_ref().and_then(|f| worst(&s, c.token, f));
+            let fixed = fix.as_ref().and_then(|f| worst(tokens, c.token, f));
             let (what, value, min) = (c.what.clone(), c.value, c.min);
             marks.insert(
                 c.token.to_owned(),
@@ -121,13 +116,18 @@ pub fn report(tokens: &BTreeMap<String, String>) -> Report {
             );
         }
     }
-    let fails = contrast::gate(&s).err().into_iter().collect();
+    let fails = serde_json::from_value(scheme("", "dark", tokens))
+        .map_err(|e| e.to_string())
+        .and_then(|s| crate::look::gate(&s))
+        .err()
+        .into_iter()
+        .collect();
     Report { fails, marks }
 }
 
-fn worst(s: &Scheme, token: &str, shade: &str) -> Option<f64> {
-    let mut t = s.clone();
-    t.tokens.insert(token.to_owned(), shade.to_owned());
+fn worst(tokens: &BTreeMap<String, String>, token: &str, shade: &str) -> Option<f64> {
+    let mut t = tokens.clone();
+    t.insert(token.to_owned(), shade.to_owned());
     contrast::checks(&t)
         .ok()?
         .into_iter()
@@ -162,6 +162,7 @@ pub fn files(name: &str, draft: &Draft, looks: &Looks) -> io::Result<Vec<(String
         sprites: true,
         moments: false,
         scene: Vec::new(),
+        load_scene: None,
         words: BTreeMap::new(),
         sprite_sheet: Some(STARTER[0].1.to_vec()),
         icon: None,

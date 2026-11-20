@@ -80,14 +80,14 @@ internal struct MachineCard: View {
         let palette = look.palette
         VStack(alignment: .leading, spacing: 12) {
             HStack(spacing: 8) {
-                Text(look.mono ? "*" : "●").font(.system(size: look.mono ? 14 : 11))
+                Text(look.textMarks ? "*" : "●").font(.system(size: look.textMarks ? 14 : 11))
                     .foregroundStyle(machine.online ? palette.green : palette.mute)
                 VStack(alignment: .leading, spacing: 1) {
                     Text(machine.id).ui(18, .bold, look)
                     Text(machine.seen).ui(12, .regular, look).foregroundStyle(palette.mute)
                 }
                 Spacer()
-                if machine.online { ActionPill(title: look.mono ? "terminal" : "Terminal ›", primary: true) }
+                if machine.online { ActionPill(title: "Terminal ›", primary: true) }
             }
             if !machine.alerts.isEmpty {
                 Label(machine.alerts.joined(separator: " · "), systemImage: "exclamationmark.triangle.fill")

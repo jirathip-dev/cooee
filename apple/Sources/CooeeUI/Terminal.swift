@@ -35,14 +35,13 @@ public struct TerminalView: View {
         VStack(spacing: 0) {
             HStack {
                 Button(action: actions.back) {
-                    Text(look.mono ? "< \(back.lowercased())" : "‹ \(back)").ui(16, .regular, look)
+                    Text(look.label(.back, back)).ui(16, .regular, look)
                         .foregroundStyle(palette.link)
                 }
                 .buttonStyle(.plain)
                 Spacer()
                 if let newShell = actions.newShell {
-                    Button(action: newShell) { ActionPill(title: look.mono ? "+ shell" : "New shell") }.buttonStyle(
-                        .plain)
+                    Button(action: newShell) { ActionPill(title: "New shell") }.buttonStyle(.plain)
                 }
             }
             .overlay { Text(title).ui(17, .semibold, look) }
@@ -115,7 +114,7 @@ public struct TerminalView: View {
                         .frame(maxWidth: .infinity, minHeight: 36)
                         .background(
                             key.name == nil && ctrl ? look.palette.link.opacity(0.4) : look.palette.card,
-                            in: .rect(cornerRadius: look.mono ? 0 : 8))
+                            in: .rect(cornerRadius: look.radius(8)))
                 }
                 .buttonStyle(.plain)
             }
@@ -127,12 +126,12 @@ public struct TerminalView: View {
 
 internal struct TerminalSlot: View {
     internal let store: StoreOf<TerminalFeature>
-    internal let config: [String: JSONValue]
+    internal let node: LayoutNode<LayoutPlace>
     internal let back: () -> Void
 
     internal var body: some View {
         let shells = store.shells
-        let machine = config["machine"]?.string ?? store.server?.url.host() ?? "this Mac"
+        let machine = node.config["machine"]?.string ?? store.server?.url.host() ?? "this Mac"
         var actions = TerminalActions(back: back, newShell: { store.send(.newShell) })
         actions.pick = { store.send(.open(shells[$0].name)) }
         actions.type = store.current?.owner == true ? { store.send(.type(Keystrokes($0))) } : nil
@@ -148,6 +147,7 @@ internal struct TerminalSlot: View {
     }
 
     private var size: TerminalSize? {
-        TerminalSize(cols: config["cols"]?.number.map(Int.init), rows: config["rows"]?.number.map(Int.init))
+        TerminalSize(
+            cols: node.config["cols"]?.number.map(Int.init), rows: node.config["rows"]?.number.map(Int.init))
     }
 }

@@ -1,4 +1,5 @@
 import AppKit
+import CooeeCore
 import CooeeUI
 import Foundation
 import SwiftUI
@@ -53,57 +54,59 @@ internal struct Pixels: Equatable {
     }
 }
 
-@Suite(.serialized)
-@MainActor
-internal struct SnapshotTests {
+extension Frame {
     private static let channelTolerance = 16
     private static let pixelTolerance = 0.025
     private static let designs = URL(fileURLWithPath: #filePath)
         .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
         .appendingPathComponent("design")
 
-    @Test(arguments: Frame.all)
-    internal func frameMatchesTheDesign(_ frame: Frame) throws {
-        let rendered = try #require(frame.render())
-        let file = Self.designs.appendingPathComponent(frame.folder).appendingPathComponent("\(frame.name).png")
-        if ProcessInfo.processInfo.environment["COOEE_RECORD"] == "1" { try Self.write(rendered, to: file) }
-        try Self.keep(rendered, frame.name)
+    @MainActor
+    internal func matchesItsDesign(_ style: Style = .bundled, in folder: String? = nil) throws {
+        try Self.matches(try #require(render(style)), name, in: folder ?? self.folder)
+    }
+
+    internal static func matches(_ rendered: CGImage, _ name: String, in folder: String) throws {
+        let file = designs.appendingPathComponent(folder).appendingPathComponent("\(name).png")
+        if ProcessInfo.processInfo.environment["COOEE_RECORD"] == "1" { try write(rendered, to: file) }
+        try keep(rendered, name)
         let design = try #require(NSImage(contentsOf: file)?.cgImage(forProposedRect: nil, context: nil, hints: nil))
         let got = try #require(Pixels(rendered))
         let want = try #require(Pixels(design))
         #expect(got.width == want.width && got.height == want.height)
-        let off = got.differing(from: want, by: Self.channelTolerance)
-        #expect(off <= Self.pixelTolerance, "\(frame.name): \(off * 100)% of pixels differ")
+        let off = got.differing(from: want, by: channelTolerance)
+        #expect(off <= pixelTolerance, "\(name): \(off * 100)% of pixels differ")
     }
 
-    @Test(arguments: Frame.everyStyle)
-    internal func frameFitsInEveryStyle(_ frame: Frame) throws {
+    @MainActor
+    internal func fitsInEveryPack() throws {
         let margin = 24
-        let rendered = try #require(frame.render(margin: CGFloat(margin)))
-        try Self.keep(rendered, frame.name)
-        let pixels = try #require(Pixels(rendered))
-        #expect(pixels.spilled(beyond: margin * 2) == 0, "\(frame.name) draws outside its frame")
-    }
-
-    @Test internal func aViewWiderThanItsFrameIsCaught() throws {
-        let wide = Frame(
-            name: "wide", width: 120, height: 60, palette: .farmDark, style: .terminal, phone: false,
-            view: { AnyView(Text(String(repeating: "overflow ", count: 12)).fixedSize()) }
-        )
-        let rendered = try #require(wide.render(margin: 24))
-        let pixels = try #require(Pixels(rendered))
-        #expect(pixels.spilled(beyond: 48) > 0)
+        for style in Style.packs {
+            let rendered = try #require(render(style, margin: CGFloat(margin)))
+            try Self.keep(rendered, "\(name)@\(style.label.lowercased())")
+            let pixels = try #require(Pixels(rendered))
+            #expect(pixels.spilled(beyond: margin * 2) == 0, "\(name) draws outside its frame in \(style.label)")
+        }
     }
 
     private static func write(_ image: CGImage, to file: URL) throws {
         let png = try #require(NSBitmapImageRep(cgImage: image).representation(using: .png, properties: [:]))
+        try FileManager.default.createDirectory(at: file.deletingLastPathComponent(), withIntermediateDirectories: true)
         try png.write(to: file)
     }
 
     private static func keep(_ image: CGImage, _ name: String) throws {
         guard let folder = ProcessInfo.processInfo.environment["COOEE_RENDERED"] else { return }
-        let url = URL(fileURLWithPath: folder)
-        try FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
-        try write(image, to: url.appendingPathComponent("\(name).png"))
+        try write(image, to: URL(fileURLWithPath: folder).appendingPathComponent("\(name).png"))
+    }
+}
+
+@MainActor
+internal struct SnapshotTests {
+    @Test internal func aViewWiderThanItsFrameIsCaught() throws {
+        let wide = Frame.mac("wide", 120, 60, .farmDark) { Text(String(repeating: "overflow ", count: 12)).fixedSize() }
+        let rendered = try #require(wide.render(.terminal, margin: 24))
+        let pixels = try #require(Pixels(rendered))
+        #expect(pixels.spilled(beyond: 48) > 0)
     }
 }

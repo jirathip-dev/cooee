@@ -40,7 +40,7 @@ internal struct ClientTests {
         let home = try await client.home()
         let rows = home.threads
         #expect(home.screen.title == "cooee" && home.screen.blocks.map(\.type) == ["pinned", "chats"])
-        #expect(home.personas == [.coder])
+        #expect(home.personas == [.coder] && home.counts == ["coder": TopicCount(topics: 1, unread: 2)])
         #expect(rows.map(\.id) == ["a1b2", "old"])
         #expect(rows[0].persona == "coder" && rows[0].unseen == 2 && rows[0].state == "working" && rows[1].archived)
         #expect(rows[0].workflow == nil && rows[1].workflow?.source == "drover" && rows[1].workflow?.stage == "impl 1")
@@ -168,6 +168,12 @@ internal struct ClientTests {
 }
 
 extension ClientTests {
+    @Test internal func anOlderPageAsksForTheMessagesBeforeTheOldestID() async throws {
+        let server = CannedServer(["/threads/a1b2/messages": [try Fixture.answer("messages.json")]])
+        #expect(try await server.client().messages("a1b2", around: 7).items.count == 9)
+        #expect(server.requests("/threads/a1b2/messages").first?.url?.query == "before=50&around=7")
+    }
+
     @Test internal func aSetupChatSaysSo() async throws {
         let server = CannedServer(["/threads": [Answer(headers: json, chunks: [#"{"id":"n2"}"#])]])
         let persona = APIPersona(id: "coder", name: "Coder", agent: "fake-acp")
@@ -188,11 +194,14 @@ extension ClientTests {
             + #""last":"","at":5,"unseen":1,"archived":false,"folder":"/home/user/src/cooee"}]"#
         let empty = Answer(headers: json, chunks: ["null"])
         let server = CannedServer([
-            "/threads": [Answer(headers: json, chunks: [row]), Answer(headers: json, chunks: [#"{"id":"n3"}"#])],
+            "/threads": [
+                Answer(headers: json, chunks: [row]), Answer(headers: json, chunks: [#"{"id":"n3"}"#]),
+                Answer(headers: json, chunks: [row]),
+            ],
             "/threads/t1/title": [empty], "/threads/t1/archive": [empty],
         ])
         let client = server.client()
-        let topics = try await client.topics(of: "coder")
+        let topics = try await client.topics(of: .persona("coder"))
         #expect(topics.map(\.folder) == ["/home/user/src/cooee"] && topics.map(\.title) == ["cooee queue"])
         #expect(server.requests("/threads").first?.url?.query == "persona=coder")
         try await client.retitle("t1", "Queue")
@@ -203,5 +212,16 @@ extension ClientTests {
         _ = try await client.newThread(persona: persona, machine: "", text: "hi", randomID: "r7")
         let started = server.requests("/threads").last?.httpBody.flatMap { String(bytes: $0, encoding: .utf8) }
         #expect(started?.contains(#""folder":"scratch""#) == true)
+        #expect(try await client.topics(of: .room("t1")).map(\.id) == ["t1"])
+        #expect(server.requests("/threads").last?.url?.query == "room=t1")
+    }
+}
+
+internal struct VoiceSendTests {
+    @Test internal func aCallsUtteranceIsSentViaVoice() async throws {
+        let server = CannedServer(["/threads/a1b2/queue": [Answer(headers: json, chunks: ["null"])]])
+        try await server.client().send("a1b2", text: "Why the drop?", queue: true, voice: true, randomID: "r1")
+        let sent = try server.decoded("/threads/a1b2/queue", as: [String: String].self)
+        #expect(sent == ["text": "Why the drop?", "random_id": "r1", "via": "voice"])
     }
 }

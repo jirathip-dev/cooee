@@ -36,7 +36,7 @@ internal struct RunBlock: View {
         var values: [String: JSONValue] = ["choice": .string(choice)]
         if choice == "approve" { values["sha"] = block["sha"] }
         let content = label()
-        return ActButton(action: block.string("action"), source: source, values: values) {
+        return ActButton(action: block.string("action"), block: block.id, source: source, values: values) {
             content
         }
     }
@@ -115,8 +115,8 @@ internal struct FieldsBlock: View {
     internal var body: some View {
         let edits = live ?? (block["submit"] == nil ? shared ?? $own : $own)
         VStack(alignment: .leading, spacing: 10) {
-            ForEach(Array(block.list("fields").enumerated()), id: \.offset) { _, field in
-                FieldRow(field: field, edits: edits)
+            ForEach(block.list("fields").keyed(by: "name")) { field in
+                FieldRow(field: field.element, edits: edits)
             }
             if let submit = block["submit"] {
                 ActButton(source: submit, values: block.fieldValues.merging(own) { $1 }) {

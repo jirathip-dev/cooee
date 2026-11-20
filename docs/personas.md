@@ -21,7 +21,13 @@ Instructions (never another persona's): in a setup chat it is saved at once, wit
 diff: each changed field's name, its old lines `-`, its new `+`) with `approve` and `deny`, and nothing is saved until
 it is approved (a restart drops a card not answered). Either way the change reaches the next session's brief. Notes hold at most 2,000 characters in all (#216): a write that would pass that is a 400 naming the use and
 the ids, so notes are merged or forgotten first; a persona already past it keeps and reads every note, and may only
-shrink them. `plugins` (#129) are the installed plugins (or config
+shrink them. Because notes and Character/Instructions reach every later session as standing instructions, an agent's
+`remember` or `update_persona` text is refused (#350), the reason in the tool's answer, when it matches the one list
+in `memory::REFUSED`: an instruction to ignore or override the rules, instructions, approvals or the owner; a URL or
+email address beside a send/post/upload verb; a secret-looking token (a key prefix such as `ghp_` or `sk-`, 40+
+mixed base64 or 32+ hex characters); or invisible or bidirectional control characters. The thread shows a note "The
+agent tried to remember: … (refused: …)", so a false refusal is seen and the owner can add the note by hand from the
+persona sheet; the owner's own edits are never scanned. `plugins` (#129) are the installed plugins (or config
 `[[plugins]]` entries) attached to it: a plugin's cards go only to its threads. `role` (#159) is `""` (a plain persona)
 or `orchestrator` (one of herdsman's, any number, any name; `fleets` the repos or fleets it covers, which another may
 cover too): an installed `drover` is attached to each orchestrator by its role, never its name.

@@ -32,7 +32,7 @@ public struct ToolRowsPage: View {
 
     private var specimen: some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text(look.mono ? "── every kind: running, done, failed" : "Every kind: running, done, failed")
+            Text(look.textMarks ? "── every kind: running, done, failed" : "Every kind: running, done, failed")
                 .ui(12, .semibold, look).foregroundStyle(look.palette.mute).padding(.bottom, 2)
             ForEach(ToolKind.allCases, id: \.self) { kind in
                 VStack(alignment: .leading, spacing: 4) {

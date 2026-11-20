@@ -1,6 +1,9 @@
 use std::{path::PathBuf, sync::Arc};
 
-use cooee_core::{Config, agents::Agent};
+use cooee_core::{
+    Config,
+    agents::{Agent, Seat},
+};
 use serde::Deserialize;
 use topcoat::{
     Result,
@@ -10,7 +13,7 @@ use topcoat::{
 
 use crate::{
     HubError,
-    http::{Answer, Data, hub, logins, profiles, recipe, thread_id},
+    http::{Answer, Data, hub, logins, profiles, recipe, seated, thread_id},
     machine,
 };
 
@@ -84,6 +87,33 @@ async fn move_thread(cx: &Cx, Json(m): Json<Move>) -> Result<Answer<cooee_core::
     ))
 }
 
+#[derive(Deserialize)]
+struct Switch {
+    agent: String,
+}
+
+#[route(POST "/threads/{id}/agent")]
+async fn switch(cx: &Cx, Json(s): Json<Switch>) -> Result<Answer<cooee_core::Item>> {
+    let (id, hub, logins) = (thread_id(cx), hub(cx), logins(cx));
+    let data = app_context::<Data>(cx);
+    let (data, dir) = (data.0.clone(), data.1.clone());
+    let done = tokio::task::spawn_blocking(move || {
+        let known = hub.agents().map_err(HubError::Refused)?;
+        if !known.iter().any(|a| a.id == s.agent) {
+            return Err(HubError::Refused(format!("no agent {}", s.agent)));
+        }
+        let seat = Seat {
+            agent: s.agent.clone(),
+            account: None,
+        };
+        let recipe = seated(&hub, &logins, (&data, dir.as_deref()), &id, &seat)?;
+        hub.switch(&id, &s.agent, &recipe)
+    });
+    Ok(Answer(
+        done.await.map_err(|e| HubError::Refused(e.to_string()))?,
+    ))
+}
+
 pub(super) fn routes(b: RouterBuilder) -> RouterBuilder {
-    b.route(attach).route(move_thread)
+    b.route(attach).route(move_thread).route(switch)
 }

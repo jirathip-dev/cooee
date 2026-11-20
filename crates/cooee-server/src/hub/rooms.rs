@@ -154,7 +154,7 @@ impl Hub {
         } else if l.asks.open.is_empty() && l.asks.paused > 0 {
             l.meta.asked_at += at.saturating_sub(l.asks.paused);
             l.asks.paused = 0;
-            if let Err(e) = self.store.save(&l.meta) {
+            if let Err(e) = self.save(&l) {
                 cooee_core::note!("cooee: room {}: {e}", l.meta.id);
             }
         }
@@ -248,7 +248,7 @@ impl Hub {
             }
             _ => return Ok(seated(&l.meta)),
         }
-        self.store.save(&l.meta)?;
+        self.save(&l)?;
         let members = seated(&l.meta);
         drop(l);
         if !gone.is_empty() {
@@ -283,11 +283,19 @@ impl Hub {
             return Ok(item);
         }
         let q = self.take(&l, text, random_id, files)?;
+        let title = super::start::opening(&q.text);
+        if l.chat.items.is_empty()
+            && l.meta.title == seated(&l.meta).join(", ")
+            && !title.is_empty()
+        {
+            l.meta.title = title;
+        }
         let body = Body::You {
             text: q.text,
             random_id: q.random_id,
             files: q.files,
             routine: None,
+            via: None,
         };
         let item = l.chat.said(now(), 0, OWNER.to_owned(), body);
         let idle = l.meta.round.is_empty();
@@ -304,7 +312,7 @@ impl Hub {
         l.meta.round.extend(turns);
         l.meta.taken = 0;
         l.meta.asked_at = now();
-        self.store.save(&l.meta)?;
+        self.save(&l)?;
         l.publish(self, vec![Change::Item(item.clone())])?;
         let id = l.meta.id.clone();
         drop(l);
@@ -321,7 +329,7 @@ impl Hub {
             let Some(turn) = l.meta.round.first().cloned() else {
                 if l.meta.taken > 0 {
                     l.meta.taken = 0;
-                    self.store.save(&l.meta)?;
+                    self.save(&l)?;
                     l.emit("room-stop", json!({ "reason": "done" }).to_string());
                 }
                 return Ok(());
@@ -373,7 +381,7 @@ impl Hub {
                 room.clone_into(&mut r.room);
             })
         } else {
-            self.send(&session, &prompt, &random_id, &[])
+            self.send(&session, &prompt, &random_id, &[], None)
                 .map(|_| session)
         };
         self.started(room, &persona, started)
@@ -393,7 +401,7 @@ impl Hub {
                 if let Some(m) = l.meta.members.iter_mut().find(|m| m.persona == persona) {
                     m.session.clone_from(&session);
                 }
-                self.store.save(&l.meta)?;
+                self.save(&l)?;
                 drop(l);
                 if stopped {
                     self.cancel(&session)
@@ -478,7 +486,7 @@ impl Hub {
             changes.push(Change::Item(l.chat.push(now(), 0, Body::Note { text })));
             l.emit("room-stop", json!({ "reason": "cap" }).to_string());
         }
-        self.store.save(&l.meta)?;
+        self.save(&l)?;
         l.publish(self, changes)?;
         drop(l);
         self.turns
@@ -494,7 +502,7 @@ impl Hub {
         };
         l.meta.round.clear();
         l.asks = OpenAsks::default();
-        self.store.save(&l.meta)?;
+        self.save(&l)?;
         l.emit("room-stop", json!({ "reason": why }).to_string());
         if !note.is_empty() {
             let text = note.to_owned();

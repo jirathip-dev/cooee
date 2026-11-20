@@ -1,0 +1,26 @@
+# cooee rules (impl and rev briefs carry these; each names its enforcer)
+
+- Don't comment Rust or Swift code (tests included) except `///` (Rust crate-root or `pub mod` `//!`) on public API, `// SAFETY:` above a forced or unsafe operation and `// TODO(#N)` on an open issue — scripts/comments.py (ci/gates/comments.sh), anti-slop no-comments, apple-check TODO step
+- Don't leave Swift imports unsorted or unused — anti-slop sorted-imports, swiftlint analyze unused_import (nightly, not the PR)
+- Don't import across Swift layers (Core → API → Features → UI → App) beyond apple/Package.swift's table — anti-slop layer-imports
+- Don't use `Any` or `AnyObject` as a Swift type — anti-slop no-any
+- Don't leave a Swift declaration without its access level — anti-slop explicit-access
+- Don't force unwrap, `try!` or `as!` in Swift without a `// SAFETY:` line — anti-slop no-force-unwrap, no-force-try, require-safety-comment-for-forced-cast
+- Don't exceed Swift file 250, type 150, function 25 lines, complexity 8 or nesting 2 — SwiftLint
+- Don't hand-format Swift — swift format lint --strict
+- Don't keep app state outside a TCA `@Reducer`, or call side effects except through a Features `@Dependency` client — anti-slop layer-imports (URLSession only in CooeeAPI), reducer TestStore tests
+- Don't let Swift warnings through: Swift 6, complete concurrency, warnings as errors — apple/Package.swift (COOEE_STRICT=1 in apple-check), Cooee.xcodeproj
+- Don't drop CooeeCore or CooeeAPI under 95% line coverage — scripts/apple-coverage.swift
+- Don't drop CooeeFeatures under 95% line coverage — scripts/apple-coverage.swift (nightly, not the PR)
+- Don't leave unused Swift code — Periphery (nightly, not the PR)
+- Don't change a design frame without its snapshot: Modern's in apple/design/ (CooeeUITests/Frames/), a pack's in apple/design/packs/<pack>/ (CooeeUITests/Packs/), each drawn from its own style.json — CooeeUITests Frames and Packs suites
+- Don't name a provider (claude, anthropic, codex, openai, gemini, hermes) outside crates/cooee-core/src/providers/ and tests — scripts/neutral-core.sh
+- don't push a PR body without a For humans section, with a placeholder, or with evidence at an older sha than the head (enforced by: pr-body `scripts/pr-body.sh`, shadow since 2026-11-13)
+- Don't break .drover/arch.toml's bans, size baselines, frozen or generated files — CI arch-check (drover arch-check, ci/drover-checks-test.sh)
+- Don't fail an active lesson check here (a shadow one only reports) — CI lessons (drover lesson-check, ci/drover-checks-test.sh)
+- Don't start a process outside crates/cooee-core/src/runner.rs: use `runner::command` — CI arch-check `Command::new` ban
+- Don't leave a temp folder behind a test, pass or fail — ci/gates/test.sh (fresh TMPDIR, ci/test-gate-test.sh)
+- Don't unwrap, expect, panic, `todo!`, `unimplemented!`, `dbg!`, index or slice, `as`-cast, print outside `cooee_core::out` (`say!`, `note!`), `let _ =` a must-use value, allow without a reason or write `unsafe` in Rust (tests may unwrap, expect, panic and index) — clippy deny lints in Cargo.toml (ci/gates/clippy.sh, fixtures in ci/bans-test.sh)
+- Don't sleep or read the clock outside crates/cooee-core/src/clock.rs, or the environment outside crates/cooee-core/src/config.rs (`env_var`) — CI arch-check `thread::sleep`, `SystemTime::now`, `Instant::now`, `env::var` bans (ci/drover-checks-test.sh)
+- Don't `print(`, use `DispatchQueue` (but Nearby.swift's Network browser), `UserDefaults.standard` outside CooeeApp/Live.swift's client values, `Task.sleep` instead of a clock dependency, `T!`, or `fatalError` without a `// SAFETY:` line right above it in Swift — apple/.swiftlint.yml (ci/swift-bans-test.sh in apple-check)
+- Don't keep a test that would catch no real regression (the areas that must have them: pairing and device trust, approvals and secrets, the hub's message keeping, routines firing once, the MCP proxy's allowlist, layout last-good, plugin isolation): no tests of copy, wording, constants or configuration, no mock that returns what it was told, and extend an area's test file before adding one — review (a tautological test is a blocking rev finding)

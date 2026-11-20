@@ -43,9 +43,9 @@ public struct DevicesView: View {
 
     private func row(_ device: PairedDevice, last: Bool) -> some View {
         let palette = look.palette
-        return Line(divider: !last, inset: look.mono ? 0 : 56) {
+        return Line(divider: !last, inset: look.textMarks ? 0 : 56) {
             HStack(spacing: 12) {
-                if !look.mono {
+                if !look.textMarks {
                     Image(systemName: device.symbol).font(.system(size: 17)).foregroundStyle(palette.link)
                         .frame(width: 30)
                 }
@@ -78,7 +78,7 @@ internal struct PairAskCard: View {
         let palette = look.palette
         VStack(alignment: .leading, spacing: 12) {
             HStack {
-                Text(look.mono ? "! pair a new device?" : "Pair a new device?").ui(17, .bold, look)
+                Text("Pair a new device?").ui(17, .bold, look)
                 Spacer()
                 Text(ago).ui(13, .regular, look).foregroundStyle(palette.mute)
             }
@@ -90,7 +90,7 @@ internal struct PairAskCard: View {
             }
             HStack(spacing: 10) {
                 CardButton(title: "Decline", tint: palette.red)
-                CardButton(title: look.mono ? "approve · face id" : "Approve · Face ID", primary: true)
+                CardButton(title: "Approve · Face ID", primary: true)
             }
         }
         .padding(16).surface(look, radius: 22)

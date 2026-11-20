@@ -26,7 +26,7 @@ internal struct ExchangeTests {
     }
 
     @Test internal func anAskIsACardThatSaysItsOutcome() throws {
-        let said = ChatItems.build([ask("replied", note: "Use the 10-Q")], live: "")
+        let said = ChatItems.build([ask("replied", note: "Use the 10-Q")])
         let card = try #require(said.first)
         guard case .asked(3, let shown) = card else { throw CancellationError() }
         #expect(shown.line(asker: "Coder") == "✓ replied in 48s · with your note" && !shown.refused)
@@ -40,7 +40,7 @@ internal struct ExchangeTests {
         #expect(line("offline")?.0 == "Not sent: Researcher is offline" && line("bogus") == nil)
         var bare = ask("replied")
         bare.persona = nil
-        #expect(ChatItems.build([bare], live: "").isEmpty)
+        #expect(ChatItems.build([bare]).isEmpty)
     }
 
     @Test internal func anExchangeKnowsItsAskerItsDepthAndTheAnswerersOwnChat() throws {

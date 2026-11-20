@@ -33,8 +33,10 @@ pub struct Launch {
     /// `--mcp`: the file the session's MCP servers pass through (written here, removed once shed has read it), and
     /// the servers, in ACP's shape (#56).
     pub mcp: Option<(PathBuf, Vec<Value>)>,
-    /// `--meta`: the session's options, sent as ACP `_meta` (a profile's provider's "no personal setup", #320).
+    /// `--meta`: the session's options, sent as ACP `_meta` (a persona's provider's session setup, #503).
     pub meta: Option<Value>,
+    /// `--resume`: the agent session to load instead of a new one (#613).
+    pub resume: Option<String>,
 }
 
 impl Launch {
@@ -52,5 +54,57 @@ impl Launch {
                 _ => self.args.push(w),
             }
         }
+    }
+}
+
+/// shed's facts about an agent program (shed#129), as `shed agents --json` prints them; older sheds have none.
+#[derive(Debug, Clone, Default, PartialEq, Eq, Deserialize)]
+#[serde(default)]
+pub struct Record {
+    /// The ACP agent id.
+    pub id: String,
+    /// The program's name.
+    pub agent: String,
+    /// The login command line.
+    pub login: Option<String>,
+    /// The status command line.
+    pub status: Option<String>,
+    /// The logout command line.
+    pub logout: Option<String>,
+    /// The variable that moves its config folder.
+    pub config_dir_var: Option<String>,
+    /// The variable that names its settings file.
+    pub settings_var: Option<String>,
+    /// The words that set an effort, `{effort}` standing for the pick.
+    pub effort_args: Vec<String>,
+    /// The efforts it takes.
+    pub efforts: Vec<String>,
+}
+
+#[derive(Debug, Deserialize)]
+pub(super) struct Listed {
+    id: String,
+    version: Option<String>,
+    #[serde(default)]
+    cmd: Vec<String>,
+    installed: Option<Agent>,
+    provider: Option<Record>,
+}
+
+impl Listed {
+    pub(super) fn agent(self) -> Option<Agent> {
+        match (self.installed, self.version) {
+            (Some(a), _) => Some(a),
+            (None, version) => Some(Agent {
+                version: version?,
+                id: self.id,
+                cmd: self.cmd,
+                models: Vec::new(),
+            }),
+        }
+    }
+
+    pub(super) fn record(self) -> Option<Record> {
+        self.provider.map(|r| Record { id: self.id, ..r })
     }
 }

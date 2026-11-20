@@ -1,0 +1,17 @@
+{
+  "type": "screen",
+  "id": "machines",
+  "title": "Machines",
+  "source": "core",
+  "blocks": [
+    {
+      "type": "list",
+      "id": "machines",
+      "rows": [
+        { "type": "row", "id": "mini", "title": "mini", "subtitle": "online" },
+        { "type": "row", "id": "d1", "title": "d1", "subtitle": "online · gpu · linux" },
+        { "type": "row", "id": "air", "title": "air", "subtitle": "online · arm" }
+      ]
+    }
+  ]
+}

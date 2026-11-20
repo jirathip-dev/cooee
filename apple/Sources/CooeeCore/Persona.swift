@@ -84,7 +84,6 @@ public struct Persona: Identifiable, Sendable, Equatable {
     public var id: String { api.id }
     public var name: String { api.name }
     public var figure: String { state.figure }
-    public var word: String { state.word }
     public var pose: String { state.pose }
 
     public init(api: APIPersona, look: PersonaLook, state: LaneState, seed: String? = nil) {
@@ -120,6 +119,7 @@ public struct Row: Identifiable, Sendable, Equatable {
     public let ago: String
     public let unseen: Int
     public let state: LaneState
+    public var status: String?
 
     public init(id: String, persona: String, title: String, last: String, ago: String, unseen: Int, state: LaneState) {
         self.id = id
@@ -139,6 +139,8 @@ public struct ListedChat: Identifiable, Sendable, Equatable {
     public let members: [Persona]
     public let asker: Persona?
     public let from: String
+    public var topics = 0
+    public var folder: String?
 
     public var id: String { row.id }
 

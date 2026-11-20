@@ -27,6 +27,12 @@ serde = { version = "=1.0.229", features = ["derive"] }
 serde_json = { version = "=1.0.154", features = ["preserve_order"] }
 # shed's API types, pinned to a shed merge commit; the hello needs the same shed protocol.
 shed-proto = { git = "https://github.com/jirathip-dev/shed", rev = "3672ee2fa3f77f71798d56446f7f90403b068dd1" }
+# The typed UI blocks and their JSON Schema (#621, q2236), pinned to a blocks staging commit.
+blocks = { git = "https://github.com/jirathip-dev/blocks", rev = "d0882093e32c6d752910c459efa04a2a6beb5c3a" }
+# The colour schemes and theme packs (#622, q2122), pinned to a swag staging commit beside blocks.
+swag = { git = "https://github.com/jirathip-dev/swag", rev = "bf9a2c6b5cb837db1e844e4746fe166cbaa06b91" }
+# Gzip replies (#601, q2045): gzip only, no brotli.
+flate2 = "=1.1.10"
 futures-util = { version = "=0.3.34", default-features = false }
 thiserror = "=2.0.21"
 # Pinned exactly (ADR 0001): Topcoat is pre-1.0 and its minors break.
@@ -59,3 +65,8 @@ as_conversions = "deny"
 print_stdout = "deny"
 print_stderr = "deny"
 let_underscore_must_use = "deny"
+
+[profile.release]
+lto = "fat"
+codegen-units = 1
+strip = true

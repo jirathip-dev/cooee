@@ -1,81 +1,55 @@
-//! The first-party theme packs (docs/themes.md, #318): jirathip-dev/swag's `packs/<name>/` at the commit
-//! `packs/swag.toml` pins. The build vendors them (`build.rs`), so they ship in the binary and an install with no
-//! network has them; a file is handed out only when it matches its sha256 in the pin.
+//! The first-party theme packs (docs/themes.md, #318, #622): the jirathip-dev/swag crate's, compiled in at the commit
+//! Cargo.lock pins, so an install with no network has them.
 
-use std::{collections::BTreeMap, io};
+use std::io;
 
-use serde::Deserialize;
+const LOCK: &str = include_str!("../../../Cargo.lock");
 
-const PIN: &str = include_str!("../../../packs/swag.toml");
-const FILES: &[(&str, &[u8])] = include!(concat!(env!("OUT_DIR"), "/swag.rs"));
-
-/// The pin: where the packs come from and what each file must hash to.
-#[derive(Debug, Clone, Deserialize)]
-#[serde(deny_unknown_fields)]
+/// Where the packs come from: swag's git URL and the commit this build has.
+#[derive(Debug, Clone)]
 pub struct Swag {
     /// The repo's git URL.
     pub url: String,
     /// The pinned commit.
     pub commit: String,
-    sha256: BTreeMap<String, String>,
 }
 
 impl Swag {
-    /// The pin this build was made from (compiled in; its test parses it); unparsable, a pin with no files.
+    /// The pin this build was made from, read from its Cargo.lock.
     #[must_use]
     pub fn pinned() -> Self {
-        toml::from_str(PIN).unwrap_or_else(|_| Self {
-            url: String::new(),
-            commit: String::new(),
-            sha256: BTreeMap::new(),
-        })
+        let url = "https://github.com/jirathip-dev/swag";
+        let commit = LOCK
+            .lines()
+            .filter_map(|l| l.strip_prefix(&format!("source = \"git+{url}?rev=")))
+            .find_map(|l| l.strip_suffix('"')?.split_once('#'))
+            .map_or_else(String::new, |(_, c)| c.to_owned());
+        Self {
+            url: url.to_owned(),
+            commit,
+        }
     }
 
     /// The packs' names, in name order.
     #[must_use]
-    pub fn names(&self) -> Vec<&str> {
-        let mut names: Vec<&str> = self
-            .sha256
-            .keys()
-            .filter_map(|f| f.split_once('/'))
-            .map(|(n, _)| n)
-            .collect();
-        names.dedup();
+    pub fn names(&self) -> Vec<&'static str> {
+        let mut names: Vec<_> = swag::packs().iter().map(|p| p.name).collect();
+        names.sort_unstable();
         names
     }
 
-    /// Pack `name`'s files (name in the pack, bytes), each checked against its sha256.
+    /// Pack `name`'s files (name in the pack, bytes).
     ///
     /// # Errors
-    /// When a file is missing or doesn't match the pin.
+    /// When swag has no such pack.
     pub fn files(&self, name: &str) -> io::Result<Vec<(&'static str, &'static [u8])>> {
-        self.check(name, FILES)
-    }
-
-    fn check(
-        &self,
-        name: &str,
-        files: &[(&'static str, &'static [u8])],
-    ) -> io::Result<Vec<(&'static str, &'static [u8])>> {
-        let mut out = Vec::new();
-        for (path, sum) in self
-            .sha256
+        swag::packs()
             .iter()
-            .filter(|(p, _)| p.split_once('/').is_some_and(|(n, _)| n == name))
-        {
-            let bad = |why: &str| {
-                io::Error::new(io::ErrorKind::InvalidData, format!("swag {path}: {why}"))
-            };
-            let (at, bytes) = files
-                .iter()
-                .find(|(p, _)| p == path)
-                .ok_or_else(|| bad("not vendored"))?;
-            if crate::sha256(bytes) != *sum {
-                return Err(bad("doesn't match its sha256 in packs/swag.toml"));
-            }
-            out.push((&at[name.len() + 1..], *bytes));
-        }
-        Ok(out)
+            .find(|p| p.name == name)
+            .map(|p| p.files.to_vec())
+            .ok_or_else(|| {
+                io::Error::new(io::ErrorKind::NotFound, format!("swag has no pack {name}"))
+            })
     }
 }
 
@@ -84,39 +58,27 @@ mod tests {
     use super::*;
 
     #[test]
-    fn every_pinned_file_is_vendored_and_matches_its_sha256() {
+    fn the_pin_is_the_locked_swag_commit_and_names_its_four_packs() {
         let swag = Swag::pinned();
         assert_eq!(swag.url, "https://github.com/jirathip-dev/swag");
-        assert_eq!(swag.commit.len(), 40);
-        assert_eq!(swag.names(), ["farm", "garden", "kitchen"]);
+        assert_eq!(swag.commit.len(), 40, "{swag:?}");
+        assert!(
+            include_str!("../../../Cargo.toml").contains(&format!("rev = \"{}\"", swag.commit)),
+            "{swag:?}"
+        );
+        assert_eq!(swag.names(), ["bush", "farm", "garden", "kitchen"]);
         for name in swag.names() {
-            let files = swag.files(name).unwrap();
-            let names: Vec<_> = files.iter().map(|(f, _)| *f).collect();
+            let mut names: Vec<_> = swag.files(name).unwrap().iter().map(|(f, _)| *f).collect();
+            names.sort_unstable();
             assert_eq!(
                 names,
                 ["icon.png", "scene.svg", "sprites.svg", "theme.json"],
                 "{name}"
             );
         }
-    }
-
-    #[test]
-    fn a_file_that_does_not_match_its_sha256_is_refused() {
-        let swag = Swag::pinned();
-        let mut files = FILES.to_vec();
-        let at = files
-            .iter()
-            .position(|(p, _)| *p == "farm/sprites.svg")
-            .unwrap();
-        files[at].1 = b"<svg/>";
-        let e = swag.check("farm", &files).unwrap_err();
         assert_eq!(
-            e.to_string(),
-            "swag farm/sprites.svg: doesn't match its sha256 in packs/swag.toml"
+            swag.files("drover").unwrap_err().to_string(),
+            "swag has no pack drover"
         );
-        assert!(swag.check("kitchen", &files).is_ok());
-        files.retain(|(p, _)| *p != "kitchen/icon.png");
-        let e = swag.check("kitchen", &files).unwrap_err();
-        assert_eq!(e.to_string(), "swag kitchen/icon.png: not vendored");
     }
 }

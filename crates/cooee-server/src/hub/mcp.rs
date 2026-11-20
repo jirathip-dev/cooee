@@ -13,7 +13,7 @@ use cooee_core::{
 use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
 
-use crate::mcp::Grant;
+use crate::mcp::{Child, Grant};
 
 use super::{Hub, HubError, Recipe, lock, now, refused};
 
@@ -48,6 +48,7 @@ pub(super) enum Proposed {
     },
     Later(Box<dyn FnOnce() -> Result<String, String> + Send>),
     Secret(super::secret::Asked),
+    Change(Box<cooee_core::chief::Carded>),
 }
 
 /// An agent's `skill` proposal (#218): the skill, and the one it edits.
@@ -130,7 +131,7 @@ impl Hub {
         self.config.as_deref().and_then(Path::parent)
     }
 
-    pub(super) fn persona(&self, id: &str) -> Agent {
+    pub(crate) fn persona(&self, id: &str) -> Agent {
         let list = agents::all(self.config_dir(), &self.data, |_| None);
         list.into_iter().find(|a| a.id == id).unwrap_or_default()
     }
@@ -153,16 +154,16 @@ impl Hub {
     }
 
     fn grant_of(&self, s: Server, tools: Option<Vec<String>>) -> Result<Grant, String> {
-        let (env, headers) = s.resolved(&self.data)?;
-        Ok(Grant {
-            kind: s.kind,
+        let (env, _) = s.resolved(&self.data)?;
+        if !matches!(s.source()?, mcp::Source::Command { .. }) {
+            return Ok(Grant::Pipe);
+        }
+        Ok(Grant::Run(Child {
             command: s.command,
             args: s.args,
-            url: s.url,
             env,
-            headers,
             tools,
-        })
+        }))
     }
 
     pub(super) fn mcp_launch(&self, id: &str, recipe: &Recipe) -> Result<Launch, HubError> {
@@ -250,16 +251,16 @@ impl Hub {
     pub fn grant(&self, id: &str, token: &str, server: &str) -> Result<Grant, HubError> {
         let (persona, pick, s) = self.granted(id, token, server)?;
         let mut g = self.grant_of(s, pick.tools).map_err(HubError::Refused)?;
-        if server == browser::SERVER {
+        if let (true, Grant::Run(c)) = (server == browser::SERVER, &mut g) {
             let profile = browser::profile(&self.data, &persona.id);
             let cdp = browser::endpoint(&self.chromium()?, &profile)
                 .map_err(|e| HubError::Refused(format!("{}'s browser: {e}", persona.id)))?;
-            g.args.extend(["--cdp-endpoint".to_owned(), cdp]);
+            c.args.extend(["--cdp-endpoint".to_owned(), cdp]);
         }
         Ok(g)
     }
 
-    fn granted(
+    pub(crate) fn granted(
         &self,
         id: &str,
         token: &str,
@@ -331,6 +332,7 @@ impl Hub {
     pub fn remember(&self, id: &str, token: &str, e: &memory::Edit) -> Result<String, HubError> {
         let home = self.home_of(id, token)?;
         let meta = self.token_of(id, token)?;
+        self.scan(id, "remember", e.text.iter())?;
         if meta.routine.is_some() {
             let what = match (&e.text, &e.replaces) {
                 (Some(_), Some(r)) => format!("replace {}'s note [{r}]", meta.profile),
@@ -361,6 +363,28 @@ impl Hub {
         ))
     }
 
+    pub(crate) fn scan<'a>(
+        &self,
+        id: &str,
+        what: &str,
+        mut texts: impl Iterator<Item = &'a String>,
+    ) -> Result<(), HubError> {
+        let Some((text, why)) = texts.find_map(|t| memory::refusal(t).map(|why| (t, why))) else {
+            return Ok(());
+        };
+        let text = format!(
+            "The agent tried to {what}: {} (refused: it {why})",
+            memory::shown(text)
+        );
+        let live = self.live(id)?;
+        let mut live = lock(&live);
+        let item = live.chat.push(now(), 0, Body::Note { text });
+        live.publish(self, vec![Change::Item(item)])?;
+        Err(HubError::Refused(format!(
+            "refused: it {why}. The owner sees it in the thread and can add it by hand."
+        )))
+    }
+
     /// What persona `persona`'s threads said after line `mark` (#219), routine runs left out: none when the owner
     /// said nothing since. For its `heartbeat` (#498) routines' results count and only its own runs are left out:
     /// none when nothing was said since.
@@ -389,20 +413,31 @@ impl Hub {
     }
 
     /// An agent's `history` in thread `id` (#217): a search of its persona's threads (`query`, at most `limit`
-    /// hits), or a page of one of them (`thread`, before item `before`).
+    /// hits), or a page of one of them (`thread`, before item `before`). In Chief's own chat (#664) `whose` names
+    /// another persona to search, and any thread may be read.
     ///
     /// # Errors
     /// [`HubError::Refused`] for a wrong token, a closed thread, one with no persona, or a thread of another persona.
     pub fn history(
         &self,
-        (id, token): (&str, &str),
+        (id, token, whose): (&str, &str, &str),
         (query, limit): (&str, usize),
         thread: &str,
         before: Option<u64>,
     ) -> Result<String, HubError> {
         let meta = self.token_of(id, token)?;
-        let persona = agents::find(self.config_dir(), &self.data, &meta.profile)
-            .map_err(|_| HubError::Refused(format!("thread {id} has no persona")))?;
+        let chief = self.chief_of(id, token).is_ok();
+        let whose = match (whose, chief) {
+            ("", _) => meta.profile.as_str(),
+            (w, true) => w,
+            _ => {
+                return Err(HubError::Refused(
+                    "NOT_CHIEF: only Chief reads another persona's history".to_owned(),
+                ));
+            }
+        };
+        let persona = agents::find(self.config_dir(), &self.data, whose)
+            .map_err(|_| HubError::Refused(format!("no persona {whose}")))?;
         let refused = |e: cooee_core::StoreError| HubError::Refused(e.to_string());
         let run = meta
             .routine
@@ -440,7 +475,7 @@ impl Hub {
             return cooee_core::history::search(&self.store, &mine, query, limit).map_err(refused);
         }
         match self.thread(thread) {
-            Ok((t, _)) if t.profile == persona.id => {
+            Ok((t, _)) if chief || t.profile == persona.id => {
                 cooee_core::history::read(&self.store, thread, before).map_err(refused)
             }
             _ => Err(HubError::Refused(format!(
@@ -612,6 +647,15 @@ impl Hub {
         self.raise(id, (tool, "routine", detail), Proposed::Later(then))
     }
 
+    pub(crate) fn ask_card(
+        &self,
+        id: &str,
+        (what, detail): (String, String),
+        allowed: Box<dyn FnOnce() -> Result<String, String> + Send>,
+    ) -> Result<Item, HubError> {
+        self.raise(id, (what, "tool", detail), Proposed::Later(allowed))
+    }
+
     /// Whether item `item` of thread `id` is an MCP server's, a routine's or a secret's card of cooee's (approving
     /// it needs Face ID).
     #[must_use]
@@ -621,7 +665,7 @@ impl Hub {
         };
         let live = lock(&live);
         live.chat.items.iter().any(|i| {
-            i.id == item && matches!(&i.body, Body::Approval { card, plugin: None, .. } if matches!(card.form.as_deref(), Some("mcp" | "routine" | "secret")))
+            i.id == item && matches!(&i.body, Body::Approval { card, plugin: None, .. } if matches!(card.form.as_deref(), Some("mcp" | "routine" | "secret" | "change")))
         })
     }
 
@@ -633,6 +677,11 @@ impl Hub {
         value: Option<&str>,
     ) -> Result<Option<String>, String> {
         let p = lock(&self.proposals).remove(&(id.to_owned(), item));
+        if let Some(Proposed::Change(c)) = &p {
+            return self
+                .change_answer((id, item), c, option == "approve", value)
+                .map(Some);
+        }
         if option != "approve" {
             return Ok(Some("declined".to_owned()));
         }
@@ -651,6 +700,7 @@ impl Hub {
                 .map_err(|e| e.to_string()),
             Proposed::Later(then) => then().map(Some),
             Proposed::Secret(a) => self.drop_secret((id, item), &a, value).map(Some),
+            Proposed::Change(_) => Ok(None),
         }
     }
 

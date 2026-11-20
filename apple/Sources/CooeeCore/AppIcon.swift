@@ -21,14 +21,6 @@ public struct AppIcon: Codable, Hashable, Sendable {
 
     public static let primary = AppIcon(set: .modern, name: "Laughing")
 
-    public static func following(_ style: LookStyle) -> AppIcon {
-        switch style {
-        case .modern: IconSet.modern.icons[0]
-        case .terminal: IconSet.terminal.icons[0]
-        case .scene: IconSet.farm.icons[0]
-        }
-    }
-
     public var asset: String { "\(set.rawValue) \(name)".capitalized.split(separator: " ").joined() }
 
     public var alternateName: String? { self == .primary ? nil : asset }

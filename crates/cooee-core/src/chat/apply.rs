@@ -49,8 +49,11 @@ impl Chat {
             | EventKind::Resources(_)
             | EventKind::Mode { .. }
             | EventKind::Turn { .. }
-            | EventKind::Session(_)
-            | EventKind::Usage(_) => Vec::new(),
+            | EventKind::Session(_) => Vec::new(),
+            EventKind::Usage(u) => {
+                self.turn.context = Some(u);
+                vec![Change::State(self.turn.clone())]
+            }
             EventKind::State(r) => vec![self.state(&r.state, r.note)],
             EventKind::Text { text } => {
                 self.turn.text.push_str(&text);
@@ -112,15 +115,9 @@ impl Chat {
                 });
                 item.map(Change::Item).into_iter().collect()
             }
-            EventKind::Reply { text, stop_reason } => {
-                let status = (stop_reason == "cancelled").then_some("cancelled");
-                let mut changes = self.end(at, seq, status);
-                changes.push(Change::Item(self.push(
-                    at,
-                    seq,
-                    Body::Agent { text, stop_reason },
-                )));
-                changes
+            EventKind::Reply { text, stop_reason } => self.replied(at, seq, text, stop_reason),
+            EventKind::Exited { .. } | EventKind::Killed if self.turn.state == "ended" => {
+                Vec::new()
             }
             EventKind::Exited { code } => {
                 let text = code.map_or("The agent stopped.".to_owned(), |c| {
@@ -132,11 +129,32 @@ impl Chat {
         }
     }
 
+    fn replied(&mut self, at: u64, seq: u64, text: String, stop_reason: String) -> Vec<Change> {
+        let status = (stop_reason == "cancelled").then_some("cancelled");
+        let mut changes = self.end(at, seq, status);
+        changes.push(Change::Item(self.push(
+            at,
+            seq,
+            Body::Agent { text, stop_reason },
+        )));
+        if matches!(
+            self.turn.state.as_str(),
+            "working" | "connecting" | "blocked"
+        ) {
+            changes.push(self.state("done", None));
+        }
+        changes
+    }
+
     /// The session is over: the turn ends and an `ended` row says why.
     pub fn ended(&mut self, at: u64, seq: u64, text: String) -> Vec<Change> {
         let mut changes = self.end(at, seq, Some("cancelled"));
-        changes.push(Change::Item(self.push(at, seq, Body::Ended { text })));
-        changes.push(self.state("ended", None));
+        changes.push(Change::Item(self.push(
+            at,
+            seq,
+            Body::Ended { text: text.clone() },
+        )));
+        changes.push(self.state("ended", Some(text)));
         changes
     }
 

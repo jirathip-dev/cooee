@@ -24,6 +24,14 @@ pub struct Item {
     pub body: Body,
 }
 
+/// How the owner's message was sent, when not typed.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum Via {
+    /// Spoken in a call (#663): its reply is read aloud.
+    Voice,
+}
+
 /// What an [`Item`] holds; `kind` names it.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "kind", rename_all = "snake_case")]
@@ -40,6 +48,9 @@ pub enum Body {
         /// The routine that sent it (#75), not the owner.
         #[serde(default, skip_serializing_if = "Option::is_none")]
         routine: Option<crate::routines::Mark>,
+        /// How it was sent: `voice` for a call's utterance (#663), none when typed.
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        via: Option<Via>,
     },
     /// The agent's whole reply to a turn.
     Agent {
@@ -146,6 +157,9 @@ pub enum Body {
         text: String,
         /// The frame's name.
         name: String,
+        /// The agent took this screenshot itself, so it saw it (D3): the chat shows it as a `screen` block (#166).
+        #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+        asked: bool,
     },
     /// A line from cooee itself (`model sonnet · effort low from the next start`).
     Note {
@@ -157,4 +171,29 @@ pub enum Body {
         /// Why.
         text: String,
     },
+}
+
+impl Item {
+    /// The answer that denies an approval with the owner's text as its value (#351).
+    pub const SAY: &str = "say";
+
+    /// An approval's deny: the agent's reject-once option, else its reject-always, else `decline`.
+    #[must_use]
+    pub fn deny(&self) -> Option<&ApprovalOption> {
+        let Body::Approval { options, .. } = &self.body else {
+            return None;
+        };
+        let reject = |kind: &str| options.iter().find(|o| o.kind == kind);
+        reject("reject_once")
+            .or_else(|| reject("reject_always"))
+            .or_else(|| options.iter().find(|o| o.id == "decline"))
+    }
+
+    /// Shed's own approval (no plugin card) with a deny (#351): it may be denied with the owner's text.
+    #[must_use]
+    pub fn sayable(&self) -> Option<&ApprovalOption> {
+        let shed =
+            matches!(&self.body, Body::Approval { plugin: None, card, .. } if card.form.is_none());
+        self.deny().filter(|_| shed)
+    }
 }

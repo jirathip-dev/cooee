@@ -276,6 +276,7 @@ fn agents_are_listed_from_the_hub_and_a_failed_refresh_keeps_the_list() {
         let log = s.shed.cli_log();
         log.lines().filter(|l| l.ends_with(" agents")).count()
     };
+    assert_ne!(s.cooee.get("/agents").0, 200);
     s.shed.gate("agents-fails", false);
     for _ in 0..10 {
         assert_eq!(s.cooee.get("/threads").0, 200);
@@ -300,6 +301,47 @@ fn agents_are_listed_from_the_hub_and_a_failed_refresh_keeps_the_list() {
     let (code, body) = s.cooee.post("/threads", &start(&s, "still", "c4"));
     assert_eq!(code, 200, "{body}");
     assert_eq!(lists(), 3, "{}", s.shed.cli_log());
+}
+
+fn approval(cooee: &Cooee, id: &str) -> Option<Value> {
+    let items = cooee.json(&format!("/threads/{id}/messages"))["items"].clone();
+    let items = items.as_array().unwrap().clone();
+    items.into_iter().find(|i| i["kind"] == "approval")
+}
+
+#[test]
+fn r9_an_ask_after_the_terminal_is_replaced_is_answered_in_the_new_session() {
+    let s = setup("r9-replaced");
+    let new = json!({ "agent": "fake-acp", "text": "hi", "random_id": "r9" });
+    let (status, body) = s.cooee.post("/threads", &new);
+    assert_eq!(status, 200, "{body}");
+    let id = id_of(&body);
+    let old = format!("cooee-{id}");
+    let folder = json!({ "folder": s.dir.join("root/project").canonicalize().unwrap() });
+    let (status, body) = s.cooee.post(&format!("/threads/{id}/folder"), &folder);
+    assert_eq!(status, 200, "{body}");
+    let log = s.shed.cli_log();
+    let replaced = log.lines().find_map(|l| {
+        let name = l.split("--name ").nth(1)?.split(' ').next()?;
+        name.starts_with(&format!("{old}-"))
+            .then(|| name.to_owned())
+    });
+    let replaced = replaced.unwrap_or_else(|| panic!("no new terminal: {log}"));
+
+    let ask = json!({ "text": "please approve an edit", "random_id": "r9b" });
+    let (status, body) = s.cooee.post(&format!("/threads/{id}/send"), &ask);
+    assert_eq!(status, 200, "{body}");
+    until("the new session asks", || approval(&s.cooee, &id).is_some());
+    let item = approval(&s.cooee, &id).unwrap()["id"].clone();
+    let tap = json!({ "item": item, "option": "allow" });
+    let (status, body) = s.cooee.post(&format!("/threads/{id}/approve"), &tap);
+    assert_eq!(status, 200, "{body}");
+    let answer = "\x1e{\"approve\":\"allow\"}\n".to_owned();
+    assert!(s.shed.sent(&replaced).contains(&answer), "{replaced}");
+    assert!(!s.shed.sent(&old).contains(&answer), "{old}");
+    until("the new session's edit lands", || {
+        approval(&s.cooee, &id).unwrap()["chosen"] == "allow"
+    });
 }
 
 #[test]
@@ -544,14 +586,6 @@ fn r21_an_answer_to_a_gone_session_says_not_delivered() {
         ask.get("tapped").is_none() && ask.get("chosen").is_none(),
         "{ask}"
     );
-    let (status, body) = s.cooee.post(
-        &format!("/threads/{id}/send"),
-        &json!({ "text": "hi", "random_id": "z" }),
-    );
-    assert_eq!(
-        (status, body.as_str()),
-        (410, "Not delivered: this thread's agent is gone.")
-    );
 }
 
 #[test]
@@ -643,4 +677,39 @@ fn a_start_with_no_folder_runs_in_its_own_scratch_folder() {
     assert_eq!(list[0]["id"], id.as_str());
     assert_eq!(list[0]["folder"], "", "{list}");
     assert!(!list.to_string().contains("data/scratch"), "{list}");
+}
+
+#[test]
+fn r27_a_long_tool_run_is_working_until_its_turn_ends_and_reads_no_screen() {
+    let s = setup("r27-state");
+    let (status, body) = s.cooee.post("/threads", &start(&s, "hi", "r27"));
+    assert_eq!(status, 200, "{body}");
+    let id = id_of(&body);
+    let messages = format!("/threads/{id}/messages");
+    until("the first turn ends", || {
+        s.cooee.json(&messages)["turn"]["state"] == "done"
+    });
+    let cursor = s.cooee.json(&messages)["cursor"]
+        .as_str()
+        .unwrap()
+        .to_owned();
+    let mut events = s.cooee.events(&id, &cursor, false);
+    let run = json!({ "text": "a long tool run", "random_id": "r27b" });
+    let (status, body) = s.cooee.post(&format!("/threads/{id}/send"), &run);
+    assert_eq!(status, 200, "{body}");
+    let seen: Vec<String> = events
+        .until(|e| e.event == "state" && e.data["state"] == "idle")
+        .into_iter()
+        .filter(|e| e.event == "state")
+        .map(|e| e.data["state"].as_str().unwrap().to_owned())
+        .collect();
+    let mut pill: Vec<bool> = seen.iter().map(|s| s == "working").collect();
+    pill.dedup();
+    assert_eq!(pill, [true, false], "{seen:?}");
+    assert_eq!(seen.iter().filter(|s| *s == "working").count(), 5);
+    let requests = s.shed.requests.lock().unwrap();
+    let screen = requests
+        .iter()
+        .filter(|(m, _)| m == "read" || m.starts_with("screen."));
+    assert_eq!(screen.count(), 0, "{requests:?}");
 }

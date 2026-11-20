@@ -12,6 +12,8 @@ public struct HomeActions {
     public var openOthers: () -> Void = {}
     public var rooms: [String] = []
     public var pinRoom: (String) -> Void = { _ in }
+    public var sync: Sync?
+    public var asOf: Date?
 
     public init(
         menu: @escaping () -> Void = {},
@@ -47,7 +49,10 @@ public struct HomeView: View {
             Backdrop()
             VStack(spacing: 0) {
                 TopBar(title: screen.title, personas: all, actions: actions)
-                    .overlay(alignment: .bottom) { if loading { LoadingBar() } }
+                    .overlay(alignment: .bottom) {
+                        if loading { SlowStrip().frame(height: 2, alignment: .top) }
+                    }
+                    .zIndex(1)
                 Scroller {
                     HomeBlocks(screen: screen, pins: pins, chats: chats, selected: selected, actions: actions)
                     if chats.isEmpty { BigSprite(loading: loading) }
@@ -91,9 +96,7 @@ internal struct AccountAvatar: View {
 
     internal var body: some View {
         let palette = look.palette
-        if look.mono {
-            Text("[g]").ui(15, .bold, look).foregroundStyle(palette.lead).frame(height: size)
-        } else {
+        Mark(text: "[g]", size: 15) {
             Circle().fill(palette.amber.opacity(0.9)).frame(width: size, height: size)
                 .overlay(
                     Text("G").font(.system(size: size * 0.45, weight: .bold))
@@ -101,6 +104,7 @@ internal struct AccountAvatar: View {
                 )
                 .overlay(Circle().strokeBorder(.white.opacity(0.35), lineWidth: 1))
         }
+        .foregroundStyle(palette.lead).frame(height: size)
     }
 }
 
@@ -121,7 +125,7 @@ internal struct HomeBlocks: View {
                     .scaleEffect(wide ? 0.9 : 1, anchor: .leading).padding(.top, wide ? 4 : 6)
             case "chats":
                 ChatList(chats: chats, selected: selected, open: actions.open, actions: actions)
-                    .padding(.top, wide ? 8 : look.style.stage != nil ? 0 : 14)
+                    .padding(.top, wide ? 8 : look.stage != nil ? 0 : 14)
             default:
                 EmptyView()
             }
@@ -137,10 +141,13 @@ internal struct TopBar: View {
 
     internal var body: some View {
         HStack {
-            Button(action: actions.menu) { AccountAvatar().padding(4).modifier(RoundSurface(look: look)) }
+            Button(action: actions.menu) { AccountAvatar().padding(4).chip(look) }
                 .buttonStyle(.plain).accessibilityLabel("Account")
             Spacer()
-            Text(look.mono ? "~/\(title)" : title).ui(19, .bold, look)
+            VStack(spacing: 2) {
+                Text(look.label(.title, title)).ui(19, .bold, look)
+                if let sync = actions.sync { SyncBadge(sync: sync, asOf: actions.asOf) }
+            }
             Spacer()
             Menu {
                 Button("New room", systemImage: "person.3", action: actions.room)
@@ -171,22 +178,20 @@ internal struct ChatList: View {
         let palette = look.palette
         VStack(alignment: .leading, spacing: 0) {
             if let title {
-                Text(look.mono ? "# \(title.lowercased())" : title).ui(
-                    look.mono ? 12 : 20, look.mono ? .regular : .bold, look
-                )
-                .foregroundStyle(look.mono ? palette.mute : palette.foreground).padding(.horizontal, 16)
-                .padding(.bottom, 6).padding(.top, look.style.stage != nil ? 12 : 0)
+                Text(look.label(.section, title)).ui(look.quiet ? 12 : 20, look.quiet ? .regular : .bold, look)
+                    .foregroundStyle(look.quiet ? palette.mute : palette.foreground).padding(.horizontal, 16)
+                    .padding(.bottom, 6).padding(.top, look.stage != nil ? 12 : 0)
             }
             ForEach(Array(chats.enumerated()), id: \.element.id) { index, chat in
                 Button {
-                    open(chat.id)
+                    if chat.topics > 0, let actions { actions.pin(chat.persona.id) } else { open(chat.id) }
                 } label: {
                     if let asker = chat.asker {
                         LinkedRow(chat: chat, asker: asker, selected: chat.id == selected)
                     } else {
                         ChatRow(
                             row: chat.row, persona: chat.persona, members: chat.members, selected: chat.id == selected,
-                            word: chat.workflow != nil)
+                            word: chat.workflow != nil, topics: chat.topics, folder: chat.folder)
                     }
                 }
                 .buttonStyle(.plain)
@@ -199,7 +204,7 @@ internal struct ChatList: View {
                     }
                 }
                 if index + 1 < chats.count, chats[index + 1].asker == nil {
-                    Rectangle().fill(palette.line).frame(height: look.mono ? 0 : 0.5).padding(.leading, 76)
+                    Rectangle().fill(palette.line).frame(height: look.quiet ? 0 : 0.5).padding(.leading, 76)
                 }
             }
         }

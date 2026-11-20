@@ -31,7 +31,7 @@ internal struct SkillRows: View {
                 Button {
                     add(name)
                 } label: {
-                    Text(look.mono ? "[+ add]" : "+ Add").ui(14, .semibold, look).foregroundStyle(palette.link)
+                    Text(look.label(.chip, "+ Add")).ui(14, .semibold, look).foregroundStyle(palette.link)
                 }
                 .buttonStyle(.plain).accessibilityLabel("Add skill \(name)")
             }

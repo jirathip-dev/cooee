@@ -49,10 +49,13 @@ internal struct PersonasTests {
         let server = CannedServer([
             "/personas/coder": [Answer(headers: json, chunks: ["null"])],
             "/threads/t1/model": [Answer(headers: json, chunks: [#""switched""#])],
+            "/threads/t1/agent": [Answer(headers: json, chunks: ["{}"])],
         ])
         let client = server.client()
         try await client.remove("coder")
         try await client.model("t1", model: "opus", effort: "high")
+        try await client.switchAgent("t1", to: "codex")
+        #expect(try server.decoded("/threads/t1/agent", as: [String: String].self) == ["agent": "codex"])
         #expect(server.requests("/personas/coder").map(\.httpMethod) == ["DELETE"])
         #expect(
             try server.decoded("/threads/t1/model", as: [String: String].self) == ["model": "opus", "effort": "high"])
@@ -66,6 +69,20 @@ internal struct PersonasTests {
         #expect(
             server.requests("/push/apns").map { $0.httpBody }
                 == Array(repeating: Data(#"{"token":"ab12"}"#.utf8), count: 2))
+    }
+
+    @Test internal func aTimingIsPostedByNameAndMs() async throws {
+        let server = CannedServer(["/perf": [Answer(chunks: ["ok"])]])
+        try await server.client().perf("tap", millis: 42)
+        let sent = try server.decoded("/perf", as: [String: JSONValue].self)
+        #expect(sent == ["name": .string("tap"), "ms": .number(42)])
+    }
+
+    @Test internal func aReportPostsTheScreenTheElementAsTargetAndTheNote() async throws {
+        let server = CannedServer(["/report": [Answer(chunks: ["report sent"])]])
+        try await server.client().report(Report(note: "wrong time", path: "/t1", element: "working pill"))
+        let sent = try server.decoded("/report", as: [String: JSONValue].self)
+        #expect(sent == ["note": .string("wrong time"), "path": .string("/t1"), "target": .string("working pill")])
     }
 
     @Test internal func aRefusedSaveCarriesTheServersReason() async throws {

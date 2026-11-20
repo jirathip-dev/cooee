@@ -12,7 +12,7 @@ use std::{
 
 use serde::{Deserialize, Serialize};
 
-use crate::{Body, Item, Store, StoreError, redact, store::Page};
+use crate::{Body, Item, Store, StoreError, redact, routines::Tally, store::Page};
 
 /// At most this many hits a search.
 pub const HITS: usize = 5;
@@ -34,9 +34,9 @@ pub struct Watermark {
     pub line: u64,
     /// The newest due time run (0: none seen yet).
     pub due: u64,
-    /// When the heartbeat ran in the last 24 hours (#498).
-    #[serde(skip_serializing_if = "Vec::is_empty")]
-    pub runs: Vec<u64>,
+    /// What its routine did on its last local day (#690).
+    #[serde(skip_serializing_if = "Tally::is_empty")]
+    pub today: Tally,
     /// The heartbeat's last run (#498).
     #[serde(skip_serializing_if = "Option::is_none")]
     pub last: Option<Beat>,
@@ -58,8 +58,8 @@ pub struct Beat {
     pub pushed: bool,
 }
 
-/// Watermark `key` of `<data>/watermarks.json` changed by `f`, one change at a time, written when it changed: what
-/// `f` returns.
+/// Watermark `key` of `<data>/watermarks.json` changed by `f`, one change at a time, written when it changed (and
+/// dropped when back to the default): what `f` returns.
 ///
 /// # Errors
 /// When the file can't be read or written.
@@ -75,7 +75,11 @@ pub fn watermark<T>(data: &Path, key: &str, f: impl FnOnce(&mut Watermark) -> T)
     let mut w = was.clone();
     let out = f(&mut w);
     if w != was {
-        all.insert(key.to_owned(), w);
+        if w == Watermark::default() {
+            all.remove(key);
+        } else {
+            all.insert(key.to_owned(), w);
+        }
         crate::write_private(&path, &serde_json::to_vec_pretty(&all)?)?;
     }
     Ok(out)
@@ -232,6 +236,44 @@ pub fn read(store: &Store, id: &str, before: Option<u64>) -> Result<String, Stor
     Ok(out.join("\n"))
 }
 
+/// What a session on another provider is told about `thread` so far (#503): the first owner message (500 characters
+/// at most), then the last turns, newest kept, up to `cap` characters, then `Older turns: your history tool, thread <id>`.
+///
+/// # Errors
+/// [`StoreError`] when its items can't be read.
+pub fn handoff(store: &Store, thread: &str, cap: usize) -> Result<String, StoreError> {
+    let items = store.items(thread)?;
+    let first = items.iter().find(|i| matches!(i.body, Body::You { .. }));
+    let mut out = vec!["This chat ran on another provider until now.".to_owned()];
+    if let Some((_, text)) = first.and_then(said) {
+        let text: String = text.chars().take(500).collect();
+        out.push(format!("Its first message: {text}"));
+    }
+    let (mut turns, mut left) = (Vec::new(), cap);
+    for i in items.iter().rev() {
+        if first.is_some_and(|f| f.id == i.id) {
+            break;
+        }
+        let Some((who, text)) = said(i) else { continue };
+        let line = format!("{who}: {text}");
+        let n = line.chars().count() + 1;
+        if n > left {
+            if turns.is_empty() {
+                turns.push(line.chars().take(left).collect());
+            }
+            break;
+        }
+        left -= n;
+        turns.push(line);
+    }
+    if !turns.is_empty() {
+        out.push("Its last turns:".to_owned());
+        out.extend(turns.into_iter().rev());
+    }
+    out.push(format!("Older turns: your history tool, thread {thread}"));
+    Ok(out.join("\n"))
+}
+
 #[cfg(test)]
 mod tests {
     use std::fs;
@@ -262,6 +304,7 @@ mod tests {
             random_id: String::new(),
             files: Vec::new(),
             routine: None,
+            via: None,
         }
     }
 
@@ -353,6 +396,36 @@ mod tests {
     }
 
     #[test]
+    fn a_handoff_keeps_the_first_message_and_the_newest_turns_in_the_cap_without_tool_rows() {
+        let s = store("handoff");
+        s.append("t1", &item(1, 1, you(&"f".repeat(900)))).unwrap();
+        for n in 0..40u64 {
+            s.append("t1", &item(2 + n * 2, 2, tool("cat secret.txt")))
+                .unwrap();
+            let reply = agent(&format!("answer {n} {}", "b".repeat(100)));
+            s.append("t1", &item(3 + n * 2, 3, reply)).unwrap();
+        }
+        let got = handoff(&s, "t1", 1000).unwrap();
+        let lines: Vec<&str> = got.lines().collect();
+        assert_eq!(lines[1], format!("Its first message: {}", "f".repeat(500)));
+        assert!(!got.contains("cat secret.txt"), "{got}");
+        let turns: Vec<&str> = lines
+            .iter()
+            .copied()
+            .filter(|l| l.starts_with("reply: "))
+            .collect();
+        let kept: usize = turns.iter().map(|l| l.chars().count() + 1).sum();
+        assert!(kept <= 1000 && turns.len() == 8, "{got}");
+        assert!(
+            turns[0].starts_with("reply: answer 32 ") && turns[7].starts_with("reply: answer 39 ")
+        );
+        assert_eq!(
+            lines.last(),
+            Some(&"Older turns: your history tool, thread t1")
+        );
+    }
+
+    #[test]
     fn new_history_is_the_newest_20000_characters_after_the_mark_and_none_without_an_owner_turn() {
         let s = store("since");
         let prompt = Body::You {
@@ -363,6 +436,7 @@ mod tests {
                 id: "consolidate".to_owned(),
                 name: "Consolidation".to_owned(),
             }),
+            via: None,
         };
         s.append("t1", &item(1, 10, you("old"))).unwrap();
         s.append("t1", &item(2, 20, prompt)).unwrap();

@@ -107,7 +107,7 @@ fn post(url: &HttpsUrl, body: &str) -> Result<Reply, Refused> {
         "Content-Type: application/x-www-form-urlencoded".to_owned(),
         "Accept: application/json".to_owned(),
     ];
-    fetch("POST", url.as_str(), &headers, Some(body)).map_err(Refused::Net)
+    fetch("POST", url.as_str(), &headers, Some(body.as_bytes())).map_err(Refused::Net)
 }
 
 fn granted(r: &Reply, now: u64, old: Option<Secret>) -> Result<Credential, Refused> {

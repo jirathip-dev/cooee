@@ -140,7 +140,7 @@ internal struct BlockStack: View {
 
     internal var body: some View {
         VStack(alignment: .leading, spacing: spacing) {
-            ForEach(Array(blocks.enumerated()), id: \.offset) { _, block in BlockNode(block: block) }
+            ForEach(blocks.keyed()) { BlockNode(block: $0.element).reportable(block: $0.element) }
         }
     }
 }
@@ -175,8 +175,8 @@ internal struct GroupBlock: View {
             HStack(spacing: 8) {
                 Text(block.string("title") ?? "").ui(block["large"]?.bool == false ? 17 : 30, .bold, look)
                 Spacer(minLength: 4)
-                ForEach(Array(block.list("actions").enumerated()), id: \.offset) { _, item in
-                    ToolbarItemView(item: item)
+                ForEach(block.list("actions").keyed()) { item in
+                    ToolbarItemView(item: item.element)
                 }
                 if block["refresh"]?.bool == true, let refresh {
                     Button(action: refresh) { RoundButton(symbol: "arrow.clockwise", ascii: "r", size: 36) }
@@ -192,7 +192,7 @@ internal struct GroupBlock: View {
         let palette = look.palette
         return VStack(alignment: .leading, spacing: 6) {
             if let header = block.string("header") {
-                Text(look.mono ? "## \(header)" : header.uppercased()).ui(12, .semibold, look)
+                Text(look.label(.header, header)).ui(12, .semibold, look)
                     .foregroundStyle(palette.mute)
             }
             BlockStack(blocks: block.list("blocks"))

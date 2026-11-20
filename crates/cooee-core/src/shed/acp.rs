@@ -2,11 +2,35 @@ use std::{collections::BTreeMap, fmt::Write as _, path::Path, time::Duration};
 
 use serde_json::{Value, json};
 use shed_proto::{
-    AcpSession, Event, EventsParams, Method, ModelParams, Reported, StateParams, TerminalInfo,
-    WaitOutcome, WaitParams, WaitResult,
+    AcpSession, Event, EventsParams, Method, ModelParams, Reported, Request, StateParams,
+    TerminalInfo, WaitOutcome, WaitParams, WaitResult,
 };
 
-use super::{Agent, Launch, Shed, ShedError, client::CALL};
+use super::{Agent, Launch, Listed, Record, Shed, ShedError, client::CALL};
+
+/// One line of an event stream: an event, or shed's `reset`, the events up to its seq lost.
+#[derive(Debug)]
+pub enum Streamed {
+    /// An event.
+    Event(Event),
+    /// The events up to this seq are gone; resume after it.
+    Reset(u64),
+}
+
+fn streamed(line: &str) -> Result<Streamed, serde_json::Error> {
+    serde_json::from_str(line)
+        .map(Streamed::Event)
+        .or_else(|e| {
+            let note: Request = serde_json::from_str(line)?;
+            match (
+                note.method.as_str(),
+                note.params.get("seq").and_then(Value::as_u64),
+            ) {
+                ("reset", Some(seq)) => Ok(Streamed::Reset(seq)),
+                _ => Err(e),
+            }
+        })
+}
 
 impl Shed {
     /// Waits up to a minute for ACP terminal `name`'s session to be ready for a prompt; the session as reported.
@@ -80,7 +104,7 @@ impl Shed {
     }
 
     /// Streams the events of the terminals carrying every one of `labels`, first the kept ones after `since`.
-    /// The iterator ends when the connection closes; an event this build doesn't know is skipped and logged.
+    /// The iterator ends when the connection closes; a line this build doesn't know is skipped and logged.
     ///
     /// # Errors
     /// [`ShedError`] when the subscription fails.
@@ -88,15 +112,15 @@ impl Shed {
         &self,
         labels: BTreeMap<String, String>,
         since: Option<u64>,
-    ) -> Result<impl Iterator<Item = Event>, ShedError> {
+    ) -> Result<impl Iterator<Item = Streamed>, ShedError> {
         let mut conn = self.connect()?;
         let _: Value = conn.call(Method::Events, json!(EventsParams { labels, since }))?;
         conn.writer.set_read_timeout(None).map_err(conn.io())?;
         Ok(std::iter::from_fn(move || {
             loop {
                 let line = conn.line().ok()??;
-                match serde_json::from_str(&line) {
-                    Ok(event) => return Some(event),
+                match streamed(&line) {
+                    Ok(item) => return Some(item),
                     Err(e) => crate::note!("cooee: dropped a shed event ({e}): {}", line.trim()),
                 }
             }
@@ -108,7 +132,17 @@ impl Shed {
     /// # Errors
     /// [`ShedError::Cli`] when the CLI fails.
     pub fn agents(&self) -> Result<Vec<Agent>, ShedError> {
-        self.cli(&["agents"])
+        let listed: Vec<Listed> = self.cli(&["agents"])?;
+        Ok(listed.into_iter().filter_map(Listed::agent).collect())
+    }
+
+    /// shed's records of the agent programs it knows (`shed agents`); none from a shed that has none.
+    ///
+    /// # Errors
+    /// [`ShedError::Cli`] when the CLI fails.
+    pub fn records(&self) -> Result<Vec<Record>, ShedError> {
+        let listed: Vec<Listed> = self.cli(&["agents"])?;
+        Ok(listed.into_iter().filter_map(Listed::record).collect())
     }
 
     /// Starts ACP agent `agent` in terminal `name` in `cwd` with `labels` (`shed run --acp`) and `launch`: with
@@ -153,6 +187,9 @@ impl Shed {
                 detail: format!("{}: {e}", file.display()),
             })?;
             args.extend(["--mcp", path]);
+        }
+        if let Some(session) = &launch.resume {
+            args.extend(["--resume", session]);
         }
         let meta = launch.meta.as_ref().map(Value::to_string);
         if let Some(meta) = &meta {

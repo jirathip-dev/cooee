@@ -7,8 +7,10 @@ internal struct ActButton<Label: View>: View {
     @Environment(\.openThread) private var openThread
     @Environment(\.open) private var open
     @Environment(\.openBeside) private var openBeside
+    @Environment(\.acting) private var acting
     @State private var pending: JSONValue?
     internal var action: String?
+    internal var block: String?
     internal let source: JSONValue
     internal var values: [String: JSONValue] = [:]
     @ViewBuilder internal let label: Label
@@ -20,7 +22,12 @@ internal struct ActButton<Label: View>: View {
             label
         }
         .buttonStyle(.plain)
+        .disabled(waiting).opacity(waiting ? 0.5 : 1)
         .modifier(Confirming(pending: $pending) { _ in fire() })
+    }
+
+    private var waiting: Bool {
+        BlockAction(action: action, source: source, values: values, block: block).map(acting.contains) ?? false
     }
 
     private func fire() {
@@ -32,10 +39,14 @@ internal struct ActButton<Label: View>: View {
             openBeside(path)
         } else if let tap = source["tap"], let path = tap.string("sheet") ?? tap.string("open") {
             open(tap.string("focus").map { "\(path)#\($0)" } ?? path)
-        } else if let action = BlockAction(action: action, source: source, values: values) {
+        } else if let action = BlockAction(action: action, source: source, values: values, block: block) {
             act(action)
         }
     }
+}
+
+extension EnvironmentValues {
+    @Entry internal var acting: [BlockAction] = []
 }
 
 internal struct Confirming: ViewModifier {
@@ -90,26 +101,29 @@ internal struct CardBlock: View {
 
     internal var body: some View {
         if CardTrust.draws(block.string("kind"), from: context.poster) {
-            card
+            Folding(block: block) { card }
         } else {
             MissingPoster(kind: block.string("kind") ?? "")
         }
     }
 
     @ViewBuilder private var card: some View {
-        let tint = kind?.tint ?? look.palette.tone(block.string("tone")) ?? look.palette.lead
+        let palette = look.palette
+        let tint =
+            kind?.tint ?? palette.fleet(block.string("color")) ?? palette.tone(block.string("tone")) ?? palette.lead
         VStack(alignment: .leading, spacing: 10) {
             header(tint)
             if let title = block.string("title") {
                 Text(title).ui(16, .semibold, look).foregroundStyle(look.palette.foreground)
             }
-            if let subtitle = block.string("subtitle") {
-                Text(subtitle).ui(13, .regular, look).foregroundStyle(look.palette.mute).lineLimit(2)
+            if let subtitle = block["subtitle"], let text = subtitle.string ?? subtitle.string("text") {
+                Text(text).ui(13, .regular, look).foregroundStyle(palette.tone(subtitle.string("tone")) ?? palette.mute)
+                    .lineLimit(2)
             }
             if !block.list("buttons").isEmpty {
                 HStack(spacing: 8) {
-                    ForEach(Array(block.list("buttons").enumerated()), id: \.offset) { _, button in
-                        BlockNode(block: button)
+                    ForEach(block.list("buttons").keyed()) { button in
+                        BlockNode(block: button.element)
                     }
                 }
             }
@@ -119,7 +133,7 @@ internal struct CardBlock: View {
         .padding(14)
         .surface(look, radius: 20)
         .overlay(alignment: .leading) {
-            if look.style.surface == .glass {
+            if look.glass {
                 RoundedRectangle(cornerRadius: 2).fill(tint).frame(width: 3).padding(.vertical, 16)
             }
         }
@@ -138,8 +152,8 @@ internal struct CardBlock: View {
         if kind != nil || meta != nil || badge != nil || member != nil {
             HStack(spacing: 6) {
                 if let kind {
-                    if !look.mono { Image(systemName: kind.symbol).font(.system(size: 12, weight: .bold)) }
-                    Text(look.mono ? "## \(kind.label)" : kind.label.uppercased()).ui(11, .bold, look)
+                    if !look.textMarks { Image(systemName: kind.symbol).font(.system(size: 12, weight: .bold)) }
+                    Text(look.label(.kind, kind.label)).ui(11, .bold, look)
                 }
                 if let member {
                     FigureView(persona: member, size: 22)
@@ -160,21 +174,9 @@ internal struct MissingPoster: View {
 
     internal var body: some View {
         let label = "\(kind) · source unknown · not drawn"
-        Label(look.mono ? "## \(label)" : label.uppercased(), systemImage: "exclamationmark.octagon.fill")
+        Label(look.label(.kind, label), systemImage: "exclamationmark.octagon.fill")
             .labelStyle(.titleAndIcon).ui(11, .bold, look).foregroundStyle(look.palette.red)
             .frame(maxWidth: .infinity, alignment: .leading).padding(14).surface(look, radius: 20)
-    }
-}
-
-internal struct Pill: View {
-    @Environment(\.look) private var look
-    internal let badge: JSONValue
-
-    internal var body: some View {
-        let tint = look.palette.tone(badge.string("tone")) ?? look.palette.mute
-        Text(badge.string("text") ?? "").ui(11, .bold, look).foregroundStyle(tint)
-            .padding(.horizontal, 8).padding(.vertical, 3)
-            .background(tint.opacity(0.15), in: look.mono ? AnyShape(Rectangle()) : AnyShape(Capsule()))
     }
 }
 
@@ -206,7 +208,7 @@ internal struct ChoiceBlock: View {
         VStack(alignment: .leading, spacing: 8) {
             if let question = block.string("question") { Text(question).ui(15, .semibold, look) }
             ForEach(Array(options.enumerated()), id: \.offset) { index, option in
-                ActButton(action: block.string("action"), source: option, values: values(option)) {
+                ActButton(action: block.string("action"), block: block.id, source: option, values: values(option)) {
                     CardButton(
                         title: title(option),
                         primary: option.string("value") == block.string("recommended"),
@@ -228,7 +230,7 @@ internal struct ChoiceBlock: View {
 
     private func title(_ option: JSONValue) -> String {
         let label = option.string("label") ?? ""
-        let recommended = option.string("value") == block.string("recommended") && !look.mono
+        let recommended = option.string("value") == block.string("recommended") && !look.textMarks
         return recommended ? "\(label) · recommended" : label
     }
 

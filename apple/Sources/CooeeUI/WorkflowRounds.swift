@@ -18,7 +18,8 @@ internal struct RoundRow: View {
                 } label: {
                     HStack(spacing: 8) {
                         Text(round.workflow?.stage ?? row.title).ui(15, .semibold, look)
-                        Text(row.state.word).ui(14, .regular, look).foregroundStyle(palette.state(row.state))
+                        Text(row.status ?? row.state.word).ui(14, .regular, look)
+                            .foregroundStyle(palette.state(row.state))
                         Spacer()
                         Text("\(row.ago) ›").ui(14, .regular, look).foregroundStyle(palette.mute)
                     }
@@ -49,5 +50,22 @@ internal struct RoundRow: View {
         .padding(12).frame(maxWidth: .infinity, alignment: .leading)
         .background(palette.card, in: .rect(cornerRadius: 14))
         .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(palette.line, lineWidth: 1))
+    }
+}
+
+internal struct LaneStatusRow: View {
+    @Environment(\.look) private var look
+    internal let status: String
+    internal let close: (() -> Void)?
+
+    internal var body: some View {
+        HStack(spacing: 8) {
+            Text(status).ui(14, .regular, look).foregroundStyle(look.palette.mute).lineLimit(1)
+            Spacer(minLength: 4)
+            if let close {
+                Button("close", action: close).buttonStyle(.plain).modifier(OutlineChip())
+                    .accessibilityLabel("Close session")
+            }
+        }
     }
 }

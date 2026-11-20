@@ -7,7 +7,7 @@ internal struct PinnedRow: View {
     internal let rows: [Row]
     internal var actions = HomeActions()
 
-    private var stage: CooeeCore.Stage? { look.style.stage }
+    private var stage: CooeeCore.Stage? { look.stage }
 
     internal var body: some View {
         Stage(height: 180, title: "pinned") { strip.padding(.bottom, stage == nil ? 0 : 8) }
@@ -36,7 +36,7 @@ internal struct PinnedRow: View {
             }
             .padding(.horizontal, 16)
         }
-        .frame(height: look.style.figures == .avatar ? 96 : 116)
+        .frame(height: look.figures == .avatar ? 96 : 116)
     }
 
     private func pin(_ persona: Persona) -> some View {
@@ -54,8 +54,8 @@ internal struct PinnedRow: View {
             Text(persona.name).ui(12, .medium, look).lineLimit(1).foregroundStyle(ink)
                 .padding(.horizontal, stage == nil ? 0 : 6).padding(.vertical, stage == nil ? 0 : 2)
                 .background(stage?.color(\.paper).opacity(0.85) ?? .clear, in: .capsule)
-            if look.style.figures != .avatar {
-                Text(persona.word).ui(10, .regular, look)
+            if look.figures != .avatar {
+                Text(look.word(persona.state)).ui(10, .regular, look).lineLimit(1).minimumScaleFactor(0.7)
                     .foregroundStyle(persona.state == .needs ? palette.red : stage == nil ? palette.mute : ink)
             }
         }
@@ -70,11 +70,13 @@ internal struct ChatRow: View {
     internal var members: [Persona] = []
     internal var selected = false
     internal var word = false
+    internal var topics = 0
+    internal var folder: String?
 
     internal var body: some View {
         let palette = look.palette
         Acting(motion: Motion(row.state)) { pose in line(pose).background(palette.red.opacity(pose.tint)) }
-            .background(selected ? palette.link.opacity(0.16) : .clear, in: .rect(cornerRadius: look.mono ? 0 : 14))
+            .background(selected ? palette.link.opacity(0.16) : .clear, in: .rect(cornerRadius: look.radius(14)))
             .padding(.horizontal, selected ? 6 : 0)
             .contentShape(.rect)
     }
@@ -94,8 +96,7 @@ internal struct ChatRow: View {
             VStack(alignment: .leading, spacing: 3) {
                 HStack(spacing: 6) {
                     Text(room ? row.title : persona.name).ui(16, .semibold, look).lineLimit(1)
-                    Text(room ? "\(members.count) members" : row.title).ui(14, .regular, look)
-                        .foregroundStyle(palette.mute).lineLimit(1)
+                    subtitle(room)
                     Spacer(minLength: 4)
                     Text(row.ago).ui(13, .regular, look).foregroundStyle(row.unseen > 0 ? palette.link : palette.mute)
                 }
@@ -105,25 +106,52 @@ internal struct ChatRow: View {
         .padding(.horizontal, 16).padding(.vertical, 10)
     }
 
+    @ViewBuilder
+    private func subtitle(_ room: Bool) -> some View {
+        if topics > 1 {
+            TopicCountChip(topics: topics)
+        } else {
+            Text(room ? "\(members.count) members" : row.title).ui(14, .regular, look)
+                .foregroundStyle(look.palette.mute).lineLimit(1)
+        }
+    }
+
     private var detail: some View {
         let palette = look.palette
         return HStack(spacing: 6) {
             if row.state == .needs {
-                if look.mono {
-                    Text("!").ui(14, .bold, look).foregroundStyle(palette.red)
-                } else {
-                    Image(systemName: "exclamationmark.circle.fill").font(.system(size: 13)).foregroundStyle(
-                        palette.red)
+                Mark(text: "!", size: 14) {
+                    Image(systemName: "exclamationmark.circle.fill").font(.system(size: 13))
                 }
+                .foregroundStyle(palette.red)
             }
-            if row.state == .working && !look.mono {
+            if row.state == .working && !look.textMarks {
                 Image(systemName: "ellipsis").font(.system(size: 13, weight: .bold)).foregroundStyle(palette.cyan)
             }
-            if word { Text("\(row.state.word) ·").ui(14, .regular, look).foregroundStyle(palette.state(row.state)) }
-            Text(row.last).ui(14, .regular, look).foregroundStyle(palette.mute).lineLimit(1)
+            if let status = row.status ?? (word ? row.state.word : nil) {
+                Text("\(status) ·").ui(14, .regular, look).foregroundStyle(palette.state(row.state))
+            }
+            if topics > 1 {
+                FolderGlyph(folder: folder, size: 11, slash: true).foregroundStyle(palette.mute)
+                Text("\(Text(row.title).fontWeight(.semibold)) · \(row.last)").ui(14, .regular, look)
+                    .foregroundStyle(palette.mute).lineLimit(1)
+            } else {
+                Text(row.last).ui(14, .regular, look).foregroundStyle(palette.mute).lineLimit(1)
+            }
             Spacer(minLength: 4)
             if row.unseen > 0 { Badge(count: row.unseen) }
         }
+    }
+}
+
+private struct TopicCountChip: View {
+    @Environment(\.look) private var look
+    fileprivate let topics: Int
+
+    fileprivate var body: some View {
+        Text(look.label(.chip, "\(topics) topics")).ui(12, .medium, look)
+            .foregroundStyle(look.palette.mute).padding(.horizontal, look.outline ? 0 : 7).frame(height: 20)
+            .background(look.outline ? Color.clear : look.palette.edge.opacity(0.35), in: .capsule)
     }
 }
 
@@ -145,7 +173,7 @@ internal struct LinkedRow: View {
             Text(chat.row.ago).ui(13, .regular, look).foregroundStyle(palette.mute)
         }
         .padding(.leading, 12).padding(.trailing, 16).frame(height: 50)
-        .background(selected ? palette.link.opacity(0.16) : .clear, in: .rect(cornerRadius: look.mono ? 0 : 12))
+        .background(selected ? palette.link.opacity(0.16) : .clear, in: .rect(cornerRadius: look.radius(12)))
         .background(alignment: .topLeading) {
             Path { path in
                 path.move(to: .zero)

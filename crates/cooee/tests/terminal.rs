@@ -7,7 +7,7 @@ mod support;
 use std::{
     fs,
     io::{BufRead, BufReader, Write},
-    net::{TcpListener, TcpStream},
+    net::TcpStream,
     path::PathBuf,
     time::Duration,
 };
@@ -40,23 +40,24 @@ fn mac(name: &str) -> Mac {
 fn mac_on(name: &str, shed: Hello) -> Mac {
     let dir = scratch(name);
     let shed = FakeShed::start(&dir.join("shed"), shed);
-    let port = TcpListener::bind("127.0.0.1:0")
-        .unwrap()
-        .local_addr()
-        .unwrap()
-        .port();
     let entry = format!(
-        "[[plugins]]\nname = \"terminal\"\nlabel = \"Terminal\"\nurl = \"http://127.0.0.1:{port}\"\nmodule = \"/tab.js\"\ntoken = \"{TOKEN}\"\n"
+        "[[plugins]]\nname = \"terminal\"\nlabel = \"Terminal\"\nurl = \"http://127.0.0.1:0\"\nmodule = \"/tab.js\"\ntoken = \"{TOKEN}\"\n"
     );
     let home = dir.join("home");
     fs::create_dir_all(&home).unwrap();
     let env = [("SHELL", "/bin/sh"), ("HOME", home.to_str().unwrap())];
     let cooee = Cooee::start_env(&dir, &shed.dir, &entry, &env);
+    let err = fs::read_to_string(dir.join("cooee.err")).unwrap();
+    let backend = err
+        .lines()
+        .find_map(|l| l.strip_prefix("cooee: plugin terminal on http://"))
+        .unwrap_or_else(|| panic!("no terminal backend in: {err}"))
+        .to_owned();
     Mac {
         dir,
         shed,
         cooee,
-        backend: format!("127.0.0.1:{port}"),
+        backend,
     }
 }
 
@@ -187,7 +188,7 @@ fn no_passkey_is_403_a_passkey_unlocks_and_the_token_alone_is_not_enough() {
 fn a_shed_of_another_protocol_fails_the_list_naming_both_sides() {
     let theirs = Hello {
         build: "fffffff".to_owned(),
-        protocol: 2,
+        protocol: 3,
         ..version()
     };
     let m = mac_on("term-version", theirs);
@@ -196,7 +197,7 @@ fn a_shed_of_another_protocol_fails_the_list_naming_both_sides() {
     assert_eq!(status, 502, "{body}");
     let (v, b) = (&version().version, &version().build);
     let said = format!(
-        "SHED_VERSION: cooee speaks shed {v} ({b}) protocol 1; the server refused it: client {b} / server fffffff: protocol 1 vs 2"
+        "SHED_VERSION: cooee speaks shed {v} ({b}) protocol 1; the server refused it: client {b} / server fffffff: protocol 1 vs 3"
     );
     assert!(body.contains(&said), "{body}\nwanted: {said}");
 }

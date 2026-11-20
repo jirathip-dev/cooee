@@ -6,7 +6,7 @@ use std::{
     time::Duration,
 };
 
-use cooee_core::{Config, SHED_CARGO, SHED_LABEL, Shed, ShedError, provider};
+use cooee_core::{Config, SHED_MIN_PROTOCOL, Shed, ShedError, provider, shed_fix};
 
 use crate::{
     cli::load,
@@ -15,6 +15,8 @@ use crate::{
     service::{job, plist, tailnet_name, write_plist},
 };
 
+mod chief;
+
 /// `cooee setup`'s flags.
 pub struct Setup {
     pub instance: String,
@@ -22,6 +24,8 @@ pub struct Setup {
     pub explicit: bool,
     pub dry_run: bool,
     pub yes: bool,
+    pub chief_agent: Option<String>,
+    pub chief_machine: Option<String>,
 }
 
 pub(crate) fn ok(argv: &[&str]) -> bool {
@@ -99,13 +103,14 @@ impl Setup {
 
     /// Every step, in order, then the pairing code.
     pub fn run(&self, path: &Path) -> Result<(), String> {
+        self.chief_flags(path)?;
         let uid = output(&["id", "-u"]).ok_or("`id -u` failed")?;
         let gui = format!("gui/{}", uid.trim());
-        let updated = self.shed()?;
-        self.shed_service(&gui, updated)?;
+        shed()?;
         let (config, changed) = self.config(path)?;
         self.themes(&config)?;
         self.agents(&config)?;
+        self.chief(&config, path)?;
         self.service(&config, path, &gui, changed, "serve")?;
         self.service(&config, path, &gui, false, "update")?;
         self.tailnet(config.port)?;
@@ -118,72 +123,6 @@ impl Setup {
             .map_err(|e| format!("doctor: {e}\nfix it, then run `cooee setup` again"))?;
         cooee_core::say!("\npair your phone:");
         pair(&config)
-    }
-
-    fn shed(&self) -> Result<bool, String> {
-        let rev = SHED_CARGO[6];
-        let done = output(&["cargo", "install", "--list"])
-            .is_some_and(|l| l.contains(&format!("/shed?rev={rev}#")));
-        if !step(&format!("shed {}", &rev[..7]), done) {
-            self.exec(&SHED_CARGO)?;
-        }
-        Ok(!done)
-    }
-
-    fn shed_service(&self, gui: &str, updated: bool) -> Result<(), String> {
-        let loaded = ok(&["launchctl", "list", SHED_LABEL]);
-        let answers = || ok(&["shed", "ls"]);
-        let serve = Shed::new("shed".into(), None);
-        let mismatch = || {
-            serve
-                .hello()
-                .err()
-                .filter(|e| matches!(e, ShedError::Version { .. }))
-        };
-        let held = |e: ShedError| format!("{e}\ncooee's service was left on its running build");
-        let other = mismatch();
-        if step(
-            &format!("shed service {SHED_LABEL}"),
-            !updated && loaded && other.is_none() && answers(),
-        ) {
-            return Ok(());
-        }
-        match other {
-            Some(e) if !loaded => return Err(held(e)),
-            _ if loaded => {
-                cooee_core::say!("  warn: restarting shed serve ends every running shed session");
-                if self
-                    .ask("restart it now? [Y/n]", "y")
-                    .starts_with(['n', 'N'])
-                {
-                    return Err("shed serve was not restarted, so cooee wasn't either".to_owned());
-                }
-            }
-            _ => {}
-        }
-        self.exec(&["shed", "install"])?;
-        if loaded {
-            self.exec(&[
-                "launchctl",
-                "kickstart",
-                "-k",
-                &format!("{gui}/{SHED_LABEL}"),
-            ])?;
-        } else {
-            let home = cooee_core::env_var("HOME").ok_or("no HOME")?;
-            let file = Path::new(&home).join(format!("Library/LaunchAgents/{SHED_LABEL}.plist"));
-            self.exec(&["launchctl", "bootstrap", gui, &file.display().to_string()])?;
-        }
-        if self.dry_run {
-            return Ok(());
-        }
-        if !wait(answers) {
-            return Err("shed doesn't answer `shed ls`; see ~/Library/Logs/shed.log".to_owned());
-        }
-        if !wait(|| mismatch().is_none()) {
-            return mismatch().map_or(Ok(()), |e| Err(held(e)));
-        }
-        Ok(())
     }
 
     fn config(&self, path: &Path) -> Result<(Config, bool), String> {
@@ -415,6 +354,17 @@ impl Setup {
             self.exec(&["tailscale", "serve", "--bg", &https, &to])?;
         }
         Ok(())
+    }
+}
+
+fn shed() -> Result<(), String> {
+    match Shed::new("shed".into(), None).hello() {
+        Ok(()) => {
+            step(&format!("shed protocol {SHED_MIN_PROTOCOL}+"), true);
+            Ok(())
+        }
+        Err(e @ ShedError::Version { .. }) => Err(format!("{e}\nnothing was changed")),
+        Err(e) => Err(format!("{e}\nfix: {}\nnothing was changed", shed_fix())),
     }
 }
 

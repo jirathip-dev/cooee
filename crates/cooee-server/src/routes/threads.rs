@@ -23,8 +23,8 @@ use topcoat::{
 use crate::{
     Hub, HubError, Out, Resume, Slice, Upload,
     http::{
-        Answer, Created, Data, Name, Paired, allowed, blocking, hub, logins, plain, profiles,
-        provider_name, recipe, thread_id,
+        Answer, Created, Data, Name, Paired, Tag, allowed, blocking, hub, logins, plain, profiles,
+        provider_name, recipe, seated, thread_id,
     },
     pairing, plugin,
 };
@@ -90,19 +90,43 @@ async fn events(cx: &Cx) -> Result<Sse<impl Stream<Item = Result<Event>> + use<>
     Ok(Sse::new(stream::iter(first.into_iter().map(Ok)).chain(rest)).keep_alive(KeepAlive::new()))
 }
 
+#[route(GET "/home/events")]
+async fn home_events(cx: &Cx) -> Result<Sse<impl Stream<Item = Result<Event>> + use<>>> {
+    let rest = stream::unfold(hub(cx).home(), |mut rx| async move {
+        match rx.recv().await {
+            Ok(()) | Err(RecvError::Lagged(_)) => Some(((), rx)),
+            Err(RecvError::Closed) => None,
+        }
+    });
+    let all = stream::iter([()]).chain(rest);
+    let all = all.map(|()| Ok(Event::new().event("changed").data("{}")));
+    Ok(Sse::new(all).keep_alive(KeepAlive::new()))
+}
+
 #[derive(Deserialize)]
 struct Of {
     persona: Option<String>,
+    room: Option<String>,
 }
 
 #[route(GET "/threads")]
 async fn thread_list(cx: &Cx) -> Result<Answer<Vec<cooee_core::Summary>>> {
     let of: Option<Of> = parse_query_params(cx).ok();
-    let persona = of.and_then(|o| o.persona);
+    let (persona, room) = of.map_or((None, None), |o| (o.persona, o.room));
+    let seats = |r: &cooee_core::Summary| {
+        let mut seats = r.members.clone();
+        seats.sort();
+        seats
+    };
     Ok(Answer(
         blocking(cx, move |hub| {
             let mut rows = hub.list();
+            let room = room.map(|id| rows.iter().find(|r| r.id == id).map(seats));
             rows.retain(|r| persona.as_ref().is_none_or(|p| &r.persona == p));
+            rows.retain(|r| {
+                room.as_ref()
+                    .is_none_or(|m| m.as_ref().is_some_and(|m| !m.is_empty() && &seats(r) == m))
+            });
             Ok(rows)
         })
         .await,
@@ -115,7 +139,7 @@ struct New {
     #[serde(default)]
     folder: PathBuf,
     text: String,
-    random_id: String,
+    random_id: Tag,
     #[serde(default)]
     account: Option<String>,
     #[serde(default)]
@@ -159,11 +183,11 @@ async fn create(cx: &Cx, Json(new): Json<New>) -> Result<Answer<Created>> {
             hub.create_later(
                 (&agent, &name),
                 &folder,
-                (&new.text, &new.random_id),
+                (&new.text, &new.random_id.0),
                 recipe,
             )?
         } else {
-            hub.create(&agent, &folder, &new.text, &new.random_id, &recipe)?
+            hub.create(&agent, &folder, &new.text, &new.random_id.0, &recipe)?
         };
         let ours = list.into_iter().find(|a| a.id == profile).and_then(|a| {
             let name = a.id.split_once('/')?.1.to_owned();
@@ -180,35 +204,77 @@ async fn create(cx: &Cx, Json(new): Json<New>) -> Result<Answer<Created>> {
     Ok(Answer(id.map(|id| Created { id })))
 }
 
-#[route(POST "/threads/{id}/retry")]
-async fn retry(cx: &Cx) -> Result<Answer<()>> {
-    let (id, hub, logins) = (thread_id(cx), hub(cx), logins(cx));
-    let data = app_context::<Data>(cx);
-    let (data, config) = (data.0.clone(), data.1.clone());
-    let done = tokio::task::spawn_blocking(move || {
-        let (t, _) = hub.thread(&id)?;
-        let list = profiles(&hub, (&data, config.as_deref()));
+struct Again {
+    id: String,
+    hub: Arc<Hub>,
+    logins: Arc<crate::Logins>,
+    data: PathBuf,
+    config: Option<PathBuf>,
+}
+
+impl Again {
+    fn of(cx: &Cx) -> Self {
+        let data = app_context::<Data>(cx);
+        let (id, hub, logins) = (thread_id(cx), hub(cx), logins(cx));
+        let (data, config) = (data.0.clone(), data.1.clone());
+        Self {
+            id,
+            hub,
+            logins,
+            data,
+            config,
+        }
+    }
+
+    fn recipe(&self) -> Result<(crate::hub::Recipe, String), HubError> {
+        let (t, _) = self.hub.thread(&self.id)?;
+        let config = self.config.as_deref();
+        let list = profiles(&self.hub, (&self.data, config));
         let (_, _, recipe) = recipe(
-            &logins,
-            (&data, config.as_deref(), &list),
+            &self.logins,
+            (&self.data, config, &list),
             (&t.agent, Some(&t.account), &t.profile),
             PathBuf::new(),
             ((t.model, t.effort), t.setup),
         )?;
-        let name = provider_name(&t.agent, &logins.statuses());
-        hub.retry(&id, recipe, &name)
-    });
-    Ok(Answer(
-        done.await.map_err(|e| HubError::Refused(e.to_string()))?,
-    ))
+        Ok((recipe, provider_name(&t.agent, &self.logins.statuses())))
+    }
+
+    fn restart(&self) -> Result<(), HubError> {
+        self.hub.restart(&self.id, &self.recipe()?.0)
+    }
+}
+
+async fn off<T: Send + 'static>(
+    f: impl FnOnce() -> Result<T, HubError> + Send + 'static,
+) -> Result<Answer<T>> {
+    let done = tokio::task::spawn_blocking(f).await;
+    Ok(Answer(done.map_err(|e| HubError::Refused(e.to_string()))?))
+}
+
+#[route(POST "/threads/{id}/retry")]
+async fn retry(cx: &Cx) -> Result<Answer<()>> {
+    let a = Again::of(cx);
+    off(move || {
+        let (recipe, name) = a.recipe()?;
+        a.hub.retry(&a.id, recipe, &name)
+    })
+    .await
+}
+
+#[route(POST "/threads/{id}/restart")]
+async fn restart(cx: &Cx) -> Result<Answer<()>> {
+    let a = Again::of(cx);
+    off(move || a.restart()).await
 }
 
 #[derive(Deserialize)]
 struct Message {
     text: String,
-    random_id: String,
+    random_id: Tag,
     #[serde(default)]
     files: Vec<File>,
+    via: Option<cooee_core::Via>,
 }
 
 #[derive(Deserialize)]
@@ -232,13 +298,20 @@ impl Message {
 
 #[route(POST "/threads/{id}/send")]
 async fn send(cx: &Cx, Json(m): Json<Message>) -> Result<Answer<cooee_core::Item>> {
-    let id = thread_id(cx);
-    Ok(Answer(
-        blocking(cx, move |hub| {
-            hub.send(&id, &m.text, &m.random_id, &m.uploads()?)
-        })
-        .await,
-    ))
+    let a = Again::of(cx);
+    off(move || {
+        let (send, files) = (
+            |f: &[_]| a.hub.send(&a.id, &m.text, &m.random_id.0, f, m.via),
+            m.uploads()?,
+        );
+        match send(&files) {
+            Err(HubError::Shed(e)) if e.no_such_terminal() => {
+                a.restart().and_then(|()| send(&files))
+            }
+            done => done,
+        }
+    })
+    .await
 }
 
 #[route(POST "/threads/{id}/handback")]
@@ -246,7 +319,7 @@ async fn hand_back(cx: &Cx, Json(m): Json<Message>) -> Result<Answer<cooee_core:
     let id = thread_id(cx);
     Ok(Answer(
         blocking(cx, move |hub| {
-            hub.resume_handoff(&id, &m.text, &m.random_id)
+            hub.resume_handoff(&id, &m.text, &m.random_id.0)
         })
         .await,
     ))
@@ -257,7 +330,7 @@ async fn queue(cx: &Cx, Json(m): Json<Message>) -> Result<Answer<Vec<cooee_core:
     let id = thread_id(cx);
     Ok(Answer(
         blocking(cx, move |hub| {
-            hub.queue(&id, &m.text, &m.random_id, &m.uploads()?)
+            hub.queue(&id, &m.text, &m.random_id.0, &m.uploads()?, m.via)
         })
         .await,
     ))
@@ -394,8 +467,14 @@ async fn approve(cx: &Cx, Json(a): Json<Approve>) -> Result<Response> {
         }
     }
     let by = request_context::<Paired>(cx).0.label.clone();
+    let (logins, data) = (logins(cx), app_context::<Data>(cx));
+    let (data, dir) = (data.0.clone(), data.1.clone());
     Answer(
         blocking(cx, move |hub| {
+            if let Some(seat) = hub.fallback_seat(&id, a.item, &a.option) {
+                let recipe = seated(hub, &logins, (&data, dir.as_deref()), &id, &seat)?;
+                return hub.fall_back((&id, a.item), &a.option, &recipe, &by);
+            }
             hub.approve(&id, a.item, &a.option, a.value.as_deref(), &by)
         })
         .await,
@@ -451,8 +530,10 @@ pub(super) fn routes(b: RouterBuilder) -> RouterBuilder {
     b.route(thread_list)
         .route(messages)
         .route(events)
+        .route(home_events)
         .route(create)
         .route(retry)
+        .route(restart)
         .route(send)
         .route(hand_back)
         .route(queue)

@@ -36,7 +36,7 @@ internal struct TopicStrip: View {
             Button(action: actions.list) { ListButton(folded: actions.topics.folded) }
                 .buttonStyle(.plain).accessibilityLabel("Topics")
             Scroller(axis: .horizontal) {
-                HStack(spacing: look.mono ? 2 : 4) {
+                HStack(spacing: look.outline ? 2 : 4) {
                     Button {
                         actions.open(nil)
                     } label: {
@@ -60,7 +60,7 @@ internal struct StripSurface: ViewModifier {
     @Environment(\.look) private var look
 
     internal func body(content: Content) -> some View {
-        if look.mono {
+        if look.outline {
             content.overlay(alignment: .bottom) { Rectangle().fill(look.palette.edge).frame(height: 1) }
         } else {
             content.surface(look, radius: 21).padding(.horizontal, 10).padding(.top, 6)
@@ -75,10 +75,10 @@ internal struct ListButton: View {
     internal var body: some View {
         let palette = look.palette
         ZStack(alignment: .topTrailing) {
-            Glyph(symbol: "sidebar.left", ascii: folded > 0 ? "[≡+\(folded)]" : "[≡]", size: look.mono ? 13 : 16)
-                .foregroundStyle(look.mono && folded > 0 ? palette.link : palette.mute)
-                .frame(minWidth: 46).frame(height: 42).padding(.horizontal, look.mono ? 6 : 0)
-            if folded > 0 && !look.mono {
+            Glyph(symbol: "sidebar.left", ascii: folded > 0 ? "[≡+\(folded)]" : "[≡]", size: look.textMarks ? 13 : 16)
+                .foregroundStyle(look.textMarks && folded > 0 ? palette.link : palette.mute)
+                .frame(minWidth: 46).frame(height: 42).padding(.horizontal, look.textMarks ? 6 : 0)
+            if folded > 0 && !look.textMarks {
                 Text("+\(folded)").ui(10, .bold, look).foregroundStyle(palette.dark ? .black : .white)
                     .padding(.horizontal, 4).frame(height: 15)
                     .background(palette.link, in: Capsule())
@@ -96,7 +96,7 @@ internal struct NewChip: View {
     internal var body: some View {
         HStack(spacing: 5) {
             Glyph(symbol: "plus.bubble.fill", ascii: "+", size: 14)
-            Text(look.mono ? "new" : "New").ui(14, .semibold, look)
+            Text(look.quiet ? "new" : "New").ui(14, .semibold, look)
         }
         .foregroundStyle(look.palette.link)
         .modifier(ChipFrame(lit: lit))
@@ -115,7 +115,7 @@ internal struct TopicChip: View {
             FolderGlyph(folder: topic.folder, size: 12).foregroundStyle(lit ? palette.link : palette.mute)
             Text(topic.title).ui(14, lit ? .semibold : .medium, look).lineLimit(1).fixedSize()
                 .foregroundStyle(lit ? palette.foreground : palette.mute)
-            Mark(topic: topic)
+            TopicMark(topic: topic)
         }
         .modifier(ChipFrame(lit: lit))
         .background {
@@ -134,24 +134,18 @@ internal struct PressedChip: PreferenceKey {
     }
 }
 
-internal struct Mark: View {
+internal struct TopicMark: View {
     @Environment(\.look) private var look
     internal let topic: ThreadRow
 
     internal var body: some View {
         let palette = look.palette
         if topic.state == "working" {
-            if look.mono {
-                Text("…").ui(13, .bold, look).foregroundStyle(palette.cyan)
-            } else {
-                Image(systemName: "ellipsis").font(.system(size: 11, weight: .heavy)).foregroundStyle(palette.cyan)
-            }
+            Mark(text: "…") { Image(systemName: "ellipsis").font(.system(size: 11, weight: .heavy)) }
+                .foregroundStyle(palette.cyan)
         } else if topic.unseen > 0 {
-            if look.mono {
-                Text("*").ui(14, .bold, look).foregroundStyle(palette.link)
-            } else {
-                Circle().fill(palette.link).frame(width: 7, height: 7)
-            }
+            Mark(text: "*", size: 14) { Circle().fill(palette.link).frame(width: 7, height: 7) }
+                .foregroundStyle(palette.link)
         }
     }
 }
@@ -162,10 +156,10 @@ internal struct ChipFrame: ViewModifier {
 
     internal func body(content: Content) -> some View {
         let palette = look.palette
-        content.padding(.horizontal, look.mono ? 8 : 10).frame(height: 42).contentShape(Rectangle())
+        content.padding(.horizontal, look.outline ? 8 : 10).frame(height: 42).contentShape(Rectangle())
             .overlay(alignment: .bottom) {
                 if lit {
-                    if look.mono {
+                    if look.outline {
                         Rectangle().fill(palette.link).frame(height: 2)
                     } else {
                         Capsule().fill(palette.link).frame(height: 3).padding(.horizontal, 6)
@@ -182,11 +176,7 @@ internal struct Glyph: View {
     internal var size: CGFloat = 17
 
     internal var body: some View {
-        if look.mono {
-            Text(ascii).ui(size, .bold, look)
-        } else {
-            Image(systemName: symbol).font(.system(size: size, weight: .semibold))
-        }
+        Mark(text: ascii, size: size) { Image(systemName: symbol).font(.system(size: size, weight: .semibold)) }
     }
 }
 

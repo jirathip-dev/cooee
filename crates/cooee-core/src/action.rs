@@ -26,6 +26,33 @@ pub enum Kind {
     Other,
 }
 
+impl Kind {
+    /// Every kind.
+    pub const ALL: [Self; 7] = [
+        Self::Read,
+        Self::Edit,
+        Self::Run,
+        Self::Search,
+        Self::Fetch,
+        Self::Tool,
+        Self::Other,
+    ];
+
+    /// What an action of this kind does, as a verb phrase.
+    #[must_use]
+    pub const fn verb(self) -> &'static str {
+        match self {
+            Self::Read => "reads a file",
+            Self::Edit => "edits a file",
+            Self::Run => "runs a command",
+            Self::Search => "searches files",
+            Self::Fetch => "fetches a page",
+            Self::Tool => "calls a tool",
+            Self::Other => "acts",
+        }
+    }
+}
+
 /// What a tool call does and to what: a path, a command, a query, a URL, `server/tool`, or the call's title.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Action {

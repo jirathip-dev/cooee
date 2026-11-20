@@ -11,20 +11,22 @@ internal struct MenuHost: View {
 
     internal var body: some View {
         @Bindable var menu = store.scope(state: \.menu, action: \.menu)
-        let pages = rows.filter { $0.content == .component(.settings) }.flatMap { $0.config["pages"]?.items ?? [] }
+        let pages = rows.filter { $0.content == .component("settings") }.flatMap { $0.config["pages"]?.items ?? [] }
         NavigationStack(path: Binding(get: { menu.path }, set: { menu.send(.path($0)) })) {
             ScrollView {
                 VStack(spacing: 12) {
-                    ForEach(rows.filter { !$0.locked }, id: \.id) { SlotView(store: store, node: $0, compact: compact) }
+                    ForEach(rows, id: \.id) { SlotView(store: store, node: $0, compact: compact) }
                     ActionRow(symbol: "arrow.counterclockwise", title: "Reset layout") { store.send(.layout(.reset)) }
+                    ActionRow(symbol: "exclamationmark.bubble", title: "Report") { store.send(.reporting) }
+                    if !menu.timings.isEmpty { TimingRows(timings: menu.timings) }
                 }
                 .padding(12)
             }
             .background(look.palette.background)
             .navigationDestination(for: MenuFeature.Page.self) { page in
-                if page == .terminal, let node = rows.first(where: { $0.content == .component(.terminal) }) {
+                if page == .terminal, let node = rows.first(where: { $0.content == .component("terminal") }) {
                     TerminalSlot(
-                        store: store.scope(state: \.terminal, action: \.terminal), config: node.config
+                        store: store.scope(state: \.terminal, action: \.terminal), node: node
                     ) { menu.send(.path(menu.path.dropLast())) }
                     .toolbar(.hidden)
                 } else if page == .themeEditor, pages.contains(.string(page.rawValue)),
@@ -59,7 +61,7 @@ internal struct MenuScreen: View {
 
     private var values: [String: String] {
         let settings = store.settings
-        let look = "\(settings.style.rawValue.capitalized) · \(settings.scheme.rawValue.capitalized)"
+        let look = "\(settings.style.label) · \(settings.scheme.rawValue.capitalized)"
         return ["look": look, "notifications": settings.push == nil ? "Off" : "On"]
     }
 }
@@ -121,11 +123,13 @@ internal struct MenuPage: View {
                 }
             }
         }
+        ColourPicks(store: store)
         Group2(header: "Style") {
-            ForEach(LookStyle.allCases, id: \.self) { style in
-                pick(style.rawValue.capitalized, selected: store.settings.style == style) { store.send(.style(style)) }
+            ForEach(store.offered, id: \.name) { style in
+                pick(style.label, selected: store.settings.style.name == style.name) { store.send(.style(style.name)) }
             }
         }
+        if let notice = store.notice { Text(notice).ui(13, .regular, look).foregroundStyle(look.palette.amber) }
         Group2 {
             Toggle("Motion", isOn: Binding(get: { store.settings.motion != false }, set: { store.send(.motion($0)) }))
                 .ui(16, .regular, look).padding(.horizontal, 14).frame(height: 48)
@@ -167,5 +171,36 @@ internal struct MenuPage: View {
             .padding(.horizontal, 14).frame(height: 48).contentShape(.rect)
         }
         .buttonStyle(.plain).accessibilityAddTraits(selected ? .isSelected : [])
+    }
+}
+
+internal struct TimingRows: View {
+    @Environment(\.look) private var look
+    internal let timings: Timings
+
+    internal var body: some View {
+        Group2(header: "Timings · last \(Timings.window)") {
+            ForEach(Timing.allCases, id: \.self) { timing in
+                HStack {
+                    Text(Self.title(timing)).ui(16, .regular, look)
+                    Spacer()
+                    Text(value(timing)).ui(15, .regular, look).foregroundStyle(look.palette.mute).monospacedDigit()
+                }
+                .padding(.horizontal, 14).frame(height: 48)
+            }
+        }
+    }
+
+    private static func title(_ timing: Timing) -> String {
+        switch timing {
+        case .tap: "Tap to painted"
+        case .event: "Event to painted"
+        case .echo: "Send to echo"
+        }
+    }
+
+    private func value(_ timing: Timing) -> String {
+        guard let p50 = timings.percentile(timing, 50), let p95 = timings.percentile(timing, 95) else { return "–" }
+        return "p50 \(p50) · p95 \(p95) ms"
     }
 }

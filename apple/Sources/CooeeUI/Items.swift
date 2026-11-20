@@ -1,27 +1,32 @@
 import CooeeCore
 import SwiftUI
 
-internal struct ItemView: View {
+internal struct ItemView: View, Equatable {
     @Environment(\.look) private var look
     internal let item: Item
     internal var retry: () -> Void = {}
     internal var view: () -> Void = {}
+    internal var restart: (() -> Void)?
+
+    nonisolated internal static func == (lhs: Self, rhs: Self) -> Bool {
+        lhs.item == rhs.item && (lhs.restart == nil) == (rhs.restart == nil)
+    }
 
     internal var body: some View {
         switch item {
-        case .you(_, let text, let files):
-            YouBubble(text: text, files: files).modifier(Copyable(text: text))
+        case .you(let id, let text, let files):
+            YouBubble(text: text, files: files).modifier(Copyable(text: text, id: id))
         case .outgoing(let message):
             VStack(alignment: .trailing, spacing: 4) {
                 YouBubble(text: message.text, files: message.files.map(\.name))
-                    .modifier(Copyable(text: message.text))
+                    .modifier(Copyable(text: message.text, id: message.id))
                 Delivery(failure: message.failure, retry: retry)
             }
         case .agent(_, let blocks):
             VStack(alignment: .leading, spacing: 10) {
-                ForEach(Array(blocks.enumerated()), id: \.offset) { _, block in BlockView(block: block) }
+                ForEach(Array(blocks.enumerated()), id: \.offset) { _, block in BlockView(block: block).equatable() }
             }
-            .modifier(Copyable(text: item.plainText ?? ""))
+            .modifier(Copyable(text: item.plainText ?? "", id: item.id))
         case .tools(_, let rows):
             ToolFold(rows: rows)
         case .trace(_, let steps, let seconds):
@@ -31,6 +36,9 @@ internal struct ItemView: View {
                 Text(text).foregroundStyle(look.palette.mute)
                 if text.hasPrefix("Updated ") {
                     Button("View", action: view).buttonStyle(.plain).foregroundStyle(look.palette.link)
+                }
+                if text.hasPrefix("The agent is gone"), let restart {
+                    Button("Restart", action: restart).buttonStyle(.plain).foregroundStyle(look.palette.link)
                 }
             }
             .ui(13, .regular, look).frame(maxWidth: .infinity)
@@ -42,6 +50,12 @@ internal struct ItemView: View {
             RoundDivider(text: text)
         case .asked(_, let ask):
             AskCard(ask: ask)
+        case .screen(_, let screen):
+            ScreenItemView(screen: screen)
+        case .call(let call):
+            CallBlock(call: call)
+        case .link(_, let link):
+            LinkLine(link: link)
         }
     }
 }
@@ -59,34 +73,27 @@ internal struct YouBubble: View {
             if let noteTo {
                 Text("Your note · to \(noteTo)").ui(13, .regular, look).foregroundStyle(palette.mute)
             }
-            ForEach(files, id: \.self) { file in
-                Label(file, systemImage: "doc.text").ui(13, .regular, look).foregroundStyle(palette.mute)
-                    .padding(.horizontal, 10).padding(.vertical, 6)
-                    .background(palette.card, in: .rect(cornerRadius: 10))
-            }
+            ForEach(files, id: \.self) { FileChip(name: $0) }
             if members.isEmpty {
-                Text(look.mono ? "> \(text)" : text).ui(16, .regular, look)
+                Text(look.label(.said, text)).ui(16, .regular, look)
                     .padding(.horizontal, 14).padding(.vertical, 10)
-                    .background(look.mono ? Color.clear : palette.link.opacity(0.22), in: .rect(cornerRadius: 20))
-                    .foregroundStyle(look.mono ? palette.lead : palette.foreground)
+                    .background(look.outline ? Color.clear : palette.link.opacity(0.22), in: .rect(cornerRadius: 20))
+                    .foregroundStyle(look.outline ? palette.lead : palette.foreground)
             } else {
                 roomBubble
             }
         }
-        .frame(maxWidth: .infinity, alignment: .trailing).padding(.leading, look.mono ? 0 : 48)
+        .frame(maxWidth: .infinity, alignment: .trailing).padding(.leading, look.outline ? 0 : 48)
     }
 
     private var roomBubble: some View {
         let palette = look.palette
         return Text(BlockView.mentioned(AttributedString(text), members, palette.link)).ui(16, .regular, look)
             .foregroundStyle(palette.foreground).padding(.horizontal, 14).padding(.vertical, 10)
-            .frame(maxWidth: look.mono ? .infinity : nil, alignment: .leading)
-            .background(
-                look.mono ? palette.card : palette.amber.opacity(0.2), in: .rect(cornerRadius: look.mono ? 6 : 20)
-            )
-            .overlay(alignment: .leading) {
-                if look.mono { Rectangle().fill(palette.lead).frame(width: 3) }
-            }
+            .frame(maxWidth: look.outline ? .infinity : nil, alignment: .leading)
+            .accent(
+                look, palette.lead, fill: palette.amber.opacity(0.2), radius: look.radius(20, least: 6),
+                paper: palette.card)
     }
 }
 
@@ -110,10 +117,12 @@ internal struct Delivery: View {
     }
 }
 
-internal struct BlockView: View {
+internal struct BlockView: View, Equatable {
     @Environment(\.look) private var look
     @Environment(\.members) private var members
     internal let block: Block
+
+    nonisolated internal static func == (lhs: Self, rhs: Self) -> Bool { lhs.block == rhs.block }
 
     internal var body: some View {
         switch block {
@@ -175,11 +184,12 @@ internal struct CodeBlock: View {
             }
             .padding(.horizontal, 12).frame(height: 32)
             .background(palette.edge.opacity(0.35))
-            Text(code).font(.system(size: 13, design: .monospaced)).foregroundStyle(palette.foreground)
+            Text(lang == "diff" ? Self.diff(code, palette) : AttributedString(code))
+                .font(.system(size: 13, design: .monospaced)).foregroundStyle(palette.foreground)
                 .padding(12).frame(maxWidth: .infinity, alignment: .leading)
                 .fixedSize(horizontal: false, vertical: true)
         }
-        .background(palette.card, in: .rect(cornerRadius: look.mono ? 0 : 12))
-        .overlay(RoundedRectangle(cornerRadius: look.mono ? 0 : 12).strokeBorder(palette.edge, lineWidth: 1))
+        .background(palette.card, in: .rect(cornerRadius: look.radius(12)))
+        .overlay(RoundedRectangle(cornerRadius: look.radius(12)).strokeBorder(palette.edge, lineWidth: 1))
     }
 }

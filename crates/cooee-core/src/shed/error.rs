@@ -13,7 +13,7 @@ pub enum ShedError {
         /// The underlying error.
         source: io::Error,
     },
-    /// shed speaks another protocol than the `shed-proto` cooee was built with.
+    /// shed is not shed, or speaks a protocol older than [`SHED_MIN_PROTOCOL`].
     #[error(
         "SHED_VERSION: cooee speaks shed {ours}; {theirs}; fix: {}",
         shed_fix()
@@ -54,28 +54,14 @@ impl ShedError {
     }
 }
 
-/// shed's install command: the rev `shed-proto` is pinned to in Cargo.toml, since the hello needs the same protocol.
-pub const SHED_CARGO: [&str; 8] = [
-    "cargo",
-    "install",
-    "--locked",
-    "--git",
-    "https://github.com/jirathip-dev/shed",
-    "--rev",
-    "4ac443dbbcb51227dc9df2fb55e2f0834d6a91eb",
-    "shed",
-];
+/// The oldest shed protocol cooee accepts; any newer one is accepted too (shed serves the previous one for a release).
+pub const SHED_MIN_PROTOCOL: u32 = 1;
 
-/// shed's launchd job on macOS (`shed install`).
-pub const SHED_LABEL: &str = "dev.shed.serve";
-
-/// The command that installs the shed this build speaks and restarts its serve onto it.
+/// What to do when shed is missing or too old: cooee never installs, updates or restarts shed itself.
 #[must_use]
 pub fn shed_fix() -> String {
-    let restart = if cfg!(target_os = "macos") {
-        format!("launchctl kickstart -k gui/$(id -u)/{SHED_LABEL}")
-    } else {
-        "shed serve".to_owned()
-    };
-    format!("{} && {restart}", SHED_CARGO.join(" "))
+    format!(
+        "install or update shed to protocol {SHED_MIN_PROTOCOL} or newer from https://github.com/jirathip-dev/shed/releases, \
+         and start its serve"
+    )
 }

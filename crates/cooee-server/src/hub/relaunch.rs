@@ -1,4 +1,10 @@
-use std::{collections::BTreeMap, fs, path::Path};
+use std::{
+    collections::BTreeMap,
+    fs,
+    path::{Path, PathBuf},
+};
+
+use cooee_core::history;
 
 use super::{
     Body, Change, Hub, HubError, Item, LABEL, Recipe, lock, now, on_machine, outside, short,
@@ -11,8 +17,12 @@ impl Hub {
     /// [`HubError::Refused`] for a folder outside the roots; as `relaunch`.
     pub fn attach(&self, id: &str, folder: &Path, recipe: &Recipe) -> Result<Item, HubError> {
         let folder = self.allowed(folder).ok_or_else(|| outside(folder))?;
-        let machine = lock(&*self.live(id)?).meta.machine.clone();
-        self.relaunch(id, (&folder, &machine), recipe)
+        let l = self.live(id)?;
+        let (machine, agent) = {
+            let l = lock(&l);
+            (l.meta.machine.clone(), l.meta.agent.clone())
+        };
+        self.relaunch(id, (&folder, &machine), (&agent, recipe), None)
     }
 
     /// Moves thread `id` to `machine` (#151; empty: this host), in the same folder, as `relaunch` says.
@@ -20,40 +30,60 @@ impl Hub {
     /// # Errors
     /// [`HubError::Refused`] while a turn is under way (stop it first); as `relaunch`.
     pub fn move_to(&self, id: &str, machine: &str, recipe: &Recipe) -> Result<Item, HubError> {
+        let (folder, _, agent) = self.idle(id)?;
+        self.relaunch(id, (&folder, machine), (&agent, recipe), None)
+    }
+
+    /// Switches thread `id` to ACP agent `agent` (#503) and `recipe`'s account (#76): a new session gets its brief and a handoff
+    /// of the thread so far, as `relaunch` says; the thread keeps its id.
+    ///
+    /// # Errors
+    /// [`HubError::Refused`] while a turn is under way, or when it already runs on `agent` and that account; as
+    /// `relaunch`.
+    pub fn switch(&self, id: &str, agent: &str, recipe: &Recipe) -> Result<Item, HubError> {
+        let (folder, machine, was) = self.idle(id)?;
+        if was == agent && lock(&*self.live(id)?).meta.account == recipe.account {
+            return Err(HubError::Refused(format!("it already runs on {agent}")));
+        }
+        let handoff = history::handoff(&self.store, id, 4_000)?;
+        self.relaunch(id, (&folder, &machine), (agent, recipe), Some(&handoff))
+    }
+
+    fn idle(&self, id: &str) -> Result<(PathBuf, String, String), HubError> {
         let live = self.live(id)?;
-        let folder = {
-            let l = lock(&live);
-            if matches!(
-                l.chat.turn.state.as_str(),
-                "working" | "connecting" | "blocked"
-            ) {
-                return Err(HubError::Refused(
-                    "a turn is under way: stop it first".to_owned(),
-                ));
-            }
-            l.meta
-                .folder
-                .clone()
-                .unwrap_or_else(|| self.scratch.join(id))
-        };
-        self.relaunch(id, (&folder, machine), recipe)
+        let l = lock(&live);
+        if matches!(
+            l.chat.turn.state.as_str(),
+            "working" | "connecting" | "blocked"
+        ) {
+            return Err(HubError::Refused(
+                "a turn is under way: stop it first".to_owned(),
+            ));
+        }
+        let folder = l.meta.folder.clone();
+        Ok((
+            folder.unwrap_or_else(|| self.scratch.join(id)),
+            l.meta.machine.clone(),
+            l.meta.agent.clone(),
+        ))
     }
 
     fn relaunch(
         &self,
         id: &str,
         (folder, machine): (&Path, &str),
-        recipe: &Recipe,
+        (agent, recipe): (&str, &Recipe),
+        handoff: Option<&str>,
     ) -> Result<Item, HubError> {
         let live = self.live(id)?;
-        let (agent, old) = {
+        let old = {
             let l = lock(&live);
             if l.meta.closed || l.meta.workflow.is_some() {
                 return Err(HubError::Refused(
                     "only an open chat of your own can move".to_owned(),
                 ));
             }
-            (l.meta.agent.clone(), l.meta.terminal.clone())
+            l.meta.terminal.clone()
         };
         let terminal = on_machine(machine, &format!("cooee-{id}-{:x}", now()));
         let labels = BTreeMap::from([
@@ -63,8 +93,8 @@ impl Hub {
         let started = self
             .mcp_launch(id, recipe)
             .and_then(|launch| {
-                let cmd = self.adapter(&agent);
-                let run = (agent.as_str(), cmd.as_slice());
+                let cmd = self.adapter(agent);
+                let run = (agent, cmd.as_slice());
                 Ok(self
                     .shed
                     .run_acp(&terminal, run, folder, &labels, &launch)?)
@@ -84,38 +114,29 @@ impl Hub {
             "" => f.display().to_string(),
             m => format!("{} on {m}", f.display()),
         };
-        let turns: Vec<String> = live
-            .chat
-            .items
-            .iter()
-            .filter_map(|i| match &i.body {
-                Body::You { text, .. } => Some(format!("Owner: {text}")),
-                Body::Agent { text, .. } => Some(format!("You: {text}")),
-                _ => None,
-            })
-            .collect();
-        let last = turns
-            .iter()
-            .rev()
-            .take(6)
-            .rev()
-            .cloned()
-            .collect::<Vec<_>>()
-            .join("\n\n");
-        let handover = format!(
-            "{}\n\nThis chat moved from {} to {}, where you now run; what it made before is still there. Its last turns:\n\n{last}",
-            recipe.instructions.trim_end(),
-            place(&was, &live.meta.machine),
-            place(folder, machine)
+        let story = handoff.map_or_else(
+            || {
+                format!(
+                    "This chat moved from {} to {}, where you now run; what it made before is still there. Its last turns:\n\n{}",
+                    place(&was, &live.meta.machine),
+                    place(folder, machine),
+                    last_turns(&live.chat.items)
+                )
+            },
+            str::to_owned,
         );
+        let handover = format!("{}\n\n{story}", recipe.instructions.trim_end());
         handover.trim_start().clone_into(&mut live.meta.handover);
         live.meta.terminal.clone_from(&terminal);
-        {
-            let mut terminals = lock(&self.terminals);
-            let me = terminals.remove(&old);
-            terminals.extend(me.map(|l| (terminal.clone(), l)));
-        }
-        let text = if live.meta.machine == machine {
+        self.retarget(&old, &terminal);
+        let text = if handoff.is_some() {
+            agent.clone_into(&mut live.meta.agent);
+            live.meta.account.clone_from(&recipe.account);
+            (live.meta.model, live.meta.effort) = (recipe.model.clone(), recipe.effort.clone());
+            let on = Some(recipe.account.as_str()).filter(|a| !a.is_empty());
+            let on = on.map_or_else(|| agent.to_owned(), |a| format!("{agent} · {a}"));
+            format!("now on {on} · later turns run there")
+        } else if live.meta.machine == machine {
             format!("now in {} · later turns run here", short(folder))
         } else {
             format!(
@@ -129,7 +150,7 @@ impl Hub {
             live.meta.folder = Some(folder.to_owned());
         }
         machine.clone_into(&mut live.meta.machine);
-        self.store.save(&live.meta)?;
+        self.save(&live)?;
         let item = live.chat.push(now(), 0, Body::Note { text });
         live.publish(self, vec![Change::Item(item.clone())])?;
         drop(live);
@@ -143,4 +164,25 @@ impl Hub {
         }
         Ok(item)
     }
+}
+
+impl Hub {
+    pub(super) fn retarget(&self, old: &str, terminal: &str) {
+        let mut terminals = lock(&self.terminals);
+        let me = terminals.remove(old);
+        terminals.extend(me.map(|l| (terminal.to_owned(), l)));
+    }
+}
+
+fn last_turns(items: &[Item]) -> String {
+    let turns: Vec<String> = items
+        .iter()
+        .filter_map(|i| match &i.body {
+            Body::You { text, .. } => Some(format!("Owner: {text}")),
+            Body::Agent { text, .. } => Some(format!("You: {text}")),
+            _ => None,
+        })
+        .collect();
+    let from = turns.len().saturating_sub(6);
+    turns.get(from..).unwrap_or_default().join("\n\n")
 }

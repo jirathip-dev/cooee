@@ -100,7 +100,7 @@ fn install_writes_a_plist_and_prints_the_commands() {
     for want in [
         format!("launchctl bootstrap gui/$(id -u) {}", plist.display()),
         "tailscale serve --bg --https=4799 http://127.0.0.1:4799".to_owned(),
-        "cargo install --locked --git https://github.com/jirathip-dev/shed".to_owned(),
+        "shed isn't running: install or update shed to protocol 1 or newer from https://github.com/jirathip-dev/shed/releases".to_owned(),
     ] {
         assert!(stdout.contains(&want), "{want} not in {stdout}");
     }
@@ -131,7 +131,7 @@ fn doctor_reports_a_missing_shed() {
         stdout.contains("FAIL shed: ")
             && stdout.contains(&no_shed.join("shed.sock").display().to_string())
             && stdout.contains(
-                "install: cargo install --locked --git https://github.com/jirathip-dev/shed"
+                "fix: install or update shed to protocol 1 or newer from https://github.com/jirathip-dev/shed/releases"
             ),
         "{stdout}"
     );

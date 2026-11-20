@@ -1,6 +1,14 @@
 {
-  "originHash" : "3884f4d7e4c4dd8acb692d4486ecd1ed13cb798a2a4402d25c3e5b3b2f19d0a2",
+  "originHash" : "07980522f76fe75b9842d75ab026c1d015f245fe9c20a94d9de2d526dc4cac2a",
   "pins" : [
+    {
+      "identity" : "blocks",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/jirathip-dev/blocks",
+      "state" : {
+        "revision" : "d0882093e32c6d752910c459efa04a2a6beb5c3a"
+      }
+    },
     {
       "identity" : "combine-schedulers",
       "kind" : "remoteSourceControl",

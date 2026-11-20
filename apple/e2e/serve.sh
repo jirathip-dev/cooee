@@ -8,7 +8,7 @@
 # header-strip places for Conductor, a persona it isn't attached to yet: the app attaches it. #181: the lane chat a
 # strip horse opens, `herdsman-impl-641`, is seeded with lane-390-*.png's messages. #229: it claims `source=drover`,
 # the fake shed runs three drover lanes (FAKE_SHED_LANES) for Conductor's Workflow sheet, and a chat with no persona,
-# "Bonjour probe", is in Others. #252: the first-party theme
+# "Bonjour probe", is in Others. #513: the Terminal and Scene style
 # packs are installed, for the look sheet.
 set -eu
 cd "$(dirname "$0")/../.."
@@ -41,7 +41,7 @@ cp apple/e2e/screens.py docs/design/screens-as-data/fixtures/events.json docs/de
   docs/design/queue-scene/fixtures/queue-stream.json "$drover/"
 cat >"$drover/cooee-plugin.toml" <<'TOML'
 name = "drover"
-version = "0.0.1"
+version = "0.1.0"
 build = "python3 -m py_compile screens.py"
 run = "TOKEN=$COOEE_PLUGIN_TOKEN exec python3 screens.py"
 needs = ["python3"]
@@ -83,8 +83,9 @@ JSONL
 printf 'name = "Conductor"\nagent = "fake-acp"\nfolder = "%s"\n' "$tmp/root/project" >"$tmp/personas/conductor.toml"
 printf 'name = "Coder"\nagent = "fake-acp"\nfolder = "%s"\nplugins = ["cards"]\n' "$tmp/root/project" >"$tmp/personas/coder.toml"
 mkdir -p "$tmp/themes"
-cp -R packs/themes/farm packs/themes/kitchen packs/themes/garden "$tmp/themes/"
+cp -R packs/terminal packs/scene "$tmp/themes/"
 target=$(cargo metadata --format-version 1 --no-deps | sed -n 's/.*"target_directory":"\([^"]*\)".*/\1/p')
+for name in bush farm garden kitchen; do "$target/debug/cooee" theme add --config "$tmp/config.toml" "$name" --yes; done
 "$target/debug/cooee" plugin add --config "$tmp/config.toml" "$drover" --yes
 "$target/debug/cooee" serve --config "$tmp/config.toml" &
 srv=$!

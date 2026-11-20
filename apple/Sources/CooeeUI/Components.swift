@@ -8,7 +8,7 @@ internal struct FigureView: View {
     internal var frame = 0
 
     internal var body: some View {
-        if persona.id.isEmpty && look.style.figures != .ascii {
+        if persona.id.isEmpty && look.figures != .ascii {
             NeutralAvatar(persona: persona, size: size)
         } else {
             styled
@@ -18,7 +18,7 @@ internal struct FigureView: View {
     @ViewBuilder private var styled: some View {
         let palette = look.palette
         let tint = palette.tint(persona.look.tint)
-        switch look.style.figures {
+        switch look.figures {
         case .avatar:
             Circle()
                 .fill(
@@ -64,12 +64,8 @@ internal struct AgentChip: View {
                     .joined(separator: " "))
             Image(systemName: "chevron.down").font(.system(size: 8, weight: .bold))
         }
-        .ui(12, .regular, look).foregroundStyle(palette.mute).lineLimit(1).fixedSize()
-        .padding(.horizontal, 9).padding(.vertical, 4)
-        .background(look.mono ? Color.clear : palette.edge.opacity(0.35), in: .capsule)
-        .overlay {
-            if look.mono { Rectangle().strokeBorder(palette.edge, lineWidth: 1) }
-        }
+        .ui(12, .regular, look).foregroundStyle(palette.mute).lineLimit(1)
+        .padding(.horizontal, 9).padding(.vertical, 4).chip(look, fill: palette.edge.opacity(0.35), edge: palette.edge)
     }
 }
 
@@ -80,23 +76,11 @@ internal struct RoundButton: View {
     internal var size: CGFloat = 40
 
     internal var body: some View {
-        Group {
-            if look.mono {
-                Text("[\(ascii)]").ui(15, .bold, look).fixedSize()
-            } else {
-                Image(systemName: symbol).font(.system(size: size * 0.42, weight: .semibold))
-            }
+        Mark(text: "[\(ascii)]", size: 15) {
+            Image(systemName: symbol).font(.system(size: size * 0.42, weight: .semibold))
         }
-        .foregroundStyle(look.palette.foreground).frame(minWidth: size, minHeight: size)
-        .modifier(RoundSurface(look: look))
-    }
-}
-
-internal struct RoundSurface: ViewModifier {
-    internal let look: Look
-
-    internal func body(content: Content) -> some View {
-        if look.mono { content } else { content.surface(look, radius: 99, interactive: true) }
+        .fixedSize().foregroundStyle(look.palette.foreground).frame(minWidth: size, minHeight: size)
+        .chip(look)
     }
 }
 
@@ -108,7 +92,7 @@ internal struct Badge: View {
     internal var body: some View {
         Text("\(count)").ui(12, .bold, look).foregroundStyle(look.palette.dark ? .black : .white)
             .padding(.horizontal, 6).frame(minWidth: 20, minHeight: 20)
-            .background(tint ?? look.palette.link, in: look.mono ? AnyShape(Rectangle()) : AnyShape(Capsule()))
+            .background(tint ?? look.palette.link, in: look.pill)
     }
 }
 
@@ -121,13 +105,10 @@ internal struct CardButton: View {
     internal var body: some View {
         let palette = look.palette
         let tint = tint ?? palette.link
-        Text(look.mono ? "[ \(title) ]" : title).ui(15, primary ? .semibold : .regular, look)
+        Text(look.label(.button, title)).ui(15, primary ? .semibold : .regular, look)
             .foregroundStyle(primary ? (palette.dark ? Color.black : .white) : tint)
             .padding(.horizontal, 14).frame(height: 36).frame(maxWidth: .infinity)
-            .background(
-                primary ? tint : tint.opacity(look.mono ? 0 : 0.12),
-                in: look.mono ? AnyShape(Rectangle()) : AnyShape(Capsule())
-            )
+            .background(primary ? tint : tint.opacity(look.outline ? 0 : 0.12), in: look.pill)
             .accessibilityLabel(title)
     }
 }

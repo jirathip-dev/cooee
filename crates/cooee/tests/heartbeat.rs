@@ -66,7 +66,7 @@ impl Setup {
         fs::create_dir_all(&bin).unwrap();
         fs::create_dir_all(&log).unwrap();
         let curl = format!(
-            "#!/bin/sh\ncat >\"{}/$$.json\"\nprintf '\\n200'\n",
+            "#!/bin/sh\nperl -ne 'print $1 =~ s/\\\\(.)/$1/gr if /^data-raw = \"(.*)\"$/' >\"{}/$$.json\"\nprintf '\\n200'\n",
             log.display()
         );
         fs::write(bin.join("curl"), curl).unwrap();
@@ -189,7 +189,12 @@ fn a_heartbeat_runs_only_on_news_and_pushes_only_when_its_rule_matches() {
     let cooee = s.tick();
     thread::sleep(Duration::from_millis(500));
     assert!(runs(&cooee).is_empty(), "nothing new: no run");
-    assert_eq!(mark(&s.dir)["runs"], Value::Null, "no run counted");
+    let today = &mark(&s.dir)["today"];
+    assert_eq!(
+        (&today["ran"], &today["idle"]),
+        (&json!(0), &json!(1)),
+        "{today}"
+    );
 
     say(&cooee, "fake says: The build is red. / NOTIFY", "a");
     drop(cooee);
@@ -353,5 +358,11 @@ fn a_heartbeat_action_is_a_card_with_nothing_done_and_its_daily_limit_holds() {
         line,
         "the news waits for the next allowed run"
     );
-    assert_eq!(mark(&s.dir)["runs"].as_array().unwrap().len(), 1);
+    assert_eq!(
+        (
+            &mark(&s.dir)["today"]["ran"],
+            &mark(&s.dir)["today"]["capped"]
+        ),
+        (&json!(1), &json!(1))
+    );
 }

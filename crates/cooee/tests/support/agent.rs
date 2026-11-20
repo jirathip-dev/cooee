@@ -7,7 +7,7 @@ use std::{
     time::Duration,
 };
 
-use cooee_core::shed_proto::{ApprovalOption, EventKind};
+use cooee_core::shed_proto::{AcpUsage, ApprovalOption, EventKind};
 use serde_json::{Value, json};
 
 use super::FakeShed;
@@ -49,6 +49,10 @@ impl FakeShed {
                 agent: Vec::new(),
             };
             self.emit(name, turn);
+            if prompt.contains("long tool run") {
+                self.long_tool_run(name);
+                continue;
+            }
             let Some((events, stop)) = self.script(name, &prompt, rx) else {
                 continue;
             };
@@ -97,7 +101,7 @@ impl FakeShed {
             let said = "Questions for you:\n1. **HTML or SwiftUI?**\n\n**Call voice:** the iOS target building.";
             (vec![reply(said, "end_turn")], "end_turn")
         } else if prompt.contains("commands") {
-            let mut events = Vec::new();
+            let mut events = vec![plan("Run the checks", "in_progress")];
             for (id, title) in [
                 ("k1", "$ cargo fmt"),
                 ("k2", "$ cargo clippy"),
@@ -179,11 +183,11 @@ impl FakeShed {
         prompt: &str,
         rx: &Receiver<Input>,
     ) -> Option<(Vec<EventKind>, &'static str)> {
+        let meta = self.meta(name).unwrap_or_default();
         let said = if prompt.contains("What is the code word?") {
-            let word = prompt
-                .split("The code word is ")
-                .nth(1)
-                .unwrap_or("unknown.");
+            let system = meta["systemPrompt"]["append"].as_str().unwrap_or_default();
+            let word = format!("{system}\n{prompt}");
+            let word = word.split("The code word is ").nth(1).unwrap_or("unknown.");
             word.split_whitespace()
                 .next()
                 .unwrap()
@@ -196,12 +200,39 @@ impl FakeShed {
             self.cooee_tool(name, "handoff", &json!({ "what": what }))
         } else if prompt.contains("Use your conformance skill") {
             self.cooee_tool(name, "skill", &json!({ "read": "conformance" }))
+        } else if prompt.contains("List the names of every tool you have") {
+            let on = meta["claudeCode"]["options"]["tools"].as_array();
+            let on = |t: &str| on.is_none_or(|on| on.iter().any(|o| o == t));
+            TOOLS
+                .into_iter()
+                .filter(|t| on(t))
+                .collect::<Vec<_>>()
+                .join("\n")
         } else if prompt.contains("Run `sleep 120`") {
             return Some(self.sleep_until_cancel(name, rx));
         } else {
             return None;
         };
-        Some((vec![reply(&said, "end_turn")], "end_turn"))
+        let usage = AcpUsage {
+            used: 1200,
+            size: 200_000,
+            cost: None,
+            turn: None,
+            total: None,
+        };
+        Some((
+            vec![EventKind::Usage(usage), reply(&said, "end_turn")],
+            "end_turn",
+        ))
+    }
+
+    /// Terminal `name`'s agent hits its account limit as shed reports it: the limit line, then `rate-limited`.
+    pub fn limit(&self, name: &str) {
+        self.emit(
+            name,
+            reply("You've hit your limit · resets 3pm", "end_turn"),
+        );
+        self.report(name, "rate-limited", Some("3pm"));
     }
 
     fn cooee_tool(&self, name: &str, tool: &str, arguments: &Value) -> String {
@@ -252,6 +283,20 @@ impl FakeShed {
         (vec![reply("", "cancelled")], "cancelled")
     }
 
+    fn long_tool_run(&self, name: &str) {
+        self.report(name, "working", None);
+        let call = "cargo test --workspace";
+        self.emit(name, tool("t1", call, "pending"));
+        self.emit(name, tool("t1", call, "in_progress"));
+        for line in ["running 3 tests\n", "test a ... ok\n", "test b ... ok\n"] {
+            self.report(name, "working", Some(call));
+            self.emit(name, text(line));
+        }
+        self.emit(name, tool("t1", call, "completed"));
+        self.emit(name, reply("Tests pass.", "end_turn"));
+        self.report(name, "idle", None);
+    }
+
     fn approval(&self, name: &str, rx: &Receiver<Input>) -> (Vec<EventKind>, &'static str) {
         let call = "Edit src/lib.rs";
         self.emit(name, tool("c2", call, "pending"));
@@ -292,6 +337,20 @@ impl FakeShed {
         )
     }
 }
+
+const TOOLS: [&str; 11] = [
+    "Read",
+    "Write",
+    "Edit",
+    "Bash",
+    "Glob",
+    "Grep",
+    "TodoWrite",
+    "WebSearch",
+    "WebFetch",
+    "Agent",
+    "Skill",
+];
 
 /// The `markdown` turn's reply: a heading, inline marks, a link, a 3-column table, a fenced block, a list and raw
 /// HTML (which stays text).
@@ -339,6 +398,13 @@ fn read_file(status: &str, at: &[&str]) -> EventKind {
         kind: Some("read".to_owned()),
         locations: at.iter().map(Into::into).collect(),
         raw_input: None,
+    }
+}
+
+fn plan(content: &str, status: &str) -> EventKind {
+    let entry = json!({ "content": content, "priority": "high", "status": status });
+    EventKind::Plan {
+        entries: vec![entry],
     }
 }
 
