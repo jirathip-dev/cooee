@@ -2,6 +2,7 @@
 //! Each one's settings are `<config>/routines.toml`, its run state and the deliveries seen `<data>/routine-runs.json`
 //! (#359). Pure: the server's runner gives `now`, the Mac's UTC offset and each delivery.
 mod cron;
+mod end;
 mod github;
 mod webhook;
 
@@ -14,6 +15,7 @@ use std::{
 use serde::{Deserialize, Serialize};
 
 pub use cron::{Schedule, local, parse_local};
+pub use end::{End, Ended};
 pub use github::{Delivery, Fields, Github, Hooks, Rejected, Skip};
 pub use webhook::{Inbound, Webhook};
 
@@ -145,25 +147,6 @@ pub enum Paused {
     Ended(Ended),
 }
 
-/// When and how a routine ended.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-pub struct Ended {
-    /// When, in Unix ms.
-    pub at: u64,
-    /// By what.
-    pub by: End,
-}
-
-/// What ended a routine.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(rename_all = "snake_case")]
-pub enum End {
-    /// Its end time came.
-    EndTime,
-    /// Its maker's `stop_routine`.
-    StopRoutine,
-}
-
 /// A routine's run.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Run {
@@ -247,16 +230,7 @@ impl Routine {
         if list.len() >= MAX {
             return Err(format!("TOO_MANY: there are {MAX} routines already"));
         }
-        let ends_at = match ask.until.as_deref() {
-            None => None,
-            Some(u) => Some(
-                parse_local(u.trim(), offset_min)
-                    .filter(|at| *at > now)
-                    .ok_or_else(|| {
-                        format!("BAD_UNTIL: {u:?} is no local YYYY-MM-DD HH:MM after now")
-                    })?,
-            ),
-        };
+        let ends_at = end::ends_at(ask.until.as_deref(), (now, offset_min))?;
         let place = match ask.place.as_str() {
             "" | "chat" => Place::Chat {
                 thread: from.id.clone(),
@@ -347,37 +321,6 @@ impl Routine {
             None => {}
         }
         Ok(())
-    }
-
-    /// Ends it once its end time is past `now`: whether it ended now.
-    pub fn end(&mut self, now: u64) -> bool {
-        let Some(at) = self.ends_at.filter(|at| *at <= now) else {
-            return false;
-        };
-        if matches!(self.paused, Some(Paused::Ended(_))) {
-            return false;
-        }
-        self.paused = Some(Paused::Ended(Ended {
-            at,
-            by: End::EndTime,
-        }));
-        true
-    }
-
-    /// Its end in words, in UTC offset `offset_min`: `until …`, `ended … by …`, or empty.
-    #[must_use]
-    pub fn until(&self, offset_min: i32) -> String {
-        match (&self.paused, self.ends_at) {
-            (Some(Paused::Ended(e)), _) => {
-                let by = match e.by {
-                    End::EndTime => "its end time",
-                    End::StopRoutine => "stop_routine",
-                };
-                format!("ended {} by {by}", local(e.at, offset_min))
-            }
-            (_, Some(at)) => format!("until {}", local(at, offset_min)),
-            (_, None) => String::new(),
-        }
     }
 
     /// What the list and the chat show it as.
@@ -757,47 +700,6 @@ mod tests {
             Some(nine + 14 * 1440 * MIN)
         );
         assert_eq!(r.key(nine), format!("routine-{}-{nine}", r.id));
-    }
-
-    #[test]
-    fn an_end_time_runs_it_before_and_ends_it_at_it_and_resume_drops_a_past_one() {
-        let nine = MON + 9 * 60 * MIN;
-        let until = Ask {
-            until: Some("2024-11-18 09:00".to_owned()),
-            ..ask("0 9 * * *", "")
-        };
-        let past = Ask {
-            until: Some("2024-11-11 08:00".to_owned()),
-            ..until.clone()
-        };
-        let e = Routine::make(&[], past, &chat(), (nine, 0)).unwrap_err();
-        assert!(e.starts_with("BAD_UNTIL"), "{e}");
-        let mut r = Routine::make(&[], until, &chat(), (MON, 0)).unwrap();
-        let end = nine + 7 * 1440 * MIN;
-        assert_eq!(
-            (r.ends_at, r.until(0)),
-            (Some(end), "until 2024-11-18 09:00".to_owned())
-        );
-        assert!(!r.end(end - MIN));
-        assert_eq!(
-            (r.due(end - MIN, 0), &r.paused),
-            (Some(end - 1440 * MIN), &None)
-        );
-        assert!(r.end(end) && !r.end(end + MIN));
-        let ended = Paused::Ended(Ended {
-            at: end,
-            by: End::EndTime,
-        });
-        assert_eq!(r.paused, Some(ended));
-        assert_eq!(r.until(0), "ended 2024-11-18 09:00 by its end time");
-        assert_eq!(r.admit(end + MIN), Err(Skip::Paused));
-        let resume = Edit {
-            paused: Some(false),
-            ..Edit::default()
-        };
-        r.edit(resume, end + MIN).unwrap();
-        assert!(!r.end(end + 1440 * MIN));
-        assert_eq!((&r.paused, r.ends_at), (&None, None));
     }
 
     #[test]
