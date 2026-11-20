@@ -1,0 +1,12 @@
+Decided: the panel reads the app's one store (CooeeRoot.live): asks are Home's chats in needs, running are those working, drover lanes included through their workflow rows
+Because: "Running agents and waiting asks update live, with no polling faster than the app already does."
+Decided: the panel and its rows live in CooeeUI (MenuPanel), only MenuBarExtra, the label and window activation are Mac-only in CooeeApp/MenuBar.swift
+Because: "Only the menu bar shell (`MenuBarExtra` and its window) is Mac-only."
+Decided: the glyph is a template cut of the app icon; lists show 3 rows then "+N more" opens the main window
+Because: q2424
+Decided: round 2: Frames.swift is back to staging's text; MenuBarFrames renders the bare panel itself and shares the pixel comparison through Frame.matches
+Because: apple/Tests/CooeeUITests/SnapshotTests.swift:69
+Rejected: a chrome flag on Frame — Frames.swift is frozen in .drover/arch.toml
+Check: git diff origin/staging -- apple/Tests/CooeeUITests/Frames.swift is empty and arch-check is green in CI
+Check: the live menu bar was not screenshotted: the lane has no screen-capture permission
+Owner: The Mac app now has a cooee icon in the menu bar; its panel shows the server status, what waits on you and what runs, a QR to pair a phone, and each row opens that chat.
