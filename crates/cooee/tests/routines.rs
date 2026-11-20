@@ -11,7 +11,8 @@
 //! Signed POSTs (#499): a webhook routine waits for Face ID too; a wrong signature on `/hooks/in/<id>` is a 401 and
 //! starts nothing, a good one a 202 and one thread, the same delivery again (by key or body) nothing, the seventh in
 //! an hour `skipped: rate`; the persona panel shows its URL and its test button runs it. A silence rule (#692) alerts
-//! once when no signed POST came for its minutes (a bad signature counts for nothing) and once when they are back.
+//! once when no signed POST came for its minutes (a bad signature counts for nothing) and once when they are back; a
+//! signed `{"kind":"alive"}` (#697) only feeds that clock, a 200 with no run and no share of the rate.
 //!
 //! Scripts (#691): an agent's script routine waits for Face ID; on its due time a post one posts its output in the
 //! chat and pushes only on a non-zero exit, a wake one stays silent on exit 0 and else prompts the agent with it.
@@ -932,7 +933,9 @@ fn a_silence_rule_alerts_once_after_n_minutes_without_a_signed_post_and_once_whe
     );
     assert_eq!(quiet(&cooee)["silent"], true);
     assert_eq!(notes(&cooee, &id).len(), 1);
-    assert_eq!(post_in(port, "r-quiet", "", &sign(body), body).0, 202);
+    let before = threads(&cooee);
+    let alive = (200, "alive".to_owned());
+    assert_eq!(post_in(port, "r-quiet", "", &sign(body), body), alive);
     let said = noted(&cooee, &id, 2);
     assert_eq!(
         said[1], "⟳ r-quiet: signed POSTs are back after 16 min of silence",
@@ -940,6 +943,25 @@ fn a_silence_rule_alerts_once_after_n_minutes_without_a_signed_post_and_once_whe
     );
     assert!(quiet(&cooee)["heard"].as_u64().unwrap() > made);
     assert_eq!(quiet(&cooee)["silent"], Value::Null);
+    for n in 0..12 {
+        let b = format!(r#"{{"kind":"alive","n":{n}}}"#);
+        assert_eq!(post_in(port, "r-quiet", "", &sign(&b), &b), alive);
+    }
+    thread::sleep(Duration::from_millis(500));
+    assert_eq!(
+        threads(&cooee).len(),
+        before.len(),
+        "an alive starts no run"
+    );
+    assert_eq!(quiet(&cooee)["last_run"], Value::Null);
+    assert_eq!(notes(&cooee, &id).len(), 2, "one back line, no more");
+    let check = r#"{"kind":"check","host":"mini"}"#;
+    assert_eq!(
+        post_in(port, "r-quiet", "", &sign(check), check),
+        (202, "runs: 1".to_owned()),
+        "12 alives in an hour leave the rate untouched"
+    );
+    assert_eq!(grown(&cooee, before.len() + 1).len(), before.len() + 1);
 
     let screen = cooee.json("/screens/persona/coder");
     let blocks = screen["blocks"].as_array().unwrap();
