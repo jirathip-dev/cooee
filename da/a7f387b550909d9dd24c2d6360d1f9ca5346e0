@@ -1,0 +1,10 @@
+Decided: round 3: running rows show a run clock (m:ss since the working thread last changed, from Home's own row time), asks and done rows keep their age
+Because: apple/design/menu-bar/Sources/MenuBar/Model.swift:43
+Decided: the panel's clock ticks each second by redrawing from state it already holds; it sends no request, so nothing polls faster than Home
+Because: "Running agents and waiting asks update live, with no polling faster than the app already does."
+Decided: a cooee ask reads "<name> asks" and a drover row "cooee#659 · design", as the approved design draws them
+Because: apple/design/menu-bar/Sources/MenuBar/Model.swift:31
+Rejected: a run-start field on the server's thread rows — a server change outside this issue; the row's own time is what Home keeps
+Check: all eight MenuBarFrames renders diff 0.000 % against apple/design/menu-bar PNGs (was up to 1.16 %)
+Check: the live menu bar was not screenshotted: the lane has no screen-capture permission
+Owner: The Mac app now has a cooee icon in the menu bar; its panel shows the server status, what waits on you and what runs with its run clock, a QR to pair a phone, and each row opens that chat.
