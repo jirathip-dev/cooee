@@ -6,6 +6,7 @@ mod cron;
 mod end;
 mod file;
 mod github;
+mod guard;
 mod script;
 mod webhook;
 
@@ -18,6 +19,7 @@ pub use end::{End, Ended};
 pub use file::Routines;
 pub(crate) use file::files;
 pub use github::{Delivery, Fields, Github, Hooks, Rejected, Skip};
+pub use guard::{Cap, Change, Held, Tally, Turns, day};
 pub use script::{Mode, Script};
 pub use webhook::{Inbound, Webhook};
 
@@ -65,6 +67,9 @@ pub struct Routine {
     /// When it ends (Unix ms): no run at or after it.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub ends_at: Option<u64>,
+    /// Its own runs-a-day cap (#690); none: the default.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub per_day: Option<Cap>,
     /// The thread whose agent made it.
     pub made_in: String,
     /// When, in Unix ms: its first due time is after this.
@@ -220,6 +225,8 @@ pub struct Edit {
     pub prompt: Option<String>,
     /// Pause, or resume.
     pub paused: Option<bool>,
+    /// Its own cap: a number sets it, empty clears it.
+    pub per_day: Option<String>,
 }
 
 impl Routine {
@@ -275,6 +282,7 @@ impl Routine {
             script,
             paused: None,
             ends_at,
+            per_day: None,
             made_in: from.id.clone(),
             made_at: now,
             last_due: 0,
@@ -312,6 +320,15 @@ impl Routine {
             return Err("BAD_PROMPT: a prompt is not empty and closes each {{".to_owned());
         }
         let trigger = e.when.map(|w| Schedule::parse(&w)).transpose()?;
+        let per_day = match e.per_day.as_deref().map(str::trim) {
+            Some(_) if self.turns() == Turns::Never => {
+                return Err("BAD_CAP: a script that only posts runs no agent".to_owned());
+            }
+            Some("") => Some(None),
+            Some(n) => Some(Some(Cap::parse(n)?)),
+            None => None,
+        };
+        self.per_day = per_day.unwrap_or(self.per_day);
         if let Some(t) = trigger
             .map(Trigger::Schedule)
             .filter(|t| *t != self.trigger)
@@ -330,6 +347,22 @@ impl Routine {
             None => {}
         }
         Ok(())
+    }
+
+    /// When a run of it is an agent turn.
+    #[must_use]
+    pub fn turns(&self) -> Turns {
+        match self.script.as_ref().map(|s| s.mode) {
+            None => Turns::Always,
+            Some(Mode::Wake) => Turns::OnWake,
+            Some(Mode::Post) => Turns::Never,
+        }
+    }
+
+    /// Its cap: its own, else `default`, else [`Cap::DEFAULT`].
+    #[must_use]
+    pub fn cap(&self, default: Option<Cap>) -> Cap {
+        self.per_day.or(default).unwrap_or(Cap::DEFAULT)
     }
 
     /// What the list and the chat show it as.
@@ -423,6 +456,8 @@ impl Routine {
 pub struct Book {
     /// The routines.
     pub routines: Vec<Routine>,
+    /// The default runs-a-day cap (#690).
+    pub per_day: Option<Cap>,
     /// Each delivery's guid seen, by the hook or the catch-up, and when (ms).
     pub seen: Vec<(String, u64)>,
 }

@@ -113,7 +113,7 @@ what you found matches the owner's notify rule, else SILENT: and why.";
 
 /// A persona's heartbeat (#498): off unless `on`; at `when` (default hourly) a run looks at what is new and stays
 /// silent unless its notify rule matches, on `model` and `effort` (empty: its provider's cheapest), at most `per_day`
-/// runs in any 24 hours (none: [`Heartbeat::PER_DAY`]).
+/// runs a local day (none: [`Heartbeat::PER_DAY`]).
 #[derive(Debug, Clone, Default, PartialEq, Eq, Deserialize, Serialize)]
 #[serde(default, deny_unknown_fields)]
 pub struct Heartbeat {
@@ -128,14 +128,14 @@ pub struct Heartbeat {
     /// Its effort (empty: the provider's lowest).
     #[serde(skip_serializing_if = "String::is_empty")]
     pub effort: String,
-    /// At most this many runs in any 24 hours.
+    /// At most this many runs a local day.
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub per_day: Option<usize>,
+    pub per_day: Option<crate::routines::Cap>,
 }
 
 impl Heartbeat {
-    /// The runs in any 24 hours when `per_day` is unset.
-    pub const PER_DAY: usize = 4;
+    /// The runs a local day when `per_day` is unset.
+    pub const PER_DAY: crate::routines::Cap = crate::routines::Cap(4);
 
     /// When it runs: `when`, else hourly on the hour.
     #[must_use]

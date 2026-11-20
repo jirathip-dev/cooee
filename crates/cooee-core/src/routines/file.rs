@@ -6,13 +6,17 @@ use std::{
 
 use serde::{Deserialize, Serialize};
 
-use super::{Book, Ended, Github, Paused, Place, Routine, Run, Schedule, Script, Trigger, Webhook};
+use super::{
+    Book, Cap, Ended, Github, Paused, Place, Routine, Run, Schedule, Script, Trigger, Webhook,
+};
 
 const RUNS_FORMAT: u32 = 1;
 
 #[derive(Debug, Default, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 struct Settings {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    per_day: Option<Cap>,
     #[serde(default)]
     routine: Vec<Def>,
 }
@@ -36,6 +40,8 @@ struct Def {
     paused: bool,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     ends_at: Option<u64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    per_day: Option<Cap>,
     place: Place,
 }
 
@@ -68,8 +74,15 @@ struct State {
     silent: bool,
 }
 
-pub(crate) fn files(routines: &[Routine], seen: &[(String, u64)]) -> (String, Vec<u8>) {
-    let mut settings = Settings::default();
+pub(crate) fn files(
+    routines: &[Routine],
+    seen: &[(String, u64)],
+    per_day: Option<Cap>,
+) -> (String, Vec<u8>) {
+    let mut settings = Settings {
+        per_day,
+        routine: Vec::new(),
+    };
     let mut runs = RunFile {
         format: RUNS_FORMAT,
         runs: BTreeMap::new(),
@@ -96,6 +109,7 @@ pub(crate) fn files(routines: &[Routine], seen: &[(String, u64)]) -> (String, Ve
             script: r.script.clone(),
             paused: r.paused == Some(Paused::Owner),
             ends_at: r.ends_at,
+            per_day: r.per_day,
             place: r.place.clone(),
         });
         let state = State {
@@ -188,6 +202,7 @@ impl Routines {
                 trigger,
                 paused: if d.paused { Some(Paused::Owner) } else { gone },
                 ends_at: d.ends_at,
+                per_day: d.per_day,
                 made_in: s.made_in,
                 made_at: s.made_at,
                 last_due: s.last_due,
@@ -204,6 +219,7 @@ impl Routines {
         }
         Ok(Book {
             routines,
+            per_day: settings.per_day,
             seen: runs.seen,
         })
     }
@@ -214,7 +230,7 @@ impl Routines {
     /// # Errors
     /// When it can't be read or written.
     pub fn save(&self, book: &Book) -> io::Result<()> {
-        let (toml, runs) = files(&book.routines, &book.seen);
+        let (toml, runs) = files(&book.routines, &book.seen, book.per_day);
         let text = String::from_utf8(read(&self.settings)?.unwrap_or_default())
             .map_err(io::Error::other)?;
         let was: Settings = toml::from_str(&text).map_err(io::Error::other)?;

@@ -12,7 +12,7 @@ use std::{
 
 use serde::{Deserialize, Serialize};
 
-use crate::{Body, Item, Store, StoreError, redact, store::Page};
+use crate::{Body, Item, Store, StoreError, redact, routines::Tally, store::Page};
 
 /// At most this many hits a search.
 pub const HITS: usize = 5;
@@ -34,9 +34,9 @@ pub struct Watermark {
     pub line: u64,
     /// The newest due time run (0: none seen yet).
     pub due: u64,
-    /// When the heartbeat ran in the last 24 hours (#498).
-    #[serde(skip_serializing_if = "Vec::is_empty")]
-    pub runs: Vec<u64>,
+    /// What its routine did on its last local day (#690).
+    #[serde(skip_serializing_if = "Tally::is_empty")]
+    pub today: Tally,
     /// The heartbeat's last run (#498).
     #[serde(skip_serializing_if = "Option::is_none")]
     pub last: Option<Beat>,
@@ -58,8 +58,8 @@ pub struct Beat {
     pub pushed: bool,
 }
 
-/// Watermark `key` of `<data>/watermarks.json` changed by `f`, one change at a time, written when it changed: what
-/// `f` returns.
+/// Watermark `key` of `<data>/watermarks.json` changed by `f`, one change at a time, written when it changed (and
+/// dropped when back to the default): what `f` returns.
 ///
 /// # Errors
 /// When the file can't be read or written.
@@ -75,7 +75,11 @@ pub fn watermark<T>(data: &Path, key: &str, f: impl FnOnce(&mut Watermark) -> T)
     let mut w = was.clone();
     let out = f(&mut w);
     if w != was {
-        all.insert(key.to_owned(), w);
+        if w == Watermark::default() {
+            all.remove(key);
+        } else {
+            all.insert(key.to_owned(), w);
+        }
         crate::write_private(&path, &serde_json::to_vec_pretty(&all)?)?;
     }
     Ok(out)

@@ -79,6 +79,7 @@ fn run(d: &Desk, me: &Me, args: Value) -> Result<String, HubError> {
         when: ask.when,
         prompt: ask.prompt,
         paused,
+        per_day: None,
     };
     let r = d.runner.edit(&ask.id, e, now())?;
     let text = format!("{verb} routine {}", r.name);

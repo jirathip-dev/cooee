@@ -32,7 +32,7 @@ note is written when the owner approves it.
 
 Heartbeat (#498): each persona has a second built-in routine, off until its `agent.toml` sets `[heartbeat] on = true`
 (optional `when`, default `0 * * * *`; `model` and `effort`, default its provider's cheapest; `per_day`, default 4
-runs in any 24 hours). At a due time it reads, under the `heartbeat-<persona>` watermark, what the persona's threads
+runs a local day, counted by the routines' shared guard, [routine-guards](routine-guards.md)). At a due time it reads, under the `heartbeat-<persona>` watermark, what the persona's threads
 and its routines' runs said since the last line read (its own runs left out); nothing new means no run and no
 tokens, and a due time over `per_day` leaves the news for the next one. Else it opens a thread marked `Heartbeat`
 with shed policy `ask`, whose one prompt carries the owner's notify rule (`notify.md` in the persona's folder, empty
@@ -72,7 +72,7 @@ signed body runs the routine as above; an unsigned or wrongly signed one counts 
 
 | Route | Form | Answer |
 |---|---|---|
-| `GET /routines.json` | | `Routine[]`: `{id, name, trigger: {schedule} \| {github: {repo, events, match?}}, place: {in: chat, thread} \| {in: new_thread, who}, prompt, paused?: {why: owner \| chat_gone \| ended}, ends_at?, made_in, made_at, last_due, last_run?: {at, key, outcome: ran \| failed \| skipped, thread \| why}, recent?}` (`skipped`'s `why`: `paused` or `rate`; `recent`: its event runs in the last hour) |
+| `GET /routines.json` | | `Routine[]`: `{id, name, trigger: {schedule} \| {github: {repo, events, match?}}, place: {in: chat, thread} \| {in: new_thread, who}, prompt, paused?: {why: owner \| chat_gone \| ended}, ends_at?, made_in, made_at, last_due, last_run?: {at, key, outcome: ran \| failed \| skipped, thread \| why}, recent?}` (`skipped`'s `why`: `paused`, `rate`, `quiet` or `capped`; `per_day?`: its own cap; `recent`: its event runs in the last hour) |
 | `POST /routines/<id>` | `name`, `when`, `prompt`, `paused` (`true`/`false`), each optional | 204; 400 with the refusal |
 | `POST /routines/<id>/delete` | | 204; the threads it ran in stay |
 
