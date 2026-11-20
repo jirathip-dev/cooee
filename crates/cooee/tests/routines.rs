@@ -12,7 +12,8 @@
 //! starts nothing, a good one a 202 and one thread, the same delivery again (by key or body) nothing, the seventh in
 //! an hour `skipped: rate`; the persona panel shows its URL and its test button runs it. A silence rule (#692) alerts
 //! once when no signed POST came for its minutes (a bad signature counts for nothing) and once when they are back; a
-//! signed `{"kind":"alive"}` (#697) only feeds that clock, a 200 with no run and no share of the rate.
+//! signed `{"kind":"alive"}` (#697) only feeds that clock, a 200 with no run and no share of the rate. Mail arriving at
+//! a persona's catch-all inbox (#220) starts one run per mail, its code hidden.
 //!
 //! Scripts (#691): an agent's script routine waits for Face ID; on its due time a post one posts its output in the
 //! chat and pushes only on a non-zero exit, a wake one stays silent on exit 0 and else prompts the agent with it.
@@ -34,7 +35,7 @@ use std::{
 
 use serde_json::{Value, json};
 use sha2::{Digest, Sha256};
-use support::{Authenticator, Cooee, FakeShed, scratch, version};
+use support::{Authenticator, Cooee, FakeShed, agent, scratch, version};
 
 fn call(shed: &FakeShed, id: &str, name: &str, args: &Value) -> Value {
     let file = shed.dir.join(format!("mcp-cooee-{id}.json"));
@@ -672,10 +673,14 @@ fn the_catch_up_runs_a_delivery_the_hook_missed_once_across_restarts() {
 }
 
 fn post_in(port: u16, id: &str, key: &str, signature: &str, body: &str) -> (u16, String) {
+    post_at(port, &format!("/hooks/in/{id}"), key, signature, body)
+}
+
+fn post_at(port: u16, path: &str, key: &str, signature: &str, body: &str) -> (u16, String) {
     let mut c = TcpStream::connect(("127.0.0.1", port)).unwrap();
     write!(
         c,
-        "POST /hooks/in/{id} HTTP/1.1\r\nHost: 127.0.0.1\r\nContent-Type: application/json\r\n{key}\
+        "POST {path} HTTP/1.1\r\nHost: 127.0.0.1\r\nContent-Type: application/json\r\n{key}\
          X-Signature-256: {signature}\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}",
         body.len()
     )
@@ -1156,4 +1161,96 @@ fn a_script_routine_waits_for_its_card_then_posts_or_wakes_the_agent_by_its_mode
     }
     thread::sleep(Duration::from_millis(500));
     assert_eq!(pushed(&log), ["Routine post-fail failed"]);
+}
+
+#[test]
+fn mail_arriving_at_a_personas_inbox_starts_one_run_per_mail_with_its_code_hidden() {
+    let dir = scratch("routines-mail");
+    let shed = FakeShed::start(&dir.join("shed"), version());
+    let (cooee, port) = hooked(&dir, &shed, "http://127.0.0.1:9");
+    fs::write(dir.join("data/secrets/MAIL_HOOK"), SECRET).unwrap();
+    let coder = "name = \"Coder\"\nagent = \"fake-acp\"\n\n[mail]\non = true\naddress = \"coder@owner.example\"\nhook = \"MAIL_HOOK\"\n";
+    agent(&dir, "coder", coder, "");
+    let start = |profile: &str, random: &str| {
+        let new = json!({ "agent": "fake-acp", "profile": profile, "folder": dir.join("root/project"),
+                          "text": "hi", "random_id": random });
+        let (status, body) = cooee.post("/threads", &new);
+        assert_eq!(status, 200, "{body}");
+        serde_json::from_str::<Value>(&body).unwrap()["id"]
+            .as_str()
+            .unwrap()
+            .to_owned()
+    };
+    let ask =
+        json!({ "name": "Inbox", "place": "new_thread", "prompt": "File this mail", "mail": true });
+    let plain = start("", "plain");
+    let said = call(&shed, &plain, "create_routine", &ask);
+    let said = said["content"][0]["text"].as_str().unwrap().to_owned();
+    assert!(said.starts_with("BAD_TRIGGER"), "{said}");
+
+    let id = start("coder", "coder");
+    let said = call(&shed, &id, "create_routine", &ask);
+    assert!(
+        said["content"][0]["text"]
+            .as_str()
+            .unwrap()
+            .starts_with("Proposed."),
+        "{said}"
+    );
+    let items = cooee.json(&format!("/threads/{id}/messages"))["items"].clone();
+    let card = items
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|i| i["form"] == "routine")
+        .unwrap_or_else(|| panic!("no card: {items}"))["id"]
+        .clone();
+    let phone = Authenticator::new(&cooee);
+    phone.save(&cooee);
+    let a = json!({ "item": card, "option": "approve", "passkey": phone.get(&cooee) });
+    let (status, body) = cooee.post(&format!("/threads/{id}/approve"), &a);
+    assert_eq!(status, 200, "{body}");
+    assert_eq!(cooee.json("/routines.json")[0]["trigger"]["mail"], "coder");
+
+    let before = threads(&cooee);
+    let key = |k: &str| format!("Idempotency-Key: {k}\r\n");
+    let mail = r#"{"from":"no-reply@shop.example","subject":"Your code is 482913","text":"Use code 482913."}"#;
+    let to = |p: &str, k: &str, sig: &str| post_at(port, p, &key(k), sig, mail).0;
+    assert_eq!(to("/hooks/mail/coder", "k-1", &sign("{}")), 401);
+    assert_eq!(to("/hooks/mail/nobody", "k-1", &sign(mail)), 404);
+    assert_eq!(to("/hooks/mail/coder", "k-1", &sign(mail)), 202);
+    let now = grown(&cooee, before.len() + 1);
+    let started = now.iter().find(|t| !before.contains(t)).unwrap().clone();
+    let first = (0..100)
+        .find_map(|_| {
+            thread::sleep(Duration::from_millis(100));
+            let items = cooee.json(&format!("/threads/{started}/messages"))["items"].clone();
+            items
+                .as_array()?
+                .iter()
+                .find(|i| i["kind"] == "you")
+                .map(|i| i["text"].as_str().unwrap_or_default().to_owned())
+        })
+        .expect("no first message");
+    assert!(first.starts_with("File this mail\n\n"), "{first}");
+    assert!(first.contains("no-reply@shop.example"), "{first}");
+    assert!(first.contains("Your code is [code]"), "{first}");
+    assert!(!first.contains("482913"), "{first}");
+
+    assert_eq!(
+        to("/hooks/mail/coder", "k-1", &sign(mail)),
+        200,
+        "kept already"
+    );
+    let other = r#"{"from":"ada@shop.example","subject":"Receipt","text":"Thanks"}"#;
+    assert_eq!(
+        post_at(port, "/hooks/mail/coder", &key("k-2"), &sign(other), other).0,
+        202
+    );
+    thread::sleep(Duration::from_millis(500));
+    assert_eq!(
+        grown(&cooee, before.len() + 3).len(),
+        before.len() + 2,
+        "one run per mail"
+    );
 }

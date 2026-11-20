@@ -39,6 +39,7 @@ mod handoff;
 mod heartbeat;
 mod home;
 mod lanes;
+mod mail;
 mod mcp;
 mod models;
 mod plugins;
@@ -281,6 +282,7 @@ pub struct Hub {
     url: OnceLock<String>,
     mcp_key: String,
     proposals: Mutex<HashMap<(String, u64), Proposed>>,
+    codes: Mutex<HashMap<String, String>>,
     updates: Mutex<HashMap<(String, u64), (String, Update)>>,
     registry: Mutex<()>,
     turns: mpsc::Sender<String>,
@@ -554,6 +556,7 @@ impl Hub {
             url: OnceLock::new(),
             mcp_key,
             proposals: Mutex::default(),
+            codes: Mutex::default(),
             updates: Mutex::default(),
             registry: Mutex::default(),
             turns,

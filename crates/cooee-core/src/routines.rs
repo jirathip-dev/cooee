@@ -101,6 +101,8 @@ pub enum Trigger {
     Github(Github),
     /// A signed POST to `/hooks/in/<id>`.
     Webhook(Webhook),
+    /// Mail arriving at this persona's inbox (#220).
+    Mail(String),
 }
 
 /// Where a routine's runs post.
@@ -200,6 +202,9 @@ pub struct Ask {
     pub github: Option<Github>,
     /// The signed POST.
     pub webhook: Option<Webhook>,
+    /// Mail arriving at the making chat's persona.
+    #[serde(default)]
+    pub mail: bool,
     /// The prompt, but for a script routine.
     #[serde(default)]
     pub prompt: String,
@@ -262,11 +267,19 @@ impl Routine {
             },
             p => return Err(format!("BAD_PLACE: {p:?} is neither chat nor new_thread")),
         };
-        let trigger = match (ask.when, ask.github, ask.webhook) {
-            (Some(w), None, None) => Trigger::Schedule(Schedule::parse(&w)?),
-            (None, Some(g), None) => Trigger::Github(g.checked()?),
-            (None, None, Some(h)) => Trigger::Webhook(h.checked()?),
-            _ => return Err("BAD_TRIGGER: give one of when, github or webhook".to_owned()),
+        let trigger = match (ask.when, ask.github, ask.webhook, ask.mail) {
+            (Some(w), None, None, false) => Trigger::Schedule(Schedule::parse(&w)?),
+            (None, Some(g), None, false) => Trigger::Github(g.checked()?),
+            (None, None, Some(h), false) => Trigger::Webhook(h.checked()?),
+            (None, None, None, true) if !from.profile.is_empty() => {
+                Trigger::Mail(from.profile.clone())
+            }
+            _ => {
+                return Err(
+                    "BAD_TRIGGER: give one of when, github, webhook or mail (a persona's chat)"
+                        .to_owned(),
+                );
+            }
         };
         let script = ask.script.map(Script::checked).transpose()?;
         let mut stamp = now;
@@ -381,6 +394,7 @@ impl Routine {
             Trigger::Schedule(s) => s.describe(),
             Trigger::Github(g) => format!("on {} in {}", g.events.join(", "), g.repo),
             Trigger::Webhook(h) => h.describe(),
+            Trigger::Mail(p) => format!("when mail arrives at {p}"),
         }
     }
 
@@ -487,6 +501,7 @@ mod tests {
             when: Some(when.to_owned()),
             github: None,
             webhook: None,
+            mail: false,
             prompt: "Renewals due {{due}}?".to_owned(),
             script: None,
             place: place.to_owned(),

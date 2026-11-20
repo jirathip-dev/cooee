@@ -219,6 +219,9 @@ pub struct Agent {
     /// Its heartbeat (#498); a save that leaves it out keeps it.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub heartbeat: Option<Heartbeat>,
+    /// Its inbox (#220); set on the Mac, a save keeps it.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub mail: Option<crate::mail::Inbox>,
     /// What a call's utterance is told before it (#663), in place of [`SPOKEN`]; empty: nothing. A save that leaves
     /// it out keeps it.
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -560,6 +563,7 @@ pub fn save(config: &Path, data: &Path, mut a: Agent) -> io::Result<Agent> {
         sites: old.sites,
         policy: old.policy,
         fallback: old.fallback,
+        mail: old.mail,
         consolidate: a.consolidate.or(old.consolidate),
         heartbeat: a.heartbeat.or(old.heartbeat),
         spoken: a.spoken.or(old.spoken),
