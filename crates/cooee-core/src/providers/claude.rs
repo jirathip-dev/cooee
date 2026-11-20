@@ -26,6 +26,8 @@ const TOKEN: &str = "CLAUDE_CODE_OAUTH_TOKEN";
 
 const KEPT: &str = "Read Write Edit NotebookEdit Glob Grep Bash TaskStop TodoWrite TaskCreate TaskGet TaskUpdate TaskList";
 
+const ASKS: [&str; 7] = ["Read", "Glob", "Grep", "Bash", "Write", "Edit", "NotebookEdit"];
+
 const OFFABLE: [(Builtin, &[&str]); 3] = [
     (Builtin::Web, &["WebSearch", "WebFetch"]),
     (Builtin::SubAgents, &["Agent", "Workflow"]),
@@ -103,8 +105,14 @@ impl Provider for Claude {
             }
         }
         let excludes = ["{/Users/*,/home/*,/root}/.claude/{CLAUDE.md,rules/**}"];
-        let settings = json!({ "claudeMdExcludes": excludes,
-                               "autoMemoryEnabled": !want.off.contains(&Builtin::Memory) });
+        let mut settings = json!({ "claudeMdExcludes": excludes,
+                                   "autoMemoryEnabled": !want.off.contains(&Builtin::Memory) });
+        if want.ask_all {
+            let ask: Vec<&str> = tools.iter().copied().filter(|t| ASKS.contains(t) || t.starts_with("Web")).collect();
+            let ask = json!({ "defaultMode": "default", "disableAutoMode": "disable",
+                              "disableBypassPermissionsMode": "disable", "ask": ask });
+            settings.as_object_mut().map(|s| s.insert("permissions".to_owned(), ask));
+        }
         let options = json!({
             "settingSources": ["project", "local"],
             "strictMcpConfig": true,

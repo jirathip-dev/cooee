@@ -27,7 +27,7 @@ use super::Input;
 
 #[derive(Default)]
 pub(super) struct Shared {
-    seq: u64,
+    pub(super) seq: u64,
     floor: u64,
     ring: Vec<Event>,
     subs: Vec<Sender<Event>>,
@@ -74,7 +74,7 @@ const CLI: &str = r#"#!/bin/sh
 # machines.json; `[--on <m>] machine stats` prints stats-<m>.json (stats-local.json), exit 1 when offline; its
 # `history` only the first time, as `--since` the last sample leaves nothing new. A `run` with an adapter command
 # after `--` runs it, as the terminal would: the fake adapter `fake-acp` notes its variables in adapter.env and adapter-<name>.env. A `--mcp`
-# file is kept as mcp-<name>.json, a `--meta` as meta-<name>.json. `--on <m> run` starts on machine <m> (#149): the terminal is `<m>/<name>`.
+# file is kept as mcp-<name>.json, a `--meta` as meta-<name>.json, a `--cwd` as cwd-<name>. `--on <m> run` starts on machine <m> (#149): the terminal is `<m>/<name>`.
 gates=$(dirname "$0")
 printf '%s\n' "$*" >>"$gates/cli.log"
 case "$*" in
@@ -97,6 +97,7 @@ case "$*" in
     [ "$1" = -- ] && { shift; break; }
     shift
   done
+  [ -n "$cwd" ] && printf '%s' "$cwd" >"$gates/cwd-$name"
   f=${cwd:+${cwd##*/}}
   while [ -e "$gates/hold-run" ] || [ -e "$gates/hold-in-${f:-/}" ]; do sleep 0.02; done
   [ -e "$gates/run-fails" ] && { echo 'fake shed: timed out' >&2; exit 1; }

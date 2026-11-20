@@ -133,7 +133,14 @@ impl Hub {
         }
         let was = live.chat.turn.state.clone();
         let read = |c: &cooee_core::action::Call| self.providers.action(&live.meta.agent, c);
-        changes.extend(live.chat.apply(now(), event.seq, event.kind, &read));
+        changes.extend(match event.kind {
+            k if !live.meta.profile.is_empty()
+                && matches!(&k, shed_proto::EventKind::ApprovalRequest { id, .. } if !id.is_empty()) =>
+            {
+                self.asked(live, event.seq, k)
+            }
+            k => live.chat.apply(now(), event.seq, k, &read),
+        });
         if was != "limited" && live.chat.turn.state == "limited" {
             changes.extend(self.capped(live).map(Change::Item));
         }

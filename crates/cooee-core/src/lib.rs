@@ -33,6 +33,7 @@ pub mod provider;
 mod providers;
 mod root;
 pub mod routines;
+pub mod rules;
 pub mod runner;
 pub mod scratch;
 pub mod secrets;

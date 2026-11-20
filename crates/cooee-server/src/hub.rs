@@ -25,6 +25,7 @@ use tokio::sync::broadcast;
 use crate::push::{Push, note};
 use glance::{Glance, glance, summary};
 
+mod approvals;
 mod ask;
 mod cards;
 mod chief;
