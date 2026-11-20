@@ -33,6 +33,10 @@ internal struct MenuHost: View {
                     let editor = menu.scope(state: \.editor, action: \.editor)
                 {
                     if compact { ThemeEditor(store: editor) } else { ThemeMac(store: editor).toolbar(.hidden) }
+                } else if page == .connectors, pages.contains(.string(page.rawValue)),
+                    let connectors = menu.scope(state: \.connectors, action: \.connectors)
+                {
+                    ConnectorsPage(store: connectors)
                 } else if pages.contains(.string(page.rawValue)) {
                     MenuPage(store: menu, page: page)
                 }
@@ -93,7 +97,7 @@ internal struct MenuPage: View {
                 case .look: lookPage
                 case .notifications: pushPage
                 case .appIcon: AppIconPicker(store: store)
-                case .terminal, .themeEditor: EmptyView()
+                case .terminal, .themeEditor, .connectors: EmptyView()
                 }
             }
             .padding(16)
@@ -111,6 +115,7 @@ internal struct MenuPage: View {
         case .terminal: "Terminal"
         case .appIcon: "App icon"
         case .themeEditor: "Theme"
+        case .connectors: "Connectors"
         }
     }
 

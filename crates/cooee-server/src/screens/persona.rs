@@ -1,8 +1,3 @@
-//! `GET /screens/persona/{id}` (#314): the persona panel and its edit sheet as data, the #244 sections filled
-//! with what core holds for the persona (its routines, places and memory); `POST /screens/action` saves it,
-//! clears its memory or tests a webhook routine, and its `actions` (#495) ask a thread's persona to keep how it did
-//! the thread as a skill or a routine.
-
 use std::sync::Arc;
 
 use blocks::{AppBlock, Block};
@@ -80,15 +75,13 @@ pub async fn action(cx: &Cx, Json(a): Json<Act>) -> Result<Answer<Value>> {
         return Ok(Answer(super::routines::action(cx, a).await));
     };
     match a.action.as_str() {
-        "save" => match serde_json::from_value::<Agent>(Value::Object(a.values)) {
-            Ok(p) => {
-                let Answer(saved) = persona_save(cx, Agent { id, ..p }).await?;
-                Ok(Answer(
-                    saved.and_then(|p| serde_json::to_value(p).map_err(refused)),
-                ))
+        "save" => {
+            let named = a.values.contains_key("mcp");
+            match serde_json::from_value::<Agent>(Value::Object(a.values)) {
+                Ok(p) => Ok(Answer(save(cx, Agent { id, ..p }, named).await)),
+                Err(e) => Ok(Answer(Err(refused(e)))),
             }
-            Err(e) => Ok(Answer(Err(refused(e)))),
-        },
+        }
         "clear" => Ok(Answer(clear(cx, id).await)),
         "test" => {
             let routine = a
@@ -227,6 +220,37 @@ struct Teach {
     action: &'static str,
 }
 
+async fn save(cx: &Cx, p: Agent, named: bool) -> Result<Value, HubError> {
+    let (data, config) = data(cx);
+    let (id, picks) = (p.id.clone(), p.mcp.clone());
+    let known = (data.clone(), config.clone(), picks.clone());
+    blocking(cx, move |hub| {
+        let (data, config, picks) = known;
+        let servers = hub.mcp().map_err(refused)?;
+        let had =
+            agents::find(config.as_deref(), &data, &id).map_or_else(|_| Vec::new(), |a| a.mcp);
+        let new = picks.iter().filter(|p| !had.contains(p));
+        match new
+            .into_iter()
+            .find(|p| !servers.iter().any(|s| s.name == p.server))
+        {
+            Some(p) => Err(refused(format!("there is no connector {}", p.server))),
+            None => Ok(()),
+        }
+    })
+    .await?;
+    let saved = persona_save(cx, p).await.map_err(refused)?.0?;
+    if !named {
+        return serde_json::to_value(saved).map_err(refused);
+    }
+    blocking(cx, move |_| {
+        let config = config.ok_or_else(|| refused("no config folder"))?;
+        let picked = agents::pick(&config, &data, &saved.id, picks).map_err(refused)?;
+        serde_json::to_value(picked).map_err(refused)
+    })
+    .await
+}
+
 fn data(cx: &Cx) -> (std::path::PathBuf, Option<std::path::PathBuf>) {
     let d = app_context::<Data>(cx);
     (d.0.clone(), d.1.clone())
@@ -282,7 +306,7 @@ async fn fill(cx: &Cx, id: String) -> Result<Block, HubError> {
         let notes = home.as_ref().map(memory::notes).unwrap_or_default();
         let skills = home.as_ref().map(skills_block).unwrap_or_default();
         let library = library_rows(index.as_deref(), &skills);
-        let mut screen = super::bundled(BUNDLED)?.title(p.name);
+        let mut screen = crate::http::bundled(BUNDLED)?.title(p.name);
         let blocks = screen.blocks.get_or_insert_default();
         for block in blocks.iter_mut() {
             let Block::App(block) = block else { continue };
@@ -312,7 +336,7 @@ async fn fill(cx: &Cx, id: String) -> Result<Block, HubError> {
             more: Map::from_iter([("rows".to_owned(), to_value(&rows.collect::<Vec<_>>())?)]),
         };
         blocks.push(Block::App(Box::new(actions)));
-        Ok(super::core(screen))
+        Ok(crate::http::core(screen))
     })
     .await
 }
@@ -362,4 +386,8 @@ fn routine(((url, next, when), r): &(Shown, Routine)) -> Value {
         next: next.as_deref(),
     };
     serde_json::to_value(row).unwrap_or_default()
+}
+
+pub(super) fn routes(b: topcoat::router::RouterBuilder) -> topcoat::router::RouterBuilder {
+    b.route(persona).route(action)
 }

@@ -13,6 +13,7 @@ public struct PersonaFeature: Sendable {
         public var lists: [ModelList] = []
         public var machines: [MachineRow] = []
         public var folders: FolderListing?
+        public var connectors = ConnectorList()
         public var search = ""
         public var busy = false
         public var error: String?
@@ -38,6 +39,7 @@ public struct PersonaFeature: Sendable {
         case offered([AgentOption])
         case listed([ModelList])
         case machines([MachineRow])
+        case linked(ConnectorList)
         case agent(String)
         case browse(String?)
         case browsed(FolderListing)
@@ -62,11 +64,13 @@ public struct PersonaFeature: Sendable {
             case saved(APIPersona)
             case deleted(String)
             case chat(APIPersona)
+            case connectors
         }
     }
 
     @Dependency(\.personas) private var personas
     @Dependency(\.plugins) private var plugins
+    @Dependency(\.connectors) private var connectors
     @Dependency(\.dismiss) private var dismiss
 
     public init() {}
@@ -79,7 +83,7 @@ public struct PersonaFeature: Sendable {
                 return .none
             case .task:
                 return .concatenate(
-                    state.isNew ? .none : load(state), offer(state), models(state), machines(state))
+                    state.isNew ? .none : load(state), offer(state), models(state), machines(state), link(state))
             case .agent(let agent):
                 (state.draft.agent, state.draft.model, state.draft.effort) = (agent, "", "")
                 return models(state)
@@ -109,6 +113,8 @@ public struct PersonaFeature: Sendable {
             state.lists = lists
         case .machines(let machines):
             state.machines = machines
+        case .linked(let list):
+            state.connectors = list
         case .addSkill(let name):
             return perform(state, BlockAction(action: "add_skill", values: ["name": .string(name)]))
         case .failed(let error):
@@ -173,6 +179,11 @@ extension PersonaFeature {
     private func machines(_ state: State) -> Effect<Action> {
         let (personas, server) = (personas, state.server)
         return run { await $0(.machines(try await personas.machines(server))) }
+    }
+
+    private func link(_ state: State) -> Effect<Action> {
+        let (connectors, server) = (connectors, state.server)
+        return .run { send in if let list = try? await connectors.list(server) { await send(.linked(list)) } }
     }
 
     private func browse(_ state: inout State, _ path: String?) -> Effect<Action> {

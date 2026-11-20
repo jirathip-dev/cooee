@@ -1,22 +1,50 @@
 import CooeeCore
 import SwiftUI
 
+internal struct PersonaActions {
+    internal var close: () -> Void
+    internal var save: () -> Void
+    internal var clear: () -> Void
+    internal var chat: () -> Void
+    internal var agent: @MainActor @Sendable (String) -> Void = { _ in }
+    internal var browse: () -> Void = {}
+    internal var more: () -> Void = {}
+    internal var delete: (() -> Void)?
+    internal var photo: () -> Void = {}
+    internal var sprite: (String?) -> Void = { _ in }
+    internal var skill: (String) -> Void = { _ in }
+    internal var catalogue: () -> Void = {}
+
+    internal init(
+        close: @escaping () -> Void = {}, save: @escaping () -> Void = {}, clear: @escaping () -> Void = {},
+        chat: @escaping () -> Void = {}
+    ) {
+        self.close = close
+        self.save = save
+        self.clear = clear
+        self.chat = chat
+    }
+}
+
 internal struct PersonaChoices {
     internal var agents: [AgentOption]
     internal var models: [String]
     internal var efforts: [String]
     internal var machines: [MachineRow]
+    internal var connectors: ConnectorList
 
     internal init(
         agents: [AgentOption] = [],
         models: [String] = [],
         efforts: [String] = [],
-        machines: [MachineRow] = []
+        machines: [MachineRow] = [],
+        connectors: ConnectorList = ConnectorList()
     ) {
         self.agents = agents
         self.models = models
         self.efforts = efforts
         self.machines = machines
+        self.connectors = connectors
     }
 }
 

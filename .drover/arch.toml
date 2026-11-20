@@ -1,7 +1,7 @@
 # drover arch-check (#356, docs/architecture/hot-files/adr.md): a generated file is what `generate` writes, and a
 # code file stays under 800 lines (the baseline's offenders may only shrink). Frozen lists start with slice 1 (q1720).
 frozen = ["apple/Sources/CooeeApp/Live.swift", "apple/Sources/CooeeCore/Models.swift", "apple/Sources/CooeeFeatures/Clients.swift", "apple/Tests/CooeeUITests/Frames.swift", "apple/UITests/LiveUITests.swift", "crates/cooee-core/src/root.rs", "crates/cooee-server/src/root.rs", "docs/api.md", "docs/architecture.md", "justfile"]
-generated = ["Cargo.lock", "README.md", "crates/cooee-core/src/chat.rs", "crates/cooee-core/src/lib.rs", "crates/cooee-core/src/shed.rs", "crates/cooee-core/src/store.rs", "crates/cooee-server/src/chief/tools/mod.rs", "crates/cooee-server/src/lib.rs", "crates/cooee-server/src/login.rs", "crates/cooee-server/src/mcp.rs", "crates/cooee-server/src/push.rs", "crates/cooee-server/src/routes/mod.rs", "crates/cooee/src/cmd/mod.rs", "crates/cooee/tests/support/mod.rs"]
+generated = ["Cargo.lock", "README.md", "crates/cooee-core/src/chat.rs", "crates/cooee-core/src/lib.rs", "crates/cooee-core/src/shed.rs", "crates/cooee-core/src/store.rs", "crates/cooee-server/src/chief/tools/mod.rs", "crates/cooee-server/src/lib.rs", "crates/cooee-server/src/login.rs", "crates/cooee-server/src/mcp.rs", "crates/cooee-server/src/push.rs", "crates/cooee-server/src/routes/mod.rs", "crates/cooee-server/src/screens/mod.rs", "crates/cooee/src/cmd/mod.rs", "crates/cooee/tests/support/mod.rs"]
 generate = "scripts/gen.sh"
 
 [[size]]

@@ -1,6 +1,3 @@
-//! `GET /screens/settings/{devices,signins,machines,plugins}` (#312): each one list of rows from the data its JSON
-//! route reads (`GET /devices`, the sign-ins sheet, `GET /machines`, `GET /plugins`).
-
 use std::{collections::HashMap, sync::Arc, time::Duration};
 
 use blocks::{Block, Label, List, Row, Screen, Tone, Toned};
@@ -23,7 +20,7 @@ const DROVER: Duration = Duration::from_secs(2);
 fn list(id: &str, title: &str, rows: Vec<Row>) -> Block {
     let rows: Vec<Block> = rows.into_iter().map(|r| Block::Row(Box::new(r))).collect();
     let list = Block::List(Box::new(List::new(rows).id(id)));
-    super::core(Screen::default().id(id).title(title).blocks(vec![list]))
+    crate::http::core(Screen::default().id(id).title(title).blocks(vec![list]))
 }
 
 fn row(id: impl Into<String>, title: impl Into<String>, subtitle: impl Into<String>) -> Row {
@@ -175,4 +172,11 @@ pub async fn machines(cx: &Cx) -> Result<Answer<Block>> {
 pub async fn plugins(cx: &Cx) -> Result<Answer<Block>> {
     let rows = plugin_rows(cx).await;
     Ok(Answer(rows.map(|r| list("plugins", "Plugins", r))))
+}
+
+pub(super) fn routes(b: topcoat::router::RouterBuilder) -> topcoat::router::RouterBuilder {
+    b.route(devices)
+        .route(signins)
+        .route(machines)
+        .route(plugins)
 }

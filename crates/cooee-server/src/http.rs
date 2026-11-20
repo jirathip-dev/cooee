@@ -301,3 +301,21 @@ pub(crate) async fn persona_save(cx: &Cx, p: Agent) -> Result<Answer<Agent>> {
     })
     .await
 }
+
+pub(crate) fn core(screen: blocks::Screen) -> blocks::Block {
+    blocks::Block::Screen(Box::new(screen.source("core")))
+}
+
+pub(crate) fn bundled(text: &str) -> Result<blocks::Screen, HubError> {
+    match serde_json::from_str(text).map_err(refused)? {
+        blocks::Block::Screen(screen) => Ok(*screen),
+        _ => Err(refused("a bundled screen is no screen")),
+    }
+}
+
+pub(crate) fn fields(value: impl serde::Serialize) -> blocks::Fields {
+    match serde_json::to_value(value) {
+        Ok(serde_json::Value::Object(fields)) => fields,
+        _ => blocks::Fields::new(),
+    }
+}

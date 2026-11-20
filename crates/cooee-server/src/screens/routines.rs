@@ -1,7 +1,3 @@
-//! `GET /screens/settings/routines` (#690): the default runs-a-day cap and each routine with its cap and today's
-//! tally (ran, skipped idle, skipped capped); `POST /screens/action` on it sets the default (`default`) or a
-//! routine's own cap (`cap`, empty: back to the default), each answering the screen.
-
 use blocks::{Block, Label, List, Row, Screen, Tone, Toned};
 use cooee_core::routines::{Edit, Mode};
 use serde_json::Value;
@@ -34,7 +30,7 @@ async fn fill(cx: &Cx) -> Result<Block, HubError> {
     let rows: Vec<Block> = rows.into_iter().map(|r| Block::Row(Box::new(r))).collect();
     let list = Block::List(Box::new(List::new(rows).id("routines")));
     let screen = Screen::default().id("routines").title("Routines");
-    Ok(super::core(screen.blocks(vec![list])))
+    Ok(crate::http::core(screen.blocks(vec![list])))
 }
 
 fn row(g: &Guarded) -> Row {
@@ -98,4 +94,8 @@ pub(super) async fn action(cx: &Cx, a: Act) -> Result<Value, HubError> {
         other => return Err(refused(format!("no action {other}"))),
     }
     serde_json::to_value(fill(cx).await?).map_err(refused)
+}
+
+pub(super) fn routes(b: topcoat::router::RouterBuilder) -> topcoat::router::RouterBuilder {
+    b.route(guards)
 }

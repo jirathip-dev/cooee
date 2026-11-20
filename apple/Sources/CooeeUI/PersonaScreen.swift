@@ -12,7 +12,8 @@ internal struct PersonaScreen: View {
         PersonaEditBlocks(
             draft: $store.draft,
             choices: PersonaChoices(
-                agents: store.agents, models: store.models, efforts: store.efforts, machines: store.machines
+                agents: store.agents, models: store.models, efforts: store.efforts, machines: store.machines,
+                connectors: store.connectors
             ),
             screen: store.screen ?? .bundledPersona,
             error: store.error,
@@ -61,6 +62,7 @@ internal struct PersonaScreen: View {
         actions.photo = { store.choosingPhoto = true }
         actions.sprite = sprite
         actions.skill = { store.send(.addSkill($0)) }
+        actions.catalogue = { store.send(.delegate(.connectors)) }
         return actions
     }
 }
