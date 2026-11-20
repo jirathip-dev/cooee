@@ -178,6 +178,8 @@ pub enum Skip {
     Rate,
     /// Its wake script exited 0.
     Quiet,
+    /// An event or a wake came at its runs-a-day cap (#690).
+    Capped,
 }
 
 /// What a prompt's `{{…}}` read: a schedule's due time (ms) in a UTC offset (minutes), or an event.

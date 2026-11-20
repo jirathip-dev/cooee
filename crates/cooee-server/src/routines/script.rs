@@ -84,7 +84,10 @@ impl Runner {
         };
         match (s.mode, ran.ok) {
             (Mode::Wake, true) => Outcome::Skipped { why: Skip::Quiet },
-            (Mode::Wake, false) => self.prompt(r, &ran.said, key),
+            (Mode::Wake, false) => match self.admit_wake(r, crate::hub::now()) {
+                Ok(()) => self.prompt(r, &ran.said, key),
+                Err(why) => Outcome::Skipped { why },
+            },
             (Mode::Post, ok) => {
                 let text = format!("⟳ {}: {}", r.name, ran.said);
                 if let Err(e) = self.hub.say(&thread, Body::Note { text }) {

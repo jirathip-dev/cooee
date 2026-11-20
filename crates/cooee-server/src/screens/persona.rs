@@ -61,10 +61,10 @@ pub async fn persona(cx: &Cx) -> Result<Response> {
 /// `{screen, block, action, values}` from a core screen's block.
 #[derive(Deserialize)]
 pub struct Act {
-    screen: String,
-    action: String,
+    pub(super) screen: String,
+    pub(super) action: String,
     #[serde(default)]
-    values: Map<String, Value>,
+    pub(super) values: Map<String, Value>,
 }
 
 /// `POST /screens/action`: on `/screens/persona/<id>`, `save` puts `values` as the persona and answers it, `clear`
@@ -77,7 +77,7 @@ pub async fn action(cx: &Cx, Json(a): Json<Act>) -> Result<Answer<Value>> {
         .strip_prefix("/screens/persona/")
         .map(str::to_owned)
     else {
-        return Ok(Answer(Err(refused(format!("no screen {}", a.screen)))));
+        return Ok(Answer(super::routines::action(cx, a).await));
     };
     match a.action.as_str() {
         "save" => match serde_json::from_value::<Agent>(Value::Object(a.values)) {
