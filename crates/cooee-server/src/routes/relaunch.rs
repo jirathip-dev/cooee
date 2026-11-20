@@ -32,7 +32,7 @@ async fn attach(cx: &Cx, Json(a): Json<Attach>) -> Result<Answer<cooee_core::Ite
         let list = profiles(&hub, (&data, config.as_deref()));
         let (_, _, recipe) = recipe(
             &logins,
-            (&data, config.as_deref(), &list),
+            (&data, config.as_deref(), &list, &hub.mcp()?),
             (&t.agent, Some(&t.account), &t.profile),
             PathBuf::new(),
             ((t.model, t.effort), t.setup),
@@ -75,7 +75,7 @@ async fn move_thread(cx: &Cx, Json(m): Json<Move>) -> Result<Answer<cooee_core::
         let list = profiles(&hub, (&data, dir.as_deref()));
         let (_, _, recipe) = recipe(
             &logins,
-            (&data, dir.as_deref(), &list),
+            (&data, dir.as_deref(), &list, &hub.mcp()?),
             (&t.agent, Some(&t.account), &t.profile),
             PathBuf::new(),
             ((t.model, t.effort), t.setup),

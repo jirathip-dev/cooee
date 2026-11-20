@@ -2,6 +2,7 @@ use std::path::Path;
 
 use cooee_core::{
     agents::Agent,
+    mcp::Server,
     provider::{Channel, Gap, Setup, Want},
 };
 
@@ -12,10 +13,11 @@ pub(crate) fn persona(
     logins: &Logins,
     a: &Agent,
     account: Option<&str>,
-    (data, config): (&Path, Option<&Path>),
+    (data, config, registry): (&Path, Option<&Path>, &[Server]),
 ) -> Result<Recipe, HubError> {
     let brief = a.brief(config);
-    let (off, run) = (a.off(), data.join("run").join(&a.id));
+    let off = a.off(registry);
+    let run = data.join("run").join(&a.id);
     let want = Want {
         brief: &brief,
         off: &off,
