@@ -63,16 +63,19 @@ extension Frame {
 
     @MainActor
     internal func matchesItsDesign(_ style: Style = .bundled, in folder: String? = nil) throws {
-        let rendered = try #require(render(style))
-        let file = Self.designs.appendingPathComponent(folder ?? self.folder).appendingPathComponent("\(name).png")
-        if ProcessInfo.processInfo.environment["COOEE_RECORD"] == "1" { try Self.write(rendered, to: file) }
-        try Self.keep(rendered, name)
+        try Self.matches(try #require(render(style)), name, in: folder ?? self.folder)
+    }
+
+    internal static func matches(_ rendered: CGImage, _ name: String, in folder: String) throws {
+        let file = designs.appendingPathComponent(folder).appendingPathComponent("\(name).png")
+        if ProcessInfo.processInfo.environment["COOEE_RECORD"] == "1" { try write(rendered, to: file) }
+        try keep(rendered, name)
         let design = try #require(NSImage(contentsOf: file)?.cgImage(forProposedRect: nil, context: nil, hints: nil))
         let got = try #require(Pixels(rendered))
         let want = try #require(Pixels(design))
         #expect(got.width == want.width && got.height == want.height)
-        let off = got.differing(from: want, by: Self.channelTolerance)
-        #expect(off <= Self.pixelTolerance, "\(name): \(off * 100)% of pixels differ")
+        let off = got.differing(from: want, by: channelTolerance)
+        #expect(off <= pixelTolerance, "\(name): \(off * 100)% of pixels differ")
     }
 
     @MainActor

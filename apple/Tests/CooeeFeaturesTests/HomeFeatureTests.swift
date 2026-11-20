@@ -198,4 +198,23 @@ extension HomeFeatureTests {
         #expect(asked.value == 2 && keptCopies.value == 1)
         await task.cancel()
     }
+
+    @Test internal func theMenuBarGlanceListsAsksThenRunningChatsAndPairsAPhoneToThisServer() {
+        var state = AppFeature.State(layout: testLayout, server: mini)
+        state.home?.personas = [coder]
+        state.home?.rows = [
+            row("t1", state: "working"), row("a1", state: "blocked"), lane("l1", state: "blocked"), row("d1"),
+            lane("l2"),
+        ]
+        let glance = state.glance(now: epoch)
+        #expect(glance.link == .running("mini.local") && !glance.stale)
+        #expect(glance.asks.map(\.id) == ["a1", "l1"] && glance.running.map(\.id) == ["t1", "l2"])
+        #expect(glance.asks.last?.workflow?.source == "drover")
+        #expect(glance.clocks == ["t1": "16:40", "l2": "16:40"])
+        #expect(glance.pair.flatMap { PairTarget(typed: $0.absoluteString) } == PairTarget(typed: "mini.local"))
+        state.home?.sync = .reconnecting
+        #expect(state.glance(now: epoch).link == .unreachable("mini.local", since: nil))
+        #expect(state.glance(now: epoch).stale && state.glance(now: epoch).asks.count == 2)
+        #expect(AppFeature.State(layout: testLayout, server: nil).glance(now: epoch) == Glance(link: .unpaired))
+    }
 }
