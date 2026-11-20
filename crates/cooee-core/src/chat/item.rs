@@ -74,6 +74,9 @@ pub enum Body {
         /// When it ended, in Unix milliseconds.
         #[serde(default, skip_serializing_if = "Option::is_none")]
         ended: Option<u64>,
+        /// The rule that answered its request, in plain words.
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        ruled: Option<String>,
     },
     /// The agent asks before running a tool.
     Approval {

@@ -211,7 +211,8 @@ impl FakeShed {
         } else if prompt.contains("Run `sleep 120`") {
             return Some(self.sleep_until_cancel(name, rx));
         } else {
-            return None;
+            let command = prompt.split("Run `").nth(1)?.split('`').next()?;
+            return Some(self.asks(name, command, rx));
         };
         let usage = AcpUsage {
             used: 1200,
@@ -295,6 +296,66 @@ impl FakeShed {
         self.emit(name, tool("t1", call, "completed"));
         self.emit(name, reply("Tests pass.", "end_turn"));
         self.report(name, "idle", None);
+    }
+
+    fn asks(
+        &self,
+        name: &str,
+        command: &str,
+        rx: &Receiver<Input>,
+    ) -> (Vec<EventKind>, &'static str) {
+        let n = self.shared.lock().unwrap().seq;
+        let (call, input) = (format!("r{n}"), json!({ "command": command }));
+        let row = |status: &str| EventKind::ToolCall {
+            id: call.clone(),
+            title: command.to_owned(),
+            status: status.to_owned(),
+            kind: Some("execute".to_owned()),
+            locations: Vec::new(),
+            raw_input: Some(input.clone()),
+        };
+        self.emit(name, row("pending"));
+        let option = |id: &str, kind: &str| ApprovalOption {
+            id: id.to_owned(),
+            name: id.to_owned(),
+            kind: kind.to_owned(),
+        };
+        let acp =
+            json!({ "toolCallId": call, "title": command, "kind": "execute", "rawInput": input });
+        self.emit(
+            name,
+            EventKind::ApprovalRequest {
+                id: format!("q{n}"),
+                tool: command.to_owned(),
+                options: vec![
+                    option("allow", "allow_once"),
+                    option("always", "allow_always"),
+                    option("reject", "reject_once"),
+                ],
+                call: Some(acp),
+            },
+        );
+        self.report(name, "blocked", Some(command));
+        let Ok(Input::Approve(chosen)) = rx.recv() else {
+            return (vec![reply("", "cancelled")], "cancelled");
+        };
+        let ran = chosen != "reject";
+        self.emit(name, EventKind::Approved { option: chosen });
+        let cwd = fs::read_to_string(self.dir.join(format!("cwd-{name}"))).unwrap();
+        if ran && command.starts_with("printf ") {
+            Command::new("sh")
+                .args(["-c", command])
+                .current_dir(cwd)
+                .status()
+                .unwrap();
+        }
+        self.report(name, "working", None);
+        let (status, said) = if ran {
+            ("completed", "Ran it.")
+        } else {
+            ("failed", "Denied.")
+        };
+        (vec![row(status), reply(said, "end_turn")], "end_turn")
     }
 
     fn approval(&self, name: &str, rx: &Receiver<Input>) -> (Vec<EventKind>, &'static str) {

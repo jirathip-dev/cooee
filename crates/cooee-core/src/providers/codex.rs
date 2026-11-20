@@ -41,18 +41,22 @@ impl Provider for Codex {
 
     fn session(&self, want: &Want) -> Setup {
         let on = |b| !want.off.contains(&b);
-        let config = json!({
+        let mut config = json!({
             "developer_instructions": want.brief,
             "tools": { "web_search": on(Builtin::Web) },
             "features": { "multi_agent": on(Builtin::SubAgents), "memories": on(Builtin::Memory) },
             "skills": { "bundled": { "enabled": on(Builtin::Skills) } },
         });
-        let mut gaps = vec![Gap::PersonalFiles];
+        let (mut gaps, mut env) = (vec![Gap::PersonalFiles], Vec::new());
         if want.ask_all {
             gaps.extend([Kind::Read, Kind::Search, Kind::Run].map(Gap::AsksNot));
+            let policy = ("approval_policy".to_owned(), json!("on-request"));
+            config.as_object_mut().map(|c| c.insert(policy.0, policy.1));
+            env.push(("INITIAL_AGENT_MODE".to_owned(), "read-only".to_owned()));
         }
+        env.push(("CODEX_CONFIG".to_owned(), config.to_string()));
         Setup {
-            env: vec![("CODEX_CONFIG".to_owned(), config.to_string())],
+            env,
             brief: Channel::System,
             gaps,
             ..Setup::default()

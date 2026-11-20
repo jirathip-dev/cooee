@@ -705,15 +705,22 @@ impl Agent {
         Ok((plain, secret))
     }
 
-    /// The harness built-ins its sessions turn off (#503): every one cooee replaces; web stays the harness's.
+    /// The harness built-ins its sessions turn off (#503): every one cooee replaces; web once a pick provides it.
     #[must_use]
-    pub fn off(&self) -> Vec<Builtin> {
-        vec![
+    pub fn off(&self, registry: &[mcp::Server]) -> Vec<Builtin> {
+        let picked = |s: &&mcp::Server| s.enabled && self.mcp.iter().any(|p| p.server == s.name);
+        let mut off = vec![
             Builtin::Browser,
             Builtin::Memory,
             Builtin::SubAgents,
             Builtin::Skills,
-        ]
+        ];
+        let web = registry
+            .iter()
+            .filter(picked)
+            .any(|s| s.provides.contains(&mcp::Provides::Web));
+        off.extend(web.then_some(Builtin::Web));
+        off
     }
 
     /// The folder its chats work in; none: each chat's own.

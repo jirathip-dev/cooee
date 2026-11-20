@@ -1,4 +1,4 @@
-use std::{io, sync::Mutex};
+use std::io;
 
 use cooee_core::{Body, Card, Change, Item, Plugin, Queued, agents, shed_proto::ApprovalOption};
 
@@ -130,27 +130,6 @@ impl Hub {
         };
         self.enqueue(id, &random_id, q)?;
         Ok(denied)
-    }
-
-    fn shed_approve(
-        &self,
-        live: &Mutex<Live>,
-        terminal: &str,
-        tapped: Item,
-        option: &str,
-    ) -> Result<Option<Item>, HubError> {
-        if let Err(e) = self.shed.approve(terminal, option) {
-            let mut live = lock(live);
-            let untapped = live.chat.update(tapped.id, 0, |b| {
-                if let Body::Approval { tapped, card, .. } = b {
-                    *tapped = None;
-                    card.said = None;
-                }
-            });
-            live.publish(self, untapped.map(Change::Item).into_iter().collect())?;
-            return Err(e.into());
-        }
-        Ok(Some(tapped))
     }
 
     /// Plugin `plugin`'s card (#553 rows 30–33, 35): choices (the recommended one first), a config diff to apply

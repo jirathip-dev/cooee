@@ -16,24 +16,29 @@ impl Chat {
         let ended = matches!(status.as_str(), "completed" | "failed").then_some(at);
         let found = self.find(|b| matches!(b, Body::Tool { call, .. } if *call == id));
         let kind = read.kind;
-        let body = move |subject| Body::Tool {
+        let body = move |subject, ruled| Body::Tool {
             call: id,
             subject,
             action: kind,
             status,
             ended,
+            ruled,
         };
         let item = match found {
             Some(n) => self.update(n, seq, |b| {
+                let ruled = match b {
+                    Body::Tool { ruled, .. } => ruled.take(),
+                    _ => None,
+                };
                 let subject = match b {
                     Body::Tool {
                         subject, action, ..
                     } if !facts && *action == kind => std::mem::take(subject),
                     _ => read.subject,
                 };
-                *b = body(subject);
+                *b = body(subject, ruled);
             }),
-            None => Some(self.push(at, seq, body(read.subject))),
+            None => Some(self.push(at, seq, body(read.subject, None))),
         };
         item.map(Change::Item).into_iter().collect()
     }
@@ -104,6 +109,7 @@ impl Chat {
                         Body::Approval {
                             chosen: None,
                             plugin: None,
+                            card: Card { request: None, .. },
                             ..
                         }
                     )
@@ -158,6 +164,16 @@ impl Chat {
         )));
         changes.push(self.state("ended", Some(text)));
         changes
+    }
+
+    /// Tool call `call`'s row says the rule that answered its request.
+    pub fn ruled(&mut self, call: &str, words: String) -> Option<Item> {
+        let n = self.find(|b| matches!(b, Body::Tool { call: c, .. } if c == call))?;
+        self.update(n, 0, |b| {
+            if let Body::Tool { ruled, .. } = b {
+                *ruled = Some(words);
+            }
+        })
     }
 
     /// Records `by`'s tap of `option` on approval `id` at `now`. `None` when it isn't an approval or was already
