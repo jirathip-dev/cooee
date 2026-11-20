@@ -7,7 +7,7 @@ import Testing
 
 @Suite(.serialized)
 internal struct MenuBarFrames {
-    private static let pair = URL(string: "https://mini.tail2b4.ts.net/pair")
+    private static let pair = URL(string: "https://server.example.com/pair")
 
     private static func chat(
         _ persona: String, _ state: LaneState, title: String, last: String = "", ago: String,

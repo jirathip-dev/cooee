@@ -18,7 +18,7 @@ public struct MenuPanel: View {
             } else {
                 live
                 Rule()
-                PairQR(server: "mini", dimmed: snapshot.asOf != nil)
+                PairQR(server: "server", dimmed: snapshot.asOf != nil)
             }
             Rule()
             MenuItem(title: "Open Cooee", keys: "⌘O", strong: true)

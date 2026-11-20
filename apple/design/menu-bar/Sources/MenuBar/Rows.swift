@@ -112,7 +112,7 @@ internal struct PairQR: View {
     internal var body: some View {
         let palette = look.palette
         HStack(spacing: 14) {
-            QRCode(text: "https://\(server).tail2b4.ts.net/pair", size: 96)
+            QRCode(text: "https://\(server).example.com/pair", size: 96)
                 .padding(6).background(.white, in: .rect(cornerRadius: 10))
                 .opacity(dimmed ? 0.25 : 1)
             VStack(alignment: .leading, spacing: 4) {
@@ -122,7 +122,7 @@ internal struct PairQR: View {
                         ? "Pairing needs the server." : "Scan with the iPhone camera, then approve its check word here."
                 )
                 .ui(12, .regular, look).foregroundStyle(palette.mute).fixedSize(horizontal: false, vertical: true)
-                Text("\(server).tail2b4.ts.net").ui(11, .regular, look).monospaced().foregroundStyle(palette.mute)
+                Text("\(server).example.com").ui(11, .regular, look).monospaced().foregroundStyle(palette.mute)
                     .lineLimit(1)
             }
             Spacer(minLength: 0)
