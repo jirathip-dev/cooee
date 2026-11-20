@@ -28,6 +28,9 @@ account = "work"                # optional: its provider's account (else the one
 settings = "settings.json"      # optional: an agent settings file, its hooks the agent's guard
 policy = "ask"                  # optional: shed's approval policy, ask, allow or deny
 
+[[fallback]]                    # optional, repeatable, in order: at a usage limit a card offers these (#76)
+agent = "codex-acp"             # the ACP agent, with `account` optional
+
 [env]                           # optional: plain values ({thread}: the thread's id), secrets as secret:<NAME>
 API_KEY = "secret:API_KEY"
 
@@ -37,7 +40,7 @@ tools = ["get_issue"]           # optional: the tools it may use (none: all)
 ```
 
 A malformed `agent.toml` hides that agent only; the log names its file and the line or key, never its text. The API
-never sets the launch keys (`account`, `settings`, `env`, `mcp`, `policy`): they are edited by hand. A plugin brings
+never sets the launch keys (`account`, `settings`, `env`, `mcp`, `policy`, `fallback`): they are edited by hand. A plugin brings
 its own as `[[profiles]]` in its `cooee-plugin.toml` ([plugins.md](plugins.md)), lent as read-only agents
 `<plugin>/<name>` while it is installed and on. The first `cooee serve` of this build (or `cooee config migrate`;
 `--dry-run` prints the plan and writes nothing) moves the old `personas/`, `profiles/`, `<data>/personas/` and

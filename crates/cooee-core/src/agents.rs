@@ -33,6 +33,8 @@ pub enum Role {
     Plain,
     /// One of herdsman's orchestrators: an installed drover is attached to it.
     Orchestrator,
+    /// cooee's own persona (#664): only the folder `chief` has it.
+    Chief,
 }
 
 /// How an agent's native chat reads (#242).
@@ -58,6 +60,10 @@ make it with create_routine when they agree.";
 /// What a [`Style::Chat`] agent's new session is told after its brief.
 pub const PLAIN: &str =
     "Answer short, plain and conversational: summarise, and give the details only when asked.";
+
+/// What a call's utterance (#663) is told before it, unless its persona's `spoken` says otherwise.
+pub const SPOKEN: &str = "Spoken reply: answer in one to three short plain sentences, no markdown, lists or code; \
+it is read aloud.";
 
 /// The consolidation routine's mark on its runs (#219), and its watermark's key with the persona's id after a `-`.
 pub const CONSOLIDATE: &str = "consolidate";
@@ -107,7 +113,7 @@ what you found matches the owner's notify rule, else SILENT: and why.";
 
 /// A persona's heartbeat (#498): off unless `on`; at `when` (default hourly) a run looks at what is new and stays
 /// silent unless its notify rule matches, on `model` and `effort` (empty: its provider's cheapest), at most `per_day`
-/// runs in any 24 hours (none: [`Heartbeat::PER_DAY`]).
+/// runs a local day (none: [`Heartbeat::PER_DAY`]).
 #[derive(Debug, Clone, Default, PartialEq, Eq, Deserialize, Serialize)]
 #[serde(default, deny_unknown_fields)]
 pub struct Heartbeat {
@@ -122,14 +128,14 @@ pub struct Heartbeat {
     /// Its effort (empty: the provider's lowest).
     #[serde(skip_serializing_if = "String::is_empty")]
     pub effort: String,
-    /// At most this many runs in any 24 hours.
+    /// At most this many runs a local day.
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub per_day: Option<usize>,
+    pub per_day: Option<crate::routines::Cap>,
 }
 
 impl Heartbeat {
-    /// The runs in any 24 hours when `per_day` is unset.
-    pub const PER_DAY: usize = 4;
+    /// The runs a local day when `per_day` is unset.
+    pub const PER_DAY: crate::routines::Cap = crate::routines::Cap(4);
 
     /// When it runs: `when`, else hourly on the hour.
     #[must_use]
@@ -204,18 +210,50 @@ pub struct Agent {
     /// shed's approval policy: `ask`, `allow` or `deny`.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub policy: Option<String>,
+    /// The agents its chats may continue on when this one hits a usage limit (#76), in the order offered.
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub fallback: Vec<Seat>,
     /// Its consolidation routine (#219); a save that leaves it out keeps it.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub consolidate: Option<Consolidate>,
     /// Its heartbeat (#498); a save that leaves it out keeps it.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub heartbeat: Option<Heartbeat>,
+    /// What a call's utterance is told before it (#663), in place of [`SPOKEN`]; empty: nothing. A save that leaves
+    /// it out keeps it.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub spoken: Option<String>,
     /// Its files' [`disk::version`] when read; a save naming an older one is refused (#360), one naming none isn't.
     #[serde(skip_serializing_if = "String::is_empty")]
     pub version: String,
     /// Set for a plugin's profile read as an agent: read-only, no folder.
     #[serde(skip)]
     pub lent: Option<Lent>,
+}
+
+/// One agent and account of a fallback chain (#76).
+#[derive(Debug, Clone, Default, PartialEq, Eq, Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct Seat {
+    /// The ACP agent (`shed agents` id).
+    pub agent: String,
+    /// Its provider's account (none: the provider's default).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub account: Option<String>,
+}
+
+/// An agent and account a thread saw hit its usage limit (#76).
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct Capped {
+    /// The ACP agent.
+    pub agent: String,
+    /// Its account (empty: the system default).
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    pub account: String,
+    /// When it resets, as the harness said it (empty: not said).
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    pub resets: String,
 }
 
 /// What only a plugin's agent has.
@@ -355,6 +393,9 @@ const FILES: [&str; 3] = ["agent.toml", "INSTRUCTIONS.md", "CHARACTER.md"];
 
 fn load(d: &Path, id: &str) -> Result<Agent, String> {
     let a = parse(&d.join("agent.toml"))?;
+    if a.role == Role::Chief && id != crate::chief::ID {
+        return Err("only cooee's own Chief, folder chief, has role chief".to_owned());
+    }
     let md = |n: &str| fs::read_to_string(d.join(n)).unwrap_or_default();
     let folder = match a.folder.as_str() {
         "" | "scratch" => a.folder.clone(),
@@ -518,11 +559,18 @@ pub fn save(config: &Path, data: &Path, mut a: Agent) -> io::Result<Agent> {
         mcp: old.mcp,
         sites: old.sites,
         policy: old.policy,
+        fallback: old.fallback,
         consolidate: a.consolidate.or(old.consolidate),
         heartbeat: a.heartbeat.or(old.heartbeat),
+        spoken: a.spoken.or(old.spoken),
         lent: None,
         ..a
     };
+    if old.role == Role::Chief {
+        a.role = Role::Chief;
+    } else if a.role == Role::Chief {
+        return Err(refused("only cooee's own Chief has that role".to_owned()));
+    }
     a.check().map_err(|_| {
         refused("a persona needs a name, an agent, and an image or none as its avatar".to_owned())
     })?;
@@ -537,12 +585,18 @@ pub fn save(config: &Path, data: &Path, mut a: Agent) -> io::Result<Agent> {
     find(Some(config), data, &a.id)
 }
 
-/// Deletes agent `id`'s whole folder; its chats stay.
+/// Deletes agent `id`'s whole folder; its chats stay. Chief (#664) is never deleted.
 ///
 /// # Errors
-/// An unknown id, or a folder that can't be removed.
+/// An unknown id, Chief, or a folder that can't be removed.
 pub fn remove(config: &Path, id: &str) -> io::Result<()> {
-    fs::remove_dir_all(home(config, id)?.path())
+    let h = home(config, id)?;
+    if parse(&h.path().join("agent.toml")).is_ok_and(|a| a.role == Role::Chief) {
+        return Err(refused(
+            "Chief can't be deleted: rename it instead.".to_owned(),
+        ));
+    }
+    fs::remove_dir_all(h.path())
 }
 
 /// Agent `id`'s chat places: the `header-strip` and `chat-cards` places of its plugins, in its order and theirs.

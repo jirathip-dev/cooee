@@ -27,4 +27,8 @@ extension Client {
     public func archive(_ id: String, _ archived: Bool) async throws {
         try await post("/threads/\(id)/archive", Archive(archived: archived))
     }
+
+    public func close(_ id: String) async throws {
+        try await post("/threads/\(id)/close", [String: String]())
+    }
 }

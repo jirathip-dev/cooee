@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 
 mod pack;
 
-pub use pack::{STYLES, Style, check, read_pack};
+pub use pack::{LoadScene, STYLES, Style, check, read_pack};
 
 /// blocks' contrast gate on `s`, as `cooee theme check` says a fail.
 ///
@@ -48,6 +48,9 @@ pub struct Theme {
     /// The Scene's layers: element ids in `scene.svg` (`viewBox` at most 400 × 320); none: no scene.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub scene: Vec<String>,
+    /// What the Scene draws for its host's load; none: the weather sky.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub load_scene: Option<LoadScene>,
     /// The theme's word per state key (`working needs done fail idle merged loading empty-threads`); a missing key
     /// says the plain word.
     #[serde(default)]
@@ -582,7 +585,7 @@ pub(crate) mod tests {
         assert_eq!(refused, Vec::<String>::new());
         assert_eq!(looks.default, "plain");
         assert_eq!(looks.themes.keys().collect::<Vec<_>>(), ["plain"]);
-        assert_eq!(looks.schemes.len(), 12);
+        assert_eq!(looks.schemes.len(), 14);
         for (name, s) in &looks.schemes {
             assert_eq!(gate(s), Ok(()), "{name}");
         }
@@ -591,7 +594,7 @@ pub(crate) mod tests {
         assert_eq!(looks.default, "farm");
         assert_eq!(
             looks.themes.keys().collect::<Vec<_>>(),
-            ["farm", "garden", "kitchen", "plain"]
+            ["bush", "farm", "garden", "kitchen", "plain"]
         );
         assert!(
             looks
@@ -614,7 +617,7 @@ pub(crate) mod tests {
             .map(|e| e.unwrap().path())
             .collect();
         dirs.push(packs().join("starter"));
-        assert_eq!(dirs.len(), 4, "{dirs:?}");
+        assert_eq!(dirs.len(), 5, "{dirs:?}");
         for dir in dirs {
             assert_eq!(check(&dir), Ok("theme"), "{}", dir.display());
         }

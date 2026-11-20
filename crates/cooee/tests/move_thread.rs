@@ -344,3 +344,142 @@ fn a_switch_starts_the_other_agent_with_the_brief_and_a_handoff_in_the_same_thre
     assert_eq!(kinds(&cooee, &id), ["you", "agent", "note", "you", "agent"]);
     assert_eq!(kept, persona());
 }
+
+fn card(cooee: &Cooee, id: &str, n: usize) -> Value {
+    let deadline = Instant::now() + Duration::from_secs(10);
+    loop {
+        let items = cooee.json(&format!("/threads/{id}/messages"))["items"].clone();
+        let cards: Vec<Value> = items
+            .as_array()
+            .unwrap()
+            .iter()
+            .filter(|i| i["kind"] == "approval" && i["form"] == "fallback")
+            .cloned()
+            .collect();
+        if cards.len() >= n || Instant::now() > deadline {
+            assert_eq!(cards.len(), n, "{items}");
+            return cards[n - 1].clone();
+        }
+        thread::sleep(Duration::from_millis(20));
+    }
+}
+
+fn options(card: &Value) -> Vec<(String, String)> {
+    let all = card["options"].as_array().unwrap().iter();
+    all.map(|o| {
+        let s = |k: &str| o[k].as_str().unwrap().to_owned();
+        (s("id"), s("name"))
+    })
+    .collect()
+}
+
+fn chained() -> (FakeShed, Cooee, String) {
+    let dir = scratch("fallback");
+    support::agent(
+        &dir,
+        "ada",
+        "name = \"Ada\"\nagent = \"fake-acp\"\n\n[[fallback]]\nagent = \"other-acp\"\n",
+        "Be brief.",
+    );
+    let shed = FakeShed::start(&dir.join("shed"), version());
+    let agents = json!([
+        { "id": "fake-acp", "version": "1.0.0", "distribution": "npx", "cmd": ["fake-acp"] },
+        { "id": "other-acp", "version": "1.0.0", "distribution": "npx", "cmd": ["fake-acp"] },
+    ]);
+    fs::write(shed.dir.join("agents.json"), agents.to_string()).unwrap();
+    let cooee = support::Cooee::start(&dir, &shed.dir);
+    let new = json!({ "agent": "fake-acp", "profile": "ada", "text": "echo hello", "random_id": "start" });
+    let (status, body) = cooee.post("/threads", &new);
+    assert_eq!(status, 200, "{body}");
+    let id = serde_json::from_str::<Value>(&body).unwrap()["id"]
+        .as_str()
+        .unwrap()
+        .to_owned();
+    replies(&cooee, &id, 1);
+    (shed, cooee, id)
+}
+
+fn lane(shed: &FakeShed, agent: &str) -> String {
+    let log = shed.cli_log();
+    let run = log
+        .lines()
+        .find(|l| l.contains(&format!("run --acp {agent}")));
+    let name = run.unwrap().split("--name ").nth(1).unwrap();
+    name.split(' ').next().unwrap().to_owned()
+}
+
+#[test]
+fn a_limit_asks_for_the_next_agent_of_the_chain_and_its_pick_takes_the_turn_with_a_handoff_until_every_one_is_capped()
+ {
+    let (shed, cooee, id) = chained();
+    let first = format!("cooee-{id}");
+    shed.report(&first, "error", Some("boom"));
+    let deadline = Instant::now() + Duration::from_secs(10);
+    while row(&cooee, &id)["state"] != "error" {
+        assert!(Instant::now() < deadline, "{}", row(&cooee, &id));
+        thread::sleep(Duration::from_millis(20));
+    }
+    assert_eq!(kinds(&cooee, &id), ["you", "agent"], "an error is no limit");
+
+    shed.limit(&first);
+    let asked = card(&cooee, &id, 1);
+    assert_eq!(asked["tool"], "fake-acp capped until 3pm, continue on");
+    let pair = |a: &str, b: &str| (a.to_owned(), b.to_owned());
+    let picks = [pair("other-acp", "other-acp"), pair("wait", "wait")];
+    assert_eq!(options(&asked), picks);
+    let tap = |item: &Value, option: &str| {
+        let body = json!({ "item": item["id"], "option": option });
+        cooee.post(&format!("/threads/{id}/approve"), &body)
+    };
+    let (status, body) = tap(&asked, "other-acp");
+    assert_eq!(status, 200, "{body}");
+    let items = replies(&cooee, &id, 3);
+    let lane = lane(&shed, "other-acp");
+    let prompts = shed.sent(&lane);
+    assert_eq!(prompts.len(), 1, "{prompts:?}");
+    let go_on = "Go on with my last message: the agent before you hit its usage limit.";
+    let said = [
+        "Be brief.",
+        "Its first message: echo hello",
+        "reply: You've hit your limit · resets 3pm",
+        go_on,
+    ];
+    assert!(
+        said.iter().all(|s| prompts[0].contains(s)),
+        "{}",
+        prompts[0]
+    );
+    let shown: Vec<&Value> = items
+        .iter()
+        .map(|i| i.get("text").unwrap_or(&i["chosen"]))
+        .collect();
+    assert_eq!(
+        shown[2..6],
+        [
+            &json!("You've hit your limit · resets 3pm"),
+            &json!("other-acp"),
+            &json!("now on other-acp · later turns run there"),
+            &json!(go_on),
+        ]
+    );
+    assert_eq!(row(&cooee, &id)["agent"], "other-acp");
+    assert_eq!(tap(&asked, "other-acp").0, 200);
+    assert_eq!(shed.cli_log().matches("run --acp other-acp").count(), 1);
+
+    shed.report(&lane, "rate-limited", Some("9am"));
+    let out = card(&cooee, &id, 2);
+    let all = "every agent in this chat's chain is capped; fake-acp resets first, 3pm";
+    assert_eq!(out["tool"], format!("other-acp capped until 9am: {all}"));
+    let picks = [
+        pair("fake-acp", "fake-acp (capped until 3pm)"),
+        pair("wait", "wait"),
+    ];
+    assert_eq!(options(&out), picks);
+    assert_eq!(tap(&out, "wait").0, 200);
+    let waited = card(&cooee, &id, 2);
+    assert_eq!(
+        (&waited["chosen"], &waited["line"]),
+        (&json!("wait"), &json!("waiting for its reset"))
+    );
+    assert_eq!(row(&cooee, &id)["agent"], "other-acp");
+}

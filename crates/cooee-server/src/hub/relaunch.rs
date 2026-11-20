@@ -34,14 +34,15 @@ impl Hub {
         self.relaunch(id, (&folder, machine), (&agent, recipe), None)
     }
 
-    /// Switches thread `id` to ACP agent `agent` (#503), set up by `recipe`: a new session gets its brief and a handoff
+    /// Switches thread `id` to ACP agent `agent` (#503) and `recipe`'s account (#76): a new session gets its brief and a handoff
     /// of the thread so far, as `relaunch` says; the thread keeps its id.
     ///
     /// # Errors
-    /// [`HubError::Refused`] while a turn is under way, or when it already runs on `agent`; as `relaunch`.
+    /// [`HubError::Refused`] while a turn is under way, or when it already runs on `agent` and that account; as
+    /// `relaunch`.
     pub fn switch(&self, id: &str, agent: &str, recipe: &Recipe) -> Result<Item, HubError> {
         let (folder, machine, was) = self.idle(id)?;
-        if was == agent {
+        if was == agent && lock(&*self.live(id)?).meta.account == recipe.account {
             return Err(HubError::Refused(format!("it already runs on {agent}")));
         }
         let handoff = history::handoff(&self.store, id, 4_000)?;
@@ -132,7 +133,9 @@ impl Hub {
             agent.clone_into(&mut live.meta.agent);
             live.meta.account.clone_from(&recipe.account);
             (live.meta.model, live.meta.effort) = (recipe.model.clone(), recipe.effort.clone());
-            format!("now on {agent} · later turns run there")
+            let on = Some(recipe.account.as_str()).filter(|a| !a.is_empty());
+            let on = on.map_or_else(|| agent.to_owned(), |a| format!("{agent} · {a}"));
+            format!("now on {on} · later turns run there")
         } else if live.meta.machine == machine {
             format!("now in {} · later turns run here", short(folder))
         } else {

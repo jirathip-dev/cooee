@@ -104,7 +104,8 @@ impl Hub {
             .type_line(&a.terminal, v)
             .map_err(|e| e.to_string())?;
         let said = entered(&a.name);
-        self.queue(id, &said, &format!("secret-{item}"), &[]).ok();
+        self.queue(id, &said, &format!("secret-{item}"), &[], None)
+            .ok();
         Ok(said)
     }
 }

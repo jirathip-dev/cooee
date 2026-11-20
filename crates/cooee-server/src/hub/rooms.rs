@@ -295,6 +295,7 @@ impl Hub {
             random_id: q.random_id,
             files: q.files,
             routine: None,
+            via: None,
         };
         let item = l.chat.said(now(), 0, OWNER.to_owned(), body);
         let idle = l.meta.round.is_empty();
@@ -380,7 +381,7 @@ impl Hub {
                 room.clone_into(&mut r.room);
             })
         } else {
-            self.send(&session, &prompt, &random_id, &[])
+            self.send(&session, &prompt, &random_id, &[], None)
                 .map(|_| session)
         };
         self.started(room, &persona, started)

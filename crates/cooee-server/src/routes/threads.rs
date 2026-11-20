@@ -23,8 +23,8 @@ use topcoat::{
 use crate::{
     Hub, HubError, Out, Resume, Slice, Upload,
     http::{
-        Answer, Created, Data, Name, Paired, allowed, blocking, hub, logins, plain, profiles,
-        provider_name, recipe, thread_id,
+        Answer, Created, Data, Name, Paired, Tag, allowed, blocking, hub, logins, plain, profiles,
+        provider_name, recipe, seated, thread_id,
     },
     pairing, plugin,
 };
@@ -139,7 +139,7 @@ struct New {
     #[serde(default)]
     folder: PathBuf,
     text: String,
-    random_id: String,
+    random_id: Tag,
     #[serde(default)]
     account: Option<String>,
     #[serde(default)]
@@ -183,11 +183,11 @@ async fn create(cx: &Cx, Json(new): Json<New>) -> Result<Answer<Created>> {
             hub.create_later(
                 (&agent, &name),
                 &folder,
-                (&new.text, &new.random_id),
+                (&new.text, &new.random_id.0),
                 recipe,
             )?
         } else {
-            hub.create(&agent, &folder, &new.text, &new.random_id, &recipe)?
+            hub.create(&agent, &folder, &new.text, &new.random_id.0, &recipe)?
         };
         let ours = list.into_iter().find(|a| a.id == profile).and_then(|a| {
             let name = a.id.split_once('/')?.1.to_owned();
@@ -271,9 +271,10 @@ async fn restart(cx: &Cx) -> Result<Answer<()>> {
 #[derive(Deserialize)]
 struct Message {
     text: String,
-    random_id: String,
+    random_id: Tag,
     #[serde(default)]
     files: Vec<File>,
+    via: Option<cooee_core::Via>,
 }
 
 #[derive(Deserialize)]
@@ -300,7 +301,7 @@ async fn send(cx: &Cx, Json(m): Json<Message>) -> Result<Answer<cooee_core::Item
     let a = Again::of(cx);
     off(move || {
         let (send, files) = (
-            |f: &[_]| a.hub.send(&a.id, &m.text, &m.random_id, f),
+            |f: &[_]| a.hub.send(&a.id, &m.text, &m.random_id.0, f, m.via),
             m.uploads()?,
         );
         match send(&files) {
@@ -318,7 +319,7 @@ async fn hand_back(cx: &Cx, Json(m): Json<Message>) -> Result<Answer<cooee_core:
     let id = thread_id(cx);
     Ok(Answer(
         blocking(cx, move |hub| {
-            hub.resume_handoff(&id, &m.text, &m.random_id)
+            hub.resume_handoff(&id, &m.text, &m.random_id.0)
         })
         .await,
     ))
@@ -329,7 +330,7 @@ async fn queue(cx: &Cx, Json(m): Json<Message>) -> Result<Answer<Vec<cooee_core:
     let id = thread_id(cx);
     Ok(Answer(
         blocking(cx, move |hub| {
-            hub.queue(&id, &m.text, &m.random_id, &m.uploads()?)
+            hub.queue(&id, &m.text, &m.random_id.0, &m.uploads()?, m.via)
         })
         .await,
     ))
@@ -466,8 +467,14 @@ async fn approve(cx: &Cx, Json(a): Json<Approve>) -> Result<Response> {
         }
     }
     let by = request_context::<Paired>(cx).0.label.clone();
+    let (logins, data) = (logins(cx), app_context::<Data>(cx));
+    let (data, dir) = (data.0.clone(), data.1.clone());
     Answer(
         blocking(cx, move |hub| {
+            if let Some(seat) = hub.fallback_seat(&id, a.item, &a.option) {
+                let recipe = seated(hub, &logins, (&data, dir.as_deref()), &id, &seat)?;
+                return hub.fall_back((&id, a.item), &a.option, &recipe, &by);
+            }
             hub.approve(&id, a.item, &a.option, a.value.as_deref(), &by)
         })
         .await,

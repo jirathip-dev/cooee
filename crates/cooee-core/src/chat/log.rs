@@ -173,6 +173,7 @@ mod tests {
                 random_id: "r".to_owned(),
                 files: Vec::new(),
                 routine: None,
+                via: None,
             },
         };
         let chat = Chat::from_versions((0..5).map(|i| you(&format!("v{i}"))).collect());

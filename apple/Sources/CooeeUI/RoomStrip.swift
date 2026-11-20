@@ -37,7 +37,7 @@ internal struct MemberStrip: View {
                 }
             Text(member.name).ui(13, .semibold, look).lineLimit(1).card(
                 stage, stage?.color(\.ink) ?? palette.foreground)
-            Text(stage == nil ? state.rawValue : member.word).ui(12, .regular, look).lineLimit(1)
+            Text(stage == nil ? state.rawValue : look.word(member.state)).ui(12, .regular, look).lineLimit(1)
                 .foregroundStyle(state.color(palette)).card(stage, state.color(palette))
         }
         .padding(.vertical, 6).padding(.horizontal, 2).frame(maxWidth: .infinity)

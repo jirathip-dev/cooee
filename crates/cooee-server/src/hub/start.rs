@@ -345,7 +345,7 @@ impl Hub {
             .into_iter()
             .filter(|s| !s.is_empty())
             .collect::<Vec<_>>();
-        self.send_after(id, text, random_id, &[], &before.join("\n\n"))?;
+        self.send_after(id, text, random_id, &[], &before.join("\n\n"), None)?;
         Ok(())
     }
 }

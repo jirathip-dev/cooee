@@ -126,13 +126,14 @@ internal struct MenuFeatureTests {
             ])
     }
 
-    @Test internal func theMotionSwitchAndAPickedSpriteAreKept() async {
+    @Test internal func theMotionSwitchTheNightPickAndAPickedSpriteAreKept() async {
         let store = store()
         await store.send(.motion(false)) { $0.settings.motion = false }
         #expect(!store.state.settings.moves(reduceMotion: false))
         await store.send(.sprite("coder", "blk")) { $0.settings.sprites = ["farm": ["coder": "blk"]] }
         await store.send(.sprite("coder", nil)) { $0.settings.sprites = ["farm": [:]] }
-        #expect(calls.all == ["save system modern farm -", "save system modern farm -", "save system modern farm -"])
+        await store.send(.night(true)) { $0.settings.night = true }
+        #expect(calls.all == Array(repeating: "save system modern farm -", count: 4))
     }
 
     @Test internal func aRefusedIconChangeSaysWhichTileToTapAgain() async {

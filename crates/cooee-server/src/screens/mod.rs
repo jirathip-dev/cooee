@@ -3,6 +3,7 @@ pub mod home;
 pub mod locked;
 pub mod menu;
 pub mod persona;
+pub mod routines;
 pub mod settings;
 
 use blocks::{Block, Screen};
@@ -18,6 +19,7 @@ pub(crate) fn routes(b: RouterBuilder) -> RouterBuilder {
         .route(attach::attach)
         .route(persona::persona)
         .route(persona::action)
+        .route(routines::guards)
         .route(locked::pairing)
         .route(locked::reset_layout)
 }

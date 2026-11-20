@@ -129,7 +129,7 @@ const X = {
       <p class=aq>The fix round's branch is still checked out in its herdr-era worktree. Move it out?</p>
       <p class=chc><button type=button class=rec>move it out, wip/ first</button><button type=button>refuse LANE_LIVE</button></p>
       <p class=oth><input aria-label="other answer" placeholder="other…"></p><p class=ds>takes the recommendation in 12m</p></div>
-    <div class="ak nh"><p class=ah><span><b>synergy #2708</b> · review 3</span><span>needs-human · 12m</span></p>
+    <div class="ak nh"><p class=ah><span><b>acme #2708</b> · review 3</span><span>needs-human · 12m</span></p>
       <p class=aq>Round limit: review 3 FAIL · 1 finding</p>
       <p class=chc><button type=button>one more round</button><button type=button>merge anyway</button><button type=button>park</button></p></div>`,
   more: () => {

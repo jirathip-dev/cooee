@@ -94,7 +94,7 @@ Served by herdsman as the conductor's Queue header-strip screen (`screens.rs` `q
 | 59 | Stop, Kill with dry-run confirm, Clean with reasons | ● | partial | `WorkingPill` Stop; Queue live row long-press Stop | no Kill, no Clean | #380 | Long-press a lane, Kill: the confirm shows the unpushed/dirty line |
 | 60 | Lane figures animated by state | | partial | figure: scene sprite / ascii glyph / tone dot | not animated; herdsman sends no `coat` | #246 | A working lane's figure animates |
 | 61 | Herd scene: ranch, state bands, gate | | partial | `PinnedRow` `scene-strip` | no per-repo ranch, bands or gate | #181 | Scene: one figure per lane in its band |
-| 62 | Weather, day/night, repo switching | | missing | — | none of it | #382 | Tap [☾]: night; tap ›: next repo |
+| 62 | Weather, day/night, repo switching | | done | `LaneStage` `Sky`: the scene block's `load` → clear/cloudy/storm, night 19–07 or [☾] (`Settings.night`), › taps its `next` | — (the plugin sends `load` and `next`; no swipe) | #382 | Tap [☾]: night; tap ›: next repo |
 
 ## drover asks (rows 63–71) and run cards
 

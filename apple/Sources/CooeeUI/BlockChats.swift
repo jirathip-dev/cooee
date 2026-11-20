@@ -55,7 +55,7 @@ internal struct PinnedRow: View {
                 .padding(.horizontal, stage == nil ? 0 : 6).padding(.vertical, stage == nil ? 0 : 2)
                 .background(stage?.color(\.paper).opacity(0.85) ?? .clear, in: .capsule)
             if look.figures != .avatar {
-                Text(persona.word).ui(10, .regular, look)
+                Text(look.word(persona.state)).ui(10, .regular, look).lineLimit(1).minimumScaleFactor(0.7)
                     .foregroundStyle(persona.state == .needs ? palette.red : stage == nil ? palette.mute : ink)
             }
         }
@@ -128,7 +128,9 @@ internal struct ChatRow: View {
             if row.state == .working && !look.textMarks {
                 Image(systemName: "ellipsis").font(.system(size: 13, weight: .bold)).foregroundStyle(palette.cyan)
             }
-            if word { Text("\(row.state.word) ·").ui(14, .regular, look).foregroundStyle(palette.state(row.state)) }
+            if let status = row.status ?? (word ? row.state.word : nil) {
+                Text("\(status) ·").ui(14, .regular, look).foregroundStyle(palette.state(row.state))
+            }
             if topics > 1 {
                 FolderGlyph(folder: folder, size: 11, slash: true).foregroundStyle(palette.mute)
                 Text("\(Text(row.title).fontWeight(.semibold)) · \(row.last)").ui(14, .regular, look)

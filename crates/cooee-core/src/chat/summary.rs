@@ -54,8 +54,11 @@ pub struct Summary {
     /// The machine it runs on (#148; empty: this host).
     pub machine: String,
     /// The state: `connecting`, `unconnected` (its start failed), `working`, `blocked`, `done`, `error`, `limited`,
-    /// `ended` or empty.
+    /// `ended` or empty; a Workflow session's also `offline` (its host's link is down) or the tool's own (`parked`).
     pub state: String,
+    /// The state's reason: shed's note, or what ended it.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub note: Option<String>,
     /// The last item's text, short.
     pub last: String,
     /// When the last item was made, in Unix milliseconds (none: no items).

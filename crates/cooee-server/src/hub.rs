@@ -2,7 +2,11 @@ use std::{
     collections::{BTreeMap, HashMap, VecDeque},
     fs, io,
     path::{Path, PathBuf},
-    sync::{Arc, Condvar, Mutex, MutexGuard, OnceLock, PoisonError, atomic::AtomicBool, mpsc},
+    sync::{
+        Arc, Condvar, Mutex, MutexGuard, OnceLock, PoisonError,
+        atomic::{AtomicBool, AtomicU64, Ordering},
+        mpsc,
+    },
     thread,
     time::{Duration, Instant, UNIX_EPOCH},
 };
@@ -19,16 +23,21 @@ use serde_json::json;
 use tokio::sync::broadcast;
 
 use crate::push::{Push, note};
+use glance::{Glance, glance, summary};
 
 mod ask;
 mod cards;
+mod chief;
 mod events;
 mod expire;
+mod fallback;
 mod folders;
 mod frames;
+mod glance;
 mod handoff;
 mod heartbeat;
 mod home;
+mod lanes;
 mod mcp;
 mod models;
 mod plugins;
@@ -45,15 +54,20 @@ mod surface;
 #[cfg(test)]
 mod tests;
 mod threads;
+pub(crate) use chief::Me;
 pub use mcp::Called;
 use mcp::Proposed;
 pub use rooms::Starter;
 pub use screen::{Input, Screen};
 pub use setup::Update;
 
+static REV: AtomicU64 = AtomicU64::new(0);
+
 const REPLAY: u64 = 5 * 60 * 1000;
 
 const LAG: usize = 256;
+
+const TEXT_TICK: u64 = 40;
 
 const IDLE: u64 = 10 * 60 * 1000;
 
@@ -93,8 +107,8 @@ pub enum HubError {
 /// One page event: its number in the thread, its SSE event name and its JSON.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Out {
-    /// Counts up from 1 per thread since this server started.
-    pub seq: u64,
+    /// The hub-wide rev: counts up from 1 across every thread since this server started.
+    pub rev: u64,
     /// `item`, `text` or `state`.
     pub event: &'static str,
     /// The JSON data.
@@ -105,8 +119,11 @@ struct Live {
     meta: Thread,
     chat: Chat,
     applied: u64,
-    seq: u64,
     ring: VecDeque<(u64, Out)>,
+    trimmed: u64,
+    unsent: String,
+    text_at: u64,
+    flushing: bool,
     tx: Option<broadcast::Sender<Out>>,
     was: String,
     moved: u64,
@@ -121,80 +138,11 @@ struct Live {
     held: Vec<Event>,
 }
 
-#[derive(Clone)]
-struct Glance {
-    ask: Option<(String, String, String)>,
-    last: String,
-    speaker: String,
-    at: Option<u64>,
-    unseen: usize,
-    routine: String,
-}
-
-fn glance(live: &Live) -> Glance {
-    let items = &live.chat.items;
-    let from = items.partition_point(|i| i.id <= live.meta.read.unwrap_or(0));
-    let after = items.get(from..).unwrap_or_default().iter();
-    let unseen = after.filter(|i| !matches!(i.body, Body::You { .. }));
-    summary(&live.meta, items, unseen.count())
-}
-
-fn summary(meta: &Thread, items: &[Item], unseen: usize) -> Glance {
-    let ask = items.iter().find_map(|i| match &i.body {
-        Body::Approval {
-            tool,
-            tapped: None,
-            chosen: None,
-            card,
-            ..
-        } if card.line.is_none() => Some((meta.room.clone(), i.speaker.clone(), tool.clone())),
-        _ => None,
-    });
-    let last = items.last();
-    let text = last.map_or("", |i| match &i.body {
-        Body::Link { text, title, .. } if text.is_empty() => title,
-        Body::You { text, .. }
-        | Body::Agent { text, .. }
-        | Body::Note { text }
-        | Body::Frame { text, .. }
-        | Body::Link { text, .. }
-        | Body::Ask { text, .. }
-        | Body::Handoff { text, .. }
-        | Body::Ended { text } => text,
-        Body::Tool { title, .. } => title,
-        Body::Approval { tool, .. } => tool,
-        Body::Plan { .. } => "plan",
-        Body::Routine { name, .. } => name,
-    });
-    let waiting = items.iter().find_map(|i| match &i.body {
-        Body::Approval { tool, .. } if waits(&i.body) => Some(format!("{tool} waiting")),
-        _ => None,
-    });
-    Glance {
-        ask,
-        last: waiting
-            .unwrap_or_else(|| text.lines().last().unwrap_or("").chars().take(80).collect()),
-        at: last.map(|i| i.at),
-        speaker: last.map(|i| i.speaker.clone()).unwrap_or_default(),
-        unseen,
-        routine: routine_of(meta, items),
-    }
-}
-
 struct After {
     next: Result<Option<Queued>, HubError>,
     reply: Option<Body>,
     seat: (String, String),
     asked: String,
-}
-
-fn routine_of(meta: &Thread, items: &[Item]) -> String {
-    let you = items.iter().rev().find_map(|i| match &i.body {
-        Body::You { routine, .. } => Some(routine),
-        _ => None,
-    });
-    let mark = meta.routine.as_ref().or_else(|| you?.as_ref());
-    mark.map(|m| m.name.clone()).unwrap_or_default()
 }
 
 /// A slice of a thread's items, with the turn in progress and the page event it is current to.
@@ -208,7 +156,7 @@ pub struct Slice {
     pub skipped_after: usize,
     /// The turn in progress.
     pub turn: Turn,
-    /// Resume the event stream after this (`<boot>.<seq>`).
+    /// Resume the event stream after this (`<boot>.<rev>`).
     pub cursor: String,
     /// The first message while its thread connects, not yet an item.
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -335,6 +283,7 @@ pub struct Hub {
     updates: Mutex<HashMap<(String, u64), (String, Update)>>,
     registry: Mutex<()>,
     turns: mpsc::Sender<String>,
+    texts: mpsc::Sender<String>,
     starter: OnceLock<Starter>,
     asks: Mutex<HashMap<String, mpsc::Sender<String>>>,
     models: Mutex<Vec<cooee_core::models::Offered>>,
@@ -393,8 +342,11 @@ impl Live {
             was: chat.turn.state.clone(),
             meta,
             chat,
-            seq: 0,
             ring: VecDeque::new(),
+            trimmed: 0,
+            unsent: String::new(),
+            text_at: 0,
+            flushing: false,
             tx: None,
             moved: now(),
             stuck: false,
@@ -410,8 +362,8 @@ impl Live {
     }
 
     fn trim(&mut self, now: u64) {
-        while self.ring.front().is_some_and(|(at, _)| at + REPLAY < now) {
-            self.ring.pop_front();
+        while let Some((_, out)) = self.ring.pop_front_if(|(at, _)| *at + REPLAY < now) {
+            self.trimmed = out.rev;
         }
     }
 
@@ -436,10 +388,40 @@ impl Live {
         self.tx = None;
     }
 
+    fn text(&mut self, at: u64, text: &str) -> bool {
+        self.unsent.push_str(text);
+        if at >= self.text_at + TEXT_TICK {
+            self.flush(at);
+        }
+        let schedule = !self.unsent.is_empty() && !self.flushing;
+        self.flushing |= schedule;
+        schedule
+    }
+
+    fn tick(&mut self, at: u64) -> Option<u64> {
+        let due = self.text_at + TEXT_TICK;
+        if !self.unsent.is_empty() && at < due {
+            return Some(due);
+        }
+        self.flush(at);
+        self.flushing = false;
+        None
+    }
+
+    fn flush(&mut self, at: u64) {
+        if !self.unsent.is_empty() {
+            self.text_at = at;
+            let text = std::mem::take(&mut self.unsent);
+            self.emit("text", json!({ "text": text }).to_string());
+        }
+    }
+
     fn emit(&mut self, event: &'static str, data: String) {
-        self.seq += 1;
+        if event != "text" && !self.unsent.is_empty() {
+            self.flush(now());
+        }
         let out = Out {
-            seq: self.seq,
+            rev: REV.fetch_add(1, Ordering::Relaxed) + 1,
             event,
             data,
         };
@@ -489,8 +471,15 @@ impl Live {
                         store.queue(&self.meta.id, &item)?;
                     }
                     self.emit("item", serde_json::to_string(&item).unwrap_or_default());
+                    if matches!(item.body, Body::Agent { .. }) {
+                        self.ring.retain(|(_, o)| o.event != "text");
+                    }
                 }
-                Change::Text(text) => self.emit("text", json!({ "text": text }).to_string()),
+                Change::Text(text) => {
+                    if self.text(now(), &text) {
+                        hub.texts.send(self.meta.id.clone()).ok();
+                    }
+                }
                 Change::State(turn) => self.emit("state", json!(turn).to_string()),
             }
         }
@@ -540,6 +529,7 @@ impl Hub {
             threads.insert(id, live);
         }
         let (turns, next) = mpsc::channel();
+        let (texts, unsent) = mpsc::channel();
         let hub = Arc::new(Self {
             home: home::Home::new(&threads),
             agents: Mutex::new((None, 0)),
@@ -566,6 +556,7 @@ impl Hub {
             updates: Mutex::default(),
             registry: Mutex::default(),
             turns,
+            texts,
             starter: OnceLock::new(),
             asks: Mutex::default(),
             models: Mutex::new(cooee_core::models::load(&data.join("models.json"))),
@@ -579,6 +570,12 @@ impl Hub {
                 if let Err(e) = worker.take_turn(&room) {
                     cooee_core::note!("cooee: room {room}: {e}");
                 }
+            }
+        });
+        let flusher = Arc::clone(&hub);
+        thread::spawn(move || {
+            for id in unsent {
+                flusher.flush_text(id);
             }
         });
         let follower = Arc::clone(&hub);
@@ -636,6 +633,17 @@ impl Hub {
             let mut live = lock(&live);
             live.trim(now);
             live.unload(now);
+        }
+    }
+
+    fn flush_text(&self, id: String) {
+        let Some(live) = lock(&self.threads).get(&id).cloned() else {
+            return;
+        };
+        let due = lock(&live).tick(now());
+        if let Some(due) = due {
+            cooee_core::clock::sleep(Duration::from_millis(due.saturating_sub(now())));
+            self.texts.send(id).ok();
         }
     }
 
@@ -733,25 +741,6 @@ impl Hub {
         let live = Arc::new(Mutex::new(Live::new(meta, Chat::default())));
         self.insert(id, t.name.clone(), &live);
         Some(live)
-    }
-
-    /// Drops the Workflow sessions whose terminal is not among `terminals` (listed at `at`): the tool that started
-    /// them cleaned them up (#33). One adopted since the listing stays.
-    pub fn prune(&self, terminals: &[TerminalInfo], at: u64) {
-        for live in self.all() {
-            let id = {
-                let live = lock(&live);
-                let listed = terminals.iter().any(|t| t.name == live.meta.terminal);
-                if live.meta.workflow.is_none() || listed || live.moved > at {
-                    continue;
-                }
-                live.meta.id.clone()
-            };
-            self.remove(&id);
-            if let Err(e) = self.store.remove(&id) {
-                cooee_core::note!("cooee: {e}");
-            }
-        }
     }
 
     /// The push subscriptions and key.

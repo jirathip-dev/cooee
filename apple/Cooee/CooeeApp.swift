@@ -12,6 +12,11 @@ internal struct CooeeMain: App {
     internal init() { CooeeShortcuts.updateAppShortcutParameters() }
 
     internal var body: some Scene {
-        WindowGroup { CooeeRoot() }
+        #if os(macOS)
+            WindowGroup(id: CooeeMenuBar.window) { CooeeRoot() }
+            CooeeMenuBar()
+        #else
+            WindowGroup { CooeeRoot() }
+        #endif
     }
 }
