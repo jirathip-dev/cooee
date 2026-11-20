@@ -1,0 +1,15 @@
+label = "Google Calendar"
+publisher = "Google (Google LLC)"
+url = "https://www.googleapis.com/calendar/v3/"
+builtin = "google-calendar"
+leaves = "The calendars and dates the persona asks for; Google already holds the events it reads."
+reviewed = 2026-11-20
+
+[auth]
+kind = "oauth"
+issuer = "https://accounts.google.com"
+scopes = ["https://www.googleapis.com/auth/calendar.readonly"]
+client = "owner"
+
+[tools]
+read = ["list_calendars", "list_events"]

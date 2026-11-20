@@ -168,7 +168,7 @@ async fn create(cx: &Cx, Json(new): Json<New>) -> Result<Answer<Created>> {
         let asked = new.folder.clone();
         let (agent, folder, mut recipe) = recipe(
             &logins,
-            (&data, config.as_deref(), &list),
+            (&data, config.as_deref(), &list, &hub.mcp()?),
             (&new.agent, new.account.as_deref(), profile),
             new.folder,
             (picked, new.setup),
@@ -232,7 +232,7 @@ impl Again {
         let list = profiles(&self.hub, (&self.data, config));
         let (_, _, recipe) = recipe(
             &self.logins,
-            (&self.data, config, &list),
+            (&self.data, config, &list, &self.hub.mcp()?),
             (&t.agent, Some(&t.account), &t.profile),
             PathBuf::new(),
             ((t.model, t.effort), t.setup),

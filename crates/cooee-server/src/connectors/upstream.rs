@@ -10,6 +10,7 @@ use cooee_core::{
 use serde_json::{Value, json};
 
 use super::{
+    Way,
     calls::{Decision, Permit, decide, offered},
     lock,
 };
@@ -266,8 +267,17 @@ impl super::Connectors {
                 return Ok(vec![error(&id, -32602, &e)]);
             }
         }
-        let (url, transport, _) = super::target(&s)?;
+        let (url, way, _) = super::target(&s)?;
         let headers = self.headers(&s, pick.account.as_deref(), now)?;
+        let transport = match way {
+            Way::Builtin(b) => {
+                return Ok(super::builtin::answer(b, &url, (&headers, now), msg)
+                    .into_iter()
+                    .map(|m| offered(only(m, pick.tools.as_deref()), &s))
+                    .collect());
+            }
+            Way::Mcp(t) => t,
+        };
         let key = (thread.to_owned(), server.to_owned());
         let held = lock(&self.sessions).get(&key).cloned();
         let session = if let Some(h) = held {

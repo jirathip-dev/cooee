@@ -138,7 +138,12 @@ pub(crate) fn provider_name(agent: &str, providers: &[cooee_core::Sheet]) -> Str
 
 pub(crate) fn recipe(
     logins: &Logins,
-    (data, config, list): (&std::path::Path, Option<&std::path::Path>, &[Agent]),
+    (data, config, list, registry): (
+        &std::path::Path,
+        Option<&std::path::Path>,
+        &[Agent],
+        &[cooee_core::mcp::Server],
+    ),
     (agent, account, id): (&str, Option<&str>, &str),
     folder: PathBuf,
     (mut picked, setup): ((String, String), bool),
@@ -165,7 +170,7 @@ pub(crate) fn recipe(
         let recipe = Recipe {
             mcp: a.mcp.iter().map(|k| k.server.clone()).collect(),
             machine: a.machine.clone(),
-            ..crate::hub::session::persona(logins, a, account, (data, config))?
+            ..crate::hub::session::persona(logins, a, account, (data, config, registry))?
         };
         (a.agent.clone(), a.work_folder().unwrap_or(folder), recipe)
     };
@@ -203,7 +208,7 @@ pub(crate) fn seated(
     }
     let (_, _, recipe) = recipe(
         logins,
-        (data, config, &list),
+        (data, config, &list, &hub.mcp()?),
         (&seat.agent, seat.account.as_deref(), &t.profile),
         PathBuf::new(),
         (Default::default(), t.setup),

@@ -369,3 +369,208 @@ fn a_token_is_pasted_once_and_sent_in_its_header() {
     assert!(e.contains("tailscale serve"), "{e}");
     assert!(c.signin(&oauth, "../x", ORIGIN, T0).is_err());
 }
+
+fn fake_google() -> (String, Arc<Mutex<Vec<String>>>) {
+    use base64::{Engine as _, engine::general_purpose::URL_SAFE_NO_PAD as B64};
+    let listener = TcpListener::bind("127.0.0.1:0").unwrap();
+    let base = format!("http://{}", listener.local_addr().unwrap());
+    let seen = Arc::new(Mutex::new(Vec::new()));
+    let s2 = Arc::clone(&seen);
+    thread::spawn(move || {
+        for s in listener.incoming() {
+            let mut s = BufReader::new(s.unwrap());
+            let mut line = String::new();
+            s.read_line(&mut line).unwrap();
+            loop {
+                let mut h = String::new();
+                s.read_line(&mut h).unwrap();
+                if h.trim().is_empty() {
+                    break;
+                }
+            }
+            s2.lock().unwrap().push(line.trim().to_owned());
+            let path = line.split(' ').nth(1).unwrap().split('?').next().unwrap();
+            let v = match path {
+                "/gmail/messages" => json!({ "messages": [{ "id": "m1" }, { "id": "m2" }] }),
+                "/gmail/messages/m1" | "/gmail/messages/m2" if line.contains("format=full") => {
+                    json!({
+                        "snippet": "hi",
+                        "payload": { "mimeType": "multipart/alternative", "headers": [{ "name": "Subject", "value": "Big" }],
+                                     "parts": [{ "mimeType": "text/plain", "body": { "data": B64.encode("x".repeat(20_000)) } }] }
+                    })
+                }
+                "/gmail/messages/m1" | "/gmail/messages/m2" => json!({
+                    "snippet": "y".repeat(1000),
+                    "payload": { "headers": [{ "name": "From", "value": "a@example.com" }, { "name": "Subject", "value": "Hello" }] }
+                }),
+                "/cal/users/me/calendarList" => {
+                    json!({ "items": [{ "id": "primary", "summary": "Me", "primary": true }] })
+                }
+                "/cal/calendars/primary/events" => json!({ "items": [
+                    { "id": "e1", "summary": "z".repeat(50_000), "start": { "dateTime": "2026-11-20T09:00:00Z" } }
+                ] }),
+                _ => json!({ "error": { "message": "not here" } }),
+            };
+            let status = if v.get("error").is_some() { 404 } else { 200 };
+            let v = v.to_string();
+            write!(
+                s.get_mut(),
+                "HTTP/1.1 {status} X\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{v}",
+                v.len()
+            )
+            .unwrap();
+        }
+    });
+    (base, seen)
+}
+
+fn call_builtin(
+    b: cooee_core::connectors::Builtin,
+    url: &str,
+    tool: &str,
+    args: &Value,
+) -> (String, bool) {
+    let url = cooee_core::connectors::HttpsUrl::try_from(url.to_owned()).unwrap();
+    let bearer = ["Authorization: Bearer acc-1".to_owned()];
+    let msg = json!({ "jsonrpc": "2.0", "id": 7, "method": "tools/call",
+                      "params": { "name": tool, "arguments": args } });
+    let got = super::builtin::answer(b, &url, (&bearer, T0), &msg);
+    let r = &got[0]["result"];
+    (
+        r["content"][0]["text"].as_str().unwrap().to_owned(),
+        r["isError"] == true,
+    )
+}
+
+#[test]
+fn a_builtin_offers_only_its_reviewed_read_tools_and_no_write_is_sent() {
+    use cooee_core::connectors::{Auth, Builtin, HttpsUrl, Target, entry};
+
+    use super::{builtin::answer, calls};
+    let (base, seen) = fake_google();
+    for (name, b, api) in [
+        ("gmail", Builtin::Gmail, "gmail"),
+        ("google-calendar", Builtin::GoogleCalendar, "cal"),
+    ] {
+        let e = entry(name).unwrap();
+        assert!(matches!(e.target, Target::Builtin { builtin, .. } if builtin == b));
+        assert!(e.tools.write.is_empty() && e.tools.never.is_empty());
+        assert!(matches!(&e.auth, Auth::OAuth { scopes, .. }
+                if !scopes.is_empty() && scopes.iter().all(|s| s.ends_with(".readonly"))));
+        let url = HttpsUrl::try_from(format!("{base}/{api}/")).unwrap();
+        let list = json!({ "jsonrpc": "2.0", "id": 1, "method": "tools/list" });
+        let listed: Vec<String> = answer(b, &url, (&[], T0), &list)[0]["result"]["tools"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|t| t["name"].as_str().unwrap().to_owned())
+            .collect();
+        assert_eq!(
+            listed, e.tools.read,
+            "{name}: the code offers what the entry reviewed"
+        );
+        let s = Server {
+            name: name.to_owned(),
+            kind: "stdio".to_owned(),
+            catalogue: true,
+            enabled: true,
+            ..Server::default()
+        };
+        for write in [
+            "send_mail",
+            "create_event",
+            "delete_event",
+            "trash_mail",
+            "modify",
+        ] {
+            assert!(
+                matches!(calls::decide(&s, write), calls::Decision::Deny),
+                "{write}"
+            );
+            let (said, failed) = call_builtin(b, url.as_str(), write, &json!({}));
+            assert!(failed && said.contains("reads only"), "{said}");
+        }
+    }
+    assert!(
+        seen.lock().unwrap().is_empty(),
+        "a refused tool sends nothing"
+    );
+    for (b, api, tool) in [
+        (Builtin::Gmail, "gmail", "search_mail"),
+        (Builtin::Gmail, "gmail", "read_mail"),
+        (Builtin::GoogleCalendar, "cal", "list_calendars"),
+        (Builtin::GoogleCalendar, "cal", "list_events"),
+    ] {
+        call_builtin(b, &format!("{base}/{api}/"), tool, &json!({ "id": "m1" }));
+    }
+    let seen = seen.lock().unwrap();
+    assert!(
+        seen.len() >= 4 && seen.iter().all(|l| l.starts_with("GET ")),
+        "{seen:?}"
+    );
+}
+
+#[test]
+fn a_builtin_result_keeps_its_size_caps() {
+    use cooee_core::connectors::Builtin;
+    let (base, seen) = fake_google();
+    let (gmail, calendar) = (format!("{base}/gmail/"), format!("{base}/cal/"));
+    let (found, _) = call_builtin(
+        Builtin::Gmail,
+        &gmail,
+        "search_mail",
+        &json!({ "query": "from:a", "limit": 1000 }),
+    );
+    assert!(
+        found.starts_with("m1 · ") && found.contains("Hello") && !found.contains(&"y".repeat(301)),
+        "{found}"
+    );
+    let (mail, failed) = call_builtin(Builtin::Gmail, &gmail, "read_mail", &json!({ "id": "m1" }));
+    assert!(!failed && mail.contains("Subject: Big"));
+    assert!(
+        mail.contains(&"x".repeat(8_000))
+            && !mail.contains(&"x".repeat(8_001))
+            && mail.ends_with("(cut at 8000 characters)")
+    );
+    let (calendars, _) = call_builtin(
+        Builtin::GoogleCalendar,
+        &calendar,
+        "list_calendars",
+        &json!({}),
+    );
+    assert_eq!(calendars, "primary · Me (primary)\n");
+    let (events, _) = call_builtin(
+        Builtin::GoogleCalendar,
+        &calendar,
+        "list_events",
+        &json!({}),
+    );
+    assert_eq!(
+        events.chars().count(),
+        40_000 + "… (cut at 40000 characters)".chars().count()
+    );
+    let (missing, failed) = call_builtin(
+        Builtin::GoogleCalendar,
+        &calendar,
+        "list_events",
+        &json!({ "calendar": "gone" }),
+    );
+    assert!(
+        failed && missing.contains("HTTP 404: not here"),
+        "{missing}"
+    );
+    let seen = seen.lock().unwrap();
+    assert!(
+        seen[0].contains("q=from%3Aa") && seen[0].contains("maxResults=25"),
+        "{}",
+        seen[0]
+    );
+    let listed = seen
+        .iter()
+        .find(|l| l.contains("/cal/calendars/primary/events"))
+        .unwrap();
+    assert!(
+        listed.contains("timeMin=2027-01-15T08%3A00%3A00Z") && listed.contains("singleEvents=true"),
+        "{listed}"
+    );
+}

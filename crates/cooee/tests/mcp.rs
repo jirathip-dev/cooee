@@ -513,6 +513,13 @@ fn the_mac_adds_toggles_and_removes_servers_with_references_only() {
         text.contains(r#"env = { "GIT_TOKEN" = "env:GIT_TOKEN" }"#),
         "{text}"
     );
+    fs::write(&config, text + "provides = [\"web\"]\n").unwrap();
+    assert!(cooee(&["mcp", "enable", "git"]).0);
+    let text = fs::read_to_string(&config).unwrap();
+    assert!(
+        text.ends_with("enabled = true\nprovides = [\"web\"]\n"),
+        "{text}"
+    );
 }
 
 const DROPPED: &str = "drop-v4lue-k9q2-unseen";
