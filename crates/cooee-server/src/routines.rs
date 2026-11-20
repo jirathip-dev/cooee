@@ -9,8 +9,8 @@ use cooee_core::{
     agents::{self, BEAT, CONSOLIDATE, CONSOLIDATION, HEARTBEAT, Heartbeat},
     history::{self, Beat},
     routines::{
-        Ask, Book, Delivery, Edit, Fields, Hooks, Inbound, Mark, Outcome, Paused, Place, Routine,
-        Routines, Run, Trigger, Who, local,
+        Ask, Book, Delivery, Edit, End, Ended, Fields, Hooks, Inbound, Mark, Outcome, Paused,
+        Place, Routine, Routines, Run, Trigger, Who, local,
     },
     secrets,
 };
@@ -155,19 +155,22 @@ impl Runner {
                 return Err(refused("NO_HOOKS: [hooks] isn't set up on this Mac"));
             }
             let list = self.list()?;
-            let r = Routine::make(&list, ask.clone(), &from, now).map_err(refused)?;
+            let r = Routine::make(&list, ask.clone(), &from, (now, self.offset(now)))
+                .map_err(refused)?;
             let tool = format!(
                 "save routine {}: {}, {}",
                 r.name,
-                r.when(),
+                self.when(&r, now),
                 placed(&r.place)
             );
             let runner = Arc::downgrade(self);
             let save = Box::new(move || {
                 let runner = runner.upgrade().ok_or("cooee is stopping")?;
+                let now = crate::hub::now();
+                let offset = runner.offset(now);
                 let saved = runner.change(|b| {
-                    let r = Routine::make(&b.routines, ask, &from, crate::hub::now())
-                        .map_err(refused)?;
+                    let r =
+                        Routine::make(&b.routines, ask, &from, (now, offset)).map_err(refused)?;
                     b.routines.push(r.clone());
                     Ok(r)
                 });
@@ -181,11 +184,54 @@ impl Runner {
                     .to_owned(),
             );
         }
-        self.make(id, ask, &from, now)?;
-        Ok(
-            "Made. The owner sees it in this chat and can change it in Settings › routines."
-                .to_owned(),
-        )
+        let r = self.make(id, ask, &from, now)?;
+        Ok(format!(
+            "Made routine {}. The owner sees it in this chat and can change it in Settings › routines; stop_routine ends it.",
+            r.id
+        ))
+    }
+
+    /// `stop_routine` by thread `id`'s agent (`token`: its MCP token): routine `routine` ends now, when this chat
+    /// made it; its chat gets the `Ended routine` line.
+    ///
+    /// # Errors
+    /// [`HubError::Refused`] for a wrong token, no such routine (`NO_ROUTINE`) or one another chat made (`NOT_YOURS`).
+    pub fn stop(
+        &self,
+        (id, token): (&str, &str),
+        routine: &str,
+        now: u64,
+    ) -> Result<String, HubError> {
+        let from = self.hub.token_of(id, token)?;
+        let r = self.change(|b| {
+            let r = b.routines.iter_mut().find(|r| r.id == routine);
+            let r = r.ok_or_else(|| refused(format!("NO_ROUTINE: no routine {routine}")))?;
+            if r.made_in != from.id {
+                return Err(refused(format!(
+                    "NOT_YOURS: routine {routine} was made in another chat"
+                )));
+            }
+            r.paused = Some(Paused::Ended(Ended {
+                at: now,
+                by: End::StopRoutine,
+            }));
+            Ok(r.clone())
+        })?;
+        let text = format!("Ended routine {}", r.name);
+        self.hub.say(id, Body::Note { text: text.clone() })?;
+        Ok(format!(
+            "{text}. The owner can resume or delete it in Settings › routines."
+        ))
+    }
+
+    /// Routine `r`'s trigger and end in words, as the chat and the persona panel show them.
+    pub(crate) fn when(&self, r: &Routine, now: u64) -> String {
+        let until = r.until(self.offset(now));
+        if until.is_empty() {
+            r.when()
+        } else {
+            format!("{} · {until}", r.when())
+        }
     }
 
     pub(crate) fn make(
@@ -196,14 +242,15 @@ impl Runner {
         now: u64,
     ) -> Result<Routine, HubError> {
         let r = self.change(|b| {
-            let r = Routine::make(&b.routines, ask, from, now).map_err(refused)?;
+            let r =
+                Routine::make(&b.routines, ask, from, (now, self.offset(now))).map_err(refused)?;
             b.routines.push(r.clone());
             Ok(r)
         })?;
         let body = Body::Routine {
             routine: r.id.clone(),
             name: r.name.clone(),
-            when: r.when(),
+            when: self.when(&r, now),
             place: placed(&r.place).to_owned(),
         };
         self.hub.say(id, body)?;
@@ -234,8 +281,8 @@ impl Runner {
         })
     }
 
-    /// Runs each routine whose due time passed by `now`, once, and records it; a paused one only moves on (no
-    /// burst when it resumes).
+    /// Ends each routine whose end time passed by `now`, then runs each whose due time passed, once, and records it; a
+    /// paused or ended one only moves on (no burst when it resumes).
     pub fn tick(&self, now: u64) {
         let offset = self.offset(now);
         self.consolidate(now, offset);
@@ -260,15 +307,18 @@ impl Runner {
             let Some(r) = book.routines.get_mut(at) else {
                 continue;
             };
-            let Some(due) = r.due(now, offset) else {
-                continue;
-            };
-            if r.paused.is_none() {
-                let outcome = self.run(r, &r.text(&Fields::Due(due, offset)), &r.key(due));
-                self.record(r, r.key(due), outcome, now);
+            let ended = r.end(now);
+            let due = r.due(now, offset);
+            if let Some(due) = due {
+                if r.paused.is_none() {
+                    let outcome = self.run(r, &r.text(&Fields::Due(due, offset)), &r.key(due));
+                    self.record(r, r.key(due), outcome, now);
+                }
+                r.last_due = due;
             }
-            r.last_due = due;
-            if let Err(e) = self.file.save(&book) {
+            if (ended || due.is_some())
+                && let Err(e) = self.file.save(&book)
+            {
                 cooee_core::note!("cooee: routines: {e}");
             }
         }

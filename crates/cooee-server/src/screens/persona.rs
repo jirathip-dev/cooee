@@ -234,7 +234,7 @@ async fn fill(cx: &Cx, id: String) -> Result<Block, HubError> {
     let all = routines::on(cx, |r| {
         Ok(r.list()?
             .into_iter()
-            .map(|x| (r.url(&x), x))
+            .map(|x| ((r.url(&x), r.when(&x, crate::hub::now())), x))
             .collect::<Vec<_>>())
     })
     .await?;
@@ -250,7 +250,7 @@ async fn fill(cx: &Cx, id: String) -> Result<Block, HubError> {
             .filter(|t| t.persona == p.id)
             .map(|t| t.id)
             .collect();
-        let mine = |(_, r): &&(Option<String>, Routine)| match &r.place {
+        let mine = |(_, r): &&((Option<String>, String), Routine)| match &r.place {
             Place::Chat { thread } => chats.contains(thread),
             Place::NewThread { who } => who.profile == p.id,
         };
@@ -339,11 +339,11 @@ fn library_rows(index: Option<&std::path::Path>, mine: &[Skill]) -> Vec<Skill> {
         .collect()
 }
 
-fn routine((url, r): &(Option<String>, Routine)) -> Value {
+fn routine(((url, when), r): &((Option<String>, String), Routine)) -> Value {
     let row = RoutineRow {
         id: &r.id,
         name: &r.name,
-        when: r.when(),
+        when: when.clone(),
         on: r.paused.is_none(),
         url: url.as_deref(),
     };

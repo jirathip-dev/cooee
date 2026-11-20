@@ -117,14 +117,15 @@ mod tests {
             }),
             prompt: "Triage {{title}}".to_owned(),
             place: String::new(),
+            until: None,
         };
         let from = crate::Thread {
             id: "t-1".to_owned(),
             ..crate::Thread::default()
         };
-        let e = Routine::make(&[], ask("bad name"), &from, 1).unwrap_err();
+        let e = Routine::make(&[], ask("bad name"), &from, (1, 0)).unwrap_err();
         assert!(e.starts_with("BAD_WEBHOOK"), "{e}");
-        let r = Routine::make(&[], ask("ALERTS_HOOK"), &from, 1).unwrap();
+        let r = Routine::make(&[], ask("ALERTS_HOOK"), &from, (1, 0)).unwrap();
         assert_eq!(r.when(), "on a POST signed with secret:ALERTS_HOOK");
         let long = Inbound {
             key: "k".to_owned(),
