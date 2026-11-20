@@ -21,7 +21,7 @@ internal struct ScreenTests {
         let names = try FileManager.default.contentsOfDirectory(atPath: Self.fixtures.path).filter {
             $0.hasSuffix(".json")
         }
-        #expect(names.count == 10)
+        #expect(names.count == 11)
         for name in names {
             let value = try Self.fixture(name)
             let again = try JSONDecoder().decode(JSONValue.self, from: JSONEncoder().encode(value))

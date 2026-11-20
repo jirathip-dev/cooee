@@ -29,12 +29,13 @@ internal struct ScreensTests {
     @Test internal func anActionPostsTheScreenTheActionAndItsValuesAndGetsOps() async throws {
         let ops = #"{"ops":[{"op":"merge","id":"waves","fields":{"value":"1"}}]}"#
         let server = CannedServer(["/p/hello/action": [Answer(headers: json, chunks: [ops])]])
-        let action = BlockAction(action: "wave", values: ["n": .number(2)])
+        let action = BlockAction(action: "wave", values: ["n": .number(2)], block: "q7")
         let answer = try await server.client().act(.plugin("hello"), screen: "hello", action)
         #expect(answer["ops"]?.items.count == 1)
         let sent = try server.decoded("/p/hello/action", as: JSONValue.self)
         #expect(
             sent.string("screen") == "hello" && sent.string("action") == "wave" && sent["values"]?["n"] == .number(2))
+        #expect(sent.string("block") == "q7")
     }
 
     @Test internal func aRefusedActionThrowsItsStatus() async throws {
@@ -85,10 +86,10 @@ internal struct ScreensTests {
         let folder = FileManager.default.temporaryDirectory.appending(path: "kept-\(UUID().uuidString)")
         let kept = KeptScreen(screen: .object(["title": .string("Queue")]), kept: Date(timeIntervalSince1970: 60))
         let screens = KeptScreens(folder: folder)
-        #expect(screens.load("https://mini|d|/screens/queue") == nil)
+        #expect(screens.load("https://mini|d|/screens/queue") as KeptScreen? == nil)
         screens.save("https://mini|d|/screens/queue", kept)
-        #expect(screens.load("https://mini|d|/screens/queue") == kept)
-        #expect(screens.load("https://mini|d|/screens/events") == nil)
+        #expect(screens.load("https://mini|d|/screens/queue") as KeptScreen? == kept)
+        #expect(screens.load("https://mini|d|/screens/events") as KeptScreen? == nil)
         try FileManager.default.removeItem(at: folder)
     }
 }

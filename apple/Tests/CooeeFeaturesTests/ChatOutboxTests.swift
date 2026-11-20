@@ -37,9 +37,9 @@ internal struct ChatOutboxTests {
         }
         #expect(store.state.sending)
         await store.receive(\.outbox.undelivered) {
-            $0.outbox[0].failure = "The agent stopped."
-            $0.draft = "hi"
+            ($0.outbox[0].failure, $0.draft, $0.error) = ("The agent stopped.", "hi", "The agent stopped.")
         }
+        await store.receive(\.link.toasted) { $0.error = nil }
         #expect(!store.state.sending)
         #expect(store.state.drawn == [.outgoing(Outgoing(id: -1, text: "hi", failure: "The agent stopped."))])
         await store.send(.outbox(.retry(-1))) {
@@ -62,7 +62,9 @@ internal struct ChatOutboxTests {
         await store.receive(\.outbox.undelivered) {
             $0.outbox[0].failure = "No agent."
             $0.draft = "hi"
+            $0.error = "No agent."
         }
+        await store.receive(\.link.toasted) { $0.error = nil }
         await store.send(.outbox(.retry(7)))
         #expect(store.state.error == nil)
     }
@@ -130,5 +132,18 @@ internal struct ChatOutboxTests {
         #expect(store.state.drawn == [.outgoing(Outgoing(id: 0, text: "hi", failure: ""))])
         await store.send(.outbox(.retry(0)))
         await store.receive(\.failed) { $0.error = "Shed is still down." }
+        await store.receive(\.link.toasted) { $0.error = nil }
+    }
+
+    @Test internal func restartOnTheGoneLineStartsTheAgentAgain() async {
+        let store = store(.thread("a1"), refusing: APIError(status: 502, text: "Shed is down."))
+        let calls = calls
+        store.dependencies.threads.restart = { _, thread in calls.record("restart \(thread)") }
+        await store.send(.outbox(.restart))
+        #expect(calls.all == ["restart a1"])
+        store.dependencies.threads.restart = { _, _ in throw APIError(status: 400, text: "The thread is closed.") }
+        await store.send(.outbox(.restart))
+        await store.receive(\.failed) { $0.error = "The thread is closed." }
+        await store.receive(\.link.toasted) { $0.error = nil }
     }
 }

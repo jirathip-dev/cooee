@@ -1,14 +1,16 @@
 use std::{
     io,
+    os::unix::fs::MetadataExt,
     path::{Path, PathBuf},
     sync::{Arc, Mutex, PoisonError},
+    time::SystemTime,
 };
 
 use cooee_core::{Apns, ApnsEnv, write_private};
 use p256::{PublicKey, SecretKey};
 use serde::{Deserialize, Serialize};
 
-use super::crypto::b64;
+use super::{crypto::b64, worker::Queue};
 
 /// A browser's push subscription, or a native device's APNs token.
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
@@ -39,6 +41,18 @@ pub struct Push {
     pub(super) key: Arc<Mutex<Option<SecretKey>>>,
     pub(super) apns: Option<Apns>,
     pub(super) bearer: Arc<Mutex<Option<(u64, String)>>>,
+    pub(super) subs: Cached<Vec<Sub>>,
+    pub(super) p8: Cached<SecretKey>,
+    pub(super) queue: Arc<Queue>,
+}
+
+pub(super) type Stamp = (u64, SystemTime, u64);
+
+pub(super) type Cached<T> = Arc<Mutex<Option<(Stamp, T)>>>;
+
+pub(super) fn stamp(path: &Path) -> Option<Stamp> {
+    let m = std::fs::metadata(path).ok()?;
+    Some((m.ino(), m.modified().ok()?, m.len()))
 }
 
 pub(super) static LOCK: Mutex<()> = Mutex::new(());
@@ -52,6 +66,9 @@ impl Push {
             key: Arc::default(),
             apns: None,
             bearer: Arc::default(),
+            subs: Arc::default(),
+            p8: Arc::default(),
+            queue: Arc::default(),
         }
     }
 
@@ -60,10 +77,22 @@ impl Push {
     }
 
     pub(super) fn load(&self) -> Vec<Sub> {
-        std::fs::read(self.path())
+        let (path, mut cache) = (
+            self.path(),
+            self.subs.lock().unwrap_or_else(PoisonError::into_inner),
+        );
+        let at = stamp(&path);
+        if let Some((was, subs)) = cache.as_ref()
+            && Some(*was) == at
+        {
+            return subs.clone();
+        }
+        let subs: Vec<Sub> = std::fs::read(path)
             .ok()
             .and_then(|b| serde_json::from_slice(&b).ok())
-            .unwrap_or_default()
+            .unwrap_or_default();
+        *cache = at.map(|at| (at, subs.clone()));
+        subs
     }
 
     pub(super) fn store(&self, subs: &[Sub]) -> io::Result<()> {

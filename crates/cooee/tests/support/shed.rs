@@ -245,6 +245,12 @@ impl FakeShed {
         self.report(name, "blocked", Some("Edit early.rs"));
     }
 
+    /// Terminal `name`'s program exits with code 1 by itself.
+    pub fn end(&self, name: &str) {
+        self.shared.lock().unwrap().stopped.insert(name.to_owned());
+        self.emit(name, EventKind::Exited { code: Some(1) });
+    }
+
     /// Starts ACP terminal `name` as another tool would, with `labels` (a Workflow session, #33).
     pub fn lane(&self, name: &str, labels: &[(&str, &str)]) {
         let labels = labels
@@ -288,9 +294,12 @@ impl FakeShed {
         procs.insert(name.to_owned(), Proc::default());
     }
 
-    /// Terminal `name` is gone, as after a shed restart.
+    /// Terminal `name` is gone and event seqs start again from 1, as after a shed restart.
     pub fn vanish(&self, name: &str) {
-        self.shared.lock().unwrap().gone.insert(name.to_owned());
+        let mut s = self.shared.lock().unwrap();
+        s.gone.insert(name.to_owned());
+        (s.seq, s.floor) = (0, 0);
+        s.ring.clear();
     }
 
     /// The variables the fake adapter last ran with, as `env` printed them.
@@ -519,7 +528,7 @@ impl FakeShed {
         let has = |l: &BTreeMap<String, String>| {
             want.iter().all(|(k, v)| l.get(k).is_some_and(|x| v == x))
         };
-        let listed = all.iter().filter(|(_, l)| has(l));
+        let listed = all.iter().filter(|(n, l)| has(l) && !self.no_link(n));
         let listed = listed.filter_map(|(n, _)| self.terminal(n).ok());
         json!(listed.collect::<Vec<_>>())
     }

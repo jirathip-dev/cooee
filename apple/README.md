@@ -33,4 +33,4 @@ TestFlight: a merge to `main` that touches `apple/` uploads the iPhone and the M
 The checks are the rules: `just apple-check` (`scripts/apple-check.sh`, in CI job `apple`) runs `swift format`
 (`.swift-format`), anti-slop (`tools/anti-slop-swift`, cooee's rules in `CooeeRules.swift`), SwiftLint
 (`.swiftlint.yml`), the tests, coverage (`scripts/apple-coverage.swift`) and Periphery (`.periphery.yml`).
-`.herdsman/rules.md` lists them in one line each.
+`.drover/rules.md` lists them in one line each.

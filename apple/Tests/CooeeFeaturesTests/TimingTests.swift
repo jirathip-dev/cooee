@@ -1,8 +1,6 @@
 import ComposableArchitecture
-import CooeeAPI
 import CooeeCore
 @testable import CooeeFeatures
-import Foundation
 import Testing
 
 @MainActor
@@ -18,7 +16,7 @@ internal struct TimingTests {
     }
 
     @Test internal func aBlockActionRecordsTapToPaintedOnceItsAnswerIsApplied() async {
-        let clock = clock
+        let (clock, drive) = (clock, BlockAction(action: "drive", values: [:]))
         var state = ScreenFeature.State(server: mini, source: .plugin("drover"), path: "/screens/queue", label: "Q")
         state.screen = LiveScreen(.object(["id": .string("queue")]))
         let store = TestStore(initialState: state) {
@@ -31,11 +29,11 @@ internal struct TimingTests {
                 return .object(["toast": .string("Driving")])
             }
         }
-        await store.send(.act(BlockAction(action: "drive", values: [:]))) { $0.acting = true }
+        await store.send(.act(drive)) { $0.pending = [drive] }
         #expect(calls.all.isEmpty)
         await clock.advance(by: .milliseconds(40))
         await store.receive(\.acted) {
-            $0.acting = false
+            $0.pending = []
             $0.said = "Driving"
             $0.asOf = epoch
         }

@@ -83,6 +83,18 @@ cmds() {
   mv "$dir/mod.rs.gen" "$dir/mod.rs"
 }
 
+# tools DIR: DIR/mod.rs, a `mod` line per Chief tool file (#664) and the table `ALL` of each file's `TOOL`, in name order.
+tools() {
+  dir=$1
+  {
+    for m in $(modules "$dir"); do printf 'mod %s;\n' "$m"; done
+    printf '\nuse crate::chief::Tool;\n\npub(crate) const ALL: &[Tool] = &[\n'
+    for m in $(modules "$dir"); do printf '    %s::TOOL,\n' "$m"; done
+    printf '];\n'
+  } >"$dir/mod.rs.gen"
+  mv "$dir/mod.rs.gen" "$dir/mod.rs"
+}
+
 crate crates/cooee-core/src "cooee's core: the model and its files. No HTTP." \
   accounts blocks chat config devices login providers root shed store
 module crates/cooee-core/src/chat
@@ -94,7 +106,8 @@ module crates/cooee-server/src/push
 routes crates/cooee-server/src/routes
 routes crates/cooee-server/src/screens
 crate crates/cooee-server/src "cooee's HTTP server: the native app's JSON API (docs/README.md)." \
-  connectors contrast editor gate http hub layout login look manage pairing passkey net plugin push root routes routines screens serve themes
+  chief connectors contrast editor gate http hub layout login look manage pairing passkey net plugin push root routes routines screens serve themes
+tools crates/cooee-server/src/chief/tools
 cmds crates/cooee/src/cmd
 flat crates/cooee/tests/support
 # today: README.md's list between its markers, from the `## Today` bullets of docs/*.md in file-name order, their ../ links made the README's.

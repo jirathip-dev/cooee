@@ -58,16 +58,19 @@ extension Client {
             let task = Task {
                 var last = since
                 var attempt = 0
+                var down = false
                 while !Task.isCancelled {
                     attempt += 1
                     do {
-                        if try await stream(id, last: &last, resume: attempt > 1, into: continuation) { return }
+                        if try await stream(id, last: &last, resume: attempt > 1, down: &down, into: continuation) {
+                            return
+                        }
                     } catch let error as APIError where error.status < 500 {
                         continuation.finish(throwing: error)
                         return
                     } catch {
-                        try? await clock.sleep(for: retry)
-                        continue
+                        down = true
+                        continuation.yield(.sync(Self.down(error)))
                     }
                     try? await clock.sleep(for: retry)
                 }
@@ -81,11 +84,16 @@ extension Client {
         _ id: String,
         last: inout String,
         resume: Bool,
+        down: inout Bool,
         into continuation: AsyncThrowingStream<StreamEvent, any Error>.Continuation
     ) async throws -> Bool {
         var request = try request("GET", "/threads/\(id)/events?since=\(last)")
         if resume { request.setValue(last, forHTTPHeaderField: "Last-Event-ID") }
-        return try await sse(request, id: last) { frame in
+        let (bytes, response) = try await session.bytes(for: request)
+        try Self.open(response)
+        if down { continuation.yield(.sync(.live)) }
+        down = false
+        return try await frames(bytes, id: last) { frame in
             last = frame.id
             guard let event = try Self.decode(frame.event, Data(frame.data.utf8)) else { return false }
             continuation.yield(event)
@@ -95,10 +103,24 @@ extension Client {
         }
     }
 
+    private static func down(_ error: any Error) -> Sync {
+        (error as? URLError)?.code == .notConnectedToInternet ? .offline : .reconnecting
+    }
+
+    private static func open(_ response: URLResponse) throws {
+        let status = try http(response).statusCode
+        if status >= 400 { throw APIError(status: status, text: "") }
+    }
+
     internal func sse(_ request: URLRequest, id: String, _ each: (SSEFrame) throws -> Bool) async throws -> Bool {
         let (bytes, response) = try await session.bytes(for: request)
-        let status = try Self.http(response).statusCode
-        if status >= 400 { throw APIError(status: status, text: "") }
+        try Self.open(response)
+        return try await frames(bytes, id: id, each)
+    }
+
+    private func frames(
+        _ bytes: URLSession.AsyncBytes, id: String, _ each: (SSEFrame) throws -> Bool
+    ) async throws -> Bool {
         var parser = SSEParser(id: id)
         var line: [UInt8] = []
         for try await byte in bytes {
@@ -118,8 +140,9 @@ extension Client {
         return Substring(text.hasSuffix("\r") ? String(text.dropLast()) : text)
     }
 
+    private static let decoder = JSONDecoder()
+
     internal static func decode(_ event: String, _ data: Data) throws -> StreamEvent? {
-        let decoder = JSONDecoder()
         switch event {
         case "item": return .item(try decoder.decode(APIItem.self, from: data))
         case "text": return .text(try decoder.decode(Chunk.self, from: data).text)
@@ -131,12 +154,34 @@ extension Client {
     }
 
     private static func room(_ event: String, _ data: Data) throws -> StreamEvent? {
-        let decoder = JSONDecoder()
         switch event {
         case "room-turn": return .roomTurn(try decoder.decode(Seat.self, from: data).member)
         case "room-stop": return .roomStop(try decoder.decode(Stop.self, from: data).reason)
         case "room-ask": return .roomAsk(try decoder.decode(RoomAsk.self, from: data))
         default: return nil
+        }
+    }
+}
+
+extension Client {
+    /// Yields each time Home may have changed: on connect, on each `changed` and after each failed attempt (#340).
+    public func homeChanges() -> AsyncStream<Void> {
+        AsyncStream(bufferingPolicy: .bufferingNewest(1)) { continuation in
+            let task = Task {
+                while !Task.isCancelled {
+                    do {
+                        _ = try await sse(try request("GET", "/home/events"), id: "") { _ in
+                            continuation.yield()
+                            return false
+                        }
+                    } catch {
+                        continuation.yield()
+                    }
+                    try? await clock.sleep(for: retry)
+                }
+                continuation.finish()
+            }
+            continuation.onTermination = { _ in task.cancel() }
         }
     }
 }

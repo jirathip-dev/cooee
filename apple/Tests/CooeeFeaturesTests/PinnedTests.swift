@@ -44,6 +44,9 @@ internal struct PinnedTests {
             $0.threads.events = { _, _, _ in
                 AsyncThrowingStream { $0.finish(throwing: APIError(status: 404, text: "Gone.")) }
             }
+            $0.voice.calls = { AsyncStream { $0.finish() } }
+            $0.push.opened = { AsyncStream { $0.finish() } }
+            $0.push.said = { AsyncStream { $0.finish() } }
         }
     }
 
@@ -60,7 +63,10 @@ internal struct PinnedTests {
             $0.chat?.turn = Turn(state: "done")
             $0.chat?.since = epoch
         }
-        await store.receive(\.chat.failed) { $0.chat?.error = "Gone." }
+        await store.receive(\.chat.link.dropped) {
+            $0.chat?.error = "Gone."
+            $0.chat?.status.sync = .reconnecting
+        }
         await task.cancel()
         #expect(calls.all == ["messages new", "read new 7"])
     }
@@ -96,7 +102,39 @@ internal struct PinnedTests {
                 $0.finish()
             }
         }
+        store.dependencies.push.said = { .finished }
         await store.send(.taps)
         await store.receive(\.open, assert: opened("pushed"))
+    }
+
+    @Test internal func aCallFromSiriOpensThePersonasNewestTopicAndStartsTheCall() async {
+        let store = store([thread("old", updated: 1, unseen: 0), thread("new", updated: 3, unseen: 0)])
+        store.dependencies.voice.calls = {
+            AsyncStream {
+                $0.yield("Coder")
+                $0.finish()
+            }
+        }
+        store.dependencies.voice.hear = { AsyncThrowingStream { $0.finish() } }
+        await store.send(.taps)
+        await store.receive(\.call, assert: opened("new"))
+        await store.receive(\.chat.call.start) { $0.chat?.call = Calling(started: epoch, from: 0, spoken: 0) }
+    }
+
+    @Test internal func aPushDeniedWithTextAnswersItsCardWithoutOpeningTheTopic() async {
+        let store = store([thread("pushed", updated: 1, unseen: 0)])
+        let answers = Calls()
+        store.dependencies.push.opened = { .finished }
+        store.dependencies.push.said = {
+            AsyncStream {
+                $0.yield(PushSaid(thread: "pushed", item: 4, text: "use a branch"))
+                $0.finish()
+            }
+        }
+        store.dependencies.threads.answer = { _, thread, item, option, value in
+            answers.record("answer \(thread) \(item) \(option) \(value ?? "-")")
+        }
+        await store.send(.taps).finish()
+        #expect(answers.all == ["answer pushed 4 say use a branch"])
     }
 }

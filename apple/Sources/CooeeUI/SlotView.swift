@@ -13,16 +13,16 @@ internal struct SlotView: View {
             switch node.content {
             case .component(let kind):
                 ComponentView(store: store, node: node, kind: kind, compact: compact)
-            case .screen(.core, path: "/screens/home"):
+            case .screen(source: "core", path: "/screens/home"):
                 HomeSlot(store: store, wide: false) { EmptyView() }
-            case .screen(.core, path: "/screens/menu"):
+            case .screen(source: "core", path: "/screens/menu"):
                 MenuScreen(store: store.scope(state: \.menu, action: \.menu))
             case .screen(let source, let path) where node.place == .menu:
                 ActionRow(symbol: "square.grid.2x2.fill", title: node.label ?? path) {
-                    store.send(.menu(.show(path, label: node.label ?? "", source: source)))
+                    store.send(.menu(.show(path, label: node.label ?? "", source: LayoutSource(source))))
                 }
             case .screen(let source, let path) where node.place == .column:
-                let id = ScreenFeature.State.id(source, path)
+                let id = ScreenFeature.State.id(LayoutSource(source), path)
                 if let screen = store.scope(state: \.layout.screens[id: id], action: \.layout.screens[id: id]) {
                     ColumnScreen(store: screen) { store.send(.open($0)) }
                 }
@@ -33,46 +33,42 @@ internal struct SlotView: View {
     }
 
     internal var body: some View {
-        placed.transition(node.transition.entering)
+        placed.transition(node.transition.entering).reportable(node.id)
     }
 }
 
 internal struct ComponentView: View {
     internal let store: StoreOf<AppFeature>
     internal let node: LayoutNode<LayoutPlace>
-    internal let kind: ComponentKind
+    internal let kind: String
     internal let compact: Bool
 
     internal var body: some View {
         switch kind {
-        case .nav:
+        case "nav":
             let size: SizeClass = compact ? .compact : .wide
             NavHost(
                 store: store, main: slot("main"), side: node.sidebarRows(on: size), menu: node.menuRows(on: size),
                 compact: compact)
-        case .chat: ChatSlot(store: store, back: node.config["back"]?.bool ?? compact)
-        case .composer:
+        case "chat": ChatSlot(store: store, back: node.config["back"]?.bool ?? compact)
+        case "composer":
             if let chat = store.scope(state: \.chat, action: \.chat) {
-                Composer(hint: node.config.string("hint") ?? "Message", actions: ChatScreen.actions(chat) {})
+                Composer(hint: node.config["hint"]?.string ?? "Message", actions: ChatScreen.actions(chat) {})
             }
-        case .scanner:
+        case "scanner":
             #if os(iOS)
                 QRScanner { store.send(.pairing(.connect($0))) }
             #endif
-        case .menuHost: MenuHost(store: store, rows: slot("rows"), compact: compact)
-        case .terminal:
+        case "menu-host": MenuHost(store: store, rows: slot("rows"), compact: compact)
+        case "terminal":
             ActionRow(symbol: "terminal.fill", title: "Terminal") {
                 store.send(.menu(.path(store.menu.path + [.terminal])))
             }
-        case .settings, .sidebar: EmptyView()
+        default: EmptyView()
         }
     }
 
     private func slot(_ name: String) -> [LayoutNode<LayoutPlace>] { node.slots[name] ?? [] }
-}
-
-extension [String: JSONValue] {
-    fileprivate func string(_ key: String) -> String? { self[key]?.string }
 }
 
 private struct NavHost: View {
@@ -83,11 +79,11 @@ private struct NavHost: View {
     fileprivate let compact: Bool
 
     fileprivate var body: some View {
-        let chat = main.first { $0.content == .component(.chat) }
+        let chat = main.first { $0.content == .component("chat") }
         Group {
             if compact {
                 NavigationStack(path: Binding(get: { store.path }, set: { store.send(.path($0)) })) {
-                    main.first { $0.content != .component(.chat) && !$0.locked }
+                    main.first { $0.content != .component("chat") }
                         .map { SlotView(store: store, node: $0, compact: true) }
                         .navigationDestination(for: String.self) { id in
                             if id == AppFeature.others {
@@ -146,6 +142,7 @@ private struct HomeSlot<Detail: View>: View {
                         actions: actions)
                 }
             }
+            .modifier(Refreshing { home.send(.refresh) }).modifier(Toasting(toast: home.error))
             .overlay(alignment: .bottom) {
                 if let broken = store.layout.broken {
                     Text(broken).ui(13, .regular, look).foregroundStyle(look.palette.amber).padding(12)
@@ -167,6 +164,7 @@ private struct HomeSlot<Detail: View>: View {
         actions.openOthers = { store.send(.open(AppFeature.others)) }
         actions.rooms = store.menu.settings.pinnedRooms
         actions.pinRoom = { store.send(.menu(.pinRoom($0))) }
+        (actions.sync, actions.asOf) = (store.home?.sync, store.home?.asOf)
         return actions
     }
 }
@@ -223,7 +221,7 @@ private struct ColumnScreen: View {
                 } openThread: {
                     open($0)
                 }
-                .disabled(store.offline || store.acting).opacity(store.offline ? 0.6 : 1)
+                .environment(\.acting, store.pending).disabled(store.offline).opacity(store.offline ? 0.6 : 1)
                 .environment(\.refresh, screen.root["refresh"]?.bool == true ? refresh : nil)
             }
         }

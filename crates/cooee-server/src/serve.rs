@@ -12,7 +12,7 @@ use topcoat::router::{BodyLimit, Router};
 
 use crate::{
     Hub, Layouts, Logins, Manager, connectors, editor,
-    gate::{Gate, Timing, names},
+    gate::{Gate, Gzip, Timing, names},
     http::{Data, profiles, provider_name, recipe},
     hub, layout, look, pairing,
     passkey::Unlocks,
@@ -100,6 +100,7 @@ pub fn router(
     screens::routes(editor::routes(themes::routes(routes::routes(
         Router::builder()
             .layer(Timing)
+            .layer(Gzip)
             .layer(gate)
             .layer(BodyLimit::max(64 << 20).at("/threads")),
     ))))
@@ -201,6 +202,8 @@ pub fn serve(config: &Config, ready: impl FnOnce(SocketAddr)) -> io::Result<()> 
         cooee_core::Providers::load(config.providers.as_deref(), &shed),
         &data,
     );
+    let listener = std::net::TcpListener::bind((config.bind, config.port))?;
+    listener.set_nonblocking(true)?;
     let hub = Hub::open(
         shed,
         &data,
@@ -245,13 +248,13 @@ pub fn serve(config: &Config, ready: impl FnOnce(SocketAddr)) -> io::Result<()> 
         (&data, config.dir.as_deref()),
         config.bind,
         &config.allowed_hosts,
-        Layouts::watch(config.dir.clone()),
+        Layouts::watch(config.dir.clone()).map_err(|b| io::Error::other(b.why))?,
     );
     let served = tokio::runtime::Builder::new_multi_thread()
         .enable_all()
         .build()?
         .block_on(async {
-            let listener = tokio::net::TcpListener::bind((config.bind, config.port)).await?;
+            let listener = tokio::net::TcpListener::from_std(listener)?;
             let addr = listener.local_addr()?;
             hub.listening(format!("http://127.0.0.1:{}", addr.port()));
             manager.supervise(hub, format!("http://127.0.0.1:{}", addr.port()));

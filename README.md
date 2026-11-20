@@ -15,11 +15,11 @@ On `staging`, each line with the PR or file that proves it:
 - **Native app:** one SwiftUI app for iPhone, iPad and Mac in [`apple/`](apple/README.md): pairing, Home, streaming chat, cards as blocks (#146, #196).
 - **Mac app, a client only:** the Mac app pairs with a server like the phone does, a cooee on the same Mac first; on a Mac the server is `cooee setup` (#484).
 - **TestFlight and push:** CI uploads the iOS app to TestFlight; pushes go by APNs and web push (#145, #134, #16).
-- **Web app:** a server-rendered installable web app, HTML-first, strict TypeScript only where needed (#58).
 - **Chat:** one thread is one ACP session on shed, with streamed replies, tool rows and approvals (#14).
 - **Chat-first:** a new chat needs no folder; the sidebar lists agents with their chats (#88, #63).
 - **Messages are kept:** a send the agent never got stays on its bubble, and a stopped agent refuses sends (#256).
 - **Models:** each agent's live model list; short names track the newest model (#194).
+- **Chief:** cooee's own persona, made by `cooee setup`, that sets up personas and routines at once and asks a Face ID card for MCP servers, secrets, a persona's access, machines and the config file (#664).
 - **Setup:** one command installs CI's signed release, the services, the config, Tailscale serve and prints a pairing code (#45, #584).
 - **Perf:** requests, shed calls and first token timed; `cooee perf` prints the table (#69).
 - **MCP:** a registry of MCP servers per persona through cooee's proxy; agents propose new ones for Face ID approval (#108).

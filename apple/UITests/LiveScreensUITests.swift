@@ -30,7 +30,7 @@
             keep("conductor")
             app.buttons["More"].firstMatch.tap()
             XCTAssert(app.buttons["Edit Conductor"].waitForExistence(timeout: 10), "the … opened no Edit Conductor")
-            XCTAssert(app.buttons["New chat with Conductor"].exists, "the … opened no New chat with Conductor")
+            XCTAssert(app.buttons["New topic with Conductor"].exists, "the … opened no New topic with Conductor")
             XCTAssertFalse(labelled(app, "Attach ").exists, "Conductor still has a plugin to attach")
             XCTAssert(labelled(app, "WORKFLOW").exists, "the panel has no Workflow for Conductor")
             XCTAssert(app.buttons["Add routine"].exists, "the panel has no Routines + Add for Conductor")
@@ -40,7 +40,7 @@
         }
 
         @MainActor
-        internal func opensDroversScreens(_ app: XCUIApplication, _ new: XCUIElement) {
+        internal func droverChat(_ app: XCUIApplication, _ new: XCUIElement) -> XCUIElement {
             XCTAssert(new.waitForExistence(timeout: 10))
             new.tap()
             app.buttons["Conductor"].firstMatch.tap()
@@ -53,6 +53,12 @@
                 app.buttons["Attach"].firstMatch.tap()
             }
             XCTAssert(queue.waitForExistence(timeout: 20))
+            return queue
+        }
+
+        @MainActor
+        internal func opensDroversScreens(_ app: XCUIApplication, _ new: XCUIElement) {
+            let queue = droverChat(app, new)
             personaPanel(app)
             app.buttons["Events"].firstMatch.tap()
             XCTAssert(labelled(app, "merged").waitForExistence(timeout: 20))

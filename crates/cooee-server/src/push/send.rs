@@ -1,4 +1,4 @@
-use std::{io, sync::PoisonError, thread, time::UNIX_EPOCH};
+use std::{io, sync::PoisonError, time::UNIX_EPOCH};
 
 use base64::{Engine, engine::general_purpose::URL_SAFE_NO_PAD as B64};
 use cooee_core::{Devices, random};
@@ -9,23 +9,9 @@ use super::{
     crypto::{b64, encrypt, jwt, new_key, public},
     subs::LOCK,
 };
+use crate::net::{Post, post_all};
 
 impl Push {
-    /// Sends `note` to every paired device's subscriptions and APNs tokens (only `to`'s, if set), in the
-    /// background (its handle): a 404/410, APNs' `BadDeviceToken` or an unpaired device drops it; other failures are logged.
-    pub fn send_to(&self, to: Option<&str>, note: &Note) -> thread::JoinHandle<()> {
-        let (push, to, note) = (self.clone(), to.map(str::to_owned), note.clone());
-        thread::spawn(move || match push.deliver(to.as_deref(), &note) {
-            Ok(log) => log.iter().for_each(|l| cooee_core::note!("cooee: push{l}")),
-            Err(e) => cooee_core::note!("cooee: push: {e}"),
-        })
-    }
-
-    /// [`Push::send_to`] every device.
-    pub fn send(&self, note: &Note) {
-        self.send_to(None, note);
-    }
-
     pub(super) fn deliver(&self, to: Option<&str>, note: &Note) -> io::Result<Vec<String>> {
         let payload = serde_json::to_vec(note)?;
         let paired: Vec<String> = Devices::new(&self.data)
@@ -38,11 +24,12 @@ impl Push {
             all.into_iter().partition(|s| paired.contains(&s.device));
         let live = live.iter().filter(|s| s.reset.is_none());
         let (apns, mut log) = (self.apns_key(), Vec::new());
+        let (mut subs, mut posts) = (Vec::new(), Vec::new());
         for s in live.filter(|s| to.is_none_or(|d| d == s.device)) {
-            let one = || -> io::Result<(u16, String)> {
+            let one = || -> io::Result<Post> {
                 if let Some(env) = s.apns {
                     let (a, k) = apns.as_ref().map_err(|why| io::Error::other(why.clone()))?;
-                    return self.apns_post(a, k, env, s, note);
+                    return Ok(self.apns_post(a, k, env, s, note));
                 }
                 let salt: [u8; 16] = random(16)?.try_into().unwrap_or_default();
                 let body = encrypt(
@@ -52,9 +39,21 @@ impl Push {
                     &new_key()?,
                     &salt,
                 )?;
-                post(s, &self.vapid()?, &body)
+                Ok(post(s, &self.vapid()?, body))
             };
             match one() {
+                Ok(p) => {
+                    subs.push(s);
+                    posts.push(p);
+                }
+                Err(e) => log.push(format!(" to device {}: {e}", s.device)),
+            }
+        }
+        for (s, r) in subs
+            .into_iter()
+            .zip(post_all(&posts, 10).map_err(io::Error::other)?)
+        {
+            match r.map(|r| (r.status, r.body.trim().to_owned())) {
                 Ok((200..=299, _)) => {}
                 Ok((404 | 410, _)) => gone.push(s.clone()),
                 Ok((_, why)) if why.contains("BadDeviceToken") => gone.push(s.clone()),
@@ -78,7 +77,7 @@ pub(super) fn now() -> u64 {
         .map_or(0, |d| d.as_secs())
 }
 
-fn post(s: &Sub, k: &SecretKey, body: &[u8]) -> io::Result<(u16, String)> {
+fn post(s: &Sub, k: &SecretKey, body: Vec<u8>) -> Post {
     let auth = format!(
         "Authorization: vapid t={}, k={}",
         jwt(k, &s.endpoint, now()),
@@ -90,19 +89,96 @@ fn post(s: &Sub, k: &SecretKey, body: &[u8]) -> io::Result<(u16, String)> {
         "TTL: 86400",
         "Urgency: high",
     ];
-    let headers: Vec<String> = [auth].into_iter().chain(fixed.map(str::to_owned)).collect();
-    sent(&s.endpoint, &headers, body)
-}
-
-pub(super) fn sent(url: &str, headers: &[String], body: &[u8]) -> io::Result<(u16, String)> {
-    let r = crate::net::fetch("POST", url, headers, Some(body)).map_err(io::Error::other)?;
-    Ok((r.status, r.body.trim().to_owned()))
+    let headers = [auth].into_iter().chain(fixed.map(str::to_owned));
+    (s.endpoint.clone(), headers.collect(), body)
 }
 
 #[cfg(test)]
-mod tests {
+pub(super) mod tests {
+    use std::{
+        io::{BufRead, BufReader, Read, Write},
+        net::TcpListener,
+        sync::{Arc, mpsc},
+        thread,
+        time::Duration,
+    };
+
     use super::*;
-    use crate::push::note::tests::test_note;
+    use crate::push::{apns::tests::paired, key::tests::dir, note::tests::test_note};
+
+    pub(in crate::push) fn serve(
+        answer: impl Fn() -> u16 + Send + Sync + 'static,
+    ) -> (String, mpsc::Receiver<String>) {
+        let l = TcpListener::bind("127.0.0.1:0").unwrap();
+        let url = format!("http://{}", l.local_addr().unwrap());
+        let (tx, rx) = mpsc::channel();
+        let answer = Arc::new(answer);
+        thread::spawn(move || {
+            for c in l.incoming() {
+                let (tx, answer, mut c) = (tx.clone(), Arc::clone(&answer), c.unwrap());
+                thread::spawn(move || {
+                    let mut r = BufReader::new(c.try_clone().unwrap());
+                    let (mut len, mut line) = (0, String::new());
+                    while r.read_line(&mut line).unwrap() > 2 {
+                        let l = line.to_ascii_lowercase();
+                        if let Some(n) = l.strip_prefix("content-length: ") {
+                            len = n.trim().parse().unwrap();
+                        }
+                        line.clear();
+                    }
+                    let mut body = vec![0; len];
+                    r.read_exact(&mut body).unwrap();
+                    tx.send(String::from_utf8_lossy(&body).into_owned()).ok();
+                    let head = format!("HTTP/1.1 {} X\r\ncontent-length: 0\r\n\r\n", answer());
+                    c.write_all(head.as_bytes()).ok();
+                });
+            }
+        });
+        (url, rx)
+    }
+
+    #[test]
+    fn one_silent_endpoint_does_not_hold_up_the_others_and_a_gone_one_is_dropped() {
+        let dir = dir("parallel");
+        let device = paired(&dir, 1).remove(0);
+        let (release, wait) = mpsc::channel::<()>();
+        let wait = std::sync::Mutex::new(wait);
+        let silent = serve(move || {
+            wait.lock().unwrap().recv().ok();
+            201
+        });
+        let servers = [silent, serve(|| 201), serve(|| 410), serve(|| 201)];
+        let push = Push::new(&dir);
+        *push.key.lock().unwrap() = Some(new_key().unwrap());
+        let sub = |(url, _): &(String, _)| {
+            Sub {
+            device: device.clone(),
+            endpoint: format!("{url}/x"),
+            p256dh: "BCVxsr7N_eNgVRqvHtD0zTZsEc6-VV-JvLexhqUzORcxaOzi6-AYWXvTBHm4bjyPjs7Vd8pZGH6SRpkNtoIAiw4".into(),
+            auth: "BTBZMqHH6r4Tts7J_aSIgg".into(),
+            reset: None,
+            apns: None,
+        }
+        };
+        let subs: Vec<Sub> = servers.iter().map(sub).collect();
+        push.store(&subs).unwrap();
+        let start = cooee_core::clock::instant();
+        let sending = {
+            let push = push.clone();
+            thread::spawn(move || push.deliver(None, &test_note()).unwrap())
+        };
+        for (_, got) in &servers[1..] {
+            let left = Duration::from_secs(1).saturating_sub(start.elapsed());
+            got.recv_timeout(left).unwrap();
+        }
+        servers[0].1.recv_timeout(Duration::from_secs(5)).unwrap();
+        release.send(()).unwrap();
+        assert_eq!(sending.join().unwrap(), Vec::<String>::new());
+        let left: Vec<String> = [&subs[0], &subs[1], &subs[3]]
+            .map(|s| s.endpoint.clone())
+            .into();
+        assert_eq!(push.endpoints(&device), left);
+    }
 
     #[test]
     fn a_push_to_one_device_reaches_only_its_endpoint() {

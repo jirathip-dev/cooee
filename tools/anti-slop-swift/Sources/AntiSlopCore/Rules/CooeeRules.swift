@@ -157,19 +157,20 @@ public final class LayerImportsRule: SlopRule {
     }
 
     public static let layers: [String: Set<String>] = [
-        "CooeeCore": ["Foundation"],
-        "CooeeAPI": ["CooeeCore", "Foundation", "Network", "Security", "Synchronization"],
+        "CooeeCore": ["Blocks", "Foundation"],
+        "CooeeAPI": ["CooeeCore", "CryptoKit", "Foundation", "Network", "Security", "Synchronization"],
         "CooeeFeatures": ["ComposableArchitecture", "CooeeAPI", "CooeeCore", "Foundation"],
         "CooeeUI": [
             "AppKit", "AVFoundation", "ComposableArchitecture", "CooeeCore", "CooeeFeatures", "CoreImage", "ImageIO",
             "PhotosUI", "SwiftUI", "UIKit", "UniformTypeIdentifiers", "VisionKit", "WebKit",
         ],
         "CooeeApp": [
-            "AppKit", "AuthenticationServices", "ComposableArchitecture", "CooeeAPI", "CooeeCore", "CooeeFeatures",
-            "CooeeUI", "Foundation", "LocalAuthentication", "os", "ServiceManagement", "SwiftUI", "UIKit",
+            "AppKit", "AuthenticationServices", "AVFoundation", "ComposableArchitecture", "CooeeAPI", "CooeeCore",
+            "CooeeFeatures", "CooeeUI", "Foundation", "LocalAuthentication", "os", "Security", "ServiceManagement",
+            "Speech", "SwiftUI", "UIKit",
             "UserNotifications",
         ],
-        "Cooee": ["CooeeApp", "CooeeUI", "SwiftUI"],
+        "Cooee": ["AppIntents", "CooeeApp", "CooeeUI", "SwiftUI"],
         "UITests": ["XCTest"],
     ]
 

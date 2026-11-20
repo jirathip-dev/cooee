@@ -168,6 +168,12 @@ internal struct ClientTests {
 }
 
 extension ClientTests {
+    @Test internal func anOlderPageAsksForTheMessagesBeforeTheOldestID() async throws {
+        let server = CannedServer(["/threads/a1b2/messages": [try Fixture.answer("messages.json")]])
+        #expect(try await server.client().messages("a1b2", around: 7).items.count == 9)
+        #expect(server.requests("/threads/a1b2/messages").first?.url?.query == "before=50&around=7")
+    }
+
     @Test internal func aSetupChatSaysSo() async throws {
         let server = CannedServer(["/threads": [Answer(headers: json, chunks: [#"{"id":"n2"}"#])]])
         let persona = APIPersona(id: "coder", name: "Coder", agent: "fake-acp")
@@ -208,5 +214,14 @@ extension ClientTests {
         #expect(started?.contains(#""folder":"scratch""#) == true)
         #expect(try await client.topics(of: .room("t1")).map(\.id) == ["t1"])
         #expect(server.requests("/threads").last?.url?.query == "room=t1")
+    }
+}
+
+internal struct VoiceSendTests {
+    @Test internal func aCallsUtteranceIsSentViaVoice() async throws {
+        let server = CannedServer(["/threads/a1b2/queue": [Answer(headers: json, chunks: ["null"])]])
+        try await server.client().send("a1b2", text: "Why the drop?", queue: true, voice: true, randomID: "r1")
+        let sent = try server.decoded("/threads/a1b2/queue", as: [String: String].self)
+        #expect(sent == ["text": "Why the drop?", "random_id": "r1", "via": "voice"])
     }
 }

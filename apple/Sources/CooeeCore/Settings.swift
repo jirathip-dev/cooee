@@ -53,9 +53,13 @@ public struct Settings: Codable, Sendable, Equatable {
     public var scheme: LookScheme
     public var style: StylePick
     public var theme: String
+    /// The colour scheme picked by name over the theme's own; nil: the theme's.
+    public var colours: String?
     public var push: String?
     public var icon: AppIcon?
     public var motion: Bool?
+    /// The scene's [☾] pick, night or day; nil: by the local clock.
+    public var night: Bool?
     public var sprites: [String: [String: String]]?
     private var rooms: [String]?
 
@@ -75,8 +79,10 @@ public struct Settings: Codable, Sendable, Equatable {
             push: try values.decodeIfPresent(String.self, forKey: .push)
         )
         icon = try values.decodeIfPresent(AppIcon.self, forKey: .icon)
+        colours = try values.decodeIfPresent(String.self, forKey: .colours)
         rooms = try values.decodeIfPresent([String].self, forKey: .rooms)
         motion = try values.decodeIfPresent(Bool.self, forKey: .motion)
+        night = try values.decodeIfPresent(Bool.self, forKey: .night)
         sprites = try values.decodeIfPresent([String: [String: String]].self, forKey: .sprites)
     }
 

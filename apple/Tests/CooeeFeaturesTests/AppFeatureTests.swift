@@ -1,4 +1,5 @@
 import ComposableArchitecture
+import CooeeAPI
 import CooeeCore
 @testable import CooeeFeatures
 import Testing
@@ -181,5 +182,87 @@ extension AppFeatureTests {
         }
         await store.send(.chat(.delegate(.persona("coder"))))
         await store.receive(\.edit) { $0.persona = PersonaFeature.State(server: mini, persona: coder) }
+    }
+}
+
+extension AppFeatureTests {
+    private func polling(_ answers: [Int]) -> (TestStoreOf<AppFeature>, TestClock<Duration>) {
+        let (store, clock, queue) = (store(paired()), TestClock(), Queue(answers))
+        store.dependencies.continuousClock = clock
+        store.dependencies.threads.changes = { _ in AsyncStream { $0.yield() } }
+        store.dependencies.threads.home = { _ in
+            if let status = queue.next() { throw APIError(status: status, text: "") }
+            return HomeAnswer(screen: homeScreen, threads: [row("n1")], personas: [coder])
+        }
+        return (store, clock)
+    }
+
+    @Test internal func oneUnauthorizedAnswerThenAGoodOneKeepsHomeAndTheServer() async {
+        let (store, clock) = polling([401])
+        let task = await store.send(.home(.task))
+        await clock.advance(by: .seconds(5))
+        await store.receive(\.home.loaded) {
+            $0.home?.loading = false
+            $0.home?.screen = homeScreen
+            $0.home?.rows = [row("n1")]
+        }
+        #expect(store.state.home?.server == mini && store.state.pairing == nil && calls.all.isEmpty)
+        await task.cancel()
+    }
+
+    @Test internal func twoUnauthorizedAnswersInARowPairAgain() async {
+        let (store, clock) = polling([401, 401])
+        await store.send(.home(.task))
+        await clock.advance(by: .seconds(5))
+        await store.receive(\.home.delegate.unauthorized) { $0 = AppFeature.State(layout: testLayout, server: nil) }
+        #expect(calls.all == ["clear"])
+    }
+
+    @Test internal func theSavedServerIsReadAtLaunchThenHomeShows() async {
+        let store = store(.launching(layout: testLayout, settings: Settings()))
+        store.dependencies.continuousClock = TestClock()
+        store.dependencies.serverStore.load = { mini }
+        await store.send(.launch)
+        await store.receive(\.launched) { $0 = AppFeature.State(layout: testLayout, server: mini) }
+        await store.send(.launch)
+    }
+
+    @Test internal func aKeychainThatNeverAnswersIsAnErrorAfterFiveSeconds() async {
+        let (store, clock) = (store(.launching(layout: testLayout, settings: Settings())), TestClock())
+        store.dependencies.continuousClock = clock
+        store.dependencies.serverStore.load = {
+            try? await clock.sleep(for: .seconds(3600))
+            return mini
+        }
+        await store.send(.launch)
+        await clock.advance(by: .seconds(4))
+        #expect(store.state.notice == nil)
+        await clock.advance(by: .seconds(1))
+        await store.receive(\.keychainSilent) { $0.notice = AppFeature.keychainSilent }
+        #expect(store.state.home == nil && store.state.pairing == nil)
+    }
+}
+
+extension AppFeatureTests {
+    @Test internal func homeAndTheOpenChatReloadWhenTheAppComesBackAfterThirtySecondsAway() async {
+        let store = store(paired())
+        let fresh = Slice(
+            items: [APIItem(id: 9, time: 9, kind: "agent", text: "Missed")], turn: Turn(), cursor: "", queue: [])
+        store.dependencies.threads.messages = { _, _ in fresh }
+        await store.send(.open("t1")) {
+            $0.path = ["t1"]
+            $0.chat = ChatFeature.State(server: mini, target: .thread("t1"), persona: Persona(coder, state: .working))
+            $0.home?.opened["coder"] = "t1"
+        }
+        await store.send(.scene(active: false)) { $0.away = epoch }
+        store.dependencies.date.now = epoch.addingTimeInterval(29)
+        await store.send(.scene(active: true)) { $0.away = nil }
+        await store.send(.scene(active: false)) { $0.away = epoch.addingTimeInterval(29) }
+        store.dependencies.date.now = epoch.addingTimeInterval(59)
+        store.exhaustivity = .off
+        await store.send(.scene(active: true)) { $0.away = nil }
+        await store.finish()
+        await store.skipReceivedActions()
+        #expect(store.state.home?.rows == [row("n1")] && store.state.chat?.items == fresh.items)
     }
 }

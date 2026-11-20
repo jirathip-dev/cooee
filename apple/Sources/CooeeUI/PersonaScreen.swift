@@ -58,7 +58,7 @@ internal struct PersonaScreen: View {
         actions.agent = { store.send(.agent($0)) }
         actions.browse = { store.send(.browse(nil)) }
         actions.more = { store.send(.showAll) }
-        actions.delete = store.isNew ? nil : { store.send(.delete) }
+        actions.delete = store.isNew || store.draft.role == "chief" ? nil : { store.send(.delete) }
         actions.photo = { store.choosingPhoto = true }
         actions.sprite = sprite
         actions.skill = { store.send(.addSkill($0)) }

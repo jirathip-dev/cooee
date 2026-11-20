@@ -69,6 +69,7 @@ impl Hub {
             tag: "shed".to_owned(),
             url: "/".to_owned(),
             item: 0,
+            say: false,
         });
         version
     }
@@ -100,6 +101,9 @@ impl Hub {
             return None;
         }
         live.applied = event.seq;
+        if event.replay {
+            return None;
+        }
         live.moved = now();
         let mut changes = Vec::new();
         if live.stuck {
@@ -122,11 +126,16 @@ impl Hub {
                     random_id: String::new(),
                     files: Vec::new(),
                     routine: None,
+                    via: None,
                 };
                 changes.push(Change::Item(live.chat.push(now(), event.seq, body)));
             }
         }
+        let was = live.chat.turn.state.clone();
         changes.extend(live.chat.apply(now(), event.seq, event.kind));
+        if was != "limited" && live.chat.turn.state == "limited" {
+            changes.extend(self.capped(live).map(Change::Item));
+        }
         let chunk = changes.iter().any(|c| match c {
             Change::Text(_) => true,
             Change::Item(i) => matches!(i.body, Body::Agent { .. }),
@@ -141,6 +150,9 @@ impl Hub {
             }
             _ => None,
         });
+        if reply.is_some() {
+            self.uncapped(live);
+        }
         let seat = (live.meta.room.clone(), live.meta.profile.clone());
         let asked = format!("{}>{}", live.meta.asked_by, seat.1);
         let next = live
@@ -206,7 +218,7 @@ impl Hub {
     }
 
     pub(super) fn queued(&self, live: &mut Live) -> Result<(), HubError> {
-        self.store.save(&live.meta)?;
+        self.save(live)?;
         let data = json!(live.meta.queue).to_string();
         live.emit("queue", data);
         Ok(())

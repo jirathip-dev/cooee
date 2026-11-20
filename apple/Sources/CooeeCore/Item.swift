@@ -6,17 +6,29 @@ public enum Block: Sendable, Equatable {
     case bullets([String])
 }
 
+public struct PlanEntry: Sendable, Equatable {
+    public let text: String
+    public let done: Bool
+
+    public init(_ text: String, done: Bool) {
+        self.text = text
+        self.done = done
+    }
+}
+
 public struct ToolRow: Sendable, Equatable {
     public let title: String
     public let status: String
     public let frame: String?
+    public let plan: [PlanEntry]
 
     public var running: Bool { status == "running" }
 
-    public init(_ title: String, _ status: String, frame: String? = nil) {
+    public init(_ title: String, _ status: String, frame: String? = nil, plan: [PlanEntry] = []) {
         self.title = title
         self.status = status
         self.frame = frame
+        self.plan = plan
     }
 }
 
@@ -56,14 +68,19 @@ public enum Item: Identifiable, Sendable, Equatable {
     case divider(id: Int, text: String)
     case asked(id: Int, Ask)
     case screen(id: Int, ScreenItem)
+    case call(Call)
+    case link(id: Int, ThreadLink)
 
     public var id: Int {
         switch self {
         case .you(let id, _, _), .agent(let id, _), .tools(let id, _), .trace(let id, _, _), .card(let id, _, _),
-            .note(let id, _), .said(let id, _, _, _), .divider(let id, _), .asked(let id, _), .screen(let id, _):
+            .note(let id, _), .said(let id, _, _, _), .divider(let id, _), .asked(let id, _), .screen(let id, _),
+            .link(let id, _):
             id
         case .outgoing(let message):
             message.id
+        case .call(let call):
+            call.id
         }
     }
 
@@ -73,7 +90,8 @@ public enum Item: Identifiable, Sendable, Equatable {
         case .you(_, let text, _): text
         case .outgoing(let message): message.text
         case .agent(_, let blocks), .said(_, _, _, let blocks): blocks.map(\.plainText).joined(separator: "\n\n")
-        case .tools, .trace, .card, .note, .divider, .asked, .screen: nil
+        case .call(let call): call.lines.map(\.text).joined(separator: "\n")
+        case .tools, .trace, .card, .note, .divider, .asked, .screen, .link: nil
         }
     }
 }
@@ -92,22 +110,20 @@ extension Block {
 public enum ChatItems {
     public static func build(
         _ items: [APIItem],
-        live: String,
         outbox: [Outgoing] = [],
         style: ChatStyle = .detailed,
         working: Bool = false
     ) -> [Item] {
         var out: [Item] = []
-        if style == .chat {
-            folded(items, working: working, into: &out)
-        } else {
-            for item in items { append(item, to: &out) }
+        for part in Call.parts(items) {
+            if let call = part.call { out.append(.call(call)) }
+            if style == .chat {
+                folded(part.items, working: working && part.last, into: &out)
+            } else {
+                for item in part.items { append(item, to: &out) }
+            }
         }
-        out += outbox.map(Item.outgoing)
-        if !live.isEmpty {
-            out.append(.agent(id: Int.max, markdown: Markdown.blocks(live + " ▍")))
-        }
-        return out
+        return out + outbox.map(Item.outgoing)
     }
 
     internal static func append(_ item: APIItem, to out: inout [Item]) {
@@ -121,6 +137,8 @@ public enum ChatItems {
             fold(item, into: &out)
         case "approval", "ask":
             if let card = card(item) { out.append(card) }
+        case "link":
+            if let link = ThreadLink(item) { out.append(.link(id: item.id, link)) }
         default:
             other(item, into: &out)
         }
@@ -146,7 +164,7 @@ public enum ChatItems {
         var steps: [APIItem] = []
         for item in items {
             switch item.kind {
-            case "tool",
+            case "tool", "plan",
                 "frame" where item.asked != true:
                 steps.append(item)
             case "agent":
@@ -170,6 +188,12 @@ public enum ChatItems {
 
     private static func row(_ item: APIItem) -> ToolRow {
         if item.kind == "frame" { return ToolRow(item.text ?? "", "done", frame: item.name) }
+        if item.kind == "plan" {
+            let plan = (item.entries ?? []).map {
+                PlanEntry($0.string("content") ?? "", done: $0.string("status") == "completed")
+            }
+            return ToolRow("Plan", "done", plan: plan)
+        }
         let status = item.status == "completed" ? "done" : item.status == "failed" ? "failed" : "running"
         return ToolRow(item.title ?? "", status)
     }

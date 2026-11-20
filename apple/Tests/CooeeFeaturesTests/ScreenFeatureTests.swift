@@ -7,24 +7,24 @@ import Testing
 
 @MainActor
 internal struct ScreenFeatureTests {
-    nonisolated private static let queue = Place(
+    nonisolated internal static let queue = Place(
         plugin: "drover", key: "queue", label: "Queue", screen: "/screens/queue")
-    nonisolated private static let screen: JSONValue = .object([
+    nonisolated internal static let screen: JSONValue = .object([
         "type": .string("screen"), "id": .string("queue"), "title": .string("Queue"),
         "stream": .string("/screens/queue/stream"),
         "blocks": .array([.object(["type": .string("stat"), "id": .string("lanes"), "value": .string("7")])]),
     ])
-    nonisolated private static let merge: JSONValue = .object([
+    nonisolated internal static let merge: JSONValue = .object([
         "seq": .number(1),
         "ops": .array([
             .object(["op": .string("merge"), "id": .string("lanes"), "fields": .object(["value": .string("6")])])
         ]),
     ])
 
-    private let calls = Calls()
-    private let clock = TestClock()
+    internal let calls = Calls()
+    internal let clock = TestClock()
 
-    private func store(
+    internal func store(
         _ dependencies: @escaping (inout DependencyValues) -> Void = { _ in }
     ) -> TestStoreOf<ScreenFeature> {
         let (calls, clock) = (calls, clock)
@@ -98,40 +98,6 @@ internal struct ScreenFeatureTests {
         }
         await clock.advance(by: .seconds(2))
         await task.cancel()
-    }
-
-    @Test internal func anActionAppliesItsAnswersOpsAndSaysItsToast() async {
-        let answer: JSONValue = .object(["toast": .string("Driving"), "ops": Self.merge["ops"] ?? .null])
-        var state = ScreenFeature.State(server: mini, place: Self.queue)
-        state.screen = LiveScreen(Self.screen)
-        let store = TestStore(initialState: state) {
-            ScreenFeature()
-        } withDependencies: {
-            $0.date.now = epoch
-            $0.continuousClock = clock
-            $0.screenCache.save = { _, _ in }
-            $0.plugins.act = { _, plugin, screen, action in
-                #expect(plugin == .plugin("drover") && screen == "queue" && action.action == "drive")
-                return answer
-            }
-        }
-        await store.send(.act(BlockAction(action: "drive", values: [:]))) { $0.acting = true }
-        await store.receive(\.acted) {
-            $0.acting = false
-            $0.said = "Driving"
-            $0.screen?.apply(event: answer)
-            $0.asOf = epoch
-        }
-        await clock.advance(by: .seconds(2))
-    }
-
-    @Test internal func aRefusedActionSaysWhy() async {
-        let store = store { $0.plugins.act = { _, _, _, _ in throw APIError(status: 403, text: "drop isn't allowed") } }
-        await store.send(.act(BlockAction(action: "drop", values: [:]))) { $0.acting = true }
-        await store.receive(\.acted) {
-            $0.acting = false
-            $0.said = "drop isn't allowed"
-        }
     }
 
     @Test internal func aScreenWithNoStreamStopsAfterItsAnswer() async {
@@ -238,5 +204,50 @@ extension ScreenFeatureTests {
         }
         await clock.advance(by: .seconds(2))
         #expect(calls.all == ["keep https://mini.local|core|/screens/home"])
+    }
+}
+
+extension ScreenFeatureTests {
+    private func slowStore() -> TestStoreOf<ScreenFeature> {
+        store {
+            $0.screenCache.load = { _ in nil }
+            $0.plugins.screen = { [clock] _, _, _ in
+                try await clock.sleep(for: .seconds(2))
+                return Self.screen
+            }
+            $0.plugins.events = { _, _, _ in AsyncThrowingStream { _ in } }
+            $0.plugins.act = { [calls] _, _, screen, action in
+                calls.record("act \(screen) \(action.action)")
+                return .null
+            }
+        }
+    }
+
+    @Test internal func aSlowLoadShowsAStripAfter300msAndTheShownScreenStaysTappable() async {
+        let store = slowStore()
+        let task = await store.send(.task)
+        await clock.advance(by: .milliseconds(299))
+        await store.send(.background)
+        await clock.advance(by: .milliseconds(1))
+        await store.receive(\.slow) { $0.slow = true }
+        await clock.advance(by: .milliseconds(1_700))
+        await store.receive(\.loaded) {
+            $0.screen = LiveScreen(Self.screen)
+            $0.asOf = epoch
+            $0.slow = false
+        }
+        let retry = await store.send(.retry)
+        await clock.advance(by: .milliseconds(300))
+        await store.receive(\.slow) { $0.slow = true }
+        await store.send(.act(BlockAction(action: "drive", values: [:]))) {
+            $0.pending = [BlockAction(action: "drive", values: [:])]
+        }
+        await store.receive(\.acted) { $0.pending = [] }
+        await clock.advance(by: .milliseconds(1_700))
+        await store.receive(\.loaded) { $0.slow = false }
+        await clock.advance(by: .seconds(2))
+        #expect(calls.all == ["act queue drive", "keep https://mini.local|drover|/screens/queue true"])
+        await retry.cancel()
+        await task.cancel()
     }
 }

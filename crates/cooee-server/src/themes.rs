@@ -21,7 +21,7 @@ use topcoat::{
 };
 
 use crate::{
-    http::{Data, plain},
+    http::{Data, header, plain},
     hub::lock,
     look::{Looks, STYLES},
 };
@@ -567,10 +567,19 @@ async fn look_art(cx: &Cx) -> Result<Response> {
             .map(|b| with_rule(b, CALM)),
         _ => None,
     };
-    match svg {
-        Some(svg) => Ok(Response::builder()
+    let Some(svg) = svg else {
+        return plain(404, "no such theme art");
+    };
+    let tag = format!("\"{}\"", cooee_core::sha256(&svg));
+    let seen = header(cx, "if-none-match").is_some_and(|t| t.contains(&tag));
+    let reply = Response::builder()
+        .header("ETag", &tag)
+        .header("Cache-Control", "no-cache");
+    Ok(if seen {
+        reply.status(304).body(Body::empty())?
+    } else {
+        reply
             .header("Content-Type", "image/svg+xml")
-            .body(Body::from(svg))?),
-        None => plain(404, "no such theme art"),
-    }
+            .body(Body::from(svg))?
+    })
 }

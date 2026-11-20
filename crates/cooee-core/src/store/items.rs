@@ -1,7 +1,9 @@
+use std::path::Path;
+
 use rusqlite::{Connection, Transaction, params};
 
 use super::{Store, StoreError, error::db_err};
-use crate::{Item, history};
+use crate::{Body, Item, history};
 
 /// Where a [`Store::page`] read starts.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -15,46 +17,24 @@ pub enum Page {
 }
 
 impl Store {
-    /// Stores `item` in thread `id`, replacing an earlier version of it, and commits it to disk.
+    /// Stores `item` in thread `id`, replacing an earlier version of it, and waits until its batch is on disk.
     ///
     /// # Errors
     ///
     /// Returns [`StoreError`] if the id is invalid or the item can't be written.
     pub fn append(&self, id: &str, item: &Item) -> Result<(), StoreError> {
         self.path(id)?;
-        let mut db = self.db();
-        let tx = db.transaction().map_err(db_err(&self.path))?;
-        self.put(&tx, id, item)?;
-        tx.commit().map_err(db_err(&self.path))
+        self.writer.send(Some((id.to_owned(), item.clone())), true)
     }
 
-    pub(super) fn put(&self, tx: &Transaction, id: &str, item: &Item) -> Result<(), StoreError> {
-        let body = serde_json::to_value(item).map_err(|source| StoreError::Parse {
-            path: self.path.clone(),
-            source,
-        })?;
-        let kind = body
-            .get("kind")
-            .and_then(serde_json::Value::as_str)
-            .unwrap_or_default();
-        let row: i64 = tx
-            .query_row(
-                "INSERT INTO items (thread, id, at, kind, body) VALUES (?1, ?2, ?3, ?4, ?5)
-                 ON CONFLICT (thread, id) DO UPDATE SET at = excluded.at, kind = excluded.kind, body = excluded.body
-                 RETURNING rowid",
-                params![id, int(item.id), int(item.at), kind, body.to_string()],
-                |r| r.get(0),
-            )
-            .and_then(|row| tx.execute("DELETE FROM said WHERE rowid = ?1", [row]).map(|_| row))
-            .map_err(db_err(&self.path))?;
-        if let Some((_, text)) = history::said(item) {
-            tx.execute(
-                "INSERT INTO said (rowid, text) VALUES (?1, ?2)",
-                params![row, text.to_lowercase()],
-            )
-            .map_err(db_err(&self.path))?;
-        }
-        Ok(())
+    /// Hands `item` to the writer, which stores it with the next batch; a crash before that batch syncs loses it.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`StoreError`] if the id is invalid or the writer has stopped.
+    pub fn queue(&self, id: &str, item: &Item) -> Result<(), StoreError> {
+        self.path(id)?;
+        self.writer.send(Some((id.to_owned(), item.clone())), false)
     }
 
     /// Thread `id`'s items, oldest first; none when it has none.
@@ -73,6 +53,7 @@ impl Store {
     /// Returns [`StoreError`] if the id is invalid or the items can't be read.
     pub fn page(&self, id: &str, from: Page, n: usize) -> Result<Vec<Item>, StoreError> {
         self.path(id)?;
+        self.writer.flush_thread(id);
         let db = self.db();
         if let Some(mut all) = self.moved(&db, id)? {
             for item in self.bodies(&db, "thread = ?1", params![id])? {
@@ -103,6 +84,45 @@ impl Store {
             items.reverse();
         }
         Ok(items)
+    }
+
+    /// What thread `id`'s list row needs without reading it whole (#346): its approvals, the owner's newest message and
+    /// its newest item, oldest first, with how many items after `read` are not the owner's.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`StoreError`] if the id is invalid or the items can't be read.
+    pub fn glance(&self, id: &str, read: u64) -> Result<(Vec<Item>, usize), StoreError> {
+        self.path(id)?;
+        self.writer.flush_thread(id);
+        let db = self.db();
+        if self.moved(&db, id)?.is_some() {
+            drop(db);
+            let items = self.items(id)?;
+            let after = items.iter().filter(|i| i.id > read);
+            let unseen = after
+                .filter(|i| !matches!(i.body, Body::You { .. }))
+                .count();
+            return Ok((items, unseen));
+        }
+        let mut items = Vec::new();
+        for filter in [
+            "kind = 'approval'",
+            "kind = 'you' ORDER BY id DESC LIMIT 1",
+            "1 ORDER BY id DESC LIMIT 1",
+        ] {
+            items.extend(self.bodies(&db, &format!("thread = ?1 AND {filter}"), params![id])?);
+        }
+        items.sort_by_key(|i| i.id);
+        items.dedup_by_key(|i| i.id);
+        let unseen: i64 = db
+            .prepare_cached(
+                "SELECT (SELECT count(*) FROM items WHERE thread = ?1 AND id > ?2)
+                 - (SELECT count(*) FROM items WHERE thread = ?1 AND kind = 'you' AND id > ?2)",
+            )
+            .and_then(|mut q| q.query_row(params![id, int(read)], |r| r.get(0)))
+            .map_err(db_err(&self.path))?;
+        Ok((items, usize::try_from(unseen).unwrap_or(0)))
     }
 
     pub(super) fn bodies<P: rusqlite::Params>(
@@ -143,6 +163,7 @@ impl Store {
             "SELECT items.thread, items.body FROM said JOIN items ON items.rowid = said.rowid
              WHERE 1 {like} ORDER BY items.at DESC, items.id DESC"
         );
+        self.writer.flush();
         let db = self.db();
         let mut q = db.prepare(&sql).map_err(db_err(&self.path))?;
         let patterns = words.iter().map(|w| format!("%{w}%"));
@@ -170,6 +191,35 @@ impl Store {
         }
         Ok(())
     }
+}
+
+pub(super) fn put(tx: &Transaction, path: &Path, id: &str, item: &Item) -> Result<(), StoreError> {
+    let body = serde_json::to_value(item).map_err(|source| StoreError::Parse {
+        path: path.to_owned(),
+        source,
+    })?;
+    let kind = body
+        .get("kind")
+        .and_then(serde_json::Value::as_str)
+        .unwrap_or_default();
+    let row: i64 = tx
+        .query_row(
+            "INSERT INTO items (thread, id, at, kind, body) VALUES (?1, ?2, ?3, ?4, ?5)
+             ON CONFLICT (thread, id) DO UPDATE SET at = excluded.at, kind = excluded.kind, body = excluded.body
+             RETURNING rowid",
+            params![id, int(item.id), int(item.at), kind, body.to_string()],
+            |r| r.get(0),
+        )
+        .and_then(|row| tx.execute("DELETE FROM said WHERE rowid = ?1", [row]).map(|_| row))
+        .map_err(db_err(path))?;
+    if let Some((_, text)) = history::said(item) {
+        tx.execute(
+            "INSERT INTO said (rowid, text) VALUES (?1, ?2)",
+            params![row, text.to_lowercase()],
+        )
+        .map_err(db_err(path))?;
+    }
+    Ok(())
 }
 
 pub(super) fn int(n: u64) -> i64 {
@@ -264,7 +314,7 @@ pub(super) mod tests {
         }
         let mut db = store.db();
         let tx = db.transaction().unwrap();
-        store.put(&tx, "a", &item(101, "agent", "torn")).unwrap();
+        put(&tx, &store.path, "a", &item(101, "agent", "torn")).unwrap();
         std::process::abort();
     }
 }

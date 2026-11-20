@@ -2,6 +2,7 @@
 
 #![forbid(unsafe_code)]
 
+mod chief;
 mod connectors;
 mod contrast;
 mod editor;

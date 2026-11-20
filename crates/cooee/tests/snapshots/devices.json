@@ -1,0 +1,20 @@
+{
+  "type": "screen",
+  "id": "devices",
+  "title": "Devices",
+  "blocks": [
+    {
+      "type": "list",
+      "id": "devices",
+      "rows": [
+        {
+          "type": "row",
+          "id": "<device>",
+          "title": "browser",
+          "subtitle": "this device"
+        }
+      ]
+    }
+  ],
+  "source": "core"
+}

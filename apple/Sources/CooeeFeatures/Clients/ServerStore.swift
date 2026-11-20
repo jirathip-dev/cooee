@@ -3,7 +3,7 @@ import CooeeCore
 
 @DependencyClient
 public struct ServerStore: Sendable {
-    public var load: @Sendable () -> Server? = { nil }
+    public var load: @Sendable () async -> Server? = { nil }
     public var save: @Sendable (_ server: Server) -> Void
     public var clear: @Sendable () -> Void
 }

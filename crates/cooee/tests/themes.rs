@@ -1,5 +1,5 @@
 //! Theme packs end to end (docs/themes.md): `cooee theme check` passes the first-party packs and fails a broken one;
-//! `cooee theme add` of a first-party pack (the build's copy at swag's pin, no fetch), a git URL ("not reviewed") and
+//! `cooee theme add` of a first-party pack (swag's compiled-in copy, no fetch), a git URL ("not reviewed") and
 //! a folder, each pinned in the lock; a pack failing the gate, or holding a symlink, is never installed; list and remove;
 //! a git source is a shallow clone of its folder alone (#363), and an old full clone is replaced on start.
 
@@ -7,6 +7,7 @@ mod support;
 
 use std::{
     fs,
+    io::Read,
     path::{Path, PathBuf},
     process::Command,
     thread,
@@ -33,11 +34,15 @@ fn packs() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("../../packs")
 }
 
-fn farm_at(to: &Path, broken: bool) {
+fn swag_at(to: &Path, name: &str) {
     fs::create_dir_all(to).unwrap();
-    for f in ["theme.json", "sprites.svg", "scene.svg", "icon.png"] {
-        fs::copy(packs().join("themes/farm").join(f), to.join(f)).unwrap();
+    for (f, bytes) in Swag::pinned().files(name).unwrap() {
+        fs::write(to.join(f), bytes).unwrap();
     }
+}
+
+fn farm_at(to: &Path, broken: bool) {
+    swag_at(to, "farm");
     if broken {
         let svg = fs::read_to_string(to.join("sprites.svg")).unwrap();
         fs::write(
@@ -57,9 +62,18 @@ struct Setup {
 fn setup(name: &str) -> Setup {
     let dir = scratch(name);
     let shed = FakeShed::start(&dir.join("shed"), version());
-    for (repo, broken) in [("sea.git", false), ("broken.git", true)] {
+    let first = Swag::pinned().names().into_iter();
+    let first = first.map(|p| (format!("first-party/{p}"), Some(p)));
+    for (repo, pack) in ["sea.git", "broken.git"]
+        .map(|r| (r.to_owned(), None))
+        .into_iter()
+        .chain(first)
+    {
         let repo = dir.join(repo);
-        farm_at(&repo, broken);
+        match pack {
+            Some(p) => swag_at(&repo, p),
+            None => farm_at(&repo, repo.ends_with("broken.git")),
+        }
         git(&repo, &["init", "--quiet", "-b", "main"]);
         git(&repo, &["add", "-A"]);
         git(&repo, &["commit", "--quiet", "-m", "pack"]);
@@ -89,7 +103,7 @@ impl Setup {
 fn check_passes_the_first_party_packs_and_fails_a_broken_one() {
     let s = setup("th-check");
     let first: Vec<String> = ["farm", "kitchen", "garden"]
-        .map(|t| packs().join("themes").join(t).display().to_string())
+        .map(|t| s.dir.join("first-party").join(t).display().to_string())
         .into();
     let styles = ["terminal", "scene"].map(|p| packs().join(p).display().to_string());
     let first: Vec<&str> = first.iter().chain(&styles).map(String::as_str).collect();
@@ -109,6 +123,40 @@ fn check_passes_the_first_party_packs_and_fails_a_broken_one() {
         "{out}"
     );
     assert!(out.contains("1 theme(s) fail the theme gate"), "{out}");
+}
+
+fn gzips_and_revalidates(cooee: &Cooee, head: &str, svg: &str) {
+    let tag = head.lines().find_map(|l| l.strip_prefix("etag: ")).unwrap();
+    assert!(head.contains("cache-control: no-cache"), "{head}");
+    let gzip = [("Accept-Encoding", "gzip, br")];
+    let (head, zipped) = cooee.raw_bytes("GET", "/look/farm/sprites.svg", &gzip, "");
+    assert!(head.contains("content-encoding: gzip"), "{head}");
+    assert!(
+        zipped.len() < svg.len() / 4,
+        "{} of {}",
+        zipped.len(),
+        svg.len()
+    );
+    let mut unzipped = String::new();
+    flate2::read::GzDecoder::new(zipped.as_slice())
+        .read_to_string(&mut unzipped)
+        .unwrap();
+    assert_eq!(unzipped, svg);
+    let weak = head.lines().find_map(|l| l.strip_prefix("etag: ")).unwrap();
+    assert_eq!(weak, format!("W/{tag}"));
+    for seen in [tag, weak] {
+        let (head, body) = cooee.raw(
+            "GET",
+            "/look/farm/sprites.svg",
+            &[("If-None-Match", seen)],
+            "",
+        );
+        assert!(
+            head.starts_with("HTTP/1.1 304") || head.starts_with("HTTP/1.0 304"),
+            "{head}"
+        );
+        assert_eq!(body, "");
+    }
 }
 
 #[test]
@@ -137,7 +185,8 @@ fn add_remove_and_list_with_the_lock() {
     );
     let (ok, out) = s.run(&["theme", "add", "sea"]);
     assert!(
-        !ok && out.contains("sea isn't a first-party theme (farm garden kitchen scene terminal)"),
+        !ok && out
+            .contains("sea isn't a first-party theme (bush farm garden kitchen scene terminal)"),
         "{out}"
     );
     let looks = s.cooee.json("/api/v1/looks");
@@ -152,6 +201,7 @@ fn add_remove_and_list_with_the_lock() {
         svg.contains("id=\"s-needs\"") && svg.contains("--o1"),
         "{svg}"
     );
+    gzips_and_revalidates(&s.cooee, &head, &svg);
     let (head, _) = s.cooee.raw("GET", "/look/farm/theme.json", &[], "");
     assert!(
         head.starts_with("HTTP/1.0 404") || head.starts_with("HTTP/1.1 404"),
@@ -176,7 +226,7 @@ fn add_remove_and_list_with_the_lock() {
     assert!(!themes.join("sea").exists());
     let (ok, out) = s.run(&["theme", "add", &sea, "--yes"]);
     assert!(ok, "{out}");
-    let kitchen = packs().join("themes/kitchen").display().to_string();
+    let kitchen = s.dir.join("first-party/kitchen").display().to_string();
     let (ok, out) = s.run(&["theme", "add", &kitchen, "--yes"]);
     assert!(ok, "{out}");
     let lock = s.lock();
@@ -221,7 +271,7 @@ fn add_remove_and_list_with_the_lock() {
 fn a_built_in_style_pack_adds_and_a_broken_style_leaves_its_theme_served() {
     let s = setup("th-style");
     let themes = s.dir.join("themes");
-    let kitchen = packs().join("themes/kitchen").display().to_string();
+    let kitchen = s.dir.join("first-party/kitchen").display().to_string();
     assert!(s.run(&["theme", "add", &kitchen, "--yes"]).0);
     let (ok, out) = s.run(&["theme", "add", "terminal"]);
     assert!(
@@ -355,12 +405,7 @@ fn files_outside_git(dir: &Path, under: &Path, out: &mut Vec<String>) {
 fn local_swag(dir: &Path) -> (PathBuf, String) {
     let repo = dir.join("swag");
     for t in ["garden", "kitchen"] {
-        let to = repo.join("packs").join(t);
-        fs::create_dir_all(&to).unwrap();
-        for f in fs::read_dir(packs().join("themes").join(t)).unwrap() {
-            let f = f.unwrap();
-            fs::copy(f.path(), to.join(f.file_name())).unwrap();
-        }
+        swag_at(&repo.join("packs").join(t), t);
         if t == "garden" {
             git(&repo, &["init", "--quiet", "-b", "main"]);
         }
@@ -394,7 +439,7 @@ fn a_git_pack_is_a_shallow_clone_of_its_folder_alone() {
     add(&commit);
     assert_eq!(
         fs::read(s.dir.join("themes/kitchen/sprites.svg")).unwrap(),
-        fs::read(packs().join("themes/kitchen/sprites.svg")).unwrap()
+        fs::read(s.dir.join("first-party/kitchen/sprites.svg")).unwrap()
     );
     let clone = s.dir.join("data/themes/kitchen");
     assert_eq!(
@@ -608,7 +653,7 @@ fn the_editor_saves_drawn_figures_and_a_drawn_backdrop_that_pass_the_gate() {
     let (ok, out) = s.run(&["theme", "check", &pack.display().to_string()]);
     assert!(ok, "{out}");
     let sheet = fs::read_to_string(pack.join("sprites.svg")).unwrap();
-    let farm = fs::read_to_string(packs().join("themes/farm/sprites.svg")).unwrap();
+    let farm = fs::read_to_string(s.dir.join("first-party/farm/sprites.svg")).unwrap();
     assert_eq!(sheet.matches("id=\"s-needs\"").count(), 1);
     assert!(sheet.contains(needs));
     let (before, after) = farm.split_once("<symbol id=\"s-needs\"").unwrap();

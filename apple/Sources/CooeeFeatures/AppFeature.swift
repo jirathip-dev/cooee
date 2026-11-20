@@ -1,5 +1,6 @@
 import ComposableArchitecture
 import CooeeCore
+import Foundation
 
 @Reducer
 public struct AppFeature: Sendable {
@@ -17,7 +18,9 @@ public struct AppFeature: Sendable {
         public var terminal: TerminalFeature.State
         public var layout: LayoutFeature.State
         @Presents public var persona: PersonaFeature.State?
+        public var report: ReportFeature.State?
         public var notice: String?
+        public var away: Date?
 
         public init(layout: Layout, server: Server?, settings: Settings = Settings()) {
             self.layout = LayoutFeature.State(server: server, layout: layout)
@@ -29,6 +32,9 @@ public struct AppFeature: Sendable {
     }
 
     public enum Action: Sendable {
+        case launch
+        case launched(Server?)
+        case keychainSilent
         case home(HomeFeature.Action)
         case pairing(PairingFeature.Action)
         case retire
@@ -43,16 +49,22 @@ public struct AppFeature: Sendable {
         case persona(PresentationAction<PersonaFeature.Action>)
         case edit(String?)
         case open(String)
+        case call(String)
         case pin(String)
         case start(String)
         case back
         case path([String])
+        case scene(active: Bool)
+        case reporting
+        case report(ReportFeature.Action)
     }
 
-    @Dependency(\.serverStore) private var serverStore
+    @Dependency(\.serverStore) internal var serverStore
     @Dependency(\.loginItems) private var loginItems
-    @Dependency(\.push) private var push
-    @Dependency(\.date.now) private var now
+    @Dependency(\.push) internal var push
+    @Dependency(\.voice) internal var voice
+    @Dependency(\.date.now) internal var now
+    @Dependency(\.continuousClock) internal var clock
 
     public init() {}
 
@@ -69,6 +81,11 @@ public struct AppFeature: Sendable {
                 serverStore.clear()
                 state = State(layout: state.layout.layout, server: nil, settings: state.menu.settings)
                 return .none
+            case .reporting, .report,
+                .back where state.report != nil:
+                return report(&state, action)
+            case .launch, .launched, .keychainSilent:
+                return launch(&state, action)
             case .retire:
                 let loginItems = loginItems
                 return .run { send in if await loginItems.retire() { await send(.retired) } }
@@ -76,8 +93,9 @@ public struct AppFeature: Sendable {
                 state.notice = Self.retired
                 return .none
             case .taps:
-                let push = push
-                return .run { send in for await thread in await push.opened() { await send(.open(thread)) } }
+                return taps(state)
+            case .call(let name):
+                return call(&state, name)
             case .persona(.presented(.delegate(.saved))), .persona(.presented(.delegate(.deleted))):
                 state.persona = nil
                 return .send(.home(.refresh))
@@ -109,6 +127,8 @@ public struct AppFeature: Sendable {
             case .newRoom(.delegate(.cancel)):
                 state.newRoom = nil
                 return .none
+            case .scene(let active):
+                return scene(&state, active: active)
             default:
                 return navigate(&state, action)
             }
@@ -118,6 +138,7 @@ public struct AppFeature: Sendable {
         .ifLet(\.chat, action: \.chat) { ChatFeature() }
         .ifLet(\.newRoom, action: \.newRoom) { NewRoomFeature() }
         .ifLet(\.$persona, action: \.persona) { PersonaFeature() }
+        .ifLet(\.report, action: \.report) { ReportFeature() }
         Reduce { state, _ in
             if let chat = state.chat, case .thread(let id) = chat.target, chat.bar != nil {
                 state.home?.opened[chat.persona.id] = id
@@ -125,8 +146,10 @@ public struct AppFeature: Sendable {
             return .none
         }
     }
+}
 
-    private func navigate(_ state: inout State, _ action: Action) -> Effect<Action> {
+extension AppFeature {
+    internal func navigate(_ state: inout State, _ action: Action) -> Effect<Action> {
         switch action {
         case .open(let thread):
             state.path = (state.path.first == Self.others && thread != Self.others ? [Self.others] : []) + [thread]
@@ -148,9 +171,7 @@ public struct AppFeature: Sendable {
         }
         return .none
     }
-}
 
-extension AppFeature {
     private func pop(_ state: inout State, to path: [String]) {
         let round = state.home?.lists(now: now).all.first { $0.id == state.path.last }?.workflow
         state.path = path
@@ -165,7 +186,7 @@ extension AppFeature {
         return PersonaFeature.State(server: home.server, persona: id.flatMap(home.persona) ?? blank)
     }
 
-    private func chat(_ state: State, _ id: String, room: (String, [String])? = nil) -> ChatFeature.State? {
+    internal func chat(_ state: State, _ id: String, room: (String, [String])? = nil) -> ChatFeature.State? {
         guard let home = state.home, id != Self.others else { return nil }
         let row = home.rows.first { $0.id == id && !$0.members.isEmpty }
         if let (title, members) = room ?? row.map({ ($0.title, $0.members) }) {
@@ -189,48 +210,7 @@ extension AppFeature {
             chat = ChatFeature.State(server: home.server, target: .thread(id), persona: persona)
             chat.machine.current = home.rows.first { $0.id == id }?.machine ?? ""
         }
-        chat.workflow = lists.workflow[chat.persona.id]
+        chat.place(in: lists)
         return chat
-    }
-}
-
-extension AppFeature {
-    private func relay(_ state: inout State, _ delegate: ChatFeature.Action.Delegate) -> Effect<Action> {
-        switch delegate {
-        case .start(let persona):
-            return .send(.start(persona))
-        case .persona(let persona):
-            return .send(.edit(persona))
-        case .open(let thread):
-            return .send(.open(thread))
-        case .round(let thread):
-            state.path.append(thread)
-            state.chat = chat(state, thread)
-            return .none
-        case .topic(let thread):
-            return topic(&state, thread)
-        case .started(let thread):
-            state.path = state.path.dropLast() + [thread]
-            state.chat = state.chat.map { Self.moved($0, to: .thread(thread), persona: $0.persona) }
-            return .send(.home(.refresh))
-        }
-    }
-
-    private func topic(_ state: inout State, _ thread: String) -> Effect<Action> {
-        let (bar, room) = (state.chat?.bar, state.chat?.room)
-        let fresh = room != nil && state.home?.rows.contains { $0.id == thread } == false
-        state.path = state.path.dropLast() + [thread]
-        state.chat = chat(state, thread, room: fresh ? room.map { ($0.title, $0.members) } : nil)
-        state.chat?.bar = bar
-        return .none
-    }
-
-    private static func moved(
-        _ chat: ChatFeature.State, to target: ChatFeature.Target, persona: Persona
-    ) -> ChatFeature.State {
-        var moved = ChatFeature.State(server: chat.server, target: target, persona: persona)
-        moved.machine = chat.machine
-        moved.bar = chat.bar ?? moved.bar
-        return moved
     }
 }

@@ -8,14 +8,12 @@ import Testing
 
 @Suite(.serialized)
 internal struct ThemeFrames {
-    private static let schemes = URL(fileURLWithPath: #filePath)
+    private static let fixture = URL(fileURLWithPath: #filePath)
         .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
-        .deletingLastPathComponent().deletingLastPathComponent().appendingPathComponent("design-system/schemes")
+        .appendingPathComponent("schemes.json")
+    private static let schemes: [String: ThemeScheme] =
+        decode((try? String(contentsOf: fixture, encoding: .utf8)) ?? "{}") ?? [:]
     private static let server = Server(url: URL(string: "https://mini.local") ?? URL(filePath: "/"), token: "t")
-
-    private static func scheme(_ name: String) -> String {
-        (try? String(contentsOf: schemes.appendingPathComponent("\(name).json"), encoding: .utf8)) ?? "{}"
-    }
 
     private static func decode<T: Decodable>(_ json: String) -> T? {
         try? JSONDecoder().decode(T.self, from: Data(json.utf8))
@@ -58,9 +56,9 @@ internal struct ThemeFrames {
             + #""sprites": true, "style": "\#(style)", "scene": ["sky", "sea", "rocks", "sand"], "#
             + #""words": {"needs": "waving", "idle": "basking", "working": "scuttling"}}, "#
             + #""farm": {"label": "farm", "scheme": {"dark": "farm", "light": "farm-light"}, "sprites": true}}, "#
-            + #""schemes": {"farm": \#(scheme("farm")), "farm-light": \#(scheme("farm-light")), "#
-            + #""paper": \#(scheme("paper"))}}"#
+            + #""schemes": {}}"#
         var looks: Looks = decode(json) ?? Looks()
+        looks.schemes = schemes.filter { ["farm", "farm-light", "paper"].contains($0.key) }
         looks.styles = Style.served
         return looks
     }
@@ -125,6 +123,14 @@ internal struct ThemeFrames {
             .frame(maxHeight: .infinity, alignment: .top)
     }
 
+    private static var nord: MenuFeature.State {
+        var state = MenuFeature.State(server: server, settings: Settings(theme: "tidepool"))
+        state.looks = looks("modern")
+        state.looks.schemes["nord"] = schemes["nord"]
+        state.settings.colours = "nord"
+        return state
+    }
+
     internal static func editor(_ style: String) -> [Frame] {
         [
             frame("look", style) { look(menu(style, broken: false)) },
@@ -136,7 +142,14 @@ internal struct ThemeFrames {
     }
 
     internal static var all: [Frame] {
-        editor("modern") + editor("scene") + [frame("look-broken", "modern") { look(menu("modern", broken: true)) }]
+        editor("modern") + editor("scene") + [
+            frame("look-broken", "modern") { look(menu("modern", broken: true)) },
+            Frame.phone("look-colours-nord", nord.palette(device: false)) {
+                ColourPicks(store: Store(initialState: nord) { EmptyReducer() }).padding(16).padding(.top, 54)
+                    .frame(maxHeight: .infinity, alignment: .top)
+            }
+            .filed("v5-colours"),
+        ]
     }
 
     @MainActor @Test(arguments: all)

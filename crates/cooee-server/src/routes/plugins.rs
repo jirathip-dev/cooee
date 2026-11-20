@@ -97,10 +97,7 @@ async fn pass_on(
     relay: fn(plugin::Sse) -> Event,
     open: impl Fn() -> bool + Send + 'static,
 ) -> Result<Response> {
-    if reply
-        .header("content-type")
-        .is_some_and(|t| t.starts_with("text/event-stream"))
-    {
+    if reply.streams() {
         let stream = plugin::events(reply)?
             .take_while(move |_| std::future::ready(open()))
             .map(move |heard| match heard {
@@ -175,15 +172,29 @@ async fn screen(cx: &Cx) -> Result<Response> {
         .into_iter()
         .filter_map(|h| Some((h, header(cx, h)?.to_owned())))
         .collect();
+    if let Some(feed) = plugin::follow(&p, &target) {
+        return shared(cx, feed);
+    }
+    let (backend, at) = (p.clone(), target.clone());
     let reply = tokio::task::spawn_blocking(move || {
         let headers: Vec<(&str, &str)> = pass.iter().map(|(k, v)| (*k, v.as_str())).collect();
-        plugin::call(&p, "GET", &target, &headers, &[], Duration::from_secs(5))
+        plugin::call(&backend, "GET", &at, &headers, &[], Duration::from_secs(5))
     })
     .await?;
     match reply {
+        Ok(r) if r.streams() => shared(cx, plugin::share(p, target, r)?),
         Ok(r) => pass_on(cx, r, ops, || true).await,
         Err(e) => plain(502, &format!("{}: {e}", path_param::<Name>(cx))),
     }
+}
+
+fn shared(
+    cx: &Cx,
+    feed: impl futures_util::Stream<Item = plugin::Sse> + Send + 'static,
+) -> Result<Response> {
+    Sse::new(feed.map(|e| Result::<Event>::Ok(ops(e))))
+        .keep_alive(KeepAlive::new())
+        .into_response(cx)
 }
 
 #[derive(Deserialize)]
@@ -424,6 +435,7 @@ async fn plugin_push(cx: &Cx, Json(b): Json<PluginPush>) -> Result<Response> {
         },
         url: format!("/p/{}{hash}", p.name),
         item: 0,
+        say: false,
     };
     hub(cx).push().send(&note);
     Json(note).into_response(cx)

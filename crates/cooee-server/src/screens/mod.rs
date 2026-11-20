@@ -4,6 +4,7 @@ mod home;
 mod locked;
 mod menu;
 mod persona;
+mod routines;
 mod settings;
 
 use topcoat::router::RouterBuilder;
@@ -15,5 +16,6 @@ pub(crate) fn routes(b: RouterBuilder) -> RouterBuilder {
     let b = locked::routes(b);
     let b = menu::routes(b);
     let b = persona::routes(b);
+    let b = routines::routes(b);
     settings::routes(b)
 }

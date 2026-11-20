@@ -14,12 +14,13 @@ public struct ScreenFeature: Sendable {
         public var screen: LiveScreen?
         public var asOf: Date?
         public var unreachable: String?
-        public var acting = false
+        public var pending: [BlockAction] = []
         public var said: String?
         public var path: [String] = []
         public var focus: String?
         public var beside: String?
         public var besideScreen: JSONValue?
+        public var slow = false
         @Presents public var lane: ChatFeature.State?
 
         public var offline: Bool { unreachable != nil }
@@ -57,6 +58,7 @@ public struct ScreenFeature: Sendable {
         case push(String)
         case beside(String)
         case besideLoaded(JSONValue)
+        case slow
         case lane(PresentationAction<ChatFeature.Action>)
         case delegate(Delegate)
 
@@ -66,11 +68,11 @@ public struct ScreenFeature: Sendable {
         }
     }
 
-    private enum CancelID { case follow, beside, keep, background }
+    internal enum CancelID { case follow, beside, keep, background, slow }
 
-    @Dependency(\.plugins) private var plugins
-    @Dependency(\.screenCache) private var cache
-    @Dependency(\.continuousClock) private var clock
+    @Dependency(\.plugins) internal var plugins
+    @Dependency(\.screenCache) internal var cache
+    @Dependency(\.continuousClock) internal var clock
     @Dependency(\.date.now) private var now
     @Dependency(\.perf) private var perf
 
@@ -87,12 +89,15 @@ public struct ScreenFeature: Sendable {
                 return flush(state)
             case .loaded(let screen):
                 state.screen = LiveScreen(screen)
-                return keep(&state)
+                return .merge(keep(&state), settled(&state))
             case .event(let event):
                 state.screen?.apply(event: event)
                 return keep(&state)
             case .failed(let who, let kept):
                 unreachable(&state, who, kept)
+                return settled(&state)
+            case .slow:
+                state.slow = true
             case .act(let action):
                 return act(&state, action)
             case .acted(let answer, let error):
@@ -109,53 +114,17 @@ public struct ScreenFeature: Sendable {
 }
 
 extension ScreenFeature {
-    internal static func who(_ error: any Error, source: LayoutSource) -> String {
-        guard let error = error as? APIError, error.status > 0 else { return "Mac unreachable" }
-        return "\(source.name) isn't answering"
-    }
-
     private func follow(_ state: State) -> Effect<Action> {
-        let (plugins, cache, clock, server, source) = (plugins, cache, clock, state.server, state.source)
-        let (path, key) = (state.current, state.key)
-        return .run { send in
-            while true {
-                do {
-                    let screen = try await plugins.screen(server, source, path)
-                    await send(.loaded(screen))
-                    guard let stream = screen.string("stream") else { return }
-                    for try await event in plugins.events(server, source, stream) { await send(.event(event)) }
-                } catch {
-                    await send(.failed(Self.who(error, source: source), cache.load(key)))
-                }
-                try await clock.sleep(for: .seconds(5))
-            }
+        let slow = Effect<Action>.run { [clock] send in
+            try await clock.sleep(for: .milliseconds(300))
+            await send(.slow)
         }
-        .cancellable(id: CancelID.follow, cancelInFlight: true)
+        return .merge(watch(state), slow.cancellable(id: CancelID.slow, cancelInFlight: true))
     }
 
-    private func opened(_ state: inout State, _ action: Action) -> Effect<Action> {
-        switch action {
-        case .open(let thread):
-            return .send(.delegate(.open(thread)))
-        case .push(let thread):
-            let persona = Persona(APIPersona(id: "", name: thread, agent: ""))
-            state.lane = ChatFeature.State(server: state.server, target: .thread(thread), persona: persona)
-        case .beside(let path):
-            state.beside = path
-            state.besideScreen = nil
-            let (plugins, server, source) = (plugins, state.server, state.source)
-            return .run { send in
-                await send(.besideLoaded(try await plugins.screen(server, source, path)))
-            } catch: { error, send in
-                await send(.failed(Self.who(error, source: source), nil))
-            }
-            .cancellable(id: CancelID.beside, cancelInFlight: true)
-        case .besideLoaded(let screen):
-            state.besideScreen = screen
-        default:
-            break
-        }
-        return .none
+    private func settled(_ state: inout State) -> Effect<Action> {
+        state.slow = false
+        return .cancel(id: CancelID.slow)
     }
 
     private func keep(_ state: inout State) -> Effect<Action> {
@@ -209,8 +178,12 @@ extension ScreenFeature {
     }
 
     private func act(_ state: inout State, _ action: BlockAction) -> Effect<Action> {
-        guard !state.offline, !state.acting else { return .none }
-        state.acting = true
+        guard !state.offline, !state.pending.contains(action) else { return .none }
+        state.pending.append(action)
+        return state.pending.count == 1 ? send(state, action) : .none
+    }
+
+    private func send(_ state: State, _ action: BlockAction) -> Effect<Action> {
         let (plugins, server, source, clock, perf) = (plugins, state.server, state.source, clock, perf)
         let screen = state.screen?.root.string("id") ?? ""
         return .run { send in
@@ -224,13 +197,20 @@ extension ScreenFeature {
     }
 
     private func acted(_ state: inout State, _ answer: JSONValue?, _ error: String?) -> Effect<Action> {
-        state.acting = false
+        state.pending = Array(state.pending.dropFirst())
         state.said = error ?? answer?.string("toast")
-        guard let answer else { return .none }
-        state.screen?.apply(event: answer)
-        let kept = keep(&state)
-        guard let open = answer.string("open") else { return kept }
-        return navigate(&state, to: open)
+        let was = state.screen?.root.string("stream")
+        let kept = answer.map { answer in
+            state.screen?.apply(event: answer)
+            return keep(&state)
+        }
+        let next = state.pending.first.map { send(state, $0) } ?? .none
+        guard let open = answer?.string("open") else {
+            let stream = state.screen?.root.string("stream")
+            let filtered = stream == was ? nil : stream.map { watch(state, filtered: $0) }
+            return .merge(next, kept ?? .none, filtered ?? .none)
+        }
+        return .merge(next, navigate(&state, to: open))
     }
 
     private func navigate(_ state: inout State, to path: String?) -> Effect<Action> {

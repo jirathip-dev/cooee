@@ -140,10 +140,6 @@ fn a_lane_opens_as_a_chat_that_streams_takes_a_reply_and_stops() {
     );
     assert!(shed.sent(lane).contains(&"\x1e\"cancel\"\n".to_owned()));
     events.until(|e| is_item(e, "agent") && e.data["stop_reason"] == "cancelled");
-
-    let (status, _) = cooee.post(&format!("/threads/{id}/close"), &json!({}));
-    assert_eq!(status, 400);
-    assert_eq!(shed.calls("kill", lane), Vec::<Value>::new());
 }
 
 #[test]
@@ -165,4 +161,102 @@ fn a_lane_goes_once_its_tool_removes_it() {
         .collect();
     roles.sort();
     assert_eq!(roles, ["impl", "rev"]);
+}
+
+fn row(cooee: &Cooee, id: &str, until: impl Fn(&Value) -> bool) -> Value {
+    for _ in 0..250 {
+        let rows = cooee.json("/threads");
+        let found = rows.as_array().unwrap().iter().find(|r| r["id"] == id);
+        if let Some(r) = found.filter(|r| until(r)) {
+            return r.clone();
+        }
+        thread::sleep(Duration::from_millis(20));
+    }
+    panic!("no such row {id}: {}", cooee.json("/threads"));
+}
+
+fn lane_id(cooee: &Cooee, item: &str) -> String {
+    let rows = cooee.json("/threads");
+    let found = rows
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|r| r["workflow"]["item"] == item);
+    id_of(found.unwrap())
+}
+
+#[test]
+fn a_parked_dead_or_offline_lane_lists_its_state_and_reason() {
+    let dir = scratch("workflow-states");
+    let shed = FakeShed::start(&dir.join("shed"), version());
+    shed.link("m1", "up", 0, None);
+    let mut cooee = Cooee::start(&dir, &shed.dir);
+    shed.lane("lane-park", &labels("#1", "impl", "1"));
+    shed.lane("lane-dead", &labels("#2", "impl", "1"));
+    shed.lane("m1/lane-off", &labels("#3", "impl", "1"));
+    workflow(&cooee, 3);
+
+    shed.link("m1", "down", 0, Some("refused"));
+    drop(cooee);
+    cooee = Cooee::start(&dir, &shed.dir);
+    let off = row(&cooee, &lane_id(&cooee, "#3"), |r| r["state"] == "offline");
+    assert_eq!(off["workflow"]["item"], "#3");
+    shed.report("lane-park", "parked", Some("waiting on #12"));
+    shed.end("lane-dead");
+    let parked = row(&cooee, &lane_id(&cooee, "#1"), |r| r["state"] == "parked");
+    assert_eq!(parked["note"], "waiting on #12");
+    let dead = row(&cooee, &lane_id(&cooee, "#2"), |r| r["state"] == "ended");
+    assert_eq!(dead["note"], "The agent exited (1).");
+
+    shed.link("m1", "up", 0, None);
+    drop(cooee);
+    cooee = Cooee::start(&dir, &shed.dir);
+    let back = row(&cooee, &lane_id(&cooee, "#3"), |r| r["state"] != "offline");
+    assert!(back.get("note").is_none(), "{back}");
+    assert_eq!(workflow(&cooee, 3).len(), 3);
+}
+
+#[test]
+fn only_a_dead_or_unclaimed_lane_closes_once_and_is_archived() {
+    let dir = scratch("workflow-close");
+    let build = dir.join("data/plugins/drover/builds/c0ffee12345");
+    std::fs::create_dir_all(&build).unwrap();
+    let manifest = "name = \"drover\"\nversion = \"0.1.0\"\nbuild = \"true\"\nrun = \"true\"\nclaims = [\"drover\"]\n\n\
+                    [[places]]\ntype = \"menu-row\"\nlabel = \"Queue\"\nscreen = \"/screens/queue\"\n\n\
+                    [permissions]\nplaces = [\"menu-row\"]\n";
+    std::fs::write(build.join("cooee-plugin.toml"), manifest).unwrap();
+    let lock = json!([{ "name": "drover", "url": "https://example.com/drover", "commit": "c0ffee12345",
+                        "version": "0.1.0", "listed": true, "tabs": [], "port": 1, "enabled": false }]);
+    std::fs::write(dir.join("data/plugins.lock"), lock.to_string()).unwrap();
+    let shed = FakeShed::start(&dir.join("shed"), version());
+    let cooee = Cooee::start(&dir, &shed.dir);
+    let (lane, stray) = ("drover-cooee-9-impl", "stray-1");
+    shed.lane(lane, &labels("#9", "impl", "1"));
+    let mut other = labels("#10", "impl", "1");
+    other[0] = ("source", "other");
+    shed.lane(stray, &other);
+    workflow(&cooee, 2);
+    let (id, foreign) = (lane_id(&cooee, "#9"), lane_id(&cooee, "#10"));
+    let close = |id: &str| cooee.post(&format!("/threads/{id}/close"), &json!({})).0;
+
+    assert_eq!(close(&id), 400);
+    assert_eq!(shed.calls("kill", lane), Vec::<Value>::new());
+
+    shed.end(lane);
+    row(&cooee, &id, |r| r["state"] == "ended");
+    assert_eq!((close(&id), close(&id)), (200, 200));
+    assert_eq!(shed.calls("kill", lane).len(), 1);
+    assert_eq!(shed.calls("rm", lane).len(), 1);
+    let items = cooee.json(&format!("/threads/{id}/messages"))["items"].clone();
+    let ended = items
+        .as_array()
+        .unwrap()
+        .iter()
+        .filter(|i| i["kind"] == "ended");
+    assert_eq!(ended.count(), 1);
+    assert_eq!(row(&cooee, &id, |_| true)["archived"], true);
+
+    assert_eq!(close(&foreign), 200);
+    assert_eq!(shed.calls("kill", stray).len(), 1);
+    assert_eq!(row(&cooee, &foreign, |_| true)["archived"], true);
 }

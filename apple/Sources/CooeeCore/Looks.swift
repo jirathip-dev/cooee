@@ -1,9 +1,18 @@
 import Foundation
 
 public struct ThemePack: Codable, Sendable, Equatable {
+    private enum CodingKeys: String, CodingKey {
+        case label, scheme, sprites, style, words, scene
+        case loadScene = "load_scene"
+    }
+
     public struct Pair: Codable, Sendable, Equatable {
         public let dark: String
         public let light: String
+    }
+
+    public struct LoadScene: Codable, Sendable, Equatable {
+        public let kind: String
     }
 
     public let label: String
@@ -12,6 +21,9 @@ public struct ThemePack: Codable, Sendable, Equatable {
     public var style: String?
     public var words: [String: String]?
     public var scene: [String]?
+    public var loadScene: LoadScene?
+
+    public var sign: Bool { loadScene?.kind == "sign" }
 }
 
 public struct ThemeScheme: Codable, Sendable, Equatable {

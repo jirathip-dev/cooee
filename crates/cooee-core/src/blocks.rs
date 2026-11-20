@@ -1,5 +1,8 @@
+use blocks::{
+    Block, Card, CardKind, Choice, ChoiceOption, Fields, Other, Run, Secret, Text, TextStyle,
+};
 use serde::{Serialize, Serializer};
-use serde_json::{Value, json};
+use serde_json::Value;
 
 use crate::chat::{Body, Item};
 
@@ -15,7 +18,7 @@ impl Serialize for Item {
             #[serde(flatten)]
             body: &'a Body,
             #[serde(skip_serializing_if = "Option::is_none")]
-            block: Option<Value>,
+            block: Option<Block>,
         }
         Wire {
             id: self.id,
@@ -34,7 +37,7 @@ impl Item {
     /// apply or discard), `secret` (one masked field) or `run` card. Its action is `answer`, sent back as
     /// `POST /threads/<id>/approve`; once settled it shows its line instead.
     #[must_use]
-    pub fn block(&self) -> Option<Value> {
+    pub fn block(&self) -> Option<Block> {
         let Body::Approval {
             tool,
             options,
@@ -48,34 +51,60 @@ impl Item {
         };
         let (id, detail) = (self.id.to_string(), card.detail.as_deref().unwrap_or(""));
         let kind = match card.form.as_deref() {
-            Some("config") => "config",
-            Some("secret") => "secret",
-            Some("run-card") => "run",
-            _ => "ask",
+            Some("config") => CardKind::Config,
+            Some("secret") => CardKind::Secret,
+            Some("run-card") => CardKind::Run,
+            Some("mcp" | "routine") => CardKind::Proposal,
+            _ => CardKind::Ask,
         };
         let mut blocks = Vec::new();
-        if kind == "config" {
-            blocks.push(json!({ "type": "text", "markdown": format!("```\n{detail}\n```") }));
+        if matches!(kind, CardKind::Config | CardKind::Proposal) {
+            let lang = if matches!(kind, CardKind::Config) {
+                "diff"
+            } else {
+                ""
+            };
+            let diff = Text::default().markdown(format!("```{lang}\n{detail}\n```"));
+            blocks.push(Block::Text(Box::new(diff)));
         }
         let answer = format!("{id}-answer");
         let open =
             card.until.is_some() || (tapped.is_none() && chosen.is_none() && card.line.is_none());
         blocks.extend(open.then(|| match kind {
-            "secret" => json!({ "type": "secret", "id": answer, "name": detail, "action": "answer",
-                "values": { "choice": options.first().map_or("save", |o| o.id.as_str()) } }),
-            "run" => json!({ "type": "run", "id": answer, "action": "answer", "command": detail,
-                "sha": card.sha.as_deref().unwrap_or("") }),
+            CardKind::Secret => {
+                let save = options.first().map_or("save", |o| o.id.as_str());
+                let values = Fields::from_iter([("choice".to_owned(), Value::from(save))]);
+                let secret = Secret::new(detail, "answer").id(answer).values(values);
+                Block::Secret(Box::new(secret))
+            }
+            CardKind::Run => {
+                let sha = card.sha.as_deref().unwrap_or("");
+                Block::Run(Box::new(Run::new("answer", detail, sha).id(answer)))
+            }
             _ => {
+                let mut shown: Vec<_> = options
+                    .iter()
+                    .map(|o| ChoiceOption {
+                        value: o.id.clone(),
+                        label: o.name.clone(),
+                        ..ChoiceOption::default()
+                    })
+                    .collect();
+                shown.extend(self.sayable().map(|_| ChoiceOption {
+                    value: Item::SAY.to_owned(),
+                    label: "Deny and say…".to_owned(),
+                    ..ChoiceOption::default()
+                }));
+                let mut choice = Choice::new("answer", shown).id(answer);
                 let recommended = options.iter().find(|o| o.kind == "recommended");
-                let mut choice = json!({ "type": "choice", "id": answer, "action": "answer",
-                    "options": options.iter().map(|o| json!({ "value": o.id, "label": o.name })).collect::<Vec<_>>() });
-                if let (Some(r), Some(c)) = (recommended, choice.as_object_mut()) {
-                    c.insert("recommended".to_owned(), json!(r.id));
+                choice.recommended = recommended.map(|r| r.id.clone());
+                if plugin.is_some() && card.form.is_none() {
+                    choice = choice.other(Other {
+                        placeholder: Some("other…".to_owned()),
+                        ..Other::default()
+                    });
                 }
-                if let (true, Some(c)) = (plugin.is_some() && card.form.is_none(), choice.as_object_mut()) {
-                    c.insert("other".to_owned(), json!({ "placeholder": "other…" }));
-                }
-                choice
+                Block::Choice(Box::new(choice))
             }
         }));
         let by = card
@@ -89,13 +118,20 @@ impl Item {
                 .or(tapped.as_ref())
                 .map(|c| format!("✓ {c}{by}"))
         });
-        blocks.extend(line.map(|l| json!({ "type": "text", "style": "footnote", "markdown": l })));
-        Some(json!({ "type": "card", "id": id, "kind": kind, "title": tool, "blocks": blocks }))
+        blocks.extend(line.into_iter().chain(card.said.clone()).map(|l| {
+            Block::Text(Box::new(
+                Text::default().style(TextStyle::Footnote).markdown(l),
+            ))
+        }));
+        let card = Card::default().id(id).kind(kind).title(tool).blocks(blocks);
+        Some(Block::Card(Box::new(card)))
     }
 }
 
 #[cfg(test)]
 mod tests {
+    use serde_json::json;
+
     use super::*;
     use crate::chat::Card;
 
@@ -123,7 +159,7 @@ mod tests {
     #[test]
     fn a_settled_card_asks_only_while_it_may_change_and_reads_back_without_its_block() {
         let types = |item: &Item| -> Vec<Value> {
-            let block = item.block().unwrap();
+            let block = serde_json::to_value(item.block()).unwrap();
             block["blocks"]
                 .as_array()
                 .unwrap()
@@ -134,7 +170,7 @@ mod tests {
         let open = conductors(Some("split"), Some(99));
         assert_eq!(types(&open), [json!("choice"), json!("text")]);
         assert_eq!(
-            open.block().unwrap()["blocks"][1]["markdown"],
+            serde_json::to_value(open.block()).unwrap()["blocks"][1]["markdown"],
             "✓ split · conductor-t6"
         );
         assert_eq!(types(&conductors(Some("split"), None)), [json!("text")]);

@@ -34,5 +34,5 @@ skip = [
 [sources]
 unknown-registry = "deny"
 unknown-git = "deny"
-# shed-proto, pinned by rev in Cargo.toml.
-allow-git = ["https://github.com/jirathip-dev/shed"]
+# shed-proto and blocks, pinned by rev in Cargo.toml.
+allow-git = ["https://github.com/jirathip-dev/shed", "https://github.com/jirathip-dev/blocks", "https://github.com/jirathip-dev/swag"]

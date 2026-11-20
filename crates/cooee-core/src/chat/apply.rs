@@ -88,6 +88,9 @@ impl Chat {
                 item.map(Change::Item).into_iter().collect()
             }
             EventKind::Reply { text, stop_reason } => self.replied(at, seq, text, stop_reason),
+            EventKind::Exited { .. } | EventKind::Killed if self.turn.state == "ended" => {
+                Vec::new()
+            }
             EventKind::Exited { code } => {
                 let text = code.map_or("The agent stopped.".to_owned(), |c| {
                     format!("The agent exited ({c}).")
@@ -118,8 +121,12 @@ impl Chat {
     /// The session is over: the turn ends and an `ended` row says why.
     pub fn ended(&mut self, at: u64, seq: u64, text: String) -> Vec<Change> {
         let mut changes = self.end(at, seq, Some("cancelled"));
-        changes.push(Change::Item(self.push(at, seq, Body::Ended { text })));
-        changes.push(self.state("ended", None));
+        changes.push(Change::Item(self.push(
+            at,
+            seq,
+            Body::Ended { text: text.clone() },
+        )));
+        changes.push(self.state("ended", Some(text)));
         changes
     }
 
