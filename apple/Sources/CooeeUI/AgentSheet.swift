@@ -74,7 +74,8 @@ internal struct AgentSheet: View {
                             agent: agent, models: models(agent.id), picked: agent.id == draft.agent,
                             divider: agent.id != choices.agents.last?.id)
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(.plain).accessibilityLabel(agent.id)
+                    .accessibilityValue(agent.gaps.map(\.words).joined(separator: " "))
                 }
             }
             Group2 {
