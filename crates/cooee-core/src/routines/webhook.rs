@@ -115,6 +115,13 @@ impl Inbound {
         }
     }
 
+    /// Its body is a JSON object whose `kind` is `alive`: a sender's keep-quiet ping for the silence rule.
+    #[must_use]
+    pub fn alive(&self) -> bool {
+        serde_json::from_str::<serde_json::Value>(&self.body)
+            .is_ok_and(|v| v.get("kind").and_then(serde_json::Value::as_str) == Some("alive"))
+    }
+
     /// What dedupes it.
     #[must_use]
     pub fn key(&self) -> &str {
