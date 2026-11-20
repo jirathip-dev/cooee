@@ -19,7 +19,8 @@ internal struct Entry: TimelineEntry {
 
     internal var glance: SurfaceGlance {
         SurfaceGlance(
-            cache ?? GlanceCache(glance: Glance(), personas: [], host: ""), now: Int(date.timeIntervalSince1970 * 1000))
+            cache ?? GlanceCache(glance: Snapshot(), personas: [], host: ""),
+            now: Int(date.timeIntervalSince1970 * 1000))
     }
 
     internal static var now: Entry {

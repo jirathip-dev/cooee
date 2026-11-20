@@ -12,7 +12,7 @@ internal struct GlanceTests {
         let file = GlanceCache.file(in: folder)
         #expect(GlanceCache.read(file) == nil)
         let cache = GlanceCache(
-            glance: Glance(time: 9, asks: [ask]), personas: [APIPersona(id: "res", name: "Researcher", agent: "x")],
+            glance: Snapshot(time: 9, asks: [ask]), personas: [APIPersona(id: "res", name: "Researcher", agent: "x")],
             host: "mini")
         try cache.write(file)
         #expect(GlanceCache.read(file) == cache)
@@ -24,7 +24,7 @@ internal struct GlanceTests {
         var calendar = Calendar(identifier: .gregorian)
         calendar.timeZone = try #require(TimeZone(identifier: "UTC"))
         let time = (9 * 60 + 41) * 60_000
-        let cache = GlanceCache(glance: Glance(time: time), personas: [], host: "mini")
+        let cache = GlanceCache(glance: Snapshot(time: time), personas: [], host: "mini")
         #expect(cache.asOf(calendar) == "as of 9:41 · mini")
         var bare = cache
         bare.host = ""
@@ -34,7 +34,7 @@ internal struct GlanceTests {
     @Test internal func thePersonasLatestThreadIsItsNewest() {
         let old = GlanceRow(thread: "o", title: "Old", persona: "coder", name: "Coder", line: "", since: 1)
         let new = GlanceRow(thread: "n", title: "New", persona: "coder", name: "Coder", line: "", since: 5)
-        let cache = GlanceCache(glance: Glance(), personas: [], threads: [old, new, ask], host: "")
+        let cache = GlanceCache(glance: Snapshot(), personas: [], threads: [old, new, ask], host: "")
         #expect(cache.latest(of: "coder") == new && cache.latest(of: "chief") == nil)
     }
 
@@ -45,7 +45,7 @@ internal struct GlanceTests {
 
     @Test internal func whatNeedsYouIsTheAsksThenTheBlockedLanesAndTheHubsStateDecodes() throws {
         let lane = GlanceRow(thread: "l", title: "cooee#218", persona: "", name: "", line: "needs a secret", lane: true)
-        #expect(Glance(asks: [ask], blocked: [lane]).needs == [ask, lane])
+        #expect(Snapshot(asks: [ask], blocked: [lane]).needs == [ask, lane])
         let pushed =
             #"{"kind":"running","thread":"t","title":"Export","persona":"coder","name":"Coder","#
             + #""machine":"studio","line":"wrote 412 rows","since":7,"more":"+2 running","tools":6}"#

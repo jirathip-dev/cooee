@@ -19,7 +19,7 @@ internal struct SurfaceIntentTests {
                 calls.withValue { $0.append("face id \(reason)") }
                 return false
             }
-            $0.surface.cached = { GlanceCache(glance: Glance(running: [running]), personas: [], host: "mini") }
+            $0.surface.cached = { GlanceCache(glance: Snapshot(running: [running]), personas: [], host: "mini") }
         } operation: {
             _ = try await StopTurnIntent(thread: "t1").perform()
             _ = try await StopTurnIntent().perform()

@@ -29,7 +29,7 @@ public struct GlanceRow: Codable, Sendable, Equatable, Identifiable {
 }
 
 /// What the widgets show: the asks, the blocked lanes and what runs, as of `time` (Unix milliseconds).
-public struct Glance: Codable, Sendable, Equatable {
+public struct Snapshot: Codable, Sendable, Equatable {
     private enum CodingKeys: String, CodingKey {
         case time = "at"
         case asks, blocked, running
@@ -85,13 +85,14 @@ public struct Shown: Codable, Sendable, Hashable {
 public struct GlanceCache: Codable, Sendable, Equatable {
     public static let group = "group.com.jirathip.cooee"
 
-    public var glance: Glance
+    public var glance: Snapshot
     public var personas: [APIPersona]
     public var threads: [GlanceRow]
     public var host: String
     public var style: Style?
 
-    public init(glance: Glance, personas: [APIPersona], threads: [GlanceRow] = [], host: String, style: Style? = nil) {
+    public init(glance: Snapshot, personas: [APIPersona], threads: [GlanceRow] = [], host: String, style: Style? = nil)
+    {
         self.glance = glance
         self.personas = personas
         self.threads = threads

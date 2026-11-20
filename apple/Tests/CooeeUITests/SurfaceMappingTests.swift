@@ -14,7 +14,7 @@ internal struct SurfaceMappingTests {
     }
 
     @Test internal func theWidgetsRowsReadTheGlanceAsDrawn() {
-        let glance = Glance(
+        let glance = Snapshot(
             time: 0, asks: [row("a", "Researcher", "Kestrel", "Allow fetch on sec.gov?")],
             blocked: [row("b", "Am", "cooee#218 · impl lane", "needs a secret", lane: true)],
             running: [
@@ -36,7 +36,7 @@ internal struct SurfaceMappingTests {
         #expect(surface.needs[0].persona.api == researcher && surface.running[0].persona.name == "Coder")
         #expect((surface.counts, surface.rest) == ("1 ask · 1 blocked", "+1 lane"))
         let two = SurfaceGlance(
-            GlanceCache(glance: Glance(asks: glance.asks + glance.asks), personas: [], host: ""), now: Self.now)
+            GlanceCache(glance: Snapshot(asks: glance.asks + glance.asks), personas: [], host: ""), now: Self.now)
         #expect((two.counts, two.rest) == ("2 asks", ""))
     }
 

@@ -139,7 +139,7 @@ internal struct PersonasTests {
         let ask = GlanceRow(
             thread: "a", title: "Kestrel", persona: "res", name: "Researcher", machine: "mini", line: "Allow fetch?",
             since: 7)
-        #expect(got == Glance(time: 42, asks: [ask]))
+        #expect(got == Snapshot(time: 42, asks: [ask]))
         try await client.activity("ab12", for: nil)
         try await client.activity("cd34", for: "act-1")
         let bodies = try server.requests("/push/activity").map {

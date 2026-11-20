@@ -23,7 +23,7 @@ extension Client {
     }
 
     /// What the widgets show: the asks, the blocked lanes and what runs (#662).
-    public func glance() async throws -> Glance { try await call("GET", "/glance") }
+    public func glance() async throws -> Snapshot { try await call("GET", "/glance") }
 
     /// The Live Activity's push-to-start token (no `activity`), or the running activity's update token (#662).
     public func activity(_ token: String, for activity: String?) async throws {

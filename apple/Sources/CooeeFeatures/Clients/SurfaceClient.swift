@@ -11,7 +11,7 @@ public enum SurfaceRoute: Sendable, Equatable {
 /// routes the app opens.
 @DependencyClient
 public struct SurfaceClient: Sendable {
-    public var glance: @Sendable (_ server: Server) async throws -> Glance
+    public var glance: @Sendable (_ server: Server) async throws -> Snapshot
     public var register: @Sendable (_ server: Server, _ token: String, _ activity: String?) async throws -> Void
     public var tokens: @Sendable () async -> AsyncStream<(token: String, activity: String?)> = { .finished }
     public var cached: @Sendable () -> GlanceCache? = { nil }

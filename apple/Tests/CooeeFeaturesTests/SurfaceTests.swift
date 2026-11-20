@@ -17,6 +17,7 @@ internal struct SurfaceTests {
             $0.date.now = epoch
             $0.push.opened = { .finished }
             $0.push.said = { .finished }
+            $0.voice.calls = { .finished }
             $0.surface.routes = { [SurfaceRoute.thread("t1"), .start("coder")].async }
             $0.surface.tokens = { [(token: "ab", activity: nil), (token: "cd", activity: "a1")].async }
             $0.serverStore.load = { mini }
@@ -34,7 +35,7 @@ internal struct SurfaceTests {
 
     @Test internal func eachHomeLoadKeepsTheGlanceThePersonasTheThreadsTheHostAndTheStyle() async {
         let kept = LockIsolated<[GlanceCache]>([])
-        let glance = Glance(time: 5, running: [running])
+        let glance = Snapshot(time: 5, running: [running])
         var state = AppFeature.State(layout: testLayout, server: mini)
         state.home?.personas = [coder]
         let rows = [row("t1"), row("t2", archived: true), lane("l1")]
