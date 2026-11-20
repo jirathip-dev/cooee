@@ -1,0 +1,15 @@
+Decided: the panel reads the app's one store (CooeeRoot.live): asks are Home's chats in needs, running are those working, drover lanes included through their workflow rows
+Because: "Running agents and waiting asks update live, with no polling faster than the app already does."
+Decided: opening the panel sends one Home refresh; it starts no watcher of its own, so it never polls faster than Home
+Because: apple/Sources/CooeeUI/Root.swift:114
+Decided: the panel and its rows live in CooeeUI (MenuPanel), only MenuBarExtra, the label and window activation are Mac-only in CooeeApp/MenuBar.swift
+Because: "Only the menu bar shell (`MenuBarExtra` and its window) is Mac-only."
+Decided: the glyph is a template cut of the app icon (MenuBarMark, mac idiom only); lists show 3 rows then "+N more" opens the main window
+Because: q2424
+Decided: the QR is the server's address plus /pair, the link the phone's Scan QR step parses back to this server
+Because: apple/Tests/CooeeFeaturesTests/HomeFeatureTests.swift:213
+Decided: "not reachable since" shows the kept copy's time when there is one, else just "not reachable"; rows show their age, not a run clock, as Home keeps no run start
+Rejected: a new HomeFeature timestamp on every load — it changes Home's state on each refresh and every Home test
+Check: MenuBarFrames compares the four states, dark and light, with apple/design/menu-bar PNGs, nothing re-recorded
+Check: the live menu bar was not screenshotted: the lane has no screen-capture permission
+Owner: The Mac app now has a cooee icon in the menu bar; its panel shows the server status, what waits on you and what runs, a QR to pair a phone, and each row opens that chat.
