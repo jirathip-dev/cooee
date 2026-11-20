@@ -71,3 +71,22 @@ public enum Weather: String, Sendable, Equatable {
         return hour >= 19 || hour < 7
     }
 }
+
+/// A Fire Danger Rating sign's level from its scene block: drover's `level` (calm, busy, held), else its `load`.
+public enum SignLevel: String, Sendable, Equatable {
+    case moderate, high, catastrophic
+
+    public init(scene: JSONValue) {
+        switch scene.string("level") {
+        case "calm": self = .moderate
+        case "busy": self = .high
+        case "held": self = .catastrophic
+        default:
+            switch Weather(load: scene["load"]?.number) {
+            case .clear: self = .moderate
+            case .cloudy: self = .high
+            case .storm: self = .catastrophic
+            }
+        }
+    }
+}

@@ -84,7 +84,6 @@ public struct Persona: Identifiable, Sendable, Equatable {
     public var id: String { api.id }
     public var name: String { api.name }
     public var figure: String { state.figure }
-    public var word: String { state.word }
     public var pose: String { state.pose }
 
     public init(api: APIPersona, look: PersonaLook, state: LaneState, seed: String? = nil) {
