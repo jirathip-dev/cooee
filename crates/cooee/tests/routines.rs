@@ -10,7 +10,8 @@
 //!
 //! Signed POSTs (#499): a webhook routine waits for Face ID too; a wrong signature on `/hooks/in/<id>` is a 401 and
 //! starts nothing, a good one a 202 and one thread, the same delivery again (by key or body) nothing, the seventh in
-//! an hour `skipped: rate`; the persona panel shows its URL and its test button runs it.
+//! an hour `skipped: rate`; the persona panel shows its URL and its test button runs it. A silence rule (#692) alerts
+//! once when no signed POST came for its minutes (a bad signature counts for nothing) and once when they are back.
 
 mod support;
 
@@ -271,6 +272,116 @@ fn a_new_thread_routine_starts_a_thread_marked_with_it_in_the_list() {
             .iter()
             .any(|r| r["id"] == started)
     );
+}
+
+fn ends_at(settings: &Path, at: u64) {
+    let text = fs::read_to_string(settings).unwrap();
+    let line = text.lines().find(|l| l.starts_with("ends_at = ")).unwrap();
+    fs::write(settings, text.replace(line, &format!("ends_at = {at}"))).unwrap();
+}
+
+#[test]
+fn an_end_time_ends_a_routine_and_stop_routine_ends_only_one_its_chat_made() {
+    let (dir, shed, cooee, id) = chat("routines-end");
+    let listed = |cooee: &Cooee, rid: &str| {
+        let list = cooee.json("/routines.json");
+        let r = list.as_array().unwrap().iter().find(|r| r["id"] == rid);
+        r.cloned().unwrap_or_default()
+    };
+    let past = json!({ "name": "Watch", "when": "0 9 * * *", "prompt": "watch", "until": "2001-01-01 07:00" });
+    let said = call(&shed, &id, "create_routine", &past);
+    let text = said["content"][0]["text"].as_str().unwrap();
+    assert!(text.starts_with("BAD_UNTIL"), "{said}");
+    let ask = json!({ "name": "Watch", "when": "0 9 * * *", "prompt": "watch", "until": "2099-01-01 07:00" });
+    let made = call(&shed, &id, "create_routine", &ask);
+    assert_eq!(made["isError"], false, "{made}");
+    let items = cooee.json(&format!("/threads/{id}/messages"))["items"].clone();
+    let line = items
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|i| i["kind"] == "routine");
+    let when = line.unwrap()["when"].as_str().unwrap().to_owned();
+    assert_eq!(when, "every day 09:00 · until 2099-01-01 07:00");
+    let rid = cooee.json("/routines.json")[0]["id"]
+        .as_str()
+        .unwrap()
+        .to_owned();
+    assert!(made["content"][0]["text"].as_str().unwrap().contains(&rid));
+
+    let ping = json!({ "name": "Ping", "when": "30 9 * * *", "prompt": "ping" });
+    let made = call(&shed, &id, "create_routine", &ping);
+    let text = made["content"][0]["text"].as_str().unwrap();
+    let pid = text
+        .split_whitespace()
+        .nth(2)
+        .unwrap()
+        .trim_end_matches('.')
+        .to_owned();
+    assert_eq!(listed(&cooee, &pid)["name"], "Ping", "{made}");
+    let other = json!({ "agent": "fake-acp", "folder": dir.join("root/project"), "text": "hi", "random_id": "other" });
+    let (status, body) = cooee.post("/threads", &other);
+    assert_eq!(status, 200, "{body}");
+    let other = serde_json::from_str::<Value>(&body).unwrap()["id"]
+        .as_str()
+        .unwrap()
+        .to_owned();
+    let stop = json!({ "id": pid });
+    let refused = call(&shed, &other, "stop_routine", &stop);
+    assert_eq!(refused["isError"], true, "{refused}");
+    let text = refused["content"][0]["text"].as_str().unwrap();
+    assert!(text.starts_with("NOT_YOURS"), "{text}");
+    assert!(listed(&cooee, &pid)["paused"].is_null());
+    let stopped = call(&shed, &id, "stop_routine", &stop);
+    assert_eq!(stopped["isError"], false, "{stopped}");
+    let paused = listed(&cooee, &pid)["paused"].clone();
+    assert_eq!(
+        (&paused["why"], &paused["by"]),
+        (&json!("ended"), &json!("stop_routine")),
+        "{paused}"
+    );
+    drop(cooee);
+
+    let file = dir.join("data/routine-runs.json");
+    change(&file, |runs| {
+        runs[&rid]["made_at"] = json!(ago(8));
+        runs[&pid]["made_at"] = json!(ago(8));
+    });
+    let cooee = Cooee::start(&dir, &shed.dir);
+    assert_eq!(recorded(&file, &rid)["last_run"]["outcome"], "ran");
+    assert!(
+        recorded(&file, &pid).get("last_run").is_none(),
+        "an ended routine never runs"
+    );
+    assert_eq!(runs(&cooee, &id).len(), 1);
+    drop(cooee);
+
+    let end = ago(3);
+    ends_at(&dir.join("routines.toml"), end);
+    change(&file, |runs| {
+        runs[&rid]["last_due"] = json!(0);
+        runs[&rid]["made_at"] = json!(ago(8));
+    });
+    let cooee = Cooee::start(&dir, &shed.dir);
+    recorded(&file, &rid);
+    assert_eq!(runs(&cooee, &id).len(), 1, "no run after its end time");
+    let ended = listed(&cooee, &rid);
+    assert_eq!(
+        ended["paused"],
+        json!({ "why": "ended", "at": end, "by": "end_time" }),
+        "{ended}"
+    );
+    assert_eq!(
+        form(&cooee, &format!("/routines/{rid}"), "paused=false"),
+        "204"
+    );
+    let resumed = listed(&cooee, &rid);
+    assert!(
+        resumed["paused"].is_null() && resumed["ends_at"].is_null(),
+        "{resumed}"
+    );
+    assert_eq!(form(&cooee, &format!("/routines/{pid}/delete"), ""), "204");
+    assert!(listed(&cooee, &pid).is_null());
 }
 
 const SECRET: &str = "It's a Secret to Everybody";
@@ -730,4 +841,132 @@ fn the_persona_panel_shows_a_webhook_routines_url_and_its_test_button_runs_it() 
         (r["last_run"]["outcome"] == "ran").then_some(r)
     });
     assert!(ran.is_some(), "{routine}");
+}
+
+fn notes(cooee: &Cooee, id: &str) -> Vec<String> {
+    let items = cooee.json(&format!("/threads/{id}/messages"))["items"].clone();
+    let items = items.as_array().unwrap().iter();
+    let notes = items.filter(|i| i["kind"] == "note");
+    notes
+        .filter_map(|i| i["text"].as_str().map(ToOwned::to_owned))
+        .filter(|t| t.starts_with('⟳'))
+        .collect()
+}
+
+fn noted(cooee: &Cooee, id: &str, n: usize) -> Vec<String> {
+    for _ in 0..100 {
+        let all = notes(cooee, id);
+        if all.len() >= n {
+            return all;
+        }
+        thread::sleep(Duration::from_millis(100));
+    }
+    panic!("{n} routine notes never came: {:?}", notes(cooee, id));
+}
+
+#[test]
+fn a_silence_rule_alerts_once_after_n_minutes_without_a_signed_post_and_once_when_they_are_back() {
+    let dir = scratch("routines-silence");
+    let profiles = dir.join("profiles");
+    fs::create_dir_all(&profiles).unwrap();
+    fs::write(
+        profiles.join("coder.toml"),
+        "name = \"coder\"\nlabel = \"Coder\"\nagent = \"fake-acp\"\n",
+    )
+    .unwrap();
+    let shed = FakeShed::start(&dir.join("shed"), version());
+    let (cooee, _) = hooked(&dir, &shed, "http://127.0.0.1:9");
+    fs::write(dir.join("data/secrets/BEACON"), SECRET).unwrap();
+    let new = json!({ "agent": "fake-acp", "folder": dir.join("root/project"), "text": "hi", "random_id": "start" });
+    let (status, body) = cooee.post("/threads", &new);
+    assert_eq!(status, 200, "{body}");
+    let id = serde_json::from_str::<Value>(&body).unwrap()["id"]
+        .as_str()
+        .unwrap()
+        .to_owned();
+    drop(cooee);
+    let routine = |rid: &str, silence: &str| {
+        format!(
+            "[[routine]]\nid = \"{rid}\"\nname = \"{rid}\"\nprompt = \"Read it\"\n\n\
+             [routine.webhook]\nsecret = \"BEACON\"\n{silence}\n\
+             [routine.place]\nin = \"new_thread\"\n\n[routine.place.who]\nagent = \"fake-acp\"\nprofile = \"coder\"\n\n"
+        )
+    };
+    let settings = routine("r-quiet", "silence = 15\n") + &routine("r-plain", "");
+    fs::write(dir.join("routines.toml"), &settings).unwrap();
+    let made = ago(0) - 16 * 60_000;
+    let state = json!({ "made_in": id, "made_at": made });
+    let runs = json!({ "format": 1, "runs": { "r-quiet": state, "r-plain": state } });
+    let file = dir.join("data/routine-runs.json");
+    fs::write(&file, runs.to_string()).unwrap();
+
+    let (cooee, _) = hooked(&dir, &shed, "http://127.0.0.1:9");
+    assert_eq!(
+        noted(&cooee, &id, 1),
+        vec!["⟳ r-quiet: no signed POST for 16 min"]
+    );
+    drop(cooee);
+    fs::write(dir.join("routines.toml"), settings + &routine("r-new", "")).unwrap();
+    let (cooee, port) = hooked(&dir, &shed, "http://127.0.0.1:9");
+    recorded_made(&file, "r-new");
+    assert_eq!(
+        notes(&cooee, &id).len(),
+        1,
+        "no repeat while the silence lasts"
+    );
+
+    let body = r#"{"kind":"alive"}"#;
+    assert_eq!(post_in(port, "r-quiet", "", &sign("{}"), body).0, 401);
+    let quiet = |cooee: &Cooee| {
+        let all = cooee.json("/routines.json");
+        all.as_array().unwrap()[0].clone()
+    };
+    assert_eq!(
+        quiet(&cooee)["heard"],
+        Value::Null,
+        "a bad signature counts for nothing"
+    );
+    assert_eq!(quiet(&cooee)["silent"], true);
+    assert_eq!(notes(&cooee, &id).len(), 1);
+    assert_eq!(post_in(port, "r-quiet", "", &sign(body), body).0, 202);
+    let said = noted(&cooee, &id, 2);
+    assert_eq!(
+        said[1], "⟳ r-quiet: signed POSTs are back after 16 min of silence",
+        "{said:?}"
+    );
+    assert!(quiet(&cooee)["heard"].as_u64().unwrap() > made);
+    assert_eq!(quiet(&cooee)["silent"], Value::Null);
+
+    let screen = cooee.json("/screens/persona/coder");
+    let blocks = screen["blocks"].as_array().unwrap();
+    let rows = &blocks.iter().find(|b| b["type"] == "routines").unwrap()["rows"];
+    assert_eq!(
+        rows[0]["when"],
+        "on a POST signed with secret:BEACON, alert after 15 min without one"
+    );
+    assert!(
+        rows[0]["next"]
+            .as_str()
+            .unwrap()
+            .starts_with("last POST 20"),
+        "{rows}"
+    );
+    assert!(rows[1].get("next").is_none(), "{rows}");
+    thread::sleep(Duration::from_millis(500));
+    assert_eq!(
+        notes(&cooee, &id).len(),
+        2,
+        "r-plain, without the rule, never alerts"
+    );
+}
+
+fn recorded_made(file: &Path, id: &str) {
+    for _ in 0..100 {
+        let v: Value = serde_json::from_str(&fs::read_to_string(file).unwrap()).unwrap();
+        if v["runs"][id]["made_at"].as_u64().unwrap_or(0) > 0 {
+            return;
+        }
+        thread::sleep(Duration::from_millis(100));
+    }
+    panic!("no tick: {}", fs::read_to_string(file).unwrap());
 }
