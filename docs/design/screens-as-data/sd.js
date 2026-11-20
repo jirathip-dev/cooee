@@ -135,7 +135,7 @@ const menu = () => `<div class=mdim></div><div class="agm am" role=menu aria-lab
   <a class="gr lk" href="#"><i>+</i><span class=sk>Add a plugin…</span></a></div>`;
 const CHAT = {
   chat: { p: 'cond', name: 'Conductor', sub: 'drover · 3 fleets', from: 'drover', cards: 'fixtures/cards.json', strip: true, me: "What's waiting on me?",
-    ai: 'Four things: a run card that lapses at 09:52, #125\'s design, a routine ask on #722 and synergy #2708 at its round limit.' },
+    ai: 'Four things: a run card that lapses at 09:52, #125\'s design, a routine ask on #722 and acme #2708 at its round limit.' },
   research: { p: 'res', name: 'Researcher', sub: 'edgar · sec.gov', from: 'edgar', cards: 'fixtures/own-cards.json', me: "Pull Kestrel's last three 10-Ks.",
     ai: 'The edgar plugin needs three things from you first: its settings, its API key and its Python deps.' } };
 const strip = () => `<nav class=hs aria-label="drover"><a class=hsc href="#">Queue<i class=hsn>${qBadge}</i></a><a class=hsc href="#">Events</a></nav>`;

@@ -20,7 +20,7 @@ decisions: q888, q890, q891, q893–q895, q897 (conductor thread t53), and revis
   **rears at the gate**, in the stable **stands in its stable**, and grazing **grazes** (refused balks at the fence,
   over the fence jumps it; not in this frame). The dark navy `personas` band is gone: the field follows the farm
   strip, and the tack takes the farm's own project colour (`--fk-l`).
-- **The mock data is real:** each issue is a real cooee, herdsman or synergy issue with its real title, and each PR
+- **The mock data is real:** each issue is a real cooee or herdsman issue or one from a client-built app with its real title, and each PR
   link is that issue's real PR (herdsman #641 → PR #704, #722 → #726, #708 → #723, cooee #115 → #117). The stages are
   illustrative. The old herdsman #715 → "PR #722" pair was wrong: #715 is a closed serve issue whose PR was #719, and
   #722 is another issue. The Queue tab shows herdsman's own queue.
