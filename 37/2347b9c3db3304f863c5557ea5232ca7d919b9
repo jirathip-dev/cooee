@@ -1,0 +1,10 @@
+Decided: the silence clock counts only signed POSTs: Runner::inbound calls hear after Inbound::signed succeeds, never the test button
+Because: "Only POSTs whose signature checks count"
+Decided: the alert is a push plus a chat note from tick with no agent run; the back line is a chat note only
+Because: "The silence check needs no agent and no tokens"
+Decided: heard and silent live in routine-runs.json, skipped when empty, so existing run files stay byte-identical
+Because: crates/cooee-core/src/routines.rs:497
+Rejected: a repeat alert per tick while silent — the spec says no repeat while the silence lasts
+Rejected: a second is_zero helper — store::thread's generic one is reused as pub(crate)
+Check: a 401 POST leaves heard unset and silent true (crates/cooee/tests/routines.rs silence test)
+Owner: A webhook routine can warn you once when its sender goes quiet for N minutes, and say when it's back.
