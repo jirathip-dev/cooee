@@ -31,14 +31,17 @@ internal struct MenuBarFrames {
         chat("cond", .working, title: "rev lane", ago: "5m", lane: ("#631", "review")),
     ]
 
+    private static let clocks = Dictionary(
+        uniqueKeysWithValues: zip(running.map(\.id), [134.0, 48, 302].map(Glance.clock)))
+
     internal static let states: [String: (CGFloat, Glance)] = [
-        "running": (674, Glance(link: .running("mini"), pair: pair, asks: asks, running: running)),
+        "running": (674, Glance(link: .running("mini"), pair: pair, asks: asks, running: running, clocks: clocks)),
         "quiet": (462, Glance(link: .running("mini"), pair: pair)),
         "unreachable": (
             554,
             Glance(
                 link: .unreachable("mini", since: "9:12"), pair: pair, asks: Array(asks.prefix(1)),
-                running: Array(running.prefix(1)))
+                running: Array(running.prefix(1)), clocks: clocks)
         ),
         "unpaired": (379, Glance(link: .unpaired)),
     ]

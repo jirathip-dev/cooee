@@ -98,7 +98,7 @@ public struct AppPanel: View {
     private let quit: () -> Void
 
     public var body: some View {
-        TimelineView(.everyMinute) { context in
+        TimelineView(.periodic(from: .now, by: 1)) { context in
             MenuPanel(store.state.glance(now: context.date)) { tap in
                 switch tap {
                 case .chat(let id):

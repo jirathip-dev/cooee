@@ -58,6 +58,7 @@ internal struct SectionTitle: View {
 internal struct LiveLine: View {
     @Environment(\.look) private var look
     internal let chat: ListedChat
+    internal let trailing: String
     internal let tint: Color
 
     internal var body: some View {
@@ -72,14 +73,15 @@ internal struct LiveLine: View {
                 Text(detail).ui(12, .regular, look).foregroundStyle(palette.mute).lineLimit(1)
             }
             Spacer(minLength: 4)
-            Text(chat.row.ago).ui(12, .semibold, look).monospacedDigit().foregroundStyle(tint)
+            Text(trailing).ui(12, .semibold, look).monospacedDigit().foregroundStyle(tint)
             Image(systemName: "chevron.right").font(.system(size: 10, weight: .bold)).foregroundStyle(palette.mute)
         }
         .padding(.horizontal, 10).frame(height: 44).contentShape(.rect)
     }
 
     private var title: String {
-        chat.workflow.map { "\($0.issue) · \($0.role)" } ?? chat.persona.name
+        if let lane = chat.workflow { return "\(lane.group)\(lane.item) · \(lane.role)" }
+        return chat.row.state == .needs ? "\(chat.persona.name) asks" : chat.persona.name
     }
 
     private var detail: String {

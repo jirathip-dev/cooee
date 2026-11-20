@@ -60,7 +60,7 @@ public struct MenuPanel: View {
             Button {
                 tap(.chat(chat.id))
             } label: {
-                LiveLine(chat: chat, tint: tint)
+                LiveLine(chat: chat, trailing: glance.clocks[chat.id] ?? chat.row.ago, tint: tint)
             }.buttonStyle(.plain)
         }
         if chats.count > Glance.shown {
