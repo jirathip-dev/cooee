@@ -15,23 +15,25 @@ impl Chat {
     ) -> Vec<Change> {
         let ended = matches!(status.as_str(), "completed" | "failed").then_some(at);
         let found = self.find(|b| matches!(b, Body::Tool { call, .. } if *call == id));
-        let before = found.and_then(|n| self.items.iter().find(|i| i.id == n));
-        let kept = before.and_then(|i| match &i.body {
-            Body::Tool {
-                subject, action, ..
-            } if !facts && *action == read.kind => Some(subject.clone()),
-            _ => None,
-        });
-        let body = Body::Tool {
+        let kind = read.kind;
+        let body = move |subject| Body::Tool {
             call: id,
-            subject: kept.unwrap_or(read.subject),
-            action: read.kind,
+            subject,
+            action: kind,
             status,
             ended,
         };
         let item = match found {
-            Some(n) => self.update(n, seq, |b| *b = body),
-            None => Some(self.push(at, seq, body)),
+            Some(n) => self.update(n, seq, |b| {
+                let subject = match b {
+                    Body::Tool {
+                        subject, action, ..
+                    } if !facts && *action == kind => std::mem::take(subject),
+                    _ => read.subject,
+                };
+                *b = body(subject);
+            }),
+            None => Some(self.push(at, seq, body(read.subject))),
         };
         item.map(Change::Item).into_iter().collect()
     }
