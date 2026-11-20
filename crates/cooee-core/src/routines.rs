@@ -1,8 +1,10 @@
-//! Routines (#75, #261, #499): a schedule, a GitHub event or a signed POST that posts a prompt to an agent, made by the agent in chat.
+//! Routines (#75, #261, #499, #691): a schedule, a GitHub event or a signed POST that posts a prompt to an agent, or runs a
+//! script, made by the agent in chat.
 //! Each one's settings are `<config>/routines.toml`, its run state and the deliveries seen `<data>/routine-runs.json`
 //! (#359). Pure: the server's runner gives `now`, the Mac's UTC offset and each delivery.
 mod cron;
 mod github;
+mod script;
 mod webhook;
 
 use std::{
@@ -15,6 +17,7 @@ use serde::{Deserialize, Serialize};
 
 pub use cron::{Schedule, local};
 pub use github::{Delivery, Fields, Github, Hooks, Rejected, Skip};
+pub use script::{Mode, Script};
 pub use webhook::{Inbound, Webhook};
 
 use crate::Thread;
@@ -52,8 +55,11 @@ pub struct Routine {
     pub trigger: Trigger,
     /// Where each run posts.
     pub place: Place,
-    /// What each run says: see [`Routine::text`].
+    /// What each run says: see [`Routine::text`]; empty for a script routine.
     pub prompt: String,
+    /// The command a script routine runs instead of an agent turn (#691).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub script: Option<Script>,
     /// Why it doesn't run, if it doesn't.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub paused: Option<Paused>,
@@ -166,14 +172,14 @@ pub enum Outcome {
         /// The hub's sentence.
         why: String,
     },
-    /// An event didn't run it.
+    /// An event didn't run it, or its wake script stayed silent.
     Skipped {
         /// Why.
         why: Skip,
     },
 }
 
-/// `create_routine`'s arguments: `when`, `github` or `webhook`.
+/// `create_routine`'s arguments: `when`, `github` or `webhook`, and a prompt or a script.
 #[derive(Debug, Clone, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct Ask {
@@ -185,8 +191,12 @@ pub struct Ask {
     pub github: Option<Github>,
     /// The signed POST.
     pub webhook: Option<Webhook>,
-    /// The prompt.
+    /// The prompt, but for a script routine.
+    #[serde(default)]
     pub prompt: String,
+    /// The script run instead of an agent turn.
+    #[serde(default)]
+    pub script: Option<Script>,
     /// `chat` (default) or `new_thread`.
     #[serde(default)]
     pub place: String,
@@ -209,7 +219,7 @@ impl Routine {
     /// The routine `ask` says, made by thread `from`'s agent at `now`, among `list`.
     ///
     /// # Errors
-    /// `BAD_SCHEDULE`, `BAD_GITHUB`, `BAD_WEBHOOK`, `BAD_TRIGGER`, `BAD_NAME`, `BAD_PROMPT`, `BAD_PLACE` or `TOO_MANY`, said for
+    /// `BAD_SCHEDULE`, `BAD_GITHUB`, `BAD_WEBHOOK`, `BAD_TRIGGER`, `BAD_NAME`, `BAD_PROMPT`, `BAD_SCRIPT`, `BAD_PLACE` or `TOO_MANY`, said for
     /// the agent.
     pub fn make(list: &[Self], ask: Ask, from: &Thread, now: u64) -> Result<Self, String> {
         if list.len() >= MAX {
@@ -238,6 +248,7 @@ impl Routine {
             (None, None, Some(h)) => Trigger::Webhook(h.checked()?),
             _ => return Err("BAD_TRIGGER: give one of when, github or webhook".to_owned()),
         };
+        let script = ask.script.map(Script::checked).transpose()?;
         let mut stamp = now;
         while list.iter().any(|r| r.id == format!("r-{stamp}")) {
             stamp += 1;
@@ -248,6 +259,7 @@ impl Routine {
             trigger,
             place,
             prompt: String::new(),
+            script,
             paused: None,
             made_in: from.id.clone(),
             made_at: now,
@@ -260,7 +272,7 @@ impl Routine {
         r.edit(
             Edit {
                 name: Some(ask.name),
-                prompt: Some(ask.prompt),
+                prompt: r.script.is_none().then_some(ask.prompt),
                 ..Edit::default()
             },
             now,
@@ -427,7 +439,10 @@ struct Def {
     github: Option<Github>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     webhook: Option<Webhook>,
+    #[serde(default)]
     prompt: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    script: Option<Script>,
     #[serde(default)]
     paused: bool,
     place: Place,
@@ -484,6 +499,7 @@ pub(crate) fn files(routines: &[Routine], seen: &[(String, u64)]) -> (String, Ve
             github,
             webhook,
             prompt: r.prompt.clone(),
+            script: r.script.clone(),
             paused: r.paused == Some(Paused::Owner),
             place: r.place.clone(),
         });
@@ -583,6 +599,7 @@ impl Routines {
                 name: d.name,
                 place: d.place,
                 prompt: d.prompt,
+                script: d.script,
             });
         }
         Ok(Book {
@@ -626,6 +643,7 @@ mod tests {
             github: None,
             webhook: None,
             prompt: "Renewals due {{due}}?".to_owned(),
+            script: None,
             place: place.to_owned(),
         }
     }

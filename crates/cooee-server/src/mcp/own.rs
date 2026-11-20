@@ -36,8 +36,8 @@ fn handoff_tool() -> Value {
 fn routine_tool() -> Value {
     json!({
         "name": "create_routine",
-        "description": "Make a routine (when the owner asks for something on a schedule, on a GitHub event or on a signed POST from elsewhere): at each due time (when), matching event (github) or signed POST (webhook) its prompt is sent to you, in this chat (place chat, the default) or as a new thread like this one (place new_thread). The owner sees it in this chat and changes it in Settings › routines; a github or webhook one is saved only once the owner approves its card; a webhook's POST body follows the prompt as untrusted data; a webhook's silence rule (silence: N minutes) alerts the owner once, with no agent run, when no signed POST arrives for N minutes, and says once when they're back. In the prompt {{due}} is the due time; {{event}}, {{repo}} and {{a.b}} (a path into the event's payload, like {{pull_request.title}}) fill from the event. A refusal starts with BAD_SCHEDULE, BAD_GITHUB, BAD_WEBHOOK, BAD_TRIGGER, BAD_NAME, BAD_PROMPT, BAD_PLACE, TOO_MANY, NO_HOOKS or NOT_HERE.",
-        "inputSchema": { "type": "object", "required": ["name", "prompt"], "properties": {
+        "description": "Make a routine (when the owner asks for something on a schedule, on a GitHub event or on a signed POST from elsewhere): at each due time (when), matching event (github) or signed POST (webhook) its prompt is sent to you, in this chat (place chat, the default) or as a new thread like this one (place new_thread). The owner sees it in this chat and changes it in Settings › routines; a github or webhook one is saved only once the owner approves its card; a webhook's POST body follows the prompt as untrusted data; a webhook's silence rule (silence: N minutes) alerts the owner once, with no agent run, when no signed POST arrives for N minutes, and says once when they're back. In the prompt {{due}} is the due time; {{event}}, {{repo}} and {{a.b}} (a path into the event's payload, like {{pull_request.title}}) fill from the event. A script routine (script, instead of a prompt) runs a shell command on the Mac on its trigger, with no agent and no tokens (30 s at most, its output cut at 4,000 characters), in one of two modes: post (its output is posted in this chat, and the owner gets a push when it exits non-zero) or wake (exit 0 stays silent; any other exit sends its output to you as the prompt); it is saved only once the owner approves its card. A refusal starts with BAD_SCHEDULE, BAD_GITHUB, BAD_WEBHOOK, BAD_TRIGGER, BAD_NAME, BAD_PROMPT, BAD_SCRIPT, BAD_PLACE, TOO_MANY, NO_HOOKS or NOT_HERE.",
+        "inputSchema": { "type": "object", "required": ["name"], "properties": {
             "name": { "type": "string", "description": "1 to 60 characters" },
             "when": { "type": "string", "description": "5-field cron in the Mac's local time (minute hour day-of-month month day-of-week; numbers, *, a-b, */n, lists), at least 15 minutes apart: 0 9 * * 1 is Mondays 09:00" },
             "github": { "type": "object", "required": ["repo", "events"], "properties": {
@@ -49,7 +49,11 @@ fn routine_tool() -> Value {
                 "secret": { "type": "string", "description": "the secret's name the sender signs with (A-Z, 0-9, _), like ALERTS_HOOK" },
                 "silence": { "type": "integer", "minimum": 1, "maximum": 10080, "description": "minutes with no signed POST before one alert (a push and a line in this chat), and one line when they're back" }
             } },
-            "prompt": { "type": "string" },
+            "prompt": { "type": "string", "description": "what each run sends you; not for a script routine" },
+            "script": { "type": "object", "required": ["run", "mode"], "properties": {
+                "run": { "type": "string", "description": "the sh command line, 1 to 2,000 characters, run as is" },
+                "mode": { "type": "string", "enum": ["post", "wake"], "description": "post: its output goes in the chat, a push on a non-zero exit; wake: a non-zero exit sends its output to you" }
+            } },
             "place": { "type": "string", "enum": ["chat", "new_thread"] }
         } }
     })

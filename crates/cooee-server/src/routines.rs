@@ -9,8 +9,8 @@ use cooee_core::{
     agents::{self, BEAT, CONSOLIDATE, CONSOLIDATION, HEARTBEAT, Heartbeat},
     history::{self, Beat},
     routines::{
-        Ask, Book, Delivery, Edit, Fields, Hooks, Inbound, Mark, Outcome, Paused, Place, Routine,
-        Routines, Run, Trigger, Who, local,
+        Ask, Book, Delivery, Edit, Fields, Hooks, Inbound, Mark, Mode, Outcome, Paused, Place,
+        Routine, Routines, Run, Trigger, Who, local,
     },
     secrets,
 };
@@ -27,6 +27,7 @@ use crate::{
     push::Note,
 };
 
+mod script;
 mod webhook;
 
 /// How a `new_thread` run starts as `who`: its agent, the agent's name, its folder and its recipe.
@@ -132,8 +133,8 @@ impl Runner {
     }
 
     /// `create_routine` by thread `id`'s agent (`token`: its MCP token): a schedule is stored, then its chat gets
-    /// the `Created routine` line; a GitHub or webhook one only raises a card, and is stored when the owner approves it with
-    /// Face ID. A Workflow session or a routine's own run can't make one. What the agent is told.
+    /// the `Created routine` line; a GitHub, webhook or script one only raises a card, and is stored when the owner
+    /// approves it with Face ID. A Workflow session or a routine's own run can't make one. What the agent is told.
     ///
     /// # Errors
     /// [`HubError::Refused`] for a wrong token, such a thread, no `[hooks]` for a GitHub or webhook one, or a routine `ask`
@@ -150,14 +151,20 @@ impl Runner {
                 "NOT_HERE: a Workflow session or a routine's own run can't make routines",
             ));
         }
-        if ask.github.is_some() || ask.webhook.is_some() {
-            if self.hooks.is_none() {
-                return Err(refused("NO_HOOKS: [hooks] isn't set up on this Mac"));
-            }
+        let outside = ask.github.is_some() || ask.webhook.is_some();
+        if outside && self.hooks.is_none() {
+            return Err(refused("NO_HOOKS: [hooks] isn't set up on this Mac"));
+        }
+        if outside || ask.script.is_some() {
             let list = self.list()?;
             let r = Routine::make(&list, ask.clone(), &from, now).map_err(refused)?;
+            let kind = match r.script.as_ref().map(|s| s.mode) {
+                Some(Mode::Post) => ", a script that posts its output",
+                Some(Mode::Wake) => ", a script that wakes the agent when it fails",
+                None => "",
+            };
             let tool = format!(
-                "save routine {}: {}, {}",
+                "save routine {}: {}, {}{kind}",
                 r.name,
                 r.when(),
                 placed(&r.place)
@@ -175,7 +182,8 @@ impl Runner {
                     .map(|r| format!("saved routine {}", r.name))
                     .map_err(|e| e.to_string())
             });
-            self.hub.propose_later(id, (tool, r.prompt), save)?;
+            let shown = r.script.map_or(r.prompt, |s| s.run);
+            self.hub.propose_later(id, (tool, shown), save)?;
             return Ok(
                 "Proposed. Nothing is saved until the owner approves the card in this chat."
                     .to_owned(),
@@ -647,6 +655,13 @@ impl Runner {
     }
 
     fn run(&self, r: &Routine, text: &str, key: &str) -> Outcome {
+        match &r.script {
+            Some(s) => self.script(r, s, key),
+            None => self.prompt(r, text, key),
+        }
+    }
+
+    fn prompt(&self, r: &Routine, text: &str, key: &str) -> Outcome {
         let mark = Some(r.mark());
         let ran = match &r.place {
             Place::Chat { thread } => self

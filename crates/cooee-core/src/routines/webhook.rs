@@ -160,6 +160,7 @@ mod tests {
                 silence: None,
             }),
             prompt: "Triage {{title}}".to_owned(),
+            script: None,
             place: String::new(),
         };
         let from = crate::Thread {
@@ -207,6 +208,7 @@ mod tests {
                 silence,
             }),
             prompt: "Read it".to_owned(),
+            script: None,
             place: String::new(),
         };
         let e = Routine::make(&[], ask(Some(0)), &from, 1).unwrap_err();
