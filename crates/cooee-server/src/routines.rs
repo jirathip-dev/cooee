@@ -290,41 +290,6 @@ impl Runner {
         }
     }
 
-    fn note(&self, r: &Routine, line: &str) {
-        let text = format!("⟳ {}: {line}", r.name);
-        if let Err(e) = self.hub.say(&r.made_in, Body::Note { text }) {
-            cooee_core::note!("cooee: routines: {}: {e}", r.id);
-        }
-    }
-
-    /// Routine `r`'s last signed POST, as its row shows it, when it has a silence rule.
-    #[must_use]
-    pub fn heard(&self, r: &Routine, now: u64) -> Option<String> {
-        let Trigger::Webhook(h) = &r.trigger else {
-            return None;
-        };
-        h.silence?;
-        Some(match r.heard {
-            0 => "no signed POST yet".to_owned(),
-            at => format!("last POST {}", local(at, self.offset(now))),
-        })
-    }
-
-    pub(crate) fn hear(&self, id: &str, now: u64) {
-        let back = self.change(|b| {
-            let r = b.routines.iter_mut().find(|r| r.id == id);
-            Ok(r.and_then(|r| r.hear(now).map(|m| (r.clone(), m))))
-        });
-        match back {
-            Ok(Some((r, m))) => self.note(
-                &r,
-                &format!("signed POSTs are back after {m} min of silence"),
-            ),
-            Ok(None) => {}
-            Err(e) => cooee_core::note!("cooee: routines: {id}: {e}"),
-        }
-    }
-
     fn consolidate(&self, now: u64, offset: i32) {
         for p in agents::list(self.config.as_deref(), &self.data) {
             let Some(c) = p.consolidate.as_ref().filter(|c| c.on) else {

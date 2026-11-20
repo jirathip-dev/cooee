@@ -1,8 +1,10 @@
 use serde::{Deserialize, Serialize};
 
-use super::{Hooks, Rejected, github::verify};
+use super::{Hooks, Rejected, Routine, Trigger, github::verify};
 
 const SHOWN: usize = 8000;
+
+const MINUTE: u64 = 60_000;
 
 /// A signed POST to `/hooks/in/<id>` runs it: `X-Signature-256` is `sha256=` and the body's HMAC-SHA256 under
 /// `secret:<secret>`.
@@ -26,6 +28,42 @@ impl Webhook {
         } else {
             Ok(self)
         }
+    }
+
+    pub(super) fn describe(&self) -> String {
+        match self.silence {
+            Some(m) => format!(
+                "on a POST signed with secret:{}, alert after {m} min without one",
+                self.secret
+            ),
+            None => format!("on a POST signed with secret:{}", self.secret),
+        }
+    }
+}
+
+impl Routine {
+    /// Its silence alert at `now`, once per silence: the minutes since its last signed POST (else its making), when
+    /// that is past its webhook's `silence` and it isn't paused.
+    pub fn silence(&mut self, now: u64) -> Option<u64> {
+        let Trigger::Webhook(Webhook {
+            silence: Some(min), ..
+        }) = &self.trigger
+        else {
+            return None;
+        };
+        let quiet = now.saturating_sub(self.heard.unwrap_or(0).max(self.made_at));
+        if self.silent || self.paused.is_some() || self.made_at == 0 || quiet < min * MINUTE {
+            return None;
+        }
+        self.silent = true;
+        Some(quiet / MINUTE)
+    }
+
+    /// A signed POST at `now`: the minutes it was silent, when its silence alert went out.
+    pub fn hear(&mut self, now: u64) -> Option<u64> {
+        let quiet = now.saturating_sub(self.heard.unwrap_or(0).max(self.made_at));
+        self.heard = Some(now);
+        std::mem::take(&mut self.silent).then_some(quiet / MINUTE)
     }
 }
 

@@ -117,7 +117,7 @@ impl Kind {
     }
 }
 
-pub(crate) fn is_zero<T: Default + PartialEq>(n: &T) -> bool {
+fn is_zero<T: Default + PartialEq>(n: &T) -> bool {
     *n == T::default()
 }
 

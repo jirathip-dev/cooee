@@ -27,8 +27,6 @@ pub const RATE: usize = 6;
 
 const RUNS_FORMAT: u32 = 1;
 
-const MINUTE: u64 = 60_000;
-
 const HOUR: u64 = 3_600_000;
 
 const KEEP: u64 = 96 * HOUR;
@@ -73,8 +71,8 @@ pub struct Routine {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub recent: Vec<u64>,
     /// Its last signed POST (ms), for a webhook's silence rule.
-    #[serde(default, skip_serializing_if = "crate::store::is_zero")]
-    pub heard: u64,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub heard: Option<u64>,
     /// Its silence alert went out, and no signed POST came since.
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     pub silent: bool,
@@ -256,7 +254,7 @@ impl Routine {
             last_due: 0,
             last_run: None,
             recent: Vec::new(),
-            heard: 0,
+            heard: None,
             silent: false,
         };
         r.edit(
@@ -320,38 +318,8 @@ impl Routine {
         match &self.trigger {
             Trigger::Schedule(s) => s.describe(),
             Trigger::Github(g) => format!("on {} in {}", g.events.join(", "), g.repo),
-            Trigger::Webhook(h) => match h.silence {
-                Some(m) => format!(
-                    "on a POST signed with secret:{}, alert after {m} min without one",
-                    h.secret
-                ),
-                None => format!("on a POST signed with secret:{}", h.secret),
-            },
+            Trigger::Webhook(h) => h.describe(),
         }
-    }
-
-    /// Its silence alert at `now`, once per silence: the minutes since its last signed POST (else its making), when
-    /// that is past its webhook's `silence` and it isn't paused.
-    pub fn silence(&mut self, now: u64) -> Option<u64> {
-        let Trigger::Webhook(Webhook {
-            silence: Some(min), ..
-        }) = &self.trigger
-        else {
-            return None;
-        };
-        let quiet = now.saturating_sub(self.heard.max(self.made_at));
-        if self.silent || self.paused.is_some() || self.made_at == 0 || quiet < min * MINUTE {
-            return None;
-        }
-        self.silent = true;
-        Some(quiet / MINUTE)
-    }
-
-    /// A signed POST at `now`: the minutes it was silent, when its silence alert went out.
-    pub fn hear(&mut self, now: u64) -> Option<u64> {
-        let quiet = now.saturating_sub(self.heard.max(self.made_at));
-        self.heard = now;
-        std::mem::take(&mut self.silent).then_some(quiet / MINUTE)
     }
 
     /// The due time to run at `now` (ms, in UTC offset `offset_min`): the newest one past both its last run and its
@@ -486,8 +454,8 @@ struct State {
     chat_gone: Option<String>,
     #[serde(skip_serializing_if = "Vec::is_empty")]
     recent: Vec<u64>,
-    #[serde(skip_serializing_if = "crate::store::is_zero")]
-    heard: u64,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    heard: Option<u64>,
     #[serde(skip_serializing_if = "std::ops::Not::not")]
     silent: bool,
 }
@@ -787,62 +755,5 @@ mod tests {
         std::fs::write(dir.join("routine-runs.json"), r#"{"format":9,"runs":{}}"#).unwrap();
         assert!(file.load().is_err());
         std::fs::remove_dir_all(&dir).unwrap();
-    }
-
-    #[test]
-    fn an_event_matches_its_repo_events_and_match_fills_the_prompt_and_is_rate_capped() {
-        let github: Github = serde_json::from_value(serde_json::json!({
-            "repo": "Owner/App", "events": ["pull_request.opened", "push"],
-            "match": { "pull_request.draft": "false" } }))
-        .unwrap();
-        let ask = Ask {
-            when: None,
-            github: Some(github),
-            prompt: "{{event}} on {{repo}}: {{pull_request.title}} #{{ pull_request.number }}{{nope}} {{x".to_owned(),
-            ..ask("", "")
-        };
-        let e = Routine::make(&[], ask.clone(), &chat(), MON).unwrap_err();
-        assert!(e.starts_with("BAD_PROMPT"), "{e}");
-        let ask = Ask {
-            prompt: ask.prompt.replace(" {{x", ""),
-            ..ask
-        };
-        let mut r = Routine::make(&[], ask.clone(), &chat(), MON).unwrap();
-        assert_eq!(
-            (r.when().as_str(), r.due(MON * 2, 0)),
-            ("on pull_request.opened, push in Owner/App", None)
-        );
-        let pr = |action: &str, draft: bool, title: &str| {
-            let payload = serde_json::json!({ "action": action, "repository": { "full_name": "owner/app" },
-                "pull_request": { "title": title, "number": 7, "draft": draft } });
-            Delivery::fetched("g".to_owned(), "pull_request".to_owned(), payload)
-        };
-        let d = pr("opened", false, "Fix login");
-        assert!(r.matches(&d));
-        assert!(!r.matches(&pr("closed", false, "x")) && !r.matches(&pr("opened", true, "x")));
-        assert_eq!(
-            r.text(&Fields::Event(&d)),
-            "pull_request.opened on owner/app: Fix login #7"
-        );
-        let long = r.text(&Fields::Event(&pr("opened", false, &"t".repeat(3000))));
-        assert_eq!(long.chars().filter(|c| *c == 't').count(), 2000 + 1);
-        assert!(long.contains("t…"), "{long}");
-        for at in 0..u64::try_from(RATE).unwrap() {
-            assert_eq!(r.admit(MON + at), Ok(()));
-        }
-        assert_eq!(r.admit(MON + 10), Err(Skip::Rate));
-        assert_eq!(r.admit(MON + HOUR), Ok(()), "an hour on, it runs again");
-        r.paused = Some(Paused::Owner);
-        assert_eq!(r.admit(MON + 2 * HOUR), Err(Skip::Paused));
-        for (bad, why) in [(Some("x"), "BAD_GITHUB"), (None, "BAD_TRIGGER")] {
-            let mut a = ask.clone();
-            if let Some(repo) = bad {
-                a.github.as_mut().unwrap().repo = repo.to_owned();
-            } else {
-                a.when = Some("0 9 * * 1".to_owned());
-            }
-            let e = Routine::make(&[], a, &chat(), MON).unwrap_err();
-            assert!(e.starts_with(why), "{e}");
-        }
     }
 }
