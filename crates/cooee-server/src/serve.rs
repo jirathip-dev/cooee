@@ -31,7 +31,7 @@ fn starter(
         let ask = ("", None, persona);
         recipe(
             &logins,
-            (&data, config.as_deref(), &list),
+            (&data, config.as_deref(), &list, &hub.mcp()?),
             ask,
             PathBuf::new(),
             (empty, false),
@@ -56,7 +56,7 @@ fn runner(
         let list = profiles(hub, (&data, config.as_deref()));
         let (agent, folder, mut recipe) = recipe(
             &logins,
-            (&data, config.as_deref(), &list),
+            (&data, config.as_deref(), &list, &hub.mcp()?),
             (&who.agent, Some(&who.account), &who.profile),
             who.folder.clone(),
             ((who.model.clone(), who.effort.clone()), false),

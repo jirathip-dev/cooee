@@ -52,7 +52,8 @@ fn setup(name: &str) -> Setup {
     agent(&dir, "leak", &leak, "");
     let shed = FakeShed::start(&dir.join("shed"), version());
     let extra = "[[providers]]\nname = \"fake\"\nbase = \"claude\"\nagent = \"fake-acp\"\nhome = \"FAKE_HOME\"\n\
-                 settings = \"FAKE_SETTINGS\"\nlogin = [\"true\"]\nstatus = [\"true\"]\n";
+                 settings = \"FAKE_SETTINGS\"\nlogin = [\"true\"]\nstatus = [\"true\"]\n\n\
+                 [[mcp]]\nname = \"search\"\ncommand = \"true\"\nprovides = [\"web\"]\n";
     let cooee = Cooee::start_with(&dir, &shed.dir, extra);
     Setup {
         dir,
@@ -544,6 +545,21 @@ fn a_persona_with_no_profile_and_a_room_member_start_without_personal_setup_plai
         });
         personal(&line.unwrap_or_else(|| panic!("{member}'s room session never started")));
     }
+}
+
+#[test]
+fn a_persona_with_a_web_connector_starts_with_the_harnesss_own_web_tools_off() {
+    let s = setup("persona-web");
+    let pick = "name = \"Wes\"\nagent = \"fake-acp\"\n\n[[mcp]]\nserver = \"search\"\n";
+    agent(&s.dir, "wes", pick, "");
+
+    let (_, line) = s.thread("wes", "hi");
+    let o = options(&s.shed, &line).unwrap_or_else(|| panic!("no options in {line}"));
+    let tools = o["tools"].as_array().unwrap();
+    for web in ["WebSearch", "WebFetch"] {
+        assert!(!tools.contains(&json!(web)), "{web}: {o}");
+    }
+    assert!(tools.contains(&json!("Read")), "{o}");
 }
 
 #[test]
