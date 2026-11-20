@@ -46,6 +46,7 @@ impl FakeShed {
             };
             let turn = EventKind::Turn {
                 prompt: prompt.clone(),
+                agent: Vec::new(),
             };
             self.emit(name, turn);
             if prompt.contains("long tool run") {
@@ -85,7 +86,6 @@ impl FakeShed {
         let prompt = topic
             .and_then(|t| t.split_once(").\n\n"))
             .map_or(prompt, |t| t.1);
-        let read = "Read src/lib.rs";
         if let Some(turn) = self.conformance(name, prompt, rx) {
             return Some(turn);
         }
@@ -113,9 +113,9 @@ impl FakeShed {
             (events, "end_turn")
         } else if prompt.contains("tool") {
             let events = [
-                tool("c1", read, "pending"),
-                tool("c1", read, "in_progress"),
-                tool("c1", read, "completed"),
+                read_file("pending", &["src/lib.rs"]),
+                read_file("in_progress", &[]),
+                read_file("completed", &[]),
                 text("Read "),
                 text("it."),
                 reply("Read it.", "end_turn"),
@@ -217,6 +217,8 @@ impl FakeShed {
             used: 1200,
             size: 200_000,
             cost: None,
+            turn: None,
+            total: None,
         };
         Some((
             vec![EventKind::Usage(usage), reply(&said, "end_turn")],
@@ -312,8 +314,10 @@ impl FakeShed {
         self.emit(
             name,
             EventKind::ApprovalRequest {
+                id: String::new(),
                 tool: tool_name,
                 options,
+                call: None,
             },
         );
         self.report(name, "blocked", Some(call));
@@ -381,6 +385,19 @@ fn tool(id: &str, title: &str, status: &str) -> EventKind {
         title: title.to_owned(),
         status: status.to_owned(),
         kind: None,
+        locations: Vec::new(),
+        raw_input: None,
+    }
+}
+
+fn read_file(status: &str, at: &[&str]) -> EventKind {
+    EventKind::ToolCall {
+        id: "c1".to_owned(),
+        title: "Read src/lib.rs".to_owned(),
+        status: status.to_owned(),
+        kind: Some("read".to_owned()),
+        locations: at.iter().map(Into::into).collect(),
+        raw_input: None,
     }
 }
 

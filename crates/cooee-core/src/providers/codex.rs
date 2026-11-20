@@ -4,12 +4,12 @@ use serde_json::json;
 
 use crate::{
     Entry, Provider, Spec,
-    action::Kind,
+    action::{Action, Call, Kind},
     provider::{Builtin, Channel, Gap, Setup, Want},
 };
 
 /// Codex: the brief as developer instructions and its built-ins off through `CODEX_CONFIG`; its global files have no
-/// switch.
+/// switch; codex-acp titles an MCP call `mcp.<server>.<tool>` and a command with its shell prefix stripped.
 #[derive(Debug)]
 pub struct Codex(Spec);
 
@@ -23,6 +23,20 @@ pub const ENTRY: Entry = Entry {
 impl Provider for Codex {
     fn spec(&self) -> &Spec {
         &self.0
+    }
+
+    fn action(&self, call: &Call) -> Action {
+        let mcp = call.title.strip_prefix("mcp.").and_then(|t| t.split_once('.'));
+        match (mcp, Action::plain(call)) {
+            (Some((server, tool)), _) if !server.is_empty() && !tool.is_empty() => {
+                Action::tool(server, tool)
+            }
+            (_, Action { kind: Kind::Run, .. }) => Action {
+                kind: Kind::Run,
+                subject: call.title.to_owned(),
+            },
+            (_, plain) => plain,
+        }
     }
 
     fn session(&self, want: &Want) -> Setup {

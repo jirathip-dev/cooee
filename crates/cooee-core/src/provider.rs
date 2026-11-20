@@ -12,7 +12,7 @@ use toml::{Table, Value};
 
 use crate::{
     Shed, Usage,
-    action::Kind,
+    action::{Action, Call, Kind},
     login::{Ran, Spec, Status, plain_status},
     providers::REGISTRY,
     shed::Record,
@@ -157,6 +157,11 @@ pub trait Provider: Send + Sync + fmt::Debug {
     fn session(&self, want: &Want) -> Setup {
         Setup::plain(want)
     }
+
+    /// A tool call's kind and subject from ACP's facts; the default reads ACP's own fields only.
+    fn action(&self, call: &Call) -> Action {
+        Action::plain(call)
+    }
 }
 
 /// A spec with no registered behaviour.
@@ -226,6 +231,13 @@ impl Providers {
     #[must_use]
     pub fn named(&self, name: &str) -> Option<&Arc<dyn Provider>> {
         self.iter().find(|p| p.spec().name == name)
+    }
+
+    /// A tool call of ACP agent `agent` as its provider reads it; an agent no provider runs: ACP's own fields.
+    #[must_use]
+    pub fn action(&self, agent: &str, call: &Call) -> Action {
+        self.for_agent(agent)
+            .map_or_else(|| Action::plain(call), |p| p.action(call))
     }
 
     /// The provider that signs in ACP agent `agent`.

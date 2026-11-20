@@ -4,6 +4,7 @@ use serde_json::json;
 
 use crate::{
     Entry, Provider, Ran, Spec, Status, Usage, Window,
+    action::{Action, Call},
     login::one_line,
     provider::{Builtin, Channel, Setup, Want},
 };
@@ -117,6 +118,16 @@ impl Provider for Claude {
             })),
             brief: Channel::System,
             ..Setup::default()
+        }
+    }
+
+    fn action(&self, call: &Call) -> Action {
+        let mcp = call.title.strip_prefix("mcp__").and_then(|t| t.split_once("__"));
+        match mcp {
+            Some((server, tool)) if !server.is_empty() && !tool.is_empty() => {
+                Action::tool(server, tool)
+            }
+            _ => Action::plain(call),
         }
     }
 }

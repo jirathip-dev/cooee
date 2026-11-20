@@ -3,6 +3,7 @@ use serde_json::Value;
 use shed_proto::ApprovalOption;
 
 use super::Card;
+use crate::action::Kind;
 
 /// One row of a thread, as stored and as the page draws it. A later version of an item replaces the earlier one.
 /// An approval is sent with its card block (`blocks.rs`).
@@ -62,8 +63,12 @@ pub enum Body {
     Tool {
         /// The agent's tool call id.
         call: String,
-        /// What it does, in the agent's words.
-        title: String,
+        /// What it acts on: a path, a command, a query, a URL, `server/tool`, or the agent's title.
+        #[serde(rename = "title")]
+        subject: String,
+        /// Its kind of action; a row stored before kinds were read is `other`.
+        #[serde(default)]
+        action: Kind,
         /// `pending`, `in_progress`, `completed`, `failed` or `cancelled`.
         status: String,
         /// When it ended, in Unix milliseconds.

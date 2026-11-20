@@ -197,15 +197,12 @@ pub fn serve(config: &Config, ready: impl FnOnce(SocketAddr)) -> io::Result<()> 
         .get(&looks.default)
         .cloned()
         .ok_or_else(|| io::Error::other(format!("no theme {}", looks.default)))?;
-    let logins = Logins::new(
-        shed.clone(),
-        cooee_core::Providers::load(config.providers.as_deref(), &shed),
-        &data,
-    );
+    let providers = cooee_core::Providers::load(config.providers.as_deref(), &shed);
+    let logins = Logins::new(shed.clone(), providers.clone(), &data);
     let listener = std::net::TcpListener::bind((config.bind, config.port))?;
     listener.set_nonblocking(true)?;
     let hub = Hub::open(
-        shed,
+        (shed, providers),
         &data,
         (config.roots.clone(), config.path.clone()),
         theme,

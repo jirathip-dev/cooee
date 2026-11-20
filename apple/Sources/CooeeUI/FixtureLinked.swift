@@ -47,7 +47,7 @@ extension Fixtures {
         .divider(id: 0, text: "Today 09:50 · ask_persona"),
         .said(id: 1, speaker: "coder", time: "asked · 09:50", markdown: [.text(question)]),
         .said(id: -2, speaker: "res", time: "09:50", markdown: []),
-        .tools(id: 2, rows: [ToolRow("search sec.gov", "done"), ToolRow("fetch sec.gov", "done")]),
+        .tools(id: 2, rows: [ToolRow(.search, "sec.gov", "done"), ToolRow(.fetch, "sec.gov", "done")]),
         .you(id: 4, text: note),
         .asked(
             id: 5,

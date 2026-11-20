@@ -20,7 +20,7 @@ private enum VoiceScreens {
         actions.voice = VoiceActs(dictation: Dictation(before: "", heard: heard, listening: listening))
         let items: [Item] = [
             .you(id: 1, text: "Export Kestrel's filings to CSV, one row a line item."),
-            .tools(id: 2, rows: [ToolRow("cargo run -p export", "ok"), ToolRow("wrote kestrel-q2.csv", "ok")]),
+            .tools(id: 2, rows: [ToolRow(.run, "cargo run -p export", "ok"), ToolRow(.edit, "kestrel-q2.csv", "ok")]),
             .agent(id: 3, markdown: [.text("Done: **388 rows** in `kestrel-q2.csv`. The Q3 filing isn't in yet.")]),
         ]
         let draft = listening ? "" : "\(said) ten Q filing"
@@ -54,7 +54,8 @@ private enum VoiceScreens {
             .you(id: 1, text: "Find what the Q3 10-Q says about Birch."),
             .call(Call(id: 2, seconds: 252, lines: lines, tools: 2)),
             .tools(
-                id: 3, rows: [ToolRow("fetch sec.gov/…/kestrel-10q-q3.htm", "ok"), ToolRow("read notes, p. 14", "ok")]),
+                id: 3,
+                rows: [ToolRow(.fetch, "sec.gov/…/kestrel-10q-q3.htm", "ok"), ToolRow(.read, "notes, p. 14", "ok")]),
             .agent(
                 id: 4,
                 markdown: [

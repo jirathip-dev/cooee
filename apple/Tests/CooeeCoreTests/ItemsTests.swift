@@ -24,7 +24,11 @@ internal struct ItemsTests {
             drawn == [
                 .you(id: 1, text: "Fix it", files: ["1-0-log.txt"]),
                 .tools(
-                    id: 2, rows: [ToolRow("Read a", "done"), ToolRow("Run b", "running"), ToolRow("Run c", "failed")]),
+                    id: 2,
+                    rows: [
+                        ToolRow(.other, "Read a", "done"), ToolRow(.other, "Run b", "running"),
+                        ToolRow(.other, "Run c", "failed"),
+                    ]),
                 .card(id: 5, poster: "edgar", block: .object(["type": .string("card")])),
                 .note(id: 7, text: "Model set"),
                 .agent(id: 10, markdown: [.text("Done.")]),
@@ -33,11 +37,11 @@ internal struct ItemsTests {
             ]
         )
         #expect(drawn.map(\.id) == [1, 2, 5, 7, 10, 11, 12])
-        #expect(ToolRow("Run b", "running").running && !ToolRow("Read a", "done").running)
+        #expect(ToolRow(.run, "b", "running").running && !ToolRow(.read, "a", "done").running)
     }
 
     private static let card = JSONValue.object(["type": .string("card")])
-    private static let steps = (2...6).map { ToolRow("Step \($0)", "done") }
+    private static let steps = (2...6).map { ToolRow(.other, "Step \($0)", "done") }
     private static let turn: [APIItem] = {
         let tools = (2...6).map {
             APIItem(id: $0, time: Int64($0) * 1000, kind: "tool", title: "Step \($0)", status: "completed")
@@ -86,7 +90,10 @@ internal struct ItemsTests {
             APIItem(id: 5, time: 5000, kind: "agent", text: "Fixed."),
         ]
         let entries = [PlanEntry("Read the code", done: true), PlanEntry("Fix the bug", done: false)]
-        let steps = [ToolRow("Read a", "done"), ToolRow("Plan", "done", plan: entries), ToolRow("Edit a", "failed")]
+        let steps = [
+            ToolRow(.other, "Read a", "done"), ToolRow(.other, "Plan", "done", plan: entries),
+            ToolRow(.other, "Edit a", "failed"),
+        ]
         #expect(
             ChatItems.build(turn, style: .chat).suffix(2) == [
                 .agent(id: 5, markdown: [.text("Fixed.")]), .trace(id: 2, steps: steps, seconds: 3),
@@ -98,7 +105,7 @@ internal struct ItemsTests {
         frame.name = "f1"
         let you = APIItem(id: 1, time: 1000, kind: "you", text: "Go")
         let items = [you, frame, APIItem(id: 3, time: 3000, kind: "agent", text: "Done.")]
-        let row = ToolRow(#"click "Sign in""#, "done", frame: "f1")
+        let row = ToolRow(.other, #"click "Sign in""#, "done", frame: "f1")
         let (asked, done) = (Item.you(id: 1, text: "Go", files: []), Item.agent(id: 3, markdown: [.text("Done.")]))
         #expect(ChatItems.build(items) == [asked, .tools(id: 2, rows: [row]), done])
         #expect(
@@ -164,7 +171,7 @@ extension ItemsTests {
             id: 2, .shot(frame: "f2", address: "https://a.com/x", time: Date(timeIntervalSince1970: 2)))
         let waiting = Item.screen(id: 4, .handoff(what: "Sign in to a.com", waiting: true, note: ""))
         let back = Item.screen(id: 5, .handoff(what: "2FA", waiting: false, note: "done it"))
-        let row = ToolRow("click", "done", frame: "f3")
+        let row = ToolRow(.other, "click", "done", frame: "f3")
         #expect(ChatItems.build(items) == [shot, .tools(id: 3, rows: [row]), waiting, back])
         #expect(
             ChatItems.build(items, style: .chat) == [
@@ -202,7 +209,7 @@ internal struct CallItemsTests {
             ], tools: 2))
 
     @Test internal func voiceTurnsGroupIntoOneCallBlockUntilATypedMessage() {
-        let rows = [ToolRow("fetch sec.gov", "done"), ToolRow("read notes", "done")]
+        let rows = [ToolRow(.other, "fetch sec.gov", "done"), ToolRow(.other, "read notes", "done")]
         #expect(
             ChatItems.build(items)
                 == [
@@ -232,5 +239,19 @@ extension ItemsTests {
         #expect(ChatItems.build(items) == [.link(id: 2, onward), .link(id: 3, back)])
         #expect(onward.chip == "continued in Fix the build" && back.chip == "from t5")
         #expect(Item.link(id: 2, onward).plainText == nil && Item.link(id: 2, onward).id == 2)
+    }
+
+    @Test internal func aToolRowDrawsTheServersActionAndAnUnknownOneAsOther() throws {
+        let wire = #"""
+            [{"id": 2, "at": 2, "kind": "tool", "call": "c1", "title": "src/lib.rs", "action": "read", "status": "completed"},
+             {"id": 3, "at": 3, "kind": "tool", "call": "c2", "title": "cooee/remember", "action": "tool", "status": "failed"},
+             {"id": 4, "at": 4, "kind": "tool", "call": "c3", "title": "Look", "action": "browse", "status": "pending"}]
+            """#
+        let items = try JSONDecoder().decode([APIItem].self, from: Data(wire.utf8))
+        let rows = [
+            ToolRow(.read, "src/lib.rs", "done"), ToolRow(.tool, "cooee/remember", "failed"),
+            ToolRow(.other, "Look", "running"),
+        ]
+        #expect(ChatItems.build(items) == [.tools(id: 2, rows: rows)])
     }
 }
