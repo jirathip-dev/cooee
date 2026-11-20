@@ -66,7 +66,7 @@ internal struct LaneStage: View {
                 HStack(alignment: .bottom, spacing: 2) {
                     ForEach(SceneLane.placed(block.list("lanes"))) { lane in
                         ActButton(source: lane.source) { LaneFigure(lane: lane, stage: stage) }
-                            .accessibilityLabel("\(lane.name), \(lane.state.word)")
+                            .accessibilityLabel("\(lane.name), \(look.word(lane.state))")
                     }
                 }
                 .padding(.horizontal, 8)
@@ -91,7 +91,7 @@ internal struct LaneFigure: View {
                 .padding(.horizontal, 8).padding(.vertical, 3)
                 .background(stage.color(needs ? \.alertPaper : \.paper).opacity(0.92), in: .capsule)
                 .overlay(Capsule().strokeBorder(needs ? alert : .clear, lineWidth: 1.5))
-            Text(lane.state.word).ui(10, .medium, look)
+            Text(look.word(lane.state)).ui(10, .medium, look)
                 .foregroundStyle(needs || lane.state == .fail ? alert : ink)
         }
         .frame(width: 96).contentShape(.rect)

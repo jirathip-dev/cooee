@@ -73,6 +73,7 @@ public struct AppRoot: View {
         look.night = menu.settings.night
         look.sign = art != nil && menu.looks.themes[theme]?.sign == true
         look.sprites = menu.settings.sprites(in: theme)
+        look.words = menu.looks.themes[theme]?.words ?? [:]
         return look
     }
 
