@@ -185,7 +185,8 @@ fn add_remove_and_list_with_the_lock() {
     );
     let (ok, out) = s.run(&["theme", "add", "sea"]);
     assert!(
-        !ok && out.contains("sea isn't a first-party theme (farm garden kitchen scene terminal)"),
+        !ok && out
+            .contains("sea isn't a first-party theme (bush farm garden kitchen scene terminal)"),
         "{out}"
     );
     let looks = s.cooee.json("/api/v1/looks");

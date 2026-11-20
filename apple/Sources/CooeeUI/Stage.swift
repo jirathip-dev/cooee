@@ -47,7 +47,12 @@ internal struct LaneStage: View {
             TimelineView(.everyMinute) { context in
                 let night = look.night ?? Weather.night(at: context.date)
                 strip(stage)
-                    .overlay { Sky(weather: Weather(load: block["load"]?.number), night: night) }
+                    .overlay {
+                        if look.sign {
+                            Sprite(name: "", pack: "sprites.svg#s-sign-\(SignLevel(scene: block).rawValue)")
+                        }
+                    }
+                    .overlay { Sky(weather: look.sign ? .clear : Weather(load: block["load"]?.number), night: night) }
                     .overlay(alignment: .topTrailing) { SkyButtons(next: block["next"], night: night) }
             }
             .padding(.horizontal, -BlocksView.inset)
@@ -61,7 +66,7 @@ internal struct LaneStage: View {
                 HStack(alignment: .bottom, spacing: 2) {
                     ForEach(SceneLane.placed(block.list("lanes"))) { lane in
                         ActButton(source: lane.source) { LaneFigure(lane: lane, stage: stage) }
-                            .accessibilityLabel("\(lane.name), \(lane.state.word)")
+                            .accessibilityLabel("\(lane.name), \(look.word(lane.state))")
                     }
                 }
                 .padding(.horizontal, 8)
@@ -80,12 +85,13 @@ internal struct LaneFigure: View {
         let (ink, alert) = (stage.color(\.ink), stage.color(\.alert))
         let needs = lane.state == .needs
         VStack(spacing: 2) {
-            Sprite(name: lane.sprite).frame(width: 92, height: 70)
+            Sprite(name: lane.sprite, pack: look.sign ? "sprites.svg#s-scene-\(lane.state.pose)" : nil)
+                .frame(width: 92, height: 70)
             Text(lane.name).ui(12, .semibold, look).lineLimit(1).foregroundStyle(ink)
                 .padding(.horizontal, 8).padding(.vertical, 3)
                 .background(stage.color(needs ? \.alertPaper : \.paper).opacity(0.92), in: .capsule)
                 .overlay(Capsule().strokeBorder(needs ? alert : .clear, lineWidth: 1.5))
-            Text(lane.state.word).ui(10, .medium, look)
+            Text(look.word(lane.state)).ui(10, .medium, look)
                 .foregroundStyle(needs || lane.state == .fail ? alert : ink)
         }
         .frame(width: 96).contentShape(.rect)

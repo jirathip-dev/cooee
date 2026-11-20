@@ -160,15 +160,17 @@ mod tests {
                 silence: None,
             }),
             prompt: "Triage {{title}}".to_owned(),
+            script: None,
             place: String::new(),
+            until: None,
         };
         let from = crate::Thread {
             id: "t-1".to_owned(),
             ..crate::Thread::default()
         };
-        let e = Routine::make(&[], ask("bad name"), &from, 1).unwrap_err();
+        let e = Routine::make(&[], ask("bad name"), &from, (1, 0)).unwrap_err();
         assert!(e.starts_with("BAD_WEBHOOK"), "{e}");
-        let r = Routine::make(&[], ask("ALERTS_HOOK"), &from, 1).unwrap();
+        let r = Routine::make(&[], ask("ALERTS_HOOK"), &from, (1, 0)).unwrap();
         assert_eq!(r.when(), "on a POST signed with secret:ALERTS_HOOK");
         let long = Inbound {
             key: "k".to_owned(),
@@ -207,16 +209,18 @@ mod tests {
                 silence,
             }),
             prompt: "Read it".to_owned(),
+            script: None,
             place: String::new(),
+            until: None,
         };
-        let e = Routine::make(&[], ask(Some(0)), &from, 1).unwrap_err();
+        let e = Routine::make(&[], ask(Some(0)), &from, (1, 0)).unwrap_err();
         assert!(e.starts_with("BAD_WEBHOOK"), "{e}");
-        let mut plain = Routine::make(&[], ask(None), &from, MIN).unwrap();
+        let mut plain = Routine::make(&[], ask(None), &from, (MIN, 0)).unwrap();
         assert_eq!(plain.silence(1000 * MIN), None);
         assert_eq!(plain.hear(1000 * MIN), None);
         assert_eq!(plain.silence(5000 * MIN), None);
 
-        let mut r = Routine::make(&[], ask(Some(15)), &from, MIN).unwrap();
+        let mut r = Routine::make(&[], ask(Some(15)), &from, (MIN, 0)).unwrap();
         assert_eq!(
             r.when(),
             "on a POST signed with secret:BEACON, alert after 15 min without one"

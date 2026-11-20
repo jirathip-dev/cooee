@@ -64,6 +64,22 @@ internal struct SceneTests {
         #expect(loads.map(Weather.init) == [.clear, .clear, .clear, .cloudy, .cloudy, .storm, .storm])
     }
 
+    @Test internal func aSignsLevelIsDroversCalmBusyOrHeldElseTheLoad() {
+        let levels: [JSONValue] = ["calm", "busy", "held"].map { .object(["level": .string($0), "load": .number(2)]) }
+        #expect(levels.map(SignLevel.init) == [.moderate, .high, .catastrophic])
+        let loads: [JSONValue] = [.object([:]), .object(["load": .number(0.6)]), .object(["load": .number(1.2)])]
+        #expect(loads.map(SignLevel.init) == [.moderate, .high, .catastrophic])
+    }
+
+    @Test internal func aSignThemeDrawsASignAndAThemeWithoutLoadSceneDoesNot() throws {
+        let sign = #"{"label":"bush","scheme":{"dark":"a","light":"b"},"sprites":true,"load_scene":{"kind":"sign"}}"#
+        let bush = try JSONDecoder().decode(ThemePack.self, from: Data(sign.utf8))
+        let plain = try JSONDecoder().decode(
+            ThemePack.self, from: Data(#"{"label":"x","scheme":{"dark":"a","light":"b"},"sprites":true}"#.utf8))
+        #expect(bush.sign && bush.loadScene?.kind == "sign")
+        #expect(!plain.sign && plain.loadScene == nil)
+    }
+
     @Test internal func nightRunsFromSevenInTheEveningToSevenInTheMorning() throws {
         var calendar = Calendar(identifier: .gregorian)
         calendar.timeZone = try #require(TimeZone(identifier: "Australia/Sydney"))

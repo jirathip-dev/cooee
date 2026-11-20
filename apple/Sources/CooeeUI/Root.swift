@@ -84,7 +84,9 @@ extension MenuFeature.State {
         var look = Look(palette: palette(device: dark), style: style(for: theme) ?? .bundled, art: art)
         look.moving = settings.moves(reduceMotion: reduceMotion)
         look.night = settings.night
+        look.sign = art != nil && looks.themes[theme]?.sign == true
         look.sprites = settings.sprites(in: theme)
+        look.words = looks.themes[theme]?.words ?? [:]
         return look
     }
 }

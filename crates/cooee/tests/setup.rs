@@ -467,7 +467,7 @@ fn setup_installs_the_first_party_themes_chosen_with_no_network() {
     assert!(out.status.success(), "{out:?}");
     assert!(
         stdout.contains(
-            "themes:\n  themes to install, or none [garden kitchen]:\n  installed theme farm\n  installed theme scene\n  installed theme terminal\n  installed theme kitchen\n"
+            "themes:\n  themes to install, or none [bush garden kitchen]:\n  installed theme farm\n  installed theme scene\n  installed theme terminal\n  installed theme kitchen\n"
         ),
         "{stdout}"
     );
@@ -518,9 +518,10 @@ fn setup_installs_the_first_party_themes_chosen_with_no_network() {
     assert!(out.status.success(), "{out:?}");
     let stdout = String::from_utf8_lossy(&out.stdout);
     assert!(
-        stdout.contains("themes:\n  installed theme garden\n"),
+        stdout.contains("themes:\n  installed theme bush\n  installed theme garden\n"),
         "{stdout}"
     );
+    assert!(themes.join("bush/theme.json").exists());
     assert!(themes.join("garden/theme.json").exists());
     let out = mac.setup(&["--yes"]);
     assert!(String::from_utf8_lossy(&out.stdout).contains("themes: done, skipped\n"));

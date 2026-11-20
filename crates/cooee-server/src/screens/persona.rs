@@ -236,7 +236,16 @@ async fn fill(cx: &Cx, id: String) -> Result<Block, HubError> {
     let all = routines::on(cx, |r| {
         Ok(r.list()?
             .into_iter()
-            .map(|x| ((r.url(&x), r.heard(&x, crate::hub::now())), x))
+            .map(|x| {
+                (
+                    (
+                        r.url(&x),
+                        r.heard(&x, crate::hub::now()),
+                        r.when(&x, crate::hub::now()),
+                    ),
+                    x,
+                )
+            })
             .collect::<Vec<_>>())
     })
     .await?;
@@ -341,13 +350,13 @@ fn library_rows(index: Option<&std::path::Path>, mine: &[Skill]) -> Vec<Skill> {
         .collect()
 }
 
-type Shown = (Option<String>, Option<String>);
+type Shown = (Option<String>, Option<String>, String);
 
-fn routine(((url, next), r): &(Shown, Routine)) -> Value {
+fn routine(((url, next, when), r): &(Shown, Routine)) -> Value {
     let row = RoutineRow {
         id: &r.id,
         name: &r.name,
-        when: r.when(),
+        when: when.clone(),
         on: r.paused.is_none(),
         url: url.as_deref(),
         next: next.as_deref(),

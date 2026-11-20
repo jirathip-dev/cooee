@@ -168,7 +168,7 @@ impl Github {
     }
 }
 
-/// Why an event didn't run a routine.
+/// Why a run didn't reach an agent.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum Skip {
@@ -176,6 +176,8 @@ pub enum Skip {
     Paused,
     /// It ran [`super::RATE`] times in the last hour.
     Rate,
+    /// Its wake script exited 0.
+    Quiet,
 }
 
 /// What a prompt's `{{…}}` read: a schedule's due time (ms) in a UTC offset (minutes), or an event.
@@ -242,18 +244,20 @@ mod tests {
         let ask = Ask {
             when: None,
             github: Some(github),
+            script: None,
             prompt: "{{event}} on {{repo}}: {{pull_request.title}} #{{ pull_request.number }}{{nope}} {{x".to_owned(),
             name: " Monday renewals ".to_owned(),
             webhook: None,
             place: String::new(),
+            until: None,
         };
-        let e = Routine::make(&[], ask.clone(), &chat, MON).unwrap_err();
+        let e = Routine::make(&[], ask.clone(), &chat, (MON, 0)).unwrap_err();
         assert!(e.starts_with("BAD_PROMPT"), "{e}");
         let ask = Ask {
             prompt: ask.prompt.replace(" {{x", ""),
             ..ask
         };
-        let mut r = Routine::make(&[], ask.clone(), &chat, MON).unwrap();
+        let mut r = Routine::make(&[], ask.clone(), &chat, (MON, 0)).unwrap();
         assert_eq!(
             (r.when().as_str(), r.due(MON * 2, 0)),
             ("on pull_request.opened, push in Owner/App", None)
@@ -287,7 +291,7 @@ mod tests {
             } else {
                 a.when = Some("0 9 * * 1".to_owned());
             }
-            let e = Routine::make(&[], a, &chat, MON).unwrap_err();
+            let e = Routine::make(&[], a, &chat, (MON, 0)).unwrap_err();
             assert!(e.starts_with(why), "{e}");
         }
     }
