@@ -1,10 +1,27 @@
 import CooeeCore
-@testable import CooeeUI
 import SwiftUI
+
+extension RuleEffect {
+    internal var title: String {
+        switch self {
+        case .allow: "Allow"
+        case .ask: "Ask first"
+        case .deny: "Deny"
+        }
+    }
+
+    internal func tint(_ palette: Palette) -> Color {
+        switch self {
+        case .allow: palette.green
+        case .ask: palette.amber
+        case .deny: palette.red
+        }
+    }
+}
 
 internal struct EffectMark: View {
     @Environment(\.look) private var look
-    internal let effect: Effect
+    internal let effect: RuleEffect
     internal let kind: ToolKind
 
     internal var body: some View {
@@ -21,10 +38,10 @@ internal struct EffectMark: View {
 
 internal struct RuleLine: View {
     @Environment(\.look) private var look
-    internal let rule: RuleFixture
-    internal var agent = ""
-    internal var divider = true
+    internal let rule: Rule
+    internal var never: String?
     internal var hover = false
+    internal var remove: () -> Void = {}
 
     internal var body: some View {
         let palette = look.palette
@@ -33,20 +50,20 @@ internal struct RuleLine: View {
             VStack(alignment: .leading, spacing: 3) {
                 Text(rule.words).ui(15.5, .regular, look).fixedSize(horizontal: false, vertical: true)
                 HStack(spacing: 0) {
-                    Text(rule.from).foregroundStyle(palette.mute)
-                    if rule.silent { Text(" · \(agent) never asks for this").foregroundStyle(palette.amber) }
+                    Text(rule.origin).foregroundStyle(palette.mute)
+                    if let never { Text(" · \(never) never asks for this").foregroundStyle(palette.amber) }
                 }
                 .ui(12.5, .regular, look).lineLimit(1)
             }
             Spacer(minLength: 4)
-            if hover { ActionPill(title: "Remove", tint: palette.red) }
+            if hover {
+                Button(action: remove) { ActionPill(title: "Remove", tint: palette.red) }.buttonStyle(.plain)
+            }
         }
         .padding(.horizontal, 14).padding(.vertical, 10)
         .background(hover ? palette.link.opacity(0.10) : .clear)
         .overlay(alignment: .bottom) {
-            if divider {
-                Rectangle().fill(palette.line).frame(height: 0.5).padding(.leading, look.textMarks ? 0 : 56)
-            }
+            Rectangle().fill(palette.line).frame(height: 0.5).padding(.leading, look.textMarks ? 0 : 56)
         }
     }
 }
@@ -60,18 +77,20 @@ internal struct AddRuleRow: View {
             Text(look.quiet ? "add a rule" : "Add a rule").ui(15.5, .regular, look)
             Spacer()
         }
-        .foregroundStyle(look.palette.link).padding(.horizontal, 14).frame(height: 48)
+        .foregroundStyle(look.palette.link).padding(.horizontal, 14).frame(height: 48).contentShape(Rectangle())
     }
 }
 
 internal struct RulesBody: View {
     @Environment(\.look) private var look
     internal let name: String
-    internal let rules: [RuleFixture]
-    internal var agent = ""
+    internal let rules: [Rule]
+    internal var agent: AgentOption?
     internal var fresh: String?
-    internal var hover: String?
-    internal var swiped: String?
+    @State internal var hover: String?
+    @State internal var swiped: String?
+    internal var add: () -> Void = {}
+    internal var remove: (Rule) -> Void = { _ in }
 
     internal var body: some View {
         let palette = look.palette
@@ -80,7 +99,7 @@ internal struct RulesBody: View {
                 ForEach(rules) { rule in
                     line(rule).background(rule.id == fresh ? palette.green.opacity(0.10) : .clear)
                 }
-                AddRuleRow()
+                Button(action: add) { AddRuleRow() }.buttonStyle(.plain).accessibilityLabel("Add a rule")
             }
             Group2(header: "Anything else") {
                 HStack {
@@ -93,51 +112,35 @@ internal struct RulesBody: View {
         }
     }
 
-    @ViewBuilder private func line(_ rule: RuleFixture) -> some View {
-        let row = RuleLine(rule: rule, agent: agent, hover: rule.id == hover)
+    private func never(_ rule: Rule) -> String? {
+        guard let agent, agent.silent.contains(rule.kind) else { return nil }
+        return agent.id
+    }
+
+    @ViewBuilder private func line(_ rule: Rule) -> some View {
+        let row = RuleLine(rule: rule, never: never(rule), hover: rule.id == hover) { remove(rule) }
+            .contentShape(Rectangle())
+            .onHover { inside in hover = inside ? rule.id : (hover == rule.id ? nil : hover) }
+            .gesture(
+                DragGesture(minimumDistance: 20).onEnded { drag in
+                    withAnimation(.snappy) { swiped = drag.translation.width < -40 ? rule.id : nil }
+                })
         if rule.id == swiped {
             ZStack(alignment: .trailing) {
                 look.palette.red
-                Text(look.label(.button, "Remove")).ui(15, .semibold, look).foregroundStyle(.white)
-                    .frame(width: 96)
+                Button {
+                    swiped = nil
+                    remove(rule)
+                } label: {
+                    Text(look.label(.button, "Remove")).ui(15, .semibold, look).foregroundStyle(.white)
+                        .frame(width: 96).frame(maxHeight: .infinity)
+                }
+                .buttonStyle(.plain)
                 row.background(look.palette.card).offset(x: -96)
             }
             .clipped()
         } else {
             row
         }
-    }
-}
-
-internal struct BackBar: View {
-    @Environment(\.look) private var look
-    internal let back: String
-    internal let title: String
-
-    internal var body: some View {
-        HStack {
-            Text(look.label(.back, back)).ui(16, .regular, look).foregroundStyle(look.palette.link)
-            Spacer()
-        }
-        .overlay { Text(look.label(.section, title)).ui(17, .semibold, look) }
-        .padding(.horizontal, 16).frame(height: 44)
-    }
-}
-
-internal struct RulesPage: View {
-    @Environment(\.look) private var look
-    internal var rules = Story.coder
-    internal var fresh: String?
-    internal var swiped: String?
-
-    internal var body: some View {
-        VStack(spacing: 0) {
-            BackBar(back: "Coder", title: "Rules")
-            Scroller {
-                RulesBody(name: "Coder", rules: rules, agent: "Codex", fresh: fresh, swiped: swiped)
-                    .padding(.horizontal, 16).padding(.vertical, 12)
-            }
-        }
-        .background(Backdrop()).foregroundStyle(look.palette.foreground)
     }
 }

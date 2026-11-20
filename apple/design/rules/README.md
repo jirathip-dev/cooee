@@ -12,12 +12,11 @@ Dropped: the "strictest wins" line under the list, the "A gap is…" line under 
 
 ## How it was made
 
-This is a scratch package, made the same way as `composer-v2` and `connectors`. It depends on `apple/` by path and draws with
-CooeeUI's own `Group2`, `SettingRow`, `StateWord`, `ActionPill`, `CardButton`, `RoundButton`, `Glyph`, `Dim`,
-`Backdrop`, `PhoneChrome` and `MacChrome`, plus `ToolKind`'s symbols and words from the tool rows. Only the new pieces are
-here, under `Sources/RulesDesign/`, fed by fixtures (`Model.swift`). There is no API client, no app logic and no app target.
-Running `swift test` in this folder rewrites every PNG: iPhone 17 at 402 × 874 pt and the Mac window at 1440 × 860 pt, both at
-2×. Terminal and Scene are read from `packs/<pack>/style.json`. The names are `<frame>-<style>-<mode>.png`.
+The frames are drawn by the app's own views (`apple/Sources/CooeeUI/RuleRows.swift`, `RuleAdd.swift`, `RuleSheets.swift`,
+`RulesScreen.swift`, `AgentSheet.swift`), fed by the fixtures in `Sources/CooeeUI/Fixtures/RulesFrames.swift`.
+`Tests/CooeeUITests/Frames/Rules.swift` checks each PNG; `COOEE_RECORD=1 swift test --filter RulesFrames` in `apple/`
+rewrites them: iPhone 17 at 402 × 874 pt and the Mac window at 1440 × 860 pt, both at 2×. Terminal and Scene are read
+from `packs/<pack>/style.json`. The names are `<frame>-<style>-<mode>.png`. The scratch package that first drew them is gone.
 
 ## Frames and the ADR decisions they show (`docs/architecture/provider-contract/`)
 

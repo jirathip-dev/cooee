@@ -8,19 +8,27 @@ internal struct PersonaScreen: View {
     @Bindable internal var store: StoreOf<PersonaFeature>
     internal let sprite: (String?) -> Void
 
+    private var choices: PersonaChoices {
+        var choices = PersonaChoices(
+            agents: store.agents, models: store.models, efforts: store.efforts, machines: store.machines,
+            connectors: store.connectors
+        )
+        choices.lists = store.lists
+        choices.rules = store.isNew ? nil : store.rules.rules.count
+        return choices
+    }
+
     internal var body: some View {
         PersonaEditBlocks(
             draft: $store.draft,
-            choices: PersonaChoices(
-                agents: store.agents, models: store.models, efforts: store.efforts, machines: store.machines,
-                connectors: store.connectors
-            ),
+            choices: choices,
             screen: store.screen ?? .bundledPersona,
             error: store.error,
             actions: actions
         )
         .disabled(store.busy)
         .task { await store.send(.task).finish() }
+        .task { if !store.isNew { await store.send(.rules(.task)).finish() } }
         .sheet(isPresented: Binding(get: { store.folders != nil }, set: { _ in store.send(.folder(nil)) })) {
             if let listing = store.folders {
                 FolderBrowser(
@@ -35,6 +43,12 @@ internal struct PersonaScreen: View {
             ) { store.showingAll = false }
         }
         .alert($store.scope(state: \.alert, action: \.alert))
+        .sheet(isPresented: $store.rules.showing) {
+            RulesScreen(
+                store: store.scope(state: \.rules, action: \.rules), name: store.draft.name,
+                folder: ["", "scratch"].contains(store.draft.folder) ? nil : store.draft.folder,
+                agent: store.agents.first { $0.id == store.draft.agent })
+        }
         .photosPicker(isPresented: $store.choosingPhoto, selection: photo, matching: .images)
     }
 
@@ -63,6 +77,7 @@ internal struct PersonaScreen: View {
         actions.sprite = sprite
         actions.skill = { store.send(.addSkill($0)) }
         actions.catalogue = { store.send(.delegate(.connectors)) }
+        actions.rules = { store.send(.rules(.open)) }
         return actions
     }
 }
