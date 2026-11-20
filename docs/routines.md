@@ -4,7 +4,7 @@
 
 A routine is a schedule (five-field cron in the Mac's local time, its UTC offset read with `date +%z` hourly, at
 least 15 minutes between due times), a place and a prompt: `<config>/routines.toml` (`[[routine]]`: `id`, `name`,
-`when`, `prompt`, `paused`, `[routine.place]`), its run state in `<data>/routine-runs.json`, each written whole (0600)
+`when`, `prompt`, `paused`, `ends_at`, `[routine.place]`), its run state in `<data>/routine-runs.json`, each written whole (0600)
 when its part changed. One typed by hand first runs at its next due time. An agent makes one in chat with cooee's own `create_routine` tool, as itself: the chat gets a `⟳
 Created routine` line; a Workflow session or a routine's own run can't. `POST /routines/<id>` renames,
 retimes, pauses and resumes them, `POST /routines/<id>/delete` deletes them; there is no other way to make one. Every 30 seconds the runner runs each
@@ -13,7 +13,11 @@ then records it. The run's key, `routine-<id>-<due>`, is the hub's `random_id`, 
 record runs into the same message or thread again, never a second. `chat` runs queue the prompt in the making chat
 as a message marked with the routine; a closed or deleted chat pauses the routine with one push. `new_thread` runs
 start a thread as the making chat's agent, marked with the routine, whose finished turns don't push. The list shows
-`⟳ <name>` on a thread a routine started or last wrote to. The ADR and its shapes are in
+`⟳ <name>` on a thread a routine started or last wrote to. An optional end time (#689, `create_routine`'s `until`,
+local `YYYY-MM-DD HH:MM`; `ends_at` in Unix ms) ends the routine: no run at or after it, even a missed one. The making
+chat's agent ends it sooner with `stop_routine` (another chat's is refused `NOT_YOURS`). An ended routine stays listed,
+`paused: {why: ended, at, by: end_time | stop_routine}`, until the owner resumes it (a past end time is dropped) or
+deletes it; the chat line and the persona panel show `until …` or `ended … by …` after its trigger. The ADR and its shapes are in
 [architecture/routines](architecture/routines/adr.md).
 
 Consolidation (#219): each persona has a built-in routine, off until its `agent.toml` sets `[consolidate] on = true`
@@ -62,7 +66,7 @@ Test button (`POST /screens/action` `test`, `values.routine`), which runs it on 
 
 | Route | Form | Answer |
 |---|---|---|
-| `GET /routines.json` | | `Routine[]`: `{id, name, trigger: {schedule} \| {github: {repo, events, match?}}, place: {in: chat, thread} \| {in: new_thread, who}, prompt, paused?: {why: owner \| chat_gone}, made_in, made_at, last_due, last_run?: {at, key, outcome: ran \| failed \| skipped, thread \| why}, recent?}` (`skipped`'s `why`: `paused` or `rate`; `recent`: its event runs in the last hour) |
+| `GET /routines.json` | | `Routine[]`: `{id, name, trigger: {schedule} \| {github: {repo, events, match?}}, place: {in: chat, thread} \| {in: new_thread, who}, prompt, paused?: {why: owner \| chat_gone \| ended}, ends_at?, made_in, made_at, last_due, last_run?: {at, key, outcome: ran \| failed \| skipped, thread \| why}, recent?}` (`skipped`'s `why`: `paused` or `rate`; `recent`: its event runs in the last hour) |
 | `POST /routines/<id>` | `name`, `when`, `prompt`, `paused` (`true`/`false`), each optional | 204; 400 with the refusal |
 | `POST /routines/<id>/delete` | | 204; the threads it ran in stay |
 

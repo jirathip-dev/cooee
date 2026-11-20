@@ -278,6 +278,116 @@ fn a_new_thread_routine_starts_a_thread_marked_with_it_in_the_list() {
     );
 }
 
+fn ends_at(settings: &Path, at: u64) {
+    let text = fs::read_to_string(settings).unwrap();
+    let line = text.lines().find(|l| l.starts_with("ends_at = ")).unwrap();
+    fs::write(settings, text.replace(line, &format!("ends_at = {at}"))).unwrap();
+}
+
+#[test]
+fn an_end_time_ends_a_routine_and_stop_routine_ends_only_one_its_chat_made() {
+    let (dir, shed, cooee, id) = chat("routines-end");
+    let listed = |cooee: &Cooee, rid: &str| {
+        let list = cooee.json("/routines.json");
+        let r = list.as_array().unwrap().iter().find(|r| r["id"] == rid);
+        r.cloned().unwrap_or_default()
+    };
+    let past = json!({ "name": "Watch", "when": "0 9 * * *", "prompt": "watch", "until": "2001-01-01 07:00" });
+    let said = call(&shed, &id, "create_routine", &past);
+    let text = said["content"][0]["text"].as_str().unwrap();
+    assert!(text.starts_with("BAD_UNTIL"), "{said}");
+    let ask = json!({ "name": "Watch", "when": "0 9 * * *", "prompt": "watch", "until": "2099-01-01 07:00" });
+    let made = call(&shed, &id, "create_routine", &ask);
+    assert_eq!(made["isError"], false, "{made}");
+    let items = cooee.json(&format!("/threads/{id}/messages"))["items"].clone();
+    let line = items
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|i| i["kind"] == "routine");
+    let when = line.unwrap()["when"].as_str().unwrap().to_owned();
+    assert_eq!(when, "every day 09:00 · until 2099-01-01 07:00");
+    let rid = cooee.json("/routines.json")[0]["id"]
+        .as_str()
+        .unwrap()
+        .to_owned();
+    assert!(made["content"][0]["text"].as_str().unwrap().contains(&rid));
+
+    let ping = json!({ "name": "Ping", "when": "30 9 * * *", "prompt": "ping" });
+    let made = call(&shed, &id, "create_routine", &ping);
+    let text = made["content"][0]["text"].as_str().unwrap();
+    let pid = text
+        .split_whitespace()
+        .nth(2)
+        .unwrap()
+        .trim_end_matches('.')
+        .to_owned();
+    assert_eq!(listed(&cooee, &pid)["name"], "Ping", "{made}");
+    let other = json!({ "agent": "fake-acp", "folder": dir.join("root/project"), "text": "hi", "random_id": "other" });
+    let (status, body) = cooee.post("/threads", &other);
+    assert_eq!(status, 200, "{body}");
+    let other = serde_json::from_str::<Value>(&body).unwrap()["id"]
+        .as_str()
+        .unwrap()
+        .to_owned();
+    let stop = json!({ "id": pid });
+    let refused = call(&shed, &other, "stop_routine", &stop);
+    assert_eq!(refused["isError"], true, "{refused}");
+    let text = refused["content"][0]["text"].as_str().unwrap();
+    assert!(text.starts_with("NOT_YOURS"), "{text}");
+    assert!(listed(&cooee, &pid)["paused"].is_null());
+    let stopped = call(&shed, &id, "stop_routine", &stop);
+    assert_eq!(stopped["isError"], false, "{stopped}");
+    let paused = listed(&cooee, &pid)["paused"].clone();
+    assert_eq!(
+        (&paused["why"], &paused["by"]),
+        (&json!("ended"), &json!("stop_routine")),
+        "{paused}"
+    );
+    drop(cooee);
+
+    let file = dir.join("data/routine-runs.json");
+    change(&file, |runs| {
+        runs[&rid]["made_at"] = json!(ago(8));
+        runs[&pid]["made_at"] = json!(ago(8));
+    });
+    let cooee = Cooee::start(&dir, &shed.dir);
+    assert_eq!(recorded(&file, &rid)["last_run"]["outcome"], "ran");
+    assert!(
+        recorded(&file, &pid).get("last_run").is_none(),
+        "an ended routine never runs"
+    );
+    assert_eq!(runs(&cooee, &id).len(), 1);
+    drop(cooee);
+
+    let end = ago(3);
+    ends_at(&dir.join("routines.toml"), end);
+    change(&file, |runs| {
+        runs[&rid]["last_due"] = json!(0);
+        runs[&rid]["made_at"] = json!(ago(8));
+    });
+    let cooee = Cooee::start(&dir, &shed.dir);
+    recorded(&file, &rid);
+    assert_eq!(runs(&cooee, &id).len(), 1, "no run after its end time");
+    let ended = listed(&cooee, &rid);
+    assert_eq!(
+        ended["paused"],
+        json!({ "why": "ended", "at": end, "by": "end_time" }),
+        "{ended}"
+    );
+    assert_eq!(
+        form(&cooee, &format!("/routines/{rid}"), "paused=false"),
+        "204"
+    );
+    let resumed = listed(&cooee, &rid);
+    assert!(
+        resumed["paused"].is_null() && resumed["ends_at"].is_null(),
+        "{resumed}"
+    );
+    assert_eq!(form(&cooee, &format!("/routines/{pid}/delete"), ""), "204");
+    assert!(listed(&cooee, &pid).is_null());
+}
+
 const SECRET: &str = "It's a Secret to Everybody";
 const URL: &str = "https://mac.example:8443/hooks/github";
 

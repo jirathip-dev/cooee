@@ -3,6 +3,7 @@
 //! Each one's settings are `<config>/routines.toml`, its run state and the deliveries seen `<data>/routine-runs.json`
 //! (#359). Pure: the server's runner gives `now`, the Mac's UTC offset and each delivery.
 mod cron;
+mod end;
 mod github;
 mod script;
 mod webhook;
@@ -15,7 +16,8 @@ use std::{
 
 use serde::{Deserialize, Serialize};
 
-pub use cron::{Schedule, local};
+pub use cron::{Schedule, local, parse_local};
+pub use end::{End, Ended};
 pub use github::{Delivery, Fields, Github, Hooks, Rejected, Skip};
 pub use script::{Mode, Script};
 pub use webhook::{Inbound, Webhook};
@@ -63,6 +65,9 @@ pub struct Routine {
     /// Why it doesn't run, if it doesn't.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub paused: Option<Paused>,
+    /// When it ends (Unix ms): no run at or after it.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub ends_at: Option<u64>,
     /// The thread whose agent made it.
     pub made_in: String,
     /// When, in Unix ms: its first due time is after this.
@@ -144,6 +149,8 @@ pub enum Paused {
         /// That chat.
         thread: String,
     },
+    /// It ended.
+    Ended(Ended),
 }
 
 /// A routine's run.
@@ -200,6 +207,9 @@ pub struct Ask {
     /// `chat` (default) or `new_thread`.
     #[serde(default)]
     pub place: String,
+    /// When it ends, local `YYYY-MM-DD HH:MM`; none: never.
+    #[serde(default)]
+    pub until: Option<String>,
 }
 
 /// Settings › routines' edit: each field given is changed.
@@ -216,15 +226,21 @@ pub struct Edit {
 }
 
 impl Routine {
-    /// The routine `ask` says, made by thread `from`'s agent at `now`, among `list`.
+    /// The routine `ask` says, made by thread `from`'s agent at `now` (in UTC offset `offset_min`), among `list`.
     ///
     /// # Errors
-    /// `BAD_SCHEDULE`, `BAD_GITHUB`, `BAD_WEBHOOK`, `BAD_TRIGGER`, `BAD_NAME`, `BAD_PROMPT`, `BAD_SCRIPT`, `BAD_PLACE` or `TOO_MANY`, said for
-    /// the agent.
-    pub fn make(list: &[Self], ask: Ask, from: &Thread, now: u64) -> Result<Self, String> {
+    /// `BAD_SCHEDULE`, `BAD_GITHUB`, `BAD_WEBHOOK`, `BAD_TRIGGER`, `BAD_NAME`, `BAD_PROMPT`, `BAD_SCRIPT`, `BAD_PLACE`,
+    /// `BAD_UNTIL` or `TOO_MANY`, said for the agent.
+    pub fn make(
+        list: &[Self],
+        ask: Ask,
+        from: &Thread,
+        (now, offset_min): (u64, i32),
+    ) -> Result<Self, String> {
         if list.len() >= MAX {
             return Err(format!("TOO_MANY: there are {MAX} routines already"));
         }
+        let ends_at = end::ends_at(ask.until.as_deref(), (now, offset_min))?;
         let place = match ask.place.as_str() {
             "" | "chat" => Place::Chat {
                 thread: from.id.clone(),
@@ -261,6 +277,7 @@ impl Routine {
             prompt: String::new(),
             script,
             paused: None,
+            ends_at,
             made_in: from.id.clone(),
             made_at: now,
             last_due: 0,
@@ -309,7 +326,10 @@ impl Routine {
         self.prompt = prompt.unwrap_or_else(|| self.prompt.clone());
         match e.paused {
             Some(true) => self.paused = Some(Paused::Owner),
-            Some(false) => self.paused = None,
+            Some(false) => {
+                self.paused = None;
+                self.ends_at = self.ends_at.filter(|at| *at > now);
+            }
             None => {}
         }
         Ok(())
@@ -383,11 +403,12 @@ impl Routine {
             && g.r#match.iter().all(|(path, v)| d.at(path) == *v)
     }
 
-    /// Whether an event may run it at `now`: not paused and under [`RATE`] in the hour; a run is counted.
+    /// Whether an event may run it at `now`: not paused or ended and under [`RATE`] in the hour; a run is counted.
     ///
     /// # Errors
     /// Why not.
     pub fn admit(&mut self, now: u64) -> Result<(), Skip> {
+        self.end(now);
         if self.paused.is_some() {
             return Err(Skip::Paused);
         }
@@ -445,6 +466,8 @@ struct Def {
     script: Option<Script>,
     #[serde(default)]
     paused: bool,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    ends_at: Option<u64>,
     place: Place,
 }
 
@@ -467,6 +490,8 @@ struct State {
     last_run: Option<Run>,
     #[serde(skip_serializing_if = "Option::is_none")]
     chat_gone: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    ended: Option<Ended>,
     #[serde(skip_serializing_if = "Vec::is_empty")]
     recent: Vec<u64>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -488,9 +513,10 @@ pub(crate) fn files(routines: &[Routine], seen: &[(String, u64)]) -> (String, Ve
             Trigger::Github(g) => (None, Some(g), None),
             Trigger::Webhook(h) => (None, None, Some(h)),
         };
-        let chat_gone = match &r.paused {
-            Some(Paused::ChatGone { thread }) => Some(thread.clone()),
-            _ => None,
+        let (chat_gone, ended) = match &r.paused {
+            Some(Paused::ChatGone { thread }) => (Some(thread.clone()), None),
+            Some(Paused::Ended(e)) => (None, Some(*e)),
+            _ => (None, None),
         };
         settings.routine.push(Def {
             id: r.id.clone(),
@@ -501,6 +527,7 @@ pub(crate) fn files(routines: &[Routine], seen: &[(String, u64)]) -> (String, Ve
             prompt: r.prompt.clone(),
             script: r.script.clone(),
             paused: r.paused == Some(Paused::Owner),
+            ends_at: r.ends_at,
             place: r.place.clone(),
         });
         let state = State {
@@ -509,6 +536,7 @@ pub(crate) fn files(routines: &[Routine], seen: &[(String, u64)]) -> (String, Ve
             last_due: r.last_due,
             last_run: r.last_run.clone(),
             chat_gone,
+            ended,
             recent: r.recent.clone(),
             heard: r.heard,
             silent: r.silent,
@@ -572,7 +600,10 @@ impl Routines {
         let mut routines = Vec::new();
         for d in settings.routine {
             let s = runs.runs.get(&d.id).cloned().unwrap_or_default();
-            let gone = s.chat_gone.map(|thread| Paused::ChatGone { thread });
+            let gone = s
+                .ended
+                .map(Paused::Ended)
+                .or_else(|| s.chat_gone.map(|thread| Paused::ChatGone { thread }));
             let trigger = match (d.when, d.github, d.webhook) {
                 (Some(w), None, None) => Trigger::Schedule(w),
                 (None, Some(g), None) => Trigger::Github(g),
@@ -588,6 +619,7 @@ impl Routines {
             routines.push(Routine {
                 trigger,
                 paused: if d.paused { Some(Paused::Owner) } else { gone },
+                ends_at: d.ends_at,
                 made_in: s.made_in,
                 made_at: s.made_at,
                 last_due: s.last_due,
@@ -630,148 +662,4 @@ impl Routines {
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-
-    const MIN: u64 = 60_000;
-    const MON: u64 = 1_731_283_200_000;
-
-    fn ask(when: &str, place: &str) -> Ask {
-        Ask {
-            name: " Monday renewals ".to_owned(),
-            when: Some(when.to_owned()),
-            github: None,
-            webhook: None,
-            prompt: "Renewals due {{due}}?".to_owned(),
-            script: None,
-            place: place.to_owned(),
-        }
-    }
-
-    fn chat() -> Thread {
-        Thread {
-            id: "t-1".to_owned(),
-            agent: "fake-acp".to_owned(),
-            model: "m".to_owned(),
-            ..Thread::default()
-        }
-    }
-
-    #[test]
-    fn a_routine_is_due_once_per_due_time_after_it_was_made() {
-        let made = MON - 3 * 1440 * MIN;
-        let mut r = Routine::make(&[], ask("0 9 * * 1", ""), &chat(), made).unwrap();
-        assert_eq!(
-            (r.name.as_str(), r.when().as_str(), &r.place),
-            (
-                "Monday renewals",
-                "Mondays 09:00",
-                &Place::Chat {
-                    thread: "t-1".to_owned()
-                }
-            )
-        );
-        let nine = MON + 9 * 60 * MIN;
-        assert_eq!(r.due(nine - MIN, 0), None);
-        assert_eq!(r.due(nine + 5 * MIN, 0), Some(nine));
-        assert_eq!(
-            r.text(&Fields::Due(nine, 0)),
-            "Renewals due 2024-11-11 09:00?"
-        );
-        r.last_due = nine;
-        assert_eq!(r.due(nine + 5 * MIN, 0), None);
-        assert_eq!(
-            r.due(nine + 14 * 1440 * MIN, 0),
-            Some(nine + 14 * 1440 * MIN)
-        );
-        assert_eq!(r.key(nine), format!("routine-{}-{nine}", r.id));
-    }
-
-    #[test]
-    fn make_and_edit_refuse_what_is_wrong_and_change_nothing() {
-        let list = vec![Routine::make(&[], ask("0 9 * * 1", ""), &chat(), MON).unwrap()];
-        let other = Routine::make(&list, ask("0 9 * * 1", "new_thread"), &chat(), MON).unwrap();
-        assert_ne!(other.id, list[0].id);
-        let Place::NewThread { who } = &other.place else {
-            panic!("{:?}", other.place)
-        };
-        assert_eq!((who.agent.as_str(), who.model.as_str()), ("fake-acp", "m"));
-        for (a, why) in [
-            (ask("*/5 * * * *", ""), "BAD_SCHEDULE"),
-            (ask("0 9 * * 1", "somewhere"), "BAD_PLACE"),
-            (
-                Ask {
-                    name: " ".to_owned(),
-                    ..ask("0 9 * * 1", "")
-                },
-                "BAD_NAME",
-            ),
-        ] {
-            let e = Routine::make(&list, a, &chat(), MON).unwrap_err();
-            assert!(e.starts_with(why), "{e}");
-        }
-        let full = vec![list[0].clone(); MAX];
-        let e = Routine::make(&full, ask("0 9 * * 1", ""), &chat(), MON).unwrap_err();
-        assert!(e.starts_with("TOO_MANY"), "{e}");
-        let mut r = list[0].clone();
-        let bad = Edit {
-            name: Some("x".repeat(61)),
-            ..Edit::default()
-        };
-        assert!(r.edit(bad, MON + 1).is_err());
-        assert_eq!(r, list[0]);
-        let e = Edit {
-            when: Some("30 18 * * *".to_owned()),
-            paused: Some(true),
-            ..Edit::default()
-        };
-        r.edit(e, MON + 1).unwrap();
-        assert_eq!(
-            (r.when().as_str(), r.last_due),
-            ("every day 18:30", MON + 1)
-        );
-        assert_eq!(r.paused, Some(Paused::Owner));
-    }
-
-    #[test]
-    fn the_file_round_trips_and_refuses_a_newer_format() {
-        let dir = crate::scratch::owned(
-            std::env::temp_dir().join(format!("cooee-routines-{}", std::process::id())),
-        );
-        let file = Routines::new(&dir, &dir);
-        assert_eq!(file.load().unwrap(), Book::default());
-        let mut r = Routine::make(&[], ask("0 9 * * 1", ""), &chat(), MON).unwrap();
-        r.last_run = Some(Run {
-            at: MON,
-            key: r.key(MON),
-            outcome: Outcome::Ran {
-                thread: "t-1".to_owned(),
-            },
-        });
-        let github = Ask {
-            when: None,
-            github: serde_json::from_value(serde_json::json!({
-                "repo": "o/app", "events": ["push"], "match": { "ref": "refs/heads/main" } }))
-            .unwrap(),
-            ..ask("", "")
-        };
-        let mut g = Routine::make(&[], github, &chat(), MON + 1).unwrap();
-        g.recent = vec![MON];
-        let mut book = Book {
-            routines: vec![r, g],
-            ..Book::default()
-        };
-        assert!(book.see("g-1", MON) && !book.see("g-1", MON + 1));
-        file.save(&book).unwrap();
-        let text = std::fs::read_to_string(dir.join("routines.toml")).unwrap();
-        assert!(text.contains("when = \"0 9 * * 1\""), "{text}");
-        assert!(text.contains("[routine.github.match]"), "{text}");
-        let runs = std::fs::read_to_string(dir.join("routine-runs.json")).unwrap();
-        assert!(runs.contains("\"outcome\": \"ran\""), "{runs}");
-        assert!(runs.contains("\"g-1\""), "{runs}");
-        assert_eq!(file.load().unwrap(), book);
-        std::fs::write(dir.join("routine-runs.json"), r#"{"format":9,"runs":{}}"#).unwrap();
-        assert!(file.load().is_err());
-        std::fs::remove_dir_all(&dir).unwrap();
-    }
-}
+mod tests;

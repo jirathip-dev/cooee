@@ -249,14 +249,15 @@ mod tests {
             name: " Monday renewals ".to_owned(),
             webhook: None,
             place: String::new(),
+            until: None,
         };
-        let e = Routine::make(&[], ask.clone(), &chat, MON).unwrap_err();
+        let e = Routine::make(&[], ask.clone(), &chat, (MON, 0)).unwrap_err();
         assert!(e.starts_with("BAD_PROMPT"), "{e}");
         let ask = Ask {
             prompt: ask.prompt.replace(" {{x", ""),
             ..ask
         };
-        let mut r = Routine::make(&[], ask.clone(), &chat, MON).unwrap();
+        let mut r = Routine::make(&[], ask.clone(), &chat, (MON, 0)).unwrap();
         assert_eq!(
             (r.when().as_str(), r.due(MON * 2, 0)),
             ("on pull_request.opened, push in Owner/App", None)
@@ -290,7 +291,7 @@ mod tests {
             } else {
                 a.when = Some("0 9 * * 1".to_owned());
             }
-            let e = Routine::make(&[], a, &chat, MON).unwrap_err();
+            let e = Routine::make(&[], a, &chat, (MON, 0)).unwrap_err();
             assert!(e.starts_with(why), "{e}");
         }
     }
