@@ -4,13 +4,14 @@ import Foundation
 extension Client {
     private struct Message: Encodable {
         private enum CodingKeys: String, CodingKey {
-            case text, files
+            case text, files, via
             case randomID = "random_id"
         }
 
         fileprivate let text: String
         fileprivate let randomID: String
         fileprivate let files: [Attachment]?
+        fileprivate let via: String?
     }
 
     private struct NewThread: Encodable {
@@ -57,6 +58,7 @@ extension Client {
         fileprivate let item: Int
         fileprivate let option: String
         fileprivate let value: String?
+        fileprivate let passkey: Passkey?
     }
 
     private struct Created: Decodable {
@@ -123,12 +125,16 @@ extension Client {
         String(bytes: try await send(request("GET", "/look/\(theme)/\(file)")).0, encoding: .utf8) ?? ""
     }
 
-    public func messages(_ id: String, before: Int = 50) async throws -> Slice {
-        try await call("GET", "/threads/\(id)/messages?before=\(before)")
+    public func messages(_ id: String, before: Int = 50, around: Int? = nil) async throws -> Slice {
+        try await call("GET", "/threads/\(id)/messages?before=\(before)" + (around.map { "&around=\($0)" } ?? ""))
     }
 
     public func frame(_ id: String, _ name: String) async throws -> Data {
         try await send(request("GET", "/threads/\(id)/frames/\(name)")).0
+    }
+
+    public func file(_ id: String, _ name: String) async throws -> Data {
+        try await send(request("GET", "/threads/\(id)/files/\(name)")).0
     }
 
     public func send(
@@ -136,14 +142,20 @@ extension Client {
         text: String,
         files: [Attachment] = [],
         queue: Bool = false,
+        voice: Bool = false,
         randomID: String = UUID().uuidString
     ) async throws {
-        let message = Message(text: text, randomID: randomID, files: files.isEmpty ? nil : files)
+        let message = Message(
+            text: text, randomID: randomID, files: files.isEmpty ? nil : files, via: voice ? "voice" : nil)
         try await post("/threads/\(id)/\(queue ? "queue" : "send")", message)
     }
 
     public func retry(_ id: String) async throws {
         try await post("/threads/\(id)/retry", [String: String]())
+    }
+
+    public func restart(_ id: String) async throws {
+        try await post("/threads/\(id)/restart", [String: String]())
     }
 
     public func steer(_ id: String, _ randomID: String) async throws {
@@ -162,8 +174,10 @@ extension Client {
         try await post("/threads/\(id)/cancel", [String: String]())
     }
 
-    public func answer(_ id: String, item: Int, option: String, value: String?) async throws {
-        try await post("/threads/\(id)/approve", Answer(item: item, option: option, value: value))
+    public func answer(_ id: String, item: Int, option: String, value: String?, key: DeviceKey? = nil) async throws {
+        var passkey: Passkey?
+        if let key { passkey = try await prove(key) }
+        try await post("/threads/\(id)/approve", Answer(item: item, option: option, value: value, passkey: passkey))
     }
 
     public func read(_ id: String, upTo item: Int) async throws {

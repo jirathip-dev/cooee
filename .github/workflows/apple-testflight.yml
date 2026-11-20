@@ -8,10 +8,11 @@
 # (docs/ci-runners.md). #568: the archive is unsigned (ad-hoc, for its entitlements) and only the export signs, with
 # Apple's managed distribution certificate, so no run mints a Development certificate. The job's keychain is its own,
 # deleted when the job ends. A `workflow_dispatch` without `upload` archives and signs (exports) but uploads nothing.
+# #592: a staging push runs that dry run, and the Mac archive must carry every App Store icon size in its ICNS.
 name: apple-testflight
 on:
   push:
-    branches: [main]
+    branches: [main, staging]
     paths: ["apple/**", ".github/workflows/apple-testflight.yml", "scripts/asc-token.swift"]
   workflow_dispatch:
     inputs:
@@ -97,6 +98,15 @@ jobs:
             -archivePath "$RUNNER_TEMP/Cooee.xcarchive" CODE_SIGNING_ALLOWED=NO CURRENT_PROJECT_VERSION="$BUILD" \
             INFOPLIST_KEY_ITSAppUsesNonExemptEncryption=NO 2>&1 | tee -a "$LOG"
           codesign --force --sign - --entitlements ${{ matrix.entitlements }} "$RUNNER_TEMP/Cooee.xcarchive/Products/Applications/Cooee.app"
+      - name: the Mac icon has every App Store size
+        if: matrix.platform == 'macOS'
+        run: |
+          iconutil -c iconset -o "$RUNNER_TEMP/AppIcon.iconset" "$RUNNER_TEMP/Cooee.xcarchive/Products/Applications/Cooee.app/Contents/Resources/AppIcon.icns"
+          for s in 16 32 128 256 512; do
+            for f in "icon_${s}x${s}.png" "icon_${s}x${s}@2x.png"; do
+              [ -f "$RUNNER_TEMP/AppIcon.iconset/$f" ] || { echo "::error::AppIcon.icns lacks $f; App Store export refuses it (apple/Cooee/Assets.xcassets/AppIcon.appiconset)"; exit 1; }
+            done
+          done
       - name: export (cloud signing; uploads to TestFlight unless a dry run)
         run: |
           destination=$([ "$UPLOAD" = true ] && echo upload || echo export)

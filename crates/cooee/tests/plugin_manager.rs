@@ -69,7 +69,7 @@ fn setup(name: &str) -> Setup {
     let shed = FakeShed::start(&dir.join("shed"), version());
     let repo = dir.join("greet.git");
     let v1 = commit(&repo, "greet", "v1", BUILD, RUN);
-    let first = commit(&dir.join("first.git"), "first", "f1", BUILD, RUN);
+    let first = commit(&dir.join("first.git"), "first", "v1", BUILD, RUN);
     let index = format!(
         "[[plugin]]\nname = \"greet\"\nurl = {:?}\ncommit = \"{v1}\"\ndescription = \"says hello\"\n\n\
          [[plugin]]\nname = \"first\"\nurl = {:?}\ncommit = \"{first}\"\ndescription = \"ours\"\nfirst_party = true\n",
@@ -214,7 +214,13 @@ fn add_from_the_index_clones_builds_writes_the_entry_and_token_starts_it_and_loc
         s.cooee.json("/plugins")["installed"][0]["state"] == "running"
     });
     let list = s.cooee.cli(&["plugin", "list"]);
-    assert_eq!(list, format!("greet  v1  {}  index  running\n", &s.v1[..7]));
+    assert_eq!(
+        list,
+        format!(
+            "greet  v1  {}  index  running  accepts any cooee\n",
+            &s.v1[..7]
+        )
+    );
     let (ok, out) = s.run(&["plugin", "add", "greet", "--yes"], "");
     assert!(!ok && out.contains("greet is installed already"), "{out}");
 }
@@ -272,6 +278,28 @@ fn a_failed_update_keeps_the_old_build_and_a_good_one_swaps_in() {
     let dead = commit(&s.repo, "greet", "v3", BUILD, "exit 1");
     let (ok, out) = s.run(&["plugin", "update", "--yes"], "");
     assert!(!ok && out.contains("its backend exited"), "{out}");
+    commit(&s.repo, "greet", "0.0.9", BUILD, RUN);
+    let (ok, out) = s.run(&["plugin", "update", "greet", "--yes"], "");
+    assert!(
+        !ok && out.contains("greet 0.0.9 is too old for cooee")
+            && out.contains("it needs greet 0.1.0 or newer"),
+        "{out}"
+    );
+    let file = s.repo.join("cooee-plugin.toml");
+    let newer = fs::read_to_string(&file).unwrap().replace(
+        "version = \"0.0.9\"",
+        "version = \"2\"\nmin_cooee = \"99.0\"",
+    );
+    fs::write(&file, newer).unwrap();
+    git(
+        &s.repo,
+        &["commit", "--quiet", "-am", "needs a newer cooee"],
+    );
+    let (ok, out) = s.run(&["plugin", "update", "greet", "--yes"], "");
+    assert!(
+        !ok && out.contains("greet needs cooee 99.0 or newer; this is cooee "),
+        "{out}"
+    );
     assert_eq!(s.lock()[0]["commit"], json!(s.v1));
     let builds = s.data().join("plugins/greet/builds");
     assert!(!builds.join(broken).exists() && !builds.join(dead).exists());
@@ -484,7 +512,7 @@ fn an_attach_backend_that_answers_is_used_and_run_only_starts_once_it_is_gone() 
         std::net::TcpStream::connect(("127.0.0.1", port)).is_ok()
     });
     let repo = s.dir.join("attach.git");
-    commit(&repo, "att", "a1", BUILD, &format!("touch ran; {RUN}"));
+    commit(&repo, "att", "v1", BUILD, &format!("touch ran; {RUN}"));
     let manifest = fs::read_to_string(repo.join("cooee-plugin.toml")).unwrap();
     let attach = format!(
         "attach = \"http://127.0.0.1:{port}\"\nattach_token = {:?}\nneeds",
@@ -513,6 +541,6 @@ fn an_attach_backend_that_answers_is_used_and_run_only_starts_once_it_is_gone() 
 
     running.kill().unwrap();
     running.wait().unwrap();
-    s.tab_says("att", "att a1");
+    s.tab_says("att", "att v1");
     assert!(build.join("ran").exists());
 }

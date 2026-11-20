@@ -1,27 +1,32 @@
 import CooeeCore
 import SwiftUI
 
-internal struct ItemView: View {
+internal struct ItemView: View, Equatable {
     @Environment(\.look) private var look
     internal let item: Item
     internal var retry: () -> Void = {}
     internal var view: () -> Void = {}
+    internal var restart: (() -> Void)?
+
+    nonisolated internal static func == (lhs: Self, rhs: Self) -> Bool {
+        lhs.item == rhs.item && (lhs.restart == nil) == (rhs.restart == nil)
+    }
 
     internal var body: some View {
         switch item {
-        case .you(_, let text, let files):
-            YouBubble(text: text, files: files).modifier(Copyable(text: text))
+        case .you(let id, let text, let files):
+            YouBubble(text: text, files: files).modifier(Copyable(text: text, id: id))
         case .outgoing(let message):
             VStack(alignment: .trailing, spacing: 4) {
                 YouBubble(text: message.text, files: message.files.map(\.name))
-                    .modifier(Copyable(text: message.text))
+                    .modifier(Copyable(text: message.text, id: message.id))
                 Delivery(failure: message.failure, retry: retry)
             }
         case .agent(_, let blocks):
             VStack(alignment: .leading, spacing: 10) {
-                ForEach(Array(blocks.enumerated()), id: \.offset) { _, block in BlockView(block: block) }
+                ForEach(Array(blocks.enumerated()), id: \.offset) { _, block in BlockView(block: block).equatable() }
             }
-            .modifier(Copyable(text: item.plainText ?? ""))
+            .modifier(Copyable(text: item.plainText ?? "", id: item.id))
         case .tools(_, let rows):
             ToolFold(rows: rows)
         case .trace(_, let steps, let seconds):
@@ -31,6 +36,9 @@ internal struct ItemView: View {
                 Text(text).foregroundStyle(look.palette.mute)
                 if text.hasPrefix("Updated ") {
                     Button("View", action: view).buttonStyle(.plain).foregroundStyle(look.palette.link)
+                }
+                if text.hasPrefix("The agent is gone"), let restart {
+                    Button("Restart", action: restart).buttonStyle(.plain).foregroundStyle(look.palette.link)
                 }
             }
             .ui(13, .regular, look).frame(maxWidth: .infinity)
@@ -44,6 +52,10 @@ internal struct ItemView: View {
             AskCard(ask: ask)
         case .screen(_, let screen):
             ScreenItemView(screen: screen)
+        case .call(let call):
+            CallBlock(call: call)
+        case .link(_, let link):
+            LinkLine(link: link)
         }
     }
 }
@@ -61,11 +73,7 @@ internal struct YouBubble: View {
             if let noteTo {
                 Text("Your note · to \(noteTo)").ui(13, .regular, look).foregroundStyle(palette.mute)
             }
-            ForEach(files, id: \.self) { file in
-                Label(file, systemImage: "doc.text").ui(13, .regular, look).foregroundStyle(palette.mute)
-                    .padding(.horizontal, 10).padding(.vertical, 6)
-                    .background(palette.card, in: .rect(cornerRadius: 10))
-            }
+            ForEach(files, id: \.self) { FileChip(name: $0) }
             if members.isEmpty {
                 Text(look.label(.said, text)).ui(16, .regular, look)
                     .padding(.horizontal, 14).padding(.vertical, 10)
@@ -109,10 +117,12 @@ internal struct Delivery: View {
     }
 }
 
-internal struct BlockView: View {
+internal struct BlockView: View, Equatable {
     @Environment(\.look) private var look
     @Environment(\.members) private var members
     internal let block: Block
+
+    nonisolated internal static func == (lhs: Self, rhs: Self) -> Bool { lhs.block == rhs.block }
 
     internal var body: some View {
         switch block {
@@ -174,7 +184,8 @@ internal struct CodeBlock: View {
             }
             .padding(.horizontal, 12).frame(height: 32)
             .background(palette.edge.opacity(0.35))
-            Text(code).font(.system(size: 13, design: .monospaced)).foregroundStyle(palette.foreground)
+            Text(lang == "diff" ? Self.diff(code, palette) : AttributedString(code))
+                .font(.system(size: 13, design: .monospaced)).foregroundStyle(palette.foreground)
                 .padding(12).frame(maxWidth: .infinity, alignment: .leading)
                 .fixedSize(horizontal: false, vertical: true)
         }

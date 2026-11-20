@@ -23,7 +23,7 @@
             XCTAssertFalse(labelled(app, "$ cargo fmt").exists)
             keep("chat-style-chat")
             fold.tap()
-            for step in ["$ cargo fmt", "$ cargo clippy", "$ cargo test"] {
+            for step in ["Plan", "Run the checks", "$ cargo fmt", "$ cargo clippy", "$ cargo test"] {
                 XCTAssert(labelled(app, step).waitForExistence(timeout: 10))
             }
             keep("trace")

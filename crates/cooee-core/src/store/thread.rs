@@ -92,6 +92,12 @@ pub struct Thread {
     /// The routine whose run started it (#75).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub routine: Option<crate::routines::Mark>,
+    /// The agent's last reported session id, which a restart resumes (#613).
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    pub session: String,
+    /// The agents that hit a usage limit in it (#76), first capped first, each until it next replies.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub capped: Vec<crate::agents::Capped>,
 }
 
 /// What a [`Thread`] is.
@@ -129,6 +135,12 @@ pub struct Queued {
     /// The routine that sent it (#75).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub routine: Option<crate::routines::Mark>,
+    /// How it was sent (#663).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub via: Option<crate::Via>,
+    /// The approval it denies (#351): once sent it shows under that card, not as a message of its own.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub denied: Option<u64>,
 }
 
 /// One message in a thread.

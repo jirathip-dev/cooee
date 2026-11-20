@@ -20,7 +20,7 @@ public struct Topics: Equatable, Sendable {
 
     public var folders: [String] {
         var seen: Set<String> = []
-        return rows.sorted { $0.updated > $1.updated }.compactMap(\.folder)
+        return rows.sorted { $0.updated ?? 0 > $1.updated ?? 0 }.compactMap(\.folder)
             .filter { !$0.isEmpty && seen.insert($0).inserted }
     }
 
@@ -31,7 +31,7 @@ public struct Topics: Equatable, Sendable {
     }
 
     public mutating func load(_ rows: [ThreadRow]) {
-        let fresh = rows.filter { !order.contains($0.id) }.sorted { $0.updated > $1.updated }.map(\.id)
+        let fresh = rows.filter { !order.contains($0.id) }.sorted { $0.updated ?? 0 > $1.updated ?? 0 }.map(\.id)
         order = fresh + order.filter { id in rows.contains { $0.id == id } }
         self.rows = rows
     }
@@ -66,7 +66,7 @@ public struct Topics: Equatable, Sendable {
 }
 
 /// A persona's open topics and their summed unread, as `GET /screens/home` counts them (#516).
-public struct TopicCount: Sendable, Equatable {
+public struct TopicCount: Codable, Sendable, Equatable {
     public let topics: Int
     public let unread: Int
 

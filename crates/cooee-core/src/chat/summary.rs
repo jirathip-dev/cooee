@@ -31,7 +31,7 @@ impl Turn {
 }
 
 /// One row of the thread list.
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, PartialEq, Serialize)]
 pub struct Summary {
     /// The thread's id.
     pub id: String,
@@ -54,12 +54,16 @@ pub struct Summary {
     /// The machine it runs on (#148; empty: this host).
     pub machine: String,
     /// The state: `connecting`, `unconnected` (its start failed), `working`, `blocked`, `done`, `error`, `limited`,
-    /// `ended` or empty.
+    /// `ended` or empty; a Workflow session's also `offline` (its host's link is down) or the tool's own (`parked`).
     pub state: String,
+    /// The state's reason: shed's note, or what ended it.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub note: Option<String>,
     /// The last item's text, short.
     pub last: String,
-    /// When the last item was made, in Unix milliseconds.
-    pub at: u64,
+    /// When the last item was made, in Unix milliseconds (none: no items).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub at: Option<u64>,
     /// Whether it has items the owner hasn't seen.
     pub unread: bool,
     /// How many: the agent's items past the owner's read mark (the row's badge).

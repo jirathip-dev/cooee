@@ -21,9 +21,9 @@ internal struct SidebarTests {
     @Test internal func theSidebarIsAColumnOnWideAndItsNodesAreMenuRowsOnCompact() throws {
         let wide = try Self.layout().resolved(for: .wide)
         #expect(wide.sidebarRows(on: .wide).map(\.id) == ["queue", "lanes"])
-        #expect(wide.menuRows(on: .wide).map(\.id) == ["menu", "reset-layout"])
+        #expect(wide.menuRows(on: .wide).map(\.id) == ["menu"])
         let compact = try Self.layout().resolved(for: .compact).menuRows(on: .compact)
-        #expect(compact.map(\.id) == ["menu", "queue", "lanes", "reset-layout"])
+        #expect(compact.map(\.id) == ["menu", "queue", "lanes"])
         #expect(compact.first { $0.id == "queue" }?.place == .menu)
     }
 

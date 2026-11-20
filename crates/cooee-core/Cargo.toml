@@ -10,19 +10,18 @@ publish.workspace = true
 
 [dependencies]
 base64.workspace = true
+blocks.workspace = true
 hkdf.workspace = true
 rusqlite.workspace = true
 ruzstd.workspace = true
 serde.workspace = true
 sha2.workspace = true
 serde_json.workspace = true
+swag.workspace = true
 shed-proto.workspace = true
 thiserror.workspace = true
 toml.workspace = true
 toml_edit.workspace = true
-
-[build-dependencies]
-toml.workspace = true
 
 [target.'cfg(target_os = "macos")'.dependencies]
 security-framework.workspace = true

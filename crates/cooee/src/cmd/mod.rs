@@ -14,6 +14,7 @@ mod plugin;
 mod push;
 mod reports;
 mod secrets;
+mod send;
 mod serve;
 mod setup;
 mod skill;
@@ -118,6 +119,12 @@ pub(crate) const ALL: &[Command] = &[
         usage: secrets::USAGE,
         flags: secrets::FLAGS,
         run: secrets::run,
+    },
+    Command {
+        name: "send",
+        usage: send::USAGE,
+        flags: send::FLAGS,
+        run: send::run,
     },
     Command {
         name: "serve",

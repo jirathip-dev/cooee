@@ -72,6 +72,17 @@ public enum Workflow {
         return sections.filter { !$0.1.isEmpty }
     }
 
+    /// A Workflow session's parked, dead or host-offline state as its plain line (#381); none for a lane's own.
+    public static func status(_ state: String, note: String?) -> String? {
+        let reason = note.map { " · \($0)" } ?? ""
+        switch state {
+        case "parked": return "parked\(reason)"
+        case "ended": return "dead\(reason)"
+        case "offline": return "host offline"
+        default: return nil
+        }
+    }
+
     private static func rank(_ state: LaneState) -> Int {
         [LaneState.needs, .fail, .working].firstIndex(of: state) ?? 3
     }

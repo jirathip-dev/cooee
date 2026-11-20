@@ -12,6 +12,8 @@ public struct HomeActions {
     public var openOthers: () -> Void = {}
     public var rooms: [String] = []
     public var pinRoom: (String) -> Void = { _ in }
+    public var sync: Sync?
+    public var asOf: Date?
 
     public init(
         menu: @escaping () -> Void = {},
@@ -47,7 +49,10 @@ public struct HomeView: View {
             Backdrop()
             VStack(spacing: 0) {
                 TopBar(title: screen.title, personas: all, actions: actions)
-                    .overlay(alignment: .bottom) { if loading { LoadingBar() } }
+                    .overlay(alignment: .bottom) {
+                        if loading { SlowStrip().frame(height: 2, alignment: .top) }
+                    }
+                    .zIndex(1)
                 Scroller {
                     HomeBlocks(screen: screen, pins: pins, chats: chats, selected: selected, actions: actions)
                     if chats.isEmpty { BigSprite(loading: loading) }
@@ -139,7 +144,10 @@ internal struct TopBar: View {
             Button(action: actions.menu) { AccountAvatar().padding(4).chip(look) }
                 .buttonStyle(.plain).accessibilityLabel("Account")
             Spacer()
-            Text(look.label(.title, title)).ui(19, .bold, look)
+            VStack(spacing: 2) {
+                Text(look.label(.title, title)).ui(19, .bold, look)
+                if let sync = actions.sync { SyncBadge(sync: sync, asOf: actions.asOf) }
+            }
             Spacer()
             Menu {
                 Button("New room", systemImage: "person.3", action: actions.room)

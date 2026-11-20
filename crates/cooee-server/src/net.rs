@@ -33,38 +33,48 @@ fn quoted(v: &str) -> Result<String, String> {
     ))
 }
 
-struct Spool(Option<PathBuf>);
+#[derive(Default)]
+struct Spool(Vec<PathBuf>);
+
+impl Spool {
+    fn file(&mut self) -> Result<PathBuf, String> {
+        let name = cooee_core::random(16).map_err(|e| e.to_string())?;
+        let path = std::env::temp_dir().join(format!("cooee-body-{}", cooee_core::sha256(&name)));
+        self.0.push(path.clone());
+        Ok(path)
+    }
+}
 
 impl Drop for Spool {
     fn drop(&mut self) {
-        if let Some(p) = &self.0 {
+        for p in &self.0 {
             fs::remove_file(p).ok();
         }
     }
 }
 
-fn start(
+fn request(
+    config: &mut String,
     (method, url): (&str, &str),
     headers: &[String],
     body: Option<&[u8]>,
-    extra: &str,
-) -> Result<(Child, Spool), String> {
-    let mut config = format!(
-        "url = {}\nrequest = {}\nsilent\nshow-error\nconnect-timeout = 10\nproto = \"=https,http\"\n{extra}",
+    spool: &mut Spool,
+) -> Result<(), String> {
+    writeln!(
+        config,
+        "url = {}\nrequest = {}\nconnect-timeout = 10\nproto = \"=https,http\"",
         quoted(url)?,
         quoted(method)?
-    );
+    )
+    .ok();
     for h in headers {
         writeln!(config, "header = {}", quoted(h)?).ok();
     }
-    let mut spool = Spool(None);
     match body.map(|b| std::str::from_utf8(b).map(quoted)) {
         None => {}
         Some(Ok(Ok(text))) => writeln!(config, "data-raw = {text}").unwrap_or_default(),
         Some(_) => {
-            let name = cooee_core::random(16).map_err(|e| e.to_string())?;
-            let path =
-                std::env::temp_dir().join(format!("cooee-body-{}", cooee_core::sha256(&name)));
+            let path = spool.file()?;
             cooee_core::write_private(&path, body.unwrap_or_default())
                 .map_err(|e| e.to_string())?;
             writeln!(
@@ -73,9 +83,12 @@ fn start(
                 quoted(&format!("@{}", path.display()))?
             )
             .ok();
-            spool.0 = Some(path);
         }
     }
+    Ok(())
+}
+
+fn curl(config: &str) -> Result<Child, String> {
     let mut c = cooee_core::runner::command("curl")
         .args(["-K", "-"])
         .stdin(Stdio::piped())
@@ -88,7 +101,78 @@ fn start(
             .write_all(config.as_bytes())
             .map_err(|e| e.to_string())?;
     }
-    Ok((c, spool))
+    Ok(c)
+}
+
+fn start(
+    (method, url): (&str, &str),
+    headers: &[String],
+    body: Option<&[u8]>,
+    extra: &str,
+) -> Result<(Child, Spool), String> {
+    let (mut config, mut spool) = ("silent\nshow-error\n".to_owned(), Spool::default());
+    request(&mut config, (method, url), headers, body, &mut spool)?;
+    config.push_str(extra);
+    Ok((curl(&config)?, spool))
+}
+
+pub(crate) type Post = (String, Vec<String>, Vec<u8>);
+
+pub(crate) fn post_all(
+    posts: &[Post],
+    max_time: u64,
+) -> Result<Vec<Result<Reply, String>>, String> {
+    let mut got: Vec<Result<Reply, String>> = posts
+        .iter()
+        .map(|(url, ..)| Err(format!("{url}: no answer")))
+        .collect();
+    if posts.is_empty() {
+        return Ok(got);
+    }
+    let mut config = format!(
+        "parallel\nparallel-max = {}\nsilent\n",
+        posts.len().min(300)
+    );
+    let (mut spool, mut outs) = (Spool::default(), Vec::new());
+    for (i, (url, headers, body)) in posts.iter().enumerate() {
+        if i > 0 {
+            config.push_str("next\n");
+        }
+        request(&mut config, ("POST", url), headers, Some(body), &mut spool)?;
+        let out = spool.file()?;
+        writeln!(
+            config,
+            "max-time = {max_time}\noutput = {}\nwrite-out = \"%{{urlnum}} %{{http_code}} %{{exitcode}} %{{errormsg}}\\n\"",
+            quoted(&out.display().to_string())?
+        )
+        .ok();
+        outs.push(out);
+    }
+    let out = curl(&config)?
+        .wait_with_output()
+        .map_err(|e| e.to_string())?;
+    for line in String::from_utf8_lossy(&out.stdout).lines() {
+        let mut f = line.splitn(4, ' ');
+        let (Some(Ok(n)), Some(Ok(status)), Some(exit)) = (
+            f.next().map(str::parse::<usize>),
+            f.next().map(str::parse::<u16>),
+            f.next(),
+        ) else {
+            continue;
+        };
+        let (Some(slot), Some(path), Some((url, ..))) = (got.get_mut(n), outs.get(n), posts.get(n))
+        else {
+            continue;
+        };
+        *slot = match exit {
+            "0" => Ok(Reply {
+                status,
+                body: fs::read_to_string(path).unwrap_or_default(),
+            }),
+            _ => Err(format!("{url}: {}", f.next().unwrap_or_default())),
+        };
+    }
+    Ok(got)
 }
 
 pub(crate) fn fetch(

@@ -69,13 +69,22 @@ internal struct MenuFeatureTests {
         #expect(calls.all.contains("icon TerminalPrompt") && calls.all.first == "screen core/screens/menu")
     }
 
-    @Test internal func aServerRowOpensCoresScreenAndClosingTheMenuDropsIt() async {
-        let store = store()
+    @Test internal func aServerRowOpensCoresScreenAndClosingTheMenuKeepsAndDropsIt() async {
+        let (store, calls) = (store(), calls)
+        store.dependencies.date = .constant(epoch)
+        store.dependencies.continuousClock = TestClock()
+        store.dependencies.screenCache.save = { key, kept in calls.record("keep \(key) \(kept.kept == epoch)") }
         await store.send(.show("/screens/settings/devices", label: "Devices")) {
             $0.page = ScreenFeature.State(
                 server: mini, source: .core, path: "/screens/settings/devices", label: "Devices")
         }
+        await store.send(.page(.presented(.loaded(Self.menu)))) {
+            $0.page?.screen = LiveScreen(Self.menu)
+            $0.page?.asOf = epoch
+        }
         await store.send(.open(false)) { $0.page = nil }
+        await store.finish()
+        #expect(calls.all == ["keep https://mini.local|core|/screens/settings/devices true"])
         await store.send(.show("/screens/queue", label: "Queue", source: .plugin("drover"))) {
             $0.page = ScreenFeature.State(
                 server: mini, source: .plugin("drover"), path: "/screens/queue", label: "Queue")
@@ -117,13 +126,14 @@ internal struct MenuFeatureTests {
             ])
     }
 
-    @Test internal func theMotionSwitchAndAPickedSpriteAreKept() async {
+    @Test internal func theMotionSwitchTheNightPickAndAPickedSpriteAreKept() async {
         let store = store()
         await store.send(.motion(false)) { $0.settings.motion = false }
         #expect(!store.state.settings.moves(reduceMotion: false))
         await store.send(.sprite("coder", "blk")) { $0.settings.sprites = ["farm": ["coder": "blk"]] }
         await store.send(.sprite("coder", nil)) { $0.settings.sprites = ["farm": [:]] }
-        #expect(calls.all == ["save system modern farm -", "save system modern farm -", "save system modern farm -"])
+        await store.send(.night(true)) { $0.settings.night = true }
+        #expect(calls.all == Array(repeating: "save system modern farm -", count: 4))
     }
 
     @Test internal func aRefusedIconChangeSaysWhichTileToTapAgain() async {

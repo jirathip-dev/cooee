@@ -16,7 +16,7 @@ public enum Listing {
     /// The topic a tap on `persona` opens (#516): the one with the newest unread message, else `last`, else the newest.
     public static func opens(_ persona: String, rows: [ThreadRow], last: String?) -> ThreadRow? {
         let topics = rows.filter { $0.persona == persona && $0.members.isEmpty && $0.askedBy.isEmpty }
-        let newest = { (rows: [ThreadRow]) in rows.max { $0.updated < $1.updated } }
+        let newest = { (rows: [ThreadRow]) in rows.max { $0.updated ?? 0 < $1.updated ?? 0 } }
         return newest(topics.filter { $0.unseen > 0 }) ?? topics.first { $0.id == last } ?? newest(topics)
     }
 
@@ -63,11 +63,12 @@ public enum Listing {
         let state = LaneState(api: thread.state)
         let owner = personas.first { $0.id == thread.persona }
         let persona = owner.map { Persona($0, state: state) } ?? stranger(thread, state: state)
-        let row = Row(
+        var row = Row(
             id: thread.id, persona: persona.id,
             title: owner == nil && thread.workflow == nil && thread.members.isEmpty ? thread.agent : thread.title,
             last: thread.last, ago: ago(thread.updated, now: now), unseen: thread.unseen, state: state
         )
+        row.status = thread.workflow == nil ? nil : Workflow.status(thread.state, note: thread.note)
         let cast = everyone(personas: personas, rows: rows)
         let members = thread.members.map { id in cast.first { $0.id == id } ?? Persona(named(id)) }
         let asker = rows.first { $0.id == thread.askedBy }.map { from in
@@ -99,7 +100,8 @@ public enum Listing {
         }
     }
 
-    public static func ago(_ milliseconds: Int64, now: Date) -> String {
+    public static func ago(_ milliseconds: Int64?, now: Date) -> String {
+        guard let milliseconds else { return "" }
         let seconds = max(0, Int(now.timeIntervalSince1970) - Int(milliseconds / 1000))
         switch seconds {
         case ..<60: return "now"

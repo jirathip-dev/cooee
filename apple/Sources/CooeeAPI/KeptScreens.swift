@@ -12,12 +12,12 @@ public struct KeptScreens: Sendable {
         folder.appending(path: Data(key.utf8).base64EncodedString().replacingOccurrences(of: "/", with: "_"))
     }
 
-    public func load(_ key: String) -> KeptScreen? {
+    public func load<Kept: Decodable>(_ key: String) -> Kept? {
         guard let data = try? Data(contentsOf: file(key)) else { return nil }
-        return try? JSONDecoder().decode(KeptScreen.self, from: data)
+        return try? JSONDecoder().decode(Kept.self, from: data)
     }
 
-    public func save(_ key: String, _ kept: KeptScreen) {
+    public func save(_ key: String, _ kept: some Encodable) {
         try? FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
         try? JSONEncoder().encode(kept).write(to: file(key), options: .atomic)
     }

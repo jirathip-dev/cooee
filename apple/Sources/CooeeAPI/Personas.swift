@@ -21,6 +21,26 @@ extension Client {
     public func push(_ token: String, enabled: Bool) async throws {
         _ = try await send(request(enabled ? "POST" : "DELETE", "/push/apns", json: ["token": token]))
     }
+
+    /// One of the app's timings into the server's perf log (#606).
+    public func perf(_ name: String, millis: Int) async throws {
+        try await post("/perf", Sample(name: name, millis: millis))
+    }
+
+    /// A report-mode note into the server's reports (#376), listed by `cooee reports`.
+    public func report(_ report: Report) async throws {
+        try await post("/report", report)
+    }
+}
+
+private struct Sample: Encodable {
+    private enum CodingKeys: String, CodingKey {
+        case name
+        case millis = "ms"
+    }
+
+    fileprivate let name: String
+    fileprivate let millis: Int
 }
 
 extension Client {

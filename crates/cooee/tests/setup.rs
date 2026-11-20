@@ -52,7 +52,9 @@ esac"#,
 */releases/download/*/SHA256SUMS) cat "$HOME/SHA256SUMS" ;;
 */releases/download/*) for a; do [ "$prev" = -o ] && out=$a; prev=$a; done; cp "$HOME/new-cooee" "$out" ;;
 *127.0.0.1*) "$HOME/serving" ;;
-*) test ! -e "$HOME/curl-fails" ;;
+*) [ -e "$HOME/tailnet" ] || exit 0
+   for a; do shift; case $a in https://*) a="http://$(cat "$HOME/tailnet")/${a#https://*/}" ;; esac; set -- "$@" "$a"; done
+   exec /usr/bin/curl "$@" ;;
 esac"#,
     ),
 ];
@@ -97,7 +99,12 @@ impl Mac {
     }
 
     fn setup(&self, args: &[&str]) -> Output {
-        self.cooee(&[&["setup", "--port", &self.port.to_string()], args].concat())
+        let chief = ["--chief-agent", "claude-acp", "--chief-machine", "here"];
+        self.cooee(&[&["setup", "--port", &self.port.to_string()], args, &chief].concat())
+    }
+
+    fn chief(&self) -> PathBuf {
+        self.config().with_file_name("agents/chief/agent.toml")
     }
 
     fn cooee(&self, args: &[&str]) -> Output {
@@ -239,6 +246,11 @@ fn a_fresh_machine_runs_every_step_once_in_order_and_a_second_run_skips_them() {
             && timer.contains("<key>StartInterval</key>\n  <integer>900</integer>"),
         "{timer}"
     );
+    let chief = fs::read_to_string(mac.chief()).unwrap();
+    assert!(
+        chief.contains("role = \"chief\"") && chief.contains("agent = \"claude-acp\""),
+        "{chief}"
+    );
     assert!(
         stdout.contains("doctor:\nok   service dev.cooee.cooee loaded")
             && stdout.contains(&format!(
@@ -255,6 +267,7 @@ fn a_fresh_machine_runs_every_step_once_in_order_and_a_second_run_skips_them() {
         &format!("shed protocol {SHED_MIN_PROTOCOL}+"),
         &format!("config {}", mac.config().display()),
         "agents",
+        "chief",
         "cooee service dev.cooee.cooee",
         "cooee service dev.cooee.cooee.update",
         &format!("tailscale serve {port}"),
@@ -268,6 +281,22 @@ fn a_fresh_machine_runs_every_step_once_in_order_and_a_second_run_skips_them() {
         stdout.contains("pair your phone:\nType the link") && stdout.contains("\ncode  "),
         "{stdout}"
     );
+    assert_eq!(fs::read_to_string(mac.chief()).unwrap(), chief);
+}
+
+#[test]
+fn yes_with_no_chief_and_no_picks_fails_before_any_step_and_changes_nothing() {
+    let mac = Mac::new("su-chief-yes", true);
+    let before = files(&mac.home);
+    let out = mac.cooee(&["setup", "--port", &mac.port.to_string(), "--yes"]);
+    assert_eq!(out.status.code(), Some(1), "{out:?}");
+    let stderr = String::from_utf8_lossy(&out.stderr);
+    assert!(
+        stderr.contains("there is no Chief yet and --yes can't pick for you: add --chief-agent <id> --chief-machine <name|here>\nnothing was changed"),
+        "{stderr}"
+    );
+    assert_eq!(files(&mac.home), before);
+    assert_eq!(mac.changes(), Vec::<String>::new());
 }
 
 #[test]
@@ -331,9 +360,45 @@ fn dry_run_writes_nothing_and_prints_every_command() {
 }
 
 #[test]
+fn a_tailnet_url_answering_405_on_get_pair_passes_doctor() {
+    let mac = Mac::new("su-405", true);
+    let server = TcpListener::bind("127.0.0.1:0").unwrap();
+    fs::write(
+        mac.home.join("tailnet"),
+        server.local_addr().unwrap().to_string(),
+    )
+    .unwrap();
+    std::thread::spawn(move || {
+        for mut conn in server.incoming().flatten() {
+            let mut buf = [0; 4096];
+            std::io::Read::read(&mut conn, &mut buf).unwrap();
+            std::io::Write::write_all(
+                &mut conn,
+                b"HTTP/1.1 405 Method Not Allowed\r\nallow: POST\r\ncontent-length: 0\r\nconnection: close\r\n\r\n",
+            )
+            .unwrap();
+        }
+    });
+    let out = mac.setup(&["--yes"]);
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(out.status.success(), "{out:?}");
+    let port = mac.port;
+    assert!(
+        stdout.contains(&format!(
+            "ok   https://mac.tailnet.example:{port}/ (else: tailscale serve --bg --https={port} http://127.0.0.1:{port})"
+        )),
+        "{stdout}"
+    );
+}
+
+#[test]
 fn a_doctor_failure_stops_with_its_fix() {
     let mac = Mac::new("su-doctor", true);
-    fs::write(mac.home.join("curl-fails"), "").unwrap();
+    let unused = TcpListener::bind("127.0.0.1:0")
+        .unwrap()
+        .local_addr()
+        .unwrap();
+    fs::write(mac.home.join("tailnet"), unused.to_string()).unwrap();
     let out = mac.setup(&["--yes"]);
     let (stdout, stderr) = (
         String::from_utf8_lossy(&out.stdout),
@@ -397,14 +462,23 @@ fn setup_installs_the_first_party_themes_chosen_with_no_network() {
     )
     .unwrap();
     let args = ["setup", "--port", &mac.port.to_string()];
-    let out = mac.cooee_typing(&args, Some("kitchen\n\n\n"));
+    let out = mac.cooee_typing(&args, Some("kitchen\n\n\n1\n1\n"));
     let stdout = String::from_utf8_lossy(&out.stdout);
     assert!(out.status.success(), "{out:?}");
     assert!(
         stdout.contains(
-            "themes:\n  themes to install, or none [garden kitchen]:\n  installed theme farm\n  installed theme scene\n  installed theme terminal\n  installed theme kitchen\n"
+            "themes:\n  themes to install, or none [bush garden kitchen]:\n  installed theme farm\n  installed theme scene\n  installed theme terminal\n  installed theme kitchen\n"
         ),
         "{stdout}"
+    );
+    assert!(
+        stdout.contains("chief:\n  Chief is cooee's own persona: it sets up personas and routines for you.\n  its agent:  1 claude-acp\n  its machine:  1 here\n"),
+        "{stdout}"
+    );
+    let chief = fs::read_to_string(mac.chief()).unwrap();
+    assert!(
+        chief.contains("agent = \"claude-acp\"") && !chief.contains("machine"),
+        "{chief}"
     );
     let themes = mac.config().parent().unwrap().join("themes");
     assert_eq!(
@@ -444,9 +518,10 @@ fn setup_installs_the_first_party_themes_chosen_with_no_network() {
     assert!(out.status.success(), "{out:?}");
     let stdout = String::from_utf8_lossy(&out.stdout);
     assert!(
-        stdout.contains("themes:\n  installed theme garden\n"),
+        stdout.contains("themes:\n  installed theme bush\n  installed theme garden\n"),
         "{stdout}"
     );
+    assert!(themes.join("bush/theme.json").exists());
     assert!(themes.join("garden/theme.json").exists());
     let out = mac.setup(&["--yes"]);
     assert!(String::from_utf8_lossy(&out.stdout).contains("themes: done, skipped\n"));

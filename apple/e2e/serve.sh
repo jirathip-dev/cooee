@@ -41,7 +41,7 @@ cp apple/e2e/screens.py docs/design/screens-as-data/fixtures/events.json docs/de
   docs/design/queue-scene/fixtures/queue-stream.json "$drover/"
 cat >"$drover/cooee-plugin.toml" <<'TOML'
 name = "drover"
-version = "0.0.1"
+version = "0.1.0"
 build = "python3 -m py_compile screens.py"
 run = "TOKEN=$COOEE_PLUGIN_TOKEN exec python3 screens.py"
 needs = ["python3"]
@@ -85,6 +85,7 @@ printf 'name = "Coder"\nagent = "fake-acp"\nfolder = "%s"\nplugins = ["cards"]\n
 mkdir -p "$tmp/themes"
 cp -R packs/terminal packs/scene "$tmp/themes/"
 target=$(cargo metadata --format-version 1 --no-deps | sed -n 's/.*"target_directory":"\([^"]*\)".*/\1/p')
+for name in bush farm garden kitchen; do "$target/debug/cooee" theme add --config "$tmp/config.toml" "$name" --yes; done
 "$target/debug/cooee" plugin add --config "$tmp/config.toml" "$drover" --yes
 "$target/debug/cooee" serve --config "$tmp/config.toml" &
 srv=$!

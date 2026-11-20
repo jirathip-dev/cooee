@@ -54,6 +54,10 @@ impl Hub {
     pub(super) fn settle(&self, id: &str, terminal: &str, s: &AcpSession) -> Result<(), HubError> {
         let live = self.live(id)?;
         let mut live = lock(&live);
+        if !s.id.is_empty() && live.meta.session != s.id {
+            s.id.clone_into(&mut live.meta.session);
+            self.save(&live)?;
+        }
         let meta = &live.meta;
         let (agent, account, pick) = (meta.agent.clone(), meta.account.clone(), meta.model.clone());
         self.seen(&agent, &account, &s.models);
@@ -66,7 +70,7 @@ impl Hub {
         if let Some(short) = &r.fallback {
             let text = format!("model {pick} is gone: now {short} ({})", r.id);
             short.clone_into(&mut live.meta.model);
-            self.store.save(&live.meta)?;
+            self.save(&live)?;
             let item = live.chat.push(now(), 0, Body::Note { text: text.clone() });
             live.publish(self, vec![Change::Item(item)])?;
             let persona = agents::list(self.config_dir(), &self.data).into_iter();

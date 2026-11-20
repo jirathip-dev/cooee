@@ -21,7 +21,7 @@ action with an empty block id (→ #378).
 | # | feature | gate | state | where | gap | issue | phone check |
 |---|---|---|---|---|---|---|---|
 | 1 | Home Screen app, offline paint | ● | n/a-web | native: the app itself, `AppIconPicker.swift`; kept copy only for plugin sheets (`KeptScreens.swift`) | native offline copy of Home and chat missing | #369 | Airplane mode, open the app: the last Home and thread show with "as of Xm ago" |
-| 2 | Live stream, sync dot, gapless reconnect, no scroll jump | ● | partial | `CooeeAPI/Events.swift` `Client.events` (SSE, Last-Event-ID); `CooeeUI/Layout.swift` `Scroller` | no sync dot; Home polls every 5 s | #369 | Toggle airplane mode in a thread: dot amber then green, no message missing |
+| 2 | Live stream, sync dot, gapless reconnect, no scroll jump | ● | partial | `CooeeAPI/Events.swift` `Client.events` (SSE, Last-Event-ID); `CooeeUI/Shared.swift` `Scroller` | no sync dot; Home polls every 5 s | #369 | Toggle airplane mode in a thread: dot amber then green, no message missing |
 | 3 | Themed loading strip, "as of Xm ago" | | partial | `CooeeUI/PluginSheets.swift` (plugin sheets only) | no strip or age on Home and chat | #369 | Slow network, open a thread: a thin strip, content stays tappable |
 | 4 | Short self-clearing toasts | | missing | `ChatFeature`/`HomeFeature` set `state.error`, no view draws it | errors are silent; no toasts | #369 | Tap any action: a short toast, then it clears |
 | 5 | Pull to refresh, ↻, reload on resume | | partial | `HomeFeature` `poll`; `ChatFeature` reconnect loop | no `.refreshable`, no ↻, no reload on foreground | #369 | Pull down on Home: it reloads |
@@ -51,10 +51,10 @@ action with an empty block id (→ #378).
 | 29 | Sticky header; older messages on scroll | | partial | `ChatHeader` above the scroll; `Endpoints` `messages(before: 50)` | older messages never load | #372 | Scroll to the top: older messages load |
 | 30 | Choice rows, "other" box, answered ✓ line | ● | done | `crates/cooee-core/src/blocks.rs` choice; `CooeeUI/BlockCards.swift` `ChoiceBlock` | — | — | Tap the recommended option: ✓ with who |
 | 31 | Conductor-answered asks keep [change] 30 min | | done | `blocks.rs` keeps the choice open until `until`; `ChoiceBlock` re-answers via `/threads/{id}/approve` | — | — | Re-tap another option on an answered ask: the new pick goes |
-| 32 | Config-proposal card | ● | partial | `blocks.rs` config card; `CardBlock` | no applying state, diff not coloured | #374 | Tap apply: "applying…", then "applied … doctor ✓" |
+| 32 | Config-proposal card | ● | done | `blocks.rs` config card (a `diff` fence); `CardBlock`, `CodeBlock.diff`; `ChatCards` applying… until the line | — | #374 | Tap apply: "applying…", then "applied … doctor ✓" |
 | 33 | Secret request card, masked input | ● | done | `CooeeUI/BlockFields.swift` `SecretBlock` | Face ID icon is dead (#240) | #240 | Save a value: "secret X set ✓" |
 | 34 | Harness pick; model/effort chip | | partial | `CooeeUI/Components.swift` `AgentChip` (no action); persona sets the agent | no per-thread model/effort (`POST /threads/{id}/model` unused) | #240, #230 | Tap the agent chip, pick effort low: "from the next turn" |
-| 35 | Handoff chips, flow-back lines, pick-a-thread | ● | partial | `/plugin/handoff`, `/plugin/line` → link items; `ChatItems` default branch | link items are plain notes, not tappable | #374 | Tap "continued in t6": t6 opens |
+| 35 | Handoff chips, flow-back lines, pick-a-thread | ● | done | `/plugin/handoff`, `/plugin/line` → link items; `ChatItems` → `ThreadLink`; `CooeeUI/ItemLines.swift` `LinkLine` | — | #374 | Tap "continued in t6": t6 opens |
 
 ## drover queue (rows 36–48)
 
@@ -94,7 +94,7 @@ Served by herdsman as the conductor's Queue header-strip screen (`screens.rs` `q
 | 59 | Stop, Kill with dry-run confirm, Clean with reasons | ● | partial | `WorkingPill` Stop; Queue live row long-press Stop | no Kill, no Clean | #380 | Long-press a lane, Kill: the confirm shows the unpushed/dirty line |
 | 60 | Lane figures animated by state | | partial | figure: scene sprite / ascii glyph / tone dot | not animated; herdsman sends no `coat` | #246 | A working lane's figure animates |
 | 61 | Herd scene: ranch, state bands, gate | | partial | `PinnedRow` `scene-strip` | no per-repo ranch, bands or gate | #181 | Scene: one figure per lane in its band |
-| 62 | Weather, day/night, repo switching | | missing | — | none of it | #382 | Tap [☾]: night; tap ›: next repo |
+| 62 | Weather, day/night, repo switching | | done | `LaneStage` `Sky`: the scene block's `load` → clear/cloudy/storm, night 19–07 or [☾] (`Settings.night`), › taps its `next` | — (the plugin sends `load` and `next`; no swipe) | #382 | Tap [☾]: night; tap ›: next repo |
 
 ## drover asks (rows 63–71) and run cards
 
@@ -149,15 +149,15 @@ Server tests are in `crates/cooee/tests/reliability.rs` unless named otherwise. 
 
 | R | state | where | gap | issue | phone check |
 |---|---|---|---|---|---|
-| R1 | partial | `r1_a_hung_keychain_falls_through_to_a_new_key_and_blocks_nothing` | the app's `CooeeAPI/Keychain.swift` read has no deadline | #384 | — (a test row) |
+| R1 | done | `r1_a_hung_keychain_falls_through_to_a_new_key_and_blocks_nothing`; `AppFeatureTests` `aKeychainThatNeverAnswersIsAnErrorAfterFiveSeconds` | — | — | — (a test row) |
 | R2 | done | `crates/cooee-core/tests/upgrade_compat.rs` `every_earlier_release_config_loads` | — | — | — |
-| R3 | partial | `r3_a_store_error_is_a_503_not_unpaired_and_a_401_does_not_latch` | the app forgets its pairing on one 401 (`AppFeature` `.home(.delegate(.unauthorized))`) | #384 | Restart the host: the app stays on Home |
+| R3 | done | `r3_a_store_error_is_a_503_not_unpaired_and_a_401_does_not_latch`; `AppFeatureTests` `oneUnauthorizedAnswerThenAGoodOneKeepsHomeAndTheServer` | — | — | Restart the host: the app stays on Home |
 | R4 | partial | `Layout.swift` `defaultScrollAnchor`, `scrollDismissesKeyboard` | no native keyboard test | #385 | Tap the composer: flush on the keyboard, the thread keeps its place |
 | R5 | partial | `PluginSheets.swift` inline `ProgressView` | no 300 ms strip test | #385 | Slow network: a strip only, content tappable |
 | R6 | done | `crates/cooee-server/src/hub.rs` `r6_requests_over_a_long_log_are_within_budget`; `cooee-core` `chat.rs` `r6_…` | native 1,000-message chat | #337 | A 1,000-message thread opens without a stall |
 | R7 | done | `r7_page_loads_run_no_subprocess` | — | — | — |
 | R8 | done | `crates/cooee-core/tests/group.rs` | — | — | — |
-| R9 | partial | `chat_first.rs` (sends reach the new terminal) | no ask-after-replace-then-answer test | #386 | — |
+| R9 | done | `r9_an_ask_after_the_terminal_is_replaced_is_answered_in_the_new_session`; `chat_first.rs` (sends reach the new terminal) | — | — | — |
 | R10 | done | `r10_an_ask_made_during_the_start_is_listed_and_answerable` | — | — | — |
 | R11 | done | `r11_a_slow_start_is_adopted_once` | — | — | — |
 | R12 | n/a-shed | — | — | — | — |
@@ -175,10 +175,10 @@ Server tests are in `crates/cooee/tests/reliability.rs` unless named otherwise. 
 | R24 | n/a-shed | — | — | — | — |
 | R25 | partial | `apple/Tests/CooeeUITests/SnapshotTests.swift` (static frames) | no sheet-close flash test | #385 | Open and close a plugin sheet: no flash |
 | R26 | n/a-shed | — | — | — | — |
-| R27 | partial | `hub.rs` reported state from shed | no scripted ACP working → idle test | #386 | A long tool run: the pill never flickers |
+| R27 | done | `r27_a_long_tool_run_is_working_until_its_turn_ends_and_reads_no_screen` | — | — | A long tool run: the pill never flickers |
 
 ## Totals and filed issues
 
-Rows 1–85 and run cards: 15 done, 39 partial, 29 missing, 3 n/a-web; 86–90 dropped. Reliability: 14 done, 8 partial,
-5 n/a-shed. Of the 28 gate rows, 8 are done (15, 18, 19, 30, 33, 42, 43, 85); the biggest blocker is #377.
+Rows 1–85 and run cards: 17 done, 37 partial, 29 missing, 3 n/a-web; 86–90 dropped. Reliability: 14 done, 8 partial,
+5 n/a-shed. Of the 28 gate rows, 10 are done (15, 18, 19, 30, 32, 33, 35, 42, 43, 85); the biggest blocker is #377.
 Filed by this audit: #369–#386.

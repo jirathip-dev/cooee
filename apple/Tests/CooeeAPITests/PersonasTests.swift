@@ -71,6 +71,20 @@ internal struct PersonasTests {
                 == Array(repeating: Data(#"{"token":"ab12"}"#.utf8), count: 2))
     }
 
+    @Test internal func aTimingIsPostedByNameAndMs() async throws {
+        let server = CannedServer(["/perf": [Answer(chunks: ["ok"])]])
+        try await server.client().perf("tap", millis: 42)
+        let sent = try server.decoded("/perf", as: [String: JSONValue].self)
+        #expect(sent == ["name": .string("tap"), "ms": .number(42)])
+    }
+
+    @Test internal func aReportPostsTheScreenTheElementAsTargetAndTheNote() async throws {
+        let server = CannedServer(["/report": [Answer(chunks: ["report sent"])]])
+        try await server.client().report(Report(note: "wrong time", path: "/t1", element: "working pill"))
+        let sent = try server.decoded("/report", as: [String: JSONValue].self)
+        #expect(sent == ["note": .string("wrong time"), "path": .string("/t1"), "target": .string("working pill")])
+    }
+
     @Test internal func aRefusedSaveCarriesTheServersReason() async throws {
         let refused = Answer(status: 400, headers: ["Cooee-Error": "1"], chunks: ["a persona needs a name"])
         let server = CannedServer(["/personas": [refused]])

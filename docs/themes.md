@@ -14,11 +14,19 @@ A theme is one coherent pack: a folder, or a folder of a git repo. Only `plain` 
 
 | File | Required | What it is |
 |---|---|---|
-| `theme.json` | yes | `label`, `scheme: {dark, light}` (the default scheme per mode), `sprites` (bool), `moments` (bool), `words`, `scene` (the Scene's layers: element ids in `scene.svg`), and optional `style` (`modern` or a style pack's name: the Style a device takes once when it picks the theme; without it the device keeps its own) |
+| `theme.json` | yes | `label`, `scheme: {dark, light}` (the default scheme per mode), `sprites` (bool), `moments` (bool), `words`, `scene` (the Scene's layers: element ids in `scene.svg`), optional `style` (`modern` or a style pack's name: the Style a device takes once when it picks the theme; without it the device keeps its own), and optional `load_scene` (below) |
 | `sprites.svg` | when `sprites` | `<symbol>`s `s-edit s-read s-run s-idle s-done s-needs s-merged s-fail` (24 px) and `s-loading s-empty` (132 × 100), optionally Scene's 132 × 100 poses `s-scene-edit s-scene-idle s-scene-done s-scene-needs s-scene-merged s-scene-fail` (#115: farm and kitchen carry vector figures; without them Scene draws `s-<state>`); two-frame loops use `.kf1/.kf2` or `.f1/.f2`; pages `<use>` it by URL, so it loads only once a sprite shows |
 | `scene.svg` | when `sprites` or `scene` | Scene's backdrop (#34): the strip on top of each page, drawn at the page's width (`object-fit: cover`, bottom-aligned), its `viewBox` at most 400 × 320 (the first-party packs' scenes are 390 × 320 or 392 × 188), holding each layer `scene` names. A `#night` element styled by `:target` gives the night look (`scene.svg#night`, 19:00 to 07:00 on the device's clock); herdsman's load layers (`.h-busy .h-held .l-overcast .l-rain`) stay hidden, as cooee has no host load |
 | `schemes/<name>.json` | no | the pack's own colour schemes (below); its `theme.json` may name them |
 | `icon.png` | no | the tile in the look sheet, the favicon and the home-screen icon (else cooee's icon) |
+
+**`load_scene`** (optional; a theme without it draws the weather sky, #382): `{"kind": "sign"}` draws the Scene's
+host load as a Fire Danger Rating sign. `sprites.svg` then holds `s-sign-moderate s-sign-high s-sign-catastrophic`,
+each a layer the size of `scene.svg` drawn over it (the sign at the clearing's edge, with its heat shimmer and
+cicadas). The Scene picks one from the drover scene block's `level`: `calm` moderate, `busy` high, `held`
+catastrophic. Without a `level` it uses the block's `load`, at the weather's thresholds. The sheet's `.f2` frames
+stay hidden, so the sign is still. swag's bush pack (its `packs/bush/`, from
+`design/bush/`) is the first to use it.
 
 `words` maps cooee's state keys to the theme's words: `working needs done fail idle ended merged loading
 empty-threads`. A missing key says the plain word (`working`, `needs you`, `done`, `failed`, …). The theme words dress
@@ -28,20 +36,20 @@ working pill, the live line, a turn's end, push text), the plain word follows th
 **The theme gate** checks a pack: `theme.json` parses; its word keys are state keys; every scheme it holds or names is
 of the right mode and passes the contrast gate (WCAG AA, below); `sprites.svg` holds every required state; `scene.svg`
 is at most 400 × 320 with every layer; and no file is too big (`sprites.svg` 512 KiB, `scene.svg` and `icon.png` 256 KiB, the
-rest 16 KiB). `cooee theme check <path>...` runs it (CI runs it on the pinned first-party packs and `packs/starter`), and so does every load: `cooee serve`
+rest 16 KiB). `cooee theme check <path>...` runs it (CI runs it on the style packs and `packs/starter`; `cargo test` runs it on the first-party packs), and so does every load: `cooee serve`
 refuses a pack that fails it, and prints why.
 
 ## Where the first-party packs come from
 
 The first-party packs live in one repo that cooee and drover share, https://github.com/jirathip-dev/swag, as
-`packs/<name>/`. cooee pins one commit of it in `packs/swag.toml`, with the sha256 of every file it takes
-(`"farm/sprites.svg" = "…"`). The build fetches those files at that commit into `packs/themes/` (git-ignored) and into
-the binary, so an install with no network still has its themes. A file that doesn't match its sha256 is never installed,
-and `cargo test` fails on it. The theme gate runs on whatever is pinned (`just themes`, in CI), so a bad pack can't ship.
+`packs/<name>/`, with the 12 colour schemes in `schemes/`. swag is a Rust crate that compiles them in; cooee pins one
+commit of it in `Cargo.toml`, beside blocks (#622), so the binary carries them and an install with no network still has
+its themes. swag's own CI gates them with blocks' theme gate; cooee's `cargo test` runs its theme gate on every pinned
+pack, so a bad pack can't ship.
 
-**To bump the pin:** change the art in swag and merge it there. Then, in cooee, set `commit` in `packs/swag.toml` to
-that swag commit and put each changed file's `shasum -a 256` beside it. A new pack, such as bush, is one line per file.
-`cargo test` and `just themes` check the result. Nothing else in this repo changes.
+**To bump the pin:** change the art or a scheme in swag and merge it there. Then, in cooee, set swag's `rev` in
+`Cargo.toml` to that commit and run `cargo update -p swag`. `cargo test` checks the result; a changed scheme also needs
+`apple/Tests/schemes.json`, the Swift tests' copy, which a test keeps equal to what the server serves.
 
 ## Installing and removing themes
 
@@ -80,8 +88,8 @@ Look shows as one amber line.
 ## A scheme: `schemes/<name>.json`
 
 `label`, `color-scheme` (`dark` or `light`) and `tokens`: `--bg --card --edge --line --scrim --fg --mute --l --link
---g --a --r --p --c --fk-l --fk-p --fk-c --fk-g --fk-a`, each `#rrggbb`. Built in: the 12 in `design-system/schemes/`. Your own
-go in `<config dir>/schemes/`. Every scheme must pass herdsman's contrast gate (`gate` in `crates/cooee-server/src/look.rs`, ported from
+--g --a --r --p --c --fk-l --fk-p --fk-c --fk-g --fk-a`, each `#rrggbb`. Built in: swag's 12. Your own
+go in `<config dir>/schemes/`. Every scheme must pass herdsman's contrast gate (blocks' `theme::gate`, ported from
 `docs/design/look/gate.mjs`): text at 4.5:1 and state colours at 3:1 on the background, the cards and the needs-you and
 group tints, and the state colours at least ΔE2000 20 apart. A scheme that fails the gate is refused.
 

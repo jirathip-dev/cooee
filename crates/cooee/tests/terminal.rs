@@ -7,7 +7,7 @@ mod support;
 use std::{
     fs,
     io::{BufRead, BufReader, Write},
-    net::{TcpListener, TcpStream},
+    net::TcpStream,
     path::PathBuf,
     time::Duration,
 };
@@ -40,23 +40,24 @@ fn mac(name: &str) -> Mac {
 fn mac_on(name: &str, shed: Hello) -> Mac {
     let dir = scratch(name);
     let shed = FakeShed::start(&dir.join("shed"), shed);
-    let port = TcpListener::bind("127.0.0.1:0")
-        .unwrap()
-        .local_addr()
-        .unwrap()
-        .port();
     let entry = format!(
-        "[[plugins]]\nname = \"terminal\"\nlabel = \"Terminal\"\nurl = \"http://127.0.0.1:{port}\"\nmodule = \"/tab.js\"\ntoken = \"{TOKEN}\"\n"
+        "[[plugins]]\nname = \"terminal\"\nlabel = \"Terminal\"\nurl = \"http://127.0.0.1:0\"\nmodule = \"/tab.js\"\ntoken = \"{TOKEN}\"\n"
     );
     let home = dir.join("home");
     fs::create_dir_all(&home).unwrap();
     let env = [("SHELL", "/bin/sh"), ("HOME", home.to_str().unwrap())];
     let cooee = Cooee::start_env(&dir, &shed.dir, &entry, &env);
+    let err = fs::read_to_string(dir.join("cooee.err")).unwrap();
+    let backend = err
+        .lines()
+        .find_map(|l| l.strip_prefix("cooee: plugin terminal on http://"))
+        .unwrap_or_else(|| panic!("no terminal backend in: {err}"))
+        .to_owned();
     Mac {
         dir,
         shed,
         cooee,
-        backend: format!("127.0.0.1:{port}"),
+        backend,
     }
 }
 

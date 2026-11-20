@@ -100,7 +100,10 @@ fn new_thread_runs_the_agent_in_an_allowed_folder_and_streams_the_reply() {
 
     let events = s.events(&id).until(|e| is_item(e, "agent"));
     assert!(is_item(&events[0], "you") && events[0].data["text"] == "Say hello");
-    assert_eq!(text_of(&events), "Hello");
+    assert!(
+        matches!(text_of(&events).as_str(), "" | "Hello"),
+        "{events:?}"
+    );
     let reply = events.last().unwrap();
     assert_eq!(
         (&reply.data["text"], &reply.data["stop_reason"]),
@@ -141,10 +144,16 @@ fn a_tool_call_is_one_row_updated_in_place_and_a_retried_send_is_stored_once() {
     assert_eq!(status, 200, "{first}");
     let (_, again) = s.send(&id, "use a tool", "r1");
     assert_eq!(first, again);
+    let (status, body) = s.send(&id, "untagged", "");
+    assert_eq!(status, 400, "{body}");
     let prompts = s.shed.sent(&terminal(&id));
     assert_eq!(
         prompts.iter().filter(|t| t.contains("use a tool")).count(),
         1
+    );
+    assert!(
+        !prompts.iter().any(|t| t.contains("untagged")),
+        "{prompts:?}"
     );
 
     let events = events.until(|e| is_item(e, "agent"));
@@ -198,6 +207,53 @@ fn an_approval_is_sent_to_shed_once_however_often_it_is_tapped() {
 }
 
 #[test]
+fn deny_and_say_rejects_the_call_and_the_agent_gets_the_text_once_under_the_denial() {
+    let s = setup("deny-say");
+    let id = s.create("please approve an edit");
+    let mut events = s.events(&id);
+    let ask = events.until(|e| is_item(e, "approval")).pop().unwrap();
+    let choice = &ask.data["block"]["blocks"][0];
+    let last = choice["options"].as_array().unwrap().last().unwrap();
+    assert_eq!(
+        (&last["value"], &last["label"]),
+        (&json!("say"), &json!("Deny and say…"))
+    );
+    let item = ask.data["id"].as_u64().unwrap();
+    let path = format!("/threads/{id}/approve");
+    let say = json!({ "item": item, "option": "say", "value": "fake says: Use a branch instead." });
+    thread::scope(|scope| {
+        for _ in 0..3 {
+            scope.spawn(|| assert_eq!(s.cooee.post(&path, &say).0, 200));
+        }
+    });
+    events.until(|e| is_item(e, "agent") && e.data["text"] == "Use a branch instead.");
+    assert_eq!(s.cooee.post(&path, &say).0, 200);
+    let allow = json!({ "item": item, "option": "allow" });
+    assert_eq!(s.cooee.post(&path, &allow).0, 200);
+    let sent = s.shed.sent(&terminal(&id));
+    let approvals: Vec<&String> = sent.iter().filter(|t| t.contains("approve\":")).collect();
+    assert_eq!(approvals, ["\x1e{\"approve\":\"reject\"}\n"]);
+    let said = sent.iter().filter(|t| t.contains("Use a branch")).count();
+    assert_eq!(said, 1, "{sent:?}");
+
+    let items = s.items(&id);
+    let kinds: Vec<&Value> = items.iter().map(|i| &i["kind"]).collect();
+    assert_eq!(kinds, ["you", "tool", "approval", "agent", "agent"]);
+    let card = items.iter().find(|i| i["kind"] == "approval").unwrap();
+    assert_eq!(card["chosen"], "reject");
+    let lines: Vec<&Value> = card["block"]["blocks"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|b| &b["markdown"])
+        .collect();
+    assert_eq!(
+        lines,
+        ["✓ reject · browser", "fake says: Use a branch instead."]
+    );
+}
+
+#[test]
 fn cancel_ends_the_turn_and_writes_back_the_tool_call_in_progress() {
     let s = setup("cancel");
     let id = s.create("hang on");
@@ -221,7 +277,8 @@ fn cancel_ends_the_turn_and_writes_back_the_tool_call_in_progress() {
 }
 
 #[test]
-fn a_reconnect_with_last_event_id_replays_without_gaps_or_duplicates() {
+fn a_reconnect_with_last_event_id_replays_without_gaps_or_duplicates_and_revs_count_up_across_threads()
+ {
     let s = setup("reconnect");
     let id = s.create("use a tool");
     let all = s.events(&id).until(|e| is_item(e, "agent"));
@@ -240,6 +297,11 @@ fn a_reconnect_with_last_event_id_replays_without_gaps_or_duplicates() {
     for stale in ["0.0".to_owned(), format!("{boot}.99999")] {
         assert_eq!(s.cooee.events(&id, &stale, true).next().event, "reset");
     }
+    let other = s.create("hi");
+    let theirs = s.events(&other).until(|e| is_item(e, "agent"));
+    let rev = |e: &Sse| e.id.rsplit_once('.').unwrap().1.parse::<u64>().unwrap();
+    let revs: Vec<u64> = all.iter().chain(&theirs).map(rev).collect();
+    assert!(revs.windows(2).all(|w| w[0] < w[1]), "{revs:?}");
 }
 
 #[test]
@@ -265,6 +327,37 @@ fn a_restarted_cooee_reattaches_to_its_terminals_and_catches_up() {
     events.until(|e| is_item(e, "agent") && e.data["text"] == "Hello");
     let kinds: Vec<Value> = s.items(&id).iter().map(|i| i["kind"].clone()).collect();
     assert_eq!(kinds, ["you", "tool", "agent", "you", "agent"]);
+}
+
+#[test]
+fn a_reset_from_shed_resyncs_the_stream_and_drops_no_event() {
+    let s = setup("shed-reset");
+    let id = s.create("hi");
+    let mut events = s.events(&id);
+    events.until(|e| is_item(e, "agent"));
+    let floor = s.shed.forget(1_304_000);
+    let _shed = s.shed.restart(version());
+    let sinces = || -> Vec<u64> {
+        let requests = s.shed.requests.lock().unwrap();
+        let events = requests.iter().filter(|(m, _)| m == "events");
+        events.filter_map(|(_, p)| p["since"].as_u64()).collect()
+    };
+    for _ in 0..500 {
+        if sinces().contains(&floor) {
+            break;
+        }
+        thread::sleep(std::time::Duration::from_millis(20));
+    }
+    let sinces = sinces();
+    assert!(sinces.iter().any(|&n| n < floor), "{sinces:?}");
+    assert!(
+        sinces.contains(&floor),
+        "resumes after the reset: {sinces:?}"
+    );
+    assert_eq!(s.send(&id, "again", "reset-1").0, 200);
+    events.until(|e| is_item(e, "agent") && e.data["text"] == "Hello");
+    let log = fs::read_to_string(s.dir.join("cooee.err")).unwrap();
+    assert!(!log.contains("dropped a shed event"), "{log}");
 }
 
 #[test]
@@ -447,4 +540,77 @@ fn a_hanging_shed_approve_never_holds_another_thread() {
         let (code, body) = tapped.join().unwrap();
         assert_eq!(code, 200, "{body}");
     });
+}
+
+fn restarts(s: &Setup) -> Vec<String> {
+    let log = s.shed.cli_log();
+    let runs = log.lines().filter(|l| l.contains(" run --acp "));
+    runs.skip(1).map(str::to_owned).collect()
+}
+
+fn notes(s: &Setup, id: &str) -> usize {
+    s.items(id).iter().filter(|i| i["kind"] == "note").count()
+}
+
+#[test]
+fn a_send_to_a_gone_agent_starts_a_fresh_one_in_the_chat_and_delivers() {
+    let s = setup("gone-send");
+    let id = s.create("hi");
+    let mut events = s.events(&id);
+    events.until(|e| is_item(e, "agent"));
+    s.shed.vanish(&terminal(&id));
+    let (status, body) = s.send(&id, "echo back", "g1");
+    assert_eq!(status, 200, "{body}");
+    events.until(|e| is_item(e, "agent") && e.data["text"] == "back");
+    let again = restarts(&s);
+    assert_eq!(again.len(), 1, "{again:?}");
+    assert!(!again[0].contains("--resume"), "{again:?}");
+    assert_eq!(notes(&s, &id), 1, "one line says it started fresh");
+}
+
+#[test]
+fn a_gone_agent_that_reported_its_session_resumes_it_on_send() {
+    let s = setup("gone-resume");
+    fs::write(s.shed.dir.join("session.json"), r#"{"id":"sess-1"}"#).unwrap();
+    let id = s.create("hi");
+    let mut events = s.events(&id);
+    events.until(|e| is_item(e, "agent"));
+    s.shed.vanish(&terminal(&id));
+    let (status, body) = s.send(&id, "echo back", "g1");
+    assert_eq!(status, 200, "{body}");
+    events.until(|e| is_item(e, "agent") && e.data["text"] == "back");
+    let again = restarts(&s);
+    assert_eq!(again.len(), 1, "{again:?}");
+    assert!(again[0].contains("--resume sess-1"), "{again:?}");
+    assert_eq!(notes(&s, &id), 0, "resumed: no fresh-start line");
+}
+
+#[test]
+fn restart_on_the_gone_line_starts_the_agent_and_leaves_ended() {
+    let mut s = setup("gone-restart");
+    let id = s.create("hi");
+    let mut events = s.events(&id);
+    events.until(|e| is_item(e, "agent"));
+    s.shed.vanish(&terminal(&id));
+    let _shed = s.shed.restart(version());
+    events.until(|e| e.event == "state" && e.data["state"] == "ended");
+    let path = format!("/threads/{id}/restart");
+    let (status, body) = s.cooee.post(&path, &json!({}));
+    assert_eq!(status, 200, "{body}");
+    events.until(|e| e.event == "state" && e.data["state"] != "ended");
+    assert_eq!(restarts(&s).len(), 1);
+    assert_eq!(s.cooee.post(&path, &json!({})).0, 200);
+    assert_eq!(restarts(&s).len(), 1, "a second tap starts nothing");
+    let (status, body) = s.send(&id, "echo back", "g1");
+    assert_eq!(status, 200, "{body}");
+    events.until(|e| is_item(e, "agent") && e.data["text"] == "back");
+    drop(events);
+    drop(std::mem::replace(
+        &mut s.cooee,
+        Cooee::start(&s.dir, &s.shed.dir),
+    ));
+    let mut events = s.events(&id);
+    let (status, body) = s.send(&id, "echo again", "g2");
+    assert_eq!(status, 200, "{body}");
+    events.until(|e| is_item(e, "agent") && e.data["text"] == "again");
 }

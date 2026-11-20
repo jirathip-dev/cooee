@@ -28,6 +28,7 @@ use super::Input;
 #[derive(Default)]
 pub(super) struct Shared {
     seq: u64,
+    floor: u64,
     ring: Vec<Event>,
     subs: Vec<Sender<Event>>,
     reported: BTreeMap<String, Reported>,
@@ -165,6 +166,16 @@ impl FakeShed {
         shed
     }
 
+    /// Drops every kept event and skips `lost` seqs, as a shed whose ring moved on does; a later `events` with an
+    /// older `since` gets shed's `reset` first. The new floor.
+    pub fn forget(&self, lost: u64) -> u64 {
+        let mut s = self.shared.lock().unwrap();
+        s.seq += lost;
+        s.floor = s.seq;
+        s.ring.clear();
+        s.floor
+    }
+
     /// How many connections it accepted.
     pub fn connects(&self) -> usize {
         self.conns.lock().unwrap().1
@@ -234,6 +245,12 @@ impl FakeShed {
         self.report(name, "blocked", Some("Edit early.rs"));
     }
 
+    /// Terminal `name`'s program exits with code 1 by itself.
+    pub fn end(&self, name: &str) {
+        self.shared.lock().unwrap().stopped.insert(name.to_owned());
+        self.emit(name, EventKind::Exited { code: Some(1) });
+    }
+
     /// Starts ACP terminal `name` as another tool would, with `labels` (a Workflow session, #33).
     pub fn lane(&self, name: &str, labels: &[(&str, &str)]) {
         let labels = labels
@@ -277,9 +294,12 @@ impl FakeShed {
         procs.insert(name.to_owned(), Proc::default());
     }
 
-    /// Terminal `name` is gone, as after a shed restart.
+    /// Terminal `name` is gone and event seqs start again from 1, as after a shed restart.
     pub fn vanish(&self, name: &str) {
-        self.shared.lock().unwrap().gone.insert(name.to_owned());
+        let mut s = self.shared.lock().unwrap();
+        s.gone.insert(name.to_owned());
+        (s.seq, s.floor) = (0, 0);
+        s.ring.clear();
     }
 
     /// The variables the fake adapter last ran with, as `env` printed them.
@@ -508,7 +528,7 @@ impl FakeShed {
         let has = |l: &BTreeMap<String, String>| {
             want.iter().all(|(k, v)| l.get(k).is_some_and(|x| v == x))
         };
-        let listed = all.iter().filter(|(_, l)| has(l));
+        let listed = all.iter().filter(|(n, l)| has(l) && !self.no_link(n));
         let listed = listed.filter_map(|(n, _)| self.terminal(n).ok());
         json!(listed.collect::<Vec<_>>())
     }
@@ -603,6 +623,28 @@ impl FakeShed {
         json!({})
     }
 
+    fn subscribe(&self, id: Value, since: Option<u64>, writer: &mut UnixStream) {
+        let (tx, rx) = mpsc::channel();
+        let (floor, replay): (u64, Vec<Event>) = {
+            let mut s = self.shared.lock().unwrap();
+            s.subs.push(tx);
+            let kept = s.ring.iter().filter(|e| since.is_some_and(|n| e.seq > n));
+            (s.floor, kept.cloned().collect())
+        };
+        let ok = Response::ok(id, json!({}));
+        writeln!(writer, "{}", json!(ok)).unwrap();
+        if since.is_some_and(|n| n < floor) {
+            let reset =
+                format!(r#"{{"jsonrpc":"2.0","method":"reset","params":{{"seq":{floor}}}}}"#);
+            writeln!(writer, "{reset}").unwrap();
+        }
+        for event in replay.into_iter().chain(rx) {
+            if writeln!(writer, "{}", json!(event)).is_err() {
+                return;
+            }
+        }
+    }
+
     fn serve(&self, conn: UnixStream) {
         let mut writer = conn.try_clone().unwrap();
         let mut lines = BufReader::new(conn).lines();
@@ -672,27 +714,7 @@ impl FakeShed {
                     self.shared.lock().unwrap().gone.insert(name);
                     t
                 }
-                "events" => {
-                    let since = req.params["since"].as_u64();
-                    let (tx, rx) = mpsc::channel();
-                    let replay: Vec<Event> = {
-                        let mut s = self.shared.lock().unwrap();
-                        s.subs.push(tx);
-                        s.ring
-                            .iter()
-                            .filter(|e| since.is_some_and(|n| e.seq > n))
-                            .cloned()
-                            .collect()
-                    };
-                    let ok = Response::ok(id, json!({}));
-                    writeln!(writer, "{}", json!(ok)).unwrap();
-                    for event in replay.into_iter().chain(rx) {
-                        if writeln!(writer, "{}", json!(event)).is_err() {
-                            return;
-                        }
-                    }
-                    return;
-                }
+                "events" => return self.subscribe(id, req.params["since"].as_u64(), &mut writer),
                 other => Err(RpcError::new(ErrorCode::MethodNotFound, other)),
             };
             let response = match result {

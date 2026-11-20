@@ -164,7 +164,7 @@ internal struct IssueRow: View {
                 }
                 .ui(16, .semibold, look).lineLimit(1)
                 HStack(spacing: 0) {
-                    Text(row.state.word).foregroundStyle(tint)
+                    Text(row.status ?? row.state.word).foregroundStyle(tint)
                     Text(" · \(row.title)").foregroundStyle(palette.mute)
                 }
                 .ui(14, .regular, look).lineLimit(1)

@@ -3,9 +3,10 @@ pub mod home;
 pub mod locked;
 pub mod menu;
 pub mod persona;
+pub mod routines;
 pub mod settings;
 
-use serde_json::Value;
+use blocks::{Block, Screen};
 use topcoat::router::RouterBuilder;
 
 pub(crate) fn routes(b: RouterBuilder) -> RouterBuilder {
@@ -18,13 +19,25 @@ pub(crate) fn routes(b: RouterBuilder) -> RouterBuilder {
         .route(attach::attach)
         .route(persona::persona)
         .route(persona::action)
+        .route(routines::guards)
         .route(locked::pairing)
         .route(locked::reset_layout)
 }
 
-fn core(mut screen: Value) -> Value {
-    if let Some(o) = screen.as_object_mut() {
-        o.insert("source".to_owned(), Value::from("core"));
+fn core(screen: Screen) -> Block {
+    Block::Screen(Box::new(screen.source("core")))
+}
+
+fn bundled(text: &str) -> Result<Screen, crate::HubError> {
+    match serde_json::from_str(text).map_err(crate::http::refused)? {
+        Block::Screen(screen) => Ok(*screen),
+        _ => Err(crate::http::refused("a bundled screen is no screen")),
     }
-    screen
+}
+
+fn fields(value: impl serde::Serialize) -> blocks::Fields {
+    match serde_json::to_value(value) {
+        Ok(serde_json::Value::Object(fields)) => fields,
+        _ => blocks::Fields::new(),
+    }
 }

@@ -19,6 +19,11 @@ internal struct ActionTests {
         #expect(BlockAction(action: nil, source: button, values: [:])?.action == "wave")
         #expect(BlockAction(action: "answer", source: .null, values: [:])?.action == "answer")
         #expect(BlockAction(action: nil, source: .object([:]), values: [:]) == nil)
+        let option = try Self.decode(#"{"value": "2", "values": {"fleet": "cooee"}}"#)
+        #expect(BlockAction(action: "answer", source: option, values: [:], block: "q7")?.block == "q7")
+        #expect(
+            BlockAction(action: nil, source: try Self.decode(#"{"id": "wave", "action": "w"}"#), values: [:])?.block
+                == "wave")
     }
 
     @Test internal func aDestructiveTapIsAlwaysConfirmedTitledWithItsLabel() throws {

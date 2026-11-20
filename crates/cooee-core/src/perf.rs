@@ -1,5 +1,7 @@
 //! Timing (#53): each HTTP request, shed call and first reply chunk is one JSON line in the data folder's
 //! `perf.log` (`at`, `level`, `kind`, `name`, `ms`, and `status`, `via` or `thread`); `cooee perf` sums them up.
+//! The first request after [`init`] adds a `start` line: the time from start to its answer (#346).
+//! The app's own timings (#606) are `client` lines: `tap`, `event` and `echo`, checked against [`BUDGETS`].
 //! Only route patterns, methods, agent and thread ids and durations are written: never a prompt, a token or a URL.
 
 use std::{
@@ -22,6 +24,7 @@ pub const FILE: &str = "perf.log";
 struct Log {
     file: Mutex<File>,
     slow_ms: u64,
+    started: Mutex<Option<Instant>>,
 }
 
 static LOG: OnceLock<Log> = OnceLock::new();
@@ -46,19 +49,23 @@ pub fn init(data: &Path, slow_ms: u64) -> io::Result<()> {
     LOG.set(Log {
         file: Mutex::new(file),
         slow_ms,
+        started: Mutex::new(Some(crate::clock::instant())),
     })
     .ok();
     Ok(())
 }
 
-fn write(log: &Log, mut line: Value, start: Instant) {
+fn since(start: Instant) -> u64 {
+    u64::try_from(start.elapsed().as_millis()).unwrap_or(u64::MAX)
+}
+
+fn write(log: &Log, mut line: Value, ms: u64) {
     if let Some(o) = line.as_object_mut() {
         o.insert("at".to_owned(), now().into());
-        let ms = u64::try_from(start.elapsed().as_millis()).unwrap_or(u64::MAX);
         o.insert("ms".to_owned(), ms.into());
     }
     let mut file = log.file.lock().unwrap_or_else(PoisonError::into_inner);
-    writeln!(file, "{line}").ok();
+    file.write_all(format!("{line}\n").as_bytes()).ok();
 }
 
 /// One HTTP request (or SSE stream opened) since `start`: its method, route pattern (`/threads/{id}`) and status.
@@ -72,21 +79,43 @@ pub fn request(method: &str, route: &str, status: u16, start: Instant) {
     }
     let level = if slow { "warn" } else { "debug" };
     let line = json!({ "level": level, "kind": "http", "name": name, "status": status });
-    write(log, line, start);
+    write(log, line, since(start));
+    let started = log
+        .started
+        .lock()
+        .unwrap_or_else(PoisonError::into_inner)
+        .take();
+    if let Some(at) = started {
+        let line = json!({ "level": "debug", "kind": "start", "name": "to first request" });
+        write(log, line, since(at));
+    }
 }
 
 /// One shed call since `start`: its method, `via` the socket or the CLI.
 pub fn shed(method: &str, via: &str, start: Instant) {
     let Some(log) = LOG.get() else { return };
     let line = json!({ "level": "debug", "kind": "shed", "name": method, "via": via });
-    write(log, line, start);
+    write(log, line, since(start));
 }
 
 /// The first reply chunk of thread `thread`'s prompt to `agent`, sent at `start`.
 pub fn first_token(thread: &str, agent: &str, start: Instant) {
     let Some(log) = LOG.get() else { return };
     let line = json!({ "level": "debug", "kind": "first_token", "name": agent, "thread": thread });
-    write(log, line, start);
+    write(log, line, since(start));
+}
+
+/// The app's p95 budgets in ms (#606): tap feedback, and fresh data (a stream event, a send's echo).
+pub const BUDGETS: [(&str, u64); 3] = [("tap", 100), ("event", 150), ("echo", 150)];
+
+/// One timing the app measured: `name` is one of [`BUDGETS`]' names.
+pub fn client(name: &str, ms: u64) {
+    let Some(log) = LOG.get() else { return };
+    write(
+        log,
+        json!({ "level": "debug", "kind": "client", "name": name }),
+        ms,
+    );
 }
 
 fn rank(sorted: &[u64], p: usize) -> u64 {
@@ -94,10 +123,7 @@ fn rank(sorted: &[u64], p: usize) -> u64 {
     sorted.get(at).copied().unwrap_or(0)
 }
 
-/// `perf.log`'s lines `at` or after `since` as a Markdown table: count, p50, p95 and max in ms per route, shed
-/// method (and transport) and agent's first token.
-#[must_use]
-pub fn table(log: &str, since: u64) -> String {
+fn rows(log: &str, since: u64) -> BTreeMap<(String, String), Vec<u64>> {
     let mut rows: BTreeMap<(String, String), Vec<u64>> = BTreeMap::new();
     for line in log.lines() {
         let Ok(l) = serde_json::from_str::<Value>(line) else {
@@ -119,10 +145,32 @@ pub fn table(log: &str, since: u64) -> String {
             rows.entry((kind.to_owned(), name)).or_default().push(ms);
         }
     }
+    for ms in rows.values_mut() {
+        ms.sort_unstable();
+    }
+    rows
+}
+
+/// Each of [`BUDGETS`] whose p95 in `perf.log`'s lines `at` or after `since` is over it, as `tap p95 140 ms > 100 ms`.
+#[must_use]
+pub fn over_budget(log: &str, since: u64) -> Vec<String> {
+    let rows = rows(log, since);
+    BUDGETS
+        .iter()
+        .filter_map(|(name, budget)| {
+            let p95 = rank(rows.get(&("client".to_owned(), (*name).to_owned()))?, 95);
+            (p95 > *budget).then(|| format!("{name} p95 {p95} ms > {budget} ms"))
+        })
+        .collect()
+}
+
+/// `perf.log`'s lines `at` or after `since` as a Markdown table: count, p50, p95 and max in ms per route, shed
+/// method (and transport), agent's first token and the app's timings.
+#[must_use]
+pub fn table(log: &str, since: u64) -> String {
     let mut out =
         "| kind | name | n | p50 ms | p95 ms | max ms |\n|---|---|--:|--:|--:|--:|\n".to_owned();
-    for ((kind, name), mut ms) in rows {
-        ms.sort_unstable();
+    for ((kind, name), ms) in rows(log, since) {
         let (n, p50, p95, max) = (ms.len(), rank(&ms, 50), rank(&ms, 95), rank(&ms, 100));
         writeln!(out, "| {kind} | {name} | {n} | {p50} | {p95} | {max} |").ok();
     }

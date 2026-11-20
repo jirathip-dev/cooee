@@ -4,6 +4,7 @@ public struct Place: Codable, Sendable, Equatable, Identifiable {
     private enum CodingKeys: String, CodingKey {
         case plugin, label, screen, count
         case key = "id"
+        case kind = "type"
     }
 
     public let plugin: String
@@ -11,10 +12,13 @@ public struct Place: Codable, Sendable, Equatable, Identifiable {
     public let label: String
     public let screen: String
     public var count: Int?
+    public var kind: String?
 
     public var id: String { "\(plugin)\(screen)" }
+    public var cards: Bool { kind == "chat-cards" }
 
-    public init(plugin: String, key: String, label: String, screen: String, count: Int? = nil) {
+    public init(plugin: String, key: String, label: String, screen: String, count: Int? = nil, kind: String? = nil) {
+        self.kind = kind
         self.plugin = plugin
         self.key = key
         self.label = label

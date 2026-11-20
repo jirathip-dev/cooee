@@ -32,7 +32,7 @@ pub fn agent(dir: &Path, id: &str, toml: &str, instructions: &str) -> PathBuf {
 }
 
 /// `cooee serve` on a free port with data in `dir/data`, the fake shed in `shed`, the root `dir/root` unless `extra`
-/// sets `roots`, its stderr in `dir/cooee.err` and no providers unless `extra` names some; paired (`cookie` goes with every request).
+/// sets `roots`, its stderr in `dir/cooee.err` and no providers unless `extra` says `providers`; paired (`cookie` goes with every request).
 pub struct Cooee {
     pub child: Child,
     pub addr: String,
@@ -95,7 +95,7 @@ impl Cooee {
         let root = dir.join("root");
         fs::create_dir_all(root.join("project")).unwrap();
         let q = |p: &Path| format!("{:?}", p.to_string_lossy());
-        let providers = if extra.contains("[[providers]]") {
+        let providers = if extra.contains("providers") {
             ""
         } else {
             "providers = []\n"
@@ -179,6 +179,18 @@ shed_dir = {}
         headers: &[(&str, &str)],
         body: &str,
     ) -> (String, String) {
+        let (head, body) = self.raw_bytes(method, path, headers, body);
+        (head, String::from_utf8(body).unwrap())
+    }
+
+    /// [`Self::raw`] with the body's bytes as sent.
+    pub fn raw_bytes(
+        &self,
+        method: &str,
+        path: &str,
+        headers: &[(&str, &str)],
+        body: &str,
+    ) -> (String, Vec<u8>) {
         let mut stream = TcpStream::connect(&self.addr).unwrap();
         let mut request = Vec::new();
         write!(request, "{method} {path} HTTP/1.0\r\n").unwrap();
@@ -190,9 +202,13 @@ shed_dir = {}
         }
         write!(request, "Content-Length: {}\r\n\r\n{body}", body.len()).unwrap();
         stream.write_all(&request).unwrap();
-        let mut response = String::new();
-        stream.read_to_string(&mut response).unwrap();
-        let (head, body) = response.split_once("\r\n\r\n").unwrap();
+        let mut response = Vec::new();
+        stream.read_to_end(&mut response).unwrap();
+        let at = response.windows(4).position(|w| w == b"\r\n\r\n").unwrap();
+        let (head, body) = (
+            String::from_utf8_lossy(&response[..at]),
+            &response[at + 4..],
+        );
         let head = head
             .lines()
             .map(|l| match l.split_once(": ") {
@@ -201,7 +217,7 @@ shed_dir = {}
             })
             .collect::<Vec<_>>()
             .join("\n");
-        (head, body.to_owned())
+        (head, body.to_vec())
     }
 
     pub fn request(&self, method: &str, path: &str, body: Option<&Value>) -> (u16, String) {
@@ -316,4 +332,22 @@ pub fn others_go_on(cooee: &Cooee, other: &str) {
         cooee.get(&format!("/threads/{other}/messages"))
     });
     events.until(|e| is_item(e, "agent"));
+}
+
+/// `served` with each `varying` value and persona `version` standing in, equal to `tests/snapshots/<name>.json`.
+pub fn snapshot(name: &str, served: &Value, varying: &[(&str, &str)]) {
+    let mut text = served.to_string();
+    for (value, stands) in varying {
+        text = text.replace(value, stands);
+    }
+    let mut served: Value = serde_json::from_str(&text).unwrap();
+    let personas = served.get_mut("personas").and_then(Value::as_array_mut);
+    for p in personas.into_iter().flatten() {
+        p["version"] = Value::from("<version>");
+    }
+    let path = Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("tests/snapshots")
+        .join(format!("{name}.json"));
+    let staging: Value = serde_json::from_str(&fs::read_to_string(&path).unwrap()).unwrap();
+    assert_eq!(served, staging, "{name}");
 }

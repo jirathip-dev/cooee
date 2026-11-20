@@ -3,9 +3,12 @@
 //! `<data>/plugins/plugins.toml`, read beside the config's own. The curated index, `plugins/index.toml`, is built in.
 
 use std::{
+    collections::HashMap,
     fmt::Write as _,
     fs, io,
     path::{Path, PathBuf},
+    sync::{Arc, LazyLock, Mutex, PoisonError},
+    time::SystemTime,
 };
 
 use serde::{Deserialize, Serialize};
@@ -18,8 +21,11 @@ use crate::{Plugin, profiles::Profile};
 pub struct Manifest {
     /// Its name: lowercase letters, digits and `-`; its folder and lock entry.
     pub name: String,
-    /// Its version, as the owner sees it.
+    /// Its version, numbers and dots (`1.2.0`, a leading `v` allowed).
     pub version: String,
+    /// The oldest cooee it accepts (none: any).
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    pub min_cooee: String,
     /// Its PWA tabs (none: it has screens only).
     #[serde(default)]
     pub tabs: Vec<Tab>,
@@ -93,7 +99,7 @@ pub struct Place {
     /// A menu row's second line.
     #[serde(default, skip_serializing_if = "String::is_empty")]
     pub subtitle: String,
-    /// Its screen's path on the backend, under `/screens/`.
+    /// Its screen's path on the backend, under `/screens/` (a `chat-cards` place's defaults to `/screens/cards`).
     #[serde(default)]
     pub screen: String,
 }
@@ -162,6 +168,32 @@ pub struct Locked {
     pub improving: Option<String>,
 }
 
+/// This cooee's version.
+pub const COOEE_VERSION: &str = env!("CARGO_PKG_VERSION");
+
+/// The oldest plugin version this cooee accepts.
+pub const MIN_PLUGIN: &str = "0.1.0";
+
+fn numbers(v: &str) -> Option<Vec<u64>> {
+    let mut n: Vec<u64> = v
+        .strip_prefix('v')
+        .unwrap_or(v)
+        .split('.')
+        .map(|part| {
+            let digits = part.split(|c: char| !c.is_ascii_digit()).next()?;
+            digits.parse().ok()
+        })
+        .collect::<Option<_>>()?;
+    while n.last() == Some(&0) {
+        n.pop();
+    }
+    Some(n)
+}
+
+fn older(a: &str, than: &str) -> bool {
+    numbers(a) < numbers(than)
+}
+
 /// The built-in index.
 pub const INDEX: &str = include_str!("../../../plugins/index.toml");
 
@@ -205,7 +237,20 @@ impl Manifest {
     /// # Errors
     /// When it isn't valid TOML for a manifest or breaks a rule.
     pub fn parse(text: &str) -> io::Result<Self> {
-        let m: Self = toml::from_str(text).map_err(|e| bad(format!("cooee-plugin.toml: {e}")))?;
+        let mut m: Self =
+            toml::from_str(text).map_err(|e| bad(format!("cooee-plugin.toml: {e}")))?;
+        for p in &mut m.places {
+            if p.kind == PlaceKind::ChatCards && p.screen.is_empty() {
+                "/screens/cards".clone_into(&mut p.screen);
+            }
+        }
+        for (key, v) in [("version", &m.version), ("min_cooee", &m.min_cooee)] {
+            if numbers(v).is_none() && (key == "version" || !v.is_empty()) {
+                return Err(bad(format!(
+                    "cooee-plugin.toml: `{key}` must be numbers and dots, like 1.2.0"
+                )));
+            }
+        }
         let ok = |b: u8| b.is_ascii_lowercase() || b.is_ascii_digit() || b == b'-';
         if m.name.is_empty() || !m.name.bytes().all(ok) {
             return Err(bad(
@@ -257,6 +302,36 @@ impl Manifest {
         Ok(m)
     }
 
+    /// The cooee versions it accepts, as the owner reads them.
+    #[must_use]
+    pub fn accepts(&self) -> String {
+        if self.min_cooee.is_empty() {
+            "any cooee".to_owned()
+        } else {
+            format!("cooee {} or newer", self.min_cooee)
+        }
+    }
+
+    /// Whether it and this cooee accept each other.
+    ///
+    /// # Errors
+    /// One plain line naming the version needed, when either is too old for the other.
+    pub fn fits(&self) -> Result<(), String> {
+        if older(&self.version, MIN_PLUGIN) {
+            return Err(format!(
+                "{} {} is too old for cooee {COOEE_VERSION}: it needs {} {MIN_PLUGIN} or newer",
+                self.name, self.version, self.name
+            ));
+        }
+        if older(COOEE_VERSION, &self.min_cooee) {
+            return Err(format!(
+                "{} needs cooee {} or newer; this is cooee {COOEE_VERSION}",
+                self.name, self.min_cooee
+            ));
+        }
+        Ok(())
+    }
+
     /// The port of its `attach` backend, when it names one.
     #[must_use]
     pub fn attach_port(&self) -> Option<u16> {
@@ -293,6 +368,36 @@ pub fn build_dir(data: &Path, name: &str, commit: &str) -> PathBuf {
 pub fn manifest(data: &Path, l: &Locked) -> io::Result<Manifest> {
     let file = build_dir(data, &l.name, &l.commit).join("cooee-plugin.toml");
     Manifest::parse(&fs::read_to_string(file)?)
+}
+
+type Stamp = Option<(SystemTime, u64)>;
+
+type Installed = Arc<[(Locked, Manifest)]>;
+
+static READ: LazyLock<Mutex<HashMap<PathBuf, (Stamp, Installed)>>> = LazyLock::new(Mutex::default);
+
+/// The lock's plugins whose manifest reads, each with it; read again only once the lock file changes.
+///
+/// # Errors
+/// When the lock can't be read or parsed.
+pub fn installed(data: &Path) -> io::Result<Installed> {
+    let stamp = match fs::metadata(lock_path(data)) {
+        Ok(m) => Some((m.modified()?, m.len())),
+        Err(e) if e.kind() == io::ErrorKind::NotFound => None,
+        Err(e) => return Err(e),
+    };
+    let mut read = READ.lock().unwrap_or_else(PoisonError::into_inner);
+    if let Some((at, all)) = read.get(data)
+        && *at == stamp
+    {
+        return Ok(Arc::clone(all));
+    }
+    let all: Installed = read_lock(data)?
+        .into_iter()
+        .filter_map(|l| manifest(data, &l).ok().map(|m| (l, m)))
+        .collect();
+    read.insert(data.to_owned(), (stamp, Arc::clone(&all)));
+    Ok(all)
 }
 
 /// `<data>/plugins/plugins.toml`, the installed plugins' `[[plugins]]` entries.

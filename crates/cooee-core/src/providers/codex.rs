@@ -16,6 +16,7 @@ pub struct Codex(Spec);
 pub const ENTRY: Entry = Entry {
     name: "codex",
     defaults,
+    keep: &["login"],
     build: |s| Arc::new(Codex(s)),
 };
 

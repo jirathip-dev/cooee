@@ -16,6 +16,8 @@ internal struct RoomFeatureTests {
     }
 
     private func dependencies(_ values: inout DependencyValues) {
+        values.date.now = epoch
+        values.continuousClock = ImmediateClock()
         let calls = calls
         values.threads.room = { _, title, members in
             calls.record("room \(title) \(members.joined(separator: ","))")
@@ -118,6 +120,7 @@ internal struct RoomFeatureTests {
         await store.receive(\.room.seated) { $0.room?.members = ["b", "a"] }
         await store.send(.room(.seat("f")))
         await store.receive(\.failed) { $0.error = "a room has at most 5 members" }
+        await store.receive(\.link.toasted) { $0.error = nil }
         #expect(calls.all == ["seat r1 b 0 false", "seat r1 c end false", "seat r1 c end true", "seat r1 f end false"])
     }
 

@@ -7,7 +7,7 @@ mod support;
 use std::fs;
 
 use serde_json::{Value, json};
-use support::{Cooee, FakeShed, scratch, version};
+use support::{Cooee, FakeShed, scratch, snapshot, version};
 
 const BUNDLED: &str = include_str!("../../../apple/Sources/CooeeUI/Default/screens/menu.json");
 
@@ -182,4 +182,29 @@ fn the_attach_sheet_is_one_permissions_card() {
         cooee.get("/screens/plugins/drover/attach?persona=nobody").0,
         404
     );
+}
+
+#[test]
+fn each_core_screen_is_on_the_wire_as_staging_served_it() {
+    let (_shed, cooee) = start("screen-snapshots");
+    let device = cooee.json("/devices")[0]["id"].as_str().unwrap().to_owned();
+    let host = cooee.json("/machines")[0]["host"]
+        .as_str()
+        .unwrap()
+        .to_owned();
+    let varying = [(device.as_str(), "<device>"), (host.as_str(), "<host>")];
+    for (name, path) in [
+        ("menu", "/screens/menu"),
+        ("devices", "/screens/settings/devices"),
+        ("signins", "/screens/settings/signins"),
+        ("machines", "/screens/settings/machines"),
+        ("plugins", "/screens/settings/plugins"),
+        ("attach", "/screens/plugins/drover/attach?persona=coder"),
+        ("reset-layout", "/screens/reset-layout"),
+        ("pairing", "/screens/pairing"),
+        ("home", "/screens/home"),
+        ("persona", "/screens/persona/coder"),
+    ] {
+        snapshot(name, &cooee.json(path), &varying);
+    }
 }

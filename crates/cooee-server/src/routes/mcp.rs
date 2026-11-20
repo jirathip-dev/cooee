@@ -144,10 +144,16 @@ async fn mcp_history(cx: &Cx, Json(a): Json<AgentAsk>) -> Result<Answer<String>>
     };
     let number = |k: &str| s.get(k).and_then(serde_json::Value::as_u64);
     let (query, thread, before) = (text("query"), text("thread"), number("before"));
+    let whose = text("persona");
     let limit = usize::try_from(number("limit").unwrap_or(5)).unwrap_or(5);
     Ok(Answer(
         blocking(cx, move |hub| {
-            hub.history((&a.thread, &token), (&query, limit), &thread, before)
+            hub.history(
+                (&a.thread, &token, &whose),
+                (&query, limit),
+                &thread,
+                before,
+            )
         })
         .await,
     ))

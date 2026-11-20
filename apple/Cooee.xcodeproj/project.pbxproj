@@ -239,6 +239,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
+				"ASSETCATALOG_COMPILER_STANDALONE_ICON_BEHAVIOR[sdk=macosx*]" = all;
 				"CODE_SIGN_ENTITLEMENTS[sdk=iphone*]" = Cooee.entitlements;
 				"CODE_SIGN_ENTITLEMENTS[sdk=macosx*]" = "Cooee-mac.entitlements";
 				CODE_SIGN_STYLE = Automatic;
@@ -251,6 +252,8 @@
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "$(inherited) @executable_path/../Frameworks";
 				INFOPLIST_KEY_CFBundleDisplayName = cooee;
 				INFOPLIST_KEY_NSCameraUsageDescription = "Scan the QR code your cooee server shows, to pair.";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Dictate messages, record voice notes and talk on calls with your personas.";
+				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "Turn what you say into text on this device, for dictation and calls.";
 				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "Find cooee servers on this network.";
 				INFOPLIST_KEY_NSBonjourServices = "_cooee._tcp";
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -275,6 +278,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
+				"ASSETCATALOG_COMPILER_STANDALONE_ICON_BEHAVIOR[sdk=macosx*]" = all;
 				"CODE_SIGN_ENTITLEMENTS[sdk=iphone*]" = Cooee.entitlements;
 				"CODE_SIGN_ENTITLEMENTS[sdk=macosx*]" = "Cooee-mac.entitlements";
 				CODE_SIGN_STYLE = Automatic;
@@ -287,6 +291,8 @@
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "$(inherited) @executable_path/../Frameworks";
 				INFOPLIST_KEY_CFBundleDisplayName = cooee;
 				INFOPLIST_KEY_NSCameraUsageDescription = "Scan the QR code your cooee server shows, to pair.";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Dictate messages, record voice notes and talk on calls with your personas.";
+				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "Turn what you say into text on this device, for dictation and calls.";
 				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "Find cooee servers on this network.";
 				INFOPLIST_KEY_NSBonjourServices = "_cooee._tcp";
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;

@@ -48,6 +48,10 @@ impl FakeShed {
                 prompt: prompt.clone(),
             };
             self.emit(name, turn);
+            if prompt.contains("long tool run") {
+                self.long_tool_run(name);
+                continue;
+            }
             let Some((events, stop)) = self.script(name, &prompt, rx) else {
                 continue;
             };
@@ -97,7 +101,7 @@ impl FakeShed {
             let said = "Questions for you:\n1. **HTML or SwiftUI?**\n\n**Call voice:** the iOS target building.";
             (vec![reply(said, "end_turn")], "end_turn")
         } else if prompt.contains("commands") {
-            let mut events = Vec::new();
+            let mut events = vec![plan("Run the checks", "in_progress")];
             for (id, title) in [
                 ("k1", "$ cargo fmt"),
                 ("k2", "$ cargo clippy"),
@@ -277,6 +281,20 @@ impl FakeShed {
         (vec![reply("", "cancelled")], "cancelled")
     }
 
+    fn long_tool_run(&self, name: &str) {
+        self.report(name, "working", None);
+        let call = "cargo test --workspace";
+        self.emit(name, tool("t1", call, "pending"));
+        self.emit(name, tool("t1", call, "in_progress"));
+        for line in ["running 3 tests\n", "test a ... ok\n", "test b ... ok\n"] {
+            self.report(name, "working", Some(call));
+            self.emit(name, text(line));
+        }
+        self.emit(name, tool("t1", call, "completed"));
+        self.emit(name, reply("Tests pass.", "end_turn"));
+        self.report(name, "idle", None);
+    }
+
     fn approval(&self, name: &str, rx: &Receiver<Input>) -> (Vec<EventKind>, &'static str) {
         let call = "Edit src/lib.rs";
         self.emit(name, tool("c2", call, "pending"));
@@ -363,6 +381,13 @@ fn tool(id: &str, title: &str, status: &str) -> EventKind {
         title: title.to_owned(),
         status: status.to_owned(),
         kind: None,
+    }
+}
+
+fn plan(content: &str, status: &str) -> EventKind {
+    let entry = json!({ "content": content, "priority": "high", "status": status });
+    EventKind::Plan {
+        entries: vec![entry],
     }
 }
 

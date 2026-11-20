@@ -34,6 +34,10 @@ fn setup(name: &str) -> Setup {
 }
 
 fn setup_with(name: &str, check: Option<&str>) -> Setup {
+    setup_from(name, check, true)
+}
+
+fn setup_from(name: &str, check: Option<&str>, rows: bool) -> Setup {
     let dir = scratch(name);
     let token = format!("sk-{}", "q7".repeat(16));
     let flag = dir.join("signed-in");
@@ -58,6 +62,32 @@ fn setup_with(name: &str, check: Option<&str>) -> Setup {
         login.to_string_lossy(),
         status.to_string_lossy()
     );
+    let signed_out = json!({ "login": "true", "status": "false" });
+    let record = |id: &str, agent: &str, facts: Value| {
+        let mut p = json!({ "id": id, "agent": agent });
+        p.as_object_mut()
+            .unwrap()
+            .extend(facts.as_object().unwrap().clone());
+        json!({ "id": id, "source": "built-in", "installed": null, "provider": p })
+    };
+    let mut fake = record(
+        "fake-acp",
+        "fake",
+        json!({ "login": login, "status": status, "efforts": ["high"], "effort_args": ["--effort", "{effort}"] }),
+    );
+    fake["installed"] =
+        json!({ "id": "fake-acp", "version": "1.0.0", "distribution": "npx", "cmd": ["fake-acp"] });
+    let records = json!([
+        fake,
+        record("claude-acp", "claude", signed_out.clone()),
+        record("codex-acp", "codex", signed_out),
+    ]);
+    let extra = if rows {
+        extra
+    } else {
+        fs::write(shed.dir.join("agents.json"), records.to_string()).unwrap();
+        "# providers: shed's records\n".to_owned()
+    };
     let cooee = Cooee::start_with(&dir, &shed.dir, &extra);
     Setup {
         dir,
@@ -102,6 +132,33 @@ impl Setup {
         }
         out
     }
+}
+
+#[test]
+fn with_no_providers_rows_the_sign_in_and_a_new_thread_run_on_sheds_records() {
+    let s = setup_from("login-records", None, false);
+    let v = s.until(|v| v["status"]["unknown"] == false);
+    assert_eq!(v["status"]["signed_in"], false, "{v}");
+    let (terminal, _) = s.start();
+    let run = &s.shed.calls("run", &terminal)[0];
+    assert!(
+        run["cmd"][0].as_str().unwrap().ends_with("login.sh"),
+        "{run}"
+    );
+    let (code, body) = s
+        .cooee
+        .post("/logins/fake/send", &json!({ "text": "good-code" }));
+    assert_eq!(code, 200, "{body}");
+    let v = s.until(|v| v["status"]["signed_in"] == true);
+    assert_eq!(v["status"]["line"], "Signed in as owner@example.com");
+
+    fs::create_dir_all(s.dir.join("root")).unwrap();
+    let new = json!({ "agent": "fake-acp", "folder": s.dir.join("root"), "text": "hi", "random_id": "r1", "effort": "high" });
+    let (code, body) = s.cooee.post("/threads", &new);
+    assert_eq!(code, 200, "{body}");
+    let log = s.shed.cli_log();
+    let line = log.lines().rfind(|l| l.contains(" run --acp")).unwrap();
+    assert!(line.ends_with(" -- env fake-acp --effort high"), "{line}");
 }
 
 #[test]

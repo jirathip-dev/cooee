@@ -69,6 +69,11 @@ impl Hub {
     /// [`HubError::Refused`] for a wrong token, a closed thread, one with no persona, or an update changing nothing.
     pub fn update_persona(&self, id: &str, token: &str, u: Update) -> Result<String, HubError> {
         let meta = self.token_of(id, token)?;
+        self.scan(
+            id,
+            "update its persona",
+            u.character.iter().chain(&u.instructions),
+        )?;
         let old = agents::find(self.config_dir(), &self.data, &meta.profile)
             .map_err(|_| HubError::Refused(format!("thread {id} has no persona")))?;
         let (new, changed) = u.apply(old.clone());

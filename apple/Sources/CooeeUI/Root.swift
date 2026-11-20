@@ -6,6 +6,7 @@ import SwiftUI
 public struct AppRoot: View {
     @Environment(\.colorScheme) private var scheme
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.scenePhase) private var phase
     #if os(iOS)
         @Environment(\.horizontalSizeClass) private var size
     #else
@@ -44,6 +45,9 @@ public struct AppRoot: View {
                 Text(Markdown.inline(notice)).ui(13, .regular, look).foregroundStyle(look.palette.mute).padding(8)
             }
         }
+        .onChange(of: phase) { _, phase in if phase != .inactive { store.send(.scene(active: phase == .active)) } }
+        .reporting(store)
+        .task { await store.send(.launch).finish() }
         .task { await store.send(.retire).finish() }
         .task { await store.send(.taps).finish() }
         .sheet(item: $store.scope(state: \.persona, action: \.persona)) { persona in
@@ -56,29 +60,69 @@ public struct AppRoot: View {
             if let room = store.scope(state: \.newRoom, action: \.newRoom) { NewRoomScreen(store: room) }
         }
         .environment(\.look, look)
-        .preferredColorScheme(store.menu.settings.scheme == .system ? nil : dark ? .dark : .light)
+        .environment(\.pickNight) { store.send(.menu(.night($0))) }
+        .preferredColorScheme(preferred)
     }
 
-    private var look: Look {
-        let (menu, theme) = (store.menu, store.menu.settings.theme)
-        let picked = menu.looks.tokens(theme, dark: dark).flatMap { Palette(tokens: $0, dark: dark) }
-        let art = menu.server.flatMap { menu.looks.art(theme, on: $0.url) }
-        var look = Look(
-            palette: picked ?? .farm(dark ? .dark : .light), style: menu.style(for: theme) ?? .bundled, art: art)
-        look.moving = menu.settings.moves(reduceMotion: reduceMotion)
-        look.sprites = menu.settings.sprites(in: theme)
-        return look
-    }
+    private var look: Look { store.menu.look(dark: scheme == .dark, reduceMotion: reduceMotion) }
 
-    private var dark: Bool {
-        switch store.menu.settings.scheme {
-        case .system: scheme == .dark
-        case .light: false
-        case .dark: true
-        }
+    private var preferred: ColorScheme? {
+        let menu = store.menu
+        guard menu.settings.scheme != .system || menu.colours != nil else { return nil }
+        return menu.dark(device: scheme == .dark) ? .dark : .light
     }
 
     public init(store: StoreOf<AppFeature>) {
         self.store = store
+    }
+}
+
+extension MenuFeature.State {
+    internal func look(dark: Bool, reduceMotion: Bool) -> Look {
+        let theme = settings.theme
+        let art = server.flatMap { looks.art(theme, on: $0.url) }
+        var look = Look(palette: palette(device: dark), style: style(for: theme) ?? .bundled, art: art)
+        look.moving = settings.moves(reduceMotion: reduceMotion)
+        look.night = settings.night
+        look.sign = art != nil && looks.themes[theme]?.sign == true
+        look.sprites = settings.sprites(in: theme)
+        look.words = looks.themes[theme]?.words ?? [:]
+        return look
+    }
+}
+
+/// The menu bar panel on the app's store (#659): a row opens its chat, then `front` brings the main window forward.
+public struct AppPanel: View {
+    @Environment(\.colorScheme) private var scheme
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    private let store: StoreOf<AppFeature>
+    private let front: () -> Void
+    private let quit: () -> Void
+
+    public var body: some View {
+        TimelineView(.periodic(from: .now, by: 1)) { context in
+            MenuPanel(store.state.glance(now: context.date)) { tap in
+                switch tap {
+                case .chat(let id):
+                    store.send(.open(id))
+                    front()
+                case .main: front()
+                case .retry: refresh()
+                case .quit: quit()
+                }
+            }
+        }
+        .environment(\.look, store.menu.look(dark: scheme == .dark, reduceMotion: reduceMotion))
+        .task { refresh() }
+    }
+
+    private func refresh() {
+        if store.home != nil { store.send(.home(.refresh)) }
+    }
+
+    public init(store: StoreOf<AppFeature>, front: @escaping () -> Void, quit: @escaping () -> Void) {
+        self.store = store
+        self.front = front
+        self.quit = quit
     }
 }

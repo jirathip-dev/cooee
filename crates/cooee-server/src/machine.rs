@@ -28,9 +28,10 @@ struct Ctx {
 impl Ctx {
     fn new(config: &Config) -> Self {
         let data = config.data_dir().unwrap_or_default();
+        let shed = Shed::new(config.shed.clone(), config.shed_dir.clone());
         Self {
-            shed: Shed::new(config.shed.clone(), config.shed_dir.clone()),
-            providers: Providers::new(&config.providers),
+            providers: Providers::load(config.providers.as_deref(), &shed),
+            shed,
             accounts: config.data_dir().map(|d| Accounts::new(&d)),
             personas: agents::list(config.dir.as_deref(), &data),
         }
@@ -193,6 +194,15 @@ pub fn run(config: &Config, machine: &str, yes: bool) -> Result<(), String> {
         0 => Ok(()),
         n => Err(format!("{machine}: {n} check(s) failed")),
     }
+}
+
+/// Machine `machine`'s checks that fail now (#664: what Chief's setup card fixes).
+#[must_use]
+pub fn failing(config: &Config, machine: &str) -> Vec<String> {
+    let lines = Ctx::new(config).check(machine, false).into_iter();
+    lines
+        .filter_map(|(ok, what)| (!ok).then_some(what))
+        .collect()
 }
 
 /// `cooee doctor`'s row per machine shed holds a link to or a persona runs on.

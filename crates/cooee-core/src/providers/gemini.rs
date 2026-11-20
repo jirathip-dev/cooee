@@ -15,6 +15,7 @@ pub struct Gemini(Spec);
 pub const ENTRY: Entry = Entry {
     name: "gemini",
     defaults,
+    keep: &[],
     build: |s| Arc::new(Gemini(s)),
 };
 
