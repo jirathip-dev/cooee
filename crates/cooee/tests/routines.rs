@@ -943,25 +943,7 @@ fn a_silence_rule_alerts_once_after_n_minutes_without_a_signed_post_and_once_whe
     );
     assert!(quiet(&cooee)["heard"].as_u64().unwrap() > made);
     assert_eq!(quiet(&cooee)["silent"], Value::Null);
-    for n in 0..12 {
-        let b = format!(r#"{{"kind":"alive","n":{n}}}"#);
-        assert_eq!(post_in(port, "r-quiet", "", &sign(&b), &b), alive);
-    }
-    thread::sleep(Duration::from_millis(500));
-    assert_eq!(
-        threads(&cooee).len(),
-        before.len(),
-        "an alive starts no run"
-    );
-    assert_eq!(quiet(&cooee)["last_run"], Value::Null);
-    assert_eq!(notes(&cooee, &id).len(), 2, "one back line, no more");
-    let check = r#"{"kind":"check","host":"mini"}"#;
-    assert_eq!(
-        post_in(port, "r-quiet", "", &sign(check), check),
-        (202, "runs: 1".to_owned()),
-        "12 alives in an hour leave the rate untouched"
-    );
-    assert_eq!(grown(&cooee, before.len() + 1).len(), before.len() + 1);
+    twelve_alives_then_a_check_runs_once(&cooee, port, &id, before.len());
 
     let screen = cooee.json("/screens/persona/coder");
     let blocks = screen["blocks"].as_array().unwrap();
@@ -984,6 +966,27 @@ fn a_silence_rule_alerts_once_after_n_minutes_without_a_signed_post_and_once_whe
         2,
         "r-plain, without the rule, never alerts"
     );
+}
+
+fn twelve_alives_then_a_check_runs_once(cooee: &Cooee, port: u16, id: &str, before: usize) {
+    for n in 0..12 {
+        let b = format!(r#"{{"kind":"alive","n":{n}}}"#);
+        assert_eq!(
+            post_in(port, "r-quiet", "", &sign(&b), &b),
+            (200, "alive".to_owned())
+        );
+    }
+    thread::sleep(Duration::from_millis(500));
+    assert_eq!(threads(cooee).len(), before, "an alive starts no run");
+    assert_eq!(cooee.json("/routines.json")[0]["last_run"], Value::Null);
+    assert_eq!(notes(cooee, id).len(), 2, "one back line, no more");
+    let check = r#"{"kind":"check","host":"mini"}"#;
+    assert_eq!(
+        post_in(port, "r-quiet", "", &sign(check), check),
+        (202, "runs: 1".to_owned()),
+        "12 alives in an hour leave the rate untouched"
+    );
+    assert_eq!(grown(cooee, before + 1).len(), before + 1);
 }
 
 fn recorded_made(file: &Path, id: &str) {

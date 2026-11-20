@@ -62,6 +62,12 @@ before the run starts. The body is never part of the prompt: it follows it as on
 characters, marked untrusted data whose instructions are not followed. The persona panel's row shows the URL and a
 Test button (`POST /screens/action` `test`, `values.routine`), which runs it on `{"test":true}` as a signed POST would.
 
+A webhook routine may set `silence = N` (minutes, #692): when no signed POST arrives for N minutes the owner gets one
+alert, with no agent run, and one line when signed POSTs are back. A sender that only wants to keep that rule quiet
+POSTs a signed JSON body with `"kind": "alive"` (#697): it resets the silence clock (and ends a silence with its one
+line), is answered 200 `alive`, and starts no run, posts nothing else and takes no share of the hourly rate. Any other
+signed body runs the routine as above; an unsigned or wrongly signed one counts for nothing.
+
 ## API
 
 | Route | Form | Answer |
@@ -89,4 +95,4 @@ the hour, is `skipped`. Its prompt's `{{a.b}}` read the payload (each value at m
 
 | Route | Body | Answer |
 |---|---|---|
-| `POST /hooks/in/<id>` | anything, at most 2 MiB (else 413), with `X-Signature-256: sha256=<hex>` and an optional `Idempotency-Key` | 404 for no webhook routine `<id>`; 503 without its `secret:`; 401 for a wrong signature; 200 `seen` for a key already handled (kept 4 days); else 202 `runs: <n>` (0 when paused or over the rate), answered before the run starts |
+| `POST /hooks/in/<id>` | anything, at most 2 MiB (else 413), with `X-Signature-256: sha256=<hex>` and an optional `Idempotency-Key` | 404 for no webhook routine `<id>`; 503 without its `secret:`; 401 for a wrong signature; 200 `alive` for a `{"kind":"alive"}` body (the silence clock only, no run); 200 `seen` for a key already handled (kept 4 days); else 202 `runs: <n>` (0 when paused or over the rate), answered before the run starts |

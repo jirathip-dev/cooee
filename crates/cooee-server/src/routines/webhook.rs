@@ -54,7 +54,8 @@ impl Runner {
     }
 
     /// `POST /hooks/in/<id>`'s answer for a POST with headers `Idempotency-Key` and `X-Signature-256`: 404 for no
-    /// such webhook routine, 503 without its secret, 401 for a wrong signature, else [`Runner::accept`]'s.
+    /// such webhook routine, 503 without its secret, 401 for a wrong signature, 200 `alive` for a `{"kind":"alive"}`
+    /// body (it only feeds the silence clock), else [`Runner::accept`]'s.
     #[must_use]
     pub fn inbound(
         self: &Arc<Self>,
@@ -76,6 +77,9 @@ impl Runner {
         match Inbound::signed(headers, body, secret.as_bytes()) {
             Ok(i) => {
                 self.hear(id, now);
+                if i.alive() {
+                    return (200, "alive".to_owned());
+                }
                 self.accept(id, &i, now)
             }
             Err(e) => (e.status(), e.to_string()),
