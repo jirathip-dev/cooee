@@ -89,6 +89,7 @@ mod tests {
             github: None,
             webhook: None,
             prompt: "watch".to_owned(),
+            script: None,
             place: String::new(),
             until: None,
         }

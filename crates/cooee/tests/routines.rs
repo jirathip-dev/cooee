@@ -12,6 +12,9 @@
 //! starts nothing, a good one a 202 and one thread, the same delivery again (by key or body) nothing, the seventh in
 //! an hour `skipped: rate`; the persona panel shows its URL and its test button runs it. A silence rule (#692) alerts
 //! once when no signed POST came for its minutes (a bad signature counts for nothing) and once when they are back.
+//!
+//! Scripts (#691): an agent's script routine waits for Face ID; on its due time a post one posts its output in the
+//! chat and pushes only on a non-zero exit, a wake one stays silent on exit 0 and else prompts the agent with it.
 
 mod support;
 
@@ -20,6 +23,7 @@ use std::{
     fs,
     io::{Read as _, Write as _},
     net::{TcpListener, TcpStream},
+    os::unix::fs::PermissionsExt,
     path::{Path, PathBuf},
     process::{Command, Stdio},
     sync::{Arc, Mutex},
@@ -969,4 +973,162 @@ fn recorded_made(file: &Path, id: &str) {
         thread::sleep(Duration::from_millis(100));
     }
     panic!("no tick: {}", fs::read_to_string(file).unwrap());
+}
+
+fn apns(dir: &Path) -> (String, String, PathBuf) {
+    let (bin, log) = (dir.join("bin"), dir.join("pushed"));
+    fs::create_dir_all(&bin).unwrap();
+    fs::create_dir_all(&log).unwrap();
+    let curl = format!(
+        "#!/bin/sh\nperl -ne 'print $1 =~ s/\\\\(.)/$1/gr if /^data-raw = \"(.*)\"$/' >\"{}/$$.json\"\nprintf '\\n200'\n",
+        log.display()
+    );
+    fs::write(bin.join("curl"), curl).unwrap();
+    fs::set_permissions(bin.join("curl"), fs::Permissions::from_mode(0o755)).unwrap();
+    let key = "MIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQg/FMQqoOmZU6bop6k\n\
+               jwzlkZBiOA5CCW7ngc03CgGpgsKhRANCAASkJsDwiTE2wL6OIdpH5tfnsdyw5UK8\n\
+               NOnlJZkFHy9kIEFLJ8uttasmC9v/MsS+Cbb3MJBa25UlVnmKe8xoXskq";
+    let p = "PRIVATE KEY-----";
+    fs::create_dir_all(dir.join("data")).unwrap();
+    fs::write(
+        dir.join("data/apns.p8"),
+        format!("-----BEGIN {p}\n{key}\n-----END {p}\n"),
+    )
+    .unwrap();
+    let extra = "[apns]\nkey_id = \"K\"\nteam_id = \"T\"\ntopic = \"dev.cooee.app\"\nenv = \"sandbox\"\nurl = \"https://apns.test\"\n";
+    let path = format!("{}:{}", bin.display(), std::env::var("PATH").unwrap());
+    (extra.to_owned(), path, log)
+}
+
+fn pushed(log: &Path) -> Vec<String> {
+    let files = fs::read_dir(log).unwrap();
+    let read = files.map(|f| fs::read_to_string(f.unwrap().path()).unwrap());
+    let all = read.filter_map(|t| serde_json::from_str::<Value>(&t).ok());
+    let titles = all.map(|p| {
+        p["aps"]["alert"]["title"]
+            .as_str()
+            .unwrap_or_default()
+            .to_owned()
+    });
+    titles.filter(|t| t.starts_with("Routine ")).collect()
+}
+
+fn approved_script(cooee: &Cooee, shed: &FakeShed, id: &str) -> String {
+    let ask = json!({ "name": "wake-fail", "when": "0 9 * * *",
+                      "script": { "run": "echo disk full; exit 1", "mode": "wake" } });
+    let said = call(shed, id, "create_routine", &ask);
+    let text = said["content"][0]["text"].as_str().unwrap();
+    assert!(text.starts_with("Proposed."), "{said}");
+    assert_eq!(cooee.json("/routines.json"), json!([]));
+    let items = cooee.json(&format!("/threads/{id}/messages"))["items"].clone();
+    let card = items
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|i| i["form"] == "routine");
+    let card = card.unwrap_or_else(|| panic!("no card: {items}"));
+    assert_eq!(
+        card["block"]["blocks"][0]["markdown"],
+        "```\necho disk full; exit 1\n```"
+    );
+    let answer = |passkey: Value| {
+        let a = json!({ "item": card["id"], "option": "approve", "passkey": passkey });
+        cooee.post(&format!("/threads/{id}/approve"), &a)
+    };
+    assert_eq!(answer(Value::Null).0, 403);
+    assert_eq!(cooee.json("/routines.json"), json!([]));
+    let phone = Authenticator::new(cooee);
+    phone.save(cooee);
+    let (status, body) = answer(phone.get(cooee));
+    assert_eq!(status, 200, "{body}");
+    let list = cooee.json("/routines.json");
+    assert_eq!(list[0]["script"]["mode"], "wake", "{list}");
+    list[0]["id"].as_str().unwrap().to_owned()
+}
+
+#[test]
+fn a_script_routine_waits_for_its_card_then_posts_or_wakes_the_agent_by_its_mode() {
+    let dir = scratch("routines-script");
+    let (extra, path, log) = apns(&dir);
+    let shed = FakeShed::start(&dir.join("shed"), version());
+    let start = || {
+        let cooee = Cooee::start_env(&dir, &shed.dir, &extra, &[("PATH", path.as_str())]);
+        let token = json!({ "token": "ab".repeat(32) });
+        assert_eq!(cooee.post("/push/apns", &token).0, 200);
+        cooee
+    };
+    let cooee = start();
+    let new = json!({ "agent": "fake-acp", "folder": dir.join("root/project"), "text": "hi", "random_id": "start" });
+    let (status, body) = cooee.post("/threads", &new);
+    assert_eq!(status, 200, "{body}");
+    let id = serde_json::from_str::<Value>(&body).unwrap()["id"]
+        .as_str()
+        .unwrap()
+        .to_owned();
+    let terminal = format!("cooee-{id}");
+    shed.report(&terminal, "done", None);
+
+    let rid = approved_script(&cooee, &shed, &id);
+    drop(cooee);
+
+    let settings = dir.join("routines.toml");
+    let mut text = fs::read_to_string(&settings).unwrap();
+    for (name, run, mode) in [
+        ("post-ok", "echo fine", "post"),
+        ("post-fail", "echo broke; exit 3", "post"),
+        ("wake-ok", "echo all quiet", "wake"),
+    ] {
+        write!(
+            text,
+            "\n[[routine]]\nid = \"r-{name}\"\nname = \"{name}\"\nwhen = \"0 9 * * *\"\n\
+             [routine.place]\nin = \"chat\"\nthread = \"{id}\"\n\
+             [routine.script]\nrun = \"{run}\"\nmode = \"{mode}\"\n"
+        )
+        .unwrap();
+    }
+    fs::write(&settings, text).unwrap();
+    let file = dir.join("data/routine-runs.json");
+    let two_days_ago = ago(2);
+    change(&file, |runs| {
+        for r in ["r-post-ok", "r-post-fail", "r-wake-ok", rid.as_str()] {
+            runs.insert(
+                r.to_owned(),
+                json!({ "made_in": id, "made_at": two_days_ago }),
+            );
+        }
+    });
+    let cooee = start();
+    let outcome = |r: &str| {
+        let run = recorded(&file, r)["last_run"].clone();
+        (run["outcome"].clone(), run["why"].clone())
+    };
+    assert_eq!(outcome("r-post-ok"), (json!("ran"), Value::Null));
+    assert_eq!(outcome("r-post-fail"), (json!("ran"), Value::Null));
+    assert_eq!(outcome("r-wake-ok"), (json!("skipped"), json!("quiet")));
+    assert_eq!(outcome(&rid), (json!("ran"), Value::Null));
+    assert_eq!(
+        notes(&cooee, &id),
+        ["⟳ post-ok: fine", "⟳ post-fail: exit 3\nbroke"]
+    );
+    let woke = runs(&cooee, &id);
+    assert_eq!(woke.len(), 1, "{woke:?}");
+    assert_eq!(
+        (&woke[0]["routine"]["name"], &woke[0]["text"]),
+        (&json!("wake-fail"), &json!("exit 1\ndisk full"))
+    );
+    let sent = shed.sent(&terminal);
+    assert_eq!(
+        sent.iter().filter(|t| t.contains("disk full")).count(),
+        1,
+        "{sent:?}"
+    );
+    assert!(!sent.iter().any(|t| t.contains("all quiet")), "{sent:?}");
+    for _ in 0..100 {
+        if !pushed(&log).is_empty() {
+            break;
+        }
+        thread::sleep(Duration::from_millis(100));
+    }
+    thread::sleep(Duration::from_millis(500));
+    assert_eq!(pushed(&log), ["Routine post-fail failed"]);
 }

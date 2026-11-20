@@ -160,6 +160,7 @@ mod tests {
                 silence: None,
             }),
             prompt: "Triage {{title}}".to_owned(),
+            script: None,
             place: String::new(),
             until: None,
         };
@@ -208,6 +209,7 @@ mod tests {
                 silence,
             }),
             prompt: "Read it".to_owned(),
+            script: None,
             place: String::new(),
             until: None,
         };

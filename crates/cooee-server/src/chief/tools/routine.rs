@@ -52,6 +52,7 @@ fn create(d: &Desk, me: &Me, ask: Ask) -> Result<String, HubError> {
         github: None,
         webhook: None,
         prompt,
+        script: None,
         place,
         until: None,
     };
