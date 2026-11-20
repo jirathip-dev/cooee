@@ -50,7 +50,8 @@ extension Fixtures {
 
     /// Notion signed in as `main`.
     public static let notionSignedIn: Connector = {
-        let main = #"{"name": "main", "state": "signed_in", "since": 1795003235000, "personas": []}"#
+        let since = Int64(Date().timeIntervalSince1970 * 1000)
+        let main = #"{"name": "main", "state": "signed_in", "since": \#(since), "personas": []}"#
         let json = notion.replacingOccurrences(of: #""accounts": []"#, with: #""accounts": [\#(main)]"#)
         return decoded(json) ?? connector("notion")
     }()

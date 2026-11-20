@@ -129,5 +129,8 @@ extension Connector {
 }
 
 extension Connector.Account {
-    internal var day: String { Date(timeIntervalSince1970: Double(since) / 1000).formatted(Connector.day()) }
+    internal func day(now: Date = Date()) -> String {
+        let date = Date(timeIntervalSince1970: Double(since) / 1000)
+        return now.timeIntervalSince(date) < 60 ? "just now" : date.formatted(Connector.day())
+    }
 }

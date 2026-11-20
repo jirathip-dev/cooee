@@ -166,7 +166,7 @@ internal struct AccountsGroup: View {
     private func detail(_ account: Connector.Account) -> String {
         let used = account.personas.isEmpty ? "no persona yet" : "used by \(account.personas.joined(separator: ", "))"
         switch account.state {
-        case .signedIn: return "since \(account.day) · \(used)"
+        case .signedIn: return "since \(account.day()) · \(used)"
         case .needsSignIn: return "\(account.why ?? "") · \(used)"
         case .signingIn: return "in the sign-in sheet"
         }
