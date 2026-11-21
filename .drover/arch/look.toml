@@ -1,0 +1,5 @@
+[[ban]]
+pattern = "look.style"
+paths = ["apple/Sources/CooeeUI/**"]
+except = ["apple/Sources/CooeeUI/Look+Style.swift"]
+reason = "#488: a view never reads the style: use Look+Style (label, radius, pill, surface, chip, Mark, FigureView, Stage)"

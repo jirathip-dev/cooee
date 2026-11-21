@@ -1,8 +1,60 @@
-# drover arch-check (#356, docs/architecture/hot-files/adr.md): a generated file is what `generate` writes, and a
-# code file stays under 800 lines (the baseline's offenders may only shrink). Frozen lists start with slice 1 (q1720).
+# Written by scripts/gen.sh from .drover/arch/ (docs/architecture/hotspots-2026-11-16). Never edit it.
 frozen = ["apple/Sources/CooeeApp/Live.swift", "apple/Sources/CooeeCore/Models.swift", "apple/Sources/CooeeFeatures/Clients.swift", "apple/Tests/CooeeUITests/Frames.swift", "apple/UITests/LiveUITests.swift", "crates/cooee-core/src/root.rs", "crates/cooee-server/src/root.rs", "docs/api.md", "docs/architecture.md", "justfile"]
-generated = ["Cargo.lock", "README.md", "crates/cooee-core/src/chat.rs", "crates/cooee-core/src/lib.rs", "crates/cooee-core/src/shed.rs", "crates/cooee-core/src/store.rs", "crates/cooee-server/src/chief/tools/mod.rs", "crates/cooee-server/src/lib.rs", "crates/cooee-server/src/login.rs", "crates/cooee-server/src/mcp.rs", "crates/cooee-server/src/push.rs", "crates/cooee-server/src/routes/mod.rs", "crates/cooee-server/src/screens/mod.rs", "crates/cooee/src/cmd/mod.rs", "crates/cooee/tests/support/mod.rs"]
+generated = [".drover/arch.toml", "Cargo.lock", "README.md", "crates/cooee-core/src/chat.rs", "crates/cooee-core/src/lib.rs", "crates/cooee-core/src/shed.rs", "crates/cooee-core/src/store.rs", "crates/cooee-server/src/chief/tools/mod.rs", "crates/cooee-server/src/lib.rs", "crates/cooee-server/src/login.rs", "crates/cooee-server/src/mcp.rs", "crates/cooee-server/src/push.rs", "crates/cooee-server/src/routes/mod.rs", "crates/cooee-server/src/screens/mod.rs", "crates/cooee/src/cmd/mod.rs", "crates/cooee/tests/support/mod.rs"]
+shared = [".github/workflows/apple.yml", ".github/workflows/ci.yml", "Cargo.toml", "crates/cooee-server/src/serve.rs", "crates/cooee/src/main.rs"]
 generate = "scripts/gen.sh"
+
+[[ban]]
+pattern = "shed.approve"
+paths = ["crates/cooee-server/src/**"]
+except = ["crates/cooee-server/src/hub/approvals.rs"]
+reason = "#503: a harness's permission request is answered only where cooee's rules decided: hub/approvals.rs"
+
+[[collect]]
+dir = "crates/cooee-server/src/chief/tools"
+glob = "*.rs"
+
+[[ban]]
+pattern = ".approve("
+paths = ["crates/cooee-server/src/chief.rs", "crates/cooee-server/src/chief/**"]
+except = []
+reason = "#664: Chief never answers a card, its own or another persona's"
+
+[[ban]]
+pattern = ".send"
+paths = ["crates/cooee-server/src/chief.rs", "crates/cooee-server/src/chief/**"]
+except = []
+reason = "#664: Chief never sends as another persona: ask_persona is the only way to one, and it sends as Chief"
+
+[[ban]]
+pattern = ".queue("
+paths = ["crates/cooee-server/src/chief.rs", "crates/cooee-server/src/chief/**"]
+except = []
+reason = "#664: a Chief tool never queues a message into a thread; the hub tells Chief its own card's outcome"
+
+[[ban]]
+pattern = "thread::sleep"
+paths = ["crates/*/src/**"]
+except = ["crates/cooee-core/src/clock.rs"]
+reason = "#203: only the clock sleeps: use cooee_core::clock::sleep"
+
+[[ban]]
+pattern = "SystemTime::now"
+paths = ["crates/*/src/**"]
+except = ["crates/cooee-core/src/clock.rs"]
+reason = "#203: only the clock reads the time: use cooee_core::clock::now"
+
+[[ban]]
+pattern = "Instant::now"
+paths = ["crates/*/src/**"]
+except = ["crates/cooee-core/src/clock.rs"]
+reason = "#203: only the clock reads the time: use cooee_core::clock::instant"
+
+[[ban]]
+pattern = "env::var"
+paths = ["crates/*/src/**"]
+except = ["crates/cooee-core/src/config.rs"]
+reason = "#203: only the config module reads the environment: use cooee_core::env_var"
 
 [[size]]
 paths = ["crates/*/src/**/*.rs"]
@@ -56,36 +108,6 @@ paths = ["crates/cooee/src/**"]
 except = ["crates/cooee/src/main.rs", "crates/cooee/src/cmd/mod.rs"]
 reason = "#356: a command is reached only through cmd::ALL, from main.rs; commands share through cli.rs"
 
-[[ban]]
-pattern = "Command::new"
-paths = ["crates/*/src/**"]
-except = ["crates/cooee-core/src/runner.rs"]
-reason = "#202: only the runner starts a process: use cooee_core::runner::command"
-
-[[ban]]
-pattern = "thread::sleep"
-paths = ["crates/*/src/**"]
-except = ["crates/cooee-core/src/clock.rs"]
-reason = "#203: only the clock sleeps: use cooee_core::clock::sleep"
-
-[[ban]]
-pattern = "SystemTime::now"
-paths = ["crates/*/src/**"]
-except = ["crates/cooee-core/src/clock.rs"]
-reason = "#203: only the clock reads the time: use cooee_core::clock::now"
-
-[[ban]]
-pattern = "Instant::now"
-paths = ["crates/*/src/**"]
-except = ["crates/cooee-core/src/clock.rs"]
-reason = "#203: only the clock reads the time: use cooee_core::clock::instant"
-
-[[ban]]
-pattern = "env::var"
-paths = ["crates/*/src/**"]
-except = ["crates/cooee-core/src/config.rs"]
-reason = "#203: only the config module reads the environment: use cooee_core::env_var"
-
 [[collect]]
 dir = "crates/cooee/tests/support"
 glob = "*.rs"
@@ -106,11 +128,23 @@ glob = "*.sh"
 dir = "connectors"
 glob = "*.toml"
 
-[[ban]]
-pattern = "\"curl\""
-paths = ["crates/cooee-server/src/**"]
-except = ["crates/cooee-server/src/net.rs"]
-reason = "#497: only net.rs starts curl: use net::fetch or net::stream, which follow no redirect and take headers on stdin"
+[[collect]]
+dir = "apple/Tests/CooeeUITests/Frames"
+glob = "*.swift"
+
+[[size]]
+paths = ["Cargo.toml"]
+max_file_lines = 100
+
+[[size]]
+paths = [".github/workflows/*.yml"]
+max_file_lines = 200
+
+[[collect]]
+dir = ".drover/arch"
+
+[[collect]]
+dir = "scripts/gen.d"
 
 [[ban]]
 pattern = "look.style"
@@ -118,31 +152,11 @@ paths = ["apple/Sources/CooeeUI/**"]
 except = ["apple/Sources/CooeeUI/Look+Style.swift"]
 reason = "#488: a view never reads the style: use Look+Style (label, radius, pill, surface, chip, Mark, FigureView, Stage)"
 
-[[collect]]
-dir = "apple/Tests/CooeeUITests/Frames"
-glob = "*.swift"
-
-[[collect]]
-dir = "crates/cooee-server/src/chief/tools"
-glob = "*.rs"
-
 [[ban]]
-pattern = ".approve("
-paths = ["crates/cooee-server/src/chief.rs", "crates/cooee-server/src/chief/**"]
-except = []
-reason = "#664: Chief never answers a card, its own or another persona's"
-
-[[ban]]
-pattern = ".send"
-paths = ["crates/cooee-server/src/chief.rs", "crates/cooee-server/src/chief/**"]
-except = []
-reason = "#664: Chief never sends as another persona: ask_persona is the only way to one, and it sends as Chief"
-
-[[ban]]
-pattern = ".queue("
-paths = ["crates/cooee-server/src/chief.rs", "crates/cooee-server/src/chief/**"]
-except = []
-reason = "#664: a Chief tool never queues a message into a thread; the hub tells Chief its own card's outcome"
+pattern = "\"curl\""
+paths = ["crates/cooee-server/src/**"]
+except = ["crates/cooee-server/src/net.rs"]
+reason = "#497: only net.rs starts curl: use net::fetch or net::stream, which follow no redirect and take headers on stdin"
 
 [[ban]]
 pattern = "history::watermark"
@@ -151,10 +165,10 @@ except = ["crates/cooee-server/src/routines/guard.rs", "crates/cooee-server/src/
 reason = "#690: a routine's line, cap and tally change only through the guard: use Runner::admit_due, admit_event, admit_wake, count"
 
 [[ban]]
-pattern = "shed.approve"
-paths = ["crates/cooee-server/src/**"]
-except = ["crates/cooee-server/src/hub/approvals.rs"]
-reason = "#503: a harness's permission request is answered only where cooee's rules decided: hub/approvals.rs"
+pattern = "Command::new"
+paths = ["crates/*/src/**"]
+except = ["crates/cooee-core/src/runner.rs"]
+reason = "#202: only the runner starts a process: use cooee_core::runner::command"
 
 [[ban]]
 pattern = "launchctl"

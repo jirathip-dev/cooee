@@ -1,0 +1,21 @@
+[[collect]]
+dir = "crates/cooee-server/src/chief/tools"
+glob = "*.rs"
+
+[[ban]]
+pattern = ".approve("
+paths = ["crates/cooee-server/src/chief.rs", "crates/cooee-server/src/chief/**"]
+except = []
+reason = "#664: Chief never answers a card, its own or another persona's"
+
+[[ban]]
+pattern = ".send"
+paths = ["crates/cooee-server/src/chief.rs", "crates/cooee-server/src/chief/**"]
+except = []
+reason = "#664: Chief never sends as another persona: ask_persona is the only way to one, and it sends as Chief"
+
+[[ban]]
+pattern = ".queue("
+paths = ["crates/cooee-server/src/chief.rs", "crates/cooee-server/src/chief/**"]
+except = []
+reason = "#664: a Chief tool never queues a message into a thread; the hub tells Chief its own card's outcome"
