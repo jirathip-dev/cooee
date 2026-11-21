@@ -1,5 +1,6 @@
 use std::{
     collections::HashMap,
+    pin::pin,
     sync::{
         Arc, Mutex, MutexGuard, PoisonError,
         atomic::{AtomicBool, AtomicU64, AtomicUsize, Ordering},
@@ -9,9 +10,10 @@ use std::{
 
 use blocks::{Block, Have, Hello, KeyState, MediaType, Outdated, Put, Shelf, Sync, Synced, Why};
 use cooee_core::{Device, clock};
+use futures_util::future::{Either, select};
 use tokio::{
     sync::{
-        Mutex as Turn, broadcast,
+        Mutex as Turn, Notify, broadcast,
         broadcast::error::{RecvError, TryRecvError},
         mpsc,
     },
@@ -25,6 +27,7 @@ const KEYS: usize = 16;
 const UNSENT: usize = 1 << 20;
 const PACE: Duration = Duration::from_millis(50);
 const IDLE: Duration = Duration::from_secs(300);
+pub(crate) const PAGES: usize = 10;
 
 pub(crate) enum Who {
     Device(Device),
@@ -35,7 +38,7 @@ pub(crate) enum Wake {
     Thread(String),
 }
 
-type Build = dyn Fn(&Hub) -> Result<Block, HubError> + Send + std::marker::Sync;
+type Build = dyn Fn(&Hub, usize) -> Result<Block, HubError> + Send + std::marker::Sync;
 type Seen = dyn Fn(&Hub) -> Result<(), HubError> + Send + std::marker::Sync;
 
 pub(crate) struct Source {
@@ -110,6 +113,8 @@ struct Held {
     holders: Vec<Arc<Tap>>,
     task: Option<JoinHandle<()>>,
     idle: Option<Instant>,
+    pages: usize,
+    poke: Arc<Notify>,
 }
 
 #[derive(Default)]
@@ -256,6 +261,8 @@ impl Live {
                 holders: vec![],
                 task: None,
                 idle: None,
+                pages: 1,
+                poke: Arc::default(),
             });
             held.idle = None;
             Arc::clone(&held.shelf)
@@ -343,9 +350,24 @@ impl Live {
         }
     }
 
+    pub(crate) fn more(&self, k: &str) -> bool {
+        let mut st = lock(&self.state);
+        let Some(held) = st
+            .keys
+            .get_mut(k)
+            .filter(|h| h.task.is_some() && h.pages < PAGES)
+        else {
+            return false;
+        };
+        held.pages = held.pages.saturating_add(1);
+        held.poke.notify_one();
+        true
+    }
+
     async fn build(&self, k: &str, source: &Arc<Source>) -> Option<Block> {
         let (hub, source) = (Arc::clone(&self.hub), Arc::clone(source));
-        match tokio::task::spawn_blocking(move || (source.build)(&hub)).await {
+        let pages = lock(&self.state).keys.get(k).map_or(1, |h| h.pages);
+        match tokio::task::spawn_blocking(move || (source.build)(&hub, pages)).await {
             Ok(Ok(block)) => Some(block),
             Ok(Err(e)) => {
                 cooee_core::note!("cooee: stream {k}: {e}");
@@ -364,8 +386,16 @@ impl Live {
         source: Arc<Source>,
         mut wake: broadcast::Receiver<T>,
     ) {
+        let Some(poke) = lock(&self.state).keys.get(&k).map(|h| Arc::clone(&h.poke)) else {
+            return;
+        };
         loop {
-            if let Err(RecvError::Closed) = wake.recv().await {
+            let closed = {
+                let (heard, poked) = (pin!(wake.recv()), pin!(poke.notified()));
+                let first = select(heard, poked).await;
+                matches!(first, Either::Left((Err(RecvError::Closed), _)))
+            };
+            if closed {
                 return;
             }
             while !matches!(

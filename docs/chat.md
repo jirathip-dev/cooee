@@ -79,3 +79,11 @@ another run; load the newest slice again).
   item takes, so the block that streams is the block that is stored.
 - While a device holds the key the thread is open: it sends no push, and it is marked read up to its newest item
   each time a frame goes out.
+- Its actions go to `POST /screens/action` as blocks' `Action` (#720), each through the code its JSON route runs:
+  `send` (`text`, `nonce`, `files`), `queue`, `steer` and `unqueue` (a queued message by its `q`), `stop`, a card's
+  `answer` (`choice`, `value`; a proposal's passkey `id`, `client`, `auth`, `sig`), `handback`, `retry`, `archive`,
+  `close`, and `older`, which widens the key by 50 items for everyone who holds it, to 500. A send's `nonce` is
+  its `random_id`, so a send through either door is stored once. The answer is blocks' `Answer`: empty, or `400`
+  with a `bad` toast naming why; on `/screens/chat?persona=<id>` a `send` starts the chat and answers `open`.
+- A file goes first to `POST /screens/files` (the body the file, `X-Name` its name), which answers `{id, name}`;
+  the send names the ids. An upload is kept a day, so a retried send finds it again.

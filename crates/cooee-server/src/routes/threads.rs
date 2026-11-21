@@ -1,12 +1,9 @@
-use std::{path::PathBuf, sync::Arc};
-
-use cooee_machines::Machines;
 use futures_util::{Stream, StreamExt, stream};
 use serde::Deserialize;
 use tokio::sync::broadcast::error::RecvError;
 use topcoat::{
     Result,
-    context::{Cx, app_context, request_context},
+    context::Cx,
     router::{
         Body, RouterBuilder,
         content::{
@@ -22,11 +19,8 @@ use topcoat::{
 
 use crate::{
     Hub, HubError, Out, Resume, Slice, Upload,
-    http::{
-        Answer, Created, Data, Name, Paired, Tag, allowed, blocking, hub, image, logins, plain,
-        profiles, provider_name, recipe, seated, thread_id,
-    },
-    pairing, plugin,
+    http::{Answer, Created, Name, Tag, blocking, hub, image, logins, plain, thread_id},
+    turns::{self, Again},
 };
 
 #[derive(Deserialize)]
@@ -133,138 +127,26 @@ async fn thread_list(cx: &Cx) -> Result<Answer<Vec<cooee_core::Summary>>> {
     ))
 }
 
-#[derive(Deserialize)]
-struct New {
-    agent: String,
-    #[serde(default)]
-    folder: PathBuf,
-    text: String,
-    random_id: Tag,
-    #[serde(default)]
-    account: Option<String>,
-    #[serde(default)]
-    background: bool,
-    #[serde(default)]
-    profile: Option<String>,
-    #[serde(default)]
-    model: String,
-    #[serde(default)]
-    effort: String,
-    #[serde(default)]
-    machine: Option<String>,
-    #[serde(default)]
-    setup: bool,
-}
-
 #[route(POST "/threads")]
-async fn create(cx: &Cx, Json(new): Json<New>) -> Result<Answer<Created>> {
-    let (logins, machines) = (logins(cx), Arc::clone(app_context::<Arc<Machines>>(cx)));
-    let data = app_context::<Data>(cx);
-    let (data, config, hub) = (data.0.clone(), data.1.clone(), hub(cx));
-    let id = tokio::task::spawn_blocking(move || {
-        let profile = new.profile.as_deref().unwrap_or_default();
-        let list = profiles(&hub, (&data, config.as_deref()));
-        let picked = (new.model, new.effort);
-        let asked = new.folder.clone();
-        let (agent, folder, mut recipe) = recipe(
-            &logins,
-            (&data, config.as_deref(), &list, &hub.mcp()?),
-            (&new.agent, new.account.as_deref(), profile),
-            new.folder,
-            (picked, new.setup),
-        )?;
-        let folder = topic_folder(asked, folder);
-        if let Some(m) = new.machine {
-            recipe.machine = m;
-        }
-        allowed(&machines, &recipe.machine).map_err(HubError::Refused)?;
-        let id = if new.background {
-            let name = provider_name(&agent, &logins.statuses());
-            hub.create_later(
-                (&agent, &name),
-                &folder,
-                (&new.text, &new.random_id.0),
-                recipe,
-            )?
-        } else {
-            hub.create(&agent, &folder, &new.text, &new.random_id.0, &recipe)?
-        };
-        let ours = list.into_iter().find(|a| a.id == profile).and_then(|a| {
-            let name = a.id.split_once('/')?.1.to_owned();
-            Some((hub.backend(&a.lent?.plugin)?, name))
-        });
-        if let Some((b, name)) = ours
-            && let Err(e) = plugin::started(&b, &id, &name)
-        {
-            cooee_core::note!("cooee: plugin {}: thread-started: {e}", b.name);
-        }
-        Ok(id)
-    });
-    let id = id.await.map_err(|e| HubError::Refused(e.to_string()))?;
-    Ok(Answer(id.map(|id| Created { id })))
-}
-
-struct Again {
-    id: String,
-    hub: Arc<Hub>,
-    logins: Arc<crate::Logins>,
-    data: PathBuf,
-    config: Option<PathBuf>,
-}
-
-impl Again {
-    fn of(cx: &Cx) -> Self {
-        let data = app_context::<Data>(cx);
-        let (id, hub, logins) = (thread_id(cx), hub(cx), logins(cx));
-        let (data, config) = (data.0.clone(), data.1.clone());
-        Self {
-            id,
-            hub,
-            logins,
-            data,
-            config,
-        }
-    }
-
-    fn recipe(&self) -> Result<(crate::hub::Recipe, String), HubError> {
-        let (t, _) = self.hub.thread(&self.id)?;
-        let config = self.config.as_deref();
-        let list = profiles(&self.hub, (&self.data, config));
-        let (_, _, recipe) = recipe(
-            &self.logins,
-            (&self.data, config, &list, &self.hub.mcp()?),
-            (&t.agent, Some(&t.account), &t.profile),
-            PathBuf::new(),
-            ((t.model, t.effort), t.setup),
-        )?;
-        Ok((recipe, provider_name(&t.agent, &self.logins.statuses())))
-    }
-
-    fn restart(&self) -> Result<(), HubError> {
-        self.hub.restart(&self.id, &self.recipe()?.0)
-    }
+async fn create(cx: &Cx, Json(new): Json<turns::Start>) -> Result<Answer<Created>> {
+    Ok(Answer(turns::start(cx, new).await.map(|id| Created { id })))
 }
 
 async fn off<T: Send + 'static>(
     f: impl FnOnce() -> Result<T, HubError> + Send + 'static,
 ) -> Result<Answer<T>> {
-    let done = tokio::task::spawn_blocking(f).await;
-    Ok(Answer(done.map_err(|e| HubError::Refused(e.to_string()))?))
+    Ok(Answer(turns::off(f).await))
 }
 
 #[route(POST "/threads/{id}/retry")]
 async fn retry(cx: &Cx) -> Result<Answer<()>> {
-    let a = Again::of(cx);
-    off(move || {
-        let (recipe, name) = a.recipe()?;
-        a.hub.retry(&a.id, recipe, &name)
-    })
-    .await
+    let a = Again::of(cx, thread_id(cx));
+    off(move || a.retry()).await
 }
 
 #[route(POST "/threads/{id}/restart")]
 async fn restart(cx: &Cx) -> Result<Answer<()>> {
-    let a = Again::of(cx);
+    let a = Again::of(cx, thread_id(cx));
     off(move || a.restart()).await
 }
 
@@ -298,20 +180,8 @@ impl Message {
 
 #[route(POST "/threads/{id}/send")]
 async fn send(cx: &Cx, Json(m): Json<Message>) -> Result<Answer<cooee_core::Item>> {
-    let a = Again::of(cx);
-    off(move || {
-        let (send, files) = (
-            |f: &[_]| a.hub.send(&a.id, &m.text, &m.random_id.0, f, m.via),
-            m.uploads()?,
-        );
-        match send(&files) {
-            Err(HubError::Shed(e)) if e.no_such_terminal() => {
-                a.restart().and_then(|()| send(&files))
-            }
-            done => done,
-        }
-    })
-    .await
+    let a = Again::of(cx, thread_id(cx));
+    off(move || a.send((&m.text, &m.random_id.0), &m.uploads()?, m.via)).await
 }
 
 #[route(POST "/threads/{id}/handback")]
@@ -355,16 +225,6 @@ async fn steer(cx: &Cx, Json(q): Json<Queued>) -> Result<Answer<Vec<cooee_core::
     Ok(Answer(
         blocking(cx, move |hub| hub.unqueue(&id, &q.random_id, true)).await,
     ))
-}
-
-fn topic_folder(asked: PathBuf, default: PathBuf) -> PathBuf {
-    if asked.as_os_str() == "scratch" {
-        PathBuf::new()
-    } else if asked.as_os_str().is_empty() {
-        default
-    } else {
-        asked
-    }
 }
 
 #[derive(Deserialize)]
@@ -433,41 +293,12 @@ async fn thread_frame(cx: &Cx) -> Result<Response> {
         .body(Body::from(bytes))?)
 }
 
-#[derive(Deserialize)]
-struct Approve {
-    item: u64,
-    option: String,
-    #[serde(default)]
-    value: Option<String>,
-    #[serde(default)]
-    passkey: Option<pairing::Assertion>,
-}
-
 #[route(POST "/threads/{id}/approve")]
-async fn approve(cx: &Cx, Json(a): Json<Approve>) -> Result<Response> {
-    let id = thread_id(cx);
-    if a.option == "approve" && hub(cx).is_proposal(&id, a.item) {
-        let Some(p) = a.passkey else {
-            return plain(403, "Approving this needs Face ID.");
-        };
-        if let Err(why) = pairing::assert(cx, p).await? {
-            return plain(403, why);
-        }
+async fn approve(cx: &Cx, Json(a): Json<turns::Approve>) -> Result<Response> {
+    match turns::answer(cx, thread_id(cx), a).await? {
+        Ok(done) => Answer(done).into_response(cx),
+        Err(why) => plain(403, why),
     }
-    let by = request_context::<Paired>(cx).0.label.clone();
-    let (logins, data) = (logins(cx), app_context::<Data>(cx));
-    let (data, dir) = (data.0.clone(), data.1.clone());
-    Answer(
-        blocking(cx, move |hub| {
-            if let Some(seat) = hub.fallback_seat(&id, a.item, &a.option) {
-                let recipe = seated(hub, &logins, (&data, dir.as_deref()), &id, &seat)?;
-                return hub.fall_back((&id, a.item), &a.option, &recipe, &by);
-            }
-            hub.approve(&id, a.item, &a.option, a.value.as_deref(), &by)
-        })
-        .await,
-    )
-    .into_response(cx)
 }
 
 #[derive(Deserialize)]
