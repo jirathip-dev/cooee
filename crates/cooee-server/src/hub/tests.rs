@@ -554,14 +554,18 @@ fn a_hundred_lists_with_nothing_changed_read_no_persona_file_after_the_first() {
     let name = |hub: &Hub| hub.list()[0].persona_name.clone();
     assert_eq!(name(&hub), "Ada");
     let was = fs::metadata(&toml).unwrap().modified().unwrap();
-    fs::write(&toml, "name = \"Bob\"\nagent = \"x\"\n").unwrap();
-    let file = fs::File::options().write(true).open(&toml).unwrap();
-    file.set_modified(was).unwrap();
+    let stamped = |text: &str, at| {
+        let new = toml.with_extension("new");
+        fs::write(&new, text).unwrap();
+        let file = fs::File::options().write(true).open(&new).unwrap();
+        file.set_modified(at).unwrap();
+        fs::rename(&new, &toml).unwrap();
+    };
+    stamped("name = \"Bob\"\nagent = \"x\"\n", was);
     for _ in 0..100 {
         assert_eq!(name(&hub), "Ada", "an unchanged stamp read the file again");
     }
-    fs::write(&toml, "name = \"Cyd\"\nagent = \"x\"\n").unwrap();
-    file.set_modified(was + Duration::from_secs(1)).unwrap();
+    stamped("name = \"Cyd\"\nagent = \"x\"\n", was + Duration::from_secs(1));
     assert_eq!(name(&hub), "Cyd");
 }
 
