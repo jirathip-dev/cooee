@@ -134,12 +134,14 @@
      "rows": [
       {
        "type": "row",
+       "id": "profile",
        "title": "Profile",
        "value": "fleet-rev",
        "tap": {}
       },
       {
        "type": "row",
+       "id": "mcp-servers",
        "title": "MCP servers",
        "value": "none",
        "tap": {}

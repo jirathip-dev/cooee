@@ -1,0 +1,4 @@
+{ "format": 1, "label": "Modern", "icon": "modern", "type": "default", "radius": 1, "surface": "glass", "fills": "tint",
+  "marks": "symbols", "figures": "avatar", "sections": "title",
+  "labels": { "kind": { "case": "upper" }, "header": { "case": "upper" }, "group": { "case": "upper" },
+              "back": { "prefix": "‹ " } } }

@@ -16,7 +16,7 @@ use std::{
     path::PathBuf,
     sync::{Arc, Mutex, PoisonError},
     thread,
-    time::{Duration, SystemTime, UNIX_EPOCH},
+    time::{Duration, UNIX_EPOCH},
 };
 
 use cooee_core::{
@@ -31,13 +31,10 @@ pub const NAME: &str = "terminal";
 /// The label of the owner's shells.
 pub const OWNER: &str = "cooee.owner";
 
-/// The tab's UI module.
 const TAB: &str = include_str!("tab.js");
 
-/// The largest call body taken.
 const MAX_BODY: u64 = 1 << 20;
 
-/// A refusal: its status and sentence.
 type Refused = (u16, String);
 
 fn shed_error(e: &ShedError) -> Refused {
@@ -48,9 +45,8 @@ fn shed_error(e: &ShedError) -> Refused {
     }
 }
 
-/// Unix milliseconds now.
 fn millis() -> u128 {
-    SystemTime::now()
+    cooee_core::clock::now()
         .duration_since(UNIX_EPOCH)
         .map_or(0, |d| d.as_millis())
 }
@@ -104,7 +100,7 @@ impl Terminal {
             }
             if t.state != State::Running {
                 if owner {
-                    let _ = self.shed.close(&t.name);
+                    self.shed.close(&t.name).ok();
                 }
                 continue;
             }
@@ -116,7 +112,6 @@ impl Terminal {
         let name = |t: &Value| t["name"].as_str().unwrap_or_default().to_owned();
         out.sort_by(|a, b| {
             let mine = (a["owner"] != true).cmp(&(b["owner"] != true));
-            // The newest shell first: its name holds its start time.
             mine.then_with(|| {
                 if a["owner"] == true {
                     name(b).cmp(&name(a))
@@ -145,19 +140,22 @@ impl Terminal {
             policy: None,
             resume: None,
             mcp_servers: Vec::new(),
+            meta: None,
             no_hibernate: false,
             machine: None,
+            parent: None,
+            rows: None,
+            cols: None,
         };
         self.shed.run(&run).map_err(|e| shed_error(&e))?;
         let line = json!({ "at": millis(), "device": device, "event": "shell", "terminal": name });
         if let Err(e) = cooee_core::append_line(&self.log, &line.to_string()) {
-            eprintln!("cooee-terminal: {}: {e}", self.log.display());
+            cooee_core::note!("cooee-terminal: {}: {e}", self.log.display());
         }
         self.used(&name);
         Ok(name)
     }
 
-    /// Refuses unless `name` is one of the owner's shells: an agent's terminal is read-only.
     fn owned(&self, name: &str) -> Result<(), Refused> {
         let t = self.shed.get(name).map_err(|e| shed_error(&e))?;
         if t.labels.get(OWNER).is_some_and(|v| v == "1") {
@@ -168,10 +166,11 @@ impl Terminal {
         }
     }
 
-    /// `method` on one of the owner's shells, with `params` besides its name.
     fn act(&self, name: &str, method: Method, mut params: Value) -> Result<Value, Refused> {
         self.owned(name)?;
-        params["terminal"] = name.into();
+        if let Some(p) = params.as_object_mut() {
+            p.insert("terminal".to_owned(), name.into());
+        }
         let _: Value = self
             .shed
             .call(method, &params)
@@ -206,7 +205,6 @@ impl Terminal {
         Ok(name)
     }
 
-    /// A call but the screen stream: its JSON answer.
     fn route(
         &self,
         method: &str,
@@ -268,8 +266,6 @@ impl Terminal {
         }
     }
 
-    /// Streams terminal `name`'s screen to `s` as `screen` events (each a shed `ScreenUpdate`), a comment while
-    /// quiet so a closed tab is noticed, and `closed` when its program's PTY closes.
     fn watch(&self, name: &str, s: &mut TcpStream) -> io::Result<()> {
         let updates = match self
             .shed
@@ -314,7 +310,7 @@ pub fn serve(listener: &TcpListener, token: &str, terminal: &Arc<Terminal>) {
         let (token, terminal) = (token.to_owned(), Arc::clone(terminal));
         thread::spawn(move || {
             if let Err(e) = answer(stream, &token, &terminal) {
-                eprintln!("cooee-terminal: {e}");
+                cooee_core::note!("cooee-terminal: {e}");
             }
         });
     }
@@ -362,20 +358,23 @@ fn answer(stream: TcpStream, token: &str, terminal: &Terminal) -> io::Result<()>
             Err((status, why)) => respond(&mut s, status, "text/plain", &why),
         },
     }?;
-    // Drain what is left so closing never resets the connection under the answer.
-    let _ = s.set_read_timeout(Some(Duration::from_millis(100)));
-    let _ = s.read(&mut [0; 1024]);
+    s.set_read_timeout(Some(Duration::from_millis(100))).ok();
+    s.read(&mut [0; 1024]).map(drop).ok();
     Ok(())
 }
 
-/// Runs the plugin for `plugin` (its backend at its `url`) over `shed`, logging to `<data>/terminal.log`.
+/// Runs the plugin for `plugin` (its backend at its `url`, port 0 any free one, written back into `url`) over `shed`,
+/// logging to `<data>/terminal.log`.
 ///
 /// # Errors
 /// When the plugin's address can't be bound.
-pub fn start(plugin: &Plugin, shed: Shed, data: &std::path::Path) -> io::Result<()> {
+pub fn start(plugin: &mut Plugin, shed: Shed, data: &std::path::Path) -> io::Result<()> {
     let rest = plugin.url.trim_start_matches("http://");
-    let listener = TcpListener::bind(rest.split('/').next().unwrap_or(rest))?;
-    let var = |k: &str| std::env::var_os(k).filter(|v| !v.is_empty());
+    let (at, path) = rest.split_once('/').unwrap_or((rest, ""));
+    let listener = TcpListener::bind(at)?;
+    let slash = if path.is_empty() { "" } else { "/" };
+    plugin.url = format!("http://{}{slash}{path}", listener.local_addr()?);
+    let var = |k: &str| cooee_core::env_var(k).filter(|v| !v.is_empty());
     let home = var("HOME").map_or_else(|| PathBuf::from("/"), PathBuf::from);
     let shell = var("SHELL").map_or_else(
         || "/bin/zsh".to_owned(),

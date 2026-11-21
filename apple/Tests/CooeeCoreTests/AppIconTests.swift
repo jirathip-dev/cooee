@@ -6,27 +6,31 @@ internal struct AppIconTests {
     private let catalog = URL(filePath: #filePath).deletingLastPathComponent()
         .appending(path: "../../Cooee/Assets.xcassets").standardized
 
-    @Test internal func aFreshInstallShowsTheLaughingKookaburraThePrimaryIcon() throws {
-        let fresh = try JSONDecoder().decode(Settings.self, from: Data(#"{"scheme":"system","style":"modern"}"#.utf8))
-        #expect(fresh.icon == nil)
-        #expect(fresh.appIcon == .primary)
-        #expect(AppIcon.primary.asset == "ModernLaughing")
-        #expect(Settings().appIcon.alternateName == nil)
+    private static func pack(_ name: String) throws -> Style {
+        let file = URL(filePath: #filePath).deletingLastPathComponent().appending(
+            path: "../../../packs/\(name)/style.json")
+        return try JSONDecoder().decode(Style.self, from: Data(contentsOf: file.standardized))
     }
 
-    @Test internal func followingShowsTheFirstIconOfTheStylesSet() {
-        let shown = LookStyle.allCases.map { Settings(style: $0).appIcon.asset }
-        #expect(shown == ["ModernLaughing", "TerminalPrompt", "FarmBay"])
+    @Test internal func followingShowsTheFirstIconOfTheKeptStylesSet() throws {
+        let picks: [StylePick] = [
+            .modern, .pack(name: "terminal", kept: try Self.pack("terminal")),
+            .pack(name: "scene", kept: try Self.pack("scene")), .pack(name: "scene", kept: nil),
+        ]
+        let shown = picks.map { Settings(style: $0).appIcon.asset }
+        #expect(shown == ["ModernLaughing", "TerminalPrompt", "FarmBay", "ModernLaughing"])
     }
 
-    @Test internal func aPickedIconSurvivesAStyleChangeUntilFollowingAgain() throws {
+    @Test internal func aPickedIconAndTheKeptTokensSurviveARelaunchAndAnOldPickNamesItsPack() throws {
         var settings = Settings()
         settings.icon = IconSet.bush.icons[2]
-        settings.style = .terminal
+        settings.style = .pack(name: "terminal", kept: try Self.pack("terminal"))
         let kept = try JSONDecoder().decode(Settings.self, from: JSONEncoder().encode(settings))
-        #expect(kept.appIcon.alternateName == "BushKoala")
+        #expect(kept.appIcon.alternateName == "BushKoala" && kept.style == settings.style)
         settings.icon = nil
         #expect(settings.appIcon.asset == "TerminalPrompt")
+        let old = try JSONDecoder().decode(Settings.self, from: Data(#"{"scheme": "dark", "style": "terminal"}"#.utf8))
+        #expect(old.style == .pack(name: "terminal", kept: nil))
     }
 
     @Test internal func everyIconIsInTheAssetCatalogAsAnAppIconAndAPreview() throws {

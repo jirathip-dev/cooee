@@ -4,31 +4,55 @@ import Foundation
 
 @Reducer
 public struct MenuFeature: Sendable {
-    public enum Page: CaseIterable, Hashable, Sendable {
-        case look, notifications, signIns, devices, machines, plugins, appIcon
+    /// The device-local pages the app draws, never the server: the `settings` component's and the terminal.
+    public enum Page: String, CaseIterable, Hashable, Sendable {
+        case look, notifications, appIcon, terminal, themeEditor, connectors
     }
 
     @ObservableState
     public struct State: Equatable {
         public var server: Server?
         public var settings: Settings
+        public var looks = Looks()
         public var open = false
         public var path: [Page] = []
+        public var screen: JSONValue?
+        @Presents public var page: ScreenFeature.State?
+        public var editor: ThemeEditorFeature.State?
+        public var connectors: ConnectorsFeature.State?
+        public var saved: String?
         public var busy = false
         public var error: String?
+        public var notice: String?
+        public var timings = Timings()
 
         public init(server: Server?, settings: Settings) {
             self.server = server
             self.settings = settings
+            if case .pack(let name, nil) = settings.style { notice = "\(name) is a pack now: cooee theme add \(name)" }
         }
     }
 
     public enum Action: Sendable {
         case open(Bool)
+        case loaded(JSONValue)
+        case show(String, label: String, source: LayoutSource = .core)
+        case page(PresentationAction<ScreenFeature.Action>)
+        case edit(String?)
+        case editor(ThemeEditorFeature.Action)
+        case connectors(ConnectorsFeature.Action)
         case path([Page])
+        case load
+        case looks(Looks)
         case scheme(LookScheme)
-        case style(LookStyle)
+        case colours(String?)
+        case style(String)
+        case theme(String)
         case icon(AppIcon?)
+        case motion(Bool)
+        case night(Bool)
+        case sprite(String, String?)
+        case pinRoom(String)
         case push(Bool)
         case pushed(String?)
         case failed(String)
@@ -36,34 +60,109 @@ public struct MenuFeature: Sendable {
 
     @Dependency(\.settingsStore) private var settingsStore
     @Dependency(\.push) private var push
+    @Dependency(\.threads) private var threads
     @Dependency(\.appIcon) private var appIcon
+    @Dependency(\.plugins) private var plugins
+    @Dependency(\.perf) private var perf
 
     public init() {}
 
     public var body: some ReducerOf<Self> {
         Reduce { state, action in
             switch action {
-            case .open(let open):
-                state.open = open
-                state.path = []
+            case .open, .loaded, .show, .page, .edit, .editor:
+                return navigate(&state, action)
             case .path(let path):
+                let opened = path.last.flatMap { state.path.contains($0) ? nil : $0 }
                 state.path = path
-            case .scheme(let scheme):
-                state.settings.scheme = scheme
-                settingsStore.save(state.settings)
-            case .style(let style):
-                return look(&state) { $0.style = style }
+                if opened == .connectors, let server = state.server {
+                    state.connectors = ConnectorsFeature.State(server: server)
+                    return .send(.connectors(.task))
+                }
+                return opened == .look ? load(state) : .none
+            case .connectors:
+                return .none
+            case .load:
+                return load(state)
+            case .style, .looks:
+                return styled(&state, action)
             case .icon(let icon):
                 return look(&state) { $0.icon = icon }
+            case .motion(let motion):
+                return look(&state) { $0.motion = motion }
+            case .night(let night):
+                return look(&state) { $0.night = night }
+            case .sprite(let seed, let coat):
+                return look(&state) { [theme = state.settings.theme] in $0.sprite(seed, coat, in: theme) }
             case .push(let enabled):
                 return toggle(&state, enabled)
             default:
-                pushed(&state, action)
+                pick(&state, action)
             }
             return .none
         }
+        .ifLet(\.$page, action: \.page) { ScreenFeature() }
+        .ifLet(\.editor, action: \.editor) { ThemeEditorFeature() }
+        .ifLet(\.connectors, action: \.connectors) { ConnectorsFeature() }
+        .keepsLeftScreens { $0.page.map { [$0] } ?? [] }
     }
 
+    private func navigate(_ state: inout State, _ action: Action) -> Effect<Action> {
+        switch action {
+        case .open(let open):
+            state.open = open
+            state.path = []
+            state.page = nil
+            state.timings = perf.timings()
+            guard open, let server = state.server else { return .none }
+            let plugins = plugins
+            return .concatenate(
+                load(state),
+                .run { send in
+                    await send(.loaded(try await plugins.screen(server, .core, "/screens/menu")))
+                } catch: { _, _ in
+                })
+        case .loaded(let screen):
+            state.screen = screen
+        case .edit, .editor:
+            return editing(&state, action)
+        case .show(let path, let label, let source):
+            guard let server = state.server else { return .none }
+            state.page = ScreenFeature.State(server: server, source: source, path: path, label: label)
+        default:
+            break
+        }
+        return .none
+    }
+
+    private func load(_ state: State) -> Effect<Action> {
+        guard let server = state.server else { return .none }
+        return .run { [threads] send in
+            if let looks = try? await threads.looks(server) { await send(.looks(looks)) }
+        }
+    }
+
+    private func pick(_ state: inout State, _ action: Action) {
+        switch action {
+        case .scheme(let scheme):
+            state.settings.scheme = scheme
+        case .colours(let name):
+            state.settings.colours = name
+        case .theme(let theme):
+            state.settings.theme = theme
+            let looks = state.looks
+            state.settings.style =
+                looks.themes[theme]?.style.map { StylePick($0, kept: looks.style($0)) } ?? state.settings.style
+        case .pinRoom(let room):
+            state.settings.pin(room: room)
+        default:
+            return pushed(&state, action)
+        }
+        settingsStore.save(state.settings)
+    }
+}
+
+extension MenuFeature {
     private func pushed(_ state: inout State, _ action: Action) {
         state.busy = false
         switch action {
@@ -76,6 +175,43 @@ public struct MenuFeature: Sendable {
         default:
             break
         }
+    }
+
+    private func editing(_ state: inout State, _ action: Action) -> Effect<Action> {
+        switch action {
+        case .edit(let pack):
+            guard let server = state.server else { return .none }
+            let (theme, style) = (pack ?? state.settings.theme, state.settings.style.name)
+            state.editor = .init(server: server, looks: state.looks, theme: theme, style: style, new: pack == nil)
+            state.saved = nil
+            state.path.append(.themeEditor)
+            return .send(.editor(.task))
+        case .editor(.saved(let name, let style)):
+            state.settings.theme = name
+            state.settings.style = StylePick(style, kept: state.looks.style(style))
+            settingsStore.save(state.settings)
+            state.saved = state.editor?.draft.label
+            state.editor = nil
+            state.path.removeAll { $0 == .themeEditor }
+            return load(state)
+        default:
+            return .none
+        }
+    }
+
+    private func styled(_ state: inout State, _ action: Action) -> Effect<Action> {
+        var picked = state.settings.style
+        switch action {
+        case .style(let name):
+            picked = StylePick(name, kept: state.looks.style(name))
+            state.notice = nil
+        case .looks(let looks):
+            state.looks = looks
+            state.notice = picked.reconcile(with: looks, on: state.server?.url.host() ?? "the server")
+        default:
+            break
+        }
+        return picked == state.settings.style ? .none : look(&state) { $0.style = picked }
     }
 
     private func look(_ state: inout State, _ change: (inout Settings) -> Void) -> Effect<Action> {
@@ -103,5 +239,22 @@ public struct MenuFeature: Sendable {
         } catch: { error, send in
             await send(.failed(error.localizedDescription))
         }
+    }
+}
+
+extension MenuFeature.State {
+    /// The picked pack's kept tokens while `theme` has what they draw; nil: the bundled Modern.
+    public func style(for theme: String) -> Style? {
+        settings.style.kept.flatMap { looks.draws($0, in: theme) ? $0 : nil }
+    }
+
+    /// The look sheet's rows: Modern, then each pack whose style this app reads and the picked theme draws.
+    public var offered: [StylePick] {
+        [.modern]
+            + (looks.styles ?? [:]).keys.sorted().compactMap { name in
+                looks.style(name).flatMap {
+                    looks.draws($0, in: settings.theme) ? .pack(name: name, kept: $0) : nil
+                }
+            }
     }
 }

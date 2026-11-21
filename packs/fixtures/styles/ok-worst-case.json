@@ -1,0 +1,12 @@
+{ "format": 1, "label": "Worst case, 24 chars max", "type": "mono", "radius": 0, "surface": "dashed", "fills": "outline",
+  "marks": "text", "figures": "ascii", "sections": "quiet",
+  "labels": { "kind": { "prefix": "[## ", "suffix": " ##]", "case": "upper" },
+              "header": { "prefix": "<<<<", "suffix": ">>>>" },
+              "group": { "prefix": "‹‹‹‹", "suffix": "››››", "case": "lower" },
+              "section": { "prefix": "•·•·", "suffix": "·•·•" },
+              "title": { "prefix": "~/~/", "suffix": "/~/~" },
+              "button": { "prefix": "[[[ ", "suffix": " ]]]" },
+              "chip": { "prefix": "((((", "suffix": "))))", "case": "as-is" },
+              "back": { "prefix": "<-- ", "suffix": " -->" },
+              "said": { "prefix": ">>> ", "suffix": " <<<" },
+              "picked": { "prefix": "*** ", "suffix": " ***" } } }

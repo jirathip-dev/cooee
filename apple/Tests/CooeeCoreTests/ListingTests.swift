@@ -32,7 +32,7 @@ internal struct ListingTests {
         #expect(Listing.everyone(personas: [coder, pinned], rows: []).map(\.id) == ["coder", "chief"])
     }
 
-    @Test internal func theChatListDrawsEachRowWithItsPersonaOrItsAgent() {
+    @Test internal func theChatListDrawsEachRowWithItsPersonaOrItsTitleAndAgent() {
         let rows = [
             row("t1", persona: "coder", state: "blocked", updated: 999_990),
             row("t2", persona: "", state: "done", updated: 999_000),
@@ -44,7 +44,18 @@ internal struct ListingTests {
                 == Row(id: "t1", persona: "coder", title: "T t1", last: "last t1", ago: "now", unseen: 1, state: .needs)
         )
         #expect(chats[0].persona.name == "Coder" && chats[0].persona.state == .needs)
-        #expect(chats[1].persona.name == "fake-acp" && chats[1].row.persona == "fake-acp" && chats[1].row.ago == "16m")
+        #expect(chats[1].persona.name == "T t2" && chats[1].row.title == "fake-acp" && chats[1].row.ago == "16m")
+        #expect(chats[1].row.persona.isEmpty && chats[1].persona.look.initials == "T")
+    }
+
+    @Test internal func aRowWithNoMessagesShowsNoAge() throws {
+        let row = try JSONDecoder().decode(
+            ThreadRow.self,
+            from: Data(
+                #"{"id":"t0","title":"Test","agent":"","persona":"coder","state":"","last":"","unseen":0,"archived":false}"#
+                    .utf8)
+        )
+        #expect(Listing.chats(rows: [row], personas: [coder], now: now).map(\.row.ago) == [""])
     }
 
     @Test(arguments: [
@@ -66,17 +77,30 @@ internal struct ListingTests {
         )
     }
 
-    @Test internal func settingsKeepTheirLookAndTokenThroughJSON() throws {
-        let settings = Settings(scheme: .dark, style: .terminal, push: "ab12")
-        let back = try JSONDecoder().decode(Settings.self, from: try JSONEncoder().encode(settings))
-        #expect(back == settings && Settings() == Settings(scheme: .system, style: .modern, push: nil))
-    }
-
     @Test internal func aTypedAddressOrALinkIsAServer() {
         #expect(PairTarget(typed: "mini.local:4100")?.url.absoluteString == "https://mini.local:4100")
         let link = PairTarget(typed: " http://127.0.0.1:4100/pair?code=123456 ")
         #expect(link?.url.absoluteString == "http://127.0.0.1:4100" && link?.code == "123456")
         #expect(PairTarget(typed: "  ") == nil)
         #expect(PairTarget(typed: "http://") == nil)
+    }
+
+    @Test internal func aChatWithNoPersonaSeedsItsSpriteByItsThread() {
+        let rows = [
+            row("t1", persona: "", state: "idle", updated: 1), row("t2", persona: "coder", state: "idle", updated: 2),
+        ]
+        let chats = Listing.chats(
+            rows: rows + [row("t3", persona: "", state: "idle", updated: 3)], personas: [coder], now: now)
+        #expect(chats.map(\.persona.seed) == ["t1", "coder", "t3"])
+    }
+}
+
+internal struct FolderListingTests {
+    @Test internal func aSubFolderGoesUpToItsParentAndItsSearchMatchesNamesOnly() {
+        let listing = FolderListing(path: "/w/app", dirs: ["src", "docs", "Spec"], roots: ["/w", "/x/"])
+        #expect(!listing.top && listing.parent == "/w")
+        #expect(listing.shown("s") == ["/w/app/src", "/w/app/docs", "/w/app/Spec"])
+        #expect(listing.shown(" sp ") == ["/w/app/Spec"] && listing.shown("app").isEmpty)
+        #expect(listing.holds("/x/y") && !listing.holds("/wx") && !listing.holds("/x/../etc"))
     }
 }

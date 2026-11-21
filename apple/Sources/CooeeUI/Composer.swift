@@ -4,22 +4,36 @@ import UniformTypeIdentifiers
 
 internal struct Composer: View {
     @Environment(\.look) private var look
+    @Environment(\.members) private var members
     private let picking = State(initialValue: false)
     private let sending = State(initialValue: false)
     @FocusState private var typing: Bool
-    internal let persona: Persona
+    internal let hint: String
     internal var queued: [String] = []
     internal var draft = ""
     internal var attachments: [String] = []
     internal var actions = ChatActions()
+    internal var rest: CGFloat = 0
+
+    private var lifted: Bool {
+        #if os(iOS)
+            typing
+        #else
+            false
+        #endif
+    }
 
     private var chips: [String] { actions.send == nil ? attachments : actions.files }
-    private var hint: String { queued.isEmpty ? "Message \(persona.name)" : "Queue a message" }
+    private var shown: String { actions.denying ? "Deny and say…" : queued.isEmpty ? hint : "Queue a message" }
+    private var overlaid: Bool { !members.isEmpty || !(actions.voice.dictation?.heard.unsure.isEmpty ?? true) }
 
     internal var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             ForEach(Array(queued.enumerated()), id: \.offset) { index, text in queuedRow(index, text) }
             if !chips.isEmpty { chipRow }
+            if let unsure = actions.voice.dictation?.heard.unsure.first, !actions.voice.listening {
+                Alternatives(unsure: unsure, pick: actions.voice.pick)
+            }
             HStack(alignment: .bottom, spacing: 8) {
                 Button {
                     picking.wrappedValue = true
@@ -31,6 +45,7 @@ internal struct Composer: View {
                 sendButton
             }
         }
+        .padding(.bottom, lifted ? min(rest, 8) : rest)
         .fileImporter(isPresented: picking.projectedValue, allowedContentTypes: [.item], allowsMultipleSelection: true)
         { result in
             actions.attach(((try? result.get()) ?? []).compactMap(Self.attachment))
@@ -39,31 +54,37 @@ internal struct Composer: View {
 
     private var field: some View {
         let palette = look.palette
-        return HStack {
-            if let text = actions.draft {
-                TextField(hint, text: text, axis: .vertical).ui(16, .regular, look).lineLimit(1...5)
-                    .textFieldStyle(.plain).onSubmit(send).focused($typing)
+        let dictating = actions.voice.dictation != nil
+        return HStack(alignment: dictating ? .top : .center) {
+            if let dictation = actions.voice.dictation, dictation.listening {
+                DictationWords(dictation: dictation)
+            } else if let text = actions.draft {
+                TextField(members.isEmpty ? shown : "", text: text, axis: .vertical).ui(16, .regular, look)
+                    .lineLimit(1...5).textFieldStyle(.plain).onSubmit(send).focused($typing)
                     .onChange(of: typing) { _, now in if !now && sending.wrappedValue { post() } }
+                    .onChange(of: actions.denying) { _, now in if now { typing = true } }
+                    .foregroundStyle(overlaid ? .clear : palette.foreground).accessibilityLabel(shown)
+                    .overlay(alignment: .topLeading) {
+                        if overlaid { tokens(text.wrappedValue).allowsHitTesting(false) }
+                    }
             } else {
-                Text(draft.isEmpty ? hint : draft).ui(16, .regular, look)
-                    .foregroundStyle(draft.isEmpty ? palette.mute : palette.foreground)
+                tokens(draft)
             }
             Spacer()
-            Image(systemName: "mic").foregroundStyle(palette.mute)
+            if members.isEmpty { MicButton(voice: actions.voice) }
         }
-        .padding(.horizontal, 16).frame(minHeight: 42)
+        .padding(.leading, 16).padding(.trailing, dictating ? 8 : 16).padding(.vertical, dictating ? 8 : 0)
+        .frame(minHeight: 42)
         .surface(look, radius: 21)
     }
 
-    private var sendButton: some View {
+    private func tokens(_ text: String) -> some View {
         let palette = look.palette
-        return Button(action: send) {
-            Image(systemName: "arrow.up").font(.system(size: 17, weight: .bold))
-                .foregroundStyle(palette.dark ? Color.black : .white)
-                .frame(width: 42, height: 42)
-                .background(palette.link, in: look.mono ? AnyShape(Rectangle()) : AnyShape(Circle()))
-        }
-        .buttonStyle(.plain).accessibilityLabel("Send")
+        let token = palette.link.opacity(0.2)
+        let mentioned = BlockView.mentioned(
+            AttributedString(text.isEmpty ? shown : text), members, palette.link, token: token)
+        return Text(DictationWords.underlined(mentioned, actions.voice.dictation, palette.amber))
+            .ui(16, .regular, look).foregroundStyle(text.isEmpty ? palette.mute : palette.foreground)
     }
 
     private var chipRow: some View {
@@ -107,6 +128,8 @@ internal struct Composer: View {
         }
         .padding(.horizontal, 12).frame(height: 34)
         .background(palette.card.opacity(0.8), in: .rect(cornerRadius: 12))
+        .contentShape(.rect).onTapGesture { actions.edit(index) }
+        .accessibilityAction(named: "Edit") { actions.edit(index) }
     }
 
     private func send() {
@@ -127,5 +150,25 @@ internal struct Composer: View {
         let scoped = url.startAccessingSecurityScopedResource()
         defer { if scoped { url.stopAccessingSecurityScopedResource() } }
         return (try? Data(contentsOf: url)).map { Attachment(name: url.lastPathComponent, bytes: $0) }
+    }
+}
+
+extension Composer {
+    private var sendButton: some View {
+        let palette = look.palette
+        return Button(action: send) {
+            Group {
+                if actions.sending {
+                    Spinner()
+                } else {
+                    Image(systemName: "arrow.up").font(.system(size: 17, weight: .bold))
+                }
+            }
+            .foregroundStyle(palette.dark ? Color.black : .white)
+            .frame(width: 42, height: 42)
+            .background(palette.link, in: look.square ? AnyShape(Rectangle()) : AnyShape(Circle()))
+            .opacity(actions.voice.listening ? 0.35 : 1)
+        }
+        .buttonStyle(.plain).accessibilityLabel("Send").allowsHitTesting(!actions.voice.listening)
     }
 }

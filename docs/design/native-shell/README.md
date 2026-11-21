@@ -20,13 +20,13 @@ decisions: q888, q890, q891, q893–q895, q897 (conductor thread t53), and revis
   **rears at the gate**, in the stable **stands in its stable**, and grazing **grazes** (refused balks at the fence,
   over the fence jumps it; not in this frame). The dark navy `personas` band is gone: the field follows the farm
   strip, and the tack takes the farm's own project colour (`--fk-l`).
-- **The mock data is real:** each issue is a real cooee, herdsman or synergy issue with its real title, and each PR
+- **The mock data is real:** each issue is a real cooee or herdsman issue or one from a client-built app with its real title, and each PR
   link is that issue's real PR (herdsman #641 → PR #704, #722 → #726, #708 → #723, cooee #115 → #117). The stages are
   illustrative. The old herdsman #715 → "PR #722" pair was wrong: #715 is a closed serve issue whose PR was #719, and
   #722 is another issue. The Queue tab shows herdsman's own queue.
 
 There are three pages, built on the live design system as `docs/design/chat-first/` was. They link
-`web/src/app.css`, `web/schemes/` and the farm pack's `packs/themes/farm/` (theme words, row sprites, scene strip)
+`design-system/app.css`, `design-system/schemes/` and the farm pack's `packs/themes/farm/` (theme words, row sprites, scene strip)
 without copying them. `ns.css` holds this design's additions as tokens only. `ns.js` sets the scheme as `shown.rs`
 does and draws the lists. `horses.svg` holds herdsman's vector horses (`assets/themes/farm/sprites.svg`, copied by
 `horses.mjs` until cooee#115 puts them in the pack). The design adds no new visual language. The only things drawn
@@ -41,7 +41,7 @@ strokes in `currentColor`.
 
 Open a page without a query to see every frame in a gallery, with the side note. `?f=<frame>` shows one frame at
 its own size, and `?mode=dark|light` sets the mode. Serve the repo root over http, because the pages fetch from
-`web/` and `packs/`. `node docs/design/native-shell/shoot.mjs <chrome-headless-shell>`, run from the repo root,
+`design-system/` and `packs/`. `node docs/design/native-shell/shoot.mjs <chrome-headless-shell>`, run from the repo root,
 regenerates every PNG. It checks each shot for sideways scroll, anything past the right edge, and cut text without
 an ellipsis (the swipe frame's chat is off the edge by design). **All 34 pass.** The design ask's thumbnails show the shots themselves, so a fresh checkout runs it
 twice.
@@ -143,7 +143,7 @@ untouched and not drawn. **Data:** illustrative.
 4. **Queue and Asks in the shell** (Drover, served by herdsman): their frames under the shell's large title, plus the badge and the
    dot. Asks lists a fleet's open run cards first, with #83's approve / deny (one sha, sent once).
 5. **Scene acts its states** (a follow-up to cooee#115): the poses drawn here (plough, rear at the gate, stable, graze,
-   refuse, jump), and the navy `personas` band and current-ring go from `web/src/app.css` (`.sp .fh`, `.sb[aria-current]`).
+   refuse, jump), and the navy `personas` band and current-ring go from `design-system/app.css` (`.sp .fh`, `.sb[aria-current]`).
 
 ## Open questions for the owner
 

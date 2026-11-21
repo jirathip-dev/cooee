@@ -18,12 +18,10 @@ pub const WAIT: Duration = Duration::from_secs(5);
 /// keeps the item for (a self-signed one ties it to one build).
 pub const IDENTITY: &str = "Apple Development";
 
-/// Secret `name`'s file: where Linux keeps it, and where a Mac's waits to be moved.
 fn file(data: &Path, name: &str) -> PathBuf {
     data.join("secrets").join(name)
 }
 
-/// The keychain account prefix of data folder `data`, so two instances never share a secret.
 #[cfg(target_os = "macos")]
 fn prefix(data: &Path) -> String {
     let hash = crate::sha256(data.as_os_str().as_encoded_bytes());
@@ -80,11 +78,50 @@ pub fn set(data: &Path, name: &str, value: &str) -> io::Result<()> {
     crate::write_private(&file(data, name), value.as_bytes())
 }
 
-/// The names of the secrets saved for `data`.
+/// The name persona `persona`'s secret `name` is saved under (#163): no `secret:<NAME>` of an env can name it.
+#[must_use]
+pub fn persona(persona: &str, name: &str) -> String {
+    format!("{persona}.{name}")
+}
+
+/// Persona `persona`'s saved secrets, each as its variable and value (#163).
+///
+/// # Errors
+/// As [`names`] and [`get`].
+pub fn of_persona(data: &Path, persona: &str) -> io::Result<Vec<(String, String)>> {
+    let mine = format!("{persona}.");
+    let mut vars = Vec::new();
+    for name in saved(data)? {
+        let var = name.strip_prefix(&mine).filter(|v| !v.contains('.'));
+        if let (Some(var), Some(v)) = (var, get(data, &name)?) {
+            vars.push((var.to_owned(), v));
+        }
+    }
+    Ok(vars)
+}
+
+/// Removes secret `name` from the keychain (macOS) and its file; one already gone is no error.
+///
+/// # Errors
+/// When the keychain or the file refuses.
+pub fn remove(data: &Path, name: &str) -> io::Result<()> {
+    #[cfg(target_os = "macos")]
+    keychain::remove(prefix(data) + name)?;
+    match fs::remove_file(file(data, name)) {
+        Err(e) if e.kind() != io::ErrorKind::NotFound => Err(e),
+        _ => Ok(()),
+    }
+}
+
+/// The names of the secrets saved for `data` a `secret:<NAME>` can spell: a dotted one (a connector's) is not.
 ///
 /// # Errors
 /// When the keychain or the folder can't be listed.
 pub fn names(data: &Path) -> io::Result<Vec<String>> {
+    saved(data).map(|n| n.into_iter().filter(|n| !n.contains('.')).collect())
+}
+
+fn saved(data: &Path) -> io::Result<Vec<String>> {
     #[cfg(target_os = "macos")]
     return keychain::accounts(prefix(data)).map(|a| {
         let p = prefix(data);
@@ -97,7 +134,6 @@ pub fn names(data: &Path) -> io::Result<Vec<String>> {
     files(data)
 }
 
-/// The secret files in `data` (`.`-names are a launch's hand-off, not secrets).
 fn files(data: &Path) -> io::Result<Vec<String>> {
     let dir = match fs::read_dir(data.join("secrets")) {
         Ok(d) => d,
@@ -139,7 +175,6 @@ pub fn migrate(data: &Path) -> io::Result<Vec<String>> {
     Ok(names)
 }
 
-/// Overwrites `path` with zeros, then removes it.
 fn shred(path: &Path) -> io::Result<()> {
     let len = fs::metadata(path)?.len();
     let mut f = fs::OpenOptions::new().write(true).open(path)?;
@@ -160,6 +195,7 @@ mod keychain {
             keychain::SecKeychain,
             passwords::find_generic_password,
         },
+        passwords::delete_generic_password,
     };
 
     use super::{IDENTITY, WAIT, limited};
@@ -173,7 +209,6 @@ mod keychain {
         ))
     }
 
-    /// Turns keychain prompts off for good: a prompt no one sees is an error, not a wait.
     fn quiet() {
         static OFF: OnceLock<()> = OnceLock::new();
         OFF.get_or_init(|| std::mem::forget(SecKeychain::disable_user_interaction()));
@@ -214,6 +249,16 @@ mod keychain {
         })
     }
 
+    pub fn remove(account: String) -> io::Result<()> {
+        limited(WAIT, move || {
+            quiet();
+            match delete_generic_password(SERVICE, &account) {
+                Err(e) if e.code() != NOT_FOUND => Err(error(e)),
+                _ => Ok(()),
+            }
+        })
+    }
+
     pub fn accounts(prefix: String) -> io::Result<Vec<String>> {
         limited(WAIT, move || {
             quiet();
@@ -243,18 +288,19 @@ mod tests {
     use super::*;
 
     fn scratch(name: &str) -> PathBuf {
-        let d = std::env::temp_dir().join(format!("cooee-secrets-{name}-{}", std::process::id()));
-        let _ = fs::remove_dir_all(&d);
+        let d = crate::scratch::owned(
+            std::env::temp_dir().join(format!("cooee-secrets-{name}-{}", std::process::id())),
+        );
+        fs::remove_dir_all(&d).ok();
         fs::create_dir_all(d.join("secrets")).unwrap();
         d
     }
 
-    /// #713: a keychain call that never returns is a visible error once its time is up, never a hang.
     #[test]
     fn a_keychain_call_that_hangs_is_a_time_out_error() {
         let (_hold, gate) = mpsc::channel::<()>();
         let r = limited(Duration::from_millis(20), move || {
-            let _ = gate.recv();
+            gate.recv().ok();
             Ok(())
         });
         let e = r.unwrap_err();
@@ -262,7 +308,19 @@ mod tests {
         assert!(e.to_string().contains("didn't answer"), "{e}");
     }
 
-    /// On Linux the 0600 file is the store: saved there, read from there, listed, and never moved.
+    #[test]
+    fn remove_removes_and_twice_is_once() {
+        let data = scratch("remove");
+        fs::write(data.join("secrets/TOKEN"), "s3cret\n").unwrap();
+        fs::write(data.join("secrets/KEEP"), "k\n").unwrap();
+        assert_eq!(get(&data, "TOKEN").unwrap().as_deref(), Some("s3cret"));
+        remove(&data, "TOKEN").unwrap();
+        assert_eq!(get(&data, "TOKEN").unwrap(), None);
+        assert!(!data.join("secrets/TOKEN").exists());
+        remove(&data, "TOKEN").unwrap();
+        assert_eq!(get(&data, "KEEP").unwrap().as_deref(), Some("k"));
+    }
+
     #[cfg(not(target_os = "macos"))]
     #[test]
     fn linux_keeps_secrets_in_their_0600_file() {
@@ -277,13 +335,12 @@ mod tests {
         );
         assert_eq!(get(&data, "TOKEN").unwrap().as_deref(), Some("s3cret"));
         fs::write(data.join("secrets/.run-x"), "handoff").unwrap();
+        fs::write(data.join("secrets/connector.linear.main"), "{}").unwrap();
         assert_eq!(names(&data).unwrap(), ["TOKEN"]);
         assert_eq!(migrate(&data).unwrap(), Vec::<String>::new());
         assert!(path.exists());
     }
 
-    /// An unsigned cooee (every test build) never puts a secret in the keychain, where its next build couldn't
-    /// read it: the file stays and the refusal says why.
     #[cfg(target_os = "macos")]
     #[test]
     fn an_unsigned_cooee_leaves_the_file_and_says_why() {

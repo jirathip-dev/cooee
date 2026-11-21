@@ -5,143 +5,124 @@ import SwiftUI
 
 public struct AppRoot: View {
     @Environment(\.colorScheme) private var scheme
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.scenePhase) private var phase
     #if os(iOS)
         @Environment(\.horizontalSizeClass) private var size
     #else
         private let size: UserInterfaceSizeClass? = .regular
+    #endif
+    #if os(macOS)
+        private let mac = true
+    #else
+        private let mac = false
     #endif
     @Bindable private var store: StoreOf<AppFeature>
 
     public var body: some View {
         Group {
             if let home = store.scope(state: \.home, action: \.home) {
-                content(home).task { await home.send(.task).finish() }
-            } else if let setup = store.scope(state: \.setup, action: \.setup) {
-                MacSetup(store: setup)
+                let compact = size == .compact
+                SlotView(
+                    store: store, node: store.layout.layout.resolved(for: compact ? .compact : .wide), compact: compact
+                )
+                .environment(\.cast, home.personas.map { Persona($0) })
+                .task {
+                    store.send(.menu(.load))
+                    await home.send(.task).finish()
+                }
+                .task { await store.send(.layout(.task)).finish() }
             } else if let pairing = store.scope(state: \.pairing, action: \.pairing) {
-                if store.mac && [.welcome, .nearby, .address].contains(pairing.step) {
-                    MacConnect(store: pairing) { store.send(.setUpHere) }
+                if mac && [.welcome, .nearby, .address].contains(pairing.step) {
+                    MacConnect(store: pairing)
                 } else {
-                    PhoneOnboarding(store: pairing)
+                    PairingBlocks(store: pairing)
                 }
             }
         }
-        .sheet(isPresented: Binding(get: { store.menu.open }, set: { store.send(.menu(.open($0))) })) {
-            MenuSheet(store: store.scope(state: \.menu, action: \.menu)).presentationDetents([.medium, .large])
+        .safeAreaInset(edge: .top) {
+            if let notice = store.notice {
+                Text(Markdown.inline(notice)).ui(13, .regular, look).foregroundStyle(look.palette.mute).padding(8)
+            }
         }
-        .sheet(item: $store.scope(state: \.persona, action: \.persona)) { persona in PersonaScreen(store: persona) }
-        .environment(\.look, Look(palette: .farm(dark ? .dark : .light), style: store.menu.settings.style))
-        .preferredColorScheme(store.menu.settings.scheme == .system ? nil : dark ? .dark : .light)
+        .onChange(of: phase) { _, phase in if phase != .inactive { store.send(.scene(active: phase == .active)) } }
+        .reporting(store)
+        .task { await store.send(.launch).finish() }
+        .task { await store.send(.retire).finish() }
+        .task { await store.send(.taps).finish() }
+        .sheet(item: $store.scope(state: \.persona, action: \.persona)) { persona in
+            PersonaScreen(store: persona) { store.send(.menu(.sprite(persona.draft.id, $0))) }
+        }
+        .sheet(
+            isPresented: Binding(
+                get: { store.newRoom != nil }, set: { if !$0 { store.send(.newRoom(.delegate(.cancel))) } })
+        ) {
+            if let room = store.scope(state: \.newRoom, action: \.newRoom) { NewRoomScreen(store: room) }
+        }
+        .environment(\.look, look)
+        .environment(\.pickNight) { store.send(.menu(.night($0))) }
+        .preferredColorScheme(preferred)
     }
 
-    private var dark: Bool {
-        switch store.menu.settings.scheme {
-        case .system: scheme == .dark
-        case .light: false
-        case .dark: true
-        }
+    private var look: Look { store.menu.look(dark: scheme == .dark, reduceMotion: reduceMotion) }
+
+    private var preferred: ColorScheme? {
+        let menu = store.menu
+        guard menu.settings.scheme != .system || menu.colours != nil else { return nil }
+        return menu.dark(device: scheme == .dark) ? .dark : .light
     }
 
     public init(store: StoreOf<AppFeature>) {
         self.store = store
     }
+}
 
-    @ViewBuilder private func content(_ home: StoreOf<HomeFeature>) -> some View {
-        let actions = HomeActions(
-            menu: { store.send(.menu(.open(true))) },
-            new: { store.send(.start($0)) },
-            open: { store.send(.open($0)) },
-            edit: { store.send(.edit($0)) }
-        )
-        let chats = home.state.chats(now: Date())
-        if size == .compact {
-            NavigationStack(path: Binding(get: { store.path }, set: { store.send(.path($0)) })) {
-                HomeView(personas: home.pinned, all: home.everyone, chats: chats, actions: actions)
-                    .navigationDestination(for: String.self) { _ in chat(back: true).toolbar(.hidden) }
-                    .toolbar(.hidden)
-                    #if os(iOS)
-                        .background(SwipeBack())
-                    #endif
-            }
-        } else {
-            WideView(
-                personas: home.pinned, all: home.everyone, chats: chats, selected: store.path.last, actions: actions
-            ) {
-                chat(back: false)
-            }
-        }
-    }
-
-    @ViewBuilder private func chat(back: Bool) -> some View {
-        if let chat = store.scope(state: \.chat, action: \.chat) {
-            ChatScreen(store: chat, back: back) { store.send(.back) }.id(store.path.last)
-        } else if !back {
-            Text("Pick a chat, or start one with +").foregroundStyle(.secondary).frame(maxHeight: .infinity)
-        }
+extension MenuFeature.State {
+    internal func look(dark: Bool, reduceMotion: Bool) -> Look {
+        let theme = settings.theme
+        let art = server.flatMap { looks.art(theme, on: $0.url) }
+        var look = Look(palette: palette(device: dark), style: style(for: theme) ?? .bundled, art: art)
+        look.moving = settings.moves(reduceMotion: reduceMotion)
+        look.night = settings.night
+        look.sign = art != nil && looks.themes[theme]?.sign == true
+        look.sprites = settings.sprites(in: theme)
+        look.words = looks.themes[theme]?.words ?? [:]
+        return look
     }
 }
 
-internal struct ChatScreen: View {
-    @Bindable internal var store: StoreOf<ChatFeature>
-    internal let back: Bool
-    internal let onBack: () -> Void
+/// The menu bar panel on the app's store (#659): a row opens its chat, then `front` brings the main window forward.
+public struct AppPanel: View {
+    @Environment(\.colorScheme) private var scheme
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    private let store: StoreOf<AppFeature>
+    private let front: () -> Void
+    private let quit: () -> Void
 
-    private var actions: ChatActions {
-        var actions = ChatActions(
-            draft: Binding(get: { store.draft }, set: { store.send(.draftChanged($0)) }),
-            files: store.files.map(\.name),
-            send: { store.send(.send) },
-            attach: { store.send(.attach($0)) },
-            detach: { store.send(.detach($0)) },
-            stop: { store.send(.stop) },
-            steer: { store.send(.steer($0)) },
-            unqueue: { store.send(.unqueue($0)) },
-            answer: { store.send(.answer($0, $1)) },
-            answering: store.answering,
-            back: onBack
-        )
-        actions.retry = { store.send(.retry($0)) }
-        let (places, attachable) = (store.places, store.attachable)
-        actions.places = places.map(\.label)
-        actions.open = { store.send(.plugins(.open(places[$0]))) }
-        actions.attachable = attachable.map(\.name)
-        actions.attachPlugin = { store.send(.plugins(.attach(attachable[$0]))) }
-        return actions
+    public var body: some View {
+        TimelineView(.periodic(from: .now, by: 1)) { context in
+            MenuPanel(store.state.glance(now: context.date)) { tap in
+                switch tap {
+                case .chat(let id):
+                    store.send(.open(id))
+                    front()
+                case .main: front()
+                case .retry: refresh()
+                case .quit: quit()
+                }
+            }
+        }
+        .environment(\.look, store.menu.look(dark: scheme == .dark, reduceMotion: reduceMotion))
+        .task { refresh() }
     }
 
-    internal var body: some View {
-        ChatView(
-            persona: store.persona,
-            items: store.drawn,
-            working: store.working,
-            since: store.since,
-            queued: store.queue.map(\.text),
-            back: back,
-            actions: actions
-        )
-        .task { await store.send(.task).finish() }
-        .task { await store.send(.plugins(.load)).finish() }
-        .sheet(item: $store.scope(state: \.screen, action: \.screen)) { PluginScreenSheet(store: $0) }
-        .sheet(item: $store.scope(state: \.attaching, action: \.attaching)) { AttachSheet(store: $0) }
+    private func refresh() {
+        if store.home != nil { store.send(.home(.refresh)) }
     }
-}
 
-internal struct PersonaScreen: View {
-    @Bindable internal var store: StoreOf<PersonaFeature>
-
-    internal var body: some View {
-        PersonaSheet(
-            draft: $store.draft,
-            agentOpen: $store.agentOpen,
-            memory: PersonaMemory(
-                notes: Listing.memory(store.notes, persona: store.draft.name, now: Date()), count: store.notes.count
-            ),
-            error: store.error,
-            actions: PersonaActions(
-                close: { store.send(.close) }, save: { store.send(.save) }, clear: { store.send(.clearMemory) }
-            )
-        )
-        .disabled(store.busy)
-        .task { await store.send(.task).finish() }
+    public init(store: StoreOf<AppFeature>, front: @escaping () -> Void, quit: @escaping () -> Void) {
+        self.store = store
+        self.front = front
+        self.quit = quit
     }
 }

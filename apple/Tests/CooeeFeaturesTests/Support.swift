@@ -4,6 +4,10 @@ import Synchronization
 
 internal let mini = Server(url: URL(string: "https://mini.local") ?? URL(filePath: "/"), token: "tok")
 internal let coder = APIPersona(id: "coder", name: "Coder", agent: "codex")
+internal let conductor = APIPersona(id: "cond", name: "Conductor", agent: "codex", plugins: ["drover"])
+internal let drover = PluginRow(
+    name: "drover", version: "1", commit: "d", places: [], claims: ["drover"], permissions: PluginPermissions()
+)
 internal let epoch = Date(timeIntervalSince1970: 1_000_000)
 
 internal final class Calls: Sendable {
@@ -34,4 +38,32 @@ internal func row(_ id: String, persona: String = "coder", state: String = "done
         id: id, title: "T \(id)", agent: "codex", persona: persona, state: state, last: "", updated: 999_000_000,
         unseen: 0, archived: archived
     )
+}
+
+internal func lane(_ id: String, item: String = "#33", state: String = "working") -> ThreadRow {
+    ThreadRow(
+        id: id, title: "cooee \(item)", agent: "codex", persona: "", state: state, last: "", updated: 999_000_000,
+        unseen: 0, archived: false,
+        workflow: WorkflowLabel(source: "drover", group: "cooee", item: item, role: "impl", round: "1")
+    )
+}
+
+internal func layout(_ json: String, etag: String = "") -> Layout {
+    // SAFETY: every caller passes a literal layout the tests expect to decode
+    try! Layout(json: Data(json.utf8), etag: etag)
+}
+
+internal let homeScreen = HomeScreen(title: "cooee", blocks: [.object(["type": .string("chats")])])
+
+internal let testLayout = layout(#"{"format":1,"root":{"type":"nav"}}"#)
+
+internal let packStyles: [String: ServedStyle] = ["terminal", "scene"].reduce(into: [:]) { styles, name in
+    let file = URL(filePath: #filePath).deletingLastPathComponent().appending(path: "../../../packs/\(name)/style.json")
+    styles[name] = try? JSONDecoder().decode(ServedStyle.self, from: Data(contentsOf: file.standardized))
+}
+
+internal func served(_ looks: Looks) -> Looks {
+    var looks = looks
+    looks.styles = packStyles
+    return looks
 }

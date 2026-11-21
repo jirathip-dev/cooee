@@ -9,7 +9,6 @@ use std::{thread, time::Duration};
 use serde_json::{Value, json};
 use support::{Cooee, FakeShed, is_item, scratch, version};
 
-/// A lane's labels, as a tool sets them (`role` and `round` vary).
 fn labels<'a>(item: &'a str, role: &'a str, round: &'a str) -> [(&'a str, &'a str); 6] {
     [
         ("source", "drover"),
@@ -21,7 +20,6 @@ fn labels<'a>(item: &'a str, role: &'a str, round: &'a str) -> [(&'a str, &'a st
     ]
 }
 
-/// The Workflow sessions `GET /threads` lists, waiting until there are `n`.
 fn workflow(cooee: &Cooee, n: usize) -> Vec<Value> {
     for _ in 0..250 {
         let rows = cooee.json("/threads");
@@ -77,13 +75,14 @@ fn a_lane_is_listed_with_its_labels_but_never_among_the_agents() {
             &json!("2")
         )
     );
-    let (_, page) = cooee.get("/");
+    let list = cooee.json("/threads");
+    let mine = list.as_array().unwrap().iter().find(|r| r["id"] == own);
+    let mine = mine.expect("the own chat is listed");
     assert!(
-        !page.contains("cooee #33")
-            && !page.contains(&format!("/t/{}", id_of(&rows[0])))
-            && page.contains(&format!(r#"href="/t/{own}""#)),
-        "{page}"
+        mine["title"] == "My own chat" && !mine["workflow"].is_object(),
+        "{mine}"
     );
+    assert_ne!(id_of(&rows[0]), own);
 }
 
 #[test]
@@ -95,16 +94,14 @@ fn a_lane_opens_as_a_chat_that_streams_takes_a_reply_and_stops() {
     shed.lane(lane, &labels("#33", "impl", "2"));
     let id = id_of(&workflow(&cooee, 1)[0]);
 
-    let (status, page) = cooee.get(&format!("/t/{id}"));
-    assert_eq!(status, 200);
-    assert!(page.contains("impl · round 2"), "{page}");
-    assert!(
-        page.contains(r#"href="https://github.com/o/cooee/pull/60""#),
-        "{page}"
-    );
-    assert!(
-        page.contains(r#"id="composer""#) && page.contains(r#"class="stop""#),
-        "{page}"
+    let w = &workflow(&cooee, 1)[0]["workflow"];
+    assert_eq!(
+        (&w["role"], &w["round"], &w["url"]),
+        (
+            &json!("impl"),
+            &json!("2"),
+            &json!("https://github.com/o/cooee/pull/60")
+        )
     );
 
     let cursor = cooee.json(&format!("/threads/{id}/messages"))["cursor"]
@@ -122,7 +119,6 @@ fn a_lane_opens_as_a_chat_that_streams_takes_a_reply_and_stops() {
         .map(|e| e.data["text"].as_str().unwrap())
         .collect();
     assert_eq!(text, "Hello");
-    // The tool's own prompt shows as a message too; the owner's reply shows once.
     shed.input(lane, "\x1e{\"prompt\":\"Fix the bug\"}\n");
     events.until(|e| is_item(e, "agent"));
     let items = cooee.json(&format!("/threads/{id}/messages"))["items"].clone();
@@ -144,25 +140,18 @@ fn a_lane_opens_as_a_chat_that_streams_takes_a_reply_and_stops() {
     );
     assert!(shed.sent(lane).contains(&"\x1e\"cancel\"\n".to_owned()));
     events.until(|e| is_item(e, "agent") && e.data["stop_reason"] == "cancelled");
-
-    // Its tool closes it, not the owner.
-    let (status, _) = cooee.post(&format!("/threads/{id}/close"), &json!({}));
-    assert_eq!(status, 400);
-    assert_eq!(shed.calls("kill", lane), Vec::<Value>::new());
 }
 
 #[test]
 fn a_lane_goes_once_its_tool_removes_it() {
     let dir = scratch("workflow-done");
     let shed = FakeShed::start(&dir.join("shed"), version());
-    // Running before cooee starts: listed from shed's terminals.
     shed.lane("lane-rev", &labels("#31", "rev", "1"));
     let mut cooee = Cooee::start(&dir, &shed.dir);
     shed.lane("lane-impl", &labels("#32", "impl", "1"));
     shed.lane("lane-fix", &labels("#33", "fix", "3"));
     workflow(&cooee, 3);
 
-    // The tool removes it: gone from the list (here at the restart's look at shed's terminals).
     shed.vanish("lane-fix");
     drop(cooee);
     cooee = Cooee::start(&dir, &shed.dir);
@@ -172,4 +161,102 @@ fn a_lane_goes_once_its_tool_removes_it() {
         .collect();
     roles.sort();
     assert_eq!(roles, ["impl", "rev"]);
+}
+
+fn row(cooee: &Cooee, id: &str, until: impl Fn(&Value) -> bool) -> Value {
+    for _ in 0..250 {
+        let rows = cooee.json("/threads");
+        let found = rows.as_array().unwrap().iter().find(|r| r["id"] == id);
+        if let Some(r) = found.filter(|r| until(r)) {
+            return r.clone();
+        }
+        thread::sleep(Duration::from_millis(20));
+    }
+    panic!("no such row {id}: {}", cooee.json("/threads"));
+}
+
+fn lane_id(cooee: &Cooee, item: &str) -> String {
+    let rows = cooee.json("/threads");
+    let found = rows
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|r| r["workflow"]["item"] == item);
+    id_of(found.unwrap())
+}
+
+#[test]
+fn a_parked_dead_or_offline_lane_lists_its_state_and_reason() {
+    let dir = scratch("workflow-states");
+    let shed = FakeShed::start(&dir.join("shed"), version());
+    shed.link("m1", "up", 0, None);
+    let mut cooee = Cooee::start(&dir, &shed.dir);
+    shed.lane("lane-park", &labels("#1", "impl", "1"));
+    shed.lane("lane-dead", &labels("#2", "impl", "1"));
+    shed.lane("m1/lane-off", &labels("#3", "impl", "1"));
+    workflow(&cooee, 3);
+
+    shed.link("m1", "down", 0, Some("refused"));
+    drop(cooee);
+    cooee = Cooee::start(&dir, &shed.dir);
+    let off = row(&cooee, &lane_id(&cooee, "#3"), |r| r["state"] == "offline");
+    assert_eq!(off["workflow"]["item"], "#3");
+    shed.report("lane-park", "parked", Some("waiting on #12"));
+    shed.end("lane-dead");
+    let parked = row(&cooee, &lane_id(&cooee, "#1"), |r| r["state"] == "parked");
+    assert_eq!(parked["note"], "waiting on #12");
+    let dead = row(&cooee, &lane_id(&cooee, "#2"), |r| r["state"] == "ended");
+    assert_eq!(dead["note"], "The agent exited (1).");
+
+    shed.link("m1", "up", 0, None);
+    drop(cooee);
+    cooee = Cooee::start(&dir, &shed.dir);
+    let back = row(&cooee, &lane_id(&cooee, "#3"), |r| r["state"] != "offline");
+    assert!(back.get("note").is_none(), "{back}");
+    assert_eq!(workflow(&cooee, 3).len(), 3);
+}
+
+#[test]
+fn only_a_dead_or_unclaimed_lane_closes_once_and_is_archived() {
+    let dir = scratch("workflow-close");
+    let build = dir.join("data/plugins/drover/builds/c0ffee12345");
+    std::fs::create_dir_all(&build).unwrap();
+    let manifest = "name = \"drover\"\nversion = \"0.1.0\"\nbuild = \"true\"\nrun = \"true\"\nclaims = [\"drover\"]\n\n\
+                    [[places]]\ntype = \"menu-row\"\nlabel = \"Queue\"\nscreen = \"/screens/queue\"\n\n\
+                    [permissions]\nplaces = [\"menu-row\"]\n";
+    std::fs::write(build.join("cooee-plugin.toml"), manifest).unwrap();
+    let lock = json!([{ "name": "drover", "url": "https://example.com/drover", "commit": "c0ffee12345",
+                        "version": "0.1.0", "listed": true, "tabs": [], "port": 1, "enabled": false }]);
+    std::fs::write(dir.join("data/plugins.lock"), lock.to_string()).unwrap();
+    let shed = FakeShed::start(&dir.join("shed"), version());
+    let cooee = Cooee::start(&dir, &shed.dir);
+    let (lane, stray) = ("drover-cooee-9-impl", "stray-1");
+    shed.lane(lane, &labels("#9", "impl", "1"));
+    let mut other = labels("#10", "impl", "1");
+    other[0] = ("source", "other");
+    shed.lane(stray, &other);
+    workflow(&cooee, 2);
+    let (id, foreign) = (lane_id(&cooee, "#9"), lane_id(&cooee, "#10"));
+    let close = |id: &str| cooee.post(&format!("/threads/{id}/close"), &json!({})).0;
+
+    assert_eq!(close(&id), 400);
+    assert_eq!(shed.calls("kill", lane), Vec::<Value>::new());
+
+    shed.end(lane);
+    row(&cooee, &id, |r| r["state"] == "ended");
+    assert_eq!((close(&id), close(&id)), (200, 200));
+    assert_eq!(shed.calls("kill", lane).len(), 1);
+    assert_eq!(shed.calls("rm", lane).len(), 1);
+    let items = cooee.json(&format!("/threads/{id}/messages"))["items"].clone();
+    let ended = items
+        .as_array()
+        .unwrap()
+        .iter()
+        .filter(|i| i["kind"] == "ended");
+    assert_eq!(ended.count(), 1);
+    assert_eq!(row(&cooee, &id, |_| true)["archived"], true);
+
+    assert_eq!(close(&foreign), 200);
+    assert_eq!(shed.calls("kill", stray).len(), 1);
+    assert_eq!(row(&cooee, &foreign, |_| true)["archived"], true);
 }

@@ -1,7 +1,7 @@
 import CooeeCore
 import SwiftUI
 
-public struct Palette: Sendable {
+public struct Palette: Sendable, Equatable {
     public static let farmDark = Palette(
         background: .hex(0x0f1a13), card: .hex(0x1d1a12), edge: .hex(0x3b3a27), line: .hex(0x26301f),
         foreground: .hex(0xece4cc), mute: .hex(0xa3a68a), lead: .hex(0xecdba6), link: .hex(0x7cc4f0),
@@ -44,6 +44,22 @@ public struct Palette: Sendable {
     }
 }
 
+extension Palette {
+    /// A pack's scheme, from its `--bg`, `--fg`, … tokens; nil when one is missing or not `#rrggbb`.
+    public init?(tokens: [String: String], dark: Bool) {
+        let keys = [
+            "--bg", "--card", "--edge", "--line", "--fg", "--mute", "--l", "--link", "--g", "--a", "--r", "--p", "--c",
+        ]
+        let colors = keys.compactMap { key in tokens[key].flatMap(Color.hex) }
+        guard colors.count == keys.count else { return nil }
+        self.init(
+            background: colors[0], card: colors[1], edge: colors[2], line: colors[3], foreground: colors[4],
+            mute: colors[5], lead: colors[6], link: colors[7], green: colors[8], amber: colors[9], red: colors[10],
+            purple: colors[11], cyan: colors[12], dark: dark
+        )
+    }
+}
+
 extension Color {
     internal static func hex(_ value: UInt32) -> Color {
         Color(
@@ -52,19 +68,40 @@ extension Color {
             blue: Double(value & 0xff) / 255
         )
     }
+
+    internal static func hex(_ token: String) -> Color? {
+        token.count == 7 && token.hasPrefix("#") ? UInt32(token.dropFirst(), radix: 16).map(hex) : nil
+    }
 }
 
 public struct Look: Sendable {
     public var palette: Palette
-    public var style: LookStyle
+    public var style: Style
     public var still: Bool
+    public var art: URL?
+    public var moving = false
+    public var night: Bool?
+    public var sign = false
+    public var cast = Cast.farm
+    public var sprites: [String: String] = [:]
+    public var drawn: [String: PixelFigure] = [:]
+    public var vectors: [String: String] = [:]
+    public var tokens: [String: String] = [:]
+    public var words: [String: String] = [:]
 
-    internal var mono: Bool { style == .terminal }
-
-    public init(palette: Palette = .farmDark, style: LookStyle = .modern, still: Bool = false) {
+    public init(palette: Palette = .farmDark, style: Style = .bundled, still: Bool = false, art: URL? = nil) {
         self.palette = palette
         self.style = style
         self.still = still
+        self.art = art
+    }
+
+    internal func word(_ state: LaneState) -> String {
+        words[state.rawValue] ?? state.word
+    }
+
+    internal func coat(_ persona: Persona) -> String {
+        cast.pick(persona.seed, override: sprites[persona.seed] ?? persona.look.coat)
     }
 }
 
@@ -76,80 +113,5 @@ extension EnvironmentValues {
     public var look: Look {
         get { self[LookKey.self] }
         set { self[LookKey.self] = newValue }
-    }
-}
-
-extension View {
-    internal func ui(_ size: CGFloat, _ weight: Font.Weight = .regular, _ look: Look) -> some View {
-        font(.system(size: size, weight: weight, design: look.mono ? .monospaced : .default))
-    }
-
-    internal func surface(_ look: Look, radius: CGFloat = 22, interactive: Bool = false) -> some View {
-        modifier(Surface(look: look, radius: radius, interactive: interactive))
-    }
-}
-
-internal struct Surface: ViewModifier {
-    internal let look: Look
-    internal let radius: CGFloat
-    internal let interactive: Bool
-
-    internal func body(content: Content) -> some View {
-        let palette = look.palette
-        switch look.style {
-        case .terminal:
-            content.background(palette.card.opacity(0.6))
-                .overlay(Rectangle().strokeBorder(palette.edge, style: StrokeStyle(lineWidth: 1, dash: [3, 2])))
-        case .scene:
-            content.background(palette.card, in: .rect(cornerRadius: radius * 0.6))
-                .overlay(RoundedRectangle(cornerRadius: radius * 0.6).strokeBorder(palette.edge, lineWidth: 1.5))
-        case .modern where look.still:
-            content.background(stillGlass(palette)).overlay(stillRim(palette))
-        case .modern:
-            content.glassEffect(interactive ? .regular.interactive() : .regular, in: .rect(cornerRadius: radius))
-        }
-    }
-
-    private func stillGlass(_ palette: Palette) -> some View {
-        RoundedRectangle(cornerRadius: radius)
-            .fill(palette.dark ? Color.white.opacity(0.09) : Color.white.opacity(0.62))
-            .shadow(color: .black.opacity(palette.dark ? 0.35 : 0.10), radius: 10, y: 4)
-    }
-
-    private func stillRim(_ palette: Palette) -> some View {
-        RoundedRectangle(cornerRadius: radius).strokeBorder(
-            LinearGradient(
-                colors: [.white.opacity(palette.dark ? 0.28 : 0.9), .white.opacity(0.04)],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            ),
-            lineWidth: 1
-        )
-    }
-}
-
-internal struct Backdrop: View {
-    @Environment(\.look) private var look
-
-    internal var body: some View {
-        let palette = look.palette
-        ZStack {
-            palette.background
-            if look.style == .modern {
-                RadialGradient(
-                    colors: [palette.lead.opacity(palette.dark ? 0.10 : 0.22), .clear],
-                    center: .topLeading,
-                    startRadius: 10,
-                    endRadius: 420
-                )
-                RadialGradient(
-                    colors: [palette.cyan.opacity(palette.dark ? 0.08 : 0.12), .clear],
-                    center: .bottomTrailing,
-                    startRadius: 10,
-                    endRadius: 520
-                )
-            }
-        }
-        .ignoresSafeArea()
     }
 }

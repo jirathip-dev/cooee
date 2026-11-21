@@ -36,7 +36,7 @@ internal struct RunBlock: View {
         var values: [String: JSONValue] = ["choice": .string(choice)]
         if choice == "approve" { values["sha"] = block["sha"] }
         let content = label()
-        return ActButton(action: block.string("action"), source: source, values: values) {
+        return ActButton(action: block.string("action"), block: block.id, source: source, values: values) {
             content
         }
     }
@@ -52,7 +52,7 @@ internal struct SecretBlock: View {
     internal var body: some View {
         let palette = look.palette
         let name = block.string("name") ?? ""
-        let poster = context.poster.map { "the \($0) plugin" } ?? "its plugin"
+        let poster = context.poster.map { $0 == .core ? "cooee" : "the \($0.name) plugin" } ?? "its plugin"
         VStack(alignment: .leading, spacing: 10) {
             Button {
                 editing = true
@@ -115,8 +115,8 @@ internal struct FieldsBlock: View {
     internal var body: some View {
         let edits = live ?? (block["submit"] == nil ? shared ?? $own : $own)
         VStack(alignment: .leading, spacing: 10) {
-            ForEach(Array(block.list("fields").enumerated()), id: \.offset) { _, field in
-                FieldRow(field: field, edits: edits)
+            ForEach(block.list("fields").keyed(by: "name")) { field in
+                FieldRow(field: field.element, edits: edits)
             }
             if let submit = block["submit"] {
                 ActButton(source: submit, values: block.fieldValues.merging(own) { $1 }) {
@@ -129,6 +129,7 @@ internal struct FieldsBlock: View {
 
 internal struct FieldRow: View {
     @Environment(\.look) private var look
+    @Environment(\.focus) private var focus
     @State private var editing = false
     @State private var draft = ""
     internal let field: JSONValue
@@ -158,8 +159,11 @@ internal struct FieldRow: View {
             }
             .padding(.horizontal, 12).frame(minHeight: 38).padding(.vertical, note == nil ? 0 : 4)
             .background(palette.background.opacity(0.5), in: .rect(cornerRadius: 10))
+            .overlay {
+                if focus == name { RoundedRectangle(cornerRadius: 10).strokeBorder(palette.lead, lineWidth: 2) }
+            }
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.plain).id(name)
         .alert(field.string("label") ?? name, isPresented: typing) { editor }
         .confirmationDialog(field.string("label") ?? name, isPresented: picking) {
             ForEach(field.list("options").compactMap(\.string), id: \.self) { option in

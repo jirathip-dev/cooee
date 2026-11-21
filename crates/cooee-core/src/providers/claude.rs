@@ -1,6 +1,13 @@
 use std::sync::Arc;
 
-use crate::{Entry, Provider, Ran, Spec, Status, Usage, Window, login::one_line};
+use serde_json::json;
+
+use crate::{
+    Entry, Provider, Ran, Spec, Status, Usage, Window,
+    action::{Action, Call},
+    login::one_line,
+    provider::{Builtin, Channel, Setup, Want},
+};
 
 /// Claude Code: `claude auth status`'s JSON, `/usage`'s `N% used · resets …` lines (read in UTC, nonessential traffic
 /// on), `CLAUDE_CONFIG_DIR` as its account and settings folder (herdsman#565), and an inherited
@@ -11,10 +18,21 @@ pub struct Claude(Spec);
 pub const ENTRY: Entry = Entry {
     name: "claude",
     defaults,
+    keep: &[],
     build: |s| Arc::new(Claude(s)),
 };
 
 const TOKEN: &str = "CLAUDE_CODE_OAUTH_TOKEN";
+
+const KEPT: &str = "Read Write Edit NotebookEdit Glob Grep Bash TaskStop TodoWrite TaskCreate TaskGet TaskUpdate TaskList";
+
+const ASKS: [&str; 7] = ["Read", "Glob", "Grep", "Bash", "Write", "Edit", "NotebookEdit"];
+
+const OFFABLE: [(Builtin, &[&str]); 3] = [
+    (Builtin::Web, &["WebSearch", "WebFetch"]),
+    (Builtin::SubAgents, &["Agent", "Workflow"]),
+    (Builtin::Skills, &["Skill"]),
+];
 
 fn defaults() -> Spec {
     let v = |s: &str| s.split(' ').map(str::to_owned).collect();
@@ -28,6 +46,7 @@ fn defaults() -> Spec {
         logout: v("claude auth logout"),
         settings: "CLAUDE_CONFIG_DIR".into(),
         usage: v("env -u CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC TZ=UTC claude -p /usage"),
+        cheapest: "haiku".into(),
         ..Spec::default()
     }
 }
@@ -41,8 +60,10 @@ impl Provider for Claude {
         let Ok(v @ serde_json::Value::Object(_)) = serde_json::from_str(&ran.stdout) else {
             return crate::login::plain_status(ran);
         };
-        let who = v["email"].as_str().or(v["orgName"].as_str());
-        let s = match (v["loggedIn"].as_bool(), v["authMethod"].as_str(), who) {
+        let str = |k: &str| v.get(k).and_then(serde_json::Value::as_str);
+        let who = str("email").or(str("orgName"));
+        let logged_in = v.get("loggedIn").and_then(serde_json::Value::as_bool);
+        let s = match (logged_in, str("authMethod"), who) {
             (Some(true), Some(how), Some(who)) => {
                 Status::said(true, &format!("signed in · {how} ({who})"))
             }
@@ -75,6 +96,48 @@ impl Provider for Claude {
         };
         (u.five_hour.is_some() || u.seven_day.is_some()).then_some(u)
     }
+
+    fn session(&self, want: &Want) -> Setup {
+        let mut tools = KEPT.split(' ').collect::<Vec<_>>();
+        for (b, names) in OFFABLE {
+            if !want.off.contains(&b) {
+                tools.extend(names);
+            }
+        }
+        let excludes = ["{/Users/*,/home/*,/root}/.claude/{CLAUDE.md,rules/**}"];
+        let mut settings = json!({ "claudeMdExcludes": excludes,
+                                   "autoMemoryEnabled": !want.off.contains(&Builtin::Memory) });
+        if want.ask_all {
+            let ask: Vec<&str> = tools.iter().copied().filter(|t| ASKS.contains(t) || t.starts_with("Web")).collect();
+            let ask = json!({ "defaultMode": "default", "disableAutoMode": "disable",
+                              "disableBypassPermissionsMode": "disable", "ask": ask });
+            settings.as_object_mut().map(|s| s.insert("permissions".to_owned(), ask));
+        }
+        let options = json!({
+            "settingSources": ["project", "local"],
+            "strictMcpConfig": true,
+            "tools": tools,
+            "settings": settings,
+        });
+        Setup {
+            meta: Some(json!({
+                "systemPrompt": { "append": want.brief, "excludeDynamicSections": true },
+                "claudeCode": { "options": options },
+            })),
+            brief: Channel::System,
+            ..Setup::default()
+        }
+    }
+
+    fn action(&self, call: &Call) -> Action {
+        let mcp = call.title.strip_prefix("mcp__").and_then(|t| t.split_once("__"));
+        match mcp {
+            Some((server, tool)) if !server.is_empty() && !tool.is_empty() => {
+                Action::tool(server, tool)
+            }
+            _ => Action::plain(call),
+        }
+    }
 }
 
 fn window(line: &str, now: u64) -> Option<Window> {
@@ -99,7 +162,7 @@ fn window(line: &str, now: u64) -> Option<Window> {
         }
         Some(d) => {
             let (mon, day) = d.split_once(' ')?;
-            let month = MONTHS.iter().position(|m| *m == mon)? as u64 + 1;
+            let month = u64::try_from(MONTHS.iter().position(|m| *m == mon)?).ok()? + 1;
             let (day, year) = (day.parse().ok()?, 1970 + now / 31_556_952);
             (year - 1..=year + 1)
                 .filter_map(|y| Some(civil_days(y, month, day)? * 86_400 + secs))
@@ -123,8 +186,6 @@ fn civil_days(y: u64, m: u64, d: u64) -> Option<u64> {
 mod tests {
     use super::*;
 
-    /// #183: `/usage`'s reset times, read at a fixed clock: a date's next occurrence (the next year's past
-    /// December), a time alone today or tomorrow; a line in another shape is no window.
     #[test]
     fn usage_windows_from_the_usage_lines() {
         let day = |y, m, d| civil_days(y, m, d).unwrap() * 86_400;

@@ -2,22 +2,28 @@ import Foundation
 
 public struct Place: Codable, Sendable, Equatable, Identifiable {
     private enum CodingKeys: String, CodingKey {
-        case plugin, label, screen
+        case plugin, label, screen, count
         case key = "id"
+        case kind = "type"
     }
 
     public let plugin: String
     public let key: String
     public let label: String
     public let screen: String
+    public var count: Int?
+    public var kind: String?
 
     public var id: String { "\(plugin)\(screen)" }
+    public var cards: Bool { kind == "chat-cards" }
 
-    public init(plugin: String, key: String, label: String, screen: String) {
+    public init(plugin: String, key: String, label: String, screen: String, count: Int? = nil, kind: String? = nil) {
+        self.kind = kind
         self.plugin = plugin
         self.key = key
         self.label = label
         self.screen = screen
+        self.count = count
     }
 }
 
@@ -57,22 +63,10 @@ public struct PluginRow: Codable, Sendable, Equatable, Identifiable {
     public let url: String
     public let listed: Bool
     public let places: [PluginPlace]
+    public let claims: [String]
     public let permissions: PluginPermissions
 
     public var id: String { name }
-
-    public var source: String { listed ? "cooee's index" : url }
-
-    public var may: [String] {
-        let lines = places.map { place in
-            switch place.kind {
-            case "header-strip": "\(place.label) chip on the header strip"
-            case "chat-cards": "cards in its chats"
-            default: "\(place.label) row in Plugins"
-            }
-        }
-        return lines + (permissions.push ? ["notifications"] : [])
-    }
 
     public init(
         name: String,
@@ -81,6 +75,7 @@ public struct PluginRow: Codable, Sendable, Equatable, Identifiable {
         url: String = "",
         listed: Bool = true,
         places: [PluginPlace],
+        claims: [String] = [],
         permissions: PluginPermissions
     ) {
         self.name = name
@@ -89,6 +84,7 @@ public struct PluginRow: Codable, Sendable, Equatable, Identifiable {
         self.url = url
         self.listed = listed
         self.places = places
+        self.claims = claims
         self.permissions = permissions
     }
 }

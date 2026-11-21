@@ -1,0 +1,160 @@
+import Foundation
+
+public enum MemberState: String, Sendable, Equatable {
+    case waiting
+    case upNext = "up next"
+    case replying, replied, passed
+    case asking = "asks you"
+}
+
+public struct RoomRound: Sendable, Equatable {
+    public static let seats = 2...5
+    public static let turns = 6
+    public static let deadline = 600
+
+    public private(set) var turn = 0
+    public private(set) var since: Date?
+    public private(set) var passed: [String] = []
+    public private(set) var asking: String?
+    private var paused: Date?
+    private var states: [String: MemberState] = [:]
+    private var current: String?
+
+    public var running: Bool { since != nil }
+
+    public init() {}
+
+    public func state(_ member: String) -> MemberState { member == asking ? .asking : states[member] ?? .waiting }
+
+    public mutating func asks(_ member: String, when: Date) {
+        asking = member
+        paused = paused ?? when
+    }
+
+    public mutating func answered(when: Date) {
+        if let paused, let since { self.since = since + when.timeIntervalSince(paused) }
+        asking = nil
+        paused = nil
+    }
+
+    public mutating func asked(_ members: [String], named: [String], when: Date) {
+        queue(members, named: named)
+        turn = 0
+        since = when
+        passed = []
+    }
+
+    /// The members a message naming `named` queues, as its round shows them: the named ones, else everyone, up next.
+    public mutating func queue(_ members: [String], named: [String]) {
+        states = Dictionary(
+            uniqueKeysWithValues: members.map { member in
+                let next: MemberState = named.isEmpty || named.contains(member) ? .upNext : .waiting
+                return (member, member == current ? .replying : next)
+            })
+    }
+
+    public mutating func began(_ member: String) {
+        settle()
+        turn += 1
+        current = member
+        states[member] = .replying
+    }
+
+    public mutating func replied(_ member: String) {
+        states[member] = .replied
+        if member == current { current = nil }
+    }
+
+    public mutating func ended(_ reason: String) {
+        guard reason != "cap" else { return }
+        if reason == "done" {
+            settle()
+        } else if let current {
+            states[current] = .waiting
+        }
+        current = nil
+        since = nil
+        asking = nil
+        paused = nil
+        states = states.mapValues { $0 == .upNext ? .waiting : $0 }
+    }
+
+    private mutating func settle() {
+        guard let current, states[current] == .replying else { return }
+        states[current] = .passed
+        passed.append(current)
+        self.current = nil
+    }
+}
+
+public enum RoomOrder {
+    public static func move(_ members: [String], _ member: String, to place: Int) -> [String] {
+        guard let from = members.firstIndex(of: member) else { return members }
+        var moved = members
+        moved.remove(at: from)
+        moved.insert(member, at: min(max(place, 0), moved.count))
+        return moved
+    }
+
+    public static func ordinal(_ place: Int) -> String {
+        let suffix = (11...13).contains(place % 100) ? "th" : ["th", "st", "nd", "rd"][place % 10 < 4 ? place % 10 : 0]
+        return "\(place)\(suffix)"
+    }
+}
+
+public enum RoomItems {
+    public static func build(_ items: [APIItem], names: [String: String], last: RoomRound) -> [Item] {
+        var out: [Item] = []
+        var turns = 0
+        for item in items {
+            if item.kind == "you" {
+                if !out.isEmpty { out.append(.divider(id: -item.id, text: ended(turns, passed: []))) }
+                turns = 0
+            }
+            guard item.kind == "agent", let speaker = item.speaker, !speaker.isEmpty else {
+                ChatItems.append(item, to: &out)
+                continue
+            }
+            turns += 1
+            let markdown = Markdown.blocks(item.text ?? "")
+            out.append(.said(id: item.id, speaker: speaker, time: Clock.time(item.time), markdown: markdown))
+        }
+        if !last.running && last.turn > 0 {
+            out.append(.divider(id: Int.min, text: ended(last.turn, passed: last.passed.map { names[$0] ?? $0 })))
+        }
+        return out
+    }
+
+    public static func ended(_ turns: Int, passed: [String]) -> String {
+        (["round ended", turns == 1 ? "1 turn" : "\(turns) turns"] + passed.map { "\($0) passed" })
+            .joined(separator: " · ")
+    }
+}
+
+public enum Clock {
+    public static func time(_ milliseconds: Int64, in zone: TimeZone = .current) -> String {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.dateFormat = "HH:mm"
+        formatter.timeZone = zone
+        return formatter.string(from: Date(timeIntervalSince1970: Double(milliseconds) / 1000))
+    }
+
+    /// `Today 09:50`, or the day and the time when it is not `now`'s day.
+    public static func day(_ milliseconds: Int64, now: Date, in zone: TimeZone = .current) -> String {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = zone
+        let date = Date(timeIntervalSince1970: Double(milliseconds) / 1000)
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.dateFormat = "d MMM"
+        formatter.timeZone = zone
+        let day = calendar.isDate(date, inSameDayAs: now) ? "Today" : formatter.string(from: date)
+        return "\(day) \(time(milliseconds, in: zone))"
+    }
+
+    public static func round(_ seconds: Int) -> String {
+        let seconds = max(0, seconds)
+        return "\(seconds / 60):\(String(format: "%02d", seconds % 60))"
+    }
+}

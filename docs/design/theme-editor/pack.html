@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>cooee · theme editor (#307): Look, the pack, the Mac editor</title>
+<link rel="stylesheet" href="../../../design-system/app.css">
+<link rel="stylesheet" href="../native-shell/ns.css">
+<link rel="stylesheet" href="te.css">
+<script type="module" src="te.js"></script>
+</head>
+<body>
+<div class="gal">
+
+<!-- Look (today's page): the new pack sits in Theme with the others, picked and applied; New theme… and Edit start the editor. -->
+<div class="fr"><p class="cap">Look · Tidepool saved, in the list, applied</p>
+<section class="ph" data-f="look">
+  <nav class="tnav"><a href="#" data-tx="< settings">‹ Settings</a><b>Look</b><span></span></nav>
+  <div class="tbody">
+    <div class="wrn ok"><p><b>Tidepool saved on mini</b> · passed the theme gate · applied here, no restart</p></div>
+    <p class="gh">Theme</p>
+    <div class="gs">
+      <a class="gr" href="#"><span class="sk">Farm</span></a>
+      <a class="gr" href="#"><span class="sk">Garden</span></a>
+      <a class="gr" href="#"><span class="sk">Kitchen</span></a>
+      <a class="gr" href="#"><span class="sk">Plain</span></a>
+      <a class="gr" href="#"><span data-crab="done"></span><span class="sk">Tidepool</span><span class="tag">yours</span><span class="ck">✓</span></a>
+    </div>
+    <div class="gs" style="margin-top:12px">
+      <a class="gr lk" href="#"><span class="sk">Edit Tidepool…</span><span class="cv2">›</span></a>
+      <a class="gr lk" href="#"><span class="sk">New theme…</span><span class="cv2">›</span></a>
+    </div>
+    <p class="gf">A theme you make is a folder on mini: <code>themes/tidepool/</code>. You or an agent can edit its files by hand.</p>
+    <p class="gh">Scheme</p>
+    <div class="gs"><a class="gr" href="#"><span class="sk">System</span><span class="ck">✓</span></a><a class="gr" href="#"><span class="sk">Light</span></a><a class="gr" href="#"><span class="sk">Dark</span></a></div>
+    <p class="gh">Style</p>
+    <div class="gs"><a class="gr" href="#"><span class="sk">Modern</span></a><a class="gr" href="#"><span class="sk">Terminal</span></a><a class="gr" href="#"><span class="sk">Scene</span></a></div>
+  </div>
+</section></div>
+
+<!-- Look after a hand edit broke the pack: one amber line; the last good Tidepool stays applied. -->
+<div class="fr"><p class="cap">Look · a hand edit broke the pack: last good kept</p>
+<section class="ph" data-f="look-broken">
+  <nav class="tnav"><a href="#" data-tx="< settings">‹ Settings</a><b>Look</b><span></span></nav>
+  <div class="tbody">
+    <div class="wrn"><p><b>tidepool: sprites.svg has no s-fail</b> · the last good Tidepool is kept · <a href="#">Open in the editor</a></p></div>
+    <p class="gh">Theme</p>
+    <div class="gs">
+      <a class="gr" href="#"><span class="sk">Farm</span></a>
+      <a class="gr" href="#"><span class="sk">Garden</span></a>
+      <a class="gr" href="#"><span class="sk">Kitchen</span></a>
+      <a class="gr" href="#"><span class="sk">Plain</span></a>
+      <a class="gr" href="#"><span data-crab="done"></span><span class="sk">Tidepool</span><span class="tag">last good</span><span class="ck">✓</span></a>
+    </div>
+    <div class="gs" style="margin-top:12px">
+      <a class="gr lk" href="#"><span class="sk">Edit Tidepool…</span><span class="cv2">›</span></a>
+      <a class="gr lk" href="#"><span class="sk">New theme…</span><span class="cv2">›</span></a>
+    </div>
+    <p class="gf">The editor opens the files as they are on disk and shows what the gate refused.</p>
+  </div>
+</section></div>
+
+<!-- The pack: the draft preview on top, then style, figures, scene, colours, words. Save is off until the gate passes. -->
+<div class="fr"><p class="cap">The pack · one thing to fix before saving</p>
+<section class="ph" data-f="pack">
+  <nav class="tnav"><a href="#" data-tx="< look">‹ Look</a><b>Tidepool</b><a class="sv off" href="#" data-tx="[save]">Save</a></nav>
+  <div class="tbody" style="padding-top:8px">
+    <div class="pvw"><div class="pv" data-rows="3" data-what="home" data-mode="light"></div></div>
+    <div class="pvc"><span class="chip on">Home</span><span class="chip">Chat</span><span class="chip">Dark</span><span class="chip on">Light</span></div>
+    <div class="wrn"><p><b>1 to fix before saving.</b> Light colours: <i>working</i> is 2.8:1 on cards and 2.7:1 on an amber header; the gate needs 3:1. <a href="#">Fix…</a></p></div>
+    <p class="gh">Style</p>
+    <div class="sgw"><div class="seg" role="radiogroup" data-sty><button data-v="modern" role="radio" aria-checked="false">Modern</button><button data-v="terminal" role="radio" aria-checked="false">Terminal</button><button data-v="scene" role="radio" aria-checked="false">Scene</button></div></div>
+    <p class="gh">Figures · 10 of 10</p>
+    <div class="tls" data-y="tiles"></div>
+    <p class="gh">Scene, colours, words</p>
+    <div class="gs">
+      <a class="gr" href="#"><span class="bth" data-scene></span><span class="sk">Backdrop · 4 layers</span><span class="sv">390 × 188</span><span class="cv2">›</span></a>
+      <a class="gr" href="#"><span class="sk">Dark colours</span><span class="sv"><span class="gs3">✓ passes</span></span><span class="cv2">›</span></a>
+      <a class="gr" href="#"><span class="sk">Light colours</span><span class="sv"><span class="gs3 bad">✗ 1 to fix</span></span><span class="cv2">›</span></a>
+      <a class="gr" href="#"><span class="sk">Words</span><span class="sv">7 of 9 · waving, basking…</span><span class="cv2">›</span></a>
+    </div>
+  </div>
+</section></div>
+
+<!-- 1440: the Mac editor: the pack's parts on the left, the canvas, the live preview on the right; Save in the title bar. -->
+<div class="fr w"><p class="cap">1440 · the Mac: draw on the left, see it live on the right</p>
+<section class="mac" data-f="wide-mac">
+  <header class="mtb"><span class="lights"><i></i><i></i><i></i></span>
+    <span class="mt"><b>Tidepool</b><small>themes/tidepool/ on mini · saved 09:38</small></span>
+    <div class="seg" role="radiogroup" data-sty><button data-v="modern" role="radio" aria-checked="false">Modern</button><button data-v="terminal" role="radio" aria-checked="false">Terminal</button><button data-v="scene" role="radio" aria-checked="false">Scene</button></div>
+    <span class="fil"></span><span class="gs3">✓ theme gate passes</span><button class="sv2" type="button">Save ⌘S</button>
+  </header>
+  <aside class="msd">
+    <h4>Pack</h4>
+    <a href="#"><span>Name, style, words</span><small>7 of 9</small></a>
+    <h4>Colours</h4>
+    <a href="#"><span>Dark</span><small class="ok">✓</small></a>
+    <a href="#"><span>Light</span><small class="ok">✓</small></a>
+    <h4>Figures · 24 × 24</h4>
+    <a href="#"><span data-crab="edit"></span><span>s-edit</span><small>2 frames</small></a>
+    <a href="#"><span data-crab="read"></span><span>s-read</span></a>
+    <a href="#"><span data-crab="run"></span><span>s-run</span></a>
+    <a href="#"><span data-crab="idle"></span><span>s-idle</span></a>
+    <a href="#"><span data-crab="done"></span><span>s-done</span></a>
+    <a class="on" href="#"><span data-crab="needs:2"></span><span>s-needs</span><small>2 frames</small></a>
+    <a href="#"><span data-crab="merged"></span><span>s-merged</span></a>
+    <a href="#"><span data-crab="fail"></span><span>s-fail</span></a>
+    <h4>Big · 132 × 100</h4>
+    <a href="#"><span>s-loading, s-empty</span><small>2</small></a>
+    <a href="#"><span>Scene poses</span><small>6 of 6</small></a>
+    <h4>Scene</h4>
+    <a href="#"><span>Backdrop · sky, sea, rocks, sand</span><small>night</small></a>
+  </aside>
+  <main class="mcv">
+    <div class="hd"><b>s-needs · waving</b><span class="m">frame 2 of 2</span><small>pen · figure 1 · mirror on</small></div>
+    <div class="row">
+      <div class="tbx" data-y="tools" data-ks="pen fill erase line mir pick undo imp"></div>
+      <div data-grid="needs:2:1"></div>
+    </div>
+    <div class="frs"><div data-y="frames" data-st="needs" style="display:flex;gap:8px"></div><span class="lp">loops 2 frames · 0.6 s<br>onion skin: frame 1</span></div>
+    <div class="pls" data-y="swatches"></div>
+  </main>
+  <aside class="mpv">
+    <h4><span>Live preview · the real screens</span><span>draft, not saved</span></h4>
+    <div class="pvc"><span class="chip on">iPhone</span><span class="chip">Mac</span><span class="chip on">Dark</span><span class="chip">Light</span></div>
+    <div class="pv" data-what="home" data-rows="3" data-mode="dark"></div>
+    <div class="pv" data-what="chat" data-mode="light" data-fixed></div>
+  </aside>
+</section></div>
+
+</div>
+</body>
+</html>

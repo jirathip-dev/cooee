@@ -1,0 +1,20 @@
+{
+  "type": "screen",
+  "id": "plugins",
+  "title": "Plugins",
+  "blocks": [
+    {
+      "type": "list",
+      "id": "plugins",
+      "rows": [
+        {
+          "type": "row",
+          "id": "drover",
+          "title": "drover",
+          "subtitle": "0.1.0"
+        }
+      ]
+    }
+  ],
+  "source": "core"
+}

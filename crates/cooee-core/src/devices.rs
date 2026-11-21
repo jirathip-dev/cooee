@@ -1,24 +1,20 @@
-//! Paired devices (herdsman's `devices.rs`): `cooee pair` opens a six-digit code for 10 minutes; the browser that
-//! enters it gets a random token as its cookie. Only SHA-256 hashes of codes and tokens are kept, in
-//! `<data>/devices.json` (mode 0600). Five wrong codes drop the open one. The other way round (#47): a new device asks
-//! to pair and shows a check word; a paired device approves it (with its passkey) or declines; the new device then
-//! collects its token with the claim it was given. Passkeys (their public keys) are kept here too.
-
 use std::{
     fmt::Write as _,
     fs,
     io::{self, Read, Write},
-    os::unix::fs::OpenOptionsExt,
+    os::unix::fs::{MetadataExt, OpenOptionsExt},
     path::{Path, PathBuf},
-    sync::atomic::{AtomicU64, Ordering},
+    sync::{
+        Mutex, MutexGuard, PoisonError,
+        atomic::{AtomicU64, Ordering},
+    },
+    time::SystemTime,
 };
 
 use serde::{Deserialize, Serialize};
 
-/// How long a pairing code is good for, in milliseconds.
 const CODE_TTL: u64 = 10 * 60 * 1000;
 
-/// Wrong codes before the open one is dropped.
 const MISSES: u32 = 5;
 
 /// One paired browser.
@@ -51,19 +47,16 @@ pub struct Passkey {
     pub key: String,
 }
 
-#[derive(Debug, Default, Serialize, Deserialize)]
+#[derive(Debug, Default, Clone, Serialize, Deserialize)]
 #[serde(default)]
 struct File {
     devices: Vec<Device>,
-    /// The open code's hash and when it was made.
     code: Option<(String, u64)>,
     misses: u32,
     asks: Vec<Request>,
     passkeys: Vec<Credential>,
 }
 
-/// A new device's open request to pair: its claim's hash, the check word it shows, what it is, when it asked and the
-/// answer (`None`: waiting; the answering device's label with yes or no).
 #[derive(Debug, Clone, Serialize, Deserialize)]
 struct Request {
     claim: String,
@@ -73,10 +66,8 @@ struct Request {
     answer: Option<(bool, String)>,
 }
 
-/// Open requests kept at once; a newer one drops the oldest.
 const REQUESTS: usize = 4;
 
-/// How long a request waits for an answer, in milliseconds.
 const ASK_TTL: u64 = 5 * 60 * 1000;
 
 /// What a new device's claim finds: its request gone (expired, cancelled or never made), still waiting, declined (by
@@ -125,7 +116,6 @@ pub struct Credential {
     pub used: u64,
 }
 
-/// Two words from a fixed list, so a check word is never mistaken for a code.
 const WORDS: [[&str; 16]; 2] = [
     [
         "maple", "amber", "river", "cedar", "coral", "misty", "sunny", "quiet", "swift", "lucky",
@@ -137,25 +127,19 @@ const WORDS: [[&str; 16]; 2] = [
     ],
 ];
 
-/// A six-digit code.
 fn six() -> io::Result<String> {
-    let b = random(4)?;
-    Ok(format!(
-        "{:06}",
-        u32::from_be_bytes([b[0], b[1], b[2], b[3]]) % 1_000_000
-    ))
+    let b: [u8; 4] = random(4)?.try_into().unwrap_or_default();
+    Ok(format!("{:06}", u32::from_be_bytes(b) % 1_000_000))
 }
 
 impl File {
-    /// Drops the requests older than [`ASK_TTL`].
     fn expire(&mut self, now: u64) {
         self.asks.retain(|r| r.at + ASK_TTL > now);
     }
 
-    /// Adds a device with `token`, named `label` (its id: `id`, else from the token's hash); the device.
     fn add(&mut self, token: &str, id: Option<String>, label: &str, now: u64) -> &mut Device {
         let hash = sha256(token.as_bytes());
-        self.devices.push(Device {
+        self.devices.push_mut(Device {
             id: id.unwrap_or_else(|| hash[..8].to_owned()),
             label: label.to_owned(),
             hash,
@@ -163,14 +147,24 @@ impl File {
             used: now,
             by: String::new(),
             passkey: None,
-        });
-        self.devices.last_mut().expect("just pushed")
+        })
     }
 }
 
-/// The paired devices of one data folder.
+/// The paired devices of one data folder, parsed again only when the file changes (its mtime, size or inode).
 pub struct Devices {
     path: PathBuf,
+    cache: Mutex<Option<(Stamp, File)>>,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+struct Stamp(SystemTime, u64, u64);
+
+impl Stamp {
+    fn of(path: &Path) -> io::Result<Self> {
+        let m = fs::metadata(path)?;
+        Ok(Self(m.modified()?, m.len(), m.ino()))
+    }
 }
 
 /// SHA-256 of `data`, lowercase hex.
@@ -180,10 +174,9 @@ pub fn sha256(data: &[u8]) -> String {
     hex(&sha2::Sha256::digest(data))
 }
 
-/// Lowercase hex.
 fn hex(bytes: &[u8]) -> String {
     bytes.iter().fold(String::new(), |mut s, b| {
-        let _ = write!(s, "{b:02x}");
+        write!(s, "{b:02x}").ok();
         s
     })
 }
@@ -234,7 +227,6 @@ pub fn write_private(path: &Path, bytes: &[u8]) -> io::Result<()> {
     fs::File::open(dir)?.sync_all()
 }
 
-/// Constant-time equality.
 fn same(a: &str, b: &str) -> bool {
     a.len() == b.len() && a.bytes().zip(b.bytes()).fold(0, |d, (x, y)| d | (x ^ y)) == 0
 }
@@ -261,19 +253,33 @@ impl Devices {
     pub fn new(data: &Path) -> Self {
         Self {
             path: data.join("devices.json"),
+            cache: Mutex::new(None),
         }
+    }
+
+    fn cached(&self) -> MutexGuard<'_, Option<(Stamp, File)>> {
+        self.cache.lock().unwrap_or_else(PoisonError::into_inner)
     }
 
     fn load(&self) -> io::Result<File> {
-        match fs::read(&self.path) {
-            Ok(b) => serde_json::from_slice(&b).map_err(io::Error::other),
-            Err(e) if e.kind() == io::ErrorKind::NotFound => Ok(File::default()),
-            Err(e) => Err(e),
+        let stamp = match Stamp::of(&self.path) {
+            Ok(s) => s,
+            Err(e) if e.kind() == io::ErrorKind::NotFound => return Ok(File::default()),
+            Err(e) => return Err(e),
+        };
+        if let Some((_, f)) = self.cached().as_ref().filter(|(at, _)| *at == stamp) {
+            return Ok(f.clone());
         }
+        let file: File =
+            serde_json::from_slice(&fs::read(&self.path)?).map_err(io::Error::other)?;
+        *self.cached() = Some((stamp, file.clone()));
+        Ok(file)
     }
 
     fn save(&self, f: &File) -> io::Result<()> {
-        write_private(&self.path, &serde_json::to_vec_pretty(f)?)
+        write_private(&self.path, &serde_json::to_vec_pretty(f)?)?;
+        *self.cached() = Some((Stamp::of(&self.path)?, f.clone()));
+        Ok(())
     }
 
     fn change<T>(&self, f: impl FnOnce(&mut File) -> io::Result<T>) -> io::Result<T> {
@@ -337,12 +343,11 @@ impl Devices {
     /// # Errors
     /// When the file can't be read or written.
     pub fn ask(&self, agent: &str, now: u64) -> io::Result<(String, String)> {
-        let (b, claim) = (random(2)?, hex(&random(32)?));
-        let word = format!(
-            "{} {}",
-            WORDS[0][usize::from(b[0] % 16)],
-            WORDS[1][usize::from(b[1] % 16)]
-        );
+        let ([b0, b1], claim) = (random(2)?.try_into().unwrap_or_default(), hex(&random(32)?));
+        let [w0, w1] = WORDS;
+        let pick =
+            |w: [&'static str; 16], b: u8| w.get(usize::from(b % 16)).copied().unwrap_or_default();
+        let word = format!("{} {}", pick(w0, b0), pick(w1, b1));
         self.change(|f| {
             f.expire(now);
             if f.asks.len() >= REQUESTS {
@@ -406,7 +411,7 @@ impl Devices {
             let Some(i) = f.asks.iter().position(|r| same(&r.claim, &hash)) else {
                 return Ok(Claim::Gone);
             };
-            match f.asks[i].answer.clone() {
+            match f.asks.get(i).and_then(|r| r.answer.clone()) {
                 None => Ok(Claim::Waiting),
                 Some((false, by)) => {
                     f.asks.remove(i);
@@ -525,12 +530,13 @@ impl Devices {
             return Ok(None);
         };
         if device.used + 3_600_000 <= now {
-            let _ = self.change(|f| {
+            self.change(|f| {
                 for d in f.devices.iter_mut().filter(|d| d.hash == hash) {
                     d.used = now;
                 }
                 Ok(())
-            });
+            })
+            .ok();
         }
         Ok(Some(device))
     }
@@ -572,11 +578,15 @@ impl Devices {
 
 #[cfg(test)]
 mod tests {
+    use std::os::unix::fs::FileExt;
+
     use super::*;
 
     fn scratch(name: &str) -> Devices {
-        let dir = std::env::temp_dir().join(format!("cooee-devices-{name}-{}", std::process::id()));
-        let _ = fs::remove_dir_all(&dir);
+        let dir = crate::scratch::owned(
+            std::env::temp_dir().join(format!("cooee-devices-{name}-{}", std::process::id())),
+        );
+        fs::remove_dir_all(&dir).ok();
         Devices::new(&dir)
     }
 
@@ -603,7 +613,6 @@ mod tests {
             .claim(&code, "Mozilla/5.0 (iPhone)", 2000)
             .unwrap()
             .unwrap();
-        // Single use.
         assert_eq!(d.claim(&code, "x", 2000).unwrap(), None);
         let found = d.find(&token, 3000).unwrap().unwrap();
         assert_eq!(found.label, "iPhone");
@@ -633,7 +642,6 @@ mod tests {
         for _ in 0..MISSES {
             assert_eq!(d.claim(wrong, "x", 1).unwrap(), None);
         }
-        // Too many misses dropped the code: even the right one fails now.
         assert_eq!(d.claim(&code, "x", 1).unwrap(), None);
     }
 
@@ -651,7 +659,6 @@ mod tests {
         assert!(!d.answer("deadbeef", true, "iPhone", 1).unwrap());
         assert!(d.answer(&open[0].id, true, "iPhone", 1).unwrap());
         assert_eq!(d.asking(1).unwrap(), []);
-        // Renamed on the approving device before and after the new one picks it up; its id is the request's.
         assert!(d.rename(&open[0].id, "Kim's iPad").unwrap());
         let Claim::Paired(token) = d.collect(&claim, 2).unwrap() else {
             panic!("not paired");
@@ -668,7 +675,6 @@ mod tests {
         let disk = fs::read_to_string(&d.path).unwrap();
         assert!(!disk.contains(&claim) && !disk.contains(&token), "{disk}");
 
-        // Declined: the new device hears who said no, once.
         let (_, claim) = d.ask("x", 0).unwrap();
         let id = d.asking(0).unwrap()[0].id.clone();
         assert!(d.answer(&id, false, "iPhone", 1).unwrap());
@@ -679,7 +685,6 @@ mod tests {
         );
         assert_eq!(d.collect(&claim, 2).unwrap(), Claim::Gone);
 
-        // Expired after 5 minutes, cancelled, and a fifth request dropping the oldest.
         let (_, claim) = d.ask("x", 0).unwrap();
         assert_eq!(d.asking(ASK_TTL).unwrap(), []);
         assert_eq!(d.collect(&claim, ASK_TTL).unwrap(), Claim::Gone);
@@ -693,7 +698,41 @@ mod tests {
         assert_eq!(d.collect(&first, 1).unwrap(), Claim::Gone);
     }
 
-    /// R3 (herdsman#501): a devices file that can't be read is an error, never "not paired".
+    #[test]
+    fn lookups_parse_an_unchanged_file_once_and_see_the_next_change() {
+        let d = scratch("cache");
+        let token = d.claim(&d.pair(0).unwrap(), "x", 0).unwrap().unwrap();
+        assert!(d.find(&token, 0).unwrap().is_some());
+
+        let disk = fs::OpenOptions::new().write(true).open(&d.path).unwrap();
+        let (stamp, len) = (
+            disk.metadata().unwrap().modified().unwrap(),
+            disk.metadata().unwrap().len(),
+        );
+        disk.write_all_at(&vec![b' '; usize::try_from(len).unwrap()], 0)
+            .unwrap();
+        disk.set_modified(stamp).unwrap();
+        assert!(
+            d.find(&token, 0).unwrap().is_some(),
+            "same stamp: not parsed again"
+        );
+        d.save(&d.load().unwrap()).unwrap();
+
+        let cli = Devices::new(d.path.parent().unwrap());
+        let other = cli.claim(&cli.pair(0).unwrap(), "x", 0).unwrap().unwrap();
+        assert!(
+            d.find(&other, 0).unwrap().is_some(),
+            "an added device pairs at once"
+        );
+        let id = d.find(&token, 0).unwrap().unwrap().id;
+        assert!(cli.remove(&id).unwrap());
+        assert_eq!(
+            d.find(&token, 0).unwrap(),
+            None,
+            "a revoked device is out at once"
+        );
+    }
+
     #[test]
     fn an_unreadable_store_is_an_error_not_unpaired() {
         let d = scratch("unreadable");
@@ -702,11 +741,12 @@ mod tests {
         assert!(d.find(&token, 1).is_err());
     }
 
-    /// R18 (herdsman#342): parallel writes of one file each use a temp file of their own and rename it whole.
     #[test]
     fn parallel_writes_never_share_a_temp_file() {
-        let dir = std::env::temp_dir().join(format!("cooee-write-{}", std::process::id()));
-        let _ = fs::remove_dir_all(&dir);
+        let dir = crate::scratch::owned(
+            std::env::temp_dir().join(format!("cooee-write-{}", std::process::id())),
+        );
+        fs::remove_dir_all(&dir).ok();
         let path = dir.join("state.json");
         std::thread::scope(|s| {
             for i in 0..16 {

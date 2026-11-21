@@ -1,5 +1,3 @@
-//! A routine's schedule (#75): five-field cron in the Mac's local time, with no time crate.
-
 use serde::{Deserialize, Serialize};
 
 const DAY: i64 = 1440;
@@ -34,27 +32,35 @@ impl Schedule {
     pub fn parse(text: &str) -> Result<Self, String> {
         let words: Vec<&str> = text.split_whitespace().collect();
         let bad = |why: String| format!("BAD_SCHEDULE: {text:?} {why}");
-        if words.len() != 5 {
+        let Ok(five) = <[&str; 5]>::try_from(words.as_slice()) else {
             return Err(bad(
                 "isn't 5 fields: minute hour day-of-month month day-of-week".to_owned(),
             ));
-        }
+        };
         let mut fields = [0; 5];
-        for (i, w) in words.iter().enumerate() {
-            fields[i] =
-                field(w, RANGES[i]).ok_or_else(|| bad(format!("has a bad {}", NAMES[i])))?;
+        for ((f, w), (range, name)) in fields
+            .iter_mut()
+            .zip(five)
+            .zip(RANGES.into_iter().zip(NAMES))
+        {
+            *f = field(w, range).ok_or_else(|| bad(format!("has a bad {name}")))?;
         }
+        let [_, _, dom, _, dow] = five;
         if (fields[4] >> 7) & 1 == 1 {
             fields[4] = (fields[4] | 1) & !(1 << 7);
         }
         let s = Self {
             text: words.join(" "),
             fields,
-            either_day: !words[2].starts_with('*') && !words[4].starts_with('*'),
+            either_day: !dom.starts_with('*') && !dow.starts_with('*'),
         };
         let times = s.times();
         let wrap = times.first().map_or(DAY, |f| f + DAY) - times.last().copied().unwrap_or(0);
-        let gap = times.windows(2).map(|w| w[1] - w[0]).fold(wrap, i64::min);
+        let gap = times
+            .iter()
+            .zip(times.iter().skip(1))
+            .map(|(a, b)| b - a)
+            .fold(wrap, i64::min);
         if gap < 15 {
             return Err(bad("runs more often than every 15 minutes".to_owned()));
         }
@@ -84,11 +90,14 @@ impl Schedule {
     #[must_use]
     pub fn describe(&self) -> String {
         let w: Vec<&str> = self.text.split(' ').collect();
-        let (Ok(m), Ok(h)) = (w[0].parse::<u8>(), w[1].parse::<u8>()) else {
+        let Ok([m, h, dom, mon, dow]) = <[&str; 5]>::try_from(w.as_slice()) else {
             return self.text.clone();
         };
-        let day = w[4].parse::<usize>().ok().and_then(|d| DAYS.get(d % 7));
-        match (w[2], w[3], w[4], day) {
+        let (Ok(m), Ok(h)) = (m.parse::<u8>(), h.parse::<u8>()) else {
+            return self.text.clone();
+        };
+        let day = dow.parse::<usize>().ok().and_then(|d| DAYS.get(d % 7));
+        match (dom, mon, dow, day) {
             ("*", "*", "*", _) => format!("every day {h:02}:{m:02}"),
             ("*", "*", _, Some(d)) => format!("{d} {h:02}:{m:02}"),
             _ => self.text.clone(),
@@ -96,10 +105,9 @@ impl Schedule {
     }
 
     fn has(&self, f: usize, n: i64) -> bool {
-        (self.fields[f] >> n) & 1 == 1
+        self.fields.get(f).is_some_and(|b| (b >> n) & 1 == 1)
     }
 
-    /// The minutes of a day it runs at, in order.
     fn times(&self) -> Vec<i64> {
         let hours = (0..24).filter(|h| self.has(1, *h));
         hours
@@ -107,7 +115,6 @@ impl Schedule {
             .collect()
     }
 
-    /// Whether it runs on day `day` (days since 1970-01-01, a Thursday).
     fn on(&self, day: i64) -> bool {
         let (_, month, date) = civil(day);
         let (d, w) = (self.has(2, date), self.has(4, (day + 4).rem_euclid(7)));
@@ -128,7 +135,6 @@ impl From<Schedule> for String {
     }
 }
 
-/// One field's values as bits: a comma list of `*`, `n`, `a-b`, each optionally `/step`.
 fn field(word: &str, (lo, hi): (u8, u8)) -> Option<u64> {
     let mut bits = 0;
     for item in word.split(',') {
@@ -152,7 +158,6 @@ fn field(word: &str, (lo, hi): (u8, u8)) -> Option<u64> {
     Some(bits)
 }
 
-/// Year, month and day of day `z` since 1970-01-01 (Howard Hinnant's `civil_from_days`).
 fn civil(z: i64) -> (i64, i64, i64) {
     let z = z + 719_468;
     let era = z.div_euclid(146_097);
@@ -176,25 +181,53 @@ pub fn local(at: u64, offset_min: i32) -> String {
     format!("{y:04}-{mo:02}-{d:02} {:02}:{:02}", t / 60, t % 60)
 }
 
+/// Local `YYYY-MM-DD HH:MM` in UTC offset `offset_min` as Unix ms, the inverse of [`local`]; none when it isn't one.
+#[must_use]
+pub fn parse_local(text: &str, offset_min: i32) -> Option<u64> {
+    let (date, time) = text.split_once(' ')?;
+    let mut d = date.splitn(3, '-').map(str::parse::<i64>);
+    let (y, mo, d) = (d.next()?.ok()?, d.next()?.ok()?, d.next()?.ok()?);
+    let (h, m) = time.split_once(':')?;
+    let (h, m) = (h.parse::<i64>().ok()?, m.parse::<i64>().ok()?);
+    let y = if mo <= 2 { y - 1 } else { y };
+    let era = y.div_euclid(400);
+    let yoe = y - era * 400;
+    let doy = (153 * ((mo + 9) % 12) + 2) / 5 + d - 1;
+    let day = era * 146_097 + yoe * 365 + yoe / 4 - yoe / 100 + doy - 719_468;
+    let at = u64::try_from((day * DAY + h * 60 + m - i64::from(offset_min)) * 60_000).ok()?;
+    (local(at, offset_min) == text).then_some(at)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
 
     const MIN: u64 = 60_000;
-    /// 2024-11-11 00:00 UTC, a Monday.
     const MON: u64 = 1_731_283_200_000;
 
     #[test]
     fn latest_is_the_newest_due_time_in_local_time() {
         let s = Schedule::parse("0 9 * * 1").unwrap();
         assert_eq!(s.describe(), "Mondays 09:00");
-        // Bangkok (+07:00): Monday 09:00 local is 02:00 UTC.
         let nine = MON + 2 * 60 * MIN;
         assert_eq!(s.latest(nine, 420), Some(nine));
         assert_eq!(s.latest(nine + 3 * MIN, 420), Some(nine));
         assert_eq!(s.latest(nine - MIN, 420), Some(nine - 7 * 1440 * MIN));
         assert_eq!(local(nine, 420), "2024-11-11 09:00");
         assert_eq!(local(nine, 0), "2024-11-11 02:00");
+        assert_eq!(parse_local("2024-11-11 09:00", 420), Some(nine));
+        assert_eq!(
+            parse_local("2024-03-01 00:00", 0).map(|at| local(at, 0)),
+            Some("2024-03-01 00:00".to_owned())
+        );
+        for bad in [
+            "2024-02-30 09:00",
+            "2024-11-11 9:00",
+            "2024-11-11 24:00",
+            "tomorrow",
+        ] {
+            assert_eq!(parse_local(bad, 0), None, "{bad}");
+        }
         let daily = Schedule::parse("30 18 * * *").unwrap();
         assert_eq!(daily.describe(), "every day 18:30");
         assert_eq!(daily.latest(MON, 0), Some(MON - 330 * MIN));
@@ -202,7 +235,6 @@ mod tests {
 
     #[test]
     fn day_of_month_and_day_of_week_both_set_match_either() {
-        // The 1st, or a Friday: 2024-11-08 is a Friday, 2024-11-01 is one too; Monday the 11th is neither.
         let s = Schedule::parse("0 0 1 * 5").unwrap();
         assert_eq!(s.latest(MON, 0), Some(MON - 3 * 1440 * MIN));
         let first = Schedule::parse("0 0 1 * *").unwrap();

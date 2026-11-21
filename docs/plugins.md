@@ -1,10 +1,55 @@
 # Plugins
 
-A plugin adds a tab beside Chat. It is a backend of its own (on this machine or on the tailnet) that serves a UI
-module, an ES module that cooee runs in the tab. herdsman's Queue, Asks and Fleets tabs come this way, served by herdsman itself
-as Drover ([architecture.md](architecture.md#plugins-m4)).
+## Today
 
-## Configuration
+- **Plugins:** git repos added from a curated index, supervised backends, tabs and screens as data (#51, #205, [`plugins/index.toml`](../plugins/index.toml)).
+- **Fleet screens:** the app draws herdsman's fleet settings and pushes the screens it taps (#211).
+- **First-party plugins:** `machines` (per-machine health) and `terminal` (your shells, behind Face ID) (#50, #91).
+- **Run cards:** herdsman's commands shown with their sha, approved or denied from the phone (#114).
+
+## How it works
+
+A plugin adds a tab beside Chat. It is a backend of its own (on this machine or on the tailnet) that serves a UI
+module, an ES module that cooee runs in the tab, or native screens (#125). herdsman's Queue, Events and Fleets screens
+come this way, through herdsman's own `drover` plugin (below).
+
+A plugin is a tab beside Chat: a backend of its own and a UI module it serves. The module
+runs in a sandboxed frame (an opaque origin with a strict Content-Security-Policy) and reaches only its own backend,
+through the page around it and cooee's proxy (`/p/<name>/api/…`), which adds the plugin's token and drops the device's
+cookie. The backend posts pushes and choice cards back with that token; the owner's answer to a card goes to it.
+
+Plugins are installed like lazy.nvim's (#37): a git repo with a `cooee-plugin.toml`, added from the built-in index
+(`plugins/index.toml`) or by URL with `cooee plugin add` or Settings › Plugins. Each commit builds in its own folder
+and goes live only after its backend served its first tab's module; `plugins.lock` pins it and keeps the build before
+to roll back to. `cooee serve` runs every enabled backend as its child (`cooee-server/src/manage.rs`): restarts with
+backoff, 5 crashes in 10 minutes turn it off with an alert. [improve] puts an agent on a branch of the plugin's
+checkout; approving builds and swaps it in the same way.
+
+**The passkey gate (#28).** The `terminal` tab runs commands on the Mac, so a paired cookie is not enough: the device
+needs its passkey (WebAuthn, Face ID on iPhone), registered on its first use of the tab. The ceremony runs in cooee's
+page (`/passkey/options`, then `/passkey/register` or `/passkey/unlock`), never in the sandboxed frame; cooee checks it
+(`cooee-server/src/passkey.rs`: ES256 only, this host's origin and relying party, user verified) and keeps the
+credential in the device's entry in `devices.json`. An unlock lives in memory and lasts while the tab is used: each
+proxied call counts, and 10 minutes without one locks it (403 `locked`; an open stream ends at its next event) until
+Face ID again. The proxy names the device to the backend (`Cooee-Device`), which refuses any call without it. Every
+unlock and every shell started goes to `<data>/terminal.log` with the time and device; keystrokes never do.
+
+**drover** (in the index) is herdsman's own plugin: `cooee-plugin.toml` at the root of
+[jirathip-dev/herdsman](https://github.com/jirathip-dev/herdsman) ([herdsman#814](https://github.com/jirathip-dev/herdsman/issues/814)),
+whose `herdsman serve` answers the screens itself: Queue and Events chips on the Conductor persona's header strip, its
+asks as chat cards and a Fleets row in the menu. Data flows one way:
+
+```text
+cooee → herdsman serve (/screens/…, /action)
+```
+
+Its manifest's `attach` (#226) points at the `herdsman serve` already running on the Mac (`127.0.0.1:7777`), so cooee
+uses it instead of starting a second one, and runs `run` only when nothing answers there. Its `attach_token`
+(`~/.config/herdsman/cooee-token`) is the file that serve keeps its cooee token in; cooee reads it at `add`. herdsman is the engine:
+queue, drive, lanes, reviews, gates and merge; the archived bridge plugin it replaces is gone from the index. The lanes themselves are not in
+these tabs: they are shed sessions, shown as chats under Workflow ([workflow.md](workflow.md)).
+
+### Configuration
 
 One `[[plugins]]` entry per plugin in `config.toml`:
 
@@ -19,13 +64,14 @@ token = "a-long-random-secret"    # shared with the backend; at least 16 charact
 
 `cooee serve` refuses to start when an entry breaks a rule (no token, two plugins of one name, …).
 
-## Installing plugins
+### Installing plugins
 
 A plugin can also be installed, like a lazy.nvim plugin: a git repo with `cooee-plugin.toml` at its root.
 
 ```toml
 name = "hello"                                      # its folder and lock entry: lowercase letters, digits and -
-version = "0.1.0"
+version = "0.1.0"                                   # numbers and dots; cooee refuses one older than it accepts
+min_cooee = "0.1.0"                                 # optional: the oldest cooee it accepts
 build = "node --check server.mjs"                   # run with sh -c in the checkout
 run = "TOKEN=$COOEE_PLUGIN_TOKEN exec node server.mjs"  # the backend: gets PORT, COOEE_PLUGIN_TOKEN and COOEE
 needs = ["node"]                                    # optional: tools it needs on PATH
@@ -37,7 +83,7 @@ module = "/tab.js"
 ```
 
 A plugin may also bring agent profiles, `[[profiles]]` with the fields of an owner's profile
-([architecture.md](architecture.md#agent-profiles-40)), their paths in its checkout. The add and update confirm lists
+([profiles.md](profiles.md)), their paths in its checkout. The add and update confirm lists
 them; they are offered in the new-thread form while the plugin is installed and on.
 Its backend may serve them instead (one per fleet, say): `GET /cooee/profiles` (with the token, read as the sidebar
 loads and as a thread starts) answers `{"profiles": [...]}` in the same format, each with optional `hidden = true` and
@@ -59,10 +105,23 @@ it can attach the thread.
   default branch), confirms, builds it in a new folder and switches only once the build and the health check pass;
   otherwise the old one keeps running. The build before stays, to roll back to.
 - `cooee plugin remove <name> [--purge]` stops it and removes its entries; its folder stays unless `--purge`.
-- `cooee plugin list`: name, version, commit, source (index or url) and state.
-- `cooee plugin check <answer.json>...` (#138) validates a plugin's answers (a screen or any block, a list of them,
-  stream events, places) against `docs/plugins/screens.schema.json`, the JSON Schema of #125's blocks, and names each
-  field that breaks it (`$.blocks[0].rows[0].badge.tone: "red" is not one of …`). An unknown block type passes.
+- `cooee plugin list`: name, version, commit, source (index or url), state and the cooee versions it accepts.
+- Version gating (#77): a plugin's `min_cooee` names the oldest cooee it accepts, and cooee accepts plugins from
+  version 0.1.0. Add, update and rollback refuse a pair where either is too old for the other, and `cooee serve`
+  keeps an installed one off with one line naming the version needed (its state in Settings › Plugins);
+  `cooee doctor` lists each plugin's range.
+- `cooee plugin check <answer.json|cooee-plugin.toml>...` (#138) validates a plugin's answers (a screen or any block, a
+  list of them, stream events, places) against the [blocks schema](https://github.com/jirathip-dev/blocks/blob/d0882093e32c6d752910c459efa04a2a6beb5c3a/schema/blocks.schema.json) (#621: generated by the pinned blocks crate,
+  `Block` and `Op` in its `$defs`), and names each field that breaks it (`$.blocks[0].action: is required`). An unknown
+  block type, an unknown word and an unknown field pass. Give a block that holds state (a form, an editor, a list's
+  row) an `id`: the app keeps its draft and focus by it when blocks above it come or go (#602). A `.toml` file is
+  checked as a manifest, by the rules `cooee plugin add` applies.
+
+A manifest's `attach = "http://127.0.0.1:<port>"` (#226) names a backend that may be running already, like herdsman's
+own `herdsman serve` on :7777: while that port answers, `add` checks it instead of starting `run`, and `cooee serve`
+uses it and starts nothing (`plugin list` says `attached`); when it doesn't, `run` starts on that port. Its
+`attach_token` (`~/` or absolute; q1290) names the 0600 file the running backend keeps its token in, created by the
+backend: `add` reads it and calls the backend with that token, which `run` then gets as `COOEE_PLUGIN_TOKEN` too.
 
 `cooee serve` runs each enabled plugin's backend as its child (no launchd job per plugin) on its port, with its output
 in `<data>/plugins/<name>/plugin.log` (its builds' too). A backend that exits restarts after 1 s, then 2, 4 and 8; the
@@ -83,7 +142,7 @@ via an issue" instead: it changes through cooee's own issue → review flow.
 plugin can read cooee's data folder through the API. Its backend runs as the owner on the Mac, so adding, updating and
 improving are owner-only: the CLI on the Mac, or a paired device (a plugin's token is refused), after a confirm.
 
-## How a tab runs
+### How a tab runs
 
 - `/p/<name>` is the tab: cooee's bar with the tabs, and a frame. The frame's page, `/p/<name>/frame`, is the
   module (fetched from the backend) after cooee's small plugin API, in one inline script.
@@ -105,9 +164,12 @@ improving are owner-only: the CLI on the Mac, or a paired device (a plugin's tok
     is unlocked with its passkey (the `terminal` tab's gate; a stream that ends for good, such as a locked tab's, sends
     `closed`).
 - cooee calls the backend over HTTP/1.0, one connection per call, and passes on only the content type, `Accept` and
-  `Last-Event-ID`. An event stream should send a comment now and then so a closed tab is noticed.
+  `Last-Event-ID`. An event stream should send a comment now and then (cooee passes it on, so a closed tab is
+  noticed); one silent for a minute is closed. A call has a total deadline, connect to last byte (30 s through the
+  tab's proxy, 5 s for a screen, 10 s for an action or a card's answer; a stream's deadline ends once its head is in),
+  and a backend has at most 8 calls in flight: one more fails at once with a 502 `busy`.
 
-## From the backend to cooee
+### From the backend to cooee
 
 The backend authenticates with the same token (`Authorization: Bearer <token>`); any other call is refused (401).
 
@@ -116,7 +178,7 @@ The backend authenticates with the same token (`Authorization: Bearer <token>`);
   default `plugin-<name>`) replaces the older one. It answers with the notification sent.
 - `POST /plugin/dot` `{"on": true}`: a dot on the plugin's tab (`false` clears it), until cooee restarts.
 - `POST /plugin/card` `{"thread": "<id>", "text": "Ship it?", "options": ["yes", "no"]}`: a choice card in a
-  thread of a persona the plugin is attached to (docs/api.md; any other thread's is refused, 400 with why), pushed like an approval, with an "other" box for a free answer. The owner's tap goes back to the backend as
+  thread of a persona the plugin is attached to (docs/personas.md; any other thread's is refused, 400 with why), pushed like an approval, with an "other" box for a free answer. The owner's tap goes back to the backend as
   `POST /cooee/choice` `{"thread", "item", "option", "by"}` (with the token; `by` is the device's label); a 2xx
   marks the card answered (its ✓ line says by whom and when, or the backend's `{"line": "…"}`), a 409 closes it with
   its `line` (else `stale`), anything else lets it be tapped again. A conductor's cards (herdsman#553 rows 30–33):
@@ -136,70 +198,15 @@ The backend authenticates with the same token (`Authorization: Bearer <token>`);
   `to` the text with a `from <from>` chip; `POST /plugin/line` `{"thread", "from", "text"}`: a line flowing back
   into `thread` with a `from` chip. A chip opens that thread (row 35).
 
-## First-party plugin: machines
-
-`crates/cooee-machines`, built into cooee: the health of the machines shed runs on. A `[[plugins]]` entry named
-`machines` turns it on for that instance, and `cooee serve` runs its backend itself at the entry's `url`:
-
-```toml
-[[plugins]]
-name = "machines"
-label = "Machines"
-url = "http://127.0.0.1:4801"     # a free port; cooee listens there for the plugin
-module = "/tab.js"
-token = "another-long-random-secret"
-```
-
-Once a minute it asks shed (never SSH itself): `shed machine ls`, then `shed machine stats` for this machine and
-`shed --on <m> machine stats` for each added one (shed answers offline within 5 s). Each card shows online or offline
-with when it was last seen, load per CPU, memory pressure, swap, free disk and shed's terminals by state; each number
-has a 24 h sparkline, and a tap opens its chart. Only the samples newer than the last kept one are asked for. A
-machine going offline, under 10 GB of free disk or at 90 % memory pressure or more sends one push (tag `machine`, a
-tap opens `#<machine>`) when its set of problems changes, and the tab shows a dot while any machine has one.
-
-## First-party plugin: terminal
-
-`crates/cooee-terminal`, built into cooee: a real shell on the Mac from the phone, for the owner-only commands a chat
-hands over (setup, keychain, `launchctl` …), instead of an SSH app. `cooee setup` adds its entry to each instance on
-the instance's port + 1000 with a fresh token:
-
-```toml
-[[plugins]]
-name = "terminal"
-label = "Terminal"
-url = "http://127.0.0.1:5747"
-module = "/tab.js"
-token = "a-third-long-random-secret"
-```
-
-- **Shells:** [+ shell] starts `$SHELL -l` in `~`, as the owner, in a shed terminal labelled `cooee.owner=1`, so it
-  outlives the page and cooee. The list has the owner's shells, then the agents' terminals (every other shed
-  terminal but sign-ins), which can be watched but never typed into (403). [close] ends a shell's whole process tree.
-- **View:** shed keeps the screen (`screen.watch`); the backend streams its updates (rows of coloured runs) as
-  `screen` events, and the tab draws them as a monospace grid in the theme's colours. Pinch zooms the font, and the
-  shell is resized to fit; [earlier lines] shows the scrollback. No terminal emulator runs on the phone.
-- **Input:** the keyboard's text goes in as text (Thai too), in order; the key bar at the tab's foot, on the keyboard
-  while it is open: Esc, Ctrl (sticky for the next letter), Tab, ↑ ↓ ← →, ^C, paste and ↑ history (the lines typed
-  here, to type again).
-- **Gate:** the device's passkey (Face ID) opens the tab, registered on first use; 10 minutes without a touch or key
-  lock it (blurred, no input) until Face ID again, and the shells keep running ([architecture.md](architecture.md#plugins-m4)).
-- **Insert text:** `POST /insert` `{"text"}` (through the tab's proxy) types into the shell used last, else the
-  newest, else a new one, and never presses Enter: trailing line ends go, a `\` continuation joins its lines and any
-  other line end becomes `; `. It answers `{"terminal"}`. A chat's code block has **[▸ terminal]** beside [copy] when this plugin is on
-  (#29): the owner's tap opens the Terminal tab, which asks for Face ID first when locked, then inserts the block's
-  text and opens that shell (the tab's `#name`).
-
-Its other calls: `GET /list`, `POST /shell`, `GET /watch?t=<name>` (the stream), `POST /input` `{terminal, text}`,
-`/keys` `{terminal, keys}` (shed's key names), `/resize` `{terminal, cols, rows}`, `/close` `{terminal}`,
-`/scrollback` `{terminal}` and `/seen` (use, which keeps the unlock alive).
-
-## Screens
+### Screens
 
 A plugin can instead (or as well) answer its screens as JSON made of cooee's blocks, which the native app draws: no
 frontend code (the spec: [design/screens-as-data](design/screens-as-data/README.md)). Its manifest says where they go
 and what it may do:
 
 ```toml
+claims = ["drover"]               # the workflow sources it owns (#229): those sessions show in its place, not as chats
+
 [[places]]
 type = "header-strip"             # a chip under a persona's chat header; or "menu-row" (the avatar menu), "chat-cards"
 id = "queue"
@@ -218,19 +225,22 @@ network = []
 cooee answers `GET /p/<plugin>/screens/...` from the backend's `GET /screens/...` (a screen, or its event stream of
 `{seq, ops}`) and passes `POST /p/<plugin>/action` to its `POST /action` with `{screen, block, action, values, by}`.
 An action not in `actions` gets a 403 and never reaches the backend. A plugin with screens only has no tab.
+A `chat-cards` place's screen (default `/screens/cards`) answers a list of `card` blocks: the app follows its
+`/stream` and draws them at the end of that persona's chats, keyed by card id; a tap posts `screen: "cards"` with the
+tapped choice or run block's `id` as `block`. A 2xx settles the card to `✓ <toast>` until the plugin changes it, a 409
+to its line; the persona's first chip of that plugin counts the open cards (#377).
 `docs/plugins/hello-py/` is a whole one: `hello.py`, a live screen in about 30 lines of Python, no dependencies.
 
-## Example
+### Example
 
-`docs/plugins/hello/` is a plugin in about 30 lines, used by the tests (`web/e2e/plugins.spec.mjs`; its manifest by
-`web/e2e/plugin-manager.spec.mjs`). Run it with
+`docs/plugins/hello/` is a plugin in about 30 lines, used by the tests (`crates/cooee/tests/plugins.rs`; its manifest by
+`crates/cooee/tests/plugin_manager.rs`). Run it with
 `PORT=4800 COOEE=http://127.0.0.1:4747 TOKEN=a-long-random-secret node docs/plugins/hello/server.mjs` and the entry
 above.
 
 The backend, `server.mjs`:
 
 ```js
-// cooee's example plugin backend (docs/plugins.md): `PORT=4800 COOEE=http://127.0.0.1:4747 TOKEN=… node server.mjs`.
 import fs from "node:fs";
 import http from "node:http";
 
@@ -244,7 +254,6 @@ const toCooee = async (path, body) => (await fetch(COOEE + path, {
 const read = async (req) => { let b = ""; for await (const c of req) b += c; return b ? JSON.parse(b) : {}; };
 
 http.createServer(async (req, res) => {
-  // Only cooee calls this backend, and it sends the plugin's token.
   if (req.headers.authorization !== `Bearer ${TOKEN}`) return json(res, 401, "no token");
   if (req.url === "/tab.js") return res.writeHead(200, { "content-type": "text/javascript" }).end(fs.readFileSync(new URL("tab.js", import.meta.url)));
   if (req.url === "/whoami") return json(res, 200, { token: "ok", cookie: req.headers.cookie ?? null });
@@ -259,7 +268,6 @@ http.createServer(async (req, res) => {
   if (req.url === "/ask") return json(res, 200, await toCooee("/plugin/card", { thread: body.thread, text: "Ship it?", options: ["yes", "no"] }));
   if (req.url === "/cooee/choice") {
     tell("choice", body.option);
-    // A run card's [approve] carries its sha; herdsman would run it and answer the exit code and output tail.
     if (body.option === "approve" && body.value) return json(res, 200, { line: `ran: exit 0\n\`\`\`\nat ${body.value.slice(0, 12)}\n\`\`\`` });
     return json(res, 200, "ok");
   }
@@ -270,7 +278,6 @@ http.createServer(async (req, res) => {
 The module, `tab.js`:
 
 ```js
-// The example plugin's tab: runs in cooee's sandboxed frame with the `cooee` API (docs/plugins.md).
 const log = document.body.appendChild(document.createElement("ul"));
 const line = (text) => { log.appendChild(document.createElement("li")).textContent = text; };
 const me = await cooee.fetch("/whoami");
@@ -285,3 +292,33 @@ for (const path of ["/notify", "/ask"]) {
   };
 }
 ```
+
+## API
+
+### Settings › Plugins
+
+| Call | Body | Answer |
+|---|---|---|
+| `GET /plugins` | | `{installed: {name, version, commit, listed, state, enabled, first_party, improving?, previous?, tabs, places, claims, permissions, accepts}[], index: {name, description}[], jobs: {name: text}, issues}` (`claims` (#229): the workflow `source` labels its manifest claims; the native app draws a `GET /threads` row whose `workflow.source` one claims in that plugin's place on a persona it is attached to, and any other workflow row under Home's Others) |
+| `GET /plugins/log?name=N` | | the plugin's log, text |
+| `POST /plugins/plan` | `{source}` or `{name, at}` | `{commit, text}`: what would run, to confirm |
+| `POST /plugins/add`, `/plugins/update` | the plan's body and its `commit` (a confirm holds for that commit only) | a JSON string (`"installing"`, …) |
+| `POST /plugins/enable` | `{name, on}` | a JSON string |
+| `POST /plugins/improve` | `{name, text}` | `{thread}` |
+| `POST /plugins/approve`, `/plugins/rollback`, `/plugins/remove` | `{name}` | a JSON string |
+
+### Plugin backends
+
+`GET` or `POST /p/{name}/api/{path}` reaches the plugin's own backend through cooee's proxy, with its token, never the
+cookie. An event stream comes back as SSE messages of `{event, data}`. The `terminal` plugin's calls need the device
+unlocked with its passkey: else 403 `locked` (header `Cooee-Locked: 1`).
+
+### Plugin screens (#125)
+
+A plugin whose manifest has `[[places]]` serves its screens as blocks ([Screens](#screens)). A device
+reaches them through cooee, with the plugin's token, never the cookie:
+
+| Call | Body | Answer |
+|---|---|---|
+| `GET /p/{plugin}/screens/{path}` | | the backend's `GET /screens/{path}`: a screen (JSON), or its stream (SSE, each event `{seq, ops}` as sent, its id kept; `Last-Event-ID` goes along). Every client of one stream shares one backend connection: a later one first gets the kept screen, and a stream that ends after an event is opened again with the last id, its clients still connected |
+| `POST /p/{plugin}/action` | `{screen, block, action, values}` | the backend's answer to `POST /action` (`by`: the device), as it sent it; 403 for an action not in its `[permissions] actions` (never sent); 404 for no installed plugin with places; 502 when the backend can't be reached |

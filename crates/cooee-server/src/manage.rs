@@ -1,10 +1,3 @@
-//! The plugin manager (docs/plugins.md): `cooee plugin add|update|remove|list` and Settings › Plugins. A plugin's
-//! checkout is `<data>/plugins/<name>/repo`; each commit it runs is built in a folder of its own, `builds/<commit>` (a
-//! git worktree), and goes live only once it built and its backend served its first tab's module. The one before stays
-//! to roll back to. `cooee serve` runs each enabled backend as its child (no launchd job per plugin), its output in
-//! `plugin.log` beside the checkout, and restarts one that exits with backoff: 5 crashes in 10 minutes turn it off,
-//! with an alert.
-
 use std::{
     collections::{BTreeMap, VecDeque},
     fmt::Write as _,
@@ -19,7 +12,7 @@ use std::{
         atomic::{AtomicBool, Ordering},
     },
     thread,
-    time::{Duration, Instant},
+    time::Duration,
 };
 
 use cooee_core::{
@@ -34,8 +27,14 @@ use crate::{
     push::Note,
 };
 
-/// How long a new build's backend has to serve its first tab's module.
 const HEALTH: Duration = Duration::from_secs(30);
+const CHECK_EVERY: u64 = 10_000;
+const CHECK_WAIT: Duration = Duration::from_secs(2);
+const MISSES: u32 = 3;
+const LOOK_EVERY: u64 = 5000;
+
+const BACKEND: &str =
+    "exec 3<&0 </dev/null; (cat <&3 >/dev/null; kill -TERM 0) & exec 3<&-; exec sh -c \"$1\"";
 
 /// Where a first-party plugin is improved instead.
 pub const ISSUES: &str = "https://github.com/jirathip-dev/cooee/issues/new";
@@ -76,14 +75,20 @@ pub struct Row {
     pub first_party: bool,
     /// Where its screens go (#125), shown with its permissions when it's attached to a persona.
     pub places: Vec<plugins::Place>,
+    /// The workflow sources it claims (#229).
+    pub claims: Vec<String>,
     /// Its manifest's `[permissions]`.
     pub permissions: plugins::Permissions,
+    /// The cooee versions it accepts.
+    pub accepts: String,
 }
 
-/// A supervised backend: its process (none between a crash and its restart), the build it runs, its crashes.
 struct Run {
     child: Option<Child>,
     commit: String,
+    module: String,
+    check: u64,
+    misses: u32,
     backoff: Backoff,
     next: u64,
     state: String,
@@ -105,24 +110,32 @@ impl Backoff {
     }
 }
 
+type Stamp = [Option<(std::time::SystemTime, u64)>; 2];
+
+#[derive(Default)]
+struct Seen {
+    fresh: bool,
+    next: u64,
+    stamp: Stamp,
+    lock: Vec<Locked>,
+    tabs: Option<Vec<Plugin>>,
+}
+
 /// The installed plugins of one instance, and their backends while `cooee serve` runs.
 pub struct Manager {
     data: PathBuf,
     index: Vec<Listed>,
-    /// The config's own plugins, whose names an installed tab can't take.
     fixed: Vec<Plugin>,
-    /// cooee's URL, a backend's `COOEE`.
     url: Mutex<String>,
     runs: Mutex<BTreeMap<String, Run>>,
-    /// The phone's installs and updates in progress (`…`), or how they failed.
     jobs: Mutex<BTreeMap<String, String>>,
-    /// One change to the lock at a time.
     ops: Mutex<()>,
+    seen: Mutex<Seen>,
     stopping: AtomicBool,
 }
 
 fn git(dir: &Path, args: &[&str]) -> io::Result<String> {
-    let out = Command::new("git")
+    let out = cooee_core::runner::command("git")
         .arg("-C")
         .arg(dir)
         .args(args)
@@ -131,7 +144,11 @@ fn git(dir: &Path, args: &[&str]) -> io::Result<String> {
         .output()?;
     if !out.status.success() {
         let err = String::from_utf8_lossy(&out.stderr);
-        return Err(other(format!("git {}: {}", args[0], err.trim())));
+        return Err(other(format!(
+            "git {}: {}",
+            args.first().unwrap_or(&""),
+            err.trim()
+        )));
     }
     Ok(String::from_utf8_lossy(&out.stdout).trim().to_owned())
 }
@@ -140,10 +157,9 @@ fn path(p: &Path) -> &str {
     p.to_str().unwrap_or_default()
 }
 
-/// `sh -c cmd` in `dir`, its own process group, its output appended to `log`.
 fn sh(cmd: &str, dir: &Path, log: &Path) -> io::Result<Command> {
     let out = fs::OpenOptions::new().create(true).append(true).open(log)?;
-    let mut c = Command::new("sh");
+    let mut c = cooee_core::runner::command("sh");
     c.arg("-c")
         .arg(cmd)
         .current_dir(dir)
@@ -156,17 +172,13 @@ fn sh(cmd: &str, dir: &Path, log: &Path) -> io::Result<Command> {
 
 fn note(log: &Path, line: &str) {
     let f = fs::OpenOptions::new().create(true).append(true).open(log);
-    let _ = f.and_then(|mut f| writeln!(f, "== cooee: {line}"));
+    f.and_then(|mut f| writeln!(f, "== cooee: {line}")).ok();
 }
 
-/// Stops a backend and everything it started (its process group).
 fn stop(child: &mut Child) {
-    let _ = Command::new("kill")
-        .args(["-TERM", &format!("-{}", child.id())])
-        .stderr(Stdio::null())
-        .status();
-    let _ = child.kill();
-    let _ = child.wait();
+    cooee_core::group::signal(child, "-TERM");
+    child.kill().ok();
+    child.wait().ok();
 }
 
 fn free_port() -> io::Result<u16> {
@@ -175,16 +187,24 @@ fn free_port() -> io::Result<u16> {
         .port())
 }
 
+fn up(port: u16) -> bool {
+    let addr = SocketAddr::from((Ipv4Addr::LOCALHOST, port));
+    TcpStream::connect_timeout(&addr, Duration::from_millis(300)).is_ok()
+}
+
+fn attach_token(m: &Manifest) -> Option<String> {
+    let text = fs::read_to_string(m.attach_token_path()?).ok()?;
+    Some(text.trim().to_owned()).filter(|t| !t.is_empty())
+}
+
 fn on_path(tool: &str) -> bool {
-    Command::new("sh")
+    cooee_core::runner::command("sh")
         .args(["-c", "command -v \"$1\"", "sh", tool])
         .stdout(Stdio::null())
         .status()
         .is_ok_and(|s| s.success())
 }
 
-/// A plugin's tabs as `[[plugins]]` entries on `port` with `token`; one with screens only gets one of its name and
-/// no module (no tab).
 fn entries(m: &Manifest, port: u16, token: &str) -> Vec<Plugin> {
     let tab = |t: &plugins::Tab| Plugin {
         name: t.name.clone(),
@@ -206,15 +226,10 @@ fn entries(m: &Manifest, port: u16, token: &str) -> Vec<Plugin> {
     tabs.iter().map(tab).collect()
 }
 
-/// What a build's backend must serve to be healthy: its first tab's module, else its first place's screen.
 fn first_path(m: &Manifest) -> String {
     let tab = m.tabs.first().map(|t| t.module.clone());
-    let screen = m
-        .places
-        .iter()
-        .map(|p| p.screen.clone())
-        .find(|s| !s.is_empty());
-    tab.or(screen).unwrap_or_default()
+    let screen = m.places.iter().find(|p| !p.screen.is_empty());
+    tab.or(screen.map(|p| p.screen.clone())).unwrap_or_default()
 }
 
 impl Manager {
@@ -234,6 +249,7 @@ impl Manager {
             runs: Mutex::default(),
             jobs: Mutex::default(),
             ops: Mutex::default(),
+            seen: Mutex::default(),
             stopping: AtomicBool::new(false),
         }))
     }
@@ -275,12 +291,49 @@ impl Manager {
         found.ok_or_else(|| other(format!("{name} isn't installed")))
     }
 
-    /// Changes plugin `name`'s lock entry.
     fn change(&self, name: &str, f: impl FnOnce(&mut Locked)) -> io::Result<()> {
         let mut all = self.installed()?;
         let l = all.iter_mut().find(|l| l.name == name);
         f(l.ok_or_else(|| other(format!("{name} isn't installed")))?);
-        plugins::write_lock(&self.data, &all)
+        self.write_lock(&all)
+    }
+
+    fn write_lock(&self, all: &[Locked]) -> io::Result<()> {
+        let wrote = plugins::write_lock(&self.data, all);
+        lock(&self.seen).fresh = false;
+        wrote
+    }
+
+    fn write_entries(&self, all: &[Plugin]) -> io::Result<()> {
+        let wrote = plugins::write_entries(&self.data, all);
+        lock(&self.seen).fresh = false;
+        wrote
+    }
+
+    fn stamp(&self) -> Stamp {
+        let at = |p: PathBuf| {
+            let m = fs::metadata(p).ok()?;
+            Some((m.modified().ok()?, m.len()))
+        };
+        [
+            at(plugins::lock_path(&self.data)),
+            at(plugins::entries_path(&self.data)),
+        ]
+    }
+
+    fn look(&self, now: u64) -> Vec<Locked> {
+        let mut s = lock(&self.seen);
+        if s.fresh && now < s.next {
+            return s.lock.clone();
+        }
+        s.next = now + LOOK_EVERY;
+        let stamp = self.stamp();
+        if !s.fresh || stamp != s.stamp {
+            (s.fresh, s.stamp) = (true, stamp);
+            s.lock = self.installed().unwrap_or_default();
+            s.tabs = Some(self.tabs());
+        }
+        s.lock.clone()
     }
 
     fn token(&self, l: &Locked) -> io::Result<String> {
@@ -297,12 +350,11 @@ impl Manager {
         let mut all = self.fixed.clone();
         match plugins::read_entries(&self.data) {
             Ok(entries) => all.extend(entries),
-            Err(e) => eprintln!("cooee: {e}"),
+            Err(e) => cooee_core::note!("cooee: {e}"),
         }
         all
     }
 
-    /// The checkout for `url`: plugin `name`'s, fetched, or else a new clone (`.clone-<stamp>`).
     fn checkout(&self, url: &str, name: Option<&str>) -> io::Result<PathBuf> {
         if let Some(repo) = name.map(|n| self.repo(n)).filter(|r| r.exists()) {
             git(&repo, &["remote", "set-url", "origin", url])?;
@@ -344,7 +396,6 @@ impl Manager {
             .file_name()
             .is_some_and(|n| n.to_string_lossy().starts_with(".clone-"))
         {
-            // A new clone becomes its plugin's checkout, unless that is kept from before: then that one is fetched.
             let to = plan.as_ref().ok().map(|p| self.repo(&p.manifest.name));
             if let Some(to) = to.filter(|to| !to.exists()) {
                 fs::create_dir_all(to.parent().unwrap_or(&to))?;
@@ -360,7 +411,6 @@ impl Manager {
         plan
     }
 
-    /// The plan for `repo` at `rev`; `listed`: the index's name for it.
     fn plan_at(repo: &Path, url: &str, rev: &str, listed: Option<&str>) -> io::Result<Plan> {
         let commit = [rev.to_owned(), format!("origin/{rev}")]
             .iter()
@@ -380,6 +430,7 @@ impl Manager {
         let manifest = git(repo, &["show", &format!("{commit}:cooee-plugin.toml")])
             .map_err(|_| other(format!("{url} has no cooee-plugin.toml at {commit}")))?;
         let m = Manifest::parse(&manifest)?;
+        m.fits().map_err(other)?;
         if listed.is_some_and(|l| l != m.name) {
             return Err(other(format!(
                 "{url}: its manifest names {}, not the index's name",
@@ -398,11 +449,12 @@ impl Manager {
         );
         if !m.places.is_empty() {
             let actions = m.permissions.actions.join(", ");
-            let _ = write!(
+            write!(
                 text,
                 "\nscreens: {} places; actions: {actions}",
                 m.places.len()
-            );
+            )
+            .ok();
         }
         if !m.profiles.is_empty() {
             let labels: Vec<String> = m
@@ -410,13 +462,13 @@ impl Manager {
                 .iter()
                 .map(|p| format!("{} ({})", p.label, p.agent))
                 .collect();
-            let _ = write!(text, "\nagent profiles: {}", labels.join(", "));
+            write!(text, "\nagent profiles: {}", labels.join(", ")).ok();
         }
         if !m.needs.is_empty() {
-            let _ = write!(text, "\nneeds: {}", m.needs.join(", "));
+            write!(text, "\nneeds: {}", m.needs.join(", ")).ok();
         }
         if !missing.is_empty() {
-            let _ = write!(text, "\nmissing: {} (install it first)", missing.join(", "));
+            write!(text, "\nmissing: {} (install it first)", missing.join(", ")).ok();
         }
         if listed.is_none() {
             text += "\nnot reviewed: this plugin isn't in cooee's index; read its code before you add it";
@@ -431,8 +483,6 @@ impl Manager {
         })
     }
 
-    /// Builds plugin `name` at `commit` in a new folder and checks its backend serves its first tab's module with
-    /// `token`; a failed build's folder goes. Returns the manifest at that commit.
     fn build(&self, name: &str, commit: &str, token: &str) -> io::Result<Manifest> {
         let (repo, dir, log) = (
             self.repo(name),
@@ -440,8 +490,8 @@ impl Manager {
             self.log(name),
         );
         let gone = |dir: &Path| {
-            let _ = git(&repo, &["worktree", "remove", "--force", path(dir)]);
-            let _ = fs::remove_dir_all(dir);
+            git(&repo, &["worktree", "remove", "--force", path(dir)]).ok();
+            fs::remove_dir_all(dir).ok();
             git(&repo, &["worktree", "prune"])
         };
         gone(&dir)?;
@@ -481,17 +531,22 @@ impl Manager {
         token: &str,
         log: &Path,
     ) -> io::Result<Command> {
-        let mut c = sh(&m.run, dir, log)?;
-        c.env("PORT", port.to_string())
+        let mut c = sh(BACKEND, dir, log)?;
+        c.args(["sh", &m.run])
+            .stdin(Stdio::piped())
+            .env("PORT", port.to_string())
             .env("COOEE_PLUGIN_TOKEN", token)
             .env("COOEE", lock(&self.url).as_str());
         Ok(c)
     }
 
-    /// Runs the build's backend on a spare port until it serves its first tab's module (200), then stops it.
     fn health(&self, dir: &Path, m: &Manifest, token: &str, log: &Path) -> io::Result<()> {
-        let port = free_port()?;
-        let mut child = self.backend(dir, m, port, token, log)?.spawn()?;
+        let attached = m.attach_port().filter(|&p| up(p));
+        let port = attached.map_or_else(free_port, Ok)?;
+        let mut child = match attached {
+            Some(_) => None,
+            None => Some(self.backend(dir, m, port, token, log)?.spawn()?),
+        };
         let p = Plugin {
             name: m.name.clone(),
             label: String::new(),
@@ -499,12 +554,12 @@ impl Manager {
             module: first_path(m),
             token: token.to_owned(),
         };
-        let started = Instant::now();
+        let started = cooee_core::clock::instant();
         let answer = loop {
-            if let Ok(Some(s)) = child.try_wait() {
+            if let Some(Ok(Some(s))) = child.as_mut().map(Child::try_wait) {
                 break Err(other(format!("its backend exited ({s}): see its log")));
             }
-            let reply = crate::plugin::call(&p, "GET", &p.module, &[], &[], Some(HEALTH));
+            let reply = crate::plugin::call(&p, "GET", &p.module, &[], &[], HEALTH);
             match reply.map(|r| r.status) {
                 Ok(200) => break Ok(()),
                 got if started.elapsed() > HEALTH => {
@@ -514,10 +569,12 @@ impl Manager {
                         p.module
                     )));
                 }
-                _ => thread::sleep(Duration::from_millis(100)),
+                _ => cooee_core::clock::sleep(Duration::from_millis(100)),
             }
         };
-        stop(&mut child);
+        if let Some(c) = &mut child {
+            stop(c);
+        }
         answer
     }
 
@@ -550,13 +607,16 @@ impl Manager {
         {
             return Err(other(format!("a tab named {} is there already", t.name)));
         }
-        let token = cooee_core::sha256(&cooee_core::random(32)?);
+        let token = match attach_token(m) {
+            Some(t) => t,
+            None => cooee_core::sha256(&cooee_core::random(32)?),
+        };
         let m = self.build(&m.name, &plan.commit, &token)?;
-        let port = free_port()?;
+        let port = m.attach_port().map_or_else(free_port, Ok)?;
         let mut all = plugins::read_entries(&self.data)?;
         all.extend(entries(&m, port, &token));
         crate::plugin::check(&[self.fixed.as_slice(), &all].concat())?;
-        plugins::write_entries(&self.data, &all)?;
+        self.write_entries(&all)?;
         let mut lock = self.installed()?;
         lock.push(Locked {
             name: m.name.clone(),
@@ -572,7 +632,7 @@ impl Manager {
             enabled: true,
             ..Locked::default()
         });
-        plugins::write_lock(&self.data, &lock)
+        self.write_lock(&lock)
     }
 
     /// What updating plugin `name` would run: the index's pinned commit, or for a plugin added by URL the latest on
@@ -604,15 +664,13 @@ impl Manager {
         self.switch(&l, &plan.commit, &m)
     }
 
-    /// Makes `commit`'s build (built already) the one that runs, keeping the one before to roll back to, and
-    /// removes any older builds.
     fn switch(&self, l: &Locked, commit: &str, m: &Manifest) -> io::Result<()> {
         let token = self.token(l)?;
         let mut all = plugins::read_entries(&self.data)?;
         all.retain(|p| !l.tabs.contains(&p.name));
         all.extend(entries(m, l.port, &token));
         crate::plugin::check(&[self.fixed.as_slice(), &all].concat())?;
-        plugins::write_entries(&self.data, &all)?;
+        self.write_entries(&all)?;
         self.change(&l.name, |l| {
             l.previous = Some(std::mem::replace(&mut l.commit, commit.to_owned()));
             l.version.clone_from(&m.version);
@@ -621,10 +679,11 @@ impl Manager {
         let keep = [commit, l.commit.as_str()];
         for e in fs::read_dir(self.dir(&l.name).join("builds"))?.flatten() {
             if !keep.iter().any(|k| e.file_name() == *k) {
-                let _ = git(
+                git(
                     &self.repo(&l.name),
                     &["worktree", "remove", "--force", path(&e.path())],
-                );
+                )
+                .ok();
             }
         }
         Ok(())
@@ -642,7 +701,9 @@ impl Manager {
             .clone()
             .ok_or_else(|| other(format!("{name} has no build to roll back to")))?;
         let manifest = fs::read_to_string(self.build_dir(name, &prev).join("cooee-plugin.toml"))?;
-        self.switch(&l, &prev, &Manifest::parse(&manifest)?)
+        let m = Manifest::parse(&manifest)?;
+        m.fits().map_err(other)?;
+        self.switch(&l, &prev, &m)
     }
 
     /// Removes plugin `name`: `cooee serve` stops it, its entries go; its folder stays unless `purge`.
@@ -654,10 +715,10 @@ impl Manager {
         let l = self.locked(name)?;
         let mut all = plugins::read_entries(&self.data)?;
         all.retain(|p| !l.tabs.contains(&p.name));
-        plugins::write_entries(&self.data, &all)?;
+        self.write_entries(&all)?;
         let mut lock = self.installed()?;
         lock.retain(|x| x.name != name);
-        plugins::write_lock(&self.data, &lock)?;
+        self.write_lock(&lock)?;
         if purge {
             fs::remove_dir_all(self.dir(name))?;
         }
@@ -756,28 +817,28 @@ impl Manager {
         let rows = self.installed()?.into_iter().map(|l| {
             let state = if let Some(job) = lock(&self.jobs).get(&l.name) {
                 job.clone()
+            } else if !l.enabled && l.note.is_empty() {
+                "off".to_owned()
             } else if !l.enabled {
-                if l.note.is_empty() {
-                    "off".to_owned()
-                } else {
-                    l.note.clone()
-                }
+                l.note.clone()
             } else if let Some(run) = lock(&self.runs).get(&l.name) {
                 run.state.clone()
             } else {
-                let addr = SocketAddr::from((Ipv4Addr::LOCALHOST, l.port));
-                let up = TcpStream::connect_timeout(&addr, Duration::from_millis(300)).is_ok();
-                (if up { "running" } else { "not running" }).to_owned()
+                (if up(l.port) { "running" } else { "not running" }).to_owned()
             };
             let first_party = self.index.iter().any(|x| x.name == l.name && x.first_party);
-            let m = plugins::manifest(&self.data, &l).ok();
-            let (places, permissions) = m.map(|m| (m.places, m.permissions)).unwrap_or_default();
+            let (places, claims, permissions, accepts) = plugins::manifest(&self.data, &l)
+                .map(|m| (m.accepts(), m))
+                .map(|(a, m)| (m.places, m.claims, m.permissions, a))
+                .unwrap_or_default();
             Row {
                 locked: l,
                 state,
                 first_party,
                 places,
+                claims,
                 permissions,
+                accepts,
             }
         });
         Ok(rows.collect())
@@ -801,8 +862,8 @@ impl Manager {
         f: impl FnOnce(&Self) -> io::Result<()> + Send + 'static,
     ) -> io::Result<()> {
         let mut jobs = lock(&self.jobs);
-        if jobs.get(name).is_some_and(|j| j.ends_with('…')) {
-            return Err(other(format!("{name} is busy: {}", jobs[name])));
+        if let Some(j) = jobs.get(name).filter(|j| j.ends_with('…')) {
+            return Err(other(format!("{name} is busy: {j}")));
         }
         jobs.insert(name.to_owned(), format!("{what}…"));
         let (m, name) = (Arc::clone(self), name.to_owned());
@@ -817,24 +878,56 @@ impl Manager {
         Ok(())
     }
 
-    /// Starts plugin `l`'s backend from its build.
-    fn spawn(&self, l: &Locked) -> io::Result<Child> {
+    fn manifest(&self, l: &Locked) -> io::Result<Manifest> {
         let dir = self.build_dir(&l.name, &l.commit);
-        let m = Manifest::parse(&fs::read_to_string(dir.join("cooee-plugin.toml"))?)?;
+        Manifest::parse(&fs::read_to_string(dir.join("cooee-plugin.toml"))?)
+    }
+
+    fn spawn(&self, l: &Locked) -> io::Result<Option<(Child, String)>> {
+        let dir = self.build_dir(&l.name, &l.commit);
+        let m = self.manifest(l)?;
+        if m.attach_port().is_some_and(up) {
+            return Ok(None);
+        }
         let log = self.log(&l.name);
         note(&log, &format!("start {} on port {}", l.commit, l.port));
-        self.backend(&dir, &m, l.port, &self.token(l)?, &log)?
-            .spawn()
+        let child = self
+            .backend(&dir, &m, l.port, &self.token(l)?, &log)?
+            .spawn()?;
+        Ok(Some((child, first_path(&m))))
+    }
+
+    fn checks(&self, installed: &[Locked], now: u64) -> Vec<(String, bool)> {
+        let due: Vec<_> = lock(&self.runs)
+            .iter()
+            .filter(|(_, r)| r.child.is_some() && now >= r.check)
+            .map(|(n, r)| (n.clone(), r.module.clone()))
+            .collect();
+        let check = |(name, module): (String, String)| {
+            let l = installed.iter().find(|l| l.name == name)?;
+            let p = Plugin {
+                name,
+                label: String::new(),
+                url: format!("http://127.0.0.1:{}", l.port),
+                module,
+                token: self.token(l).ok()?,
+            };
+            let reply = crate::plugin::call(&p, "GET", &p.module, &[], &[], CHECK_WAIT);
+            Some((p.name, reply.is_ok_and(|r| r.status == 200)))
+        };
+        due.into_iter().filter_map(check).collect()
     }
 
     /// One pass of supervision at `now` (ms): stops the backends removed, turned off or switched to another build;
-    /// starts the enabled ones not running once their backoff is over; notes the ones that exited. Returns the
+    /// starts the enabled ones not running once their backoff is over; notes the ones that exited or are hung (failed
+    /// 3 health checks in a row, one every 10 s) and kills the hung ones. Returns the
     /// alerts: a plugin turned off after its 5th crash in 10 minutes.
     pub fn tick(&self, now: u64) -> Vec<String> {
         if self.stopping.load(Ordering::SeqCst) {
             return Vec::new();
         }
-        let installed = self.installed().unwrap_or_default();
+        let installed = self.look(now);
+        let checks = self.checks(&installed, now);
         let mut runs = lock(&self.runs);
         runs.retain(|name, run| {
             let keep = installed
@@ -850,6 +943,9 @@ impl Manager {
             let run = runs.entry(l.name.clone()).or_insert_with(|| Run {
                 child: None,
                 commit: l.commit.clone(),
+                module: String::new(),
+                check: 0,
+                misses: 0,
                 backoff: Backoff::default(),
                 next: 0,
                 state: "starting".to_owned(),
@@ -862,35 +958,66 @@ impl Manager {
                         .map_or("it exited".to_owned(), |s| s.to_string()),
                 ),
             };
+            if let Some(c) = run.child.as_mut().filter(|_| crashed.is_none())
+                && let Some(&(_, ok)) = checks.iter().find(|(n, _)| n == &l.name)
+            {
+                run.check = now + CHECK_EVERY;
+                run.misses = if ok { 0 } else { run.misses + 1 };
+                if run.misses >= MISSES {
+                    stop(c);
+                    crashed = Some(format!("hung, {MISSES} health checks in a row failed"));
+                }
+            }
             if crashed.is_none() && run.child.is_none() && now >= run.next {
+                if let Some(why) = self.manifest(l).ok().and_then(|m| m.fits().err()) {
+                    alerts.push(self.turn_off(l, &why, ""));
+                    continue;
+                }
                 match self.spawn(l) {
-                    Ok(c) => {
+                    Ok(Some((c, module))) => {
                         run.child = Some(c);
+                        run.module = module;
+                        run.check = now + CHECK_EVERY;
+                        run.misses = 0;
                         "running".clone_into(&mut run.state);
                     }
+                    Ok(None) => "attached".clone_into(&mut run.state),
                     Err(e) => crashed = Some(e.to_string()),
                 }
             }
             let Some(how) = crashed else { continue };
             run.child = None;
+            if self
+                .manifest(l)
+                .is_ok_and(|m| m.attach_port().is_some_and(up))
+            {
+                note(
+                    &self.log(&l.name),
+                    &format!("the backend stopped ({how}) while its attach port is up: attached"),
+                );
+                "attached".clone_into(&mut run.state);
+                continue;
+            }
             note(&self.log(&l.name), &format!("the backend stopped: {how}"));
             if let Some(wait) = run.backoff.crash(now) {
                 run.next = now + wait;
                 run.state = format!("crashed ({how}), restarting");
                 continue;
             }
-            let why = "off after 5 crashes in 10 minutes".to_owned();
-            let _one = lock(&self.ops);
-            let _ = self.change(&l.name, |l| {
-                l.enabled = false;
-                l.note.clone_from(&why);
-            });
-            alerts.push(format!(
-                "plugin {}: {why}; its log is in Settings › Plugins",
-                l.name
-            ));
+            let why = "off after 5 crashes in 10 minutes";
+            alerts.push(self.turn_off(l, why, "; its log is in Settings › Plugins"));
         }
         alerts
+    }
+
+    fn turn_off(&self, l: &Locked, why: &str, more: &str) -> String {
+        let _one = lock(&self.ops);
+        self.change(&l.name, |l| {
+            l.enabled = false;
+            why.clone_into(&mut l.note);
+        })
+        .ok();
+        format!("plugin {}: {why}{more}", l.name)
     }
 
     /// Supervises the backends for `hub` on a thread of its own, every half second: its tabs follow the installed
@@ -900,8 +1027,11 @@ impl Manager {
         let m = Arc::clone(self);
         thread::spawn(move || {
             loop {
-                hub.set_plugins(m.tabs());
-                for body in m.tick(now()) {
+                let alerts = m.tick(now());
+                if let Some(tabs) = lock(&m.seen).tabs.take() {
+                    hub.set_plugins(tabs);
+                }
+                for body in alerts {
                     let tag = "plugins".to_owned();
                     let url = "/#settings/plugins".to_owned();
                     let title = "cooee".to_owned();
@@ -911,9 +1041,10 @@ impl Manager {
                         tag,
                         url,
                         item: 0,
+                        say: false,
                     });
                 }
-                thread::sleep(Duration::from_millis(500));
+                cooee_core::clock::sleep(Duration::from_millis(500));
             }
         });
     }
@@ -930,87 +1061,4 @@ impl Manager {
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-
-    const MIN: u64 = 60 * 1000;
-
-    #[test]
-    fn backoff_doubles_and_the_fifth_crash_in_ten_minutes_turns_it_off() {
-        let mut b = Backoff::default();
-        let waits: Vec<_> = [0, 1, 2, 3, 4].map(|m| b.crash(m * MIN)).into();
-        assert_eq!(
-            waits,
-            [Some(1000), Some(2000), Some(4000), Some(8000), None]
-        );
-        // Crashes 11 minutes apart never add up to 5.
-        let mut b = Backoff::default();
-        assert!((0..20).all(|i| b.crash(i * 11 * MIN) == Some(1000)));
-    }
-
-    #[test]
-    fn the_supervisor_restarts_a_crashing_backend_then_turns_it_off_with_an_alert() {
-        let data = std::env::temp_dir().join(format!("cooee-supervise-{}", std::process::id()));
-        let _ = fs::remove_dir_all(&data);
-        let build = data.join("plugins/x/builds/c0");
-        fs::create_dir_all(&build).unwrap();
-        let manifest = "name = \"x\"\nversion = \"1\"\nbuild = \"true\"\nrun = \"echo ran >> runs; exit 3\"\n\
-                        [[tabs]]\nname = \"x\"\nlabel = \"X\"\nmodule = \"/tab.js\"\n";
-        fs::write(build.join("cooee-plugin.toml"), manifest).unwrap();
-        let tab = Plugin {
-            name: "x".into(),
-            label: "X".into(),
-            url: "http://127.0.0.1:1".into(),
-            module: "/tab.js".into(),
-            token: "0123456789abcdef".into(),
-        };
-        plugins::write_entries(&data, &[tab]).unwrap();
-        let x = Locked {
-            name: "x".into(),
-            commit: "c0".into(),
-            tabs: vec!["x".into()],
-            port: 1,
-            enabled: true,
-            ..Locked::default()
-        };
-        plugins::write_lock(&data, &[x]).unwrap();
-        let config = Config {
-            data: Some(data.clone()),
-            ..Config::default()
-        };
-        let m = Manager::new(&config).unwrap();
-        let runs = || {
-            fs::read_to_string(build.join("runs"))
-                .unwrap_or_default()
-                .lines()
-                .count()
-        };
-        // The fake clock: each pass is a second after the last restart's wait, so nothing waits for real but
-        // the backend's own exit.
-        let mut at = 0;
-        let mut alerts = Vec::new();
-        for _ in 0..200 {
-            alerts = m.tick(at);
-            if !alerts.is_empty() {
-                break;
-            }
-            let next = lock(&m.runs).get("x").map_or(at, |r| r.next);
-            at = next.max(at) + 1;
-            thread::sleep(Duration::from_millis(20));
-        }
-        assert_eq!(runs(), 5, "{alerts:?}");
-        assert_eq!(
-            alerts,
-            ["plugin x: off after 5 crashes in 10 minutes; its log is in Settings › Plugins"]
-        );
-        let x = &m.installed().unwrap()[0];
-        assert!(!x.enabled && x.note.contains("5 crashes"), "{x:?}");
-        assert!(m.list().unwrap()[0].state.contains("5 crashes"));
-        // Off, it stays off.
-        m.tick(at + 60 * MIN);
-        assert_eq!(runs(), 5);
-        let log = fs::read_to_string(data.join("plugins/x/plugin.log")).unwrap();
-        assert_eq!(log.matches("the backend stopped").count(), 5, "{log}");
-        fs::remove_dir_all(&data).unwrap();
-    }
-}
+mod tests;

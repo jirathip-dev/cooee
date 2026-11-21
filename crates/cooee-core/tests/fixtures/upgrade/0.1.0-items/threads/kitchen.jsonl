@@ -1,0 +1,7 @@
+{"id":1,"at":1762819200000,"kind":"you","text":"ช่วยหาสูตรต้มยำกุ้งหน่อย","random_id":"send-1"}
+{"id":2,"at":1762819201000,"seq":4,"kind":"tool","call":"t1","title":"grep -r tom-yum","status":"pending"}
+{"id":2,"at":1762819201000,"seq":6,"kind":"tool","call":"t1","title":"grep -r tom-yum","status":"completed","ended":1762819202000}
+{"id":3,"at":1762819203000,"seq":7,"kind":"plan","entries":[{"content":"find the recipe","priority":"high","status":"completed"}]}
+{"id":4,"at":1762819204000,"seq":9,"kind":"agent","text":"Found it: recipes/tom-yum.md","stop_reason":"end_turn"}
+{"id":5,"at":1762819300000,"kind":"you","text":"thanks","random_id":"send-2"}
+{"id":6,"at":1762819301000,"seq":12,"kind":"agent","text":"You're

@@ -8,23 +8,18 @@ mod support;
 
 use std::{fs, path::Path, thread, time::Duration};
 
+use cooee_core::agents::PLAIN;
 use serde_json::{Value, json};
-use support::{Cooee, Events, FakeShed, scratch, version};
+use support::{Cooee, Events, FakeShed, agent, scratch, version};
 
-/// cooee with personas Ada, Bo, Cy, Di and Ed, and the conductor profile (read as a persona).
 fn setup(name: &str) -> (std::path::PathBuf, FakeShed, Cooee) {
     let dir = scratch(name);
-    fs::create_dir_all(dir.join("personas")).unwrap();
     for n in ["Ada", "Bo", "Cy", "Di", "Ed"] {
-        let file = dir.join(format!("personas/{}.toml", n.to_lowercase()));
-        fs::write(file, format!("name = \"{n}\"\nagent = \"fake-acp\"\n")).unwrap();
+        let toml = format!("name = \"{n}\"\nagent = \"fake-acp\"\n");
+        agent(&dir, &n.to_lowercase(), &toml, "");
     }
-    fs::create_dir_all(dir.join("profiles")).unwrap();
-    fs::write(
-        dir.join("profiles/conductor.toml"),
-        "name = \"conductor\"\nlabel = \"Conductor\"\nagent = \"fake-acp\"\n",
-    )
-    .unwrap();
+    let conductor = "name = \"Conductor\"\nagent = \"fake-acp\"\nrole = \"orchestrator\"\n";
+    agent(&dir, "conductor", conductor, "");
     let shed = FakeShed::start(&dir.join("shed"), version());
     let cooee = Cooee::start(&dir, &shed.dir);
     (dir, shed, cooee)
@@ -45,7 +40,6 @@ fn room(cooee: &Cooee, members: &[&str]) -> String {
     body["id"].as_str().unwrap().to_owned()
 }
 
-/// Polls `f` for up to 10 s.
 fn eventually(mut f: impl FnMut() -> bool) {
     for _ in 0..200 {
         if f() {
@@ -56,7 +50,6 @@ fn eventually(mut f: impl FnMut() -> bool) {
     panic!("never happened");
 }
 
-/// The room's items once `n` member replies are in.
 fn replies(cooee: &Cooee, id: &str, n: usize) -> Vec<Value> {
     let mut items = Vec::new();
     eventually(|| {
@@ -67,27 +60,23 @@ fn replies(cooee: &Cooee, id: &str, n: usize) -> Vec<Value> {
     items
 }
 
-/// The `shed run` line of member `persona`'s session, if it started.
 fn run_line(dir: &Path, persona: &str) -> Option<String> {
     let log = fs::read_to_string(dir.join("shed/cli.log")).unwrap_or_default();
     let member = format!("cooee.member={persona}");
     log.lines().find(|l| l.contains(&member)).map(str::to_owned)
 }
 
-/// Member `persona`'s session's terminal, once its session started.
 fn terminal(dir: &Path, persona: &str) -> String {
     let line = run_line(dir, persona).expect("its session started");
     let t = line.split([' ', '=']).find(|w| w.starts_with("cooee-t"));
     t.unwrap().to_owned()
 }
 
-/// How many cancels member `persona`'s session was sent.
 fn cancels(dir: &Path, shed: &FakeShed, persona: &str) -> usize {
     let sent = shed.sent(&terminal(dir, persona));
     sent.iter().filter(|s| s.contains("\"cancel\"")).count()
 }
 
-/// The prompts member `persona`'s session was given, in order.
 fn prompts(dir: &Path, shed: &FakeShed, persona: &str) -> Vec<String> {
     let sent = shed.sent(&terminal(dir, persona));
     sent.iter()
@@ -132,13 +121,35 @@ fn each_member_takes_a_turn_in_its_own_session_and_hears_the_others_attributed()
         prompts(&dir, &shed, "bo")
     );
 
-    // The next turn gives each only what it hasn't had, never its own.
     send(&cooee, &id, "and again");
     replies(&cooee, &id, 4);
     let ada = prompts(&dir, &shed, "ada");
     assert_eq!(ada[1], "[Bo]: Hello\n\n[Owner]: and again", "{ada:?}");
-    // The members' sessions are the room's, never listed apart.
     assert_eq!(cooee.json("/threads").as_array().unwrap().len(), 1);
+}
+
+#[test]
+fn a_rooms_topics_are_the_rooms_of_its_members_titled_by_their_first_message() {
+    let (_dir, _shed, cooee) = setup("room-topics");
+    let first = room(&cooee, &["ada", "bo"]);
+    let second = room(&cooee, &["bo", "ada"]);
+    let other = room(&cooee, &["ada", "cy"]);
+    send(&cooee, &second, "Plan the release notes for next week");
+    replies(&cooee, &second, 2);
+    let rows = cooee.json(&format!("/threads?room={first}"));
+    let rows = rows.as_array().unwrap();
+    let ids: Vec<&Value> = rows.iter().map(|r| &r["id"]).collect();
+    assert_eq!(ids, [&json!(second), &json!(first)], "{rows:?}");
+    let row = &rows[0];
+    assert_eq!(row["title"], "Plan the release notes for", "{row}");
+    assert_eq!(row["archived"], false, "{row}");
+    assert_eq!(row["unseen"], 2, "{row}");
+    assert_eq!(row["last"], "Ada: Hello", "{row}");
+    assert_eq!(rows[1]["title"], "ada, bo", "{rows:?}");
+    let others = cooee.json(&format!("/threads?room={other}"));
+    assert_eq!(others[0]["id"], json!(other), "{others}");
+    assert_eq!(others.as_array().unwrap().len(), 1, "{others}");
+    assert_eq!(cooee.json("/threads?room=nope"), json!([]));
 }
 
 #[test]
@@ -150,7 +161,6 @@ fn members_are_given_final_replies_only() {
     assert!(items.iter().all(|i| i["kind"] != "tool"), "{items:?}");
     let bo = prompts(&dir, &shed, "bo").remove(0);
     assert!(bo.ends_with("[Ada]: Read it."), "{bo}");
-    // Ada's tool ran in her own session; Bo's was given her reply alone.
     assert!(!bo.contains("Read src/lib.rs"), "{bo}");
 }
 
@@ -167,9 +177,22 @@ fn members_join_and_leave_up_to_five_the_conductor_but_never_a_lane() {
     let (status, members) = post(&cooee, &path, &json!({ "persona": "conductor" }));
     assert_eq!((status, members), (200, json!(["ada", "bo", "conductor"])));
     assert_eq!(post(&cooee, &path, &json!({ "persona": "cy" })).0, 200);
-    // Twice is once.
     let (_, members) = post(&cooee, &path, &json!({ "persona": "cy" }));
     assert_eq!(members, json!(["ada", "bo", "conductor", "cy"]));
+    let moved = json!({ "persona": "cy", "at": 0 });
+    assert_eq!(
+        post(&cooee, &path, &moved).1,
+        json!(["cy", "ada", "bo", "conductor"])
+    );
+    assert_eq!(
+        post(&cooee, &path, &moved).1,
+        json!(["cy", "ada", "bo", "conductor"])
+    );
+    let back = json!({ "persona": "cy", "at": 9 });
+    assert_eq!(
+        post(&cooee, &path, &back).1,
+        json!(["ada", "bo", "conductor", "cy"])
+    );
     assert_eq!(post(&cooee, &path, &json!({ "persona": "di" })).0, 200);
     let (status, why) = post(&cooee, &path, &json!({ "persona": "ed" }));
     assert!(
@@ -178,7 +201,6 @@ fn members_join_and_leave_up_to_five_the_conductor_but_never_a_lane() {
     );
     assert_eq!(post(&cooee, &path, &json!({ "persona": "nobody" })).0, 400);
 
-    // A lane thread can't join.
     let labels = [("source", "drover"), ("group", "cooee"), ("item", "#33")];
     shed.lane("drover-cooee-33-impl", &labels);
     let lane = "w-drover-cooee-33-impl";
@@ -195,7 +217,6 @@ fn members_join_and_leave_up_to_five_the_conductor_but_never_a_lane() {
     let new = json!({ "members": ["ada", lane], "random_id": "lane" });
     assert_eq!(post(&cooee, "/rooms", &new).0, 400);
 
-    // Taken out: its session is closed, and it takes no more turns.
     send(&cooee, &id, "hi all");
     replies(&cooee, &id, 4);
     let bo = run_line(&dir, "bo").unwrap();
@@ -212,7 +233,6 @@ fn members_join_and_leave_up_to_five_the_conductor_but_never_a_lane() {
     assert_eq!(prompts(&dir, &shed, "bo").len(), 1);
 }
 
-/// Room `id`'s page events from its first this run.
 fn events(cooee: &Cooee, id: &str) -> Events {
     let cursor = cooee.json(&format!("/threads/{id}/messages"))["cursor"]
         .as_str()
@@ -222,7 +242,6 @@ fn events(cooee: &Cooee, id: &str) -> Events {
     cooee.events(id, &format!("{boot}.0"), false)
 }
 
-/// The next `n` turns taken, as (member, reason).
 fn turns(events: &mut Events, n: usize) -> Vec<(String, String)> {
     let mut out = Vec::new();
     while out.len() < n {
@@ -235,7 +254,6 @@ fn turns(events: &mut Events, n: usize) -> Vec<(String, String)> {
     out
 }
 
-/// The room's items, as (speaker or `note`, text).
 fn said(items: &[Value]) -> Vec<(String, String)> {
     let row = |i: &Value| {
         let who = if i["kind"] == "note" {
@@ -248,7 +266,6 @@ fn said(items: &[Value]) -> Vec<(String, String)> {
     items.iter().map(row).collect()
 }
 
-/// The room's items once `n` notes are in.
 fn notes(cooee: &Cooee, id: &str, n: usize) -> Vec<Value> {
     let mut items = Vec::new();
     eventually(|| {
@@ -282,11 +299,11 @@ fn mentioned_members_take_turns_in_mention_order_and_no_one_else() {
         pairs(&[("owner", first), ("cy", "Hello"), ("ada", "Hello")])
     );
     assert!(run_line(&dir, "bo").is_none(), "bo wasn't named");
-    // A member's first turn tells it who is in the room and how to pass.
     let cy = prompts(&dir, &shed, "cy").remove(0);
     assert!(
-        cy.starts_with("You are Cy, a member of a room with the owner and Ada, Bo.")
-            && cy.contains("Reply exactly [pass]"),
+        cy.starts_with(&format!(
+            "{PLAIN}\n\nYou are Cy, a member of a room with the owner and Ada, Bo."
+        )) && cy.contains("Reply exactly [pass]"),
         "{cy}"
     );
 }
@@ -307,7 +324,8 @@ fn with_no_mention_every_member_takes_a_turn_and_a_pass_is_hidden() {
         said(&items),
         pairs(&[("owner", "hi all"), ("ada", "Hello"), ("cy", "Hello")])
     );
-    // Bo took its turn, and Cy was never given its pass.
+    let done = events.until(|e| e.event == "room-stop").pop().unwrap();
+    assert_eq!(done.data, json!({ "reason": "done" }));
     assert_eq!(prompts(&dir, &shed, "bo").len(), 1);
     let cy = prompts(&dir, &shed, "cy").remove(0);
     assert!(cy.ends_with("[Owner]: hi all\n\n[Ada]: Hello"), "{cy}");
@@ -369,7 +387,6 @@ fn two_members_naming_each_other_stop_at_the_cap_each_message() {
     let items = notes(&cooee, &id, 1);
     let replies = |items: &[Value]| items.iter().filter(|i| i["kind"] == "agent").count();
     assert_eq!(replies(&items), 6);
-    // The round is over: the next message starts its own 6 turns, and stops there again.
     send(&cooee, &id, "@bo again");
     let items = notes(&cooee, &id, 2);
     assert_eq!(replies(&items), 12);
@@ -395,7 +412,6 @@ fn stop_cancels_the_member_taking_its_turn_and_drops_the_rest() {
     assert_eq!(status, 200, "{body}");
     let stop = events.until(|e| e.event == "room-stop").pop().unwrap();
     assert_eq!(stop.data, json!({ "reason": "stop" }));
-    // Ada's turn was cancelled: its session's cancelled reply is in, and never shown in the room.
     let session = terminal.trim_start_matches("cooee-").to_owned();
     eventually(|| {
         let all = cooee.json(&format!("/threads/{session}/messages"));
@@ -410,7 +426,6 @@ fn stop_cancels_the_member_taking_its_turn_and_drops_the_rest() {
         "Bo's queued turn was dropped"
     );
 
-    // The room takes the next message as usual (Bo hears the first, so is cued past its `hang`).
     shed.cue("bo", &["Hello"]);
     send(&cooee, &id, "@bo go");
     let items = replies(&cooee, &id, 1);
@@ -424,7 +439,6 @@ fn stop_cancels_the_member_taking_its_turn_and_drops_the_rest() {
     );
 }
 
-/// [stop] while a member's session is starting cancels that session once it has started, and drops the rest.
 #[test]
 fn stop_while_a_members_session_starts_cancels_it_once_started() {
     let (dir, shed, cooee) = setup("room-stop-start");
@@ -442,8 +456,6 @@ fn stop_while_a_members_session_starts_cancels_it_once_started() {
     );
 }
 
-/// cooee with personas Ada and Bo, sending its pushes to APNs through a fake `curl` that keeps each push's body in
-/// the folder it returns, and one device's APNs token.
 fn with_pushes(name: &str) -> (std::path::PathBuf, FakeShed, Cooee, std::path::PathBuf) {
     use std::os::unix::fs::PermissionsExt;
     let dir = scratch(name);
@@ -456,7 +468,7 @@ fn with_pushes(name: &str) -> (std::path::PathBuf, FakeShed, Cooee, std::path::P
     fs::create_dir_all(&bin).unwrap();
     fs::create_dir_all(&log).unwrap();
     let curl = format!(
-        "#!/bin/sh\ncat >\"{}/$$.json\"\nprintf '\\n200'\n",
+        "#!/bin/sh\nperl -ne 'print $1 =~ s/\\\\(.)/$1/gr if /^data-raw = \"(.*)\"$/' >\"{}/$$.json\"\nprintf '\\n200'\n",
         log.display()
     );
     fs::write(bin.join("curl"), curl).unwrap();
@@ -477,7 +489,6 @@ fn with_pushes(name: &str) -> (std::path::PathBuf, FakeShed, Cooee, std::path::P
     (dir, shed, cooee, log)
 }
 
-/// The pushes in `log` once there are `n`: each one's title and body, sorted.
 fn pushed(log: &Path, n: usize) -> Vec<(String, String)> {
     let mut got = Vec::new();
     eventually(|| {
@@ -500,8 +511,6 @@ fn pushed(log: &Path, n: usize) -> Vec<(String, String)> {
     got
 }
 
-/// #158: a room pushes only when a member addresses the owner, asks or fails, each titled with the room and the
-/// member; replies to each other, passes and a round's end stay quiet, and a member's ask shows on the room's row.
 #[test]
 fn a_room_pushes_only_when_a_member_addresses_the_owner_asks_or_fails() {
     let (dir, shed, cooee, log) = with_pushes("room-push");
@@ -516,7 +525,7 @@ fn a_room_pushes_only_when_a_member_addresses_the_owner_asks_or_fails() {
     send(&cooee, &id, "@ada over to you");
     replies(&cooee, &id, 2);
     let at_you = (
-        "ada, bo · Ada".to_owned(),
+        "hi all · Ada".to_owned(),
         "needs you · Ada: @you can you sign the order form?".to_owned(),
     );
     let quiet = "a reply to each other, a pass and a turn's end push nothing";
@@ -525,7 +534,7 @@ fn a_room_pushes_only_when_a_member_addresses_the_owner_asks_or_fails() {
     let ada = terminal(&dir, "ada");
     shed.ask(&ada);
     let asks = (
-        "ada, bo · Ada".to_owned(),
+        "hi all · Ada".to_owned(),
         "needs you · fake-acp: Edit early.rs".to_owned(),
     );
     assert_eq!(pushed(&log, 2), [at_you.clone(), asks.clone()]);
@@ -542,7 +551,7 @@ fn a_room_pushes_only_when_a_member_addresses_the_owner_asks_or_fails() {
 
     shed.report(&terminal(&dir, "bo"), "error", Some("rate limited"));
     let fails = (
-        "ada, bo · Bo".to_owned(),
+        "hi all · Bo".to_owned(),
         "failed · fake-acp: rate limited".to_owned(),
     );
     assert_eq!(pushed(&log, 3), [at_you, asks, fails]);

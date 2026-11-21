@@ -1,0 +1,25 @@
+name: lessons
+on:
+  pull_request:
+    branches: [main, staging]
+    types: [opened, edited, synchronize, reopened]
+
+jobs:
+  # #323, #202: drover's lesson-check runs each lesson check in .drover/rules.md (#510): a shadow one's failure goes
+  # to the job summary and never fails the job, an active one's fails it. The checkers' fixture tests fail it too.
+  lessons:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+      - uses: dtolnay/rust-toolchain@1.99.1
+      - name: install drover
+        run: cargo install --locked --git https://github.com/jirathip-dev/herdsman --branch staging drover
+      - name: checker tests
+        run: ci/pr-body-test.sh && ci/drover-checks-test.sh
+      - name: lesson checks
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: drover lesson-check --rules .drover/rules.md

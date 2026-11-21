@@ -1,0 +1,15 @@
+name = "Kai"
+role = "orchestrator"
+fleets = ["cooee", "drover"]
+avatar = "https://example.com/kai.png"
+character = "A dry wit; short sentences."
+instructions = "Answer in one paragraph."
+folder = "/srv/kai"
+agent = "fake-acp"
+model = "sonnet"
+effort = "high"
+machine = "air"
+plugins = ["drover"]
+can_message = ["conductor"]
+pinned = true
+profile = "kai"

@@ -30,30 +30,41 @@ internal struct SheetBar: View {
 internal struct PluginScreenSheet: View {
     @Environment(\.look) private var look
     @Environment(\.dismiss) private var dismiss
-    internal let store: StoreOf<PluginScreenFeature>
+    #if os(iOS)
+        @Environment(\.horizontalSizeClass) private var size
+    #else
+        private let size: UserInterfaceSizeClass? = .regular
+    #endif
+    internal let store: StoreOf<ScreenFeature>
 
     internal var body: some View {
-        let palette = look.palette
-        VStack(spacing: 0) {
-            SheetBar(cancel: back, title: store.offline ? "" : store.place.label, done: "Done") { dismiss() }
-            if let who = store.unreachable { offline(who) }
-            ScrollView {
-                Group {
-                    if let screen = store.screen {
-                        BlocksView(screen.root) {
-                            store.send(.act($0))
-                        } open: {
-                            store.send(.navigate($0))
-                        }
-                        .disabled(store.offline || store.acting).opacity(store.offline ? 0.6 : 1)
-                    } else if store.offline {
-                        Text("Nothing kept from \(store.place.label) yet.").foregroundStyle(palette.mute)
-                    } else {
-                        ProgressView()
-                    }
-                }
-                .frame(maxWidth: .infinity, alignment: .leading).padding(16)
+        screen.accessibilityHidden(store.lane != nil).overlay { lane }
+    }
+
+    @ViewBuilder private var lane: some View {
+        if let lane = store.scope(state: \.lane, action: \.lane.presented), case .thread(let thread) = lane.target {
+            LaneChatSheet(
+                store: lane, head: LaneHead(thread: thread, screen: store.screen?.root ?? .null),
+                back: "‹ \(store.label)"
+            ) {
+                store.send(.lane(.dismiss))
+            } done: {
+                dismiss()
             }
+        }
+    }
+
+    private var screen: some View {
+        let palette = look.palette
+        return VStack(spacing: 0) {
+            SheetBar(cancel: back, title: store.offline ? "" : store.label, done: "Done") { dismiss() }
+            if let who = store.unreachable { offline(who) }
+            ScrollViewReader { proxy in
+                ScrollView { content }.modifier(Refreshing(refresh: wide ? nil : refresh)).onChange(
+                    of: store.screen == nil
+                ) { scroll(proxy) }
+            }
+            .overlay(alignment: .top) { if store.slow { LoadingBar() } }
             if let said = store.said { Text(said).ui(13, .regular, look).foregroundStyle(palette.mute).padding(8) }
             if let pending = store.screen?.root["pending"] {
                 PendingBar(pending: pending).environment(\.act, { store.send(.act($0)) })
@@ -62,6 +73,47 @@ internal struct PluginScreenSheet: View {
         }
         .background(palette.background).foregroundStyle(palette.foreground)
         .task { await store.send(.task).finish() }
+    }
+
+    private var refresh: (@MainActor () -> Void)? {
+        guard store.screen?.root["refresh"]?.bool == true else { return nil }
+        return { store.send(.retry) }
+    }
+
+    private var content: some View {
+        let palette = look.palette
+        return Group {
+            if let screen = store.screen {
+                BlocksView(
+                    screen.root, source: store.source, focus: store.focus, picked: wide ? store.beside : nil,
+                    beside: wide ? store.besideScreen : nil
+                ) {
+                    store.send(.act($0))
+                } open: {
+                    store.send(.navigate($0))
+                } openThread: { thread in
+                    if size == .compact { store.send(.push(thread)) } else { store.send(.open(thread)) }
+                }
+                .environment(\.openBeside, beside)
+                .environment(\.refresh, wide ? refresh : nil)
+                .environment(\.acting, store.pending).disabled(store.offline).opacity(store.offline ? 0.6 : 1)
+            } else if store.offline {
+                Text("Nothing kept from \(store.label) yet.").foregroundStyle(palette.mute)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading).padding(BlocksView.inset)
+    }
+
+    private var wide: Bool { size != .compact }
+
+    private var beside: (@MainActor (String) -> Void)? {
+        guard wide else { return nil }
+        return { store.send(.beside($0)) }
+    }
+
+    private func scroll(_ proxy: ScrollViewProxy) {
+        guard let focus = store.focus, store.screen != nil else { return }
+        Task { @MainActor in proxy.scrollTo(focus, anchor: .center) }
     }
 
     private var back: (label: String, run: () -> Void)? {
@@ -74,7 +126,7 @@ internal struct PluginScreenSheet: View {
             TimelineView(.everyMinute) { context in
                 Text(
                     Offline.line(
-                        who: who, title: "\(store.place.plugin)'s \(store.title)", asOf: store.asOf, now: context.date))
+                        who: who, title: "\(store.source.name)'s \(store.title)", asOf: store.asOf, now: context.date))
             }
             .ui(13, .medium, look)
             Spacer(minLength: 4)
@@ -85,44 +137,27 @@ internal struct PluginScreenSheet: View {
     }
 }
 
-internal struct AttachSheet: View {
+internal struct AttachScreen: View {
     @Environment(\.look) private var look
     @Environment(\.dismiss) private var dismiss
     internal let store: StoreOf<AttachFeature>
 
     internal var body: some View {
-        let (plugin, palette) = (store.plugin, look.palette)
+        let palette = look.palette
         VStack(spacing: 0) {
             SheetBar(
-                cancel: ("Cancel", { dismiss() }), title: "Attach \(plugin.name)", done: "Attach", busy: store.attaching
+                cancel: ("Cancel", { dismiss() }), title: store.screen?.string("title") ?? "", done: "Attach",
+                busy: store.attaching || store.screen == nil
             ) { store.send(.attach) }
             ScrollView {
                 VStack(alignment: .leading, spacing: 18) {
-                    Text("\(plugin.name) \(plugin.version) · \(plugin.commit.prefix(7)) · \(plugin.source)")
-                        .ui(13, .regular, look).foregroundStyle(palette.mute)
-                    list("To \(store.persona.name), it may", plugin.may)
-                    list("Actions", plugin.permissions.actions) { plugin.permissions.destructive.contains($0) }
-                    list(
-                        "Its backend reaches",
-                        plugin.permissions.network.isEmpty ? ["nothing"] : plugin.permissions.network)
+                    if let screen = store.screen { BlocksView(screen, source: .core) } else { ProgressView() }
                     if let error = store.error { Text(error).foregroundStyle(palette.red) }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading).padding(16)
             }
         }
         .ui(15, .regular, look).background(palette.background).foregroundStyle(palette.foreground)
-    }
-
-    private func list(_ header: String, _ lines: [String], red: @escaping (String) -> Bool = { _ in false })
-        -> some View
-    {
-        VStack(alignment: .leading, spacing: 6) {
-            Text(look.mono ? "## \(header)" : header.uppercased()).ui(12, .semibold, look)
-                .foregroundStyle(look.palette.mute)
-            ForEach(lines, id: \.self) { line in
-                Text(red(line) ? "\(line) · always confirmed first" : line)
-                    .foregroundStyle(red(line) ? look.palette.red : look.palette.foreground)
-            }
-        }
+        .task { await store.send(.task).finish() }
     }
 }

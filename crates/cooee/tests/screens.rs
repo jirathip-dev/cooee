@@ -1,7 +1,8 @@
 //! Plugin screens as data (#125, #140): the example plugin (docs/plugins/hello-py) added from a git repo of its own,
 //! its screen and live stream through cooee's `/p/<plugin>/screens/` proxy, an action through `POST /p/<plugin>/action`
 //! and one outside its `[permissions]` refused before the backend sees it, and its header-strip chip on the persona
-//! it's attached to.
+//! it's attached to. It runs with a resolver that never answers (#388: a macOS runner's reverse DNS), so the backend
+//! must start without a DNS lookup.
 
 mod support;
 
@@ -12,7 +13,7 @@ use std::{
     path::Path,
     process::Command,
     thread,
-    time::Duration,
+    time::{Duration, Instant},
 };
 
 use serde_json::{Value, json};
@@ -29,44 +30,53 @@ fn git(dir: &Path, args: &[&str]) {
     assert!(out.status.success(), "git {args:?}: {out:?}");
 }
 
-/// docs/plugins/hello-py in a repo of its own, its manifest with a header-strip chip for the `pal` persona too.
 fn hello_repo(repo: &Path) {
     let src = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../docs/plugins/hello-py");
     fs::create_dir_all(repo).unwrap();
     fs::copy(src.join("hello.py"), repo.join("hello.py")).unwrap();
     let manifest = fs::read_to_string(src.join("cooee-plugin.toml")).unwrap();
     let strip = "[[places]]\ntype = \"header-strip\"\nid = \"waves\"\npersona = \"pal\"\nlabel = \"Waves\"\n\
-                 screen = \"/screens/hello\"\n\n[permissions]\nplaces = [\"menu-row\", \"header-strip\"]\n";
+                 screen = \"/screens/hello\"\n\n[[places]]\ntype = \"chat-cards\"\npersona = \"pal\"\n\n\
+                 [permissions]\nplaces = [\"menu-row\", \"header-strip\", \"chat-cards\"]\n";
     let manifest = manifest.replace("[permissions]\nplaces = [\"menu-row\"]\n", strip);
+    let manifest = format!("claims = [\"lab\"]\n{manifest}");
     fs::write(repo.join("cooee-plugin.toml"), manifest).unwrap();
     git(repo, &["init", "--quiet", "-b", "main"]);
     git(repo, &["add", "-A"]);
     git(repo, &["commit", "--quiet", "-m", "hello"]);
 }
 
-/// `cooee serve`, sent SIGTERM when dropped (a failed assert too), so it stops the backends it runs.
+fn no_dns(dir: &Path) -> String {
+    let py = dir.join("no-dns");
+    fs::create_dir_all(&py).unwrap();
+    let hang = "import socket, time\n\ndef hang(*_):\n    time.sleep(60)\n    raise OSError(\"no answer\")\n\n\
+                socket.gethostbyaddr = hang\n";
+    fs::write(py.join("sitecustomize.py"), hang).unwrap();
+    py.to_string_lossy().into_owned()
+}
+
 struct Serve(Cooee);
 
 impl Drop for Serve {
     fn drop(&mut self) {
         let pid = self.0.child.id().to_string();
-        let _ = Command::new("kill").args(["-TERM", &pid]).status();
-        let _ = self.0.child.wait();
+        Command::new("kill").args(["-TERM", &pid]).status().ok();
+        self.0.child.wait().ok();
     }
 }
 
-/// Waits (up to 20 s) for `f`.
-fn until(what: &str, f: impl Fn() -> bool) {
+fn until(what: &str, f: impl Fn() -> Result<(), String>) {
+    let mut last = String::new();
     for _ in 0..400 {
-        if f() {
-            return;
+        match f() {
+            Ok(()) => return,
+            Err(e) => last = e,
         }
         thread::sleep(Duration::from_millis(50));
     }
-    panic!("never: {what}");
+    panic!("never: {what}; the last try: {last}");
 }
 
-/// The `data:` of the next event on an open stream.
 fn next_data(r: &mut BufReader<TcpStream>) -> Value {
     loop {
         let mut line = String::new();
@@ -82,13 +92,33 @@ fn a_plugin_screen_streams_its_ops_and_an_action_outside_its_permissions_is_refu
     let dir = scratch("screens");
     let shed = FakeShed::start(&dir.join("shed"), version());
     hello_repo(&dir.join("hello.git"));
-    let serve = Serve(Cooee::start(&dir, &shed.dir));
+    let py = no_dns(&dir);
+    let serve = Serve(Cooee::start_env(
+        &dir,
+        &shed.dir,
+        "",
+        &[("PYTHONPATH", &py)],
+    ));
     let cooee = &serve.0;
     let url = dir.join("hello.git").to_string_lossy().into_owned();
-    let out = cooee.cli(&["plugin", "add", &url, "--yes"]);
-    assert!(out.contains("screens: 2 places; actions: wave"), "{out}");
+    let add = cooee
+        .command()
+        .env("PYTHONPATH", &py)
+        .args(["plugin", "add", &url, "--yes"])
+        .output()
+        .unwrap();
+    assert!(add.status.success(), "{add:?}");
+    let out = String::from_utf8(add.stdout).unwrap();
+    assert!(out.contains("screens: 3 places; actions: wave"), "{out}");
+    let log = dir.join("data/plugins/hello/plugin.log");
     until("its screen", || {
-        cooee.get("/p/hello/screens/hello").0 == 200
+        let at = Instant::now();
+        let (status, body) = cooee.get("/p/hello/screens/hello");
+        let took = at.elapsed();
+        let log = fs::read_to_string(&log).unwrap_or_default();
+        (status == 200)
+            .then_some(())
+            .ok_or_else(|| format!("{status} after {took:?}: {body}\nplugin.log:\n{log}"))
     });
 
     let screen = cooee.json("/p/hello/screens/hello");
@@ -96,7 +126,6 @@ fn a_plugin_screen_streams_its_ops_and_an_action_outside_its_permissions_is_refu
         (&screen["title"], &screen["blocks"][1]["value"]),
         (&json!("Hello"), &json!("0"))
     );
-    // A screens-only plugin has no PWA tab.
     assert_eq!(cooee.get("/p/hello/frame").0, 404);
 
     let mut stream = TcpStream::connect(&cooee.addr).unwrap();
@@ -125,7 +154,6 @@ fn a_plugin_screen_streams_its_ops_and_an_action_outside_its_permissions_is_refu
         (&json!(1), &json!("waves"))
     );
 
-    // Not in its [permissions] actions: refused here, never sent (the backend would count it as a wave).
     let drop = json!({ "screen": "hello", "block": "wave", "action": "drop" });
     let (status, body) = cooee.post("/p/hello/action", &drop);
     assert_eq!(status, 403, "{body}");
@@ -137,7 +165,6 @@ fn a_plugin_screen_streams_its_ops_and_an_action_outside_its_permissions_is_refu
         cooee.json("/p/hello/screens/hello")["blocks"][1]["value"],
         "1"
     );
-    // A screen path its places don't declare is refused here too.
     for off in [
         "/p/hello/screens/other",
         "/p/hello/screens/hellox",
@@ -147,21 +174,30 @@ fn a_plugin_screen_streams_its_ops_and_an_action_outside_its_permissions_is_refu
         let (status, body) = cooee.get(off);
         assert_eq!(status, 403, "{off}: {body}");
     }
-    // A plugin that isn't installed has no screens.
     assert_eq!(cooee.post("/p/nope/action", &wave).0, 404);
 
-    // Its header-strip chip shows on the persona it's attached to, and its permissions for the attach sheet.
+    pals_places(cooee);
+    let row = &cooee.json("/plugins")["installed"][0];
+    assert_eq!(
+        (
+            &row["permissions"]["actions"],
+            &row["places"][0]["type"],
+            &row["claims"]
+        ),
+        (&json!(["wave"]), &json!("menu-row"), &json!(["lab"]))
+    );
+}
+
+fn pals_places(cooee: &Cooee) {
     let pal = json!({ "name": "pal", "agent": "claude", "plugins": ["hello"] });
     let (status, body) = cooee.post("/personas", &pal);
     assert_eq!(status, 200, "{body}");
-    let chips = cooee.json("/personas/pal/places");
     assert_eq!(
-        chips,
-        json!([{ "plugin": "hello", "id": "waves", "label": "Waves", "screen": "/screens/hello" }])
+        cooee.json("/personas/pal/places"),
+        json!([
+            { "type": "header-strip", "plugin": "hello", "id": "waves", "label": "Waves", "screen": "/screens/hello" },
+            { "type": "chat-cards", "plugin": "hello", "id": "", "label": "", "screen": "/screens/cards" }
+        ])
     );
-    let row = &cooee.json("/plugins")["installed"][0];
-    assert_eq!(
-        (&row["permissions"]["actions"], &row["places"][0]["type"]),
-        (&json!(["wave"]), &json!("menu-row"))
-    );
+    assert_eq!(cooee.json("/p/hello/screens/cards")["title"], "Hello");
 }

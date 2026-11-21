@@ -21,7 +21,7 @@ internal struct ScreenTests {
         let names = try FileManager.default.contentsOfDirectory(atPath: Self.fixtures.path).filter {
             $0.hasSuffix(".json")
         }
-        #expect(names.count == 10)
+        #expect(names.count == 11)
         for name in names {
             let value = try Self.fixture(name)
             let again = try JSONDecoder().decode(JSONValue.self, from: JSONEncoder().encode(value))
@@ -110,5 +110,15 @@ internal struct ScreenTests {
         #expect(accounts.rowOrder(moving: "A", onto: "B") == ["C", "B", "A"])
         #expect(accounts.rowOrder(moving: "B", onto: "A") == ["B", "A", "C"])
         #expect(accounts.rowOrder(moving: "Z", onto: "A") == ["A", "C", "B"])
+    }
+
+    @Test internal func aBlockIsKeyedByItsIdAndOnlyOneWithoutOrARepeatByPosition() {
+        let block = { (id: String?) in JSONValue.object(id.map { ["id": .string($0)] } ?? [:]) }
+        let before = [block("a"), block(nil), block("b")].keyed().map(\.id)
+        let after = [block("new"), block("a"), block(nil), block("b"), block("a")].keyed().map(\.id)
+        #expect(before == ["=a", "#1", "=b"])
+        #expect(after == ["=new", "=a", "#2", "=b", "#4"])
+        let fields = JSONValue.object(["name": .string("token")])
+        #expect([fields].keyed(by: "name").map(\.id) == ["=token"])
     }
 }

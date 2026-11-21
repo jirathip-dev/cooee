@@ -1,0 +1,28 @@
+{
+  "format": 1,
+  "runs": {
+    "r-1731283200000": {
+      "made_in": "t-kai",
+      "made_at": 1731283200000,
+      "last_due": 1731921600000,
+      "last_run": {
+        "at": 1731921601000,
+        "key": "routine-r-1731283200000-1731921600000",
+        "outcome": "ran",
+        "thread": "t-kai"
+      }
+    },
+    "r-1731369600000": {
+      "made_in": "t-gone",
+      "made_at": 1731369600000,
+      "last_due": 0,
+      "last_run": {
+        "at": 1731400000000,
+        "key": "routine-r-1731369600000-1731400000000",
+        "outcome": "failed",
+        "why": "its chat was closed"
+      },
+      "chat_gone": "t-gone"
+    }
+  }
+}

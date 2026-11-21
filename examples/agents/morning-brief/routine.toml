@@ -1,0 +1,3 @@
+name = "Morning brief"
+when = "0 7 * * *"
+prompt = "Write today's morning brief ({{due}})."

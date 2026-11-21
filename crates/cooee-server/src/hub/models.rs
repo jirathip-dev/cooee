@@ -1,19 +1,13 @@
-//! The models each agent offers (#193), kept per agent and account from each session's start and a daily probe; a
-//! thread's pick is resolved against them and set on its session. A pinned model that is gone falls back to its
-//! family's short name, said once on the thread (and its persona's notes).
-
 use std::{collections::BTreeMap, fs};
 
 use cooee_core::{
-    Body, Change, Launch,
+    Body, Change, Launch, agents, memory,
     models::{self, Offered},
-    personas,
     shed_proto::AcpSession,
 };
 
 use super::{Hub, HubError, lock, now};
 
-/// How old a list gets before the daily probe asks its agent again, in milliseconds.
 const DAY: u64 = 24 * 60 * 60 * 1000;
 
 impl Hub {
@@ -31,7 +25,6 @@ impl Hub {
         found.find(|o| o.account == account).cloned()
     }
 
-    /// Refuses `pick` for `agent` on `account` when its models are known and none fits it.
     pub(super) fn offers(&self, agent: &str, account: &str, pick: &str) -> Result<(), HubError> {
         match self.offered(agent, account) {
             Some(o) if !pick.is_empty() && o.resolve(pick).is_none() => Err(HubError::Refused(
@@ -41,7 +34,6 @@ impl Hub {
         }
     }
 
-    /// Keeps `models` (none: kept as they were) as `agent`'s on `account`, seen now.
     fn seen(&self, agent: &str, account: &str, models: &[[String; 2]]) {
         if models.is_empty() {
             return;
@@ -55,14 +47,17 @@ impl Hub {
             seen: now(),
         });
         if let Err(e) = models::save(&self.data.join("models.json"), &lists) {
-            eprintln!("cooee: models.json: {e}");
+            cooee_core::note!("cooee: models.json: {e}");
         }
     }
 
-    /// Thread `id`'s session `s` came up on `terminal`: its models are kept and the thread's pick set on it.
     pub(super) fn settle(&self, id: &str, terminal: &str, s: &AcpSession) -> Result<(), HubError> {
         let live = self.live(id)?;
         let mut live = lock(&live);
+        if !s.id.is_empty() && live.meta.session != s.id {
+            s.id.clone_into(&mut live.meta.session);
+            self.save(&live)?;
+        }
         let meta = &live.meta;
         let (agent, account, pick) = (meta.agent.clone(), meta.account.clone(), meta.model.clone());
         self.seen(&agent, &account, &s.models);
@@ -75,18 +70,21 @@ impl Hub {
         if let Some(short) = &r.fallback {
             let text = format!("model {pick} is gone: now {short} ({})", r.id);
             short.clone_into(&mut live.meta.model);
-            self.store.save(&live.meta)?;
+            self.save(&live)?;
             let item = live.chat.push(now(), 0, Body::Note { text: text.clone() });
             live.publish(self, vec![Change::Item(item)])?;
-            let persona = personas::list(self.config_dir(), &self.data).into_iter();
+            let persona = agents::list(self.config_dir(), &self.data).into_iter();
             let persona = persona.filter(|p| p.id == live.meta.profile && p.model == pick);
             for p in persona {
-                let e = personas::Edit {
+                let e = memory::Edit {
                     text: Some(text.clone()),
-                    ..personas::Edit::default()
+                    ..memory::Edit::default()
                 };
-                if let Err(e) = personas::remember(&self.data, &p.id, "owner", &e, now()) {
-                    eprintln!("cooee: persona {}: {e}", p.id);
+                let none = || std::io::Error::other("no config folder");
+                let home = self.config_dir().ok_or_else(none);
+                let kept = home.and_then(|c| agents::home(c, &p.id));
+                if let Err(e) = kept.and_then(|h| memory::remember(&h, "owner", &e, now())) {
+                    cooee_core::note!("cooee: persona {}: {e}", p.id);
                 }
             }
         }

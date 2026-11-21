@@ -1,32 +1,51 @@
 import CooeeCore
 import SwiftUI
 
-internal struct Avatar: View {
+internal struct FigureView: View {
     @Environment(\.look) private var look
     internal let persona: Persona
     internal var size: CGFloat = 44
+    internal var frame = 0
 
     internal var body: some View {
+        if persona.id.isEmpty && look.figures != .ascii {
+            NeutralAvatar(persona: persona, size: size)
+        } else {
+            styled
+        }
+    }
+
+    @ViewBuilder private var styled: some View {
         let palette = look.palette
         let tint = palette.tint(persona.look.tint)
-        switch look.style {
-        case .modern:
+        switch look.figures {
+        case .avatar:
             Circle()
                 .fill(
                     LinearGradient(
                         colors: [tint.opacity(0.95), tint.opacity(0.6)], startPoint: .top, endPoint: .bottom)
                 )
-                .overlay(
-                    Image(systemName: persona.look.symbol).font(.system(size: size * 0.40, weight: .semibold))
-                        .foregroundStyle(palette.dark ? Color.black.opacity(0.75) : .white)
-                )
+                .overlay { face.foregroundStyle(palette.dark ? Color.black.opacity(0.75) : .white) }
+                .clipShape(Circle())
                 .frame(width: size, height: size)
-        case .terminal:
-            Text(persona.figure).font(.system(size: size * 0.30, weight: .bold, design: .monospaced))
-                .foregroundStyle(tint).frame(width: size, height: size)
-                .overlay(Rectangle().strokeBorder(tint.opacity(0.7), lineWidth: 1))
-        case .scene:
-            Sprite(name: "horse-\(persona.look.coat)-\(persona.pose)").frame(width: size * 1.32, height: size)
+        case .ascii:
+            Text(persona.state.figure(frame: frame)).font(
+                .system(size: size * 0.30, weight: .bold, design: .monospaced)
+            )
+            .foregroundStyle(tint).frame(width: size, height: size)
+            .overlay(Rectangle().strokeBorder(tint.opacity(0.7), lineWidth: 1))
+        case .sprite:
+            StateSprite(persona: persona, frame: frame, size: size)
+        }
+    }
+
+    @ViewBuilder private var face: some View {
+        if let photo = AvatarPicture.image(persona.api.avatar) {
+            Image(decorative: photo, scale: 1).resizable().scaledToFill()
+        } else if persona.look.symbol.isEmpty {
+            Text(persona.look.initials).font(.system(size: size * 0.36, weight: .semibold))
+        } else {
+            Image(systemName: persona.look.symbol).font(.system(size: size * 0.40, weight: .semibold))
         }
     }
 }
@@ -40,15 +59,13 @@ internal struct AgentChip: View {
         let palette = look.palette
         HStack(spacing: 4) {
             Text(persona.api.agent).fontWeight(.semibold)
-            Text("· \(persona.api.model)\(effort ? " · \(persona.api.effort)" : "")")
+            Text(
+                [persona.api.model, effort ? persona.api.effort : ""].filter { !$0.isEmpty }.map { "· \($0)" }
+                    .joined(separator: " "))
             Image(systemName: "chevron.down").font(.system(size: 8, weight: .bold))
         }
-        .ui(12, .regular, look).foregroundStyle(palette.mute).lineLimit(1).fixedSize()
-        .padding(.horizontal, 9).padding(.vertical, 4)
-        .background(look.mono ? Color.clear : palette.edge.opacity(0.35), in: .capsule)
-        .overlay {
-            if look.mono { Rectangle().strokeBorder(palette.edge, lineWidth: 1) }
-        }
+        .ui(12, .regular, look).foregroundStyle(palette.mute).lineLimit(1)
+        .padding(.horizontal, 9).padding(.vertical, 4).chip(look, fill: palette.edge.opacity(0.35), edge: palette.edge)
     }
 }
 
@@ -59,34 +76,23 @@ internal struct RoundButton: View {
     internal var size: CGFloat = 40
 
     internal var body: some View {
-        Group {
-            if look.mono {
-                Text("[\(ascii)]").ui(15, .bold, look)
-            } else {
-                Image(systemName: symbol).font(.system(size: size * 0.42, weight: .semibold))
-            }
+        Mark(text: "[\(ascii)]", size: 15) {
+            Image(systemName: symbol).font(.system(size: size * 0.42, weight: .semibold))
         }
-        .foregroundStyle(look.palette.foreground).frame(width: size, height: size)
-        .modifier(RoundSurface(look: look))
-    }
-}
-
-internal struct RoundSurface: ViewModifier {
-    internal let look: Look
-
-    internal func body(content: Content) -> some View {
-        if look.mono { content } else { content.surface(look, radius: 99, interactive: true) }
+        .fixedSize().foregroundStyle(look.palette.foreground).frame(minWidth: size, minHeight: size)
+        .chip(look)
     }
 }
 
 internal struct Badge: View {
     @Environment(\.look) private var look
     internal let count: Int
+    internal var tint: Color?
 
     internal var body: some View {
         Text("\(count)").ui(12, .bold, look).foregroundStyle(look.palette.dark ? .black : .white)
             .padding(.horizontal, 6).frame(minWidth: 20, minHeight: 20)
-            .background(look.palette.link, in: look.mono ? AnyShape(Rectangle()) : AnyShape(Capsule()))
+            .background(tint ?? look.palette.link, in: look.pill)
     }
 }
 
@@ -99,13 +105,11 @@ internal struct CardButton: View {
     internal var body: some View {
         let palette = look.palette
         let tint = tint ?? palette.link
-        Text(look.mono ? "[ \(title) ]" : title).ui(15, primary ? .semibold : .regular, look)
+        Text(look.label(.button, title)).ui(15, primary ? .semibold : .regular, look)
             .foregroundStyle(primary ? (palette.dark ? Color.black : .white) : tint)
             .padding(.horizontal, 14).frame(height: 36).frame(maxWidth: .infinity)
-            .background(
-                primary ? tint : tint.opacity(look.mono ? 0 : 0.12),
-                in: look.mono ? AnyShape(Rectangle()) : AnyShape(Capsule())
-            )
+            .background(primary ? tint : tint.opacity(look.outline ? 0 : 0.12), in: look.pill)
+            .accessibilityLabel(title)
     }
 }
 

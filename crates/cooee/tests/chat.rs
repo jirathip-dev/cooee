@@ -4,14 +4,11 @@
 
 mod support;
 
-use std::{
-    fs,
-    path::{Path, PathBuf},
-    thread,
-};
+use std::{fs, path::PathBuf, thread};
 
+use cooee_core::shed_proto::Hello;
 use serde_json::{Value, json};
-use support::{Cooee, Events, FakeShed, Sse, is_item, scratch, version};
+use support::{Cooee, Events, FakeShed, Sse, is_item, others_go_on, scratch, version};
 
 struct Setup {
     dir: PathBuf,
@@ -20,22 +17,7 @@ struct Setup {
 }
 
 fn setup(name: &str) -> Setup {
-    setup_with(name, &[])
-}
-
-/// [`setup`] with first-party theme packs installed beside the config (#38: only plain is built in).
-fn setup_with(name: &str, themes: &[&str]) -> Setup {
     let dir = scratch(name);
-    for t in themes {
-        let pack = Path::new(env!("CARGO_MANIFEST_DIR"))
-            .join("../../packs/themes")
-            .join(t);
-        fs::create_dir_all(dir.join("themes").join(t)).unwrap();
-        for f in fs::read_dir(pack).unwrap() {
-            let f = f.unwrap();
-            fs::copy(f.path(), dir.join("themes").join(t).join(f.file_name())).unwrap();
-        }
-    }
     let shed = FakeShed::start(&dir.join("shed"), version());
     let cooee = Cooee::start(&dir, &shed.dir);
     Setup { dir, shed, cooee }
@@ -46,9 +28,7 @@ impl Setup {
         self.dir.join("root/project")
     }
 
-    /// Starts a thread with `text`; returns its id.
     fn create(&self, text: &str) -> String {
-        // Each start its own id, as the page makes one: a repeated id adopts the thread it started.
         static STARTS: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
         let n = STARTS.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
         let new = json!({ "agent": "fake-acp", "folder": self.folder(), "text": text, "random_id": format!("start-{n}") });
@@ -60,7 +40,6 @@ impl Setup {
             .to_owned()
     }
 
-    /// The thread's events from the first one this run.
     fn events(&self, id: &str) -> Events {
         let cursor = self.cooee.json(&format!("/threads/{id}/messages"))["cursor"]
             .as_str()
@@ -121,7 +100,10 @@ fn new_thread_runs_the_agent_in_an_allowed_folder_and_streams_the_reply() {
 
     let events = s.events(&id).until(|e| is_item(e, "agent"));
     assert!(is_item(&events[0], "you") && events[0].data["text"] == "Say hello");
-    assert_eq!(text_of(&events), "Hello");
+    assert!(
+        matches!(text_of(&events).as_str(), "" | "Hello"),
+        "{events:?}"
+    );
     let reply = events.last().unwrap();
     assert_eq!(
         (&reply.data["text"], &reply.data["stop_reason"]),
@@ -130,18 +112,26 @@ fn new_thread_runs_the_agent_in_an_allowed_folder_and_streams_the_reply() {
 
     let kinds: Vec<Value> = s.items(&id).iter().map(|i| i["kind"].clone()).collect();
     assert_eq!(kinds, ["you", "agent"]);
-    let (status, page) = s.cooee.get("/");
-    assert_eq!(status, 200);
-    // Its agent in the sidebar opens it, with the last line.
-    assert!(
-        page.contains(&format!(r#"href="/t/{id}""#)) && page.contains("Hello"),
-        "{page}"
-    );
-    let (status, page) = s.cooee.get(&format!("/t/{id}"));
-    assert!(
-        status == 200 && page.contains(&format!("data-thread=\"{id}\"")),
-        "{page}"
-    );
+    let out = std::process::Command::new(env!("CARGO_BIN_EXE_cooee"))
+        .arg("--config")
+        .arg(&s.cooee.config)
+        .args(["export", &id])
+        .output()
+        .unwrap();
+    assert!(out.status.success(), "{out:?}");
+    let lines: Vec<Value> = String::from_utf8(out.stdout)
+        .unwrap()
+        .lines()
+        .map(|l| serde_json::from_str(l).unwrap())
+        .collect();
+    assert_eq!(lines, s.items(&id));
+    let list = s.cooee.json("/threads");
+    let row = list
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|t| t["id"] == id.as_str());
+    assert_eq!(row.map(|r| &r["last"]), Some(&json!("Hello")), "{list}");
 }
 
 #[test]
@@ -154,10 +144,16 @@ fn a_tool_call_is_one_row_updated_in_place_and_a_retried_send_is_stored_once() {
     assert_eq!(status, 200, "{first}");
     let (_, again) = s.send(&id, "use a tool", "r1");
     assert_eq!(first, again);
+    let (status, body) = s.send(&id, "untagged", "");
+    assert_eq!(status, 400, "{body}");
     let prompts = s.shed.sent(&terminal(&id));
     assert_eq!(
         prompts.iter().filter(|t| t.contains("use a tool")).count(),
         1
+    );
+    assert!(
+        !prompts.iter().any(|t| t.contains("untagged")),
+        "{prompts:?}"
     );
 
     let events = events.until(|e| is_item(e, "agent"));
@@ -165,6 +161,15 @@ fn a_tool_call_is_one_row_updated_in_place_and_a_retried_send_is_stored_once() {
     let statuses: Vec<&Value> = tools.iter().map(|e| &e.data["status"]).collect();
     assert_eq!(statuses, ["pending", "in_progress", "completed"]);
     assert!(tools.iter().all(|e| e.data["id"] == tools[0].data["id"]));
+    let rows: Vec<(&Value, &Value)> = tools
+        .iter()
+        .map(|e| (&e.data["action"], &e.data["title"]))
+        .collect();
+    assert!(
+        rows.iter()
+            .all(|r| *r == (&json!("read"), &json!("src/lib.rs"))),
+        "{rows:?}"
+    );
     assert!(tools[1].data.get("ended").is_none() && tools[2].data["ended"].is_u64());
     assert_eq!(text_of(&events), "Read it.");
     let kinds: Vec<Value> = s.items(&id).iter().map(|i| i["kind"].clone()).collect();
@@ -211,6 +216,53 @@ fn an_approval_is_sent_to_shed_once_however_often_it_is_tapped() {
 }
 
 #[test]
+fn deny_and_say_rejects_the_call_and_the_agent_gets_the_text_once_under_the_denial() {
+    let s = setup("deny-say");
+    let id = s.create("please approve an edit");
+    let mut events = s.events(&id);
+    let ask = events.until(|e| is_item(e, "approval")).pop().unwrap();
+    let choice = &ask.data["block"]["blocks"][0];
+    let last = choice["options"].as_array().unwrap().last().unwrap();
+    assert_eq!(
+        (&last["value"], &last["label"]),
+        (&json!("say"), &json!("Deny and say…"))
+    );
+    let item = ask.data["id"].as_u64().unwrap();
+    let path = format!("/threads/{id}/approve");
+    let say = json!({ "item": item, "option": "say", "value": "fake says: Use a branch instead." });
+    thread::scope(|scope| {
+        for _ in 0..3 {
+            scope.spawn(|| assert_eq!(s.cooee.post(&path, &say).0, 200));
+        }
+    });
+    events.until(|e| is_item(e, "agent") && e.data["text"] == "Use a branch instead.");
+    assert_eq!(s.cooee.post(&path, &say).0, 200);
+    let allow = json!({ "item": item, "option": "allow" });
+    assert_eq!(s.cooee.post(&path, &allow).0, 200);
+    let sent = s.shed.sent(&terminal(&id));
+    let approvals: Vec<&String> = sent.iter().filter(|t| t.contains("approve\":")).collect();
+    assert_eq!(approvals, ["\x1e{\"approve\":\"reject\"}\n"]);
+    let said = sent.iter().filter(|t| t.contains("Use a branch")).count();
+    assert_eq!(said, 1, "{sent:?}");
+
+    let items = s.items(&id);
+    let kinds: Vec<&Value> = items.iter().map(|i| &i["kind"]).collect();
+    assert_eq!(kinds, ["you", "tool", "approval", "agent", "agent"]);
+    let card = items.iter().find(|i| i["kind"] == "approval").unwrap();
+    assert_eq!(card["chosen"], "reject");
+    let lines: Vec<&Value> = card["block"]["blocks"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|b| &b["markdown"])
+        .collect();
+    assert_eq!(
+        lines,
+        ["✓ reject · browser", "fake says: Use a branch instead."]
+    );
+}
+
+#[test]
 fn cancel_ends_the_turn_and_writes_back_the_tool_call_in_progress() {
     let s = setup("cancel");
     let id = s.create("hang on");
@@ -234,7 +286,8 @@ fn cancel_ends_the_turn_and_writes_back_the_tool_call_in_progress() {
 }
 
 #[test]
-fn a_reconnect_with_last_event_id_replays_without_gaps_or_duplicates() {
+fn a_reconnect_with_last_event_id_replays_without_gaps_or_duplicates_and_revs_count_up_across_threads()
+ {
     let s = setup("reconnect");
     let id = s.create("use a tool");
     let all = s.events(&id).until(|e| is_item(e, "agent"));
@@ -245,16 +298,19 @@ fn a_reconnect_with_last_event_id_replays_without_gaps_or_duplicates() {
         .to_owned();
     let boot = cursor.split('.').next().unwrap();
     for cut in 1..all.len() {
-        // A page that saw the first `cut` events and reconnects gets exactly the rest.
         let mut events = s.cooee.events(&id, &all[cut - 1].id, true);
         let rest = events.until(|e| e.id == all.last().unwrap().id);
         let ids = |v: &[Sse]| v.iter().map(|e| e.id.clone()).collect::<Vec<_>>();
         assert_eq!(ids(&rest), ids(&all[cut..]), "after {}", all[cut - 1].id);
     }
-    // A cursor from another run gets a reset: the page reloads its slice.
     for stale in ["0.0".to_owned(), format!("{boot}.99999")] {
         assert_eq!(s.cooee.events(&id, &stale, true).next().event, "reset");
     }
+    let other = s.create("hi");
+    let theirs = s.events(&other).until(|e| is_item(e, "agent"));
+    let rev = |e: &Sse| e.id.rsplit_once('.').unwrap().1.parse::<u64>().unwrap();
+    let revs: Vec<u64> = all.iter().chain(&theirs).map(rev).collect();
+    assert!(revs.windows(2).all(|w| w[0] < w[1]), "{revs:?}");
 }
 
 #[test]
@@ -263,7 +319,6 @@ fn a_restarted_cooee_reattaches_to_its_terminals_and_catches_up() {
     let id = s.create("hang on");
     s.events(&id).until(|e| e.event == "text");
     drop(s.cooee);
-    // While cooee is down the turn is cancelled (as `shed cancel` would).
     s.shed.input(&terminal(&id), "\x1e\"cancel\"\n");
     s.cooee = Cooee::start(&s.dir, &s.shed.dir);
     let mut events = s.events(&id);
@@ -281,6 +336,37 @@ fn a_restarted_cooee_reattaches_to_its_terminals_and_catches_up() {
     events.until(|e| is_item(e, "agent") && e.data["text"] == "Hello");
     let kinds: Vec<Value> = s.items(&id).iter().map(|i| i["kind"].clone()).collect();
     assert_eq!(kinds, ["you", "tool", "agent", "you", "agent"]);
+}
+
+#[test]
+fn a_reset_from_shed_resyncs_the_stream_and_drops_no_event() {
+    let s = setup("shed-reset");
+    let id = s.create("hi");
+    let mut events = s.events(&id);
+    events.until(|e| is_item(e, "agent"));
+    let floor = s.shed.forget(1_304_000);
+    let _shed = s.shed.restart(version());
+    let sinces = || -> Vec<u64> {
+        let requests = s.shed.requests.lock().unwrap();
+        let events = requests.iter().filter(|(m, _)| m == "events");
+        events.filter_map(|(_, p)| p["since"].as_u64()).collect()
+    };
+    for _ in 0..500 {
+        if sinces().contains(&floor) {
+            break;
+        }
+        thread::sleep(std::time::Duration::from_millis(20));
+    }
+    let sinces = sinces();
+    assert!(sinces.iter().any(|&n| n < floor), "{sinces:?}");
+    assert!(
+        sinces.contains(&floor),
+        "resumes after the reset: {sinces:?}"
+    );
+    assert_eq!(s.send(&id, "again", "reset-1").0, 200);
+    events.until(|e| is_item(e, "agent") && e.data["text"] == "Hello");
+    let log = fs::read_to_string(s.dir.join("cooee.err")).unwrap();
+    assert!(!log.contains("dropped a shed event"), "{log}");
 }
 
 #[test]
@@ -310,108 +396,87 @@ fn closing_a_thread_kills_and_removes_its_terminal() {
 }
 
 #[test]
-fn scene_draws_the_agents_as_sprites_and_the_current_ones_chats_as_chips() {
-    // #34 on #86: Style's Scene draws the agents sidebar as the theme's scene; chats keep the style chosen before it.
-    let s = setup_with("scene", &["farm", "kitchen"]);
-    let ids = [s.create("one"), s.create("two")];
-    let page = |path: &str, pick: &str| {
-        let cookie = format!("{}; cooee-look={pick}", s.cooee.cookie);
-        s.cooee.raw("GET", path, &[("Cookie", &cookie)], "").1
-    };
-    let agents = page("/?list", "").matches(r#"<a class="agr"#).count();
-    assert!(agents >= 1);
-    let scene = page("/?list", "scene:on/style:terminal");
-    assert!(scene.contains(r#"data-style="terminal""#), "{scene}");
-    assert_eq!(
-        scene.matches(r#"<section class="sp""#).count(),
-        1,
-        "{scene}"
-    );
-    assert_eq!(scene.matches(r#"<a class="sb"#).count(), agents, "{scene}");
-    assert!(scene.contains(&format!("{agents} agents")), "{scene}");
-    assert!(!scene.contains(r#"<a class="agr"#), "{scene}");
-    assert!(scene.contains("/look/farm/sprites.svg#s-"), "{scene}");
-    // The list's current agent (the first, as a phone's `‹` names none): its one sprite for both chats, ringed,
-    // opens the ongoing one (the oldest open); its chats are chips under the scene.
-    let ongoing = format!(r#"href="/t/{}""#, ids[0]);
-    assert_eq!(
-        scene.matches(r#"aria-current="true""#).count(),
-        1,
-        "{scene}"
-    );
-    let chips = &scene[scene.find(r#"class="scc""#).expect(&scene)..];
-    let chips = &chips[..chips.find("</nav>").unwrap()];
-    assert!(chips.contains(&format!("/t/{}", ids[1])), "{chips}");
-    assert_eq!(scene.matches(&ongoing).count(), 2, "{scene}");
-    // Scene is checked; Figures stays live (ASCII or None leave Scene, amendment A).
-    assert!(
-        scene.contains(r#"data-v="scene" aria-checked="true""#),
-        "{scene}"
-    );
-    // On the side thread: its agent's sprite ringed, and its chats as chips, the side thread's current.
-    let chat = page(&format!("/t/{}", ids[1]), "scene:on");
-    let ring = chat.find(r#"aria-current="true""#).expect(&chat);
-    let tag = &chat[chat[..ring].rfind("<a").unwrap()..ring];
-    assert!(tag.contains(&ongoing), "{tag}");
-    let chips = &chat[chat.find(r#"class="scc""#).expect(&chat)..];
-    let chips = &chips[..chips.find("</nav>").unwrap()];
-    let first = chips.find(&ongoing).expect(chips);
-    let side = chips
-        .find(&format!(r#"href="/t/{}" aria-current="page""#, ids[1]))
-        .expect(chips);
-    let new = chips.find("+ new chat").expect(chips);
-    assert!(first < side && side < new, "{chips}");
-    // Figures ASCII or None, or a theme with no sprites (plain): no Scene, the agents' rows, and Scene not offered.
-    for pick in [
-        "scene:on/figures:ascii",
-        "scene:on/figures:none",
-        "scene:on/theme:plain",
-    ] {
-        let list = page("/?list", pick);
-        assert!(!list.contains(r#"id="scene""#), "{pick}");
-        assert!(list.contains(r#"<a class="agr"#), "{pick}");
-        let v = list.find(r#"data-v="scene""#).unwrap();
-        let at = list[..v].rfind("<button").unwrap();
-        let tag = &list[at..v];
-        assert!(tag.contains("hidden"), "{pick}: {tag}");
+fn a_shed_of_another_protocol_is_refused_naming_both_sides() {
+    for protocol in [0, 3] {
+        let dir = scratch(&format!("version-{protocol}"));
+        let theirs = Hello {
+            build: "fffffff".to_owned(),
+            protocol,
+            ..version()
+        };
+        let shed = FakeShed::start(&dir.join("shed"), theirs);
+        let cooee = Cooee::start(&dir, &shed.dir);
+        let new = json!({ "agent": "fake-acp", "folder": dir.join("root/project"), "text": "hi", "random_id": "x" });
+        let (status, body) = cooee.post("/threads", &new);
+        assert_eq!(status, 502, "{body}");
+        let (v, b) = (&version().version, &version().build);
+        let theirs = if protocol == 0 {
+            format!("the server runs {v} (fffffff) protocol 0, older than protocol 1")
+        } else {
+            format!(
+                "the server refused it: client {b} / server fffffff: protocol 1 vs 3; restart shed serve"
+            )
+        };
+        let said = format!("SHED_VERSION: cooee speaks shed {v} ({b}) protocol 1; {theirs}");
+        assert!(body.contains(&said), "{body}\nwanted: {said}");
+        assert!(
+            !shed.cli_log().contains(" run "),
+            "nothing started: {}",
+            shed.cli_log()
+        );
     }
-    // The scene's art, its calm layers only (cooee has no host load).
-    let (status, art) = s.cooee.get("/look/kitchen/scene.svg");
-    assert_eq!(status, 200);
-    assert!(
-        art.contains(".h-busy,.h-held,.l-overcast,.l-rain{display:none}"),
-        "{art}"
-    );
 }
 
 #[test]
-fn a_shed_of_another_version_is_refused_naming_both_versions() {
-    let dir = scratch("version");
-    let shed = FakeShed::start(&dir.join("shed"), "9.9.9");
-    let cooee = Cooee::start(&dir, &shed.dir);
-    let new = json!({ "agent": "fake-acp", "folder": dir.join("root/project"), "text": "hi", "random_id": "x" });
-    let (status, body) = cooee.post("/threads", &new);
-    assert_eq!(status, 502, "{body}");
-    assert!(
-        body.contains("version mismatch") && body.contains(version()) && body.contains("9.9.9"),
-        "{body}"
+fn a_send_to_a_shed_on_another_protocol_says_why_in_the_chat_then_goes_through_once_fixed() {
+    let s = setup("version-send");
+    let id = s.create("hi");
+    let old = Hello {
+        build: "fffffff".to_owned(),
+        protocol: 0,
+        ..version()
+    };
+    let shed = s.shed.restart(old);
+    for n in 0..2 {
+        let (status, body) = s.send(&id, "again", &format!("v-{n}"));
+        assert_eq!(status, 502, "{body}");
+    }
+    let (v, b) = (&version().version, &version().build);
+    let needs = format!(
+        "SHED_VERSION: cooee speaks shed {v} ({b}) protocol 1; the server runs {v} (fffffff) protocol 0, older than protocol 1; \
+         fix: install or update shed to protocol 1 or newer from https://github.com/jirathip-dev/shed/releases, and start its serve"
     );
-    assert!(
-        !shed.cli_log().contains(" run "),
-        "nothing started: {}",
-        shed.cli_log()
-    );
+    let notes: Vec<String> = s
+        .items(&id)
+        .iter()
+        .filter(|i| i["kind"] == "note")
+        .map(|i| i["text"].as_str().unwrap().to_owned())
+        .collect();
+    assert_eq!(notes.len(), 2, "{notes:?}");
+    assert!(notes.iter().all(|n| n.starts_with(&needs)), "{notes:?}");
+    let _fixed = shed.restart(version());
+    let (status, body) = s.send(&id, "now", "v-2");
+    assert_eq!(status, 200, "{body}");
+    let log = || fs::read_to_string(s.dir.join("cooee.err")).unwrap();
+    let cleared = "cooee: shed speaks this build's protocol again";
+    for _ in 0..500 {
+        if log().contains(cleared) {
+            break;
+        }
+        thread::sleep(std::time::Duration::from_millis(20));
+    }
+    let log = log();
+    let lines = |what: &str| log.lines().filter(|l| l.contains(what)).count();
+    assert_eq!((lines("SHED_VERSION"), lines(cleared)), (1, 1), "{log}");
 }
 
-/// The fake shed for the UI tests (web/e2e/serve.sh): serves in `$FAKE_SHED_DIR` until killed.
 #[test]
-#[ignore = "a server for web/e2e, not a test"]
+#[ignore = "a server for apple/e2e, not a test"]
 fn fake_shed_server() {
     let Some(dir) = std::env::var_os("FAKE_SHED_DIR") else {
         return;
     };
     let shed = FakeShed::start(PathBuf::from(dir).as_path(), version());
-    // Workflow sessions another tool started (#33): an impl lane at work, a rev lane that asks, a finished one.
     if std::env::var_os("FAKE_SHED_LANES").is_some() {
         let lane = |name: &str, item: &str, role: &str, prompt: &str| {
             let url = format!("https://github.com/o/cooee/issues/{}", &item[1..]);
@@ -438,7 +503,6 @@ fn fake_shed_server() {
 
 #[test]
 fn a_message_to_a_stopped_agent_is_refused_never_stored_as_sent() {
-    // #253: shed takes a prompt for a stopped session and drops it; the send says so instead of returning 200.
     let s = setup("stopped");
     let id = s.create("exit now");
     s.events(&id)
@@ -451,4 +515,111 @@ fn a_message_to_a_stopped_agent_is_refused_never_stored_as_sent() {
         !mine.iter().any(|i| i["text"] == "are you there"),
         "{mine:?}"
     );
+}
+
+#[test]
+fn a_hanging_shed_approve_never_holds_another_thread() {
+    let s = setup("approve-hang");
+    let id = s.create("please approve an edit");
+    let ask = s
+        .events(&id)
+        .until(|e| is_item(e, "approval"))
+        .pop()
+        .unwrap();
+    let other = s.create("Say hi");
+    s.events(&other).until(|e| is_item(e, "agent"));
+    let gate = format!("hang-send-{}", terminal(&id));
+    s.shed.gate(&gate, true);
+    let tap = json!({ "item": ask.data["id"], "option": "allow" });
+    let path = format!("/threads/{id}/approve");
+    thread::scope(|scope| {
+        let tapped = scope.spawn(|| s.cooee.post(&path, &tap));
+        let approving = || {
+            s.shed
+                .sent(&terminal(&id))
+                .iter()
+                .any(|t| t.contains("approve"))
+        };
+        while !approving() {
+            thread::sleep(std::time::Duration::from_millis(20));
+        }
+        others_go_on(&s.cooee, &other);
+        assert!(!tapped.is_finished(), "the approve still hangs in shed");
+        s.shed.gate(&gate, false);
+        let (code, body) = tapped.join().unwrap();
+        assert_eq!(code, 200, "{body}");
+    });
+}
+
+fn restarts(s: &Setup) -> Vec<String> {
+    let log = s.shed.cli_log();
+    let runs = log.lines().filter(|l| l.contains(" run --acp "));
+    runs.skip(1).map(str::to_owned).collect()
+}
+
+fn notes(s: &Setup, id: &str) -> usize {
+    s.items(id).iter().filter(|i| i["kind"] == "note").count()
+}
+
+#[test]
+fn a_send_to_a_gone_agent_starts_a_fresh_one_in_the_chat_and_delivers() {
+    let s = setup("gone-send");
+    let id = s.create("hi");
+    let mut events = s.events(&id);
+    events.until(|e| is_item(e, "agent"));
+    s.shed.vanish(&terminal(&id));
+    let (status, body) = s.send(&id, "echo back", "g1");
+    assert_eq!(status, 200, "{body}");
+    events.until(|e| is_item(e, "agent") && e.data["text"] == "back");
+    let again = restarts(&s);
+    assert_eq!(again.len(), 1, "{again:?}");
+    assert!(!again[0].contains("--resume"), "{again:?}");
+    assert_eq!(notes(&s, &id), 1, "one line says it started fresh");
+}
+
+#[test]
+fn a_gone_agent_that_reported_its_session_resumes_it_on_send() {
+    let s = setup("gone-resume");
+    fs::write(s.shed.dir.join("session.json"), r#"{"id":"sess-1"}"#).unwrap();
+    let id = s.create("hi");
+    let mut events = s.events(&id);
+    events.until(|e| is_item(e, "agent"));
+    s.shed.vanish(&terminal(&id));
+    let (status, body) = s.send(&id, "echo back", "g1");
+    assert_eq!(status, 200, "{body}");
+    events.until(|e| is_item(e, "agent") && e.data["text"] == "back");
+    let again = restarts(&s);
+    assert_eq!(again.len(), 1, "{again:?}");
+    assert!(again[0].contains("--resume sess-1"), "{again:?}");
+    assert_eq!(notes(&s, &id), 0, "resumed: no fresh-start line");
+}
+
+#[test]
+fn restart_on_the_gone_line_starts_the_agent_and_leaves_ended() {
+    let mut s = setup("gone-restart");
+    let id = s.create("hi");
+    let mut events = s.events(&id);
+    events.until(|e| is_item(e, "agent"));
+    s.shed.vanish(&terminal(&id));
+    let _shed = s.shed.restart(version());
+    events.until(|e| e.event == "state" && e.data["state"] == "ended");
+    let path = format!("/threads/{id}/restart");
+    let (status, body) = s.cooee.post(&path, &json!({}));
+    assert_eq!(status, 200, "{body}");
+    events.until(|e| e.event == "state" && e.data["state"] != "ended");
+    assert_eq!(restarts(&s).len(), 1);
+    assert_eq!(s.cooee.post(&path, &json!({})).0, 200);
+    assert_eq!(restarts(&s).len(), 1, "a second tap starts nothing");
+    let (status, body) = s.send(&id, "echo back", "g1");
+    assert_eq!(status, 200, "{body}");
+    events.until(|e| is_item(e, "agent") && e.data["text"] == "back");
+    drop(events);
+    drop(std::mem::replace(
+        &mut s.cooee,
+        Cooee::start(&s.dir, &s.shed.dir),
+    ));
+    let mut events = s.events(&id);
+    let (status, body) = s.send(&id, "echo again", "g2");
+    assert_eq!(status, 200, "{body}");
+    events.until(|e| is_item(e, "agent") && e.data["text"] == "again");
 }

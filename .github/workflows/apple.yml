@@ -1,189 +1,168 @@
-# #124: build the native app (apple/) for iOS and macOS on a GitHub-hosted macOS runner (free on this public repo); no
-# signing. #147: `apple-quality` runs `just apple-check`, every Swift gate (format, anti-slop, SwiftLint, tests,
-# coverage, Periphery). #143: `e2e`: the app in the iOS simulator against a real `cooee serve` (apple/e2e/serve.sh), its
-# screens kept as the `simulator-shots` artifact. #142: `mac-setup`: the Mac app's first run on the runner starts cooee
-# and shed as login items and shows the QR; the app in the iPhone simulator asks to pair and the Mac approves it;
-# the screens kept as the `mac-setup-shots` artifact.
+# #124: build the native app (apple/) for iOS and macOS; no signing. #147: `just apple-check`, every Swift gate (format,
+# anti-slop, SwiftLint, tests, coverage, Periphery). #143: the app in the iOS simulator against a real `cooee serve`
+# (apple/e2e/run.sh), its screens kept as the `simulator-shots` artifact. #277: all three in one `apple` job, so a PR
+# takes one macOS runner here; a newer push to a PR cancels its older run. #365, #565: `vars.MAC_RUNNER_APPLE` picks
+# the Mac (docs/ci-runners.md): unset, a pull request runs on GitHub-hosted xcode-27 and a push on our own Mac
+# (mini-cooee); on our Mac never for a fork's pull request (it shows skipped). #484: the Mac app is a client only; the
+# e2e's phone asks the CLI server and `cooee pair approve` answers it. #328: on a pull request push `apple` runs only the
+# builds; `just apple-check` and the e2e steps run on a staging push and when herdsman labels the PR `merge-ready`
+# (fleet `merge_label`: on exactly while a review PASS stands at the head), and merge waits on that run.
+# The e2e steps build the app once for their simulator and test that build; a staging push or manual run skips the
+# pull request builds. Every build names a concrete destination: a generic one builds every architecture. #430: on a
+# pull request `scope` (scripts/e2e-scope.sh) picks the e2e tests apple/e2e/map.toml pairs with the changed paths; a
+# change that reaches no Apple surface gets an `apple` that passes on ubuntu-latest, "no screens touched".
+# #440: the e2e runs nightly on staging's head (and on a manual run) whatever `vars.E2E` says; PRs and staging pushes
+# follow `vars.E2E` (#436: `off` skips the e2e steps). #487: the schedule and manual runs add apple-check's tidy-code
+# gates (`--nightly`: Features coverage, swiftlint analyze, Periphery); a red nightly opens or updates the one
+# `nightly red:` issue (scripts/ci-nightly.sh), naming the failed gate. #475: a pull request push takes a Mac only on the merge-ready
+# run (or while the PR carries merge-ready); any other push runs `apple` on ubuntu-latest, "waits for merge-ready".
+# #486: the builds use the runner's warm folders (APPLE_DERIVED, APPLE_PACKAGES from .github/actions/mac-runner).
 name: apple
 on:
   push:
     branches: [staging]
     paths:
-      - "scripts/mac-bins.sh"
       - "crates/cooee/src/main.rs"
+      - "crates/cooee-core/src/shed.rs"
       - "apple/**"
       - "tools/anti-slop-swift/**"
       - "scripts/apple-check.sh"
       - "scripts/apple-coverage.swift"
       - ".github/workflows/apple.yml"
+      - ".github/actions/mac-runner/**"
   pull_request:
-    paths:
-      - "scripts/mac-bins.sh"
-      - "crates/cooee/src/main.rs"
-      - "apple/**"
-      - "tools/anti-slop-swift/**"
-      - "scripts/apple-check.sh"
-      - "scripts/apple-coverage.swift"
-      - ".github/workflows/apple.yml"
+    types: [opened, synchronize, reopened, labeled]
+  workflow_dispatch:
+  schedule:
+    - cron: "41 18 * * *"
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}${{ github.event.action == 'labeled' && github.event.label.name != 'merge-ready' && format('-{0}', github.run_id) || '' }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 jobs:
-  build:
-    runs-on: macos-26
-    strategy:
-      fail-fast: false
-      matrix:
-        destination: ["generic/platform=iOS Simulator", "generic/platform=macOS"]
+  scope:
+    if: >-
+      github.event_name != 'pull_request' || ((github.event.pull_request.head.repo.full_name == github.repository
+      || vars.MAC_RUNNER_APPLE != 'self-hosted') && (github.event.action != 'labeled' || github.event.label.name == 'merge-ready'))
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      mac: ${{ steps.scope.outputs.mac }}
+      full: ${{ steps.scope.outputs.full }}
+      e2e: ${{ steps.scope.outputs.e2e }}
+      only: ${{ steps.scope.outputs.only }}
+      persona: ${{ steps.scope.outputs.persona }}
     steps:
       - uses: actions/checkout@v4
-      - name: xcodebuild
-        working-directory: apple
-        run: >-
-          xcodebuild -skipMacroValidation -project Cooee.xcodeproj -scheme Cooee -destination '${{ matrix.destination }}'
-          CODE_SIGNING_ALLOWED=NO build
+        with:
+          fetch-depth: 2
+          ref: ${{ github.event_name == 'schedule' && 'staging' || '' }}
+      - name: scope
+        id: scope
+        env:
+          EVENT: ${{ github.event_name }}
+          ACTION: ${{ github.event.action }}
+          CARRIES: ${{ contains(github.event.pull_request.labels.*.name, 'merge-ready') }}
+        run: |
+          set -o pipefail
+          scripts/e2e-scope.sh | tee -a "$GITHUB_OUTPUT"
 
-  apple-quality:
-    runs-on: macos-26
-    timeout-minutes: 60
+  apple:
+    needs: scope
+    runs-on: >-
+      ${{ needs.scope.outputs.mac == 'true' && ((vars.MAC_RUNNER_APPLE == 'self-hosted' || (vars.MAC_RUNNER_APPLE != 'hosted' && github.event_name != 'pull_request'))
+      && fromJSON('["self-hosted","macOS","ARM64","cooee-mac"]') || 'xcode-27') || 'ubuntu-latest' }}
+    timeout-minutes: 120
+    outputs:
+      gate: ${{ steps.check.outputs.gate }}
+    env:
+      MAC: ${{ needs.scope.outputs.mac }}
+      FULL: ${{ needs.scope.outputs.full }}
+      E2E: >-
+        ${{ needs.scope.outputs.e2e == 'true' && (github.event_name == 'schedule'
+        || github.event_name == 'workflow_dispatch' || vars.E2E != 'off') }}
+      ONLY: ${{ needs.scope.outputs.only }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+          ref: ${{ github.event_name == 'schedule' && 'staging' || '' }}
+      - uses: ./.github/actions/mac-runner
+        if: env.MAC == 'true'
+      - name: which e2e tests, and why
+        env:
+          EVENT: ${{ github.event_name }}
+          ACTION: ${{ github.event.action }}
+          CARRIES: ${{ contains(github.event.pull_request.labels.*.name, 'merge-ready') }}
+        run: SUMMARY="$GITHUB_STEP_SUMMARY" scripts/e2e-scope.sh && cat "$GITHUB_STEP_SUMMARY"
       - uses: taiki-e/install-action@v2
+        if: env.MAC == 'true'
         with:
           tool: just
+      - uses: dtolnay/rust-toolchain@1.99.1
+        if: env.MAC == 'true'
+      - uses: Swatinem/rust-cache@v2
+        if: env.MAC == 'true'
+      - name: xcodebuild (iOS Simulator, macOS)
+        if: github.event_name == 'pull_request' && env.MAC == 'true'
+        working-directory: apple
+        run: |
+          destinations=("platform=macOS,arch=arm64")
+          [ "$E2E" = true ] || destinations+=("platform=iOS Simulator,name=iPhone 17")
+          for destination in "${destinations[@]}"; do
+            xcodebuild -skipMacroValidation -project Cooee.xcodeproj -scheme Cooee -destination "$destination" \
+              -derivedDataPath "$APPLE_DERIVED/xcode" -clonedSourcePackagesDirPath "$APPLE_PACKAGES/xcode" \
+              CODE_SIGNING_ALLOWED=NO build
+          done
       - name: just apple-check
+        id: check
+        if: env.FULL == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
-        run: just apple-check
-
-  e2e:
-    runs-on: macos-26
-    timeout-minutes: 60
-    steps:
-      - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@1.99.1
-      - uses: Swatinem/rust-cache@v2
-      - name: cooee serve (fake agent)
+          COOEE_RENDERED: ${{ runner.temp }}/rendered
+          NIGHTLY: ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
         run: |
-          PORT=4100 PAIR_LINK="$RUNNER_TEMP/pair" apple/e2e/serve.sh >"$RUNNER_TEMP/serve.log" 2>&1 &
-          serve=$!
-          until [ -s "$RUNNER_TEMP/pair" ]; do
-            kill -0 "$serve" 2>/dev/null || { cat "$RUNNER_TEMP/serve.log"; exit 1; }
-            sleep 2
-          done
-          cat "$RUNNER_TEMP/serve.log"
-      - name: the client against it (swift test)
-        working-directory: apple
-        run: COOEE_PAIR_LINK="$(cat "$RUNNER_TEMP/pair")" swift test --filter LiveTests
-      # Once per appearance, set with simctl (the test's own XCUIDevice.appearance left this simulator light); each
-      # run pairs afresh, so the keychain is emptied first. The app builds before any code is minted: a code lives 10 min.
-      - name: the app in the simulator
-        working-directory: apple
-        run: |
-          sim=$(xcrun simctl create cooee-e2e "iPhone 17")
-          xcrun simctl bootstatus "$sim" -b
-          build=(xcodebuild -skipMacroValidation -project Cooee.xcodeproj -scheme Cooee -destination "id=$sim")
-          "${build[@]}" build-for-testing
-          for look in dark light; do
-            xcrun simctl ui "$sim" appearance "$look"
-            xcrun simctl keychain "$sim" reset
-            link=$(sh -c "$(cat "$RUNNER_TEMP/pair.again")" | sed -n 's/^link  //p')
-            TEST_RUNNER_COOEE_LOOK="$look" TEST_RUNNER_COOEE_PAIR_LINK="$link" "${build[@]}" \
-              -resultBundlePath "$RUNNER_TEMP/e2e-$look.xcresult" test-without-building
-          done
-      # #139: the personas the simulator made and edited, read back from the server, and a client round trip.
-      - name: the simulator's personas on the server (swift test)
-        working-directory: apple
-        run: |
-          link=$(sh -c "$(cat "$RUNNER_TEMP/pair.again")" | sed -n 's/^link  //p')
-          COOEE_PERSONA_LINK="$link" COOEE_SIM_LOOKS="dark light" swift test --filter LivePersonaTests
-      - name: screenshots
-        if: always()
-        run: |
-          mkdir -p simulator-shots
-          for look in dark light; do
-            xcrun xcresulttool export attachments --path "$RUNNER_TEMP/e2e-$look.xcresult" \
-              --output-path "simulator-shots/$look" || true
-          done
-          cp "$RUNNER_TEMP/serve.log" simulator-shots/ || true
-          ls simulator-shots
+          mkdir -p "$COOEE_RENDERED"
+          if [ "$NIGHTLY" = true ]; then just apple-check --nightly; else just apple-check; fi
       - uses: actions/upload-artifact@v4
-        if: always()
+        if: always() && env.FULL == 'true'
+        with:
+          name: rendered-frames
+          path: ${{ runner.temp }}/rendered
+      - name: e2e off
+        if: vars.E2E == 'off'
+        run: echo "e2e off (vars.E2E=off)" >> "$GITHUB_STEP_SUMMARY"
+      # #356: the server, the simulator, every step of apple/e2e/steps/, the screens and the teardown (apple/e2e/run.sh).
+      - name: the app and the client against cooee serve (apple/e2e/run.sh)
+        if: env.E2E == 'true'
+        env:
+          E2E_DIR: ${{ runner.temp }}
+          PERSONA: ${{ needs.scope.outputs.persona }}
+        run: apple/e2e/run.sh
+      - uses: actions/upload-artifact@v4
+        if: always() && env.E2E == 'true'
         with:
           name: simulator-shots
           path: simulator-shots
 
-  mac-setup:
-    runs-on: macos-26
-    timeout-minutes: 90
-    env:
-      SHOTS: ${{ github.workspace }}/mac-setup-shots
+  nightly-red:
+    needs: apple
+    if: always() && github.event_name == 'schedule' && needs.apple.result == 'failure'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    concurrency: nightly-red
+    permissions:
+      actions: read
+      contents: read
+      issues: write
     steps:
       - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@1.99.1
-      - uses: Swatinem/rust-cache@v2
-      - name: cooee and shed for the app
-        run: scripts/mac-bins.sh "$RUNNER_TEMP/bin"
-      - name: build for testing (the Mac app with them inside, and the app in the simulator)
-        working-directory: apple
-        run: |
-          xcodebuild -skipMacroValidation -project Cooee.xcodeproj -scheme Cooee -destination 'platform=macOS' \
-            -derivedDataPath "$RUNNER_TEMP/mac" COOEE_BIN_DIR="$RUNNER_TEMP/bin" CODE_SIGN_IDENTITY=- \
-            CODE_SIGN_STYLE=Manual DEVELOPMENT_TEAM= build-for-testing
-          sim=$(xcrun simctl create cooee-ask "iPhone 17")
-          echo "SIM=$sim" >> "$GITHUB_ENV"
-          xcodebuild -skipMacroValidation -project Cooee.xcodeproj -scheme Cooee -destination "id=$sim" \
-            -derivedDataPath "$RUNNER_TEMP/ios" build-for-testing
-      # The Mac test sets the Mac up and waits on its QR screen; once its pairing code is open (devices.json), the
-      # phone asks by address, and the Mac test approves it.
-      - name: the Mac sets itself up; the phone asks and the Mac approves it
-        working-directory: apple
-        run: |
-          sudo automationmodetool enable-automationmode-without-authentication || true
-          TEST_RUNNER_COOEE_MAC_SETUP=1 xcodebuild -project Cooee.xcodeproj -scheme Cooee -destination 'platform=macOS' \
-            -derivedDataPath "$RUNNER_TEMP/mac" -only-testing:CooeeAppUITests/MacSetupUITests \
-            -resultBundlePath "$RUNNER_TEMP/mac-setup.xcresult" test-without-building >"$RUNNER_TEMP/mac-test.log" 2>&1 &
-          mac=$!
-          devices="$HOME/.local/share/cooee/cooee/devices.json"
-          waited=0
-          until grep -q '"code": \[' "$devices" 2>/dev/null; do
-            if ! kill -0 "$mac" 2>/dev/null || [ "$waited" -ge 1200 ]; then
-              tail -120 "$RUNNER_TEMP/mac-test.log"
-              exit 1
-            fi
-            sleep 5
-            waited=$((waited + 5))
-          done
-          curl -sS -o /dev/null -w 'cooee answers %{http_code}\n' http://127.0.0.1:4747/pair
-          xcrun simctl bootstatus "$SIM" -b
-          TEST_RUNNER_COOEE_ASK_ADDRESS=http://127.0.0.1:4747 xcodebuild -project Cooee.xcodeproj -scheme Cooee \
-            -destination "id=$SIM" -derivedDataPath "$RUNNER_TEMP/ios" \
-            -only-testing:CooeeAppUITests/LiveUITests/testAsksAndTheMacApprovesIt \
-            -resultBundlePath "$RUNNER_TEMP/phone-ask.xcresult" test-without-building
-          status=0
-          wait "$mac" || status=$?
-          tail -40 "$RUNNER_TEMP/mac-test.log"
-          exit "$status"
-      - name: what the Mac ran (on failure)
-        if: failure()
-        run: |
-          pgrep -lf 'cooee|shed|zsh|security' || true
-          for f in "$HOME/.config/cooee/cooee/config.toml" "$HOME/.local/share/cooee/cooee/devices.json"; do
-            echo "== $f"; cat "$f" || true
-          done
-          ls -la "$HOME/.local/share/cooee/cooee" || true
-          for label in serve shed; do launchctl print "gui/$(id -u)/com.jirathip.cooee.$label" | head -25 || true; done
-          app=$(find "$RUNNER_TEMP/mac/Build/Products" -maxdepth 2 -name Cooee.app | head -1)
-          ls -la "$app/Contents/Helpers" "$app/Contents/Library/LaunchAgents" || true
-          perl -e "alarm 60; exec @ARGV" "$app/Contents/Helpers/cooee" pair </dev/null; echo "cooee pair exit $?"
-      - name: screenshots
-        if: always()
-        run: |
-          mkdir -p "$SHOTS"
-          for run in mac-setup phone-ask; do
-            xcrun xcresulttool export attachments --path "$RUNNER_TEMP/$run.xcresult" --output-path "$SHOTS/$run" || true
-          done
-          cp "$RUNNER_TEMP/mac-test.log" "$SHOTS/" || true
-          ls -R "$SHOTS"
-      - uses: actions/upload-artifact@v4
-        if: always()
         with:
-          name: mac-setup-shots
-          path: mac-setup-shots
+          ref: staging
+          fetch-depth: 0
+      - name: open or update the issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_ID: ${{ github.run_id }}
+          WORKFLOW: apple.yml
+          CHECK: ${{ needs.apple.outputs.gate && format('apple-check {0}', needs.apple.outputs.gate) || '' }}
+        run: scripts/ci-nightly.sh

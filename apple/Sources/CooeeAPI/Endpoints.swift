@@ -4,32 +4,61 @@ import Foundation
 extension Client {
     private struct Message: Encodable {
         private enum CodingKeys: String, CodingKey {
-            case text, files
+            case text, files, via
             case randomID = "random_id"
         }
 
         fileprivate let text: String
         fileprivate let randomID: String
         fileprivate let files: [Attachment]?
+        fileprivate let via: String?
     }
 
     private struct NewThread: Encodable {
         private enum CodingKeys: String, CodingKey {
-            case agent, profile, text, background
+            case agent, profile, model, effort, machine, folder, text, background, setup
             case randomID = "random_id"
         }
 
         fileprivate let agent: String
         fileprivate let profile: String
+        fileprivate let model: String?
+        fileprivate let effort: String?
+        fileprivate let machine: String
+        fileprivate let folder: String
         fileprivate let text: String
         fileprivate let randomID: String
+        fileprivate let setup: Bool
         fileprivate let background = true
+    }
+
+    private struct NewRoom: Encodable {
+        private enum CodingKeys: String, CodingKey {
+            case title, members
+            case randomID = "random_id"
+        }
+
+        fileprivate let title: String
+        fileprivate let members: [String]
+        fileprivate let randomID: String
+    }
+
+    private struct Seat: Encodable {
+        private enum CodingKeys: String, CodingKey {
+            case persona, remove
+            case place = "at"
+        }
+
+        fileprivate let persona: String
+        fileprivate let place: Int?
+        fileprivate let remove: Bool
     }
 
     private struct Answer: Encodable {
         fileprivate let item: Int
         fileprivate let option: String
         fileprivate let value: String?
+        fileprivate let passkey: Passkey?
     }
 
     private struct Created: Decodable {
@@ -78,12 +107,34 @@ extension Client {
         try await post("/pair/cancel", ["claim": claim])
     }
 
-    public func threads() async throws -> [ThreadRow] { try await call("GET", "/threads") }
+    public func home() async throws -> HomeAnswer { try await call("GET", "/screens/home") }
 
     public func personas() async throws -> [APIPersona] { try await call("GET", "/personas") }
 
-    public func messages(_ id: String, before: Int = 50) async throws -> Slice {
-        try await call("GET", "/threads/\(id)/messages?before=\(before)")
+    public func looks() async throws -> Looks { try await call("GET", "/api/v1/looks") }
+
+    public func checkTheme(dark: [String: String], light: [String: String]) async throws -> [String: GateReport] {
+        try await call("POST", "/api/v1/themes/check", ["dark": dark, "light": light])
+    }
+
+    public func saveTheme(_ name: String, _ draft: ThemeDraft) async throws {
+        _ = try await send(request("PUT", "/api/v1/themes/\(name)", json: draft))
+    }
+
+    public func themeArt(_ theme: String, _ file: String) async throws -> String {
+        String(bytes: try await send(request("GET", "/look/\(theme)/\(file)")).0, encoding: .utf8) ?? ""
+    }
+
+    public func messages(_ id: String, before: Int = 50, around: Int? = nil) async throws -> Slice {
+        try await call("GET", "/threads/\(id)/messages?before=\(before)" + (around.map { "&around=\($0)" } ?? ""))
+    }
+
+    public func frame(_ id: String, _ name: String) async throws -> Data {
+        try await send(request("GET", "/threads/\(id)/frames/\(name)")).0
+    }
+
+    public func file(_ id: String, _ name: String) async throws -> Data {
+        try await send(request("GET", "/threads/\(id)/files/\(name)")).0
     }
 
     public func send(
@@ -91,10 +142,20 @@ extension Client {
         text: String,
         files: [Attachment] = [],
         queue: Bool = false,
+        voice: Bool = false,
         randomID: String = UUID().uuidString
     ) async throws {
-        let message = Message(text: text, randomID: randomID, files: files.isEmpty ? nil : files)
+        let message = Message(
+            text: text, randomID: randomID, files: files.isEmpty ? nil : files, via: voice ? "voice" : nil)
         try await post("/threads/\(id)/\(queue ? "queue" : "send")", message)
+    }
+
+    public func retry(_ id: String) async throws {
+        try await post("/threads/\(id)/retry", [String: String]())
+    }
+
+    public func restart(_ id: String) async throws {
+        try await post("/threads/\(id)/restart", [String: String]())
     }
 
     public func steer(_ id: String, _ randomID: String) async throws {
@@ -105,23 +166,51 @@ extension Client {
         try await post("/threads/\(id)/unqueue", ["random_id": randomID])
     }
 
+    public func move(_ id: String, to machine: String) async throws {
+        try await post("/threads/\(id)/move", ["machine": machine])
+    }
+
     public func cancel(_ id: String) async throws {
         try await post("/threads/\(id)/cancel", [String: String]())
     }
 
-    public func answer(_ id: String, item: Int, option: String, value: String?) async throws {
-        try await post("/threads/\(id)/approve", Answer(item: item, option: option, value: value))
+    public func answer(_ id: String, item: Int, option: String, value: String?, key: DeviceKey? = nil) async throws {
+        var passkey: Passkey?
+        if let key { passkey = try await prove(key) }
+        try await post("/threads/\(id)/approve", Answer(item: item, option: option, value: value, passkey: passkey))
     }
 
     public func read(_ id: String, upTo item: Int) async throws {
         try await post("/threads/\(id)/read", ["item": item])
     }
 
-    public func newThread(persona: APIPersona, text: String, randomID: String = UUID().uuidString) async throws
-        -> String
-    {
-        let body = NewThread(agent: persona.agent, profile: persona.id, text: text, randomID: randomID)
+    public func newThread(
+        persona: APIPersona,
+        machine: String,
+        text: String,
+        setup: Bool = false,
+        randomID: String = UUID().uuidString
+    ) async throws -> String {
+        let body = NewThread(
+            agent: persona.agent, profile: persona.id, model: persona.model.isEmpty ? nil : persona.model,
+            effort: persona.effort.isEmpty ? nil : persona.effort, machine: machine, folder: persona.folder, text: text,
+            randomID: randomID, setup: setup
+        )
         let created: Created = try await call("POST", "/threads", body)
         return created.id
+    }
+
+    public func newRoom(title: String, members: [String], randomID: String = UUID().uuidString) async throws
+        -> String
+    {
+        let created: Created = try await call(
+            "POST", "/rooms", NewRoom(title: title, members: members, randomID: randomID))
+        return created.id
+    }
+
+    public func seat(_ room: String, persona: String, place: Int? = nil, remove: Bool = false) async throws
+        -> [String]
+    {
+        try await call("POST", "/threads/\(room)/members", Seat(persona: persona, place: place, remove: remove))
     }
 }

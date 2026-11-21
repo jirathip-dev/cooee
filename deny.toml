@@ -9,7 +9,7 @@ yanked = "deny"
 
 [licenses]
 version = 2
-allow = ["MIT", "Apache-2.0", "BSD-2-Clause", "BSD-3-Clause", "ISC", "Unicode-3.0", "Unicode-DFS-2016"]
+allow = ["MIT", "Apache-2.0", "BSD-2-Clause", "BSD-3-Clause", "ISC", "Unicode-3.0", "Unicode-DFS-2016", "Zlib"]
 confidence-threshold = 0.9
 
 [licenses.private]
@@ -28,12 +28,11 @@ skip = [
     { crate = "crypto-common@0.1.7", reason = "Topcoat's sha1 and aes-gcm 0.10; sha2 0.11 uses 0.2" },
     { crate = "digest@0.10.7", reason = "Topcoat's sha1; sha2 0.11 uses 0.11" },
     { crate = "rand_core@0.9.5", reason = "Topcoat's tungstenite; p256 0.14 uses 0.10 (traits only)" },
-    { crate = "base64@0.23.1", reason = "oxc_transformer's, web/build.rs only (#49); the workspace pins 0.22" },
-    { crate = "syn@3.0.9", reason = "oxc's diagnostics (icu via textwrap), web/build.rs only (#49); Topcoat's macros use 2" },
+    { crate = "syn@3.0.9", reason = "serde_derive, thiserror and futures macros; Topcoat's macros use 2" },
 ]
 
 [sources]
 unknown-registry = "deny"
 unknown-git = "deny"
-# shed-proto, pinned by rev in Cargo.toml.
-allow-git = ["https://github.com/jirathip-dev/shed"]
+# shed-proto and blocks, pinned by rev in Cargo.toml.
+allow-git = ["https://github.com/jirathip-dev/shed", "https://github.com/jirathip-dev/blocks", "https://github.com/jirathip-dev/swag", "https://github.com/jirathip-dev/farrier"]

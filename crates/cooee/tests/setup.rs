@@ -1,7 +1,9 @@
-//! `cooee setup` with fake `cargo`, `shed`, `launchctl`, `tailscale` and `curl` on `PATH` (each logs its arguments to
+//! `cooee setup` with fake `shed`, `launchctl`, `systemctl`, `tailscale` and `curl` on `PATH` (each logs its arguments to
 //! `$HOME/calls.log` and keeps its state in `$HOME`) and a fake shed server for doctor's hello: a fresh machine runs
 //! every step once, in order; a second run skips them all; `--dry-run` writes nothing; a doctor failure stops with its
-//! fix; an existing config keeps its keys. Also `scripts/install.sh`.
+//! fix; an existing config keeps its keys; a shed below the minimum protocol stops setup before it changes anything.
+//! Also `scripts/install.sh`, and `cooee update` (#332, #584) against fake GitHub releases (`curl`), with the fake
+//! `launchctl kickstart` (`systemctl restart` on Linux) serving the installed binary that `curl` asks on the port.
 
 mod support;
 
@@ -13,25 +15,14 @@ use std::{
     process::{Command, Output, Stdio},
 };
 
+use cooee_core::{SHED_MIN_PROTOCOL, shed_proto::Hello};
 use support::{FakeShed, scratch, version};
 
 const BIN: &str = env!("CARGO_BIN_EXE_cooee");
-const REV: &str = "f026a4d35a2705e560a52515da8e3a5d32e4d659";
-
 const FAKES: &[(&str, &str)] = &[
-    (
-        "cargo",
-        r#"case "$*" in
-"install --list") cat "$HOME/cargo.list" 2>/dev/null ;;
-install*) while [ $# -gt 0 ]; do [ "$1" = --rev ] && rev=$2; shift; done
-  echo "shed v0.0.0 (https://github.com/jirathip-dev/shed?rev=$rev#${rev%????????????????????????????????}):" >>"$HOME/cargo.list" ;;
-esac"#,
-    ),
     (
         "shed",
         r#"case "$*" in
-install) echo "wrote the job" ;;
-ls) test -e "$HOME/loaded-dev.shed.serve" ;;
 "--json agents") cat "$HOME/agents.json" 2>/dev/null || echo '[]' ;;
 "agents add claude-acp") echo '[{"id":"claude-acp","version":"1"}]' >"$HOME/agents.json" ;;
 *) exit 2 ;;
@@ -41,7 +32,19 @@ esac"#,
         "launchctl",
         r#"case "$1" in
 list) test -e "$HOME/loaded-$2" ;;
+print) test -e "$HOME/loaded-${2##*/}" ;;
 bootstrap) touch "$HOME/loaded-$(basename "$3" .plist)" ;;
+bootout) rm -f "$HOME/loaded-${2##*/}" ;;
+kickstart) cp "$HOME/.local/bin/cooee" "$HOME/serving" 2>/dev/null || true ;;
+esac"#,
+    ),
+    (
+        "systemctl",
+        r#"case "$2" in
+show) shift 8; for u; do [ -e "$HOME/loaded-${u%.*}" ] && s=active || s=inactive; printf 'ActiveState=%s\nMainPID=0\nResult=success\n\n' $s; done ;;
+enable) touch "$HOME/loaded-${4%.*}" ;;
+disable) rm -f "$HOME/loaded-${4%.*}" ;;
+restart) cp "$HOME/.local/bin/cooee" "$HOME/serving" 2>/dev/null || true ;;
 esac"#,
     ),
     (
@@ -52,22 +55,58 @@ esac"#,
 "serve --bg"*) port=${3#--https=}; echo "{\"TCP\":{\"$port\":{\"HTTPS\":true}}}" >"$HOME/served.json" ;;
 esac"#,
     ),
-    ("curl", r#"test ! -e "$HOME/curl-fails""#),
+    (
+        "curl",
+        r#"case "$*" in
+*/commits/main) cat "$HOME/main.json" ;;
+*/releases/latest) echo '{"tag_name":"build-2222222"}' ;;
+*/releases/download/*/SHA256SUMS) cat "$HOME/SHA256SUMS" ;;
+*/releases/download/*) for a; do [ "$prev" = -o ] && out=$a; prev=$a; done; cp "$HOME/new-cooee" "$out" ;;
+*127.0.0.1*) "$HOME/serving" ;;
+*) [ -e "$HOME/tailnet" ] || exit 0
+   for a; do shift; case $a in https://*) a="http://$(cat "$HOME/tailnet")/${a#https://*/}" ;; esac; set -- "$@" "$a"; done
+   exec /usr/bin/curl "$@" ;;
+esac"#,
+    ),
 ];
 
-/// The commands that change something, as the fakes log them.
 const CHANGES: &[&str] = &[
-    "cargo install --locked",
-    "shed install",
     "shed agents add",
     "launchctl bootstrap",
     "launchctl kickstart",
     "launchctl bootout",
+    "systemctl --user enable",
+    "systemctl --user restart",
+    "systemctl --user disable",
     "tailscale serve --bg",
 ];
 
-/// A fake machine: `HOME` at `home`, the fakes in `home/bin`, a port that is listening and, unless `dry`, a fake shed
-/// server at the per-user socket.
+const LAUNCHD: bool = cfg!(target_os = "macos");
+const RESTART: &str = if LAUNCHD {
+    "launchctl kickstart -k gui/"
+} else {
+    "systemctl --user restart dev.cooee.cooee.service"
+};
+
+fn job_file(home: &Path, label: &str, unit: &str) -> PathBuf {
+    if LAUNCHD {
+        home.join(format!("Library/LaunchAgents/{label}.plist"))
+    } else {
+        home.join(format!(".config/systemd/user/{label}.{unit}"))
+    }
+}
+
+fn load_line(home: &Path, label: &str, unit: &str) -> String {
+    let uid = Command::new("id").arg("-u").output().unwrap().stdout;
+    if LAUNCHD {
+        let file = job_file(home, label, unit);
+        let uid = String::from_utf8(uid).unwrap();
+        format!("launchctl bootstrap gui/{} {}", uid.trim(), file.display())
+    } else {
+        format!("systemctl --user enable --now {label}.{unit}")
+    }
+}
+
 struct Mac {
     home: PathBuf,
     port: u16,
@@ -76,7 +115,7 @@ struct Mac {
 }
 
 impl Mac {
-    fn new(name: &str, dry: bool) -> Self {
+    fn new(name: &str, shed: bool) -> Self {
         let home = scratch(name);
         let bin = home.join("bin");
         fs::create_dir_all(&bin).unwrap();
@@ -86,8 +125,10 @@ impl Mac {
             fs::write(&file, format!("#!/bin/sh\n{log}\n{body}\n")).unwrap();
             fs::set_permissions(&file, fs::Permissions::from_mode(0o755)).unwrap();
         }
-        let shed = (!dry).then(|| FakeShed::start(&home.join("Library/Caches/shed"), version()));
-        let listener = TcpListener::bind("127.0.0.1:0").unwrap();
+        let shed = shed.then(|| FakeShed::start(&home.join("Library/Caches/shed"), version()));
+        let listener = std::iter::repeat_with(|| TcpListener::bind("127.0.0.1:0").unwrap())
+            .find(|l| l.local_addr().unwrap().port() <= u16::MAX - 1000)
+            .unwrap();
         let port = listener.local_addr().unwrap().port();
         Self {
             home,
@@ -98,15 +139,18 @@ impl Mac {
     }
 
     fn setup(&self, args: &[&str]) -> Output {
-        self.cooee(&[&["setup", "--port", &self.port.to_string()], args].concat())
+        let chief = ["--chief-agent", "claude-acp", "--chief-machine", "here"];
+        self.cooee(&[&["setup", "--port", &self.port.to_string()], args, &chief].concat())
+    }
+
+    fn chief(&self) -> PathBuf {
+        self.config().with_file_name("agents/chief/agent.toml")
     }
 
     fn cooee(&self, args: &[&str]) -> Output {
         self.cooee_typing(args, None)
     }
 
-    /// `cooee <args>` with `input` typed in (none: no input). Git never reaches GitHub: the theme index's repo is a
-    /// missing folder here, unless the config names an index of its own.
     fn cooee_typing(&self, args: &[&str], input: Option<&str>) -> Output {
         let mut child = Command::new(BIN)
             .args(args)
@@ -140,7 +184,6 @@ impl Mac {
         child.wait_with_output().unwrap()
     }
 
-    /// The logged commands that change something, then the log is emptied.
     fn changes(&self) -> Vec<String> {
         let log = self.home.join("calls.log");
         let calls = fs::read_to_string(&log).unwrap_or_default();
@@ -157,7 +200,6 @@ impl Mac {
     }
 }
 
-/// Every file under `dir`, relative to it.
 fn files(dir: &Path) -> Vec<String> {
     let mut all = Vec::new();
     for entry in fs::read_dir(dir).unwrap().flatten() {
@@ -176,8 +218,6 @@ fn files(dir: &Path) -> Vec<String> {
     all
 }
 
-/// The owner's terminal plugin (#28) as setup adds it for an instance on `port`: port + 1000, with the 64 hex digit
-/// token written in `config`.
 fn terminal(port: u16, config: &str) -> String {
     let token = config
         .rsplit_once("token = \"")
@@ -198,31 +238,22 @@ fn terminal(port: u16, config: &str) -> String {
 
 #[test]
 fn a_fresh_machine_runs_every_step_once_in_order_and_a_second_run_skips_them() {
-    let mac = Mac::new("su-fresh", false);
+    let mac = Mac::new("su-fresh", true);
     let out = mac.setup(&["--yes"]);
     let stdout = String::from_utf8_lossy(&out.stdout);
     assert!(out.status.success(), "{out:?}");
-    let (port, home) = (mac.port, mac.home.display());
-    let plist = format!("{home}/Library/LaunchAgents/dev.cooee.cooee.plist");
-    let gui = format!(
-        "gui/{}",
-        String::from_utf8(Command::new("id").arg("-u").output().unwrap().stdout)
-            .unwrap()
-            .trim()
-    );
+    let port = mac.port;
     assert_eq!(
         mac.changes(),
         [
-            format!(
-                "cargo install --locked --git https://github.com/jirathip-dev/shed --rev {REV} shed"
-            ),
-            "shed install".to_owned(),
-            format!("launchctl bootstrap {gui} {home}/Library/LaunchAgents/dev.shed.serve.plist"),
             "shed agents add claude-acp".to_owned(),
-            format!("launchctl bootstrap {gui} {plist}"),
+            load_line(&mac.home, "dev.cooee.cooee", "service"),
+            load_line(&mac.home, "dev.cooee.cooee.update", "timer"),
             format!("tailscale serve --bg --https={port} http://127.0.0.1:{port}"),
         ]
     );
+    let ignore = fs::read_to_string(mac.config().with_file_name(".gitignore")).unwrap();
+    assert!(ignore.lines().any(|l| l == "secrets/"), "{ignore}");
     let config = fs::read_to_string(mac.config()).unwrap();
     assert_eq!(
         config,
@@ -231,10 +262,23 @@ fn a_fresh_machine_runs_every_step_once_in_order_and_a_second_run_skips_them() {
             terminal(port, &config)
         )
     );
+    let (keep, every) = if LAUNCHD {
+        (
+            "<key>KeepAlive</key>\n  <true/>",
+            "<key>StartInterval</key>\n  <integer>900</integer>",
+        )
+    } else {
+        ("Restart=always", "OnUnitActiveSec=900")
+    };
+    let serve = fs::read_to_string(job_file(&mac.home, "dev.cooee.cooee", "service")).unwrap();
+    assert!(serve.contains(keep), "{serve}");
+    let timer = job_file(&mac.home, "dev.cooee.cooee.update", "timer");
+    let timer = fs::read_to_string(timer).unwrap();
+    assert!(timer.contains(every), "{timer}");
+    let chief = fs::read_to_string(mac.chief()).unwrap();
     assert!(
-        fs::read_to_string(&plist)
-            .unwrap()
-            .contains("<string>dev.cooee.cooee</string>")
+        chief.contains("role = \"chief\"") && chief.contains("agent = \"claude-acp\""),
+        "{chief}"
     );
     assert!(
         stdout.contains("doctor:\nok   service dev.cooee.cooee loaded")
@@ -249,11 +293,12 @@ fn a_fresh_machine_runs_every_step_once_in_order_and_a_second_run_skips_them() {
     assert!(out.status.success(), "{out:?}");
     assert_eq!(mac.changes(), Vec::<String>::new());
     for step in [
-        "shed f026a4d",
-        "shed service dev.shed.serve",
+        &format!("shed protocol {SHED_MIN_PROTOCOL}+"),
         &format!("config {}", mac.config().display()),
         "agents",
+        "chief",
         "cooee service dev.cooee.cooee",
+        "cooee service dev.cooee.cooee.update",
         &format!("tailscale serve {port}"),
     ] {
         assert!(
@@ -262,36 +307,78 @@ fn a_fresh_machine_runs_every_step_once_in_order_and_a_second_run_skips_them() {
         );
     }
     assert!(
-        stdout.contains("pair your phone:\nScan it") && stdout.contains("\ncode  "),
+        stdout.contains("pair your phone:\nType the link") && stdout.contains("\ncode  "),
         "{stdout}"
     );
+    assert_eq!(fs::read_to_string(mac.chief()).unwrap(), chief);
+}
+
+#[test]
+fn yes_with_no_chief_and_no_picks_fails_before_any_step_and_changes_nothing() {
+    let mac = Mac::new("su-chief-yes", true);
+    let before = files(&mac.home);
+    let out = mac.cooee(&["setup", "--port", &mac.port.to_string(), "--yes"]);
+    assert_eq!(out.status.code(), Some(1), "{out:?}");
+    let stderr = String::from_utf8_lossy(&out.stderr);
+    assert!(
+        stderr.contains("there is no Chief yet and --yes can't pick for you: add --chief-agent <id> --chief-machine <name|here>\nnothing was changed"),
+        "{stderr}"
+    );
+    assert_eq!(files(&mac.home), before);
+    assert_eq!(mac.changes(), Vec::<String>::new());
+}
+
+#[test]
+fn a_missing_or_too_old_shed_stops_setup_naming_the_fix_and_changes_nothing() {
+    let mac = Mac::new("su-shed-old", false);
+    let fix = format!(
+        "fix: install or update shed to protocol {SHED_MIN_PROTOCOL} or newer from https://github.com/jirathip-dev/shed/releases, and start its serve"
+    );
+    let out = mac.setup(&["--yes"]);
+    assert_eq!(out.status.code(), Some(1), "{out:?}");
+    let stderr = String::from_utf8_lossy(&out.stderr);
+    assert!(
+        stderr.contains("shed.sock") && stderr.contains(&format!("{fix}\nnothing was changed")),
+        "{stderr}"
+    );
+    let old = Hello {
+        build: "fffffff".to_owned(),
+        protocol: SHED_MIN_PROTOCOL - 1,
+        ..version()
+    };
+    let _old = FakeShed::start(&mac.home.join("Library/Caches/shed"), old);
+    let before = files(&mac.home);
+    let out = mac.setup(&["--yes"]);
+    assert_eq!(out.status.code(), Some(1), "{out:?}");
+    let stderr = String::from_utf8_lossy(&out.stderr);
+    let (v, b) = (&version().version, &version().build);
+    let said = format!(
+        "SHED_VERSION: cooee speaks shed {v} ({b}) protocol 1; the server runs {v} (fffffff) protocol 0, older than protocol 1; {fix}\nnothing was changed"
+    );
+    assert!(stderr.contains(&said), "{stderr}\nwanted: {said}");
+    assert_eq!(files(&mac.home), before);
+    assert_eq!(mac.changes(), Vec::<String>::new());
 }
 
 #[test]
 fn dry_run_writes_nothing_and_prints_every_command() {
     let mac = Mac::new("su-dry", true);
+    let mut want = files(&mac.home);
     let out = mac.setup(&["--dry-run", "--yes"]);
     let stdout = String::from_utf8_lossy(&out.stdout);
     assert!(out.status.success(), "{out:?}");
     assert_eq!(mac.changes(), Vec::<String>::new());
-    let fakes: Vec<String> = FAKES.iter().map(|(n, _)| format!("bin/{n}")).collect();
-    let mut want = [fakes, vec!["calls.log".to_owned()]].concat();
+    want.push("calls.log".to_owned());
     want.sort();
     assert_eq!(files(&mac.home), want);
     let port = mac.port;
     for line in [
-        format!(
-            "would run: cargo install --locked --git https://github.com/jirathip-dev/shed --rev {REV} shed"
-        ),
-        "would run: shed install".to_owned(),
         format!("would write {}:\nport = {port}\n", mac.config().display()),
         "would run: shed agents add claude-acp".to_owned(),
-        "would write ".to_owned()
-            + &mac
-                .home
-                .join("Library/LaunchAgents/dev.cooee.cooee.plist")
-                .display()
-                .to_string(),
+        format!(
+            "would write {}",
+            job_file(&mac.home, "dev.cooee.cooee", "service").display()
+        ),
         format!("would run: tailscale serve --bg --https={port} http://127.0.0.1:{port}"),
         "would run: cooee doctor, then cooee pair".to_owned(),
     ] {
@@ -300,9 +387,45 @@ fn dry_run_writes_nothing_and_prints_every_command() {
 }
 
 #[test]
+fn a_tailnet_url_answering_405_on_get_pair_passes_doctor() {
+    let mac = Mac::new("su-405", true);
+    let server = TcpListener::bind("127.0.0.1:0").unwrap();
+    fs::write(
+        mac.home.join("tailnet"),
+        server.local_addr().unwrap().to_string(),
+    )
+    .unwrap();
+    std::thread::spawn(move || {
+        for mut conn in server.incoming().flatten() {
+            let mut buf = [0; 4096];
+            std::io::Read::read(&mut conn, &mut buf).unwrap();
+            std::io::Write::write_all(
+                &mut conn,
+                b"HTTP/1.1 405 Method Not Allowed\r\nallow: POST\r\ncontent-length: 0\r\nconnection: close\r\n\r\n",
+            )
+            .unwrap();
+        }
+    });
+    let out = mac.setup(&["--yes"]);
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(out.status.success(), "{out:?}");
+    let port = mac.port;
+    assert!(
+        stdout.contains(&format!(
+            "ok   https://mac.tailnet.example:{port}/ (else: tailscale serve --bg --https={port} http://127.0.0.1:{port})"
+        )),
+        "{stdout}"
+    );
+}
+
+#[test]
 fn a_doctor_failure_stops_with_its_fix() {
-    let mac = Mac::new("su-doctor", false);
-    fs::write(mac.home.join("curl-fails"), "").unwrap();
+    let mac = Mac::new("su-doctor", true);
+    let unused = TcpListener::bind("127.0.0.1:0")
+        .unwrap()
+        .local_addr()
+        .unwrap();
+    fs::write(mac.home.join("tailnet"), unused.to_string()).unwrap();
     let out = mac.setup(&["--yes"]);
     let (stdout, stderr) = (
         String::from_utf8_lossy(&out.stdout),
@@ -322,7 +445,7 @@ fn a_doctor_failure_stops_with_its_fix() {
 
 #[test]
 fn an_existing_config_keeps_its_keys() {
-    let mac = Mac::new("su-keep", false);
+    let mac = Mac::new("su-keep", true);
     let old = format!(
         "port = {}\nroots = [\"/srv/code\"]\ntheme = \"farm\"\n\n[[plugins]]\nname = \"board\"\nlabel = \"Board\"\n\
          url = \"http://127.0.0.1:1\"\nmodule = \"/tab.js\"\ntoken = \"0123456789abcdef\"\n",
@@ -344,7 +467,6 @@ fn an_existing_config_keeps_its_keys() {
         "{stdout}"
     );
 
-    // Another port than the config's is refused, the file untouched.
     let out = mac.cooee(&["setup", "--yes", "--port", "1"]);
     assert!(
         String::from_utf8_lossy(&out.stderr).contains(&format!("says port = {}", mac.port)),
@@ -357,72 +479,48 @@ fn an_existing_config_keeps_its_keys() {
 }
 
 #[test]
-fn setup_installs_the_first_party_themes_chosen_from_the_index() {
-    let mac = Mac::new("su-themes", false);
-    // An index whose first-party packs (and one that isn't) are folders of a local repo.
-    let repo = mac.home.join("packs.git");
-    fs::create_dir_all(&repo).unwrap();
-    let packs = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../packs/themes");
-    for t in ["farm", "kitchen", "garden"] {
-        fs::create_dir_all(repo.join(t)).unwrap();
-        for f in ["theme.json", "sprites.svg", "scene.svg", "icon.png"] {
-            fs::copy(packs.join(t).join(f), repo.join(t).join(f)).unwrap();
-        }
-    }
-    let git = |args: &[&str]| {
-        let out = Command::new("git")
-            .arg("-C")
-            .arg(&repo)
-            .args(["-c", "user.name=t", "-c", "user.email=t@t"])
-            .args(args)
-            .output()
-            .unwrap();
-        assert!(out.status.success(), "{out:?}");
-        String::from_utf8(out.stdout).unwrap().trim().to_owned()
-    };
-    git(&["init", "--quiet", "-b", "main"]);
-    git(&["add", "-A"]);
-    git(&["commit", "--quiet", "-m", "packs"]);
-    let commit = git(&["rev-parse", "HEAD"]);
-    let entry = |name: &str, first: bool| {
-        format!(
-            "[[theme]]\nname = \"{name}\"\nurl = {:?}\npath = \"{name}\"\ncommit = \"{commit}\"\n\
-             description = \"x\"\nfirst_party = {first}\n\n",
-            repo.display().to_string()
-        )
-    };
-    let index = mac.home.join("index.toml");
-    let text = entry("farm", true) + &entry("kitchen", true) + &entry("garden", false);
-    fs::write(&index, text).unwrap();
+fn setup_installs_the_first_party_themes_chosen_with_no_network() {
+    let mac = Mac::new("su-themes", true);
+    let swag = cooee_core::swag::Swag::pinned();
     fs::create_dir_all(mac.config().parent().unwrap()).unwrap();
     fs::write(
         mac.config(),
-        format!(
-            "port = {}\nroots = [\"/srv\"]\nplugin_index = {:?}\n",
-            mac.port,
-            index.display().to_string()
-        ),
+        format!("port = {}\nroots = [\"/srv\"]\n", mac.port),
     )
     .unwrap();
-    // Asked which (farm and kitchen are first-party), kitchen is typed; no Codex, no Gemini.
     let args = ["setup", "--port", &mac.port.to_string()];
-    let out = mac.cooee_typing(&args, Some("kitchen\n\n\n"));
+    let out = mac.cooee_typing(&args, Some("kitchen\n\n\n1\n1\n"));
     let stdout = String::from_utf8_lossy(&out.stdout);
     assert!(out.status.success(), "{out:?}");
     assert!(
         stdout.contains(
-            "themes:\n  themes to install, or none [farm kitchen]:\n  installed theme kitchen\n"
+            "themes:\n  themes to install, or none [bush garden kitchen]:\n  installed theme farm\n  installed theme scene\n  installed theme terminal\n  installed theme kitchen\n"
         ),
         "{stdout}"
+    );
+    assert!(
+        stdout.contains("chief:\n  Chief is cooee's own persona: it sets up personas and routines for you.\n  its agent:  1 claude-acp\n  its machine:  1 here\n"),
+        "{stdout}"
+    );
+    let chief = fs::read_to_string(mac.chief()).unwrap();
+    assert!(
+        chief.contains("agent = \"claude-acp\"") && !chief.contains("machine"),
+        "{chief}"
     );
     let themes = mac.config().parent().unwrap().join("themes");
     assert_eq!(
         files(&themes),
         [
+            "farm/icon.png",
+            "farm/scene.svg",
+            "farm/sprites.svg",
+            "farm/theme.json",
             "kitchen/icon.png",
             "kitchen/scene.svg",
             "kitchen/sprites.svg",
-            "kitchen/theme.json"
+            "kitchen/theme.json",
+            "scene/style.json",
+            "terminal/style.json"
         ]
     );
     let lock: serde_json::Value = serde_json::from_slice(
@@ -431,81 +529,376 @@ fn setup_installs_the_first_party_themes_chosen_from_the_index() {
     .unwrap();
     assert_eq!(
         lock,
-        serde_json::json!([{ "name": "kitchen", "source": "index", "commit": commit, "listed": true }])
+        serde_json::json!([
+            { "name": "farm", "source": swag.url, "commit": swag.commit, "listed": true },
+            { "name": "kitchen", "source": swag.url, "commit": swag.commit, "listed": true },
+            { "name": "scene", "source": "built in", "commit": "", "listed": true },
+            { "name": "terminal", "source": "built in", "commit": "", "listed": true }
+        ])
     );
-    // The default is all of them: farm, the one left.
+    assert!(
+        !mac.home
+            .join(".local/share/cooee/cooee/themes/kitchen.git")
+            .exists()
+    );
     let out = mac.setup(&["--yes"]);
     assert!(out.status.success(), "{out:?}");
-    assert!(String::from_utf8_lossy(&out.stdout).contains("installed theme farm\n"));
-    assert!(themes.join("farm/theme.json").exists() && !themes.join("garden").exists());
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(
+        stdout.contains("themes:\n  installed theme bush\n  installed theme garden\n"),
+        "{stdout}"
+    );
+    assert!(themes.join("bush/theme.json").exists());
+    assert!(themes.join("garden/theme.json").exists());
     let out = mac.setup(&["--yes"]);
     assert!(String::from_utf8_lossy(&out.stdout).contains("themes: done, skipped\n"));
 }
 
+fn exe(file: &Path, body: &str) {
+    fs::create_dir_all(file.parent().unwrap()).unwrap();
+    fs::write(file, format!("#!/bin/sh\n{body}\n")).unwrap();
+    fs::set_permissions(file, fs::Permissions::from_mode(0o755)).unwrap();
+}
+
+fn asset() -> String {
+    let os = if cfg!(target_os = "macos") {
+        "apple-darwin"
+    } else {
+        "unknown-linux-gnu"
+    };
+    format!("cooee-{}-{os}", std::env::consts::ARCH)
+}
+
+fn sums(file: &Path) -> String {
+    format!(
+        "{}  {}\n",
+        cooee_core::sha256(&fs::read(file).unwrap()),
+        asset()
+    )
+}
+
 #[test]
-fn install_sh_checks_its_tools_then_installs_cooee_and_runs_setup() {
+fn install_sh_downloads_the_latest_release_checks_it_and_runs_setup() {
     let home = scratch("install-sh");
     let bin = home.join("bin");
-    fs::create_dir_all(&bin).unwrap();
-    for name in ["cargo", "cooee", "codesign"] {
-        let file = bin.join(name);
-        fs::write(
-            &file,
-            format!("#!/bin/sh\nprintf '%s\\n' \"{name} $*\" >>\"$HOME/calls.log\"\n"),
-        )
-        .unwrap();
-        fs::set_permissions(&file, fs::Permissions::from_mode(0o755)).unwrap();
-    }
+    let log = "printf '%s\\n' \"cooee $*\" >>\"$HOME/calls.log\"";
+    exe(&home.join("release-cooee"), log);
+    exe(
+        &bin.join("curl"),
+        r#"case "$*" in
+*/releases/latest) echo '{"url": "x", "tag_name": "build-2222222", "draft": false}' ;;
+*/build-2222222/SHA256SUMS) cat "$HOME/sums" ;;
+*/build-2222222/cooee-*) for a; do [ "$prev" = -o ] && out=$a; prev=$a; done; cp "$HOME/release-cooee" "$out" ;;
+*) exit 22 ;;
+esac"#,
+    );
     let script = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../scripts/install.sh");
     let run = || {
         Command::new("/bin/sh")
             .arg(&script)
-            .args(["--instance", "cooee-drover"])
+            .args(["--instance", "drover"])
             .env("HOME", &home)
             .env("PATH", format!("{}:/usr/bin:/bin", bin.display()))
             .stdin(Stdio::null())
             .output()
             .unwrap()
     };
+    let installed = home.join(".local/bin/cooee");
     let out = run();
     assert_eq!(out.status.code(), Some(1), "{out:?}");
     assert!(
         String::from_utf8_lossy(&out.stderr).contains("tailscale not found"),
         "{out:?}"
     );
-    assert!(!home.join("calls.log").exists());
+    assert!(!installed.exists());
 
-    fs::copy(bin.join("cooee"), bin.join("tailscale")).unwrap();
-    let crate_dir = script.parent().unwrap().join("../crates/cooee");
-    let install = format!("cargo install --locked --path {}\n", crate_dir.display());
-    let mut sign = String::new();
-    if cfg!(target_os = "macos") {
-        // #167: no Apple Development identity, no install: an unsigned cooee couldn't keep its secrets.
-        let security = bin.join("security");
-        fs::write(&security, "#!/bin/sh\necho '  0 valid identities found'\n").unwrap();
-        fs::set_permissions(&security, fs::Permissions::from_mode(0o755)).unwrap();
-        let out = run();
-        assert_eq!(out.status.code(), Some(1), "{out:?}");
-        let err = String::from_utf8_lossy(&out.stderr);
-        assert!(
-            err.contains("no \"Apple Development\" signing identity"),
-            "{err}"
-        );
-        assert_eq!(fs::read_to_string(home.join("calls.log")).unwrap(), install);
-        fs::remove_file(home.join("calls.log")).unwrap();
-        let id = "Apple Development: Test (ABCDE12345)";
-        let found = format!("#!/bin/sh\necho '  1) 0123 \"{id}\"'\n");
-        fs::write(&security, found).unwrap();
-        let cooee = home.join(".cargo/bin/cooee");
-        sign = format!(
-            "codesign --force --sign {id} --identifier cooee {}\n",
-            cooee.display()
-        );
-    }
+    exe(&bin.join("tailscale"), "");
+    fs::write(
+        home.join("sums"),
+        format!("{}  {}\n", "0".repeat(64), asset()),
+    )
+    .unwrap();
+    let out = run();
+    assert_eq!(out.status.code(), Some(1), "{out:?}");
+    assert!(
+        String::from_utf8_lossy(&out.stderr)
+            .contains("of build-2222222 doesn't match its SHA256SUMS"),
+        "{out:?}"
+    );
+    assert!(!installed.exists() && !home.join("calls.log").exists());
+
+    fs::write(home.join("sums"), sums(&home.join("release-cooee"))).unwrap();
     let out = run();
     assert!(out.status.success(), "{out:?}");
     assert_eq!(
+        fs::read(&installed).unwrap(),
+        fs::read(home.join("release-cooee")).unwrap()
+    );
+    assert_eq!(
         fs::read_to_string(home.join("calls.log")).unwrap(),
-        format!("{install}{sign}cooee setup --instance cooee-drover\n")
+        "cooee setup --instance drover\n"
+    );
+}
+
+const SHA: &str = "2222222222222222222222222222222222222222";
+
+fn says(sha: &str) -> String {
+    format!("echo \"cooee 0.1.0 ({sha})\"")
+}
+
+fn updating(name: &str, released: bool, new: &str) -> Mac {
+    let mac = Mac::new(name, false);
+    exe(&mac.home.join(".local/bin/cooee"), "echo old");
+    exe(&mac.home.join("serving"), "echo old");
+    exe(&mac.home.join("new-cooee"), new);
+    if released {
+        let sums = sums(&mac.home.join("new-cooee"));
+        fs::write(mac.home.join("SHA256SUMS"), sums).unwrap();
+    }
+    fs::write(mac.home.join("main.json"), format!(r#"{{"sha":"{SHA}"}}"#)).unwrap();
+    fs::create_dir_all(mac.config().parent().unwrap()).unwrap();
+    fs::write(mac.config(), format!("port = {}\n", mac.port)).unwrap();
+    fs::create_dir_all(mac.data()).unwrap();
+    fs::write(mac.home.join("loaded-dev.cooee.cooee"), "").unwrap();
+    mac
+}
+
+impl Mac {
+    fn data(&self) -> PathBuf {
+        self.home.join(".local/share/cooee/cooee")
+    }
+
+    fn prints(&self, name: &str) -> String {
+        let out = Command::new(self.home.join(name)).output().unwrap();
+        String::from_utf8(out.stdout).unwrap()
+    }
+
+    fn log(&self) -> String {
+        fs::read_to_string(self.data().join("update.log")).unwrap()
+    }
+}
+
+#[test]
+fn update_check_says_what_it_would_install_and_changes_nothing() {
+    let mac = updating("up-check", true, &says(SHA));
+    fs::write(mac.home.join("calls.log"), "").unwrap();
+    let before = files(&mac.home);
+    let out = mac.cooee(&["update", "--check"]);
+    assert!(out.status.success(), "{out:?}");
+    assert_eq!(
+        String::from_utf8_lossy(&out.stdout),
+        format!(
+            "would install {SHA}'s release, restart dev.cooee.cooee and check that port {} answers\n",
+            mac.port
+        )
+    );
+    let calls = fs::read_to_string(mac.home.join("calls.log")).unwrap();
+    assert!(
+        calls
+            .lines()
+            .all(|l| l.starts_with("curl ") && !l.contains(" -o ")),
+        "{calls}"
+    );
+    assert_eq!(files(&mac.home), before);
+    assert_eq!(
+        (mac.prints(".local/bin/cooee"), mac.prints("serving")),
+        ("old\n".into(), "old\n".into())
+    );
+}
+
+#[test]
+fn update_installs_main_heads_release_with_no_build_or_signing_and_doctor_shows_it() {
+    let mac = updating("up-green", true, &says(SHA));
+    let out = mac.cooee(&["update"]);
+    assert!(out.status.success(), "{out:?}");
+    let calls = fs::read_to_string(mac.home.join("calls.log")).unwrap();
+    let at = format!(
+        "https://github.com/jirathip-dev/cooee/releases/download/build-2222222/{}",
+        asset()
+    );
+    assert!(calls.contains(&at), "{calls}");
+    assert!(calls.contains(RESTART), "{calls}");
+    assert_eq!(mac.prints("serving"), format!("cooee 0.1.0 ({SHA})\n"));
+    assert!(!mac.home.join(".local/bin/cooee.new").exists());
+    assert!(
+        mac.log().ends_with(&format!(" installed {SHA}\n")),
+        "{}",
+        mac.log()
+    );
+    let out = mac.cooee(&["doctor"]);
+    assert!(
+        String::from_utf8_lossy(&out.stdout).contains(
+            "info update: installed unknown, main's latest release build-2222222, last check 0 min ago, auto-update on\n"
+        ),
+        "{out:?}"
+    );
+}
+
+#[test]
+fn a_head_with_no_release_yet_or_auto_update_off_installs_nothing() {
+    let mac = updating("up-none", false, &says(SHA));
+    let out = mac.cooee(&["update"]);
+    assert!(out.status.success(), "{out:?}");
+    assert!(
+        mac.log()
+            .ends_with(" main 2222222: no release yet, not installed\n"),
+        "{}",
+        mac.log()
+    );
+    assert!(!mac.home.join("SHA256SUMS").exists());
+    fs::write(
+        mac.config(),
+        format!("port = {}\nauto_update = false\n", mac.port),
+    )
+    .unwrap();
+    fs::write(mac.home.join("calls.log"), "").unwrap();
+    let out = mac.cooee(&["update"]);
+    assert!(
+        String::from_utf8_lossy(&out.stdout).starts_with("auto-update is off"),
+        "{out:?}"
+    );
+    assert_eq!(fs::read_to_string(mac.home.join("calls.log")).unwrap(), "");
+    assert_eq!(mac.prints(".local/bin/cooee"), "old\n");
+}
+
+#[test]
+fn a_download_that_fails_its_checksum_or_names_another_sha_is_never_swapped_in() {
+    let other = "3333333333333333333333333333333333333333";
+    for (name, new, sums, why) in [
+        (
+            "up-sum",
+            says(SHA),
+            format!("{}  {}\n", "0".repeat(64), asset()),
+            "doesn't match SHA256SUMS".to_owned(),
+        ),
+        (
+            "up-sha",
+            says(other),
+            String::new(),
+            format!("its --version names another build: cooee 0.1.0 ({other})"),
+        ),
+    ] {
+        let mac = updating(name, true, &new);
+        if !sums.is_empty() {
+            fs::write(mac.home.join("SHA256SUMS"), sums).unwrap();
+        }
+        let out = mac.cooee(&["update"]);
+        assert_eq!(out.status.code(), Some(1), "{out:?}");
+        let err = String::from_utf8_lossy(&out.stderr);
+        assert!(
+            err.contains("2222222 not installed: ") && err.contains(&why),
+            "{err}"
+        );
+        let calls = fs::read_to_string(mac.home.join("calls.log")).unwrap();
+        assert!(!calls.contains(RESTART), "{calls}");
+        assert_eq!(mac.prints(".local/bin/cooee"), "old\n");
+        assert!(!mac.home.join(".local/bin/cooee.new").exists());
+        assert_eq!(
+            fs::read_to_string(mac.data().join("update.failed")).unwrap(),
+            SHA
+        );
+    }
+}
+
+#[test]
+fn a_new_build_that_does_not_answer_is_rolled_back_and_the_old_one_serves_again() {
+    let new = format!("[ \"$1\" = --version ] || exit 1\n{}", says(SHA));
+    let mac = updating("up-rollback", true, &new);
+    let out = mac.cooee(&["update"]);
+    assert_eq!(out.status.code(), Some(1), "{out:?}");
+    let err = String::from_utf8_lossy(&out.stderr);
+    assert!(
+        err.contains(&format!(
+            "2222222 not installed: the service doesn't answer on port {}; rolled back to the old binary: it serves again",
+            mac.port
+        )),
+        "{err}"
+    );
+    let calls = fs::read_to_string(mac.home.join("calls.log")).unwrap();
+    assert_eq!(calls.matches(RESTART).count(), 2, "{calls}");
+    assert_eq!(
+        (mac.prints(".local/bin/cooee"), mac.prints("serving")),
+        ("old\n".into(), "old\n".into())
+    );
+    assert_eq!(
+        fs::read_to_string(mac.data().join("update.failed")).unwrap(),
+        SHA
+    );
+    fs::write(mac.home.join("calls.log"), "").unwrap();
+    assert!(mac.cooee(&["update"]).status.success());
+    assert!(
+        mac.log()
+            .ends_with(" main 2222222 failed to install before: it waits for a newer one\n"),
+        "{}",
+        mac.log()
+    );
+    assert!(
+        !fs::read_to_string(mac.home.join("calls.log"))
+            .unwrap()
+            .contains("releases/download")
+    );
+}
+
+#[test]
+fn setup_on_a_mac_whose_app_ran_the_server_reuses_its_config_and_data() {
+    let mac = Mac::new("su-app", true);
+    for item in ["com.jirathip.cooee.serve", "com.jirathip.cooee.shed"] {
+        fs::write(mac.home.join(format!("loaded-{item}")), "").unwrap();
+    }
+    let kept = format!(
+        "roots = [\"~/Projects\"]\nport = {}\nallowed_hosts = [\"mac.tailnet.example\"]\n",
+        mac.port
+    );
+    fs::create_dir_all(mac.config().parent().unwrap()).unwrap();
+    fs::write(
+        mac.config(),
+        format!("shed = \"/Applications/Cooee.app/Contents/Helpers/shed\"\n{kept}"),
+    )
+    .unwrap();
+    fs::create_dir_all(mac.data()).unwrap();
+    let hash = "ab".repeat(32);
+    let devices = format!(
+        r#"{{"devices":[{{"id":"abababab","label":"iPhone","hash":"{hash}","created":1,"used":1}}]}}"#
+    );
+    fs::write(mac.data().join("devices.json"), devices).unwrap();
+    let out = mac.setup(&["--yes"]);
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(out.status.success(), "{out:?}");
+    assert!(
+        stdout.contains("adding the terminal plugin, shed from PATH, not the old Mac app's\n"),
+        "{stdout}"
+    );
+    let config = fs::read_to_string(mac.config()).unwrap();
+    assert_eq!(config, format!("{kept}{}", terminal(mac.port, &config)));
+    let listed = mac.cooee(&["devices"]);
+    let listed = String::from_utf8_lossy(&listed.stdout);
+    assert!(
+        listed.contains("abababab") && listed.contains("iPhone"),
+        "{listed}"
+    );
+    assert!(mac.home.join("loaded-dev.cooee.cooee").exists());
+    assert!(mac.setup(&["--yes"]).status.success());
+    assert_eq!(fs::read_to_string(mac.config()).unwrap(), config);
+}
+
+#[test]
+fn doctor_warns_when_both_the_cli_and_the_mac_app_are_installed() {
+    let mac = Mac::new("su-both", true);
+    let doctor = |mac: &Mac| {
+        let out = mac.cooee(&["doctor", "--config", &mac.config().display().to_string()]);
+        String::from_utf8_lossy(&out.stdout).into_owned()
+    };
+    fs::create_dir_all(mac.config().parent().unwrap()).unwrap();
+    fs::write(mac.config(), format!("port = {}\n", mac.port)).unwrap();
+    fs::write(mac.home.join("loaded-dev.cooee.cooee"), "").unwrap();
+    assert!(!doctor(&mac).contains("warn both"));
+    fs::write(mac.home.join("loaded-com.jirathip.cooee.serve"), "").unwrap();
+    let stdout = doctor(&mac);
+    assert!(
+        stdout.contains(
+            "ok   service dev.cooee.cooee loaded (else: cooee install)\nwarn both dev.cooee.cooee and the Mac \
+             app's login items (com.jirathip.cooee.serve) are installed: two servers on one Mac\n"
+        ),
+        "{stdout}"
     );
 }

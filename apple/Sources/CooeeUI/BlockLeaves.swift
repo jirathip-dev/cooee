@@ -55,87 +55,14 @@ internal struct ListBlock: View {
     internal var body: some View {
         let rows = block.list("rows")
         VStack(spacing: 0) {
-            ForEach(Array(rows.enumerated()), id: \.offset) { index, row in
-                RowView(row: row).modifier(Reordering(list: block, row: row))
-                if index < rows.count - 1 {
+            ForEach(rows.keyed()) { row in
+                RowView(row: row.element).modifier(Reordering(list: block, row: row.element))
+                if row.offset < rows.count - 1 {
                     Rectangle().fill(look.palette.line).frame(height: 0.5).padding(.leading, 12)
                 }
             }
         }
         .surface(look, radius: 16)
-    }
-}
-
-internal struct RowView: View {
-    @Environment(\.look) private var look
-    @Environment(\.act) private var act
-    @State private var pending: JSONValue?
-    internal let row: JSONValue
-
-    internal var body: some View {
-        Group {
-            if row["tap"] == nil {
-                line
-            } else {
-                ActButton(source: row) { line }
-            }
-        }
-        .contextMenu {
-            ForEach(Array(row.list("swipe").enumerated()), id: \.offset) { _, swipe in
-                Button(swipe.string("label") ?? "", role: swipe.string("tone") == "bad" ? .destructive : nil) {
-                    if Confirm(for: swipe) == nil { run(swipe) } else { pending = swipe }
-                }
-            }
-        }
-        .modifier(Confirming(pending: $pending, run: run))
-    }
-
-    private var line: some View {
-        let palette = look.palette
-        let subtitle = row["subtitle"]
-        return HStack(spacing: 10) {
-            if let figure = row["figure"] { Figure(figure: figure) }
-            VStack(alignment: .leading, spacing: 2) {
-                Text(row.string("title") ?? "").ui(15, .medium, look)
-                    .foregroundStyle(
-                        row.string("style") == "destructive"
-                            ? palette.red : row.string("style") == "link" ? palette.link : palette.foreground)
-                if let text = subtitle?.string ?? subtitle?.string("text") {
-                    Text(text).ui(12, .regular, look).foregroundStyle(
-                        palette.tone(subtitle?.string("tone")) ?? palette.mute
-                    ).lineLimit(1)
-                }
-            }
-            Spacer(minLength: 4)
-            if let badge = row["badge"] { Pill(badge: badge) }
-            if let value = row["value"] {
-                RelativeValue(value: value).ui(13, .regular, look).foregroundStyle(palette.mute)
-            }
-            if let button = row["button"] { RowButton(button: button) }
-            trailing
-        }
-        .padding(.leading, CGFloat(row["indent"]?.number ?? 0) * 18).padding(.horizontal, 12).frame(minHeight: 44)
-        .contentShape(.rect)
-        .overlay(alignment: .leading) {
-            if row["changed"]?.bool == true {
-                RoundedRectangle(cornerRadius: 2).fill(palette.lead).frame(width: 3).padding(.vertical, 10)
-            }
-        }
-        .modifier(Lifted(lifted: row["lifted"]?.bool == true))
-    }
-
-    @ViewBuilder private var trailing: some View {
-        if row["handle"]?.bool == true {
-            Image(systemName: "line.3.horizontal").font(.system(size: 15, weight: .semibold))
-                .foregroundStyle(look.palette.mute).accessibilityLabel("Reorder")
-        } else if row["tap"] != nil && row.string("accessory") != "none" {
-            Image(systemName: "chevron.right").font(.system(size: 11, weight: .bold))
-                .foregroundStyle(look.palette.mute)
-        }
-    }
-
-    private func run(_ swipe: JSONValue) {
-        if let action = BlockAction(action: nil, source: swipe, values: [:]) { act(action) }
     }
 }
 

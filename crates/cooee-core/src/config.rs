@@ -1,17 +1,23 @@
-//! The config file: one TOML file, every key optional, unknown keys an error.
-
 use std::{
-    env, fs, io,
+    env,
+    ffi::OsString,
+    fs, io,
     net::{IpAddr, Ipv4Addr},
     path::{Path, PathBuf},
 };
 
 use serde::Deserialize;
 
-use crate::{Spec, provider};
+use crate::provider;
+
+/// The environment variable `name` (#203: CI's arch-check bans `env::var` outside this module).
+#[must_use]
+pub fn env_var(name: &str) -> Option<OsString> {
+    env::var_os(name)
+}
 
 /// cooee's settings, read from `config.toml`.
-#[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Deserialize)]
 #[serde(default, deny_unknown_fields)]
 pub struct Config {
     /// The port `cooee serve` listens on (default 4747; 0 picks a free one).
@@ -29,8 +35,9 @@ pub struct Config {
     pub shed_dir: Option<PathBuf>,
     /// Where threads are stored; default `$XDG_DATA_HOME/cooee/<instance>`, else `~/.local/share/cooee/<instance>`.
     pub data: Option<PathBuf>,
-    /// The sign-ins sheet's providers (`[[providers]]`); default every registered provider's.
-    pub providers: Vec<Spec>,
+    /// The sign-ins sheet's providers (`[[providers]]`), each row over the provider of its name field by field;
+    /// default every registered provider with shed's record of its agent (see [`provider::specs`]).
+    pub providers: Option<Vec<toml::Table>>,
     /// The theme a device shows until it picks its own (default farm).
     pub theme: Option<String>,
     /// The config file's folder, where the owner's own `themes/` and `schemes/` live (set by [`Config::load`]).
@@ -44,15 +51,30 @@ pub struct Config {
     /// The plugin index Settings › Plugins and `cooee plugin add <name>` list; default the built-in one
     /// (`plugins/index.toml` in cooee's repo).
     pub plugin_index: Option<PathBuf>,
+    /// The skill index `cooee skill add` and the persona panel list (#496); default the built-in one
+    /// (`plugins/skills.toml` in cooee's repo).
+    pub skill_index: Option<PathBuf>,
     /// The instance's name (`cooee serve --instance`, default `cooee`): its own config, data folder and pairing.
     #[serde(skip)]
     pub instance: String,
     /// Timing (`[perf]`).
     pub perf: Perf,
+    /// Log rotation (`[logs]`).
+    pub logs: crate::logs::Logs,
     /// The MCP servers profiles pick from (`[[mcp]]`, #56).
     pub mcp: Vec<crate::mcp::Server>,
+    /// The Chromium each persona's browser runs (#160; default [`crate::browser::CHROMIUM`]).
+    pub chromium: PathBuf,
     /// Apple push for the native app (`[apns]`, #130); its key is `<data>/apns.p8`.
     pub apns: Option<Apns>,
+    /// GitHub webhooks for routines (`[hooks]`, #261); off when unset.
+    pub hooks: Option<crate::routines::Hooks>,
+    /// Whether `cooee update` (its timer, every 15 minutes) installs main's newest green build (default on, #332).
+    pub auto_update: bool,
+    /// How many minutes an approval a routine's run raised waits before it counts as Deny (default 30, #505).
+    pub approval_expiry_minutes: u64,
+    /// How long thread items stay in the hot store in full (`[history]`, #364).
+    pub history: History,
 }
 
 /// `[apns]`: the owner's APNs key's ids and the app it pushes to; none of it is secret.
@@ -65,7 +87,7 @@ pub struct Apns {
     pub team_id: String,
     /// The app's bundle id.
     pub topic: String,
-    /// `sandbox` (Xcode and test-flight builds) or `production`: a token registered without one is this.
+    /// `production` (test-flight and App Store builds) or `sandbox` (Xcode debug builds): a token registered without one is this.
     pub env: ApnsEnv,
     /// The APNs server; default Apple's for each token's `env`.
     pub url: Option<String>,
@@ -92,6 +114,28 @@ pub struct Perf {
 impl Default for Perf {
     fn default() -> Self {
         Self { slow_ms: 250 }
+    }
+}
+
+/// `[history]`: thread retention (#364): which items stay in full in `cooee.db` and which move to `<data>/archive/`.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize)]
+#[serde(default, deny_unknown_fields)]
+pub struct History {
+    /// An ended thread quiet for this many days moves to its month's archive (default 30).
+    pub hot_days: u64,
+    /// A tool item this many days old is trimmed when over `trim_over_kb` (default 7).
+    pub trim_after_days: u64,
+    /// A tool item's text over this many KB keeps its head and tail; the archive keeps it whole (default 4).
+    pub trim_over_kb: u64,
+}
+
+impl Default for History {
+    fn default() -> Self {
+        Self {
+            hot_days: 30,
+            trim_after_days: 7,
+            trim_over_kb: 4,
+        }
     }
 }
 
@@ -123,16 +167,23 @@ impl Default for Config {
             shed: PathBuf::from("shed"),
             shed_dir: None,
             data: None,
-            providers: provider::defaults(),
+            providers: None,
             plugins: Vec::new(),
             plugin_index: None,
+            skill_index: None,
             theme: None,
             dir: None,
             path: None,
             instance: "cooee".to_owned(),
             perf: Perf::default(),
+            logs: crate::logs::Logs::default(),
             mcp: Vec::new(),
+            chromium: PathBuf::from(crate::browser::CHROMIUM),
             apns: None,
+            hooks: None,
+            auto_update: true,
+            approval_expiry_minutes: 30,
+            history: History::default(),
         }
     }
 }
@@ -224,7 +275,7 @@ impl Config {
             path: path.to_owned(),
             why,
         })?;
-        provider::check(&config.providers).map_err(|why| ConfigError::Invalid {
+        provider::specs(config.providers.as_deref(), &[]).map_err(|why| ConfigError::Invalid {
             path: path.to_owned(),
             why,
         })?;
@@ -265,7 +316,6 @@ pub fn save_roots(path: &Path, roots: &[PathBuf]) -> io::Result<()> {
             },
         )
         .collect();
-    // A JSON array of strings is a TOML inline array too.
     let line = format!("roots = {}", serde_json::to_string(&roots)?);
     let table = toml::de::DeTable::parse(&text).map_err(io::Error::other)?;
     let old = table.get_ref().iter().find(|(k, _)| k.get_ref() == "roots");
@@ -301,7 +351,9 @@ mod tests {
 
     #[test]
     fn roots_under_home_are_expanded() {
-        let path = env::temp_dir().join(format!("cooee-roots-{}.toml", std::process::id()));
+        let path = crate::scratch::owned(
+            env::temp_dir().join(format!("cooee-roots-{}.toml", std::process::id())),
+        );
         fs::write(&path, r#"roots = ["~/Projects", "~", "/srv/~x"]"#).unwrap();
         let roots = Config::load(&path).unwrap().roots;
         fs::remove_file(&path).unwrap();
@@ -314,7 +366,9 @@ mod tests {
 
     #[test]
     fn missing_file_gives_defaults() {
-        let path = env::temp_dir().join(format!("cooee-no-config-{}.toml", std::process::id()));
+        let path = crate::scratch::owned(
+            env::temp_dir().join(format!("cooee-no-config-{}.toml", std::process::id())),
+        );
         assert_eq!(
             Config::load(&path).unwrap(),
             Config {
@@ -327,7 +381,9 @@ mod tests {
 
     #[test]
     fn saving_roots_keeps_the_other_lines() {
-        let path = env::temp_dir().join(format!("cooee-save-{}.toml", std::process::id()));
+        let path = crate::scratch::owned(
+            env::temp_dir().join(format!("cooee-save-{}.toml", std::process::id())),
+        );
         let home = PathBuf::from(env::var_os("HOME").unwrap());
         let text = "# mine\nport = 1\nroots = [\n  \"/a\",\n] # old\n\n[[plugins]]\nname = \"x\"\n";
         fs::write(&path, text).unwrap();

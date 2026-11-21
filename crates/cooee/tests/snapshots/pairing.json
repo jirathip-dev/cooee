@@ -1,0 +1,238 @@
+{
+  "type": "screen",
+  "id": "pairing",
+  "title": "Pair",
+  "blocks": [
+    {
+      "type": "step",
+      "id": "welcome",
+      "spacing": 14,
+      "blocks": [
+        {
+          "type": "spacer"
+        },
+        {
+          "type": "mark",
+          "size": 132
+        },
+        {
+          "type": "text",
+          "text": "cooee",
+          "size": 40,
+          "weight": "bold",
+          "font": "rounded"
+        },
+        {
+          "type": "text",
+          "text": "Your agents run on your Mac.\nTalk to them from here.",
+          "size": 17,
+          "tone": "mute",
+          "center": true
+        },
+        {
+          "type": "spacer"
+        },
+        {
+          "type": "ways"
+        },
+        {
+          "type": "text",
+          "text": "No server yet? Get cooee for Mac, or run `cooee setup` on a Mac or Linux box: both show a QR code.",
+          "size": 13,
+          "tone": "mute",
+          "center": true,
+          "top": 6
+        }
+      ]
+    },
+    {
+      "type": "step",
+      "id": "scan",
+      "spacing": 18,
+      "blocks": [
+        {
+          "type": "header",
+          "title": "Scan QR",
+          "subtitle": "Point at the code on your Mac, or in the terminal"
+        },
+        {
+          "type": "scanner",
+          "height": 420
+        },
+        {
+          "type": "text",
+          "text": "{error}",
+          "size": 15,
+          "weight": "semibold",
+          "tone": "bad"
+        },
+        {
+          "type": "found",
+          "text": "Found {found}"
+        },
+        {
+          "type": "spacer"
+        },
+        {
+          "type": "buttons",
+          "rows": [
+            {
+              "title": "Nearby",
+              "step": "nearby"
+            },
+            {
+              "title": "Enter address",
+              "step": "address"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "step",
+      "id": "nearby",
+      "spacing": 22,
+      "blocks": [
+        {
+          "type": "header",
+          "title": "Nearby",
+          "subtitle": "cooee servers on this Wi-Fi"
+        },
+        {
+          "type": "nearby"
+        },
+        {
+          "type": "spacer"
+        }
+      ]
+    },
+    {
+      "type": "step",
+      "id": "address",
+      "spacing": 22,
+      "blocks": [
+        {
+          "type": "header",
+          "title": "Enter address",
+          "subtitle": "The address `cooee setup` printed"
+        },
+        {
+          "type": "address"
+        },
+        {
+          "type": "spacer"
+        }
+      ]
+    },
+    {
+      "type": "step",
+      "id": "waiting",
+      "spacing": 18,
+      "blocks": [
+        {
+          "type": "spacer"
+        },
+        {
+          "type": "symbol",
+          "symbol": "desktopcomputer.and.arrow.down",
+          "size": 54,
+          "tone": "info"
+        },
+        {
+          "type": "text",
+          "text": "Approve on your Mac",
+          "size": 26,
+          "weight": "bold"
+        },
+        {
+          "type": "text",
+          "text": "{host} asks you to approve this iPhone. Check that it shows the same word:",
+          "size": 16,
+          "tone": "mute",
+          "center": true
+        },
+        {
+          "type": "word",
+          "text": "{word}"
+        },
+        {
+          "type": "countdown",
+          "text": "Waiting for approval · {left} left"
+        },
+        {
+          "type": "text",
+          "text": "Any paired device can approve it too: it got a notification.",
+          "size": 13,
+          "tone": "mute",
+          "center": true
+        },
+        {
+          "type": "spacer"
+        },
+        {
+          "type": "buttons",
+          "rows": [
+            {
+              "title": "Cancel",
+              "action": "cancel",
+              "tone": "bad"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "step",
+      "id": "paired",
+      "spacing": 16,
+      "blocks": [
+        {
+          "type": "spacer"
+        },
+        {
+          "type": "symbol",
+          "symbol": "checkmark.circle.fill",
+          "size": 84,
+          "tone": "ok"
+        },
+        {
+          "type": "text",
+          "id": "paired",
+          "text": "Paired with {host}",
+          "size": 28,
+          "weight": "bold"
+        },
+        {
+          "type": "text",
+          "text": "{by} approved this iPhone from the Mac.",
+          "size": 16,
+          "tone": "mute"
+        },
+        {
+          "type": "avatars",
+          "top": 10
+        },
+        {
+          "type": "text",
+          "text": "{count} personas are waiting on Home",
+          "size": 14,
+          "tone": "mute"
+        },
+        {
+          "type": "spacer"
+        },
+        {
+          "type": "buttons",
+          "rows": [
+            {
+              "title": "Go to Home",
+              "action": "home",
+              "primary": true
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "source": "core"
+}

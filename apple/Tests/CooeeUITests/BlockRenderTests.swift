@@ -21,9 +21,23 @@ internal struct BlockRenderTests {
                 .appendingPathComponent("fleets-config/fixtures"))
     }
 
-    private static func height(_ block: JSONValue) -> Int {
-        let view = BlocksView(block).frame(width: 402).environment(\.look, Look(palette: .farmLight, still: true))
+    private static func height(_ block: JSONValue, _ style: Style = .bundled) -> Int {
+        let look = Look(palette: .farmLight, style: style, still: true)
+        let view = BlocksView(block, source: .plugin("edgar")).frame(width: 402).environment(\.look, look)
         return ImageRenderer(content: view).cgImage?.height ?? 0
+    }
+
+    private static func row(current state: String) -> JSONValue {
+        let round = { (id: String, state: String) in
+            JSONValue.object(["id": .string(id), "name": .string(id), "state": .string(state)])
+        }
+        let lane = JSONValue.object(["name": .string("lane"), "lines": .array([.string("$ cargo test")])])
+        var current = round("fix 1", state).fields
+        current["lane"] = lane
+        return .object([
+            "type": .string("row"), "id": .string("q-1"), "title": .string("#1"),
+            "rounds": .array([round("impl", "done"), .object(current)]),
+        ])
     }
 
     @Test(arguments: ["queue.json", "events.json", "fleets.json", "hello.json"])
@@ -42,12 +56,61 @@ internal struct BlockRenderTests {
         #expect(Self.height(.object(["type": .string("a-newer-block")])) == 0)
     }
 
+    private static func middle(_ block: JSONValue) throws -> [Int] {
+        let look = Look(palette: .farmLight, style: .bundled, still: true)
+        let view = BlocksView(block, source: .plugin("drover")).frame(width: 402).environment(\.look, look)
+        let pixels = try #require(ImageRenderer(content: view).cgImage.flatMap(Pixels.init))
+        let start = pixels.height / 2 * pixels.width * 4
+        return pixels.bytes[start..<start + pixels.width * 4].map(Int.init)
+    }
+
+    private static func apart(_ one: [Int], _ other: [Int]) -> Int {
+        zip(one, other).map { abs($0 - $1) }.max() ?? 0
+    }
+
+    @Test internal func aPausedFleetsCardFoldsToOneLineAndDrawsInItsOwnColour() throws {
+        let entry = try Self.fixture("blocks.json").items.first { $0.string("name") == "card.fold" }
+        let folded = try #require(entry?["block"])
+        let open = JSONValue.object(folded.fields.filter { $0.key != "fold" })
+        #expect(Self.height(folded) > 0 && Self.height(folded) * 2 < Self.height(open))
+        let amber = JSONValue.object(open.fields.merging(["color": .string("a")]) { $1 })
+        let purple = try Self.middle(open)
+        #expect(Self.apart(purple, try Self.middle(open)) < 16)
+        #expect(Self.apart(purple, try Self.middle(amber)) > 60)
+    }
+
     @Test internal func theQueueDrawsItsStreamsOps() throws {
         let screen = try Self.fixture("queue.json")
         var queue = LiveScreen(screen)
         for event in try Self.fixture("queue-stream.json").items { queue.apply(event: event) }
         let patched = Self.height(queue.root)
         #expect(patched > 200 && patched < Self.height(screen))
+    }
+
+    @Test internal func theSceneStripDrawsOnlyInTheSceneLook() throws {
+        let scene = try #require(Self.sceneQueue().list("blocks").first)
+        #expect(scene.type == "scene")
+        #expect(Self.height(scene, .scene) == 180)
+        #expect(Self.height(scene, .bundled) == 0 && Self.height(scene, .terminal) == 0)
+    }
+
+    @Test internal func aRowWhoseCurrentRoundNeedsYouOpensItsRoundsOthersStayFolded() {
+        let folded = Self.height(Self.row(current: "working"))
+        let open = Self.height(Self.row(current: "needs"))
+        #expect(folded > 0 && open > folded * 2)
+        #expect(
+            Self.height(Self.row(current: "working"), .terminal) < Self.height(Self.row(current: "needs"), .terminal))
+    }
+
+    @Test(arguments: [Style.bundled] + Style.packs)
+    internal func theQueueInSceneDrawsInEveryLook(_ style: Style) throws {
+        #expect(Self.height(try Self.sceneQueue(), style) > 1000)
+    }
+
+    private static func sceneQueue() throws -> JSONValue {
+        let file = fixtures.deletingLastPathComponent().deletingLastPathComponent()
+            .appendingPathComponent("queue-scene/fixtures/queue.json")
+        return try JSONDecoder().decode(JSONValue.self, from: Data(contentsOf: file))
     }
 
     @Test(arguments: [

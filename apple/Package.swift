@@ -14,16 +14,18 @@ let package = Package(
         .library(name: "CooeeUI", targets: ["CooeeUI"]),
     ],
     dependencies: [
-        .package(url: "https://github.com/pointfreeco/swift-composable-architecture", exact: "1.26.2")
+        .package(url: "https://github.com/pointfreeco/swift-composable-architecture", exact: "1.26.2"),
+        .package(url: "https://github.com/jirathip-dev/blocks", revision: "d0882093e32c6d752910c459efa04a2a6beb5c3a"),
     ],
     targets: [
-        .target(name: "CooeeCore", swiftSettings: strict),
+        .target(
+            name: "CooeeCore", dependencies: [.product(name: "Blocks", package: "blocks")], swiftSettings: strict),
         .target(name: "CooeeAPI", dependencies: ["CooeeCore"], swiftSettings: strict),
         .target(name: "CooeeFeatures", dependencies: ["CooeeCore", "CooeeAPI", tca], swiftSettings: strict),
         .target(
             name: "CooeeUI",
             dependencies: ["CooeeCore", "CooeeFeatures", tca],
-            resources: [.copy("Sprites")],
+            resources: [.copy("Sprites"), .copy("Default")],
             swiftSettings: strict
         ),
         .target(
@@ -35,6 +37,8 @@ let package = Package(
         .testTarget(
             name: "CooeeAPITests", dependencies: ["CooeeAPI"], resources: [.copy("Fixtures")], swiftSettings: strict),
         .testTarget(name: "CooeeFeaturesTests", dependencies: ["CooeeFeatures", tca], swiftSettings: strict),
-        .testTarget(name: "CooeeUITests", dependencies: ["CooeeCore", "CooeeUI"], swiftSettings: strict),
+        .testTarget(name: "CooeeAppTests", dependencies: ["CooeeApp", "CooeeFeatures", tca], swiftSettings: strict),
+        .testTarget(
+            name: "CooeeUITests", dependencies: ["CooeeCore", "CooeeFeatures", "CooeeUI", tca], swiftSettings: strict),
     ]
 )

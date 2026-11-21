@@ -1,5 +1,5 @@
 //! Named instances: two `cooee serve --instance` on one shed keep their own data folders, threads and devices;
-//! `cooee install` writes a launchd plist and prints the commands to run; `cooee doctor` reports a missing shed.
+//! `cooee install` writes and loads the launchd or systemd job; `cooee doctor` reports a missing shed.
 
 mod support;
 
@@ -15,7 +15,7 @@ fn two_instances_never_see_each_others_threads_or_devices() {
     let dir = scratch("instances");
     let shed = FakeShed::start(&dir.join("shed"), version());
     let a = Cooee::start_instance(&dir, &shed.dir, "cooee");
-    let b = Cooee::start_instance(&dir, &shed.dir, "cooee-drover");
+    let b = Cooee::start_instance(&dir, &shed.dir, "drover");
 
     let folder = dir.join("root/project");
     let new =
@@ -25,15 +25,15 @@ fn two_instances_never_see_each_others_threads_or_devices() {
 
     let share = dir.join("home/.local/share/cooee");
     assert!(share.join("cooee").is_dir());
-    assert!(share.join("cooee-drover").is_dir());
+    assert!(share.join("drover").is_dir());
     let id = serde_json::from_str::<serde_json::Value>(&body).unwrap()["id"]
         .as_str()
         .unwrap()
         .to_owned();
-    let link = format!(r#"href="/t/{id}""#);
-    assert!(a.get("/").1.contains(&link));
-    let (status, page) = b.get("/");
-    assert!(status == 200 && !page.contains(&link), "{page}");
+    let ids = |c: &Cooee| c.json("/threads").to_string();
+    assert!(ids(&a).contains(&id));
+    let theirs = ids(&b);
+    assert!(!theirs.contains(&id), "{theirs}");
 
     let (devices_a, devices_b) = (a.cli(&["devices"]), b.cli(&["devices"]));
     assert_eq!(
@@ -41,20 +41,29 @@ fn two_instances_never_see_each_others_threads_or_devices() {
         (1, 1)
     );
     assert_ne!(devices_a, devices_b);
-    // a's cookie is not a device of b's.
-    let (head, _) = b.raw("GET", "/", &[("Cookie", &a.cookie)], "");
-    assert!(
-        head.contains(" 303 ") && head.contains("location: /pair"),
-        "{head}"
-    );
+    let (head, _) = b.raw("GET", "/threads", &[("Cookie", &a.cookie)], "");
+    assert!(head.contains(" 401 "), "{head}");
 }
 
-/// `cooee <args>` with `HOME` at `home`, no XDG folders and only the system `PATH` (no shed, no Tailscale).
 fn cooee(home: &Path, args: &[&str]) -> std::process::Output {
+    let bin = home.join("bin");
+    fs::create_dir_all(&bin).unwrap();
+    for (name, body) in [
+        ("launchctl", "[ \"$1\" = bootstrap ]"),
+        ("systemctl", "true"),
+    ] {
+        let log = format!("printf '%s\\n' \"{name} $*\" >>\"$HOME/calls.log\"");
+        fs::write(bin.join(name), format!("#!/bin/sh\n{log}\n{body}\n")).unwrap();
+        fs::set_permissions(
+            bin.join(name),
+            std::os::unix::fs::PermissionsExt::from_mode(0o755),
+        )
+        .unwrap();
+    }
     Command::new(BIN)
         .args(args)
         .env("HOME", home)
-        .env("PATH", "/usr/bin:/bin")
+        .env("PATH", format!("{}:/usr/bin:/bin", bin.display()))
         .env_remove("XDG_CONFIG_HOME")
         .env_remove("XDG_DATA_HOME")
         .output()
@@ -62,47 +71,64 @@ fn cooee(home: &Path, args: &[&str]) -> std::process::Output {
 }
 
 #[test]
-fn install_writes_a_plist_and_prints_the_commands() {
+fn install_writes_and_loads_the_job() {
     let home = scratch("install");
     let out = cooee(&home, &["install", "--instance", "cooee", "--port", "4799"]);
     let stdout = String::from_utf8_lossy(&out.stdout);
     assert!(out.status.success(), "{out:?}");
 
-    let plist = home.join("Library/LaunchAgents/dev.cooee.cooee.plist");
-    let text = fs::read_to_string(&plist).unwrap();
     let log = home.join(".local/share/cooee/cooee/cooee.log");
-    for want in [
-        "<string>dev.cooee.cooee</string>".to_owned(),
-        format!(
-            "<string>{BIN}</string>\n    <string>serve</string>\n    <string>--instance</string>\n    <string>cooee</string>\n  </array>"
-        ),
-        "<key>KeepAlive</key>\n  <true/>".to_owned(),
-        format!(
-            "<key>StandardErrorPath</key>\n  <string>{}</string>",
-            log.display()
-        ),
-    ] {
+    let uid = String::from_utf8(Command::new("id").arg("-u").output().unwrap().stdout).unwrap();
+    let (file, wants, load) = if cfg!(target_os = "macos") {
+        let plist = home.join("Library/LaunchAgents/dev.cooee.cooee.plist");
+        let load = format!("launchctl bootstrap gui/{} {}", uid.trim(), plist.display());
+        let wants = vec![
+            "<string>dev.cooee.cooee</string>".to_owned(),
+            format!(
+                "<string>{BIN}</string>\n    <string>serve</string>\n    <string>--instance</string>\n    <string>cooee</string>\n  </array>"
+            ),
+            "<key>KeepAlive</key>\n  <true/>".to_owned(),
+            format!(
+                "<key>StandardErrorPath</key>\n  <string>{}</string>",
+                log.display()
+            ),
+        ];
+        (plist, wants, load)
+    } else {
+        let unit = home.join(".config/systemd/user/dev.cooee.cooee.service");
+        let wants = vec![
+            format!("ExecStart={BIN} serve --instance cooee\n"),
+            "Restart=always\n".to_owned(),
+            format!("StandardError=append:{}\n", log.display()),
+        ];
+        let load = "systemctl --user enable --now dev.cooee.cooee.service".to_owned();
+        (unit, wants, load)
+    };
+    let text = fs::read_to_string(&file).unwrap();
+    for want in wants {
         assert!(text.contains(&want), "{want} not in {text}");
     }
     if cfg!(target_os = "macos") {
         let lint = Command::new("plutil")
             .arg("-lint")
-            .arg(&plist)
+            .arg(&file)
             .output()
             .unwrap();
         assert!(lint.status.success(), "{lint:?}");
     }
+    let calls = fs::read_to_string(home.join("calls.log")).unwrap();
+    assert!(calls.lines().any(|l| l == load), "{load} not in {calls}");
+    assert!(stdout.contains("dev.cooee.cooee written\n"), "{stdout}");
+    assert!(!stdout.contains(&load), "{stdout}");
     let config = home.join(".config/cooee/cooee/config.toml");
     assert_eq!(fs::read_to_string(config).unwrap(), "port = 4799\n");
     for want in [
-        format!("launchctl bootstrap gui/$(id -u) {}", plist.display()),
         "tailscale serve --bg --https=4799 http://127.0.0.1:4799".to_owned(),
-        "cargo install --locked --git https://github.com/jirathip-dev/shed".to_owned(),
+        "shed isn't running: install or update shed to protocol 1 or newer from https://github.com/jirathip-dev/shed/releases".to_owned(),
     ] {
         assert!(stdout.contains(&want), "{want} not in {stdout}");
     }
 
-    // The config is the one place the port lives: another port is refused, not silently diverged.
     let out = cooee(&home, &["install", "--port", "4800"]);
     assert!(!out.status.success());
     assert!(
@@ -129,7 +155,7 @@ fn doctor_reports_a_missing_shed() {
         stdout.contains("FAIL shed: ")
             && stdout.contains(&no_shed.join("shed.sock").display().to_string())
             && stdout.contains(
-                "install: cargo install --locked --git https://github.com/jirathip-dev/shed"
+                "fix: install or update shed to protocol 1 or newer from https://github.com/jirathip-dev/shed/releases"
             ),
         "{stdout}"
     );
@@ -138,7 +164,6 @@ fn doctor_reports_a_missing_shed() {
         "{stdout}"
     );
 
-    // With `[apns]` but no key, doctor names the file; with a key it says ready and never prints it.
     let apns =
         "[apns]\nkey_id = \"K\"\nteam_id = \"T\"\ntopic = \"dev.cooee.app\"\nenv = \"sandbox\"\n";
     fs::write(&config, format!("port = 1\n{apns}")).unwrap();
@@ -149,7 +174,6 @@ fn doctor_reports_a_missing_shed() {
         p8.display()
     );
     assert!(stdout.contains(&missing), "{stdout}");
-    // A throwaway key made for this test (`openssl ecparam -genkey -name prime256v1 | openssl pkcs8 -topk8 -nocrypt`).
     let key = "MIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQg/FMQqoOmZU6bop6k\n\
                jwzlkZBiOA5CCW7ngc03CgGpgsKhRANCAASkJsDwiTE2wL6OIdpH5tfnsdyw5UK8\n\
                NOnlJZkFHy9kIEFLJ8uttasmC9v/MsS+Cbb3MJBa25UlVnmKe8xoXskq";

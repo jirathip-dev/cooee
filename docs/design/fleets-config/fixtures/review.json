@@ -2,11 +2,11 @@
   "type": "sheet", "id": "review", "title": "Review changes", "cancel": "Edit", "done": { "label": "Apply", "action": "apply" },
   "blocks": [
     { "type": "list", "rows": [
-      { "type": "row", "figure": { "icon": "✓" }, "title": "2 changes to cooee", "subtitle": { "text": "valid · herdsman checked them", "tone": "ok" } } ] },
+      { "type": "row", "id": "2-changes-to-cooee", "figure": { "icon": "✓" }, "title": "2 changes to cooee", "subtitle": { "text": "valid · herdsman checked them", "tone": "ok" } } ] },
     { "type": "section", "header": "what changes", "blocks": [
       { "type": "list", "rows": [
-        { "type": "row", "title": "rev · effort", "value": "model default → high" },
-        { "type": "row", "title": "lessons", "value": "weekly → off" } ] } ] },
+        { "type": "row", "id": "rev-effort", "title": "rev · effort", "value": "model default → high" },
+        { "type": "row", "id": "lessons", "title": "lessons", "value": "weekly → off" } ] } ] },
     { "type": "section", "header": "the diff", "blocks": [
       { "type": "diff", "file": "~/.config/herdsman/fleet.toml", "summary": "+2 −0",
         "hunks": [

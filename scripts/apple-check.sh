@@ -1,14 +1,20 @@
 #!/bin/sh
-# Every Swift quality gate on apple/ (#147), each blocking: swift format, anti-slop (with cooee's rules and a check
-# that each TODO(#N) names an open issue), SwiftLint, the build (Swift 6, warnings as errors), the tests, coverage of
-# Core, API and Features (95%), unused imports (swiftlint analyze) and Periphery. Without Xcode it runs what the
-# Command Line Tools can and names what it skipped. SwiftLint and Periphery are pinned and checked by sha256.
+# The Swift gates on apple/ (#147). Blocking (the merge-ready run, `just apple-check`): swift format, anti-slop (with
+# cooee's rules and a check that each TODO(#N) names an open issue), SwiftLint, the build (Swift 6, warnings as
+# errors), the tests and 95% coverage of Core and API. #487: `--nightly` (`just apple-check --nightly`, apple.yml's
+# schedule and manual runs) adds Features coverage, unused imports (swiftlint analyze) and Periphery. Each step's wall
+# time and the total print at the end and go to $GITHUB_STEP_SUMMARY; a failure names its step as `gate=` in
+# $GITHUB_OUTPUT. Without Xcode it runs what the Command Line Tools can and names what it skipped. SwiftLint and
+# Periphery are pinned and checked by sha256.
+# #486: with APPLE_DERIVED and APPLE_PACKAGES set (.github/actions/mac-runner) SwiftPM builds and clones there, warm.
 set -eu
 cd "$(dirname "$0")/.."
 root=$(pwd)
 tools="$root/.tools"
 swift_dirs="Sources Tests Cooee UITests"
 skipped=""
+nightly=no
+[ "${1:-}" != --nightly ] || nightly=yes
 
 fetch() {
   dir="$tools/$1-$2"
@@ -20,7 +26,38 @@ fetch() {
   rm -f "$dir.zip"
 }
 
-step() { printf '\n== %s\n' "$1"; }
+now=$(date +%s)
+begin=$now gate="" times=""
+lap() {
+  [ -z "$gate" ] || times="$times| $gate | $(($(date +%s) - now))s |
+"
+  now=$(date +%s)
+}
+step() {
+  lap
+  gate=$1
+  printf '\n== %s\n' "$1"
+}
+finish() {
+  [ "$1" = 0 ] || [ -z "${GITHUB_OUTPUT:-}" ] || echo "gate=$gate" >>"$GITHUB_OUTPUT"
+  lap
+  table="| step | time |
+|---|---|
+$times| total | $((now - begin))s |"
+  printf '\n%s\n' "$table"
+  [ -z "${GITHUB_STEP_SUMMARY:-}" ] || printf '### apple-check\n\n%s\n' "$table" >>"$GITHUB_STEP_SUMMARY"
+}
+trap 'finish $?' EXIT
+
+apple_build="$root/apple/.build" slop_build="$root/tools/anti-slop-swift/.build" cache=""
+if [ -n "${APPLE_DERIVED:-}" ]; then
+  apple_build="$APPLE_DERIVED/swiftpm/apple" slop_build="$APPLE_DERIVED/swiftpm/anti-slop" cache="$APPLE_PACKAGES/swiftpm"
+fi
+spm() {
+  build=$1
+  shift
+  swift "$@" --scratch-path "$build" ${cache:+--cache-path "$cache"}
+}
 
 export COOEE_STRICT=1
 xcode=no
@@ -30,8 +67,8 @@ step "swift format"
 (cd apple && swift format lint --strict -r -p Package.swift $swift_dirs)
 
 step "anti-slop"
-swift build -q -c release --package-path tools/anti-slop-swift --product anti-slop
-(cd apple && "$root/tools/anti-slop-swift/.build/release/anti-slop" $swift_dirs)
+spm "$slop_build" build -q -c release --package-path tools/anti-slop-swift --product anti-slop
+(cd apple && "$slop_build/release/anti-slop" $swift_dirs)
 echo "no violations"
 
 step "TODO(#N) names an open issue"
@@ -45,6 +82,7 @@ step "SwiftLint 0.65.1"
 fetch swiftlint 0.65.1 https://github.com/realm/SwiftLint/releases/download/0.65.1/portable_swiftlint.zip \
   c1e429b0599cf1b516f369a2d9ec04eaf0e436f3c12b637df8851fa52ff694d0
 (cd apple && "$tools/swiftlint-0.65.1/swiftlint" lint --strict --quiet)
+ci/swift-bans-test.sh "$tools/swiftlint-0.65.1/swiftlint"
 echo "no violations"
 
 if [ "$xcode" = no ]; then
@@ -53,32 +91,42 @@ else
   mkdir -p apple/.build
   log="$root/apple/.build/apple-check-build.log"
   step "build (Swift 6, complete concurrency, warnings as errors)"
-  (cd apple && swift build --build-tests -v >"$log" 2>&1) || { tail -50 "$log"; exit 1; }
+  (cd apple && spm "$apple_build" build --build-tests --enable-code-coverage -v >"$log" 2>&1) || {
+    tail -50 "$log"
+    exit 1
+  }
 
   step "tests with coverage"
-  (cd apple && swift test --enable-code-coverage)
-  bin=$(cd apple && swift build --show-bin-path)
+  bin=$(cd apple && spm "$apple_build" build --show-bin-path)
+  rm -rf "${bin:?}/codecov"
+  (cd apple && spm "$apple_build" test --enable-code-coverage --skip-build)
   set --
   for object in "$bin"/Cooee*Tests.xctest/Contents/MacOS/*; do
     [ -f "$object" ] && set -- "$@" -object "$object"
   done
   xcrun llvm-cov export -summary-only -instr-profile "$bin/codecov/default.profdata" "$@" >"$bin/coverage.json"
-  swift scripts/apple-coverage.swift "$bin/coverage.json"
+  swift scripts/apple-coverage.swift "$bin/coverage.json" CooeeCore CooeeAPI
+
+  step "anti-slop's own tests"
+  spm "$slop_build" test -q --package-path tools/anti-slop-swift
+fi
+
+if [ "$xcode" = yes ] && [ "$nightly" = yes ]; then
+  step "CooeeFeatures coverage"
+  swift scripts/apple-coverage.swift "$bin/coverage.json" CooeeFeatures
 
   step "unused imports (swiftlint analyze)"
-  (cd apple && "$tools/swiftlint-0.65.1/swiftlint" analyze --strict --quiet --compiler-log-path "$log")
+  sed 's/\\#/#/g' "$log" >"$log.analyze"
+  (cd apple && "$tools/swiftlint-0.65.1/swiftlint" analyze --strict --quiet --compiler-log-path "$log.analyze")
   echo "no unused imports"
 
   step "Periphery 3.8.0"
   fetch periphery 3.8.0 https://github.com/peripheryapp/periphery/releases/download/3.8.0/periphery-3.8.0.zip \
     07d4e286e31dd79164df39097e0b59f533c94badbe18158464a455ea88a166d7
-  store=apple/.build/out
-  [ -d "$store/v5" ] || store=apple/.build/debug/index/store
-  (cd apple && "$tools/periphery-3.8.0/periphery" scan --quiet --index-store-path "$root/$store")
+  store="$apple_build/out"
+  [ -d "$store/v5" ] || store="$apple_build/debug/index/store"
+  (cd apple && "$tools/periphery-3.8.0/periphery" scan --quiet --index-store-path "$store")
   echo "no unused code"
-
-  step "anti-slop's own tests"
-  swift test -q --package-path tools/anti-slop-swift
 fi
 
 printf '\napple-check: ok\n'

@@ -28,7 +28,6 @@ fn named<'a>(lines: &'a [Value], kind: &str, name: &str) -> Vec<&'a Value> {
         .collect()
 }
 
-/// Starts a thread with `text` and waits for its reply; its id.
 fn create(cooee: &Cooee, folder: &Path, text: &str) -> String {
     let new =
         json!({ "agent": "fake-acp", "folder": folder, "text": text, "random_id": "start-1" });
@@ -56,9 +55,9 @@ fn requests_and_shed_calls_are_timed_by_route_and_method_and_slow_ones_warn() {
     let cooee = Cooee::start_with(&dir, &shed.dir, "[perf]\nslow_ms = 0\n");
     let id = create(&cooee, &dir.join("root/project"), "hi");
     assert_eq!(cooee.get(&format!("/threads/{id}/messages?limit=5")).0, 200);
-    assert_eq!(cooee.get("/").0, 200);
+    assert_eq!(cooee.get("/models").0, 200);
     let log = lines(&dir);
-    assert_eq!(named(&log, "http", "GET /").len(), 1, "{log:?}");
+    assert_eq!(named(&log, "http", "GET /models").len(), 1, "{log:?}");
 
     let messages = named(&log, "http", "GET /threads/{id}/messages");
     assert!(!messages.is_empty(), "{log:?}");
@@ -147,7 +146,7 @@ fn cooee_perf_turns_a_log_into_the_table() {
     let ago = |min: u128| now - min * 60_000;
     let mut log = String::new();
     for (i, ms) in [5, 1, 9, 3, 7, 2, 8, 4, 6, 10].iter().enumerate() {
-        let l = json!({ "at": ago(1 + i as u128), "level": "debug", "kind": "http", "name": "GET /threads", "status": 200, "ms": ms });
+        let l = json!({ "at": ago(1 + u128::try_from(i).unwrap()), "level": "debug", "kind": "http", "name": "GET /threads", "status": 200, "ms": ms });
         writeln!(log, "{l}").unwrap();
     }
     let lines = [
@@ -156,7 +155,6 @@ fn cooee_perf_turns_a_log_into_the_table() {
         json!({ "at": ago(3), "level": "debug", "kind": "shed", "name": "agents", "via": "cli", "ms": 40 }),
         json!({ "at": ago(4), "level": "debug", "kind": "first_token", "name": "fake-acp", "thread": "t1", "ms": 700 }),
         json!({ "at": ago(5), "level": "debug", "kind": "first_token", "name": "fake-acp", "thread": "t1", "ms": 300 }),
-        // Older than the window.
         json!({ "at": ago(90), "level": "debug", "kind": "shed", "name": "get", "via": "socket", "ms": 999 }),
     ];
     for l in lines {
@@ -195,4 +193,125 @@ fn cooee_perf_turns_a_log_into_the_table() {
         text.contains("| http | GET /threads | 2 | 1 | 5 | 5 |") && !text.contains("first_token"),
         "{text}"
     );
+}
+
+#[test]
+fn the_apps_timings_are_logged_and_a_p95_over_budget_fails_cooee_perf_budget() {
+    let dir = scratch("perf-client");
+    let shed = FakeShed::start(&dir.join("shed"), version());
+    let cooee = Cooee::start(&dir, &shed.dir);
+    for ms in [20, 30, 40] {
+        assert_eq!(
+            cooee.post("/perf", &json!({ "name": "tap", "ms": ms })).0,
+            200
+        );
+    }
+    assert_eq!(
+        cooee
+            .post("/perf", &json!({ "name": "event", "ms": 400 }))
+            .0,
+        200
+    );
+    assert_eq!(
+        cooee.post("/perf", &json!({ "name": "boot", "ms": 1 })).0,
+        400
+    );
+    assert_eq!(
+        cooee
+            .post("/perf", &json!({ "name": "tap", "ms": 700_000 }))
+            .0,
+        400
+    );
+    let log = lines(&dir);
+    let taps: Vec<_> = named(&log, "client", "tap")
+        .iter()
+        .map(|l| l["ms"].clone())
+        .collect();
+    assert_eq!(taps, [json!(20), json!(30), json!(40)], "{log:?}");
+    assert!(named(&log, "client", "boot").is_empty(), "{log:?}");
+
+    let budget = || cooee.command().args(["perf", "--budget"]).output().unwrap();
+    let out = budget();
+    let err = String::from_utf8(out.stderr).unwrap();
+    assert!(!out.status.success(), "{err}");
+    assert!(
+        err.contains("over budget: event p95 400 ms > 150 ms"),
+        "{err}"
+    );
+    assert!(!err.contains("tap p95"), "{err}");
+    let table = String::from_utf8(out.stdout).unwrap();
+    assert!(
+        table.contains("| client | tap | 3 | 30 | 40 | 40 |"),
+        "{table}"
+    );
+
+    let path = dir.join("data/perf.log");
+    let text = fs::read_to_string(&path).unwrap();
+    let kept: String = text
+        .lines()
+        .filter(|l| !l.contains(r#""name":"event""#))
+        .fold(String::new(), |out, l| out + l + "\n");
+    fs::write(&path, kept).unwrap();
+    let out = budget();
+    assert!(out.status.success(), "{out:?}");
+}
+
+#[test]
+fn with_500_threads_of_1000_items_the_list_answers_within_300_ms_of_start() {
+    let dir = scratch("perf-start");
+    let threads = dir.join("data/threads");
+    fs::create_dir_all(&threads).unwrap();
+    for t in 0..500 {
+        let id = format!("t{t}");
+        let meta = json!({ "format": 1, "thread": { "id": id, "title": id, "messages": [], "terminal": format!("cooee-{id}"), "read": 990 } });
+        fs::write(threads.join(format!("{id}.json")), meta.to_string()).unwrap();
+        let mut items = String::new();
+        for k in 1..=1000 {
+            let item = match k {
+                1 => json!({ "id": k, "at": k, "kind": "you", "text": "go", "random_id": "r" }),
+                1000 => {
+                    json!({ "id": k, "at": k, "kind": "agent", "text": format!("done {id}"), "stop_reason": "end_turn" })
+                }
+                _ => {
+                    json!({ "id": k, "at": k, "kind": "tool", "call": "c", "title": "ls", "status": "completed" })
+                }
+            };
+            writeln!(items, "{item}").unwrap();
+        }
+        fs::write(threads.join(format!("{id}.jsonl")), items).unwrap();
+    }
+    drop(cooee_core::Store::open(&dir.join("data")).unwrap());
+    let shed = FakeShed::start(&dir.join("shed"), version());
+    let cooee = Cooee::start(&dir, &shed.dir);
+    let (status, body) = cooee.get("/threads");
+    assert_eq!(status, 200, "{body}");
+    let rows: Vec<Value> = serde_json::from_str(&body).unwrap();
+    assert_eq!(rows.len(), 500);
+    assert!(
+        rows.iter()
+            .all(|r| r["unseen"] == 10 && r["last"].as_str().unwrap().starts_with("done t")),
+        "{body}"
+    );
+
+    let log = lines(&dir);
+    let first = named(&log, "start", "to first request");
+    let list = named(&log, "http", "GET /threads");
+    assert_eq!((first.len(), list.len()), (1, 1), "{log:?}");
+    let started = first[0]["at"].as_u64().unwrap() - first[0]["ms"].as_u64().unwrap();
+    let answered = list[0]["at"].as_u64().unwrap() - started;
+    assert!(
+        answered <= 300,
+        "GET /threads answered {answered} ms after start"
+    );
+    let table = cooee.cli(&["perf"]);
+    assert!(
+        table.contains("| start | to first request | 1 |"),
+        "{table}"
+    );
+
+    let opened = cooee.json("/threads/t7/messages");
+    let items = opened["items"].as_array().unwrap();
+    let skipped = opened["skipped_before"].as_u64().unwrap();
+    assert_eq!(skipped + u64::try_from(items.len()).unwrap(), 1000);
+    assert_eq!(items.last().unwrap()["text"], "done t7");
 }

@@ -1,0 +1,227 @@
+import ComposableArchitecture
+import CooeeAPI
+import CooeeCore
+import Foundation
+
+@Reducer
+public struct ScreenFeature: Sendable {
+    @ObservableState
+    public struct State: Equatable, Identifiable {
+        public let server: Server
+        public let source: LayoutSource
+        public let home: String
+        public let label: String
+        public var screen: LiveScreen?
+        public var asOf: Date?
+        public var unreachable: String?
+        public var pending: [BlockAction] = []
+        public var said: String?
+        public var path: [String] = []
+        public var focus: String?
+        public var beside: String?
+        public var besideScreen: JSONValue?
+        public var slow = false
+        @Presents public var lane: ChatFeature.State?
+
+        public var offline: Bool { unreachable != nil }
+        public var title: String { screen?.root.string("title") ?? label }
+        public var current: String { path.last ?? home }
+        public var key: String { "\(server.url.absoluteString)|\(source.name)|\(current)" }
+        public var id: String { Self.id(source, home) }
+
+        /// The id of the screen `source` serves at `path`, as a layout node names it.
+        public static func id(_ source: LayoutSource, _ path: String) -> String { "\(source.name)|\(path)" }
+
+        public init(server: Server, source: LayoutSource, path: String, label: String) {
+            self.server = server
+            self.source = source
+            self.home = path
+            self.label = label
+        }
+
+        public init(server: Server, place: Place) {
+            self.init(server: server, source: .plugin(place.plugin), path: place.screen, label: place.label)
+        }
+    }
+
+    public enum Action: Sendable {
+        case task
+        case retry
+        case background
+        case loaded(JSONValue)
+        case event(JSONValue)
+        case failed(String, KeptScreen?)
+        case act(BlockAction)
+        case acted(JSONValue?, String?)
+        case navigate(String?)
+        case open(String)
+        case push(String)
+        case beside(String)
+        case besideLoaded(JSONValue)
+        case slow
+        case lane(PresentationAction<ChatFeature.Action>)
+        case delegate(Delegate)
+
+        @CasePathable
+        public enum Delegate: Sendable, Equatable {
+            case open(String)
+        }
+    }
+
+    internal enum CancelID { case follow, beside, keep, background, slow }
+
+    @Dependency(\.plugins) internal var plugins
+    @Dependency(\.screenCache) internal var cache
+    @Dependency(\.continuousClock) internal var clock
+    @Dependency(\.date.now) private var now
+    @Dependency(\.perf) private var perf
+
+    public init() {}
+
+    public var body: some ReducerOf<Self> {
+        Reduce { state, action in
+            switch action {
+            case .task:
+                return .merge(follow(state), backgrounds())
+            case .retry:
+                return follow(state)
+            case .background:
+                return flush(state)
+            case .loaded(let screen):
+                state.screen = LiveScreen(screen)
+                return .merge(keep(&state), settled(&state))
+            case .event(let event):
+                state.screen?.apply(event: event)
+                return keep(&state)
+            case .failed(let who, let kept):
+                unreachable(&state, who, kept)
+                return settled(&state)
+            case .slow:
+                state.slow = true
+            case .act(let action):
+                return act(&state, action)
+            case .acted(let answer, let error):
+                return acted(&state, answer, error)
+            case .navigate(let path):
+                return navigate(&state, to: path)
+            case .open, .push, .beside, .besideLoaded, .lane, .delegate:
+                return opened(&state, action)
+            }
+            return .none
+        }
+        .ifLet(\.$lane, action: \.lane) { ChatFeature() }
+    }
+}
+
+extension ScreenFeature {
+    private func follow(_ state: State) -> Effect<Action> {
+        let slow = Effect<Action>.run { [clock] send in
+            try await clock.sleep(for: .milliseconds(300))
+            await send(.slow)
+        }
+        return .merge(watch(state), slow.cancellable(id: CancelID.slow, cancelInFlight: true))
+    }
+
+    private func settled(_ state: inout State) -> Effect<Action> {
+        state.slow = false
+        return .cancel(id: CancelID.slow)
+    }
+
+    private func keep(_ state: inout State) -> Effect<Action> {
+        state.asOf = now
+        state.unreachable = nil
+        let (clock, save) = (clock, save(state))
+        return .run { _ in
+            try await clock.sleep(for: .seconds(2))
+            save()
+        }
+        .cancellable(id: CancelID.keep, cancelInFlight: true)
+    }
+
+    private func backgrounds() -> Effect<Action> {
+        let cache = cache
+        return .run { send in
+            for await _ in cache.backgrounds() { await send(.background) }
+        }
+        .cancellable(id: CancelID.background, cancelInFlight: true)
+    }
+
+    private func flush(_ state: State) -> Effect<Action> {
+        .merge(.cancel(id: CancelID.keep), Self.flush([state]))
+    }
+
+    private func save(_ state: State) -> @Sendable () -> Void {
+        let (cache, kept) = (cache, Self.kept(state))
+        return { kept.map { cache.save($0.key, $0.screen) } }
+    }
+
+    private static func kept(_ state: State) -> (key: String, screen: KeptScreen)? {
+        guard let screen = state.screen?.root, let asOf = state.asOf else { return nil }
+        return (state.key, KeptScreen(screen: screen, kept: asOf))
+    }
+
+    /// Saves `screens` at once, off the main actor, so leaving them loses no pending save.
+    public static func flush<Action>(_ screens: [State]) -> Effect<Action> {
+        @Dependency(\.screenCache) var cache
+        let kept = screens.compactMap(kept)
+        guard !kept.isEmpty else { return .none }
+        return .run { [cache] _ in
+            for (key, screen) in kept { cache.save(key, screen) }
+        }
+    }
+
+    private func unreachable(_ state: inout State, _ who: String, _ kept: KeptScreen?) {
+        state.unreachable = who
+        guard state.screen == nil, let kept else { return }
+        state.screen = LiveScreen(kept.screen)
+        state.asOf = kept.kept
+    }
+
+    private func act(_ state: inout State, _ action: BlockAction) -> Effect<Action> {
+        guard !state.offline, !state.pending.contains(action) else { return .none }
+        state.pending.append(action)
+        return state.pending.count == 1 ? send(state, action) : .none
+    }
+
+    private func send(_ state: State, _ action: BlockAction) -> Effect<Action> {
+        let (plugins, server, source, clock, perf) = (plugins, state.server, state.source, clock, perf)
+        let screen = state.screen?.root.string("id") ?? ""
+        return .run { send in
+            let took = try await clock.measure {
+                await send(.acted(try await plugins.act(server, source, screen, action), nil))
+            }
+            perf.record(server, .tap, took)
+        } catch: { error, send in
+            await send(.acted(nil, error.localizedDescription))
+        }
+    }
+
+    private func acted(_ state: inout State, _ answer: JSONValue?, _ error: String?) -> Effect<Action> {
+        state.pending = Array(state.pending.dropFirst())
+        state.said = error ?? answer?.string("toast")
+        let was = state.screen?.root.string("stream")
+        let kept = answer.map { answer in
+            state.screen?.apply(event: answer)
+            return keep(&state)
+        }
+        let next = state.pending.first.map { send(state, $0) } ?? .none
+        guard let open = answer?.string("open") else {
+            let stream = state.screen?.root.string("stream")
+            let filtered = stream == was ? nil : stream.map { watch(state, filtered: $0) }
+            return .merge(next, kept ?? .none, filtered ?? .none)
+        }
+        return .merge(next, navigate(&state, to: open))
+    }
+
+    private func navigate(_ state: inout State, to path: String?) -> Effect<Action> {
+        let parts = path?.split(separator: "#", maxSplits: 1).map(String.init) ?? []
+        let left = flush(state)
+        if let first = parts.first { state.path.append(first) } else if state.path.popLast() == nil { return .none }
+        state.focus = parts.dropFirst().first
+        state.beside = nil
+        state.besideScreen = nil
+        state.screen = nil
+        state.unreachable = nil
+        return .merge(left, follow(state))
+    }
+}

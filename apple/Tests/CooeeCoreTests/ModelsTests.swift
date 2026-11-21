@@ -1,5 +1,4 @@
 @testable import CooeeCore
-import Foundation
 import Testing
 
 internal struct ModelsTests {
@@ -14,39 +13,26 @@ internal struct ModelsTests {
         #expect(LaneState(api: api) == state)
     }
 
-    @Test internal func eachStateHasItsFigureWordAndPose() {
-        let states: [LaneState] = [.working, .needs, .done, .idle, .fail, .merged]
-        #expect(states.map(\.figure) == ["~o=", "(!)", "\\o/", "-.-", "x_x", "\\o/"])
-        #expect(
-            states.map(\.word) == [
-                "on the trail", "at the gate", "in the stable", "grazing", "refused", "over the fence",
-            ]
-        )
-        #expect(states.map(\.pose) == ["edit", "needs", "done", "idle", "fail", "merged"])
-    }
-
-    @Test internal func aServerPersonaGetsInitialsATintAndACoatByItsID() {
+    @Test internal func aServerPersonaGetsInitialsATintAndItsIDAsItsSpriteSeed() {
         let persona = Persona(manager, state: .needs)
-        #expect(persona.look == PersonaLook(initials: "AM", symbol: "person.fill", tint: .cyan, coat: "gry"))
+        #expect(persona.look == PersonaLook(initials: "AM", symbol: "person.fill", tint: .cyan))
+        #expect(persona.seed == "am" && persona.with(state: .done).seed == "am")
         #expect(persona.id == "am" && persona.name == "Account Manager" && persona.figure == "(!)")
-        #expect(persona.word == "at the gate" && persona.pose == "needs")
+        #expect(persona.state.word == "at the gate" && persona.pose == "needs")
         #expect(Persona(coder).look.initials == "CO")
         #expect(persona.with(state: .done).state == .done && persona.with(state: .done).look == persona.look)
+    }
+
+    @Test internal func anInitialsAvatarDrawsItsInitialsInThePickedTint() {
+        var picked = manager
+        picked.avatar = Tint.green.avatar
+        #expect(Persona(picked).look == PersonaLook(initials: "AM", symbol: "", tint: .green))
+        picked.avatar = "data:image/png;base64,AA=="
+        #expect(Persona(picked).look == Persona(manager).look)
     }
 
     @Test internal func aTurnIsWorkingWhileItRunsOrConnects() {
         #expect(Turn(state: "working").working && Turn(state: "connecting").working)
         #expect(!Turn(state: "done").working && !Turn().working)
-    }
-
-    @Test internal func modelsKeepWhatTheyAreGiven() throws {
-        let url = try #require(URL(string: "https://mini.local"))
-        #expect(Server(url: url, token: "t").token == "t")
-        #expect(Attachment(name: "a.txt", bytes: Data("hi".utf8)).data == "aGk=")
-        #expect(PairAsk(word: "maple", claim: "c1").claim == "c1")
-        #expect(NearbyServer(name: "mini", address: "http://192.0.2.20:4100").id == "mini")
-        #expect(Slice(items: [], turn: Turn(), cursor: "b.1", queue: []).cursor == "b.1")
-        #expect(StreamEvent.text("a") != .reset)
-        #expect(PairClaim.paired("t") != .waiting)
     }
 }

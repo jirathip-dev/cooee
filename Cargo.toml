@@ -1,6 +1,6 @@
 [workspace]
 resolver = "3"
-members = ["crates/*", "web"]
+members = ["crates/*"]
 
 [workspace.package]
 version = "0.1.0"
@@ -15,7 +15,6 @@ cooee-core = { path = "crates/cooee-core" }
 cooee-machines = { path = "crates/cooee-machines" }
 cooee-terminal = { path = "crates/cooee-terminal" }
 cooee-server = { path = "crates/cooee-server" }
-cooee-web = { path = "web" }
 # Web push (herdsman's webpush.rs): RFC 8291 encryption and the ES256 VAPID JWT; paired-device token hashes.
 aes-gcm = { version = "=0.10.3", default-features = false, features = ["aes", "alloc"] }
 base64 = "=0.22.1"
@@ -25,19 +24,30 @@ sha2 = "=0.11.1"
 # `cooee pair`'s QR code in the terminal.
 qrcode = { version = "=0.14.1", default-features = false }
 serde = { version = "=1.0.229", features = ["derive"] }
-serde_json = "=1.0.154"
-# shed's API types, pinned to a shed merge commit; the hello needs the exact shed version.
-shed-proto = { git = "https://github.com/jirathip-dev/shed", rev = "4585d504a3e6fc666e3415609abdc5f9e72c36a2" }
+serde_json = { version = "=1.0.154", features = ["preserve_order"] }
+# shed's API types, pinned to a shed merge commit; the hello needs the same shed protocol.
+shed-proto = { git = "https://github.com/jirathip-dev/shed", rev = "3672ee2fa3f77f71798d56446f7f90403b068dd1" }
+# The typed UI blocks and their JSON Schema (#621, q2236), pinned to a blocks staging commit.
+blocks = { git = "https://github.com/jirathip-dev/blocks", rev = "d0882093e32c6d752910c459efa04a2a6beb5c3a" }
+# The colour schemes and theme packs (#622, q2122), pinned to a swag staging commit beside blocks.
+swag = { git = "https://github.com/jirathip-dev/swag", rev = "bf9a2c6b5cb837db1e844e4746fe166cbaa06b91" }
+# launchd and systemd jobs (#711): written, loaded and restarted by farrier, pinned to a farrier staging commit.
+farrier-service = { git = "https://github.com/jirathip-dev/farrier", rev = "877d016ab03caf4f97da176663a2e47c259f54e3" }
+# Gzip replies (#601, q2045): gzip only, no brotli.
+flate2 = "=1.1.10"
 futures-util = { version = "=0.3.34", default-features = false }
 thiserror = "=2.0.21"
-# web/build.rs strips the types from web/ts (#49): oxc's parser, TypeScript transform and codegen.
-oxc = { version = "=0.157.0", default-features = false, features = ["codegen", "semantic", "transformer"] }
 # Pinned exactly (ADR 0001): Topcoat is pre-1.0 and its minors break.
 topcoat = { version = "=0.11.0", default-features = false, features = ["serve", "sse"] }
 tokio = { version = "=1.54.1", features = ["rt-multi-thread", "net", "sync"] }
 # cooee-core's secrets (#167): in-process keychain calls, so an item's access list names the signed cooee.
 security-framework = { version = "=3.7.0", default-features = false, features = ["OSX_10_14"] }
+# The thread items and their search index (#221): SQLite built in, so no system library is needed.
+rusqlite = { version = "=0.41.1", features = ["bundled"] }
+ruzstd = "=0.9.1"
 toml = { version = "=1.2.0", default-features = false, features = ["parse", "serde"] }
+# Surgical config saves (#360): only the touched keys change, comments and layout stay.
+toml_edit = { version = "=0.25.18", default-features = false, features = ["parse", "display"] }
 
 [workspace.lints.rust]
 unsafe_code = "forbid"
@@ -45,4 +55,20 @@ missing_docs = "warn"
 
 [workspace.lints.clippy]
 pedantic = { level = "warn", priority = -1 }
-allow_attributes_without_reason = "warn"
+allow_attributes_without_reason = "deny"
+unwrap_used = "deny"
+expect_used = "deny"
+panic = "deny"
+todo = "deny"
+unimplemented = "deny"
+dbg_macro = "deny"
+indexing_slicing = "deny"
+as_conversions = "deny"
+print_stdout = "deny"
+print_stderr = "deny"
+let_underscore_must_use = "deny"
+
+[profile.release]
+lto = "fat"
+codegen-units = 1
+strip = true

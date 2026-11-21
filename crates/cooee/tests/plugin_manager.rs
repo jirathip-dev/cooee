@@ -31,7 +31,6 @@ fn git(dir: &Path, args: &[&str]) -> String {
     String::from_utf8(out.stdout).unwrap().trim().to_owned()
 }
 
-/// Commits plugin `name` at version `v` (its tab says `<name> <v>`) with `build` and `run`; its sha.
 fn commit(repo: &Path, name: &str, v: &str, build: &str, run: &str) -> String {
     fs::create_dir_all(repo).unwrap();
     if !repo.join(".git").exists() {
@@ -57,7 +56,6 @@ fn commit(repo: &Path, name: &str, v: &str, build: &str, run: &str) -> String {
 const RUN: &str = "TOKEN=$COOEE_PLUGIN_TOKEN exec node server.mjs";
 const BUILD: &str = "echo ok > built";
 
-/// `cooee serve` with an index listing `greet` (at its first commit) and `first` (first-party), each a fake repo.
 struct Setup {
     dir: PathBuf,
     shed: FakeShed,
@@ -71,7 +69,7 @@ fn setup(name: &str) -> Setup {
     let shed = FakeShed::start(&dir.join("shed"), version());
     let repo = dir.join("greet.git");
     let v1 = commit(&repo, "greet", "v1", BUILD, RUN);
-    let first = commit(&dir.join("first.git"), "first", "f1", BUILD, RUN);
+    let first = commit(&dir.join("first.git"), "first", "v1", BUILD, RUN);
     let index = format!(
         "[[plugin]]\nname = \"greet\"\nurl = {:?}\ncommit = \"{v1}\"\ndescription = \"says hello\"\n\n\
          [[plugin]]\nname = \"first\"\nurl = {:?}\ncommit = \"{first}\"\ndescription = \"ours\"\nfirst_party = true\n",
@@ -93,7 +91,6 @@ fn setup(name: &str) -> Setup {
     }
 }
 
-/// Waits (up to 20 s) for `f`.
 fn until(what: &str, f: impl Fn() -> bool) {
     for _ in 0..400 {
         if f() {
@@ -114,7 +111,6 @@ impl Setup {
             .unwrap()
     }
 
-    /// `cooee <args>`: whether it succeeded, its stdout and stderr; `input` typed in.
     fn run(&self, args: &[&str], input: &str) -> (bool, String) {
         let mut child = self
             .cooee
@@ -137,10 +133,9 @@ impl Setup {
         (out.status.success(), text)
     }
 
-    /// The tab's frame page, once it serves `text`.
     fn tab_says(&self, name: &str, text: &str) {
-        until(&format!("/p/{name} says {text}"), || {
-            let (status, body) = self.cooee.get(&format!("/p/{name}/frame"));
+        until(&format!("/p/{name}/api/tab.js says {text}"), || {
+            let (status, body) = self.cooee.get(&format!("/p/{name}/api/tab.js"));
             status == 200 && body.contains(text)
         });
     }
@@ -149,7 +144,6 @@ impl Setup {
         self.cooee.post(&format!("/plugins/{action}"), body)
     }
 
-    /// Waits for the phone's job on `name` to end; its failure, if it failed.
     fn job_done(&self, name: &str) -> Option<String> {
         until("the job ends", || {
             let jobs = &self.cooee.json("/plugins")["jobs"];
@@ -158,15 +152,6 @@ impl Setup {
         self.cooee.json("/plugins")["jobs"][name]
             .as_str()
             .map(str::to_owned)
-    }
-}
-
-impl Drop for Setup {
-    /// `cooee serve` gets SIGTERM, so it stops the backends it runs.
-    fn drop(&mut self) {
-        let pid = self.cooee.child.id().to_string();
-        let _ = Command::new("kill").args(["-TERM", &pid]).status();
-        let _ = self.cooee.child.wait();
     }
 }
 
@@ -214,7 +199,6 @@ fn add_from_the_index_clones_builds_writes_the_entry_and_token_starts_it_and_loc
         (&json!("greet"), &json!(s.repo), &json!(s.v1))
     );
 
-    // `cooee serve` started its backend, which gets the token and never the cookie.
     s.tab_says("greet", "greet v1");
     let (status, body) = s.cooee.get("/p/greet/api/whoami");
     assert_eq!(
@@ -230,8 +214,13 @@ fn add_from_the_index_clones_builds_writes_the_entry_and_token_starts_it_and_loc
         s.cooee.json("/plugins")["installed"][0]["state"] == "running"
     });
     let list = s.cooee.cli(&["plugin", "list"]);
-    assert_eq!(list, format!("greet  v1  {}  index  running\n", &s.v1[..7]));
-    // Installed already.
+    assert_eq!(
+        list,
+        format!(
+            "greet  v1  {}  index  running  accepts any cooee\n",
+            &s.v1[..7]
+        )
+    );
     let (ok, out) = s.run(&["plugin", "add", "greet", "--yes"], "");
     assert!(!ok && out.contains("greet is installed already"), "{out}");
 }
@@ -258,7 +247,6 @@ fn an_index_plugin_has_no_warning_and_a_url_plugin_is_not_reviewed() {
         "{plan}"
     );
 
-    // On the Mac, a URL plugin's confirm says so too; anything but `y` adds nothing.
     let (ok, out) = s.run(&["plugin", "add", &url], "n\n");
     assert!(
         !ok && out.contains("not reviewed") && out.contains("go ahead? [y/N]"),
@@ -290,6 +278,28 @@ fn a_failed_update_keeps_the_old_build_and_a_good_one_swaps_in() {
     let dead = commit(&s.repo, "greet", "v3", BUILD, "exit 1");
     let (ok, out) = s.run(&["plugin", "update", "--yes"], "");
     assert!(!ok && out.contains("its backend exited"), "{out}");
+    commit(&s.repo, "greet", "0.0.9", BUILD, RUN);
+    let (ok, out) = s.run(&["plugin", "update", "greet", "--yes"], "");
+    assert!(
+        !ok && out.contains("greet 0.0.9 is too old for cooee")
+            && out.contains("it needs greet 0.1.0 or newer"),
+        "{out}"
+    );
+    let file = s.repo.join("cooee-plugin.toml");
+    let newer = fs::read_to_string(&file).unwrap().replace(
+        "version = \"0.0.9\"",
+        "version = \"2\"\nmin_cooee = \"99.0\"",
+    );
+    fs::write(&file, newer).unwrap();
+    git(
+        &s.repo,
+        &["commit", "--quiet", "-am", "needs a newer cooee"],
+    );
+    let (ok, out) = s.run(&["plugin", "update", "greet", "--yes"], "");
+    assert!(
+        !ok && out.contains("greet needs cooee 99.0 or newer; this is cooee "),
+        "{out}"
+    );
     assert_eq!(s.lock()[0]["commit"], json!(s.v1));
     let builds = s.data().join("plugins/greet/builds");
     assert!(!builds.join(broken).exists() && !builds.join(dead).exists());
@@ -323,24 +333,26 @@ fn remove_stops_it_and_keeps_the_checkout_unless_purged() {
             .unwrap()
             .contains("greet")
     );
-    until("the tab goes", || s.cooee.get("/p/greet/frame").0 == 404);
+    until("the plugin goes", || {
+        s.cooee.get("/p/greet/api/tab.js").0 == 404
+    });
     until("the backend stops", || {
         std::net::TcpStream::connect(("127.0.0.1", port)).is_err()
     });
     assert!(s.data().join("plugins/greet/repo/.git").exists());
 
-    // Added again from the kept checkout; then purged.
     s.cooee.cli(&["plugin", "add", "greet", "--yes"]);
     s.tab_says("greet", "greet v1");
     s.cooee.cli(&["plugin", "remove", "greet", "--purge"]);
     assert!(!s.data().join("plugins/greet").exists());
-    until("the tab goes", || s.cooee.get("/p/greet/frame").0 == 404);
+    until("the plugin goes", || {
+        s.cooee.get("/p/greet/api/tab.js").0 == 404
+    });
 }
 
 #[test]
 fn improve_makes_a_branch_an_approval_builds_and_swaps_it_in_and_it_rolls_back() {
     let s = setup("pm-improve");
-    // From the phone: the plan, then the add with the commit it confirmed.
     let (_, plan) = s.act("plan", &json!({ "source": "greet" }));
     let plan: Value = serde_json::from_str(&plan).unwrap();
     let (status, body) = s.act(
@@ -363,7 +375,6 @@ fn improve_makes_a_branch_an_approval_builds_and_swaps_it_in_and_it_rolls_back()
     assert!(sent[0].contains("say hi"), "{sent:?}");
     assert_eq!(s.lock()[0]["improving"], json!(thread));
 
-    // The agent's change breaks the build: the old one keeps running.
     let manifest = fs::read_to_string(repo.join("cooee-plugin.toml")).unwrap();
     fs::write(
         repo.join("cooee-plugin.toml"),
@@ -376,7 +387,6 @@ fn improve_makes_a_branch_an_approval_builds_and_swaps_it_in_and_it_rolls_back()
     assert_eq!(s.lock()[0]["commit"], json!(s.v1));
     s.tab_says("greet", "greet v1");
 
-    // Fixed, and the tab changed: approved, it swaps in, the old build kept.
     fs::write(repo.join("cooee-plugin.toml"), &manifest).unwrap();
     fs::write(
         repo.join("tab.js"),
@@ -410,7 +420,6 @@ fn only_a_paired_device_may_add_and_a_first_party_plugin_is_improved_via_an_issu
     let plan: Value = serde_json::from_str(&plan).unwrap();
     let add = json!({ "source": "first", "commit": plan["commit"] }).to_string();
     let json = ("Content-Type", "application/json");
-    // No cookie, or a plugin backend's token instead: refused before anything runs.
     s.cooee.cli(&["plugin", "add", "greet", "--yes"]);
     let token = fs::read_to_string(s.data().join("plugins/plugins.toml")).unwrap();
     let token = token
@@ -429,7 +438,6 @@ fn only_a_paired_device_may_add_and_a_first_party_plugin_is_improved_via_an_issu
         assert!(head.starts_with("HTTP/1.0 401"), "{head}");
     }
     assert_eq!(s.lock().as_array().unwrap().len(), 1);
-    // A confirm holds for the commit it showed only.
     let (status, body) = s.act(
         "add",
         &json!({ "source": "first", "commit": "0".repeat(40) }),
@@ -449,4 +457,90 @@ fn only_a_paired_device_may_add_and_a_first_party_plugin_is_improved_via_an_issu
     );
     let rows = s.cooee.json("/plugins");
     assert_eq!(rows["installed"][1]["first_party"], true);
+}
+
+#[test]
+fn a_backend_ends_when_cooee_is_killed_and_a_restart_starts_it_again() {
+    let mut s = setup("pm-orphan");
+    s.cooee.cli(&["plugin", "add", "greet", "--yes"]);
+    s.tab_says("greet", "greet v1");
+    let port = u16::try_from(s.lock()[0]["port"].as_u64().unwrap()).unwrap();
+    s.cooee.child.kill().unwrap();
+    s.cooee.child.wait().unwrap();
+    until("the orphaned backend ends", || {
+        std::net::TcpStream::connect(("127.0.0.1", port)).is_err()
+    });
+
+    let extra = format!(
+        "plugin_index = {:?}\n",
+        s.dir.join("index.toml").to_string_lossy()
+    );
+    s.cooee = Cooee::start_with(&s.dir, &s.shed.dir, &extra);
+    s.tab_says("greet", "greet v1");
+}
+
+#[test]
+fn an_attach_backend_that_answers_is_used_and_run_only_starts_once_it_is_gone() {
+    let s = setup("pm-attach");
+    let port = std::net::TcpListener::bind("127.0.0.1:0")
+        .unwrap()
+        .local_addr()
+        .unwrap()
+        .port();
+    let served = s.dir.join("served");
+    fs::create_dir_all(&served).unwrap();
+    fs::write(served.join("tab.js"), "document.body.append('attached');\n").unwrap();
+    let hello = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../docs/plugins/hello/server.mjs");
+    fs::copy(hello, served.join("server.mjs")).unwrap();
+    let token_file = s.dir.join("cooee-token");
+    fs::write(
+        &token_file,
+        "attach-token-0123456789
+",
+    )
+    .unwrap();
+    let mut running = Command::new("node")
+        .arg("server.mjs")
+        .env("PORT", port.to_string())
+        .env("TOKEN", "attach-token-0123456789")
+        .current_dir(&served)
+        .stdout(Stdio::null())
+        .stderr(Stdio::null())
+        .spawn()
+        .unwrap();
+    until("the running backend answers", || {
+        std::net::TcpStream::connect(("127.0.0.1", port)).is_ok()
+    });
+    let repo = s.dir.join("attach.git");
+    commit(&repo, "att", "v1", BUILD, &format!("touch ran; {RUN}"));
+    let manifest = fs::read_to_string(repo.join("cooee-plugin.toml")).unwrap();
+    let attach = format!(
+        "attach = \"http://127.0.0.1:{port}\"\nattach_token = {:?}\nneeds",
+        token_file.to_string_lossy()
+    );
+    fs::write(
+        repo.join("cooee-plugin.toml"),
+        manifest.replacen("needs", &attach, 1),
+    )
+    .unwrap();
+    git(&repo, &["commit", "--quiet", "-am", "attach"]);
+    let sha = git(&repo, &["rev-parse", "HEAD"]);
+
+    s.cooee
+        .cli(&["plugin", "add", &repo.to_string_lossy(), "--yes"]);
+    let build = s.data().join("plugins/att/builds").join(&sha);
+    assert_eq!(s.lock()[0]["port"], port);
+    s.tab_says("att", "attached");
+    until("listed as attached", || {
+        s.cooee.json("/plugins")["installed"][0]["state"] == "attached"
+    });
+    assert!(
+        !build.join("ran").exists(),
+        "run started beside the attach backend"
+    );
+
+    running.kill().unwrap();
+    running.wait().unwrap();
+    s.tab_says("att", "att v1");
+    assert!(build.join("ran").exists());
 }

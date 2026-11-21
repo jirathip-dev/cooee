@@ -1,0 +1,477 @@
+use std::{
+    env, fs,
+    io::Write as _,
+    process::{Command, Stdio},
+    sync::mpsc::{self, Receiver},
+    thread,
+    time::Duration,
+};
+
+use cooee_core::shed_proto::{AcpUsage, ApprovalOption, EventKind};
+use serde_json::{Value, json};
+
+use super::FakeShed;
+
+#[derive(Debug, Clone, PartialEq)]
+pub(super) enum Input {
+    Prompt(String),
+    Approve(String),
+    Cancel,
+}
+
+impl FakeShed {
+    /// A framed input (`RS`, JSON, newline) for terminal `name`'s agent.
+    pub fn input(&self, name: &str, text: &str) {
+        let v: Value = serde_json::from_str(text.strip_prefix('\x1e').unwrap().trim_end()).unwrap();
+        let input = match (&v["prompt"], &v["approve"]) {
+            (Value::String(p), _) => Input::Prompt(p.clone()),
+            (_, Value::String(o)) => Input::Approve(o.clone()),
+            _ => Input::Cancel,
+        };
+        let mut s = self.shared.lock().unwrap();
+        let tx = s.agents.entry(name.to_owned()).or_insert_with(|| {
+            let (tx, rx) = mpsc::channel();
+            let shed = self.clone();
+            let name = name.to_owned();
+            thread::spawn(move || shed.agent(&name, &rx));
+            tx
+        });
+        tx.send(input).unwrap();
+    }
+
+    fn agent(&self, name: &str, rx: &Receiver<Input>) {
+        while let Ok(input) = rx.recv() {
+            let Input::Prompt(prompt) = input else {
+                continue;
+            };
+            let turn = EventKind::Turn {
+                prompt: prompt.clone(),
+                agent: Vec::new(),
+            };
+            self.emit(name, turn);
+            if prompt.contains("long tool run") {
+                self.long_tool_run(name);
+                continue;
+            }
+            let Some((events, stop)) = self.script(name, &prompt, rx) else {
+                continue;
+            };
+            for event in events {
+                self.emit(name, event);
+            }
+            self.report(name, "done", Some(stop));
+        }
+    }
+
+    fn said(&self, name: &str, prompt: &str) -> Option<String> {
+        let says = prompt
+            .split_once("fake says: ")
+            .map(|(_, s)| s.lines().next().unwrap_or_default().replace(" / ", "\n"));
+        self.cued(name).or(says)
+    }
+
+    fn script(
+        &self,
+        name: &str,
+        prompt: &str,
+        rx: &Receiver<Input>,
+    ) -> Option<(Vec<EventKind>, &'static str)> {
+        let delay = Duration::from_millis(
+            env::var("FAKE_SHED_DELAY_MS")
+                .ok()
+                .and_then(|v| v.parse().ok())
+                .unwrap_or(0),
+        );
+        let topic = prompt.strip_prefix("This topic: ");
+        let prompt = topic
+            .and_then(|t| t.split_once(").\n\n"))
+            .map_or(prompt, |t| t.1);
+        if let Some(turn) = self.conformance(name, prompt, rx) {
+            return Some(turn);
+        }
+        Some(if let Some(said) = self.said(name, prompt) {
+            (vec![reply(&said, "end_turn")], "end_turn")
+        } else if prompt.contains("approve") {
+            self.approval(name, rx)
+        } else if prompt.contains("markdown") {
+            let mut events: Vec<EventKind> = MARKDOWN.split_inclusive('\n').map(text).collect();
+            events.push(reply(MARKDOWN, "end_turn"));
+            (events, "end_turn")
+        } else if prompt.contains("paragraphs") {
+            let said = "Questions for you:\n1. **HTML or SwiftUI?**\n\n**Call voice:** the iOS target building.";
+            (vec![reply(said, "end_turn")], "end_turn")
+        } else if prompt.contains("commands") {
+            let mut events = vec![plan("Run the checks", "in_progress")];
+            for (id, title) in [
+                ("k1", "$ cargo fmt"),
+                ("k2", "$ cargo clippy"),
+                ("k3", "$ cargo test"),
+            ] {
+                events.extend([tool(id, title, "in_progress"), tool(id, title, "completed")]);
+            }
+            events.push(reply("Ran 3 commands.", "end_turn"));
+            (events, "end_turn")
+        } else if prompt.contains("tool") {
+            let events = [
+                read_file("pending", &["src/lib.rs"]),
+                read_file("in_progress", &[]),
+                read_file("completed", &[]),
+                text("Read "),
+                text("it."),
+                reply("Read it.", "end_turn"),
+            ];
+            (events.to_vec(), "end_turn")
+        } else if prompt.contains("plan") {
+            let entry = |c: &str, s: &str| json!({ "content": c, "priority": "high", "status": s });
+            let entries = vec![
+                entry("Read the code", "completed"),
+                entry("Fix the bug", "in_progress"),
+            ];
+            let events = vec![EventKind::Plan { entries }, reply("Planned.", "end_turn")];
+            (events, "end_turn")
+        } else if prompt.contains("hang") {
+            self.emit(name, tool("c3", "cargo test", "in_progress"));
+            self.emit(name, text("w0 "));
+            while rx.recv().is_ok_and(|i| i != Input::Cancel) {}
+            (vec![reply("w0 ", "cancelled")], "cancelled")
+        } else if let Some(n) = prompt
+            .rsplit("\n\n")
+            .next()
+            .and_then(|m| m.strip_prefix("slow "))
+        {
+            let n: usize = n.trim().parse().unwrap();
+            let mut stop = "end_turn";
+            for i in 0..n {
+                thread::sleep(delay);
+                if rx.try_recv() == Ok(Input::Cancel) {
+                    stop = "cancelled";
+                    break;
+                }
+                self.emit(name, text(&format!("w{i} ")));
+            }
+            if stop == "end_turn" {
+                while rx.recv().is_ok_and(|i| i != Input::Cancel) {}
+            }
+            (vec![reply(&format!("streamed {n} words"), stop)], stop)
+        } else if prompt.contains("wait for a note") {
+            let note = loop {
+                match rx.recv() {
+                    Ok(Input::Prompt(p)) => break p,
+                    Ok(_) => {}
+                    Err(_) => return None,
+                }
+            };
+            (
+                vec![reply(&format!("noted: {note}"), "end_turn")],
+                "end_turn",
+            )
+        } else if let Some(said) = prompt.strip_prefix("echo ") {
+            (vec![reply(said, "end_turn")], "end_turn")
+        } else if prompt.contains("exit") {
+            self.shared.lock().unwrap().stopped.insert(name.to_owned());
+            self.emit(name, EventKind::Exited { code: Some(1) });
+            return None;
+        } else {
+            let events = vec![text("Hel"), text("lo"), reply("Hello", "end_turn")];
+            (events, "end_turn")
+        })
+    }
+
+    fn conformance(
+        &self,
+        name: &str,
+        prompt: &str,
+        rx: &Receiver<Input>,
+    ) -> Option<(Vec<EventKind>, &'static str)> {
+        let meta = self.meta(name).unwrap_or_default();
+        let said = if prompt.contains("What is the code word?") {
+            let system = meta["systemPrompt"]["append"].as_str().unwrap_or_default();
+            let word = format!("{system}\n{prompt}");
+            let word = word.split("The code word is ").nth(1).unwrap_or("unknown.");
+            word.split_whitespace()
+                .next()
+                .unwrap()
+                .trim_end_matches('.')
+                .to_owned()
+        } else if prompt.contains("with your remember tool") {
+            let note = json!({ "text": "The conformance check ran." });
+            self.cooee_tool(name, "remember", &note)
+        } else if let Some(what) = prompt.split("hand off: ").nth(1) {
+            self.cooee_tool(name, "handoff", &json!({ "what": what }))
+        } else if prompt.contains("Use your conformance skill") {
+            self.cooee_tool(name, "skill", &json!({ "read": "conformance" }))
+        } else if prompt.contains("List the names of every tool you have") {
+            let on = meta["claudeCode"]["options"]["tools"].as_array();
+            let on = |t: &str| on.is_none_or(|on| on.iter().any(|o| o == t));
+            TOOLS
+                .into_iter()
+                .filter(|t| on(t))
+                .collect::<Vec<_>>()
+                .join("\n")
+        } else if prompt.contains("Run `sleep 120`") {
+            return Some(self.sleep_until_cancel(name, rx));
+        } else {
+            let command = prompt.split("Run `").nth(1)?.split('`').next()?;
+            return Some(self.asks(name, command, rx));
+        };
+        let usage = AcpUsage {
+            used: 1200,
+            size: 200_000,
+            cost: None,
+            turn: None,
+            total: None,
+        };
+        Some((
+            vec![EventKind::Usage(usage), reply(&said, "end_turn")],
+            "end_turn",
+        ))
+    }
+
+    /// Terminal `name`'s agent hits its account limit as shed reports it: the limit line, then `rate-limited`.
+    pub fn limit(&self, name: &str) {
+        self.emit(
+            name,
+            reply("You've hit your limit · resets 3pm", "end_turn"),
+        );
+        self.report(name, "rate-limited", Some("3pm"));
+    }
+
+    fn cooee_tool(&self, name: &str, tool: &str, arguments: &Value) -> String {
+        let file = self.dir.join(format!("mcp-{name}.json"));
+        let servers: Value = serde_json::from_str(&fs::read_to_string(file).unwrap()).unwrap();
+        let cooee = servers
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|s| s["name"] == "cooee")
+            .unwrap();
+        let args = cooee["args"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|a| a.as_str().unwrap());
+        let mut command = Command::new(cooee["command"].as_str().unwrap());
+        for v in cooee["env"].as_array().unwrap() {
+            command.env(v["name"].as_str().unwrap(), v["value"].as_str().unwrap());
+        }
+        let mut child = command
+            .args(args)
+            .stdin(Stdio::piped())
+            .stdout(Stdio::piped())
+            .spawn()
+            .unwrap();
+        let call = json!({ "jsonrpc": "2.0", "id": 1, "method": "tools/call",
+                           "params": { "name": tool, "arguments": arguments } });
+        writeln!(child.stdin.take().unwrap(), "{call}").unwrap();
+        let out = child.wait_with_output().unwrap();
+        let answer: Value = serde_json::from_slice(&out.stdout).unwrap();
+        answer["result"]["content"][0]["text"]
+            .as_str()
+            .unwrap()
+            .to_owned()
+    }
+
+    fn sleep_until_cancel(
+        &self,
+        name: &str,
+        rx: &Receiver<Input>,
+    ) -> (Vec<EventKind>, &'static str) {
+        let mut sleep = Command::new("sleep").arg("120").spawn().unwrap();
+        self.emit(name, tool("s1", "sleep 120", "in_progress"));
+        while rx.recv().is_ok_and(|i| i != Input::Cancel) {}
+        sleep.kill().unwrap();
+        sleep.wait().unwrap();
+        (vec![reply("", "cancelled")], "cancelled")
+    }
+
+    fn long_tool_run(&self, name: &str) {
+        self.report(name, "working", None);
+        let call = "cargo test --workspace";
+        self.emit(name, tool("t1", call, "pending"));
+        self.emit(name, tool("t1", call, "in_progress"));
+        for line in ["running 3 tests\n", "test a ... ok\n", "test b ... ok\n"] {
+            self.report(name, "working", Some(call));
+            self.emit(name, text(line));
+        }
+        self.emit(name, tool("t1", call, "completed"));
+        self.emit(name, reply("Tests pass.", "end_turn"));
+        self.report(name, "idle", None);
+    }
+
+    fn asks(
+        &self,
+        name: &str,
+        command: &str,
+        rx: &Receiver<Input>,
+    ) -> (Vec<EventKind>, &'static str) {
+        let n = self.shared.lock().unwrap().seq;
+        let (call, input) = (format!("r{n}"), json!({ "command": command }));
+        let row = |status: &str| EventKind::ToolCall {
+            id: call.clone(),
+            title: command.to_owned(),
+            status: status.to_owned(),
+            kind: Some("execute".to_owned()),
+            locations: Vec::new(),
+            raw_input: Some(input.clone()),
+        };
+        self.emit(name, row("pending"));
+        let option = |id: &str, kind: &str| ApprovalOption {
+            id: id.to_owned(),
+            name: id.to_owned(),
+            kind: kind.to_owned(),
+        };
+        let acp =
+            json!({ "toolCallId": call, "title": command, "kind": "execute", "rawInput": input });
+        self.emit(
+            name,
+            EventKind::ApprovalRequest {
+                id: format!("q{n}"),
+                tool: command.to_owned(),
+                options: vec![
+                    option("allow", "allow_once"),
+                    option("always", "allow_always"),
+                    option("reject", "reject_once"),
+                ],
+                call: Some(acp),
+            },
+        );
+        self.report(name, "blocked", Some(command));
+        let Ok(Input::Approve(chosen)) = rx.recv() else {
+            return (vec![reply("", "cancelled")], "cancelled");
+        };
+        let ran = chosen != "reject";
+        self.emit(name, EventKind::Approved { option: chosen });
+        let cwd = fs::read_to_string(self.dir.join(format!("cwd-{name}"))).unwrap();
+        if ran && command.starts_with("printf ") {
+            Command::new("sh")
+                .args(["-c", command])
+                .current_dir(cwd)
+                .status()
+                .unwrap();
+        }
+        self.report(name, "working", None);
+        let (status, said) = if ran {
+            ("completed", "Ran it.")
+        } else {
+            ("failed", "Denied.")
+        };
+        (vec![row(status), reply(said, "end_turn")], "end_turn")
+    }
+
+    fn approval(&self, name: &str, rx: &Receiver<Input>) -> (Vec<EventKind>, &'static str) {
+        let call = "Edit src/lib.rs";
+        self.emit(name, tool("c2", call, "pending"));
+        let option = |id: &str, name: &str, kind: &str| ApprovalOption {
+            id: id.to_owned(),
+            name: name.to_owned(),
+            kind: kind.to_owned(),
+        };
+        let options = vec![
+            option("allow", "Allow", "allow_once"),
+            option("always", "Always allow", "allow_always"),
+            option("reject", "Reject", "reject_once"),
+        ];
+        let tool_name = call.to_owned();
+        self.emit(
+            name,
+            EventKind::ApprovalRequest {
+                id: String::new(),
+                tool: tool_name,
+                options,
+                call: None,
+            },
+        );
+        self.report(name, "blocked", Some(call));
+        let Ok(Input::Approve(option)) = rx.recv() else {
+            return (vec![reply("", "cancelled")], "cancelled");
+        };
+        let done = if option == "reject" {
+            "failed"
+        } else {
+            "completed"
+        };
+        self.emit(name, EventKind::Approved { option });
+        self.report(name, "working", None);
+        (
+            vec![tool("c2", call, done), reply("Edited.", "end_turn")],
+            "end_turn",
+        )
+    }
+}
+
+const TOOLS: [&str; 11] = [
+    "Read",
+    "Write",
+    "Edit",
+    "Bash",
+    "Glob",
+    "Grep",
+    "TodoWrite",
+    "WebSearch",
+    "WebFetch",
+    "Agent",
+    "Skill",
+];
+
+/// The `markdown` turn's reply: a heading, inline marks, a link, a 3-column table, a fenced block, a list and raw
+/// HTML (which stays text).
+pub const MARKDOWN: &str = "## Build report
+
+The **build** passed on *staging*: see [the run](https://example.com/run/1) and `cargo test`.
+
+| crate | tests | time |
+|---|---:|---|
+| cooee-core | 42 | 1.2 s |
+| cooee-server | 17 | 3.4 s |
+
+```rust
+fn main() {
+    println!(\"hello\");
+}
+```
+
+- fmt is clean
+- clippy is clean
+
+<script>alert(1)</script>
+";
+
+fn text(t: &str) -> EventKind {
+    EventKind::Text { text: t.to_owned() }
+}
+
+fn tool(id: &str, title: &str, status: &str) -> EventKind {
+    EventKind::ToolCall {
+        id: id.to_owned(),
+        title: title.to_owned(),
+        status: status.to_owned(),
+        kind: None,
+        locations: Vec::new(),
+        raw_input: None,
+    }
+}
+
+fn read_file(status: &str, at: &[&str]) -> EventKind {
+    EventKind::ToolCall {
+        id: "c1".to_owned(),
+        title: "Read src/lib.rs".to_owned(),
+        status: status.to_owned(),
+        kind: Some("read".to_owned()),
+        locations: at.iter().map(Into::into).collect(),
+        raw_input: None,
+    }
+}
+
+fn plan(content: &str, status: &str) -> EventKind {
+    let entry = json!({ "content": content, "priority": "high", "status": status });
+    EventKind::Plan {
+        entries: vec![entry],
+    }
+}
+
+fn reply(t: &str, stop: &str) -> EventKind {
+    EventKind::Reply {
+        text: t.to_owned(),
+        stop_reason: stop.to_owned(),
+    }
+}

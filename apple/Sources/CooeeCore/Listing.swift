@@ -13,24 +13,85 @@ public enum Listing {
         }
     }
 
-    public static func chats(rows: [ThreadRow], personas: [APIPersona], now: Date) -> [ListedChat] {
-        rows.map { thread in
-            let state = LaneState(api: thread.state)
-            let api =
-                personas.first { $0.id == thread.persona }
-                ?? APIPersona(id: thread.agent, name: thread.agent, agent: thread.agent)
-            let persona = Persona(api, state: state)
-            let row = Row(
-                id: thread.id,
-                persona: persona.id,
-                title: thread.title,
-                last: thread.last,
-                ago: ago(thread.updated, now: now),
-                unseen: thread.unseen,
-                state: state
-            )
-            return ListedChat(row: row, persona: persona)
+    /// The topic a tap on `persona` opens (#516): the one with the newest unread message, else `last`, else the newest.
+    public static func opens(_ persona: String, rows: [ThreadRow], last: String?) -> ThreadRow? {
+        let topics = rows.filter { $0.persona == persona && $0.members.isEmpty && $0.askedBy.isEmpty }
+        let newest = { (rows: [ThreadRow]) in rows.max { $0.updated ?? 0 < $1.updated ?? 0 } }
+        return newest(topics.filter { $0.unseen > 0 }) ?? topics.first { $0.id == last } ?? newest(topics)
+    }
+
+    /// One row per counted persona, where its newest topic was, drawing the topic a tap opens.
+    public static func collapsed(
+        _ chats: [ListedChat], rows: [ThreadRow], counts: [String: TopicCount], opened: [String: String]
+    )
+        -> [ListedChat]
+    {
+        var seen: Set<String> = []
+        return chats.compactMap { chat in
+            let id = chat.persona.id
+            guard chat.members.isEmpty, chat.from.isEmpty, let count = counts[id] else { return chat }
+            guard seen.insert(id).inserted, let topic = opens(id, rows: rows, last: opened[id]),
+                let opens = chats.first(where: { $0.id == topic.id })
+            else { return nil }
+            let row = opens.row
+            var listed = ListedChat(
+                row: Row(
+                    id: row.id, persona: id, title: row.title, last: row.last, ago: row.ago, unseen: count.unread,
+                    state: row.state),
+                persona: opens.persona)
+            (listed.topics, listed.folder) = (count.topics, topic.folder)
+            return listed
         }
+    }
+
+    public static func chats(rows: [ThreadRow], personas: [APIPersona], now: Date) -> [ListedChat] {
+        nested(rows.map { listed($0, rows: rows, personas: personas, now: now) })
+    }
+
+    /// Each linked exchange right under its asker's chat, and one it asked under it.
+    public static func nested(_ chats: [ListedChat]) -> [ListedChat] {
+        let ids = Set(chats.map(\.id))
+        func under(_ chat: ListedChat) -> [ListedChat] {
+            [chat] + chats.filter { $0.from == chat.id }.flatMap(under)
+        }
+        return chats.filter { !ids.contains($0.from) }.flatMap(under)
+    }
+
+    private static func listed(_ thread: ThreadRow, rows: [ThreadRow], personas: [APIPersona], now: Date)
+        -> ListedChat
+    {
+        let state = LaneState(api: thread.state)
+        let owner = personas.first { $0.id == thread.persona }
+        let persona = owner.map { Persona($0, state: state) } ?? stranger(thread, state: state)
+        var row = Row(
+            id: thread.id, persona: persona.id,
+            title: owner == nil && thread.workflow == nil && thread.members.isEmpty ? thread.agent : thread.title,
+            last: thread.last, ago: ago(thread.updated, now: now), unseen: thread.unseen, state: state
+        )
+        row.status = thread.workflow == nil ? nil : Workflow.status(thread.state, note: thread.note)
+        let cast = everyone(personas: personas, rows: rows)
+        let members = thread.members.map { id in cast.first { $0.id == id } ?? Persona(named(id)) }
+        let asker = rows.first { $0.id == thread.askedBy }.map { from in
+            Persona(personas.first { $0.id == from.persona } ?? named(from.persona))
+        }
+        return ListedChat(
+            row: row, persona: persona, workflow: thread.workflow, members: members, asker: asker,
+            from: asker == nil ? "" : thread.askedBy)
+    }
+
+    private static func stranger(_ thread: ThreadRow, state: LaneState) -> Persona {
+        let label = thread.workflow
+        let name = label.map { "\($0.group) \($0.item) · \($0.stage)" } ?? thread.title
+        let api = APIPersona(
+            id: "", name: name, agent: label?.source ?? thread.agent, model: label?.role ?? "",
+            style: .detailed)
+        let look = PersonaLook(
+            initials: String(name.prefix(1)).uppercased(), symbol: "", tint: .lead, coat: label == nil ? "" : nil)
+        return Persona(api: api, look: look, state: state, seed: thread.id)
+    }
+
+    private static func named(_ id: String) -> APIPersona {
+        APIPersona(id: id, name: id, agent: "")
     }
 
     public static func memory(_ notes: [PersonaNote], persona: String, now: Date) -> [Field] {
@@ -39,7 +100,8 @@ public enum Listing {
         }
     }
 
-    public static func ago(_ milliseconds: Int64, now: Date) -> String {
+    public static func ago(_ milliseconds: Int64?, now: Date) -> String {
+        guard let milliseconds else { return "" }
         let seconds = max(0, Int(now.timeIntervalSince1970) - Int(milliseconds / 1000))
         switch seconds {
         case ..<60: return "now"
@@ -47,6 +109,25 @@ public enum Listing {
         case ..<86400: return "\(seconds / 3600)h"
         default: return "\(seconds / 86400)d"
         }
+    }
+}
+
+public enum Pin: Identifiable, Sendable, Equatable {
+    case persona(Persona)
+    case room(ListedChat)
+
+    public var id: String {
+        switch self {
+        case .persona(let persona): persona.id
+        case .room(let room): room.id
+        }
+    }
+}
+
+extension HomeLists {
+    public func pins(_ personas: [Persona], rooms: [String]) -> [Pin] {
+        let pinned = rooms.compactMap { id in chats.first { $0.id == id && !$0.members.isEmpty } }
+        return personas.map(Pin.persona) + pinned.map(Pin.room)
     }
 }
 
