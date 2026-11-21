@@ -128,14 +128,13 @@ pub fn search(b: &dyn Backend, from: &str, date: &str) -> Result<String, String>
 pub fn read(b: &dyn Backend, id: &str) -> Result<(String, Option<String>), String> {
     let m = b.mails()?.into_iter().find(|m| m.id == id);
     let m = m.ok_or_else(|| format!("NO_MAIL: no mail {id}"))?;
-    let whole = format!(
-        "From: {}\nSubject: {}\nDate: {}\n\n{}",
-        m.from,
-        m.subject,
-        m.date,
-        b.open(id)?
+    let (subject, first) = hide(&m.subject);
+    let (body, code) = hide(&b.open(id)?);
+    let code = first.or(code);
+    let text = format!(
+        "From: {}\nSubject: {subject}\nDate: {}\n\n{body}",
+        m.from, m.date
     );
-    let (text, code) = hide(&whole);
     let told = code.as_ref().map_or(String::new(), |_| {
         format!(
             "A verification code was in it: have it typed with secret {CODE}; you never see it.\n\n"
