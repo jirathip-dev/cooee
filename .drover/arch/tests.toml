@@ -1,0 +1,3 @@
+[[collect]]
+dir = "crates/cooee/tests"
+glob = "*/*.rs"

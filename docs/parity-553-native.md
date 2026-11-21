@@ -146,7 +146,7 @@ Built by herdsman at `GET /screens/cards` (`screens.rs` `chat_cards`), never del
 
 ## Reliability (R1–R27, cooee's part)
 
-Server tests are in `crates/cooee/tests/reliability.rs` unless named otherwise. Phone checks are the native app on TestFlight.
+Server tests are in `crates/cooee/tests/reliability/` unless named otherwise. Phone checks are the native app on TestFlight.
 
 | R | state | where | gap | issue | phone check |
 |---|---|---|---|---|---|
