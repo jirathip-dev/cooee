@@ -252,6 +252,15 @@ impl Desks {
         self.on_screen(name, &args).map(|o| o.stdout)
     }
 
+    /// A PNG of `name`'s whole screen.
+    ///
+    /// # Errors
+    /// [`Error::Cli`] when the CLI or the screenshot fails.
+    pub fn screenshot(&self, name: &Name) -> Result<Vec<u8>, Error> {
+        self.on_screen(name, &["import", "-window", "root", "png:-"])
+            .map(|o| o.stdout)
+    }
+
     /// A left click at (`x`, `y`) on `name`'s screen.
     ///
     /// # Errors

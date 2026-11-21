@@ -1,11 +1,44 @@
 use std::{collections::HashMap, sync::Mutex};
 
 use base64::{Engine as _, engine::general_purpose::STANDARD};
-use cooee_core::{Config, browser::Control};
+use cooee_core::{
+    Config,
+    browser::{self, Control},
+};
 use cooee_desk::{Desks, Name};
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
+use serde_json::json;
 
 use super::{Hub, HubError, Input, lock, now};
+
+/// An agent's `desk` (#172): one action on its persona's desk.
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "lowercase", deny_unknown_fields)]
+pub enum DeskAsk {
+    /// A picture of the whole screen, for the agent.
+    Screenshot {},
+    /// A click at `x`, `y` pixels from the top left.
+    Click {
+        /// Pixels from the left.
+        x: u32,
+        /// Pixels from the top.
+        y: u32,
+    },
+    /// Text typed into what has the focus.
+    Type {
+        /// What is typed.
+        text: String,
+    },
+}
+
+/// What a desk action answers the agent: a line, and the screen when it asked for a screenshot.
+#[derive(Debug, Serialize)]
+pub struct DeskSeen {
+    /// What was done.
+    pub text: String,
+    /// The PNG, base64, of a screenshot the agent asked for.
+    pub image: Option<String>,
+}
 
 #[derive(Default)]
 pub(super) struct Leases(Mutex<HashMap<String, Control>>);
@@ -26,7 +59,7 @@ pub(super) struct State {
 }
 
 impl Hub {
-    fn desk(&self, desk: &str) -> Result<(Desks, Name), HubError> {
+    fn made(&self, desk: &str) -> Result<(Desks, Name), HubError> {
         let config = self.config.as_deref().map(Config::load).transpose();
         let container = config.map_err(|e| refused(&e))?.and_then(|c| c.container);
         let desks = Desks::new(
@@ -58,7 +91,7 @@ impl Hub {
     /// # Errors
     /// [`HubError::Refused`] for a desk cooee didn't make.
     pub fn desk_screen(&self, desk: &str) -> Result<Control, HubError> {
-        self.desk(desk)?;
+        self.made(desk)?;
         Ok(self.held(desk))
     }
 
@@ -67,7 +100,7 @@ impl Hub {
     /// # Errors
     /// [`HubError::Refused`] for a desk cooee didn't make.
     pub fn desk_take(&self, desk: &str) -> Result<Control, HubError> {
-        self.desk(desk)?;
+        self.made(desk)?;
         let taken = self.held(desk).take(now());
         lock(&self.areas.desk.leases.0).insert(desk.to_owned(), taken.clone());
         Ok(taken)
@@ -92,7 +125,7 @@ impl Hub {
         if self.held(desk) == Control::Agent {
             return Err(refused(&format!("take control of desk {desk} first")));
         }
-        let (desks, name) = self.desk(desk)?;
+        let (desks, name) = self.made(desk)?;
         match input {
             Input::Click { x, y } => desks.click(&name, *x, *y),
             Input::Text(text) => desks.type_text(&name, text),
@@ -105,10 +138,46 @@ impl Hub {
     /// # Errors
     /// [`HubError::Refused`] for a desk cooee didn't make, or when the capture fails.
     pub fn desk_frame(&self, desk: &str) -> Result<DeskFrame, HubError> {
-        let (desks, name) = self.desk(desk)?;
+        let (desks, name) = self.made(desk)?;
         let jpeg = desks.frame(&name).map_err(|e| refused(&e))?;
         Ok(DeskFrame {
             jpeg: STANDARD.encode(jpeg),
+        })
+    }
+
+    /// An agent's `desk` in thread `id`, on the desk its persona names (one the provider made): the action is
+    /// logged in the persona's replay log, and the screen after it kept as the thread's replay frame, encrypted for
+    /// 14 days; only a screenshot it asked for reaches the agent.
+    ///
+    /// # Errors
+    /// [`HubError::Refused`] for a wrong token, no desk, one the provider didn't make, or the desk's own error.
+    pub fn desk(&self, id: &str, token: &str, ask: &DeskAsk) -> Result<DeskSeen, HubError> {
+        let persona = self.persona(&self.token_of(id, token)?.profile);
+        let no_desk = |why: &dyn std::fmt::Display| HubError::Refused(format!("NO_DESK: {why}"));
+        let desk = persona
+            .desk
+            .as_deref()
+            .ok_or_else(|| no_desk(&format!("{} has no desk", persona.id)))?;
+        let (desks, name) = self.made(desk).map_err(|e| no_desk(&e))?;
+        let (caption, asked) = match ask {
+            DeskAsk::Screenshot {} => ("screenshot".to_owned(), true),
+            DeskAsk::Click { x, y } => (format!("click {x},{y}"), false),
+            DeskAsk::Type { text } => (format!("type {text:?}"), false),
+        };
+        let line = json!({ "at": now(), "thread": id, "desk": desk, "tool": caption });
+        let profile = browser::profile(&self.data, &persona.id);
+        browser::log(&profile, &line).map_err(|e| super::refused(&profile, &e))?;
+        match ask {
+            DeskAsk::Screenshot {} => Ok(()),
+            DeskAsk::Click { x, y } => desks.click(&name, f64::from(*x), f64::from(*y)),
+            DeskAsk::Type { text } => desks.type_text(&name, text),
+        }
+        .map_err(|e| refused(&e))?;
+        let shot = desks.screenshot(&name).map_err(|e| refused(&e))?;
+        self.seal(id, (&caption, asked), &shot)?;
+        Ok(DeskSeen {
+            text: format!("{caption} on {desk}: done"),
+            image: asked.then(|| STANDARD.encode(&shot)),
         })
     }
 }

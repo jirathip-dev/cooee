@@ -10,7 +10,7 @@ use topcoat::{
 use crate::{
     HubError,
     http::{AgentAsk, Answer, bearer, blocking, refused},
-    hub::{Called, MailAsk, SecretAsk, Update},
+    hub::{Called, DeskSeen, MailAsk, SecretAsk, Update},
     mcp,
 };
 
@@ -30,6 +30,18 @@ async fn mcp_mail(cx: &Cx, Json(a): Json<AgentAsk>) -> Result<Answer<String>> {
         blocking(cx, move |hub| {
             let m: MailAsk = serde_json::from_value(a.server).map_err(refused)?;
             hub.mail(&a.thread, &token, m)
+        })
+        .await,
+    ))
+}
+
+#[route(POST "/mcp/agent/desk")]
+async fn mcp_desk(cx: &Cx, Json(a): Json<AgentAsk>) -> Result<Answer<DeskSeen>> {
+    let token = bearer(cx);
+    Ok(Answer(
+        blocking(cx, move |hub| {
+            let d = serde_json::from_value(a.server).map_err(refused)?;
+            hub.desk(&a.thread, &token, &d)
         })
         .await,
     ))
@@ -207,6 +219,7 @@ pub(super) fn routes(b: RouterBuilder) -> RouterBuilder {
         .route(mcp_handoff)
         .route(mcp_remember)
         .route(mcp_mail)
+        .route(mcp_desk)
         .route(mcp_persona)
         .route(mcp_history)
         .route(mcp_skill)
