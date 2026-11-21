@@ -20,6 +20,8 @@ pub const MAX_MEMORY_MIB: u32 = 8192;
 pub const PROVIDER: &str = "container";
 /// The label a desk carries its provider in, set when it is created.
 pub const PROVIDER_LABEL: &str = "cooee.provider";
+/// The display a desk's desktop is drawn on, read and driven only from inside the desk.
+pub const DISPLAY: &str = "DISPLAY=:1";
 
 /// Why a desk step failed.
 #[derive(Debug, thiserror::Error)]
@@ -35,6 +37,14 @@ pub enum Error {
     /// A network named [`NETWORK`] exists but is not host-only.
     #[error("network {NETWORK} exists but is not host-only")]
     NotHostOnly,
+    /// A click outside the screen.
+    #[error("a click at ({x}, {y}) is off the screen")]
+    Point {
+        /// From the left.
+        x: f64,
+        /// From the top.
+        y: f64,
+    },
     /// The desk reached an address it must not, so it was stopped.
     #[error("desk {desk} reached {target}, so it was stopped")]
     Reached {
@@ -231,6 +241,52 @@ impl Desks {
                 })
             })
             .collect())
+    }
+
+    /// A JPEG of `name`'s screen, captured inside the desk: no screen-sharing port or password leaves it.
+    ///
+    /// # Errors
+    /// [`Error::Cli`] when the CLI or the capture fails.
+    pub fn frame(&self, name: &Name) -> Result<Vec<u8>, Error> {
+        let args = ["import", "-window", "root", "jpeg:-"];
+        self.on_screen(name, &args).map(|o| o.stdout)
+    }
+
+    /// A PNG of `name`'s whole screen.
+    ///
+    /// # Errors
+    /// [`Error::Cli`] when the CLI or the screenshot fails.
+    pub fn screenshot(&self, name: &Name) -> Result<Vec<u8>, Error> {
+        self.on_screen(name, &["import", "-window", "root", "png:-"])
+            .map(|o| o.stdout)
+    }
+
+    /// A left click at (`x`, `y`) on `name`'s screen.
+    ///
+    /// # Errors
+    /// [`Error::Point`] off the screen, [`Error::Cli`] when the CLI fails.
+    pub fn click(&self, name: &Name, x: f64, y: f64) -> Result<(), Error> {
+        if !(x.is_finite() && y.is_finite() && x >= 0.0 && y >= 0.0) {
+            return Err(Error::Point { x, y });
+        }
+        let (x, y) = (format!("{x:.0}"), format!("{y:.0}"));
+        let args = ["xdotool", "mousemove", &x, &y, "click", "1"];
+        self.on_screen(name, &args).map(drop)
+    }
+
+    /// Types `text` into `name`'s focused window.
+    ///
+    /// # Errors
+    /// [`Error::Cli`] when the CLI fails.
+    pub fn type_text(&self, name: &Name, text: &str) -> Result<(), Error> {
+        self.on_screen(name, &["xdotool", "type", "--", text])
+            .map(drop)
+    }
+
+    fn on_screen(&self, name: &Name, args: &[&str]) -> Result<Output, Error> {
+        let mut all = vec!["exec", name.0.as_str(), "env", DISPLAY];
+        all.extend_from_slice(args);
+        self.run(&all)
     }
 
     fn network(&self) -> Result<(), Error> {

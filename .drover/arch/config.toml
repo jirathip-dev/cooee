@@ -1,5 +1,5 @@
 [[ban]]
 pattern = "env::var"
 paths = ["crates/*/src/**"]
-except = ["crates/cooee-core/src/config.rs"]
+except = ["crates/cooee-core/src/config/**"]
 reason = "#203: only the config module reads the environment: use cooee_core::env_var"

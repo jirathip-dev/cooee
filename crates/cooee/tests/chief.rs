@@ -24,7 +24,7 @@ struct Setup {
     cooee: Cooee,
 }
 
-const OWN: [&str; 11] = [
+const OWN: [&str; 12] = [
     "propose_server",
     "remember",
     "ask_persona",
@@ -36,6 +36,7 @@ const OWN: [&str; 11] = [
     "skill",
     "secret",
     "mail",
+    "desk",
 ];
 
 const CHIEFS: [&str; 9] = [

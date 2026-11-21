@@ -1,4 +1,4 @@
-//! The plugin manager end to end (docs/plugins.md): a fake plugin, the example backend (docs/plugins/hello) in a
+//! The plugin manager end to end (docs/plugins/): a fake plugin, the example backend (docs/plugins/hello) in a
 //! git repo of its own, listed in a fake index. `cooee plugin add` clones, builds, writes its entries and token and
 //! locks it, and `cooee serve` starts its backend; a failed update keeps the old build; remove; a URL plugin is "not
 //! reviewed"; [improve] makes a branch whose approval builds and swaps in, and rolls back; only a paired device

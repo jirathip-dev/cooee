@@ -57,6 +57,23 @@ routes() {
   mv "$dir/mod.rs.gen" "$dir/mod.rs"
 }
 
+# screens DIR: DIR/mod.rs as `routes` writes it, then one `source` trying each module that has one, in name order.
+screens() {
+  dir=$1
+  routes "$dir"
+  set -- $(for m in $(modules "$dir"); do if grep -q '^pub(super) fn source(' "$dir/$m.rs"; then echo "$m"; fi; done)
+  {
+    cat "$dir/mod.rs"
+    printf '\npub(crate) fn source(path: &str, who: &crate::live::Who) -> Option<crate::live::Source> {\n'
+    if [ $# -eq 0 ]; then printf '    None\n'; fi
+    for m in "$@"; do
+      if [ "$m" = "$1" ]; then printf '    %s::source(path, who)\n' "$m"; else printf '        .or_else(|| %s::source(path, who))\n' "$m"; fi
+    done
+    printf '}\n'
+  } | rustfmt --edition 2024 >"$dir/mod.rs.gen"
+  mv "$dir/mod.rs.gen" "$dir/mod.rs"
+}
+
 # flat DIR: DIR/mod.rs, a private `mod` line per module, all re-exported flat (the test support's index).
 flat() {
   dir=$1 ms=$(modules "$1")
@@ -115,9 +132,9 @@ arch() {
 for f in $(printf '%s\n' scripts/gen.d/* | LC_ALL=C sort); do . "./$f"; done
 arch
 
-# today: README.md's list between its markers, from the `## Today` bullets of docs/*.md in file-name order, their ../ links made the README's.
-for f in $(printf '%s\n' docs/*.md | LC_ALL=C sort); do
-  awk '/^## / { on = $0 == "## Today"; next } on && /^- / { gsub(/\]\(\.\.\//, "]("); print }' "$f"
+# today: README.md's list between its markers, from the `## Today` bullets of docs/*.md and docs/*/README.md in file-name order, their ../ links made the README's.
+for f in $(printf '%s\n' docs/*.md docs/*/README.md | LC_ALL=C sort); do
+  awk '/^## / { on = $0 == "## Today"; next } on && /^- / { gsub(/\]\((\.\.\/)+/, "]("); print }' "$f"
 done >README.md.today
 awk -v f=README.md.today '/^<!-- \/today -->$/ { while ((getline l < f) > 0) print l; skip = 0 } !skip { print } /^<!-- today:/ { skip = 1 }' \
   README.md >README.md.gen

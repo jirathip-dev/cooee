@@ -66,7 +66,12 @@ impl Hub {
         self.seal(id, (caption, asked), &image)
     }
 
-    fn seal(&self, id: &str, (caption, asked): (&str, bool), image: &[u8]) -> Result<(), HubError> {
+    pub(super) fn seal(
+        &self,
+        id: &str,
+        (caption, asked): (&str, bool),
+        image: &[u8],
+    ) -> Result<(), HubError> {
         let dir = self.frames().join(id);
         let sealed = random(NONCE).and_then(|nonce| {
             let mut out = self

@@ -7,7 +7,8 @@ use std::{
     fs,
     io::{BufRead, BufReader, Write},
     net::TcpListener,
-    os::unix::fs::PermissionsExt,
+    path::Path,
+    process::{Command, Stdio},
     thread,
     time::Duration,
 };
@@ -134,6 +135,17 @@ fn each_machine_shows_its_drover_host_tags_on_its_settings_row() {
     }
 }
 
+fn script(path: &Path, body: &str) {
+    let mut sh = Command::new("sh")
+        .args(["-c", "cat >\"$0\" && chmod 755 \"$0\""])
+        .arg(path)
+        .stdin(Stdio::piped())
+        .spawn()
+        .unwrap();
+    sh.stdin.take().unwrap().write_all(body.as_bytes()).unwrap();
+    assert!(sh.wait().unwrap().success());
+}
+
 const CONTAINER: &str = r#"#!/bin/sh
 d=$(dirname "$0")
 case "$1 $2" in
@@ -153,8 +165,7 @@ fn a_created_desk_lists_as_a_desk_of_its_provider_on_this_host_and_nothing_else_
     let claimed = json!({ "name": "air", "target": "air.local", "kind": "desk", "provider": "container", "parent": "mini" });
     fs::write(shed.dir.join("machines.json"), json!([claimed]).to_string()).unwrap();
     let container = dir.join("container");
-    fs::write(&container, CONTAINER).unwrap();
-    fs::set_permissions(&container, fs::Permissions::from_mode(0o755)).unwrap();
+    script(&container, CONTAINER);
     let by_hand =
         json!([{ "configuration": { "id": "by-hand", "labels": {} }, "status": "running" }]);
     fs::write(dir.join("containers.json"), by_hand.to_string()).unwrap();
@@ -189,4 +200,77 @@ fn a_created_desk_lists_as_a_desk_of_its_provider_on_this_host_and_nothing_else_
         ],
         "{machines}"
     );
+}
+
+const DESK: &str = r#"#!/bin/sh
+d=$(dirname "$0")
+printf '%s\n' "$*" >>"$d/calls.log"
+case "$1" in
+ls) echo '[{"configuration":{"id":"research-1","labels":{"cooee.provider":"container"}},"status":"running"},{"configuration":{"id":"by-hand","labels":{}},"status":"running"}]' ;;
+exec) [ "$5" != import ] || printf jpeg ;;
+esac
+"#;
+
+#[test]
+fn a_desk_streams_through_cooee_and_takes_input_only_while_the_owner_holds_its_lease() {
+    let dir = scratch("machines-desk-screen");
+    let shed = FakeShed::start(&dir.join("shed"), version());
+    let container = dir.join("container");
+    script(&container, DESK);
+    let extra = format!("container = {:?}\n", container.to_string_lossy());
+    let cooee = Cooee::start_with(&dir, &shed.dir, &extra);
+    let screen = "/desks/research-1/screen";
+    let inputs = || {
+        let log = fs::read_to_string(dir.join("calls.log")).unwrap_or_default();
+        log.lines()
+            .filter(|l| l.contains("xdotool"))
+            .map(str::to_owned)
+            .collect::<Vec<_>>()
+    };
+
+    let (status, body) = cooee.get("/desks/by-hand/screen");
+    assert_eq!((status, body.as_str()), (400, "no desk by-hand"));
+    assert_eq!(cooee.json(screen), json!({ "by": "agent" }));
+    let mut live = cooee.sse(&format!("{screen}/live"), "");
+    let frame = live.next();
+    assert_eq!(
+        (frame.event.as_str(), frame.data),
+        ("frame", json!({ "jpeg": "anBlZw==" }))
+    );
+    drop(live);
+
+    let click = json!({ "click": { "x": 10.0, "y": 20.0 } });
+    let (status, body) = cooee.post(&format!("{screen}/input"), &click);
+    assert_eq!(
+        (status, body.as_str()),
+        (400, "take control of desk research-1 first")
+    );
+    let (status, body) = cooee.post(&format!("{screen}/back"), &json!({}));
+    assert_eq!(
+        (status, body.as_str()),
+        (400, "you don't hold desk research-1")
+    );
+    assert_eq!(inputs(), Vec::<String>::new());
+
+    let (status, body) = cooee.post(&format!("{screen}/control"), &json!({}));
+    assert_eq!(status, 200, "{body}");
+    assert_eq!(serde_json::from_str::<Value>(&body).unwrap()["by"], "owner");
+    for input in [click.clone(), json!({ "text": "hunter2" })] {
+        let (status, body) = cooee.post(&format!("{screen}/input"), &input);
+        assert_eq!(status, 200, "{body}");
+    }
+    let off = json!({ "click": { "x": -1.0, "y": 0.0 } });
+    assert_eq!(cooee.post(&format!("{screen}/input"), &off).0, 400);
+    assert_eq!(
+        inputs(),
+        [
+            "exec research-1 env DISPLAY=:1 xdotool mousemove 10 20 click 1",
+            "exec research-1 env DISPLAY=:1 xdotool type -- hunter2",
+        ]
+    );
+
+    let (status, body) = cooee.post(&format!("{screen}/back"), &json!({}));
+    assert_eq!((status, body.as_str()), (200, r#"{"by":"agent"}"#));
+    assert_eq!(cooee.post(&format!("{screen}/input"), &click).0, 400);
+    assert_eq!(inputs().len(), 2);
 }
