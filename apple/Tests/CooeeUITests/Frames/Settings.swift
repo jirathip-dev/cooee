@@ -36,7 +36,7 @@ internal struct SettingsFrames {
 
     @MainActor private static func taggedMachines() -> some View {
         let screen = (try? JSONDecoder().decode(JSONValue.self, from: Data(contentsOf: machines))) ?? .null
-        return Color.clear.overlay(alignment: .top) { BlocksView(screen, source: .core).padding(BlocksView.inset) }
+        return Color.clear.overlay(alignment: .top) { BlockScreen(screen, source: .core).padding(BlockScreen.inset) }
             .clipped()
     }
 

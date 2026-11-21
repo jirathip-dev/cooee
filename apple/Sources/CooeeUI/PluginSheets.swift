@@ -1,4 +1,5 @@
 import ComposableArchitecture
+import BlocksUI
 import CooeeCore
 import CooeeFeatures
 import SwiftUI
@@ -67,8 +68,7 @@ internal struct PluginScreenSheet: View {
             .overlay(alignment: .top) { if store.slow { LoadingBar() } }
             if let said = store.said { Text(said).ui(13, .regular, look).foregroundStyle(palette.mute).padding(8) }
             if let pending = store.screen?.root["pending"] {
-                PendingBar(pending: pending).environment(\.act, { store.send(.act($0)) })
-                    .environment(\.open, { store.send(.navigate($0)) })
+                PendingBar(pending: pending) { store.send(.act($0)) } open: { store.send(.navigate($0)) }
             }
         }
         .background(palette.background).foregroundStyle(palette.foreground)
@@ -84,32 +84,25 @@ internal struct PluginScreenSheet: View {
         let palette = look.palette
         return Group {
             if let screen = store.screen {
-                BlocksView(
+                BlockScreen(
                     screen.root, source: store.source, focus: store.focus, picked: wide ? store.beside : nil,
-                    beside: wide ? store.besideScreen : nil
+                    beside: wide ? store.besideScreen : nil, refresh: wide ? refresh : nil
                 ) {
                     store.send(.act($0))
                 } open: {
-                    store.send(.navigate($0))
+                    store.send(wide ? .beside($0) : .navigate($0))
                 } openThread: { thread in
                     if size == .compact { store.send(.push(thread)) } else { store.send(.open(thread)) }
                 }
-                .environment(\.openBeside, beside)
-                .environment(\.refresh, wide ? refresh : nil)
-                .environment(\.acting, store.pending).disabled(store.offline).opacity(store.offline ? 0.6 : 1)
+                .disabled(store.offline).opacity(store.offline ? 0.6 : 1)
             } else if store.offline {
                 Text("Nothing kept from \(store.label) yet.").foregroundStyle(palette.mute)
             }
         }
-        .frame(maxWidth: .infinity, alignment: .leading).padding(BlocksView.inset)
+        .frame(maxWidth: .infinity, alignment: .leading).padding(BlockScreen.inset)
     }
 
     private var wide: Bool { size != .compact }
-
-    private var beside: (@MainActor (String) -> Void)? {
-        guard wide else { return nil }
-        return { store.send(.beside($0)) }
-    }
 
     private func scroll(_ proxy: ScrollViewProxy) {
         guard let focus = store.focus, store.screen != nil else { return }
@@ -151,7 +144,7 @@ internal struct AttachScreen: View {
             ) { store.send(.attach) }
             ScrollView {
                 VStack(alignment: .leading, spacing: 18) {
-                    if let screen = store.screen { BlocksView(screen, source: .core) } else { ProgressView() }
+                    if let screen = store.screen { BlockScreen(screen, source: .core) } else { ProgressView() }
                     if let error = store.error { Text(error).foregroundStyle(palette.red) }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading).padding(16)
@@ -159,5 +152,42 @@ internal struct AttachScreen: View {
         }
         .ui(15, .regular, look).background(palette.background).foregroundStyle(palette.foreground)
         .task { await store.send(.task).finish() }
+    }
+}
+
+internal struct PendingBar: View {
+    @Environment(\.look) private var look
+    internal let pending: JSONValue
+    internal let act: (BlockAction) -> Void
+    internal let open: (String) -> Void
+
+    internal var body: some View {
+        let palette = look.palette
+        HStack(spacing: 12) {
+            HStack(spacing: 0) {
+                Text(pending.string("count") ?? "").fontWeight(.semibold).foregroundStyle(palette.lead)
+                Text(" · \(pending.string("text") ?? "")")
+            }
+            .ui(13, .regular, look).foregroundStyle(palette.mute).lineLimit(1)
+            Spacer(minLength: 4)
+            Button { run(pending["discard"]) } label: {
+                Text("Discard").ui(13, .regular, look).foregroundStyle(palette.mute)
+            }
+            .buttonStyle(.plain)
+            Button { run(pending["review"]) } label: {
+                CardButton(title: "Review changes", primary: true, tint: palette.lead)
+            }
+            .buttonStyle(.plain)
+        }
+        .padding(.vertical, 8).padding(.leading, 16).padding(.trailing, 8)
+        .surface(look, radius: 20).padding(12)
+    }
+
+    private func run(_ tap: JSONValue?) {
+        if let path = tap?.string("sheet") ?? tap?.string("open") {
+            open(tap?.string("focus").map { "\(path)#\($0)" } ?? path)
+        } else if let action = tap?.string("action") {
+            act(BlockAction(action: action, values: tap?["values"]?.fields ?? [:]))
+        }
     }
 }

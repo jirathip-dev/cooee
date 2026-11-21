@@ -38,7 +38,7 @@ internal struct PluginDeckTests {
             }
             $0.plugins.act = { _, source, screen, act in
                 calls.record(
-                    "\(source.name) \(screen) \(act.action) \(act.block) \(act.values["choice"]?.string ?? "")")
+                    "\(source.name) \(screen) \(act.action) \(act.block ?? "") \(act.values["choice"]?.string ?? "")")
                 if refusing { throw APIError(status: 409, text: "card c1 expired") }
                 return Self.reply(act)
             }
@@ -82,15 +82,15 @@ internal struct PluginDeckTests {
         #expect(store.state.places == [Self.queue] && store.state.chipCounts == [2])
         let (ask, run) = (store.state.drawn[0].id, store.state.drawn[1].id)
         #expect(store.state.drawn.map(\.id) == [ask, run])
-        let pick = BlockAction(action: "answer", values: ["choice": .string("2")], block: "q7")
+        let pick = BlockAction(action: "answer", block: "q7", values: ["choice": .string("2")])
         await store.send(.cards(.answer(ask, pick)))
         await store.receive(\.cards.played)
-        let approve = BlockAction(action: "run-card", values: ["choice": .string("approve")], block: "c1")
+        let approve = BlockAction(action: "run-card", block: "c1", values: ["choice": .string("approve")])
         await store.send(.cards(.answer(run, approve)))
         await store.receive(\.cards.played)
         await store.send(.cards(.answer(run, approve)))
         await store.send(
-            .cards(.answer(run, BlockAction(action: "run-card", values: ["choice": .string("deny")], block: "c1"))))
+            .cards(.answer(run, BlockAction(action: "run-card", block: "c1", values: ["choice": .string("deny")]))))
         #expect(line(store, 0) == "✓ answered q7" && line(store, 1) == "✓ exit 0\n```\nok\n```")
         #expect(store.state.chipCounts == [nil] && store.state.answering.isEmpty)
         #expect(
@@ -105,7 +105,7 @@ internal struct PluginDeckTests {
         let load = await store.send(.plugins(.load))
         await store.receive(\.cards.heard)
         let run = store.state.drawn[1].id
-        let approve = BlockAction(action: "run-card", values: ["choice": .string("approve")], block: "c1")
+        let approve = BlockAction(action: "run-card", block: "c1", values: ["choice": .string("approve")])
         await store.send(.cards(.answer(run, approve)))
         await store.receive(\.cards.played)
         await store.send(.cards(.answer(run, approve)))

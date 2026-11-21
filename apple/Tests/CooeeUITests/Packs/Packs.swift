@@ -80,7 +80,7 @@ private struct SkyStrip: View {
             "type": .string("scene"), "label": .string("lanes"), "lanes": .array(lanes), "load": .number(load),
             "next": .object(["action": .string("filter"), "values": .object(["repo": .string("cooee")])]),
         ])
-        Color.clear.overlay(alignment: .top) { BlocksView(scene, source: .plugin("drover")).padding(BlocksView.inset) }
+        Color.clear.overlay(alignment: .top) { BlockScreen(scene, source: .plugin("drover")).padding(BlockScreen.inset) }
             .transformEnvironment(\.look) { $0.night = night }
     }
 }

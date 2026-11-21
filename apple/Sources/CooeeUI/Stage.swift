@@ -1,3 +1,4 @@
+import BlocksUI
 import CooeeCore
 import SwiftUI
 
@@ -55,7 +56,7 @@ internal struct LaneStage: View {
                     .overlay { Sky(weather: look.sign ? .clear : Weather(load: block["load"]?.number), night: night) }
                     .overlay(alignment: .topTrailing) { SkyButtons(next: block["next"], night: night) }
             }
-            .padding(.horizontal, -BlocksView.inset)
+            .padding(.horizontal, -BlockScreen.inset)
             .accessibilityElement(children: .contain).accessibilityLabel(block.string("label") ?? "")
         }
     }
@@ -65,7 +66,7 @@ internal struct LaneStage: View {
             Scroller(axis: .horizontal) {
                 HStack(alignment: .bottom, spacing: 2) {
                     ForEach(SceneLane.placed(block.list("lanes"))) { lane in
-                        ActButton(source: lane.source) { LaneFigure(lane: lane, stage: stage) }
+                        ActButton(source: Source(lane.source)) { LaneFigure(lane: lane, stage: stage) }
                             .accessibilityLabel("\(lane.name), \(look.word(lane.state))")
                     }
                 }

@@ -42,13 +42,13 @@ internal struct QueueFrames {
     }()
 
     @MainActor internal static func sheet() -> some View {
-        Color.clear.overlay(alignment: .top) { BlocksView(screen, source: .plugin("drover")).padding(BlocksView.inset) }
+        Color.clear.overlay(alignment: .top) { BlockScreen(screen, source: .plugin("drover")).padding(BlockScreen.inset) }
             .clipped()
     }
 
     @MainActor internal static func panel() -> some View {
         Color.clear.overlay(alignment: .top) {
-            BlocksView(screen, source: .plugin("drover")).padding(BlocksView.inset).frame(width: 760).padding(.top, 36)
+            BlockScreen(screen, source: .plugin("drover")).padding(BlockScreen.inset).frame(width: 760).padding(.top, 36)
         }
         .clipped()
     }
@@ -65,7 +65,7 @@ internal struct QueueFrames {
             view: {
                 AnyView(
                     Color.clear.overlay(alignment: .top) {
-                        BlocksView(figures, source: .plugin("drover")).padding(.top, 36)
+                        BlockScreen(figures, source: .plugin("drover")).padding(.top, 36)
                     })
             })
         return sheets("modern") + [lanes]

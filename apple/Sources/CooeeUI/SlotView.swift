@@ -1,4 +1,5 @@
 import ComposableArchitecture
+import BlocksUI
 import CooeeCore
 import CooeeFeatures
 import SwiftUI
@@ -214,18 +215,19 @@ private struct ColumnScreen: View {
     fileprivate var body: some View {
         Group {
             if let screen = store.screen {
-                BlocksView(screen.root, source: store.source) {
+                BlockScreen(
+                    screen.root, source: store.source, refresh: screen.root["refresh"]?.bool == true ? refresh : nil
+                ) {
                     store.send(.act($0))
                 } open: {
                     store.send(.navigate($0))
                 } openThread: {
                     open($0)
                 }
-                .environment(\.acting, store.pending).disabled(store.offline).opacity(store.offline ? 0.6 : 1)
-                .environment(\.refresh, screen.root["refresh"]?.bool == true ? refresh : nil)
+                .disabled(store.offline).opacity(store.offline ? 0.6 : 1)
             }
         }
-        .padding(BlocksView.inset)
+        .padding(BlockScreen.inset)
         .task { await store.send(.task).finish() }
     }
 

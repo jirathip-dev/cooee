@@ -2,6 +2,7 @@ import CooeeCore
 import Foundation
 import Testing
 
+@MainActor
 internal struct SceneTests {
     private static let fixtures = URL(fileURLWithPath: #filePath)
         .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()

@@ -2,6 +2,7 @@ import CooeeCore
 import Foundation
 import Testing
 
+@MainActor
 internal struct DiagramTests {
     private static let folder = URL(fileURLWithPath: #filePath)
         .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()

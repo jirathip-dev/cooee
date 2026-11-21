@@ -98,7 +98,7 @@ extension ScreenFeatureTests {
             $0.screen = LiveScreen(Self.screen)
             $0.asOf = epoch
         }
-        let repo = BlockAction(action: "filter", values: ["repo": .array([.string("cooee")])], block: "repo")
+        let repo = BlockAction(action: "filter", block: "repo", values: ["repo": .array([.string("cooee")])])
         await store.send(.act(repo)) { $0.pending = [repo] }
         await store.receive(\.acted) {
             $0.pending = []

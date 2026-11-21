@@ -15,7 +15,7 @@ let package = Package(
     ],
     dependencies: [
         .package(url: "https://github.com/pointfreeco/swift-composable-architecture", exact: "1.26.2"),
-        .package(url: "https://github.com/jirathip-dev/blocks", revision: "d0882093e32c6d752910c459efa04a2a6beb5c3a"),
+        .package(url: "https://github.com/jirathip-dev/blocks", exact: "2.0.0"),
     ],
     targets: [
         .target(
@@ -24,7 +24,7 @@ let package = Package(
         .target(name: "CooeeFeatures", dependencies: ["CooeeCore", "CooeeAPI", tca], swiftSettings: strict),
         .target(
             name: "CooeeUI",
-            dependencies: ["CooeeCore", "CooeeFeatures", tca],
+            dependencies: ["CooeeCore", "CooeeFeatures", .product(name: "BlocksUI", package: "blocks"), tca],
             resources: [.copy("Sprites"), .copy("Default")],
             swiftSettings: strict
         ),
