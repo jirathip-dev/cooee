@@ -565,7 +565,10 @@ fn a_hundred_lists_with_nothing_changed_read_no_persona_file_after_the_first() {
     for _ in 0..100 {
         assert_eq!(name(&hub), "Ada", "an unchanged stamp read the file again");
     }
-    stamped("name = \"Cyd\"\nagent = \"x\"\n", was + Duration::from_secs(1));
+    stamped(
+        "name = \"Cyd\"\nagent = \"x\"\n",
+        was + Duration::from_secs(1),
+    );
     assert_eq!(name(&hub), "Cyd");
 }
 
