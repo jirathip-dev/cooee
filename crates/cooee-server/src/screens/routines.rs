@@ -65,7 +65,7 @@ fn row(g: &Guarded) -> Row {
     if capped && r.paused.is_none() {
         let tone = Some(Tone::Warn);
         return row.badge(Label {
-            text: "capped today".to_owned(),
+            text: "capped today".into(),
             tone,
         });
     }

@@ -1,0 +1,2 @@
+generated crates/cooee-core/src/config.rs
+shared crates/cooee-core/src/config/keys.rs

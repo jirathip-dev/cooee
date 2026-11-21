@@ -1,0 +1,3 @@
+[[collect]]
+dir = "ci/cap.d"
+glob = "*.toml"
