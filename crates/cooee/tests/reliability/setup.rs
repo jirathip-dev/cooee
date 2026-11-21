@@ -1,5 +1,4 @@
 use std::{
-    fs,
     io::{Read, Write},
     net::TcpStream,
     path::PathBuf,
@@ -80,7 +79,7 @@ pub fn post_raw(addr: &str, cookie: &str, path: &str, body: &Value) -> Option<St
 
 #[cfg(target_os = "macos")]
 pub fn fake_security(dir: &std::path::Path, script: &str) -> String {
-    use std::os::unix::fs::PermissionsExt;
+    use std::{fs, os::unix::fs::PermissionsExt};
     let bin = dir.join("bin");
     fs::create_dir_all(&bin).unwrap();
     fs::write(bin.join("security"), script).unwrap();
