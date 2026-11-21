@@ -1,10 +1,10 @@
 use std::{sync::Arc, time::Duration};
 
 use blocks::{
-    Action, Block, Button, Fallback, FieldValue, Fields, Form, Island, Screen, Submit, Tap, Text,
-    TextField, Toast, Tone,
+    Action, Block, Button, FieldValue, Fields, Form, Screen, Submit, Tap, Text, TextField, Toast,
+    Tone,
 };
-use cooee_core::{Claim, Devices, Peek};
+use cooee_core::{Claim, Devices, Peek, device_key};
 use serde::Deserialize;
 use serde_json::Value;
 use topcoat::{
@@ -83,21 +83,8 @@ fn button(label: &str, act: &str) -> Block {
 }
 
 fn key(mode: &str) -> Block {
-    let props = Fields::from_iter([
-        ("mode".to_owned(), Value::from(mode)),
-        ("send".to_owned(), Value::from(mode)),
-        ("values".to_owned(), Value::Object(Fields::new())),
-    ]);
-    let fallback = Fallback {
-        title: "This app keeps no device key".into(),
-        subtitle: Some("Pair with the code instead".into()),
-        ..Fallback::default()
-    };
-    let island = Island::new("device-key", fallback)
-        .id("key")
-        .props(props)
-        .events(vec![mode.to_owned()]);
-    Block::Island(Box::new(island))
+    let instead = "Pair with the code instead";
+    device_key("key", mode, mode, Fields::new(), instead)
 }
 
 fn screen(c: &Caller, now: u64) -> Block {

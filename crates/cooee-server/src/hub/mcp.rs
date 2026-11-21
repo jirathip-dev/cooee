@@ -666,9 +666,10 @@ impl Hub {
             return false;
         };
         let live = lock(&live);
-        live.chat.items.iter().any(|i| {
-            i.id == item && matches!(&i.body, Body::Approval { card, plugin: None, .. } if matches!(card.form.as_deref(), Some("mcp" | "routine" | "secret" | "change")))
-        })
+        live.chat
+            .items
+            .iter()
+            .any(|i| i.id == item && i.needs_key())
     }
 
     pub(super) fn proposal_answer(
