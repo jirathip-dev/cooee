@@ -149,25 +149,38 @@ pub fn read(b: &dyn Backend, id: &str) -> Result<(String, Option<String>), Strin
     Ok((shown + "…", code))
 }
 
-/// `text` with each 4 to 8 digit run on a line naming a code or a verification as `[code]`, and the first one.
+fn names_code(line: &str) -> bool {
+    line.split(|c: char| !c.is_ascii_alphanumeric()).any(|w| {
+        let w = w.to_ascii_lowercase();
+        ["code", "otp", "pin", "passcode", "2fa", "mfa", "token"].contains(&w.as_str())
+            || w.starts_with("verif")
+    })
+}
+
+/// `text` with each 4 to 8 digit run on a line naming a code, or on the next line when that one had none, as `[code]`, and the first one.
 #[must_use]
 pub fn hide(text: &str) -> (String, Option<String>) {
-    let (mut out, mut code) = (String::new(), None);
+    let (mut out, mut code, mut after) = (String::new(), None, false);
     for line in text.split_inclusive('\n') {
-        let low = line.to_lowercase();
-        if !(low.contains("code") || low.contains("verif")) {
+        let named = names_code(line);
+        if !(named || after) {
             out.push_str(line);
             continue;
         }
+        let mut hid = false;
         for word in line.split_inclusive(|c: char| !c.is_ascii_alphanumeric()) {
             let run = word.trim_end_matches(|c: char| !c.is_ascii_alphanumeric());
             if (4..=8).contains(&run.len()) && run.bytes().all(|b| b.is_ascii_digit()) {
                 code.get_or_insert_with(|| run.to_owned());
                 out.push_str("[code]");
                 out.push_str(word.get(run.len()..).unwrap_or_default());
+                hid = true;
             } else {
                 out.push_str(word);
             }
+        }
+        if named || !line.trim().is_empty() {
+            after = named && !hid;
         }
     }
     (out, code)
@@ -500,5 +513,19 @@ mod tests {
             "{text}"
         );
         assert!(b.sent.lock().unwrap().is_empty());
+    }
+
+    #[test]
+    fn a_code_on_its_own_line_or_under_another_label_is_hidden() {
+        for body in [
+            "Your verification code is:\n\n482913\nthanks\n",
+            "Your OTP is 482913\n",
+            "Your sign-in PIN: 482913 expires\n",
+        ] {
+            let (text, code) = hide(body);
+            assert_eq!(code.as_deref(), Some("482913"), "{body}");
+            assert!(!text.contains("482913"), "{text}");
+        }
+        assert_eq!(hide("Shipping 4 items, order 55512\n").1, None);
     }
 }
