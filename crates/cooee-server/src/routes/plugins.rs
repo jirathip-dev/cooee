@@ -312,7 +312,7 @@ fn improve(
     };
     let prompt = format!(
         "You're improving the cooee plugin {name}: this folder is its checkout, on the branch cooee-improve. \
-         cooee-plugin.toml says how it builds (`{}`) and runs; docs/plugins.md in cooee's repo has the plugin API. \
+         cooee-plugin.toml says how it builds (`{}`) and runs; docs/plugins/ in cooee's repo has the plugin API. \
          Make the change here and build it to check it; don't push. When I approve in Settings › Plugins, cooee \
          commits the branch, builds it and swaps it in.\n\n{ask}",
         manifest.build

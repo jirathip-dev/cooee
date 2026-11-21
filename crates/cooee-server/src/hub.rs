@@ -181,7 +181,7 @@ pub struct Pending {
     pub random_id: String,
 }
 
-/// A plugin's card (`POST /plugin/card`, docs/plugins.md).
+/// A plugin's card (`POST /plugin/card`, docs/plugins/).
 #[derive(Debug, Deserialize)]
 pub struct CardSpec {
     /// The thread it goes in.
