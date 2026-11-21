@@ -1,0 +1,10 @@
+[[ban]]
+pattern = "launchctl"
+paths = ["crates/*/src/**"]
+except = ["crates/cooee/src/service.rs"]
+reason = "#711: jobs are written, loaded and restarted only by farrier-service"
+
+[[ban]]
+pattern = "systemctl"
+paths = ["crates/*/src/**"]
+reason = "#711: jobs are written, loaded and restarted only by farrier-service"
