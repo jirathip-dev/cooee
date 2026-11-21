@@ -5,6 +5,7 @@ mod locked;
 mod menu;
 mod persona;
 mod routines;
+mod sessions;
 mod settings;
 
 use topcoat::router::RouterBuilder;
@@ -17,5 +18,10 @@ pub(crate) fn routes(b: RouterBuilder) -> RouterBuilder {
     let b = menu::routes(b);
     let b = persona::routes(b);
     let b = routines::routes(b);
+    let b = sessions::routes(b);
     settings::routes(b)
+}
+
+pub(crate) fn source(path: &str, who: &crate::live::Who) -> Option<crate::live::Source> {
+    sessions::source(path, who)
 }

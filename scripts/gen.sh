@@ -57,6 +57,23 @@ routes() {
   mv "$dir/mod.rs.gen" "$dir/mod.rs"
 }
 
+# screens DIR: DIR/mod.rs as `routes` writes it, then one `source` trying each module that has one, in name order.
+screens() {
+  dir=$1
+  routes "$dir"
+  set -- $(for m in $(modules "$dir"); do if grep -q '^pub(super) fn source(' "$dir/$m.rs"; then echo "$m"; fi; done)
+  {
+    cat "$dir/mod.rs"
+    printf '\npub(crate) fn source(path: &str, who: &crate::live::Who) -> Option<crate::live::Source> {\n'
+    if [ $# -eq 0 ]; then printf '    None\n'; fi
+    for m in "$@"; do
+      if [ "$m" = "$1" ]; then printf '    %s::source(path, who)\n' "$m"; else printf '        .or_else(|| %s::source(path, who))\n' "$m"; fi
+    done
+    printf '}\n'
+  } | rustfmt --edition 2024 >"$dir/mod.rs.gen"
+  mv "$dir/mod.rs.gen" "$dir/mod.rs"
+}
+
 # flat DIR: DIR/mod.rs, a private `mod` line per module, all re-exported flat (the test support's index).
 flat() {
   dir=$1 ms=$(modules "$1")
