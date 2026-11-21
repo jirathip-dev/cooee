@@ -588,7 +588,6 @@ impl Hub {
             loop {
                 let began = cooee_core::clock::instant();
                 asker.refresh_served();
-                asker.surface(now());
                 cooee_core::clock::sleep(SERVED_EVERY.saturating_sub(began.elapsed()));
             }
         });
