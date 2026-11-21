@@ -110,13 +110,19 @@ internal final class Ear {
         let (stream, input) = AsyncStream.makeStream(of: AnalyzerInput.self)
         self.input = input
         try await analyzer.start(inputSequence: stream)
-        let node = engine.inputNode
-        let resample = Resample(from: node.outputFormat(forBus: 0), to: format)
-        node.installTap(onBus: 0, bufferSize: 4096, format: node.outputFormat(forBus: 0)) { buffer, _ in
-            if let converted = resample?.convert(buffer) { input.yield(AnalyzerInput(buffer: converted)) }
-        }
+        Ear.feed(engine.inputNode, to: format, into: input)
         engine.prepare()
         try engine.start()
+    }
+
+    internal static func feed(
+        _ node: AVAudioNode, to format: AVAudioFormat, into input: AsyncStream<AnalyzerInput>.Continuation
+    ) {
+        let source = node.outputFormat(forBus: 0)
+        let resample = Resample(from: source, to: format)
+        node.installTap(onBus: 0, bufferSize: 4096, format: source) { buffer, _ in
+            if let converted = resample?.convert(buffer) { input.yield(AnalyzerInput(buffer: converted)) }
+        }
     }
 
     private func stop() async {
