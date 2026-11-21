@@ -71,6 +71,7 @@ pub(super) fn source(path: &str, who: &Who) -> Option<Source> {
                 let peek = devices.peek(&claim, now()).map_err(crate::http::refused)?;
                 Ok(screen(&Caller::Asking(peek), now()))
             }),
+            seen: None,
         }
     })
 }

@@ -19,7 +19,7 @@ use tokio::{
     task::JoinHandle,
 };
 
-use crate::{Hub, HubError};
+use crate::{Hub, HubError, Out};
 
 const STREAMS: usize = 4;
 const KEYS: usize = 16;
@@ -61,39 +61,47 @@ impl Who {
 
 pub(crate) enum Wake {
     Home,
+    Thread(String),
     Every(Duration),
 }
 
 enum Waker {
-    Hub(broadcast::Receiver<()>),
+    Home(broadcast::Receiver<()>),
+    Thread(broadcast::Receiver<Out>),
     Tick(tokio::time::Interval),
 }
 
 impl Waker {
     async fn next(&mut self) -> bool {
         match self {
-            Self::Hub(wake) => {
-                if let Err(RecvError::Closed) = wake.recv().await {
-                    return false;
-                }
-                while !matches!(
-                    wake.try_recv(),
-                    Err(TryRecvError::Empty | TryRecvError::Closed)
-                ) {}
-            }
+            Self::Home(wake) => drained(wake).await,
+            Self::Thread(wake) => drained(wake).await,
             Self::Tick(every) => {
                 every.tick().await;
+                true
             }
         }
-        true
     }
 }
 
+async fn drained<T: Clone>(wake: &mut broadcast::Receiver<T>) -> bool {
+    if let Err(RecvError::Closed) = wake.recv().await {
+        return false;
+    }
+    while !matches!(
+        wake.try_recv(),
+        Err(TryRecvError::Empty | TryRecvError::Closed)
+    ) {}
+    true
+}
+
 type Build = dyn Fn(&Hub) -> Result<Block, HubError> + Send + std::marker::Sync;
+type Seen = dyn Fn(&Hub) -> Result<(), HubError> + Send + std::marker::Sync;
 
 pub(crate) struct Source {
     pub(crate) wake: Wake,
     pub(crate) build: Box<Build>,
+    pub(crate) seen: Option<Box<Seen>>,
 }
 
 pub(crate) enum Sent {
@@ -323,19 +331,41 @@ impl Live {
             .keys
             .get(&at)
             .is_some_and(|h| h.task.is_some());
+        let source = Arc::new(source);
         if !started {
-            let wake = match source.wake {
-                Wake::Home => Waker::Hub(self.hub.home()),
-                Wake::Every(every) => Waker::Tick(tokio::time::interval(every)),
+            let wake = match &source.wake {
+                Wake::Home => Some(Waker::Home(self.hub.home())),
+                Wake::Thread(id) => self
+                    .hub
+                    .subscribe(id, "")
+                    .ok()
+                    .map(|(_, w)| Waker::Thread(w)),
+                Wake::Every(every) => Some(Waker::Tick(tokio::time::interval(*every))),
             };
-            let source = Arc::new(source);
-            if let Some(block) = self.build(&have.k, &source).await {
-                put(&mut kept, &have.k, &block);
-            }
-            let task =
-                tokio::spawn(Arc::clone(self).run((at.clone(), have.k.clone()), source, wake));
-            if let Some(held) = lock(&self.state).keys.get_mut(&at) {
-                held.task.replace(task).inspect(JoinHandle::abort);
+            let task = match wake {
+                Some(wake) => {
+                    let at = (at.clone(), have.k.clone());
+                    Some(self.start(at, &source, &mut kept, wake).await)
+                }
+                None => None,
+            };
+            let mut st = lock(&self.state);
+            let placed = match (task, st.keys.get_mut(&at)) {
+                (Some(task), Some(held)) => {
+                    held.task.replace(task).inspect(JoinHandle::abort);
+                    true
+                }
+                (task, _) => {
+                    task.inspect(JoinHandle::abort);
+                    false
+                }
+            };
+            if !placed {
+                if let Some(open) = st.streams.iter_mut().find(|o| o.tap.sid == tap.sid) {
+                    open.keys.retain(|k| *k != have.k);
+                }
+                st.release(&at, &tap.sid);
+                return gone(404);
             }
         }
         {
@@ -352,10 +382,39 @@ impl Live {
                 }
             }
         }
-        kept.state(&(), &have.k, have.rev).unwrap_or_else(|e| {
+        let state = kept.state(&(), &have.k, have.rev).unwrap_or_else(|e| {
             cooee_core::note!("cooee: stream {}: {e}", have.k);
             gone(500)
-        })
+        });
+        drop(kept);
+        self.seen(&have.k, &source).await;
+        state
+    }
+
+    async fn start(
+        self: &Arc<Self>,
+        at: (String, String),
+        source: &Arc<Source>,
+        kept: &mut Shelf<()>,
+        wake: Waker,
+    ) -> JoinHandle<()> {
+        if let Some(block) = self.build(&at.1, source).await {
+            put(kept, &at.1, &block);
+        }
+        tokio::spawn(Arc::clone(self).run(at, Arc::clone(source), wake))
+    }
+
+    async fn seen(&self, k: &str, source: &Arc<Source>) {
+        if source.seen.is_none() {
+            return;
+        }
+        let (hub, source) = (Arc::clone(&self.hub), Arc::clone(source));
+        let seen = move || source.seen.as_ref().map_or(Ok(()), |seen| seen(&hub));
+        match tokio::task::spawn_blocking(seen).await {
+            Ok(Ok(())) => {}
+            Ok(Err(e)) => cooee_core::note!("cooee: stream {k}: {e}"),
+            Err(e) => cooee_core::note!("cooee: stream {k}: {e}"),
+        }
     }
 
     pub(crate) fn hand_over(&self, claim: &str) {
@@ -399,15 +458,19 @@ impl Live {
                 let Some(kept) = kept else { return };
                 let mut kept = kept.lock().await;
                 if let Some(frame) = put(&mut kept, &k, &block) {
-                    let st = lock(&self.state);
-                    for tap in st
-                        .keys
-                        .get(&at)
-                        .map(|h| h.holders.as_slice())
-                        .unwrap_or_default()
                     {
-                        tap.push(&frame);
+                        let st = lock(&self.state);
+                        for tap in st
+                            .keys
+                            .get(&at)
+                            .map(|h| h.holders.as_slice())
+                            .unwrap_or_default()
+                        {
+                            tap.push(&frame);
+                        }
                     }
+                    drop(kept);
+                    self.seen(&k, &source).await;
                 }
             }
             tokio::time::sleep(PACE.max(start.elapsed().saturating_mul(10))).await;

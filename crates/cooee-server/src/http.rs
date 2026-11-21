@@ -326,3 +326,19 @@ pub(crate) fn fields(value: impl serde::Serialize) -> blocks::Fields {
         _ => blocks::Fields::new(),
     }
 }
+
+pub(crate) fn image(name: &std::path::Path) -> Option<&'static str> {
+    let ext = name
+        .extension()
+        .and_then(|e| e.to_str())
+        .unwrap_or_default();
+    match ext.to_ascii_lowercase().as_str() {
+        "png" => Some("image/png"),
+        "jpg" | "jpeg" => Some("image/jpeg"),
+        "gif" => Some("image/gif"),
+        "webp" => Some("image/webp"),
+        "heic" => Some("image/heic"),
+        "avif" => Some("image/avif"),
+        _ => None,
+    }
+}

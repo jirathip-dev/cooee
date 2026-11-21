@@ -1,4 +1,5 @@
 mod attach;
+mod chat;
 mod connectors;
 mod home;
 mod locked;
@@ -13,6 +14,7 @@ use topcoat::router::RouterBuilder;
 
 pub(crate) fn routes(b: RouterBuilder) -> RouterBuilder {
     let b = attach::routes(b);
+    let b = chat::routes(b);
     let b = connectors::routes(b);
     let b = home::routes(b);
     let b = locked::routes(b);
@@ -25,5 +27,7 @@ pub(crate) fn routes(b: RouterBuilder) -> RouterBuilder {
 }
 
 pub(crate) fn source(path: &str, who: &crate::live::Who) -> Option<crate::live::Source> {
-    pair::source(path, who).or_else(|| sessions::source(path, who))
+    chat::source(path, who)
+        .or_else(|| pair::source(path, who))
+        .or_else(|| sessions::source(path, who))
 }

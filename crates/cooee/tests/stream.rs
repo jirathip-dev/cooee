@@ -194,8 +194,12 @@ fn the_sessions_screen_is_core_kinds_grouped_by_persona_with_the_rows_of_get_thr
 fn a_stream_without_a_device_opens_only_the_pair_screen() {
     const PAIR: &str = "/screens/pair";
     let dir = scratch("stream-pair");
+    fs::create_dir_all(dir.join("profiles")).unwrap();
+    let coder = "name = \"coder\"\nlabel = \"Coder\"\nagent = \"fake-acp\"\n";
+    fs::write(dir.join("profiles/coder.toml"), coder).unwrap();
     let shed = FakeShed::start(&dir.join("shed"), version());
     let mut cooee = Cooee::start(&dir, &shed.dir);
+    let thread = format!("/screens/chat/{}", chat(&cooee, "one"));
     let paired = std::mem::take(&mut cooee.cookie);
     let ask = json!({ "screen": PAIR, "action": "ask" });
     let (head, _) = cooee.raw(
@@ -226,10 +230,14 @@ fn a_stream_without_a_device_opens_only_the_pair_screen() {
     m.hello(&hello).unwrap();
     m.open(PAIR);
     m.open(KEY);
+    m.open(&thread);
     let sent = m.have();
     let synced = sync(&cooee, &hello.sid, &sent);
     let gone: Vec<_> = synced.keys.iter().map(|k| (k.k.as_str(), k.gone)).collect();
-    assert_eq!(gone, [(PAIR, None), (KEY, Some(404))]);
+    assert_eq!(
+        gone,
+        [(thread.as_str(), Some(404)), (PAIR, None), (KEY, Some(404))]
+    );
     m.synced(&sent, synced);
     let pair = |m: &Mirror| serde_json::to_value(m.screen(PAIR).unwrap()).unwrap();
     assert_eq!(pair(&m)["blocks"][3]["action"], "cancel");
