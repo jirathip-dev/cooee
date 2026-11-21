@@ -203,6 +203,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "cooee-desk"
+version = "0.1.0"
+dependencies = [
+ "cooee-core",
+ "serde_json",
+ "thiserror",
+]
+
+[[package]]
 name = "cooee-machines"
 version = "0.1.0"
 dependencies = [
