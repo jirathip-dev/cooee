@@ -23,8 +23,8 @@ use topcoat::{
 use crate::{
     Hub, HubError, Out, Resume, Slice, Upload,
     http::{
-        Answer, Created, Data, Name, Paired, Tag, allowed, blocking, hub, logins, plain, profiles,
-        provider_name, recipe, seated, thread_id,
+        Answer, Created, Data, Name, Paired, Tag, allowed, blocking, hub, image, logins, plain,
+        profiles, provider_name, recipe, seated, thread_id,
     },
     pairing, plugin,
 };
@@ -400,19 +400,7 @@ async fn thread_file(cx: &Cx) -> Result<Response> {
     let Ok(path) = found else {
         return plain(404, "No such file.");
     };
-    let ext = path
-        .extension()
-        .and_then(|e| e.to_str())
-        .unwrap_or_default();
-    let kind = match ext.to_ascii_lowercase().as_str() {
-        "png" => Some("image/png"),
-        "jpg" | "jpeg" => Some("image/jpeg"),
-        "gif" => Some("image/gif"),
-        "webp" => Some("image/webp"),
-        "heic" => Some("image/heic"),
-        "avif" => Some("image/avif"),
-        _ => None,
-    };
+    let kind = image(&path);
     let bytes = tokio::task::spawn_blocking(move || std::fs::read(path)).await??;
     let r = Response::builder()
         .header("Content-Type", kind.unwrap_or("application/octet-stream"))
