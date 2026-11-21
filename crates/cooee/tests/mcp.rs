@@ -914,10 +914,7 @@ fn a_persona_with_no_desk_or_a_desk_the_provider_did_not_make_is_refused_and_not
     let dir = scratch("mcp-desk-no");
     let s = desk_setup(&dir);
     let bin = dir.join("bin");
-    for (who, why) in [
-        ("bob", "no desk hand-made was made here"),
-        ("cy", "cy has no desk"),
-    ] {
+    for (who, why) in [("bob", "no desk hand-made"), ("cy", "cy has no desk")] {
         let (_, servers) = s.thread(who);
         let mut m = Mcp::start(named(&servers, "cooee"), Agent::Codex);
         let e = m
