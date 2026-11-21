@@ -110,7 +110,7 @@ fn load_line(home: &Path, label: &str, unit: &str) -> String {
 struct Mac {
     home: PathBuf,
     port: u16,
-    _listener: TcpListener,
+    listener: TcpListener,
     _shed: Option<FakeShed>,
 }
 
@@ -133,7 +133,7 @@ impl Mac {
         Self {
             home,
             port,
-            _listener: listener,
+            listener,
             _shed: shed,
         }
     }
@@ -660,7 +660,7 @@ fn updating(name: &str, released: bool, new: &str) -> Mac {
     fs::write(mac.config(), format!("port = {}\n", mac.port)).unwrap();
     fs::create_dir_all(mac.data()).unwrap();
     fs::write(mac.home.join("loaded-dev.cooee.cooee"), "").unwrap();
-    let server = mac._listener.try_clone().unwrap();
+    let server = mac.listener.try_clone().unwrap();
     std::thread::spawn(move || {
         for mut conn in server.incoming().flatten() {
             let mut buf = [0; 4096];
@@ -810,7 +810,7 @@ fn a_download_that_fails_its_checksum_or_names_another_sha_is_never_swapped_in()
         assert!(!mac.home.join(".local/bin/cooee.new").exists());
         assert_eq!(
             fs::read_to_string(mac.data().join("update.failed")).unwrap(),
-            SHA
+            format!("{SHA} by unknown")
         );
     }
 }
@@ -837,7 +837,7 @@ fn a_new_build_that_does_not_answer_is_rolled_back_and_the_old_one_serves_again(
     );
     assert_eq!(
         fs::read_to_string(mac.data().join("update.failed")).unwrap(),
-        SHA
+        format!("{SHA} by unknown")
     );
     fs::write(mac.home.join("calls.log"), "").unwrap();
     assert!(mac.cooee(&["update"]).status.success());
