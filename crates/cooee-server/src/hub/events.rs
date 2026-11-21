@@ -30,7 +30,7 @@ impl Hub {
                         match item {
                             Streamed::Event(event) => {
                                 last = Some(event.seq);
-                                self.apply(event);
+                                self.apply(*event);
                             }
                             Streamed::Reset(seq) => {
                                 last = Some(seq);
@@ -112,7 +112,7 @@ impl Hub {
             live.chat.turn.note = None;
             changes.push(Change::State(live.chat.turn.clone()));
         }
-        if let (Some(_), shed_proto::EventKind::Turn { prompt }) =
+        if let (Some(_), shed_proto::EventKind::Turn { prompt, .. }) =
             (&live.meta.workflow, &event.kind)
         {
             let own = live
@@ -132,7 +132,15 @@ impl Hub {
             }
         }
         let was = live.chat.turn.state.clone();
-        changes.extend(live.chat.apply(now(), event.seq, event.kind));
+        let read = |c: &cooee_core::action::Call| self.providers.action(&live.meta.agent, c);
+        changes.extend(match event.kind {
+            k if !live.meta.profile.is_empty()
+                && matches!(&k, shed_proto::EventKind::ApprovalRequest { id, .. } if !id.is_empty()) =>
+            {
+                self.asked(live, event.seq, k)
+            }
+            k => live.chat.apply(now(), event.seq, k, &read),
+        });
         if was != "limited" && live.chat.turn.state == "limited" {
             changes.extend(self.capped(live).map(Change::Item));
         }

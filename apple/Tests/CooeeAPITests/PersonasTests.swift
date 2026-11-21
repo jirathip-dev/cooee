@@ -94,7 +94,8 @@ internal struct PersonasTests {
     }
 
     @Test internal func theAgentChipsListsAndTheFoldersDecodeFromTheServer() async throws {
-        let agents = #"[{"id":"fake-acp","efforts":["low","high"]},{"id":"codex","efforts":[]}]"#
+        let agents =
+            #"[{"id":"fake-acp","efforts":["low","high"],"gaps":[]},{"id":"codex","efforts":[],"gaps":[{"kind":null,"words":"Reads yours."},{"kind":"run","words":"No ask."}]}]"#
         let models =
             #"[{"agent":"fake-acp","account":"","seen":5,"models":[["fake-opus-3","Opus"]],"short":{"opus":"fake-opus-3"}}]"#
         let folders = #"{"path":"/w/my app","home":"/home/user","dirs":["src"],"roots":["/w"]}"#
@@ -106,7 +107,8 @@ internal struct PersonasTests {
         let client = server.client()
         #expect(
             try await client.agents() == [
-                AgentOption(id: "fake-acp", efforts: ["low", "high"]), AgentOption(id: "codex"),
+                AgentOption(id: "fake-acp", efforts: ["low", "high"]),
+                AgentOption(id: "codex", gaps: [Gap(words: "Reads yours."), Gap(kind: .run, words: "No ask.")]),
             ])
         let lists = try await client.models()
         #expect(
@@ -117,6 +119,34 @@ internal struct PersonasTests {
         _ = try await client.folders(nil)
         let asked = server.requests("/folders").map { $0.url?.query() }
         #expect(asked == ["path=%2Fw%2Fmy%20app", nil])
+    }
+
+    @Test internal func rulesAreListedAddedAndRemovedWithTheServersWordsAndItsRefusal() async throws {
+        let listed =
+            #"[{"id":"3f","effect":"allow","kind":"run","pattern":"cargo test *","folder":"/w","by":"card","at":1795003200000,"words":"Allow running cargo test … in /w"}]"#
+        let added =
+            #"{"id":"9e","effect":"deny","kind":"fetch","pattern":"*.ads","by":"settings","at":1795176000000,"words":"Deny fetching from *.ads"}"#
+        let refused = Answer(status: 400, headers: ["Cooee-Error": "1"], chunks: ["a rule needs a one-line pattern"])
+        let server = CannedServer([
+            "/personas/coder/rules": [
+                Answer(headers: json, chunks: [listed]), Answer(headers: json, chunks: [added]), refused,
+            ],
+            "/personas/coder/rules/3f": [Answer(chunks: [])],
+        ])
+        let client = server.client()
+        let rules = try await client.rules("coder")
+        #expect(rules.map(\.words) == ["Allow running cargo test … in /w"])
+        #expect(rules.first?.origin == "from a card · 18 Nov" && rules.first?.kind == .run)
+        let rule = try await client.addRule("coder", NewRule(effect: .deny, kind: .fetch, pattern: "*.ads"))
+        #expect(rule.origin == "added here · 20 Nov" && rule.effect == .deny)
+        let posted = server.requests("/personas/coder/rules").compactMap(\.httpBody).first
+        let sent = String(bytes: try #require(posted), encoding: .utf8) ?? ""
+        #expect(sent.contains(#""effect":"deny""#) && sent.contains(#""kind":"fetch""#) && !sent.contains("folder"))
+        await #expect(throws: APIError(status: 400, text: "a rule needs a one-line pattern")) {
+            try await client.addRule("coder", NewRule(pattern: ""))
+        }
+        try await client.removeRule("coder", "3f")
+        #expect(server.requests("/personas/coder/rules/3f").map(\.httpMethod) == ["DELETE"])
     }
 
     @Test internal func aNewThreadCarriesThePickedModelAndEffort() async throws {

@@ -28,6 +28,7 @@ internal struct SettingRow: View {
     internal var tint: Color?
     internal var icon: AppIcon?
     internal var value = ""
+    internal var warn = false
     internal var divider = true
 
     internal var body: some View {
@@ -41,7 +42,15 @@ internal struct SettingRow: View {
             }
             Text(title).ui(16, .regular, look)
             Spacer()
-            Text(value).ui(15, .regular, look).foregroundStyle(palette.mute).lineLimit(1)
+            if warn {
+                HStack(spacing: 5) {
+                    Text(look.textMarks ? "*" : "●").font(.system(size: look.textMarks ? 12 : 8))
+                    Text(value).ui(15, .regular, look).lineLimit(1)
+                }
+                .foregroundStyle(palette.amber)
+            } else {
+                Text(value).ui(15, .regular, look).foregroundStyle(palette.mute).lineLimit(1)
+            }
             Image(systemName: "chevron.right").font(.system(size: 12, weight: .semibold))
                 .foregroundStyle(palette.mute)
         }

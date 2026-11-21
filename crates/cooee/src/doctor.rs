@@ -6,7 +6,7 @@ use std::{
 use cooee_core::{Config, ROOTS_FIX, Shed, ShedError, agents_fix, plugins, shed_fix};
 use cooee_server::machine;
 
-use crate::service::{app_items, label, tailnet_name};
+use crate::service::{app_items, service, tailnet_name};
 
 pub(crate) fn doctor(config: &Config) -> Result<(), String> {
     let mut failed = Vec::new();
@@ -16,11 +16,11 @@ pub(crate) fn doctor(config: &Config) -> Result<(), String> {
             failed.push(format!("FAIL {what}"));
         }
     };
-    let label = label(&config.instance);
-    let loaded = cooee_core::runner::command("launchctl")
-        .args(["list", &label])
-        .output()
-        .is_ok_and(|o| o.status.success());
+    let service = service(config, None, "serve")?;
+    let label = service.label().to_string();
+    let loaded = service
+        .status()
+        .is_ok_and(|s| s.loaded && s.refused.is_none());
     check(
         loaded,
         format!("service {label} loaded (else: cooee install)"),

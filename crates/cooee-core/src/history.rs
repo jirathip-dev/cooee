@@ -318,9 +318,11 @@ mod tests {
     fn tool(title: &str) -> Body {
         Body::Tool {
             call: "c".to_owned(),
-            title: title.to_owned(),
+            subject: title.to_owned(),
+            action: crate::action::Kind::Other,
             status: "completed".to_owned(),
             ended: None,
+            ruled: None,
         }
     }
 

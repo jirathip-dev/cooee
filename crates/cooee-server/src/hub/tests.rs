@@ -11,7 +11,7 @@ fn hub_on(dir: &Path, bin: PathBuf) -> Arc<Hub> {
     let (looks, _) = crate::look::Looks::load(None, None);
     let theme = looks.themes[&looks.default].clone();
     Hub::open(
-        shed,
+        (shed, cooee_core::Providers::default()),
         &dir.join("data"),
         (Vec::new(), None),
         theme,
@@ -157,7 +157,16 @@ fn a_members_ask_shows_in_its_room_and_pauses_its_deadline() {
         kind: "allow_once".into(),
     };
     let (tool, options) = ("fetch sec.gov".to_owned(), vec![option]);
-    hub.apply(event("s1", 1, EventKind::ApprovalRequest { tool, options }));
+    hub.apply(event(
+        "s1",
+        1,
+        EventKind::ApprovalRequest {
+            id: String::new(),
+            tool,
+            options,
+            call: None,
+        },
+    ));
     let ask = rx.try_recv().unwrap();
     let data: serde_json::Value = serde_json::from_str(&ask.data).unwrap();
     assert_eq!(ask.event, "room-ask");
@@ -376,6 +385,8 @@ fn a_busy_thread_does_not_hold_up_another_threads_event() {
         title: "ls".to_owned(),
         status: status.to_owned(),
         kind: None,
+        locations: Vec::new(),
+        raw_input: None,
     };
     let round = |r: u64| {
         let dir = scratch(&format!("head-of-line-{r}"));
@@ -530,7 +541,16 @@ fn a_hundred_lists_with_nothing_changed_read_no_persona_file_after_the_first() {
     let (looks, _) = crate::look::Looks::load(None, None);
     let theme = looks.themes[&looks.default].clone();
     let config = (Vec::new(), Some(dir.join("config/config.toml")));
-    let hub = Hub::open(shed, &dir.join("data"), config, theme, Vec::new(), None, 0).unwrap();
+    let hub = Hub::open(
+        (shed, cooee_core::Providers::default()),
+        &dir.join("data"),
+        config,
+        theme,
+        Vec::new(),
+        None,
+        0,
+    )
+    .unwrap();
     let name = |hub: &Hub| hub.list()[0].persona_name.clone();
     assert_eq!(name(&hub), "Ada");
     let was = fs::metadata(&toml).unwrap().modified().unwrap();
@@ -589,7 +609,16 @@ fn an_approval_in_a_background_thread_tells_home_at_once() {
         kind: "allow_once".into(),
     };
     let (tool, options) = ("Edit a.rs".to_owned(), vec![option]);
-    hub.apply(event("bg", 3, EventKind::ApprovalRequest { tool, options }));
+    hub.apply(event(
+        "bg",
+        3,
+        EventKind::ApprovalRequest {
+            id: String::new(),
+            tool,
+            options,
+            call: None,
+        },
+    ));
     assert!(home.try_recv().is_ok(), "the approval did not tell home");
     let row = hub.list().into_iter().find(|r| r.id == "bg").unwrap();
     assert_eq!((row.last.as_str(), row.unseen), ("Edit a.rs", 1));

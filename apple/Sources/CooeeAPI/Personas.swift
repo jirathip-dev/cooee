@@ -60,6 +60,16 @@ extension Client {
 
     public func machines() async throws -> [MachineRow] { try await call("GET", "/machines") }
 
+    public func rules(_ persona: String) async throws -> [Rule] { try await call("GET", "/personas/\(persona)/rules") }
+
+    public func addRule(_ persona: String, _ rule: NewRule) async throws -> Rule {
+        try await call("POST", "/personas/\(persona)/rules", rule)
+    }
+
+    public func removeRule(_ persona: String, _ rule: String) async throws {
+        _ = try await send(request("DELETE", "/personas/\(persona)/rules/\(rule)"))
+    }
+
     public func folders(_ path: String?) async throws -> FolderListing {
         let query = path.map { "?path=" + ($0.addingPercentEncoding(withAllowedCharacters: .alphanumerics) ?? "") }
         return try await call("GET", "/folders" + (query ?? ""))

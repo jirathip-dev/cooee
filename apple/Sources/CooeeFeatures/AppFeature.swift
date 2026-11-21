@@ -107,6 +107,9 @@ public struct AppFeature: Sendable {
                     ChatFeature.State(server: $0.server, target: .setup(persona), persona: Persona(persona))
                 }
                 return .send(.home(.refresh))
+            case .persona(.presented(.delegate(.connectors))):
+                state.persona = nil
+                return .concatenate(.send(.menu(.open(true))), .send(.menu(.path([.connectors]))))
             case .chat(.delegate(let delegate)):
                 return relay(&state, delegate)
             case .home(.loaded):

@@ -3,7 +3,7 @@ use std::path::Path;
 use cooee_core::{
     Launch,
     agents::Agent,
-    provider::{Setup, Want},
+    provider::{Gap, Setup, Want},
 };
 
 use super::Logins;
@@ -34,6 +34,19 @@ impl Logins {
     #[must_use]
     pub fn session(&self, agent: &str, want: &Want) -> Option<Setup> {
         Some(self.providers.for_agent(agent)?.session(want))
+    }
+
+    /// What a persona session of `agent` can't be told, on its default login (#536: the agent picker's lines).
+    #[must_use]
+    pub fn gaps(&self, agent: &str) -> Vec<Gap> {
+        let want = Want {
+            brief: "",
+            off: &[],
+            ask_all: true,
+            run: Path::new(""),
+        };
+        let setup = self.session(agent, &want);
+        setup.unwrap_or_else(|| Setup::plain(&want)).gaps
     }
 
     /// What a thread of agent `a` runs with: its account's label (`a`'s, else `account`) and [`Launch`] (the account's

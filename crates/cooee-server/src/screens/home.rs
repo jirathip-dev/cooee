@@ -1,5 +1,3 @@
-//! `GET /screens/home` (#311): the app's bundled home, its blocks filled with the threads and personas they draw.
-
 use blocks::Block;
 use serde_json::Value;
 use topcoat::{Result, context::Cx, router::route};
@@ -13,9 +11,9 @@ const BUNDLED: &str = include_str!("../../../../apple/Sources/CooeeUI/Default/sc
 #[route(GET "/screens/home")]
 pub async fn home(cx: &Cx) -> Result<Answer<Block>> {
     let screen = blocking(cx, move |hub| {
-        let mut screen = super::bundled(BUNDLED)?;
+        let mut screen = crate::http::bundled(BUNDLED)?;
         let threads = hub.list();
-        let mut personas: Vec<_> = hub.personas().iter().map(super::fields).collect();
+        let mut personas: Vec<_> = hub.personas().iter().map(crate::http::fields).collect();
         for p in &mut personas {
             let open = threads
                 .iter()
@@ -24,9 +22,13 @@ pub async fn home(cx: &Cx) -> Result<Answer<Block>> {
             p.insert("topics".to_owned(), Value::from(topics));
             p.insert("unread".to_owned(), Value::from(unread));
         }
-        screen.threads = Some(threads.iter().map(super::fields).collect());
+        screen.threads = Some(threads.iter().map(crate::http::fields).collect());
         screen.personas = Some(personas);
-        Ok(super::core(screen))
+        Ok(crate::http::core(screen))
     });
     Ok(Answer(screen.await))
+}
+
+pub(super) fn routes(b: topcoat::router::RouterBuilder) -> topcoat::router::RouterBuilder {
+    b.route(home)
 }

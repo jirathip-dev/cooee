@@ -42,7 +42,7 @@ pub(super) fn summary(meta: &Thread, items: &[Item], unseen: usize) -> Glance {
         | Body::Ask { text, .. }
         | Body::Handoff { text, .. }
         | Body::Ended { text } => text,
-        Body::Tool { title, .. } => title,
+        Body::Tool { subject, .. } => subject,
         Body::Approval { tool, .. } => tool,
         Body::Plan { .. } => "plan",
         Body::Routine { name, .. } => name,

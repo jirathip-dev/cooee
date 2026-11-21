@@ -1,6 +1,3 @@
-//! `GET /screens/plugins/{name}/attach?persona=` (#312): the attach sheet as data, one `permissions` card of what
-//! installed plugin `name` may do for the persona. Only core serves this card kind.
-
 use blocks::{Block, Card, CardKind, Label, List, Row, RowStyle, Screen, Text, Tone};
 use cooee_core::{agents, plugins::PlaceKind};
 use serde::Deserialize;
@@ -45,7 +42,7 @@ pub async fn attach(cx: &Cx) -> Result<Response> {
     })
     .await??;
     match found {
-        Ok(screen) => Json(super::core(screen)).into_response(cx),
+        Ok(screen) => Json(crate::http::core(screen)).into_response(cx),
         Err(why) => plain(404, &why),
     }
 }
@@ -110,4 +107,8 @@ fn sheet(p: &manage::Row, persona: &str) -> Screen {
         .id("attach")
         .title(format!("Attach {}", l.name))
         .blocks(vec![Block::Card(Box::new(card))])
+}
+
+pub(super) fn routes(b: topcoat::router::RouterBuilder) -> topcoat::router::RouterBuilder {
+    b.route(attach)
 }

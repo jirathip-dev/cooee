@@ -63,6 +63,14 @@
           "tone": "ok",
           "open": "/screens/settings/plugins",
           "value": "1"
+        },
+        {
+          "id": "connectors",
+          "title": "Connectors",
+          "symbol": "point.3.connected.trianglepath.dotted",
+          "tone": "purple",
+          "page": "connectors",
+          "value": "0"
         }
       ]
     }

@@ -494,6 +494,14 @@ fn a_capped_signed_post_runs_nothing_but_still_feeds_the_silence_clock() {
             .as_u64()
             .unwrap()
     };
+    let ran = (0..400).any(|_| {
+        let last = mac.cooee().json("/routines.json")[0]["last_run"].clone();
+        last["outcome"] == "ran" || {
+            thread::sleep(Duration::from_millis(25));
+            false
+        }
+    });
+    assert!(ran, "the first POST's run is recorded");
     let first = heard(&mac);
     thread::sleep(Duration::from_millis(5));
     assert_eq!(

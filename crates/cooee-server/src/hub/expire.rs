@@ -191,6 +191,44 @@ mod tests {
     }
 
     #[test]
+    fn a_background_persona_card_expires_as_the_harnesss_one_time_deny_of_its_request() {
+        let dir = scratch("expire-persona");
+        let sent = fake_shed(&dir);
+        let t0 = super::super::now();
+        let mark = json!({ "id": "r-1", "name": "nightly" });
+        let meta = json!({ "routine": mark, "random_id": "r1" });
+        seed(&dir, "run", &meta, None, t0);
+        let jsonl = dir.join("data/threads/run.jsonl");
+        let you = fs::read_to_string(&jsonl)
+            .unwrap()
+            .lines()
+            .next()
+            .unwrap()
+            .to_owned();
+        let option = |id: &str, kind: &str| json!({ "id": id, "name": id, "kind": kind });
+        let rule = json!({ "effect": "allow", "kind": "run", "pattern": "cargo test *" });
+        let ask = json!({ "id": 2, "at": t0, "seq": 1, "kind": "approval", "tool": "cargo test -p x",
+            "action": "run", "request": { "id": "q7", "allow": "once", "deny": "no", "rule": rule },
+            "options": [option("allow", "allow_once"), option("always", "allow_always"), option("deny", "reject_once")] });
+        fs::write(&jsonl, format!("{you}\n{ask}\n")).unwrap();
+        let hub = hub(&dir);
+        hub.watch(t0 + EXPIRY);
+        hub.watch(t0 + 2 * EXPIRY);
+        let answers: Vec<Value> = (sent.lock().unwrap().iter())
+            .filter(|p| p["name"] == "cooee-run")
+            .map(|p| p["text"].clone())
+            .collect();
+        assert_eq!(
+            answers,
+            [json!("\u{1e}{\"approve\":\"no\",\"request\":\"q7\"}\n")]
+        );
+        assert!(matches!(
+            card(&hub, "run").body,
+            Body::Approval { chosen: Some(c), card, .. } if c == "deny" && card.by.as_deref() == Some(EXPIRED)
+        ));
+    }
+
+    #[test]
     fn a_connectors_write_card_in_a_routines_run_expires_as_deny_and_the_owners_waits() {
         let dir = scratch("expire-tool");
         fake_shed(&dir);

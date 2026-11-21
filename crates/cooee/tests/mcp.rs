@@ -297,6 +297,17 @@ fn the_agent_sees_and_calls_only_the_allowed_tools_under_claude_and_codex_and_no
         );
         assert!(m.run("c", &json!({})).is_err(), "{agent:?}");
     }
+    let deny = json!({ "effect": "deny", "kind": "tool", "pattern": "fs/*" });
+    let (status, rule) = s.cooee.post("/personas/coder/rules", &deny);
+    assert_eq!(status, 200, "{rule}");
+    let mut m = Mcp::start(fs_entry, Agent::Claude);
+    let e = m.run("a", &json!({})).unwrap_err();
+    assert!(e.contains("fs/a: Deny the tool fs/*"), "#503: {e}");
+    let rule: Value = serde_json::from_str(&rule).unwrap();
+    let gone = format!("/personas/coder/rules/{}", rule["id"].as_str().unwrap());
+    assert_eq!(s.cooee.request("DELETE", &gone, None).0, 200);
+    assert!(m.run("a", &json!({})).is_ok());
+    drop(m);
 
     let (plain, servers) = s.thread("");
     assert_eq!(servers.len(), 1, "{servers:?}");
@@ -497,6 +508,13 @@ fn the_mac_adds_toggles_and_removes_servers_with_references_only() {
     );
     assert!(
         text.contains(r#"env = { "GIT_TOKEN" = "env:GIT_TOKEN" }"#),
+        "{text}"
+    );
+    fs::write(&config, text + "provides = [\"web\"]\n").unwrap();
+    assert!(cooee(&["mcp", "enable", "git"]).0);
+    let text = fs::read_to_string(&config).unwrap();
+    assert!(
+        text.ends_with("enabled = true\nprovides = [\"web\"]\n"),
         "{text}"
     );
 }
