@@ -58,6 +58,7 @@ mod surface;
 mod tests;
 mod threads;
 pub(crate) use chief::Me;
+pub use desk::DeskSeen;
 pub use mcp::Called;
 use mcp::Proposed;
 pub use rooms::Starter;
