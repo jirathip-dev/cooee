@@ -43,6 +43,13 @@ keychain, a 0600 file on Linux) at `<data>/frames/<thread>/<at>-<hash>`, and add
 the page's address, which the app shows as a `screen` block (#166); `GET /threads/<id>/frames/<name>` serves it decrypted. Frames are deleted 14 days after they
 were taken. The app shows each as a step with its caption and picture, in the thread and the trace sheet.
 
+Desks (#172): a persona whose `agent.toml` names `desk = "<name>"` (a desk the `container` provider made, #169) gets
+cooee's `desk` tool: one of `screenshot`, `click {x, y}` or `type {text}`, run in the desk on display `:1` with
+`xdotool` and ImageMagick's `import`. Each action is appended to `<data>/browsers/<persona>.log` (`desk`, `tool`: its
+caption) and the screen after it is kept as a replay frame under the same rules as the browser's: encrypted, 14 days,
+shown in the thread; only a `screenshot` the agent asked for is sent to it (as a PNG). Any other desk, or none, is
+refused `NO_DESK`.
+
 The Screen (#162): `GET /personas/{id}/screen/live` streams the persona's current tab over SSE, a `frame {url,
 title, jpeg}` every half second (or `gone {why}` while its browser isn't running). `POST /personas/{id}/screen/control`
 gives the owner a 10-minute lease (again while they hold it: 10 minutes more): the agent's browser calls wait until `POST …/screen/back {note}` (the waiting call
