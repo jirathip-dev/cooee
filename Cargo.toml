@@ -12,6 +12,7 @@ publish = false
 
 [workspace.dependencies]
 cooee-core = { path = "crates/cooee-core" }
+cooee-desk = { path = "crates/cooee-desk" }
 cooee-machines = { path = "crates/cooee-machines" }
 cooee-terminal = { path = "crates/cooee-terminal" }
 cooee-server = { path = "crates/cooee-server" }

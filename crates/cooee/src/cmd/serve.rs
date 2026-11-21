@@ -58,7 +58,8 @@ fn serve(config: &Config) -> Result<(), String> {
             addr.ip()
         };
         let (shed, dir) = (config.shed.clone(), config.shed_dir.clone());
-        if let Err(e) = cooee_machines::start(p, shed, dir, SocketAddr::new(ip, addr.port())) {
+        let addr = SocketAddr::new(ip, addr.port());
+        if let Err(e) = cooee_machines::start(p, shed, dir, config.container.clone(), addr) {
             cooee_core::note!("cooee: plugin machines at {}: {e}", p.url);
         }
     })

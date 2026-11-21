@@ -98,6 +98,8 @@ async fn persona_new(cx: &Cx, Json(p): Json<Agent>) -> Result<Answer<Agent>> {
 struct MachineRow {
     name: String,
     host: String,
+    #[serde(flatten)]
+    kind: cooee_machines::Kind,
     online: bool,
     last_seen: Option<u64>,
     health: Option<cooee_core::shed_proto::Sample>,
@@ -120,6 +122,7 @@ async fn machine_list(cx: &Cx) -> Result<Answer<Vec<MachineRow>>> {
                         c.name.clone()
                     },
                     host: c.name,
+                    kind: c.kind,
                     online: c.online,
                     last_seen: c.last_seen,
                     health: c.now,

@@ -7,9 +7,12 @@ use std::{
     fs,
     io::{BufRead, BufReader, Write},
     net::TcpListener,
+    os::unix::fs::PermissionsExt,
     thread,
     time::Duration,
 };
+
+use cooee_desk::{Caps, Desks, Name};
 
 use serde_json::{Value, json};
 use support::{Cooee, FakeShed, scratch, version};
@@ -129,4 +132,61 @@ fn each_machine_shows_its_drover_host_tags_on_its_settings_row() {
     {
         assert_eq!(&row(want["id"].as_str().unwrap()), want, "{screen}");
     }
+}
+
+const CONTAINER: &str = r#"#!/bin/sh
+d=$(dirname "$0")
+case "$1 $2" in
+"network ls") echo '[{"id":"cooee-desks","configuration":{"mode":"hostOnly"}}]' ;;
+"ls --all") cat "$d/containers.json" ;;
+"create --name")
+  rest=$(cut -c2- "$d/containers.json")
+  printf '[{"configuration":{"id":"%s","labels":{"%s":"%s"}},"status":"stopped"},%s' "$3" "${5%%=*}" "${5#*=}" "$rest" >"$d/next.json"
+  mv "$d/next.json" "$d/containers.json" ;;
+esac
+"#;
+
+#[test]
+fn a_created_desk_lists_as_a_desk_of_its_provider_on_this_host_and_nothing_else_does() {
+    let dir = scratch("machines-desk");
+    let shed = FakeShed::start(&dir.join("shed"), version());
+    let claimed = json!({ "name": "air", "target": "air.local", "kind": "desk", "provider": "container", "parent": "mini" });
+    fs::write(shed.dir.join("machines.json"), json!([claimed]).to_string()).unwrap();
+    let container = dir.join("container");
+    fs::write(&container, CONTAINER).unwrap();
+    fs::set_permissions(&container, fs::Permissions::from_mode(0o755)).unwrap();
+    let by_hand =
+        json!([{ "configuration": { "id": "by-hand", "labels": {} }, "status": "running" }]);
+    fs::write(dir.join("containers.json"), by_hand.to_string()).unwrap();
+    Desks::new(container.clone(), Vec::new())
+        .create(
+            &Name::new("research-1").unwrap(),
+            "img",
+            Caps::new(2, 2048).unwrap(),
+        )
+        .unwrap();
+
+    let extra = format!("container = {:?}\n", container.to_string_lossy());
+    let cooee = Cooee::start_with(&dir, &shed.dir, &extra);
+    let machines = cooee.json("/machines");
+    let row = |m: &Value| {
+        json!([
+            &m["host"],
+            &m["kind"],
+            &m["provider"],
+            &m["parent"],
+            &m["online"]
+        ])
+    };
+    let rows: Vec<Value> = machines.as_array().unwrap().iter().map(row).collect();
+    let local = &machines[0]["host"];
+    assert_eq!(
+        rows,
+        [
+            json!([local, "host", null, null, false]),
+            json!(["air", "host", null, null, false]),
+            json!(["research-1", "desk", "container", local, false]),
+        ],
+        "{machines}"
+    );
 }

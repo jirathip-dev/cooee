@@ -239,6 +239,7 @@ pub fn serve(config: &Config, ready: impl FnOnce(SocketAddr)) -> io::Result<()> 
                 config.shed.clone(),
                 config.shed_dir.clone(),
                 cooee_machines::local_name(),
+                config.container.clone(),
             )),
             Arc::new(config.clone()),
         ),

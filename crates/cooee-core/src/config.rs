@@ -65,6 +65,8 @@ pub struct Config {
     pub mcp: Vec<crate::mcp::Server>,
     /// The Chromium each persona's browser runs (#160; default [`crate::browser::CHROMIUM`]).
     pub chromium: PathBuf,
+    /// Apple's `container` CLI the desks run on (#169); unset: no desks are listed.
+    pub container: Option<PathBuf>,
     /// Apple push for the native app (`[apns]`, #130); its key is `<data>/apns.p8`.
     pub apns: Option<Apns>,
     /// GitHub webhooks for routines (`[hooks]`, #261); off when unset.
@@ -179,6 +181,7 @@ impl Default for Config {
             logs: crate::logs::Logs::default(),
             mcp: Vec::new(),
             chromium: PathBuf::from(crate::browser::CHROMIUM),
+            container: None,
             apns: None,
             hooks: None,
             auto_update: true,
