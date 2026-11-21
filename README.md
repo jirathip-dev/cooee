@@ -58,7 +58,7 @@ same Mac first, as This Mac.
 
 - [docs/README.md](docs/README.md): how it fits together and the API's conventions; each area's doc beside it.
 - [docs/roadmap.md](docs/roadmap.md): the roadmap, in build order.
-- [docs/plugins.md](docs/plugins.md), [docs/themes.md](docs/themes.md), [docs/accounts.md](docs/accounts.md), [docs/logins.md](docs/logins.md).
+- [docs/plugins/](docs/plugins/README.md), [docs/themes.md](docs/themes.md), [docs/accounts.md](docs/accounts.md), [docs/logins.md](docs/logins.md).
 - Designs: [docs/design/](docs/design/). Architecture records: [docs/architecture/](docs/architecture/), [docs/decisions/](docs/decisions/).
 
 `just check` runs every CI gate.
