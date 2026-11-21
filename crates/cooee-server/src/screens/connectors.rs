@@ -33,7 +33,7 @@ pub(super) async fn connector_rows(cx: &Cx) -> Result<Vec<Row>, HubError> {
             Row::new(title)
                 .id(s["name"].as_str().unwrap_or_default())
                 .subtitle(Toned::Label(Label {
-                    text,
+                    text: text.into(),
                     tone: Some(tone),
                 }))
         };
