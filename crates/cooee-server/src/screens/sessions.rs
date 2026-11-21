@@ -41,6 +41,7 @@ pub(super) fn source(path: &str, who: &Who) -> Option<Source> {
     Some(Source {
         wake: Wake::Home,
         build: Box::new(move |hub| Ok(screen(hub, archived))),
+        seen: None,
     })
 }
 
