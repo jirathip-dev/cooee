@@ -23,6 +23,21 @@ fn secret_tool() -> Value {
     })
 }
 
+fn mail_tool() -> Value {
+    json!({
+        "name": "mail",
+        "description": "Your persona's own inbox: list (unread, newest first), search (by sender or date), read (one mail by id, marked read) or send (one recipient; the owner approves it unless a rule allows that recipient). At most 10 lines a list, 8,000 characters a read; a verification code in it is typed with secret MAIL_CODE, never shown.",
+        "inputSchema": { "type": "object", "properties": {
+            "list": { "type": "boolean" },
+            "search": { "type": "object", "properties": { "from": { "type": "string" }, "date": { "type": "string", "description": "part of the date, like 2026-11-20" } } },
+            "read": { "type": "string", "description": "a mail's id, as a list shows it" },
+            "send": { "type": "object", "required": ["to", "subject", "text"], "properties": {
+                "to": { "type": "string" }, "subject": { "type": "string" }, "text": { "type": "string" }
+            } }
+        } }
+    })
+}
+
 fn handoff_tool() -> Value {
     json!({
         "name": "handoff",
@@ -49,6 +64,7 @@ fn routine_tool() -> Value {
                 "secret": { "type": "string", "description": "the secret's name the sender signs with (A-Z, 0-9, _), like ALERTS_HOOK" },
                 "silence": { "type": "integer", "minimum": 1, "maximum": 10080, "description": "minutes with no signed POST before one alert (a push and a line in this chat), and one line when they're back" }
             } },
+            "mail": { "type": "boolean", "description": "run when mail arrives at your persona's catch-all inbox; its sender and subject follow the prompt" },
             "prompt": { "type": "string", "description": "what each run sends you; not for a script routine" },
             "script": { "type": "object", "required": ["run", "mode"], "properties": {
                 "run": { "type": "string", "description": "the sh command line, 1 to 2,000 characters, run as is" },
@@ -147,7 +163,8 @@ fn own_tools() -> Value {
         routine_tool(),
         stop_routine_tool(),
         skill,
-        secret_tool()
+        secret_tool(),
+        mail_tool()
     ])
 }
 
@@ -170,7 +187,7 @@ fn merged(own: &Value, mut mine: Vec<Value>) -> Value {
 }
 
 /// `cooee mcp serve --thread <id>`: cooee's own MCP server: `propose_server`, and `remember` (#126),
-/// `ask_persona` (#156), `handoff` (#164), `history` (#217), `update_persona` (#270), `skill` (#218) and `secret` (#163) for a persona's,
+/// `ask_persona` (#156), `handoff` (#164), `history` (#217), `update_persona` (#270), `skill` (#218) and `secret` (#163) and `mail` (#220) for a persona's,
 /// and in Chief's own chat its tools (#664).
 ///
 /// # Errors
@@ -220,6 +237,7 @@ pub fn serve(thread: &str) -> Result<(), String> {
                     Some("stop_routine") => ("/mcp/agent/routine/stop", ""),
                     Some("skill") => ("/mcp/agent/skill", ""),
                     Some("secret") => ("/mcp/agent/secret", ""),
+                    Some("mail") => ("/mcp/agent/mail", ""),
                     _ => ("/mcp/agent/chief", ""),
                 };
                 let server = if path == "/mcp/agent/chief" {

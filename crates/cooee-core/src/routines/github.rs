@@ -250,6 +250,7 @@ mod tests {
             prompt: "{{event}} on {{repo}}: {{pull_request.title}} #{{ pull_request.number }}{{nope}} {{x".to_owned(),
             name: " Monday renewals ".to_owned(),
             webhook: None,
+            mail: false,
             place: String::new(),
             until: None,
         };

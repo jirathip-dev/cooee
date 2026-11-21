@@ -154,9 +154,15 @@ impl Runner {
                 "NOT_HERE: a Workflow session or a routine's own run can't make routines",
             ));
         }
-        let outside = ask.github.is_some() || ask.webhook.is_some();
+        let outside = ask.github.is_some() || ask.webhook.is_some() || ask.mail;
         if outside && self.hooks.is_none() {
             return Err(refused("NO_HOOKS: [hooks] isn't set up on this Mac"));
+        }
+        let inbox = self.hub.persona(&from.profile).mail;
+        if ask.mail && !inbox.is_some_and(|m| m.on && !m.hook.is_empty()) {
+            return Err(refused(
+                "BAD_TRIGGER: mail arrives only at a persona's catch-all inbox, and it is off",
+            ));
         }
         if outside || ask.script.is_some() {
             let list = self.list()?;
@@ -585,13 +591,14 @@ async fn github_hook(cx: &Cx, body: Raw) -> Result<Response> {
     Ok(Response::builder().status(status).body(Bytes::from(text))?)
 }
 
-/// `[hooks] bind`'s router: `POST /hooks/github`, `POST /hooks/in/<id>` and nothing else; no Gate, no devices, no other route.
+/// `[hooks] bind`'s router: `POST /hooks/github`, `POST /hooks/in/<id>`, `POST /hooks/mail/<persona>` and nothing else; no Gate, no devices, no other route.
 #[must_use]
 pub fn hooks(runner: Arc<Runner>) -> Router {
     Router::builder()
         .app_context(runner)
         .route(github_hook)
         .route(webhook::inbound_hook)
+        .route(webhook::mail_hook)
         .build()
 }
 
