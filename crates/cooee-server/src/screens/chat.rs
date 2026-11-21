@@ -1,27 +1,40 @@
-use std::path::Path;
+use std::{
+    collections::BTreeMap,
+    fs,
+    path::{Path, PathBuf},
+    sync::Arc,
+};
 
 use blocks::{
-    Attachment, Block, Card, Composer, Image, Images, Message, Prose, Role, Row, Screen, Section,
-    Stage, Steps, Tap, Text, Toned, Tool, ToolState, Working,
+    Action, Attachment, Block, Card, Composer, Image, Images, Message, Prose, Queued, Role, Row,
+    Screen, Section, Stage, Steps, Tap, Text, Toast, Tone, Toned, Tool, ToolState, Working,
 };
 use cooee_core::{Body, Item, routines::local};
-use topcoat::{context::Cx, router::route};
+use serde::Serialize;
+use serde_json::Value;
+use sha2::{Digest, Sha256};
+use topcoat::{
+    context::{Cx, app_context},
+    router::{Body as Bytes, request::Bytes as Raw, response::Response, route},
+};
 
 use crate::{
-    Hub, HubError, Slice,
-    http::{Answer, blocking, core, image, thread_id},
-    live::{Source, Wake, Who},
+    Hub, HubError, Slice, Upload,
+    http::{Answer, Data, Tag, blocking, core, header, image, refused, thread_id},
+    live::{Live, PAGES, Source, Wake, Who},
+    turns::{self, Again, Approve, Start},
 };
 
 const PATH: &str = "/screens/chat/";
 const WINDOW: usize = 50;
 const SUMMARY: usize = 80;
+const DAY: u64 = 86_400_000;
 
 /// `{type: screen, source: core, id: chat}`: thread `id`'s newest 50 items, an agent's turn as one `message`.
 #[route(GET "/screens/chat/{id}")]
 pub async fn chat(cx: &Cx) -> topcoat::Result<Answer<Block>> {
     let id = thread_id(cx);
-    Ok(Answer(blocking(cx, move |hub| screen(hub, &id)).await))
+    Ok(Answer(blocking(cx, move |hub| screen(hub, &id, 1)).await))
 }
 
 pub(super) fn source(path: &str, who: &Who) -> Option<Source> {
@@ -35,7 +48,7 @@ pub(super) fn source(path: &str, who: &Who) -> Option<Source> {
     let (built, seen) = (id.to_owned(), id.to_owned());
     Some(Source {
         wake: Wake::Thread(id.to_owned()),
-        build: Box::new(move |hub| screen(hub, &built)),
+        build: Box::new(move |hub, pages| screen(hub, &built, pages)),
         seen: Some(Box::new(move |hub| read(hub, &seen))),
     })
 }
@@ -47,9 +60,9 @@ fn read(hub: &Hub, id: &str) -> Result<(), HubError> {
     }
 }
 
-fn screen(hub: &Hub, id: &str) -> Result<Block, HubError> {
+fn screen(hub: &Hub, id: &str, pages: usize) -> Result<Block, HubError> {
     let (meta, _) = hub.thread(id)?;
-    let slice = hub.slice(id, None, WINDOW, 0)?;
+    let slice = hub.slice(id, None, WINDOW.saturating_mul(pages), 0)?;
     let personas = hub.personas();
     let name = |speaker: &str| {
         let who = if speaker.is_empty() {
@@ -60,9 +73,17 @@ fn screen(hub: &Hub, id: &str) -> Result<Block, HubError> {
         let persona = personas.iter().find(|p| p.id == *who);
         persona.map_or_else(|| meta.agent.clone(), |p| p.name.clone())
     };
-    let mut blocks = vec![Block::Section(Box::new(
-        Section::new(log(id, &slice, &name)).id("log"),
-    ))];
+    let mut blocks = vec![];
+    if slice.skipped_before > 0 && pages < PAGES {
+        let tap = Tap {
+            action: Some("older".to_owned()),
+            ..Tap::default()
+        };
+        let older = Row::new("Older messages").id("older").tap(tap);
+        blocks.push(Block::Row(Box::new(older)));
+    }
+    let log = Section::new(log(id, &slice, &name)).id("log");
+    blocks.push(Block::Section(Box::new(log)));
     blocks.extend(state(&slice));
     blocks.push(composer(&slice));
     let screen = Screen::default().id("chat").title(meta.title.clone());
@@ -283,8 +304,21 @@ fn state(slice: &Slice) -> Option<Block> {
     })))
 }
 
+fn q(random_id: &str) -> u64 {
+    let hash = Sha256::digest(random_id.as_bytes());
+    hash.iter().take(6).fold(0, |n, b| n << 8 | u64::from(*b))
+}
+
 fn composer(slice: &Slice) -> Block {
-    let say = Composer::new("send").id("say");
+    let acts = ["queue", "steer", "unqueue", "stop"].map(|a| (a.to_owned(), a.to_owned()));
+    let queued = slice.queue.iter().map(|m| Queued {
+        q: q(&m.random_id),
+        text: m.text.clone(),
+    });
+    let say = Composer::new("send")
+        .id("say")
+        .acts(BTreeMap::from(acts))
+        .queued(queued.collect::<Vec<_>>());
     let running = matches!(
         slice.turn.state.as_str(),
         "working" | "connecting" | "blocked"
@@ -299,6 +333,244 @@ fn composer(slice: &Slice) -> Block {
     }))
 }
 
+pub(super) async fn act(cx: &Cx, a: &Action) -> Option<topcoat::Result<Response>> {
+    let done = if let Some(persona) = a.screen.strip_prefix("/screens/chat?persona=") {
+        begin(cx, persona.to_owned(), a).await
+    } else {
+        let id = a.screen.strip_prefix(PATH)?.to_owned();
+        on(cx, id, a).await.map(|()| blocks::Answer::default())
+    };
+    Some(answer(done))
+}
+
+pub(super) fn answer(done: Result<blocks::Answer, HubError>) -> topcoat::Result<Response> {
+    let (status, a) = match done {
+        Ok(a) => (200, a),
+        Err(e) => {
+            let toast = Toast::new(e.to_string()).tone(Tone::Bad);
+            let status = if matches!(e, HubError::NoThread(_)) {
+                404
+            } else {
+                400
+            };
+            (
+                status,
+                blocks::Answer {
+                    toast: Some(toast),
+                    ..blocks::Answer::default()
+                },
+            )
+        }
+    };
+    Ok(Response::builder()
+        .status(status)
+        .header("Content-Type", "application/json")
+        .body(Bytes::from(serde_json::to_string(&a).unwrap_or_default()))?)
+}
+
+fn word(a: &Action, key: &str) -> String {
+    let found = a.values.get(key).and_then(Value::as_str);
+    found.unwrap_or_default().to_owned()
+}
+
+fn uploads(cx: &Cx) -> PathBuf {
+    app_context::<Data>(cx).0.join("uploads")
+}
+
+async fn begin(cx: &Cx, persona: String, a: &Action) -> Result<blocks::Answer, HubError> {
+    let nonce = word(a, "nonce");
+    if a.action != "send" || nonce.is_empty() {
+        return Err(refused("a new chat starts with a send and its nonce"));
+    }
+    let picked = blocking(cx, move |hub| {
+        let all = hub.personas();
+        let p = all.iter().find(|p| p.id == persona);
+        p.map(|p| (p.id.clone(), p.agent.clone()))
+            .ok_or_else(|| refused(format!("no persona {persona}")))
+    })
+    .await?;
+    let start = Start {
+        agent: picked.1,
+        folder: PathBuf::new(),
+        text: word(a, "text"),
+        random_id: Tag(nonce),
+        account: None,
+        background: true,
+        profile: Some(picked.0),
+        model: String::new(),
+        effort: String::new(),
+        machine: None,
+        setup: false,
+    };
+    let id = turns::start(cx, start).await?;
+    Ok(blocks::Answer {
+        open: Some(format!("{PATH}{id}")),
+        ..blocks::Answer::default()
+    })
+}
+
+async fn on(cx: &Cx, id: String, a: &Action) -> Result<(), HubError> {
+    let (text, nonce, dir) = (word(a, "text"), word(a, "nonce"), uploads(cx));
+    let shown = a.values.get("q").and_then(Value::as_u64);
+    let files: Vec<String> =
+        a.values
+            .get("files")
+            .and_then(Value::as_array)
+            .map_or_else(Vec::new, |all| {
+                let id = |f: &Value| {
+                    f.as_str()
+                        .or_else(|| f.get("id")?.as_str())
+                        .map(str::to_owned)
+                };
+                all.iter().filter_map(id).collect()
+            });
+    let sent = move || {
+        if nonce.is_empty() {
+            return Err(refused("a send needs its nonce"));
+        }
+        Ok((nonce, held(&dir, &files)?))
+    };
+    let steer = a.action == "steer";
+    match a.action.as_str() {
+        "send" => {
+            let t = Again::of(cx, id);
+            turns::off(move || {
+                let (nonce, files) = sent()?;
+                t.send((&text, &nonce), &files, None).map(drop)
+            })
+            .await
+        }
+        "queue" | "steer" => {
+            blocking(cx, move |hub| {
+                if let Some(shown) = shown {
+                    let random_id = queued(hub, &id, shown)?;
+                    hub.unqueue(&id, &random_id, steer)?;
+                    if steer {
+                        return Ok(());
+                    }
+                }
+                let (nonce, files) = sent()?;
+                hub.queue(&id, &text, &nonce, &files, None)?;
+                if steer {
+                    hub.unqueue(&id, &nonce, true)?;
+                }
+                Ok(())
+            })
+            .await
+        }
+        "unqueue" => {
+            blocking(cx, move |hub| {
+                let random_id = queued(hub, &id, shown.unwrap_or_default())?;
+                hub.unqueue(&id, &random_id, false).map(drop)
+            })
+            .await
+        }
+        "stop" => blocking(cx, move |hub| hub.cancel(&id)).await,
+        "answer" => card(cx, id, a).await,
+        "handback" => {
+            blocking(cx, move |hub| {
+                let (nonce, _) = sent()?;
+                hub.resume_handoff(&id, &text, &nonce).map(drop)
+            })
+            .await
+        }
+        "retry" => {
+            let t = Again::of(cx, id);
+            turns::off(move || t.retry()).await
+        }
+        "older" => {
+            app_context::<Arc<Live>>(cx).more(&a.screen);
+            Ok(())
+        }
+        "archive" => blocking(cx, move |hub| hub.archive(&id, true)).await,
+        "close" => blocking(cx, move |hub| hub.close(&id)).await,
+        other => Err(refused(format!("no action {other}"))),
+    }
+}
+
+fn queued(hub: &Hub, id: &str, shown: u64) -> Result<String, HubError> {
+    let slice = hub.slice(id, None, 0, 0)?;
+    let found = slice.queue.into_iter().find(|m| q(&m.random_id) == shown);
+    found
+        .map(|m| m.random_id)
+        .ok_or_else(|| refused("that message is no longer queued"))
+}
+
+async fn card(cx: &Cx, id: String, a: &Action) -> Result<(), HubError> {
+    let item = a.values.get("item").and_then(Value::as_u64).or_else(|| {
+        let block = a.block.as_deref()?.strip_suffix("-answer")?;
+        block.parse().ok()
+    });
+    let value = ["value", "other", "answer"]
+        .iter()
+        .find_map(|k| a.values.get(*k).and_then(Value::as_str));
+    let approve = Approve {
+        item: item.ok_or_else(|| refused("an answer names its card"))?,
+        option: word(a, "choice"),
+        value: value.map(str::to_owned),
+        passkey: serde_json::from_value(Value::Object(a.values.clone())).ok(),
+    };
+    match turns::answer(cx, id, approve).await {
+        Ok(Ok(done)) => done.map(drop),
+        Ok(Err(why)) => Err(refused(why)),
+        Err(e) => Err(refused(e)),
+    }
+}
+
+#[derive(Serialize)]
+struct Kept {
+    id: String,
+    name: String,
+}
+
+/// `POST /screens/files`: the composer's file handler; the body is the file, `X-Name` its name.
+#[route(POST "/screens/files")]
+pub async fn upload(cx: &Cx, body: Raw) -> topcoat::Result<Answer<Kept>> {
+    let name = header(cx, "x-name").unwrap_or_default().to_owned();
+    let dir = uploads(cx);
+    Ok(Answer(turns::off(move || keep(&dir, name, &body)).await))
+}
+
+fn keep(dir: &Path, name: String, data: &[u8]) -> Result<Kept, HubError> {
+    if name.is_empty() || name.starts_with('.') || name.contains(['/', '\\']) {
+        return Err(refused("X-Name must be a file name"));
+    }
+    let now = crate::http::now();
+    if let Ok(all) = fs::read_dir(dir) {
+        for old in all.flatten() {
+            let name = old.file_name();
+            let at = name
+                .to_str()
+                .and_then(|n| n.split('-').next()?.parse::<u64>().ok());
+            if at.is_some_and(|at| at.saturating_add(DAY) < now) {
+                fs::remove_dir_all(old.path()).ok();
+            }
+        }
+    }
+    let random = cooee_core::random(6).map_err(refused)?;
+    let random = random.iter().fold(0, |n, b| n << 8 | u64::from(*b));
+    let id = format!("{now}-{random:x}");
+    let held = dir.join(&id);
+    fs::create_dir_all(&held).map_err(refused)?;
+    fs::write(held.join(&name), data).map_err(refused)?;
+    Ok(Kept { id, name })
+}
+
+fn held(dir: &Path, ids: &[String]) -> Result<Vec<Upload>, HubError> {
+    let one = |id: &String| {
+        let gone = || refused(format!("file {id} is gone: attach it again"));
+        if id.is_empty() || !id.chars().all(|c| c.is_ascii_hexdigit() || c == '-') {
+            return Err(gone());
+        }
+        let mut held = fs::read_dir(dir.join(id)).map_err(|_| gone())?.flatten();
+        let file = held.next().ok_or_else(gone)?;
+        let data = fs::read(file.path()).map_err(refused)?;
+        let name = file.file_name().to_string_lossy().into_owned();
+        Ok(Upload { name, data })
+    };
+    ids.iter().map(one).collect()
+}
+
 pub(super) fn routes(b: topcoat::router::RouterBuilder) -> topcoat::router::RouterBuilder {
-    b.route(chat)
+    b.route(chat).route(upload)
 }

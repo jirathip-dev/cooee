@@ -842,3 +842,196 @@ fn a_held_chat_sends_no_push_and_is_marked_read_as_its_frames_go_out() {
     );
     assert_eq!(unseen(&s, &other), 1);
 }
+
+fn act(s: &Setup, screen: &str, action: &str, values: &Value) -> (u16, Value) {
+    let a = json!({ "screen": screen, "block": "say", "action": action, "values": values });
+    let (status, body) = s.cooee.post("/screens/action", &a);
+    (status, serde_json::from_str(&body).unwrap())
+}
+
+fn mine(s: &Setup, id: &str, text: &str) -> Vec<Value> {
+    let items = s.items(id).into_iter();
+    items
+        .filter(|i| i["kind"] == "you" && i["text"] == text)
+        .collect()
+}
+
+fn prompted(s: &Setup, id: &str, text: &str) -> usize {
+    let sent = s.shed.sent(&terminal(id));
+    sent.iter().filter(|t| t.contains(text)).count()
+}
+
+#[test]
+fn a_send_with_the_same_nonce_twice_is_one_item_and_one_prompt_through_either_door() {
+    let s = setup("chat-act-send");
+    let id = s.create("hi");
+    s.events(&id).until(|e| is_item(e, "agent"));
+    let key = format!("/screens/chat/{id}");
+    let send = json!({ "text": "echo once", "nonce": "n1" });
+    assert_eq!(act(&s, &key, "send", &send), (200, json!({})));
+    assert_eq!(act(&s, &key, "send", &send), (200, json!({})));
+    let (status, body) = s.send(&id, "echo once", "n1");
+    assert_eq!(status, 200, "{body}");
+    let stored = mine(&s, &id, "echo once");
+    assert_eq!(stored.len(), 1, "{stored:?}");
+    assert_eq!(stored[0]["random_id"], "n1");
+    assert_eq!(prompted(&s, &id, "echo once"), 1);
+
+    let (status, refused) = act(&s, &key, "send", &json!({ "text": "echo none" }));
+    assert_eq!((status, &refused["toast"]["tone"]), (400, &json!("bad")));
+    assert_eq!(mine(&s, &id, "echo none"), Vec::<Value>::new());
+    assert_eq!(prompted(&s, &id, "echo none"), 0);
+}
+
+#[test]
+fn a_file_uploads_first_and_the_send_names_its_id() {
+    let s = setup("chat-act-file");
+    let id = s.create("hi");
+    s.events(&id).until(|e| is_item(e, "agent"));
+    let upload = |name: &str| {
+        let headers = [("Cookie", s.cooee.cookie.as_str()), ("X-Name", name)];
+        let (head, body) = s
+            .cooee
+            .raw("POST", "/screens/files", &headers, "not really a png");
+        (head[9..12].to_owned(), body)
+    };
+    assert_eq!(upload("../escape").0, "400");
+    let (status, kept) = upload("shot.png");
+    assert_eq!(status, "200", "{kept}");
+    let kept: Value = serde_json::from_str(&kept).unwrap();
+    assert_eq!(kept["name"], "shot.png");
+
+    let key = format!("/screens/chat/{id}");
+    let files = json!([{ "id": kept["id"], "name": "shot.png", "src": null }]);
+    let send = json!({ "text": "echo seen", "nonce": "f1", "files": files });
+    assert_eq!(act(&s, &key, "send", &send).0, 200);
+    assert_eq!(
+        act(&s, &key, "send", &send).0,
+        200,
+        "a retry still finds its file"
+    );
+    let stored = mine(&s, &id, "echo seen");
+    assert_eq!(stored.len(), 1, "{stored:?}");
+    let name = stored[0]["files"][0].as_str().unwrap();
+    let (status, bytes) = s.cooee.get(&format!("/threads/{id}/files/{name}"));
+    assert_eq!((status, bytes.as_str()), (200, "not really a png"));
+
+    let gone = json!({ "text": "echo lost", "nonce": "f2", "files": [{ "id": "1-ab" }] });
+    assert_eq!(act(&s, &key, "send", &gone).0, 400);
+    assert_eq!(mine(&s, &id, "echo lost"), Vec::<Value>::new());
+}
+
+fn turn(s: &Setup, id: &str) -> Value {
+    s.cooee.json(&format!("/threads/{id}/messages"))["turn"]["state"].clone()
+}
+
+fn queued(s: &Setup, key: &str) -> Vec<Value> {
+    let screen = s.cooee.json(key);
+    let say = block(&screen, "say").unwrap();
+    say["queued"].as_array().cloned().unwrap_or_default()
+}
+
+#[test]
+fn a_card_queue_steer_and_stop_work_from_the_chat_screen() {
+    let s = setup("chat-act-turn");
+    let id = s.create("please approve an edit");
+    let key = format!("/screens/chat/{id}");
+    let mut events = s.events(&id);
+    let ask = events.until(|e| is_item(e, "approval")).pop().unwrap();
+    let card = json!({ "screen": key, "block": format!("{}-answer", ask.data["id"]), "action": "answer", "values": { "choice": "allow" } });
+    for _ in 0..2 {
+        assert_eq!(s.cooee.post("/screens/action", &card).0, 200);
+    }
+    let approvals = s.shed.sent(&terminal(&id));
+    let approvals: Vec<&String> = approvals
+        .iter()
+        .filter(|t| t.contains("approve\":"))
+        .collect();
+    assert_eq!(approvals, ["\x1e{\"approve\":\"allow\"}\n"]);
+    events.until(|e| is_item(e, "agent"));
+
+    let hang = json!({ "text": "hang on", "nonce": "h1" });
+    assert_eq!(act(&s, &key, "send", &hang).0, 200);
+    eventually(|| turn(&s, &id) == "working");
+    let later = json!({ "text": "then this", "nonce": "q1" });
+    assert_eq!(act(&s, &key, "queue", &later).0, 200);
+    let shown = queued(&s, &key);
+    assert_eq!(shown.len(), 1);
+    assert_eq!(shown[0]["text"], "then this");
+    assert_eq!(
+        act(&s, &key, "unqueue", &json!({ "q": shown[0]["q"] })).0,
+        200
+    );
+    assert_eq!(queued(&s, &key), Vec::<Value>::new());
+
+    assert_eq!(
+        act(
+            &s,
+            &key,
+            "queue",
+            &json!({ "text": "steer", "nonce": "q2" })
+        )
+        .0,
+        200
+    );
+    let q = queued(&s, &key)[0]["q"].clone();
+    assert_eq!(act(&s, &key, "steer", &json!({ "q": q })).0, 200);
+    assert_eq!(queued(&s, &key), Vec::<Value>::new());
+    assert!(
+        s.shed
+            .sent(&terminal(&id))
+            .iter()
+            .any(|t| t.contains("\"steer\""))
+    );
+
+    assert_eq!(act(&s, &key, "stop", &json!({})).0, 200);
+    assert!(
+        s.shed
+            .sent(&terminal(&id))
+            .contains(&"\x1e\"cancel\"\n".to_owned())
+    );
+    eventually(|| turn(&s, &id) == "done");
+    assert_eq!(
+        mine(&s, &id, "then this"),
+        Vec::<Value>::new(),
+        "the unqueued message never went"
+    );
+}
+
+#[test]
+fn older_widens_a_held_chat_by_50_items_for_its_holders_to_500() {
+    let dir = scratch("chat-act-older");
+    let threads = dir.join("data/threads");
+    fs::create_dir_all(&threads).unwrap();
+    let meta = json!({ "format": 1, "thread": { "id": "long", "title": "long", "messages": [], "terminal": "cooee-long" } });
+    fs::write(threads.join("long.json"), meta.to_string()).unwrap();
+    let items: String = (1..=600)
+        .map(|k| json!({ "id": k, "at": k, "kind": "you", "text": format!("n{k}"), "random_id": format!("r{k}") }).to_string() + "\n")
+        .collect();
+    fs::write(threads.join("long.jsonl"), items).unwrap();
+    drop(cooee_core::Store::open(&dir.join("data")).unwrap());
+    let shed = FakeShed::start(&dir.join("shed"), version());
+    let cooee = Cooee::start(&dir, &shed.dir);
+    let s = Setup { dir, shed, cooee };
+
+    let (mut events, mut m, key) = screen_frames(&s, "long");
+    let count = |v: &Value| block(v, "log").unwrap()["blocks"].as_array().unwrap().len();
+    let shown = serde_json::to_value(m.screen(&key).unwrap()).unwrap();
+    assert_eq!(count(&shown), 50);
+    for n in 2..=10 {
+        assert!(
+            block(
+                &serde_json::to_value(m.screen(&key).unwrap()).unwrap(),
+                "older"
+            )
+            .is_some()
+        );
+        assert_eq!(act(&s, &key, "older", &json!({})), (200, json!({})));
+        follow(&mut events, &mut m, &key, |v| count(v) == 50 * n);
+    }
+    let shown = serde_json::to_value(m.screen(&key).unwrap()).unwrap();
+    assert!(block(&shown, "older").is_none(), "500 is the widest");
+    assert!(block(&shown, "m101").is_some() && block(&shown, "m100").is_none());
+    assert_eq!(act(&s, &key, "older", &json!({})).0, 200);
+    assert_eq!(count(&s.cooee.json(&key)), 50, "GET stays the newest 50");
+}

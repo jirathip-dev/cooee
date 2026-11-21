@@ -67,7 +67,7 @@ pub(super) fn source(path: &str, who: &Who) -> Option<Source> {
         let (claim, devices) = (claim.clone(), Devices::new(data));
         Source {
             wake: Wake::Every(Duration::from_secs(1)),
-            build: Box::new(move |_| {
+            build: Box::new(move |_, _| {
                 let peek = devices.peek(&claim, now()).map_err(crate::http::refused)?;
                 Ok(screen(&Caller::Asking(peek), now()))
             }),

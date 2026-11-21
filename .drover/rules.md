@@ -1,5 +1,4 @@
 # cooee rules (impl and rev briefs carry these; each names its enforcer)
-
 - Don't comment Rust or Swift code (tests included) except `///` (Rust crate-root or `pub mod` `//!`) on public API, `// SAFETY:` above a forced or unsafe operation and `// TODO(#N)` on an open issue (enforced by: scripts/comments.py (ci/gates/comments.sh), anti-slop no-comments, apple-check TODO step)
 - Don't leave Swift imports unsorted or unused (enforced by: anti-slop sorted-imports, swiftlint analyze unused_import (nightly, not the PR))
 - Don't import across Swift layers (Core → API → Features → UI → App) beyond apple/Package.swift's table (enforced by: anti-slop layer-imports)
@@ -24,3 +23,8 @@
 - Don't sleep or read the clock outside crates/cooee-core/src/clock.rs, or the environment outside crates/cooee-core/src/config.rs (`env_var`) (enforced by: CI arch-check `thread::sleep`, `SystemTime::now`, `Instant::now`, `env::var` bans (ci/drover-checks-test.sh))
 - Don't `print(`, use `DispatchQueue` (but Nearby.swift's Network browser), `UserDefaults.standard` outside CooeeApp/Live.swift's client values, `Task.sleep` instead of a clock dependency, `T!`, or `fatalError` without a `// SAFETY:` line right above it in Swift (enforced by: apple/.swiftlint.yml (ci/swift-bans-test.sh in apple-check))
 - Don't keep a test that would catch no real regression (the areas that must have them: pairing and device trust, approvals and secrets, the hub's message keeping, routines firing once, the MCP proxy's allowlist, layout last-good, plugin isolation): no tests of copy, wording, constants or configuration, no mock that returns what it was told, and extend an area's test file before adding one (enforced by: review (a tautological test is a blocking rev finding))
+- Don't add provider facts (login, status, logout or usage commands, limits, resets, token var, config dir, adapter): they are shed-catalog data (enforced by: CI arch-check `logout` ban (.drover/arch/boundaries.toml))
+- Don't store credentials, tokens, secrets or account folders: shed owns them (enforced by: CI arch-check `generic-password` ban (.drover/arch/boundaries.toml))
+- Don't run VMs or containers, or self-update: shed owns machines and installs (enforced by: CI arch-check `docker` and `releases/` bans (.drover/arch/boundaries.toml))
+- Don't write a shed protocol client: use shed-client (enforced by: CI arch-check `UnixStream` ban (.drover/arch/boundaries.toml))
+- Don't put workflow logic (issues, queues, lanes, reviews, merges) in cooee: drover owns it, and cooee draws its screens (enforced by: review)
