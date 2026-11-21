@@ -1,5 +1,5 @@
 #!/bin/sh
-# scripts/comments.py on fixtures: /// on public API, a crate root's //!, // SAFETY:, // TODO(#N) and a // inside a
+# scripts/comments.py on fixtures: /// on public API, a crate root's //! (a test target's main.rs too), // SAFETY:, // TODO(#N) and a // inside a
 # string or regex pass, as does a /// on a #[macro_export] macro; a plain // comment, a /// on a private item, a /* */ block and a non-crate-root //! each fail.
 set -eu
 here=$(cd "$(dirname "$0")/.." && pwd)
@@ -14,9 +14,10 @@ fails() {
 printf '/// A.\npub fn a() {\n    // SAFETY: b is set above.\n    let u = "http://x";\n}\n// TODO(#201) one rule.\n/// M.\n#[macro_export]\nmacro_rules! m { () => {} }\n' > "$t/ok.rs"
 printf '/// A.\npublic enum A {\n    /// B.\n    case b\n}\n' > "$t/ok.swift"
 printf '/** A. */\nexport const a = "//";\nconst r = /\\/\\//;\n' > "$t/ok.ts"
-mkdir -p "$t/src"
+mkdir -p "$t/src" "$t/tests/chat"
 printf '//! The crate.\npub fn a() {}\n' > "$t/src/lib.rs"
-check "$t/ok.rs" "$t/ok.swift" "$t/ok.ts" "$t/src/lib.rs" || { cat "$t/out"; exit 1; }
+printf '//! The test target.\nmod turns;\n' > "$t/tests/chat/main.rs"
+check "$t/ok.rs" "$t/ok.swift" "$t/ok.ts" "$t/src/lib.rs" "$t/tests/chat/main.rs" || { cat "$t/out"; exit 1; }
 fails plain.rs 'pub fn a() {}\n// says why\n'
 fails private.rs '/// A.\nfn a() {}\n'
 fails macro.rs '/// M.\nmacro_rules! m { () => {} }\n'
