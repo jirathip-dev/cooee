@@ -17,7 +17,7 @@ flags, drop the footer. Title just 'Workflow'; repo chips from the live fleets, 
   **architecture** (`state "building" as impl`), so the ids and taps stay herdsman's.
 - **The footer is dropped.** So is the `fix · 2` screen's footer.
 - **Title.** The sheet and the block are just **Workflow**. The Queue `⋯` row is **Workflow…** (R0: "Workflow map…").
-- **Repo chips** come from the live fleets in #184's Fleets list (all, synergy, cooee, herdsman, berth, sendmeter).
+- **Repo chips** come from the live fleets in #184's Fleets list (all, acme, cooee, herdsman, berth, sendmeter).
   drover's own repo is never a chip.
 
 **The map is a #125 block.** Each frame is a fixture (`fixtures/*.json`) in the shape drover would send. screens-as-data's

@@ -1,4 +1,4 @@
-# #329: synergy's model. `scope` (scripts/ci-scope.sh) picks the legs: a pull request push runs the Linux legs; the
+# #329: a client-built app's model. `scope` (scripts/ci-scope.sh) picks the legs: a pull request push runs the Linux legs; the
 # macOS legs run on the merge-ready run (herdsman's merge_label, on while a review PASS stands at the head), and only
 # when the change reaches the Apple surface. A skipped leg still reports its check, under the same name. A staging push
 # that a green merge-ready run already tested (same tree) runs nothing again (scripts/ci-reuse.sh); the nightly runs

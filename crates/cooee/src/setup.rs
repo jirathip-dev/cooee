@@ -7,13 +7,16 @@ use std::{
 };
 
 use cooee_core::{Config, SHED_MIN_PROTOCOL, Shed, ShedError, provider, shed_fix};
+use farrier_service::Files;
 
 use crate::{
     cli::load,
     devices::pair,
     doctor::doctor,
-    service::{job, plist, tailnet_name, write_plist},
+    service::{service, tailnet_name},
 };
+
+mod chief;
 
 /// `cooee setup`'s flags.
 pub struct Setup {
@@ -22,6 +25,8 @@ pub struct Setup {
     pub explicit: bool,
     pub dry_run: bool,
     pub yes: bool,
+    pub chief_agent: Option<String>,
+    pub chief_machine: Option<String>,
 }
 
 pub(crate) fn ok(argv: &[&str]) -> bool {
@@ -99,14 +104,14 @@ impl Setup {
 
     /// Every step, in order, then the pairing code.
     pub fn run(&self, path: &Path) -> Result<(), String> {
-        let uid = output(&["id", "-u"]).ok_or("`id -u` failed")?;
-        let gui = format!("gui/{}", uid.trim());
+        self.chief_flags(path)?;
         shed()?;
         let (config, changed) = self.config(path)?;
         self.themes(&config)?;
         self.agents(&config)?;
-        self.service(&config, path, &gui, changed, "serve")?;
-        self.service(&config, path, &gui, false, "update")?;
+        self.chief(&config, path)?;
+        self.service(&config, path, changed, "serve")?;
+        self.service(&config, path, false, "update")?;
         self.tailnet(config.port)?;
         if self.dry_run {
             cooee_core::say!("would run: cooee doctor, then cooee pair");
@@ -299,36 +304,41 @@ impl Setup {
         &self,
         config: &Config,
         path: &Path,
-        gui: &str,
         changed: bool,
         verb: &str,
     ) -> Result<(), String> {
-        let label = job(&self.instance, verb);
-        let (file, text) = plist(config, path, self.explicit, verb)?;
-        let same = fs::read_to_string(&file).is_ok_and(|t| t == text);
-        let loaded = ok(&["launchctl", "list", &label]);
-        if step(
-            &format!("cooee service {label}"),
-            same && loaded && !changed,
-        ) {
+        let service = service(config, self.explicit.then_some(path), verb)?;
+        let label = service.label().to_string();
+        let status = service.status().map_err(|e| e.to_string())?;
+        let same = status.files == Files::Same;
+        let up = status.loaded && status.refused.is_none();
+        if step(&format!("cooee service {label}"), same && up && !changed) {
             return Ok(());
         }
-        if !same {
-            self.write(&file, &text, || write_plist(config, &file, &text))?;
-        }
-        let target = format!("{gui}/{label}");
-        if loaded && same {
-            self.exec(&["launchctl", "kickstart", "-k", &target])?;
-        } else {
-            if loaded {
-                self.exec(&["launchctl", "bootout", &target])?;
+        let restart = same && up;
+        if self.dry_run {
+            if !same {
+                for (file, text) in service.files() {
+                    cooee_core::say!("  would write {}:\n{text}", file.display());
+                }
             }
-            self.exec(&["launchctl", "bootstrap", gui, &file.display().to_string()])?;
+            let commands = service.commands();
+            let line = if restart {
+                commands.restart
+            } else {
+                commands.load
+            };
+            cooee_core::say!("  would run: {line}");
+            return Ok(());
         }
+        let done = if restart {
+            service.restart().map(|()| "restarted".to_owned())
+        } else {
+            service.install().map(|i| i.to_string())
+        };
+        cooee_core::say!("  {label}: {}", done.map_err(|e| e.to_string())?);
         let addr = SocketAddr::from((Ipv4Addr::LOCALHOST, config.port));
-        if !self.dry_run {
-            wait(|| TcpStream::connect_timeout(&addr, Duration::from_secs(1)).is_ok());
-        }
+        wait(|| TcpStream::connect_timeout(&addr, Duration::from_secs(1)).is_ok());
         Ok(())
     }
 

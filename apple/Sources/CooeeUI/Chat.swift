@@ -24,7 +24,7 @@ public struct ChatView: View {
                     ChatHeader(
                         persona: persona, chips: chips, back: back, plugged: actions.topics == nil, actions: actions
                     )
-                    .overlay(alignment: .bottom) { if loading { LoadingBar().offset(y: 2) } }
+                    .overlay(alignment: .bottom) { if loading { SlowStrip().offset(y: 2) } }
                 }
                 if let topics = actions.topics { StripRow(topics: topics, chips: chips, wide: !back, actions: actions) }
                 Scroller(end: end, top: actions.older) {
@@ -35,7 +35,10 @@ public struct ChatView: View {
                             BigSprite(loading: loading)
                         }
                         ForEach(items) { item in
-                            ItemView(item: item, retry: { actions.retry(item.id) }, view: actions.view).equatable()
+                            ItemView(
+                                item: item, retry: { actions.retry(item.id) }, view: actions.view,
+                                restart: actions.restart
+                            ).equatable()
                                 .environment(\.act) { actions.answer(item.id, $0) }
                                 .disabled(actions.answering.contains(item.id))
                         }
@@ -49,17 +52,18 @@ public struct ChatView: View {
                 .environment(\.message, actions.message)
                 VStack(spacing: 8) {
                     if let waits = actions.waits { WaitsPill(name: persona.name, since: waits) }
-                    if working { WorkingPill(persona: persona, since: since, step: actions.step, stop: actions.stop) }
+                    if working { WorkingPill(persona: persona, since: since, step: actions.step, actions: actions) }
                     if let topics = actions.topics, topics.newing { FolderRow(actions: topics).padding(.bottom, 2) }
                     Composer(
                         hint: "Message \(actions.topics?.start?.title ?? persona.name)",
                         queued: queued,
                         draft: draft,
                         attachments: working && since == nil ? ["look-sheet.png"] : [],
-                        actions: actions
+                        actions: actions,
+                        rest: 26
                     )
                 }
-                .padding(.horizontal, 12).padding(.bottom, 26)
+                .padding(.horizontal, 12)
             }
             .overlayPreferenceValue(PressedChip.self) { anchor in
                 if let topics = actions.topics { TopicOverlays(topics: topics, anchor: anchor) }
@@ -163,7 +167,10 @@ internal struct ChatHeader: View {
                 }
                 sheet { FigureView(persona: persona, size: 38) }
                 VStack(alignment: .leading, spacing: 3) {
-                    sheet { Text(persona.name).ui(16, .semibold, look) }
+                    HStack(spacing: 6) {
+                        sheet { Text(persona.name).ui(16, .semibold, look) }
+                        if let sync = actions.sync { SyncBadge(sync: sync, asOf: actions.asOf) }
+                    }
                     HStack(spacing: 6) {
                         chip
                         if let machine = actions.machine {
@@ -181,8 +188,13 @@ internal struct ChatHeader: View {
                     Button(action: screen) { RoundButton(symbol: "display", ascii: "scr", size: 40) }
                         .buttonStyle(.plain).accessibilityLabel("Screen")
                 }
+                if let call = actions.voice.call {
+                    Button(action: call) { RoundButton(symbol: "phone.fill", ascii: "c", size: 40) }
+                        .buttonStyle(.plain).accessibilityLabel("Call")
+                }
                 more
             }
+            if let status = actions.status { LaneStatusRow(status: status, close: actions.close) }
             if plugged && (!chips.isEmpty || actions.workflow != nil) { plugins }
         }
         .padding(.horizontal, 14).padding(.vertical, 8)

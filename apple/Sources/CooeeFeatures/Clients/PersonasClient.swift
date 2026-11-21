@@ -9,6 +9,9 @@ public struct PersonasClient: Sendable {
     public var models: @Sendable (_ server: Server) async throws -> [ModelList]
     public var machines: @Sendable (_ server: Server) async throws -> [MachineRow]
     public var folders: @Sendable (_ server: Server, _ path: String?) async throws -> FolderListing
+    public var rules: @Sendable (_ server: Server, _ persona: String) async throws -> [Rule]
+    public var addRule: @Sendable (_ server: Server, _ persona: String, _ rule: NewRule) async throws -> Rule
+    public var removeRule: @Sendable (_ server: Server, _ persona: String, _ rule: String) async throws -> Void
 }
 
 extension PersonasClient: TestDependencyKey {

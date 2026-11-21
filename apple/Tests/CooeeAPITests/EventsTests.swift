@@ -46,9 +46,10 @@ internal struct EventsTests {
         }
     }
 
-    @Test internal func aServerErrorOrABadEventIsRetried() async throws {
+    @Test internal func aServerErrorABadEventOrNoNetworkIsRetriedAndSaysSoUntilItIsBack() async throws {
         let server = CannedServer([
             "/threads/a1b2/events": [
+                Answer(chunks: [], failure: URLError(.notConnectedToInternet)),
                 Answer(status: 503, chunks: []),
                 Answer(headers: sse, chunks: ["id: b.1\nevent: text\ndata: not json\n\n"]),
                 Answer(headers: sse, chunks: ["id: b.2\nevent: reset\ndata: {}\n\n"]),
@@ -56,8 +57,10 @@ internal struct EventsTests {
         ])
         var got: [StreamEvent] = []
         for try await event in server.client().events("a1b2", since: "b.0") { got.append(event) }
-        #expect(got == [.reset])
-        #expect(server.requests("/threads/a1b2/events").count == 3)
+        #expect(
+            got == [.sync(.offline), .sync(.reconnecting), .sync(.live), .sync(.reconnecting), .sync(.live), .reset])
+        let requests = server.requests("/threads/a1b2/events")
+        #expect(requests.count == 4 && requests[3].value(forHTTPHeaderField: "Last-Event-ID") == "b.1")
     }
 
     @Test internal func aCancelledStreamStops() async throws {
@@ -71,6 +74,21 @@ internal struct EventsTests {
         for _ in 0..<100_000 where server.requests("/threads/a1b2/events").isEmpty { await Task.yield() }
         reader.cancel()
         #expect(try await reader.value == 0)
+    }
+
+    @Test internal func homeHearsAChangeOnConnectOnEachChangedAndAfterAFailedAttempt() async {
+        let server = CannedServer([
+            "/home/events": [
+                Answer(chunks: [], failure: URLError(.notConnectedToInternet)),
+                Answer(headers: sse, chunks: ["event: changed\ndata: {}\n\n"]),
+            ]
+        ])
+        var heard = 0
+        for await _ in server.client().homeChanges() {
+            heard += 1
+            if server.requests("/home/events").count > 2 { break }
+        }
+        #expect(heard >= 2)
     }
 
     @Test internal func sseFramesFollowTheSpec() throws {

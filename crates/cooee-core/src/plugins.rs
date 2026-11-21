@@ -21,8 +21,11 @@ use crate::{Plugin, profiles::Profile};
 pub struct Manifest {
     /// Its name: lowercase letters, digits and `-`; its folder and lock entry.
     pub name: String,
-    /// Its version, as the owner sees it.
+    /// Its version, numbers and dots (`1.2.0`, a leading `v` allowed).
     pub version: String,
+    /// The oldest cooee it accepts (none: any).
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    pub min_cooee: String,
     /// Its PWA tabs (none: it has screens only).
     #[serde(default)]
     pub tabs: Vec<Tab>,
@@ -165,6 +168,32 @@ pub struct Locked {
     pub improving: Option<String>,
 }
 
+/// This cooee's version.
+pub const COOEE_VERSION: &str = env!("CARGO_PKG_VERSION");
+
+/// The oldest plugin version this cooee accepts.
+pub const MIN_PLUGIN: &str = "0.1.0";
+
+fn numbers(v: &str) -> Option<Vec<u64>> {
+    let mut n: Vec<u64> = v
+        .strip_prefix('v')
+        .unwrap_or(v)
+        .split('.')
+        .map(|part| {
+            let digits = part.split(|c: char| !c.is_ascii_digit()).next()?;
+            digits.parse().ok()
+        })
+        .collect::<Option<_>>()?;
+    while n.last() == Some(&0) {
+        n.pop();
+    }
+    Some(n)
+}
+
+fn older(a: &str, than: &str) -> bool {
+    numbers(a) < numbers(than)
+}
+
 /// The built-in index.
 pub const INDEX: &str = include_str!("../../../plugins/index.toml");
 
@@ -213,6 +242,13 @@ impl Manifest {
         for p in &mut m.places {
             if p.kind == PlaceKind::ChatCards && p.screen.is_empty() {
                 "/screens/cards".clone_into(&mut p.screen);
+            }
+        }
+        for (key, v) in [("version", &m.version), ("min_cooee", &m.min_cooee)] {
+            if numbers(v).is_none() && (key == "version" || !v.is_empty()) {
+                return Err(bad(format!(
+                    "cooee-plugin.toml: `{key}` must be numbers and dots, like 1.2.0"
+                )));
             }
         }
         let ok = |b: u8| b.is_ascii_lowercase() || b.is_ascii_digit() || b == b'-';
@@ -264,6 +300,36 @@ impl Manifest {
                 .map_err(|e| bad(format!("cooee-plugin.toml: {e}")))?;
         }
         Ok(m)
+    }
+
+    /// The cooee versions it accepts, as the owner reads them.
+    #[must_use]
+    pub fn accepts(&self) -> String {
+        if self.min_cooee.is_empty() {
+            "any cooee".to_owned()
+        } else {
+            format!("cooee {} or newer", self.min_cooee)
+        }
+    }
+
+    /// Whether it and this cooee accept each other.
+    ///
+    /// # Errors
+    /// One plain line naming the version needed, when either is too old for the other.
+    pub fn fits(&self) -> Result<(), String> {
+        if older(&self.version, MIN_PLUGIN) {
+            return Err(format!(
+                "{} {} is too old for cooee {COOEE_VERSION}: it needs {} {MIN_PLUGIN} or newer",
+                self.name, self.version, self.name
+            ));
+        }
+        if older(COOEE_VERSION, &self.min_cooee) {
+            return Err(format!(
+                "{} needs cooee {} or newer; this is cooee {COOEE_VERSION}",
+                self.name, self.min_cooee
+            ));
+        }
+        Ok(())
     }
 
     /// The port of its `attach` backend, when it names one.

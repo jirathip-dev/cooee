@@ -68,6 +68,7 @@ struct CooeeRuleTests {
         #expect(LayerImportsRule.module(of: "apple/Sources/CooeeAPI/Client.swift") == "CooeeAPI")
         #expect(LayerImportsRule.module(of: "apple/Tests/CooeeUITests/Shots.swift") == "CooeeUITests")
         #expect(LayerImportsRule.module(of: "apple/Cooee/CooeeApp.swift") == "Cooee")
+        #expect(LayerImportsRule.module(of: "apple/CooeeWidgets/Widgets.swift") == "CooeeWidgets")
         #expect(LayerImportsRule.module(of: "apple/UITests/LiveUITests.swift") == "UITests")
         #expect(LayerImportsRule.module(of: "apple/Package.swift") == nil)
     }

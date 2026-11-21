@@ -1,6 +1,6 @@
-use std::{io, sync::Mutex};
+use std::io;
 
-use cooee_core::{Body, Card, Change, Item, Plugin, agents, shed_proto::ApprovalOption};
+use cooee_core::{Body, Card, Change, Item, Plugin, Queued, agents, shed_proto::ApprovalOption};
 
 use super::{CHANGE, CardSpec, Hub, HubError, Live, lock, now};
 
@@ -20,6 +20,9 @@ impl Hub {
         value: Option<&str>,
         by: &str,
     ) -> Result<Option<Item>, HubError> {
+        if option == Item::SAY {
+            return self.deny_saying(id, item, value.unwrap_or_default(), by);
+        }
         let live = self.live(id)?;
         let (terminal, tapped) = {
             let mut l = lock(&live);
@@ -50,10 +53,15 @@ impl Hub {
             Body::Approval { card, .. }
                 if matches!(
                     card.form.as_deref(),
-                    Some("mcp" | "skill" | "memory" | "routine" | "secret" | "tool")
+                    Some("mcp" | "skill" | "memory" | "routine" | "secret" | "tool" | "change")
                 ) =>
             {
                 Ok(self.proposal_answer(id, item, option, value))
+            }
+            Body::Approval { card, .. }
+                if card.form.as_deref() == Some(super::fallback::FALLBACK) =>
+            {
+                Ok(super::fallback::waited(option))
             }
             Body::Approval { card, .. } if card.form.as_deref() == Some("persona") => {
                 Ok(self.persona_answer(id, item, option))
@@ -83,24 +91,45 @@ impl Hub {
         sent.map(|_| done)
     }
 
-    fn shed_approve(
+    fn deny_saying(
         &self,
-        live: &Mutex<Live>,
-        terminal: &str,
-        tapped: Item,
-        option: &str,
+        id: &str,
+        item: u64,
+        text: &str,
+        by: &str,
     ) -> Result<Option<Item>, HubError> {
-        if let Err(e) = self.shed.approve(terminal, option) {
-            let mut live = lock(live);
-            let untapped = live.chat.update(tapped.id, 0, |b| {
-                if let Body::Approval { tapped, .. } = b {
-                    *tapped = None;
+        let live = self.live(id)?;
+        let (terminal, tapped, reject) = {
+            let mut l = lock(&live);
+            let card = l.chat.items.iter().find(|i| i.id == item).cloned();
+            let reject = card.as_ref().and_then(Item::sayable).map(|o| o.id.clone());
+            let Some(reject) = reject.filter(|_| !text.trim().is_empty()) else {
+                return Err(HubError::Refused(
+                    "deny and say needs the agent's own approval and your text".to_owned(),
+                ));
+            };
+            let Some(tapped) = l.chat.tap(item, &reject, by, now()) else {
+                return Ok(card);
+            };
+            let said = l.chat.update(item, 0, |b| {
+                if let Body::Approval { card, .. } = b {
+                    card.said = Some(text.to_owned());
                 }
             });
-            live.publish(self, untapped.map(Change::Item).into_iter().collect())?;
-            return Err(e.into());
-        }
-        Ok(Some(tapped))
+            let tapped = said.unwrap_or(tapped);
+            l.publish(self, vec![Change::Item(tapped.clone())])?;
+            (l.meta.terminal.clone(), tapped, reject)
+        };
+        let denied = self.shed_approve(&live, &terminal, tapped, &reject)?;
+        let random_id = format!("deny-{item}");
+        let q = |l: &Live| {
+            Ok(Queued {
+                denied: Some(item),
+                ..self.take(l, text, &random_id, &[])?
+            })
+        };
+        self.enqueue(id, &random_id, q)?;
+        Ok(denied)
     }
 
     /// Plugin `plugin`'s card (#553 rows 30–33, 35): choices (the recommended one first), a config diff to apply
@@ -181,8 +210,8 @@ impl Hub {
                 form: c.form,
                 detail: c.detail,
                 sha: c.sha,
-                line: None,
                 until: answered.then_some(at + CHANGE),
+                ..Card::default()
             },
         };
         let item = live.chat.push(at, 0, body);
@@ -234,7 +263,7 @@ impl Hub {
         self.offers(&live.meta.agent, &live.meta.account, model)?;
         model.clone_into(&mut live.meta.model);
         effort.clone_into(&mut live.meta.effort);
-        self.store.save(&live.meta)?;
+        self.save(&live)?;
         let say = |what: &str, pick: &str| {
             format!("{what} {}", if pick.is_empty() { "default" } else { pick })
         };

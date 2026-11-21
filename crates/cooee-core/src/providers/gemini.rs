@@ -28,6 +28,10 @@ const OFFABLE: [(Builtin, &[&str]); 2] = [
 
 const SETTINGS: &str = "gemini-settings.json";
 
+const POLICY: &str = "ask-all.toml";
+
+const ASK_ALL: &str = "[[rule]]\ntoolName = \"*\"\ndecision = \"ask_user\"\npriority = 999\n";
+
 impl Provider for Gemini {
     fn spec(&self) -> &Spec {
         &self.0
@@ -40,15 +44,25 @@ impl Provider for Gemini {
                 core.extend(names);
             }
         }
-        let settings = json!({
+        let mut settings = json!({
             "tools": { "core": core },
             "skills": { "enabled": !want.off.contains(&Builtin::Skills) },
             "experimental": { "enableAgents": !want.off.contains(&Builtin::SubAgents) },
         });
+        let mut files = Vec::new();
+        if want.ask_all {
+            let security = json!({ "disableYoloMode": true, "disableAlwaysAllow": true });
+            if let Some(s) = settings.as_object_mut() {
+                s.insert("security".to_owned(), security);
+                s.insert("adminPolicyPaths".to_owned(), json!([want.run.join(POLICY)]));
+            }
+            files.push((POLICY.into(), ASK_ALL.to_owned()));
+        }
+        files.push((SETTINGS.into(), settings.to_string()));
         let path = want.run.join(SETTINGS).display().to_string();
         Setup {
             env: vec![("GEMINI_CLI_SYSTEM_SETTINGS_PATH".to_owned(), path)],
-            files: vec![(SETTINGS.into(), settings.to_string())],
+            files,
             gaps: vec![Gap::PersonalFiles],
             ..Setup::default()
         }

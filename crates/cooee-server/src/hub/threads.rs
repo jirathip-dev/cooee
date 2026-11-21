@@ -1,9 +1,9 @@
-use std::path::PathBuf;
+use std::{path::PathBuf, sync::atomic::Ordering};
 
-use cooee_core::{Kind, Summary, Thread, Turn, agents};
+use cooee_core::{Kind, Thread, Turn};
 use tokio::sync::broadcast;
 
-use super::{Hub, HubError, LAG, Out, Pending, Resume, Slice, glance, lock, now, rooms, waits};
+use super::{Hub, HubError, LAG, Out, Pending, REV, Resume, Slice, lock, now, waits};
 
 impl Hub {
     /// Renames the thread.
@@ -18,7 +18,7 @@ impl Hub {
         let live = self.live(id)?;
         let mut live = lock(&live);
         live.meta.title = title;
-        Ok(self.store.save(&live.meta)?)
+        Ok(self.save(&live)?)
     }
 
     /// Archives the thread (`on`) or restores it.
@@ -29,7 +29,7 @@ impl Hub {
         let live = self.live(id)?;
         let mut live = lock(&live);
         live.meta.archived = on;
-        Ok(self.store.save(&live.meta)?)
+        Ok(self.save(&live)?)
     }
 
     /// File `name` sent in thread `id`: its path, if it is one of that thread's.
@@ -66,15 +66,18 @@ impl Hub {
         Ok(self.shed.cancel(&terminal)?)
     }
 
-    /// Closes the thread: kills and removes its terminal. Its history stays.
+    /// Closes the thread: kills and removes its terminal, once. Its history stays; a Workflow session's is archived.
     ///
     /// # Errors
-    /// [`HubError::Shed`] when shed fails.
+    /// [`HubError::Refused`] for a live Workflow session a plugin claims; [`HubError::Shed`] when shed fails.
     pub fn close(&self, id: &str) -> Result<(), HubError> {
         let live = self.live(id)?;
         let terminal = {
             let l = lock(&live);
-            if l.meta.workflow.is_some() {
+            if l.meta.closed {
+                return Ok(());
+            }
+            if !self.closable(&l) {
                 return Err(HubError::Refused(
                     "the tool that started this session closes it".to_owned(),
                 ));
@@ -84,7 +87,8 @@ impl Hub {
         self.shed.close(&terminal)?;
         let mut live = lock(&live);
         live.meta.closed = true;
-        self.store.save(&live.meta)?;
+        live.meta.archived |= live.meta.workflow.is_some();
+        self.save(&live)?;
         if live.chat.turn.state != "ended" {
             let changes = live
                 .chat
@@ -105,62 +109,7 @@ impl Hub {
             return Ok(());
         }
         live.meta.read = Some(item);
-        Ok(self.store.save(&live.meta)?)
-    }
-
-    /// The thread list, newest first.
-    #[must_use]
-    pub fn list(&self) -> Vec<Summary> {
-        let personas = agents::list(self.config_dir(), &self.data);
-        let mut asks = Vec::new();
-        let mut rows: Vec<Summary> = self
-            .all()
-            .iter()
-            .filter_map(|live| {
-                let live = lock(live);
-                let g = live.unloaded.clone().unwrap_or_else(|| glance(&live));
-                if !live.meta.room.is_empty() {
-                    asks.extend(g.ask);
-                    return None;
-                }
-                let persona = personas.iter().find(|p| p.id == live.meta.profile);
-                Some(Summary {
-                    id: live.meta.id.clone(),
-                    title: live.meta.title.clone(),
-                    agent: live.meta.agent.clone(),
-                    account: live.meta.account.clone(),
-                    profile: live.meta.profile.clone(),
-                    persona: persona.map(|p| p.id.clone()).unwrap_or_default(),
-                    persona_name: persona.map(|p| p.name.clone()).unwrap_or_default(),
-                    persona_role: persona.map(|p| p.role).unwrap_or_default(),
-                    folder: live.meta.folder.clone().unwrap_or_default(),
-                    machine: live.meta.machine.clone(),
-                    state: live.chat.turn.state.clone(),
-                    last: rooms::said(&personas, &g.speaker, g.last),
-                    at: g.at,
-                    unread: g.unseen > 0,
-                    unseen: g.unseen,
-                    archived: live.meta.archived,
-                    setup: live.meta.setup,
-                    workflow: live.meta.workflow.clone(),
-                    routine: g.routine,
-                    members: rooms::seated(&live.meta),
-                    asked_by: live.meta.asked_by.clone(),
-                })
-            })
-            .collect();
-        for (room, persona, tool) in asks {
-            let Some(row) = rows.iter_mut().find(|r| r.id == room) else {
-                continue;
-            };
-            let name = personas.iter().find(|p| p.id == persona);
-            let name = name.map_or(persona.as_str(), |p| p.name.as_str());
-            row.last = format!("{name}: {tool} waiting");
-            row.unseen += 1;
-            row.unread = true;
-        }
-        rows.sort_by_key(|r| std::cmp::Reverse(r.at));
-        rows
+        Ok(self.save(&live)?)
     }
 
     /// The thread's meta.
@@ -197,7 +146,7 @@ impl Hub {
             skipped_before: from,
             skipped_after: items.len() - to.max(from),
             turn: live.chat.turn.clone(),
-            cursor: format!("{}.{}", self.boot, live.seq),
+            cursor: format!("{}.{}", self.boot, REV.load(Ordering::Relaxed)),
             pending: live.pending.clone().map(|text| Pending {
                 text,
                 random_id: live.meta.random_id.clone(),
@@ -208,7 +157,7 @@ impl Hub {
         })
     }
 
-    /// Subscribes to thread `id`'s page events after `cursor` (`<boot>.<seq>`), in one step under the thread's
+    /// Subscribes to thread `id`'s page events after `cursor` (`<boot>.<rev>`), in one step under the thread's
     /// lock, so nothing is missed or doubled.
     ///
     /// # Errors
@@ -220,17 +169,17 @@ impl Hub {
     ) -> Result<(Resume, broadcast::Receiver<Out>), HubError> {
         let live = self.live(id)?;
         let mut live = lock(&live);
-        let seq = cursor
+        let rev = cursor
             .strip_prefix(&self.boot)
             .and_then(|s| s.strip_prefix('.'))
             .and_then(|s| s.parse::<u64>().ok())
-            .filter(|s| *s <= live.seq);
-        let first = live.ring.front().map_or(live.seq + 1, |(_, o)| o.seq);
-        let resume = match seq {
+            .filter(|s| *s <= REV.load(Ordering::Relaxed));
+        let first = live.trimmed + 1;
+        let resume = match rev {
             Some(s) if s + 1 >= first => Resume::Replay(
                 live.ring
                     .iter()
-                    .filter(|(_, o)| o.seq > s)
+                    .filter(|(_, o)| o.rev > s)
                     .map(|(_, o)| o.clone())
                     .collect(),
             ),
@@ -243,6 +192,6 @@ impl Hub {
     /// The SSE id of a page event.
     #[must_use]
     pub fn event_id(&self, out: &Out) -> String {
-        format!("{}.{}", self.boot, out.seq)
+        format!("{}.{}", self.boot, out.rev)
     }
 }

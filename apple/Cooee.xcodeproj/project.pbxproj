@@ -9,6 +9,8 @@
 /* Begin PBXBuildFile section */
 		C0EE00000000000000000101 /* CooeeUI in Frameworks */ = {isa = PBXBuildFile; productRef = C0EE00000000000000000401 /* CooeeUI */; };
 		C0EE00000000000000000102 /* CooeeApp in Frameworks */ = {isa = PBXBuildFile; productRef = C0EE00000000000000000403 /* CooeeApp */; };
+		C0EE00000000000000000103 /* CooeeUI in Frameworks */ = {isa = PBXBuildFile; productRef = C0EE00000000000000000404 /* CooeeUI */; };
+		C0EE00000000000000000104 /* CooeeWidgets.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = C0EE00000000000000000203 /* CooeeWidgets.appex */; platformFilter = ios; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -19,16 +21,38 @@
 			remoteGlobalIDString = C0EE00000000000000000701;
 			remoteInfo = Cooee;
 		};
+		C0EE00000000000000000C02 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = C0EE00000000000000000001 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = C0EE00000000000000000703;
+			remoteInfo = CooeeWidgets;
+		};
 /* End PBXContainerItemProxy section */
+/* Begin PBXCopyFilesBuildPhase section */
+		C0EE00000000000000000D01 /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				C0EE00000000000000000104 /* CooeeWidgets.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		C0EE00000000000000000201 /* Cooee.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Cooee.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		C0EE00000000000000000202 /* CooeeAppUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = CooeeAppUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		C0EE00000000000000000203 /* CooeeWidgets.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = CooeeWidgets.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		C0EE00000000000000000301 /* Cooee */ = {isa = PBXFileSystemSynchronizedRootGroup; path = Cooee; sourceTree = "<group>"; };
 		C0EE00000000000000000302 /* UITests */ = {isa = PBXFileSystemSynchronizedRootGroup; path = UITests; sourceTree = "<group>"; };
+		C0EE00000000000000000303 /* CooeeWidgets */ = {isa = PBXFileSystemSynchronizedRootGroup; path = CooeeWidgets; sourceTree = "<group>"; };
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -48,6 +72,14 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		C0EE00000000000000000503 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				C0EE00000000000000000103 /* CooeeUI in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -56,6 +88,7 @@
 			children = (
 				C0EE00000000000000000301 /* Cooee */,
 				C0EE00000000000000000302 /* UITests */,
+				C0EE00000000000000000303 /* CooeeWidgets */,
 				C0EE00000000000000000602 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -65,6 +98,7 @@
 			children = (
 				C0EE00000000000000000201 /* Cooee.app */,
 				C0EE00000000000000000202 /* CooeeAppUITests.xctest */,
+				C0EE00000000000000000203 /* CooeeWidgets.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -79,10 +113,12 @@
 				C0EE00000000000000000801 /* Sources */,
 				C0EE00000000000000000501 /* Frameworks */,
 				C0EE00000000000000000802 /* Resources */,
+				C0EE00000000000000000D01 /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				C0EE00000000000000000B02 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				C0EE00000000000000000301 /* Cooee */,
@@ -117,6 +153,29 @@
 			productReference = C0EE00000000000000000202 /* CooeeAppUITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
 		};
+		C0EE00000000000000000703 /* CooeeWidgets */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = C0EE00000000000000000904 /* Build configuration list for PBXNativeTarget "CooeeWidgets" */;
+			buildPhases = (
+				C0EE00000000000000000805 /* Sources */,
+				C0EE00000000000000000503 /* Frameworks */,
+				C0EE00000000000000000806 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				C0EE00000000000000000303 /* CooeeWidgets */,
+			);
+			name = CooeeWidgets;
+			packageProductDependencies = (
+				C0EE00000000000000000404 /* CooeeUI */,
+			);
+			productName = CooeeWidgets;
+			productReference = C0EE00000000000000000203 /* CooeeWidgets.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -133,6 +192,9 @@
 					C0EE00000000000000000702 = {
 						CreatedOnToolsVersion = 26.0;
 						TestTargetID = C0EE00000000000000000701;
+					};
+					C0EE00000000000000000703 = {
+						CreatedOnToolsVersion = 26.0;
 					};
 				};
 			};
@@ -155,6 +217,7 @@
 			targets = (
 				C0EE00000000000000000701 /* Cooee */,
 				C0EE00000000000000000702 /* CooeeAppUITests */,
+				C0EE00000000000000000703 /* CooeeWidgets */,
 			);
 		};
 /* End PBXProject section */
@@ -168,6 +231,13 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		C0EE00000000000000000804 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		C0EE00000000000000000806 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -191,6 +261,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		C0EE00000000000000000805 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -198,6 +275,12 @@
 			isa = PBXTargetDependency;
 			target = C0EE00000000000000000701 /* Cooee */;
 			targetProxy = C0EE00000000000000000C01 /* PBXContainerItemProxy */;
+		};
+		C0EE00000000000000000B02 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			platformFilter = ios;
+			target = C0EE00000000000000000703 /* CooeeWidgets */;
+			targetProxy = C0EE00000000000000000C02 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -252,7 +335,10 @@
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "$(inherited) @executable_path/../Frameworks";
 				INFOPLIST_KEY_CFBundleDisplayName = cooee;
 				INFOPLIST_KEY_NSCameraUsageDescription = "Scan the QR code your cooee server shows, to pair.";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Dictate messages, record voice notes and talk on calls with your personas.";
+				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "Turn what you say into text on this device, for dictation and calls.";
 				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "Find cooee servers on this network.";
+				"INFOPLIST_KEY_NSSupportsLiveActivities[sdk=iphone*]" = YES;
 				INFOPLIST_KEY_NSBonjourServices = "_cooee._tcp";
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
@@ -289,7 +375,10 @@
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "$(inherited) @executable_path/../Frameworks";
 				INFOPLIST_KEY_CFBundleDisplayName = cooee;
 				INFOPLIST_KEY_NSCameraUsageDescription = "Scan the QR code your cooee server shows, to pair.";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Dictate messages, record voice notes and talk on calls with your personas.";
+				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "Turn what you say into text on this device, for dictation and calls.";
 				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "Find cooee servers on this network.";
+				"INFOPLIST_KEY_NSSupportsLiveActivities[sdk=iphone*]" = YES;
 				INFOPLIST_KEY_NSBonjourServices = "_cooee._tcp";
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
@@ -346,6 +435,56 @@
 			};
 			name = Release;
 		};
+		C0EE00000000000000000A07 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = CooeeWidgets.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "CooeeWidgets-Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = cooee;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @executable_path/../../Frameworks";
+				MARKETING_VERSION = 0.1;
+				PRODUCT_BUNDLE_IDENTIFIER = com.jirathip.cooee.widgets;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_STRICT_CONCURRENCY = complete;
+				SWIFT_TREAT_WARNINGS_AS_ERRORS = YES;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		C0EE00000000000000000A08 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = CooeeWidgets.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "CooeeWidgets-Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = cooee;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @executable_path/../../Frameworks";
+				MARKETING_VERSION = 0.1;
+				PRODUCT_BUNDLE_IDENTIFIER = com.jirathip.cooee.widgets;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_STRICT_CONCURRENCY = complete;
+				SWIFT_TREAT_WARNINGS_AS_ERRORS = YES;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -376,6 +515,15 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
+		C0EE00000000000000000904 /* Build configuration list for PBXNativeTarget "CooeeWidgets" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				C0EE00000000000000000A07 /* Debug */,
+				C0EE00000000000000000A08 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 /* End XCConfigurationList section */
 
 /* Begin XCLocalSwiftPackageReference section */
@@ -393,6 +541,10 @@
 		C0EE00000000000000000403 /* CooeeApp */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = CooeeApp;
+		};
+		C0EE00000000000000000404 /* CooeeUI */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = CooeeUI;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

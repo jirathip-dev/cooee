@@ -197,10 +197,22 @@ fn a_day_old_list_is_asked_again() {
 }
 
 #[test]
-fn the_agent_list_carries_each_agents_efforts() {
+fn the_agent_list_carries_each_agents_efforts_and_gaps() {
     let (_shed, cooee, _dir) = setup("model-agents");
+    let mut row = cooee.json("/agents");
+    let gaps = row[0].as_object_mut().unwrap().remove("gaps").unwrap();
     assert_eq!(
-        cooee.json("/agents"),
+        row,
         json!([{ "id": "fake-acp", "efforts": ["low", "high"] }])
     );
+    let kinds: Vec<&Value> = gaps
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|g| &g["kind"])
+        .collect();
+    let all = ["read", "edit", "run", "search", "fetch", "tool", "other"].map(|k| json!(k));
+    assert_eq!(kinds[0], &Value::Null, "{gaps}");
+    assert_eq!(&kinds[1..], all.iter().collect::<Vec<_>>(), "{gaps}");
+    assert_eq!(gaps[3]["words"], "It doesn't ask before it runs a command.");
 }

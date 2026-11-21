@@ -1,6 +1,9 @@
 use std::{path::PathBuf, sync::Arc};
 
-use cooee_core::{Config, agents::Agent};
+use cooee_core::{
+    Config,
+    agents::{Agent, Seat},
+};
 use serde::Deserialize;
 use topcoat::{
     Result,
@@ -10,7 +13,7 @@ use topcoat::{
 
 use crate::{
     HubError,
-    http::{Answer, Data, hub, logins, profiles, recipe, thread_id},
+    http::{Answer, Data, hub, logins, profiles, recipe, seated, thread_id},
     machine,
 };
 
@@ -29,7 +32,7 @@ async fn attach(cx: &Cx, Json(a): Json<Attach>) -> Result<Answer<cooee_core::Ite
         let list = profiles(&hub, (&data, config.as_deref()));
         let (_, _, recipe) = recipe(
             &logins,
-            (&data, config.as_deref(), &list),
+            (&data, config.as_deref(), &list, &hub.mcp()?),
             (&t.agent, Some(&t.account), &t.profile),
             PathBuf::new(),
             ((t.model, t.effort), t.setup),
@@ -72,7 +75,7 @@ async fn move_thread(cx: &Cx, Json(m): Json<Move>) -> Result<Answer<cooee_core::
         let list = profiles(&hub, (&data, dir.as_deref()));
         let (_, _, recipe) = recipe(
             &logins,
-            (&data, dir.as_deref(), &list),
+            (&data, dir.as_deref(), &list, &hub.mcp()?),
             (&t.agent, Some(&t.account), &t.profile),
             PathBuf::new(),
             ((t.model, t.effort), t.setup),
@@ -99,19 +102,11 @@ async fn switch(cx: &Cx, Json(s): Json<Switch>) -> Result<Answer<cooee_core::Ite
         if !known.iter().any(|a| a.id == s.agent) {
             return Err(HubError::Refused(format!("no agent {}", s.agent)));
         }
-        let (t, _) = hub.thread(&id)?;
-        let mut list = profiles(&hub, (&data, dir.as_deref()));
-        for p in list.iter_mut().filter(|p| p.id == t.profile) {
-            s.agent.clone_into(&mut p.agent);
-            (p.account, p.model, p.effort) = (None, String::new(), String::new());
-        }
-        let (_, _, recipe) = recipe(
-            &logins,
-            (&data, dir.as_deref(), &list),
-            (&s.agent, None, &t.profile),
-            PathBuf::new(),
-            (Default::default(), t.setup),
-        )?;
+        let seat = Seat {
+            agent: s.agent.clone(),
+            account: None,
+        };
+        let recipe = seated(&hub, &logins, (&data, dir.as_deref()), &id, &seat)?;
         hub.switch(&id, &s.agent, &recipe)
     });
     Ok(Answer(

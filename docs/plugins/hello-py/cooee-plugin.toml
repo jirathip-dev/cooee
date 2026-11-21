@@ -1,6 +1,7 @@
 # The example plugin with a screen (screens-as-data, #125): no frontend code, only JSON the app draws.
 name = "hello"
 version = "0.1.0"
+min_cooee = "0.1.0"
 build = "python3 -m py_compile hello.py"
 run = "TOKEN=$COOEE_PLUGIN_TOKEN exec python3 hello.py"
 needs = ["python3"]

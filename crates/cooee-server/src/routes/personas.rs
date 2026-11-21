@@ -1,8 +1,10 @@
 use std::{collections::BTreeMap, sync::Arc};
 
 use cooee_core::{
+    action::Kind,
     agents::{self, Agent},
     memory,
+    provider::Gap,
 };
 use cooee_machines::Machines;
 use serde::Serialize;
@@ -29,6 +31,26 @@ struct ModelList {
 struct AgentRow {
     id: String,
     efforts: Vec<String>,
+    gaps: Vec<GapRow>,
+}
+
+#[derive(Serialize)]
+struct GapRow {
+    kind: Option<Kind>,
+    words: String,
+}
+
+impl From<Gap> for GapRow {
+    fn from(g: Gap) -> Self {
+        let kind = match g {
+            Gap::AsksNot(k) => Some(k),
+            Gap::PersonalFiles | Gap::StillOn(_) => None,
+        };
+        Self {
+            kind,
+            words: g.words(),
+        }
+    }
 }
 
 #[route(GET "/agents")]
@@ -37,6 +59,7 @@ async fn agent_list(cx: &Cx) -> Result<Answer<Vec<AgentRow>>> {
     let rows = hub(cx).agents().map_err(refused).map(|agents| {
         let rows = agents.into_iter().map(|a| AgentRow {
             efforts: logins.efforts(&a.id),
+            gaps: logins.gaps(&a.id).into_iter().map(GapRow::from).collect(),
             id: a.id,
         });
         rows.collect()
@@ -58,7 +81,8 @@ async fn model_list(cx: &Cx) -> Result<Answer<Vec<ModelList>>> {
 
 #[route(GET "/personas")]
 async fn persona_list(cx: &Cx) -> Result<Answer<Vec<Agent>>> {
-    on_personas(cx, |d, c| Ok(agents::list(Some(c), d))).await
+    let hub = hub(cx);
+    on_personas(cx, move |_, _| Ok(hub.personas().to_vec())).await
 }
 
 #[route(POST "/personas")]

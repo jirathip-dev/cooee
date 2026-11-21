@@ -189,6 +189,7 @@ extension AppFeatureTests {
     private func polling(_ answers: [Int]) -> (TestStoreOf<AppFeature>, TestClock<Duration>) {
         let (store, clock, queue) = (store(paired()), TestClock(), Queue(answers))
         store.dependencies.continuousClock = clock
+        store.dependencies.threads.changes = { _ in AsyncStream { $0.yield() } }
         store.dependencies.threads.home = { _ in
             if let status = queue.next() { throw APIError(status: status, text: "") }
             return HomeAnswer(screen: homeScreen, threads: [row("n1")], personas: [coder])
@@ -239,5 +240,29 @@ extension AppFeatureTests {
         await clock.advance(by: .seconds(1))
         await store.receive(\.keychainSilent) { $0.notice = AppFeature.keychainSilent }
         #expect(store.state.home == nil && store.state.pairing == nil)
+    }
+}
+
+extension AppFeatureTests {
+    @Test internal func homeAndTheOpenChatReloadWhenTheAppComesBackAfterThirtySecondsAway() async {
+        let store = store(paired())
+        let fresh = Slice(
+            items: [APIItem(id: 9, time: 9, kind: "agent", text: "Missed")], turn: Turn(), cursor: "", queue: [])
+        store.dependencies.threads.messages = { _, _ in fresh }
+        await store.send(.open("t1")) {
+            $0.path = ["t1"]
+            $0.chat = ChatFeature.State(server: mini, target: .thread("t1"), persona: Persona(coder, state: .working))
+            $0.home?.opened["coder"] = "t1"
+        }
+        await store.send(.scene(active: false)) { $0.away = epoch }
+        store.dependencies.date.now = epoch.addingTimeInterval(29)
+        await store.send(.scene(active: true)) { $0.away = nil }
+        await store.send(.scene(active: false)) { $0.away = epoch.addingTimeInterval(29) }
+        store.dependencies.date.now = epoch.addingTimeInterval(59)
+        store.exhaustivity = .off
+        await store.send(.scene(active: true)) { $0.away = nil }
+        await store.finish()
+        await store.skipReceivedActions()
+        #expect(store.state.home?.rows == [row("n1")] && store.state.chat?.items == fresh.items)
     }
 }

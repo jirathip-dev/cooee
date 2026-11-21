@@ -6,7 +6,7 @@ import Foundation
 public struct MenuFeature: Sendable {
     /// The device-local pages the app draws, never the server: the `settings` component's and the terminal.
     public enum Page: String, CaseIterable, Hashable, Sendable {
-        case look, notifications, appIcon, terminal, themeEditor
+        case look, notifications, appIcon, terminal, themeEditor, connectors
     }
 
     @ObservableState
@@ -19,6 +19,7 @@ public struct MenuFeature: Sendable {
         public var screen: JSONValue?
         @Presents public var page: ScreenFeature.State?
         public var editor: ThemeEditorFeature.State?
+        public var connectors: ConnectorsFeature.State?
         public var saved: String?
         public var busy = false
         public var error: String?
@@ -39,6 +40,7 @@ public struct MenuFeature: Sendable {
         case page(PresentationAction<ScreenFeature.Action>)
         case edit(String?)
         case editor(ThemeEditorFeature.Action)
+        case connectors(ConnectorsFeature.Action)
         case path([Page])
         case load
         case looks(Looks)
@@ -48,6 +50,7 @@ public struct MenuFeature: Sendable {
         case theme(String)
         case icon(AppIcon?)
         case motion(Bool)
+        case night(Bool)
         case sprite(String, String?)
         case pinRoom(String)
         case push(Bool)
@@ -70,9 +73,15 @@ public struct MenuFeature: Sendable {
             case .open, .loaded, .show, .page, .edit, .editor:
                 return navigate(&state, action)
             case .path(let path):
-                let opened = path.last == .look && !state.path.contains(.look)
+                let opened = path.last.flatMap { state.path.contains($0) ? nil : $0 }
                 state.path = path
-                return opened ? load(state) : .none
+                if opened == .connectors, let server = state.server {
+                    state.connectors = ConnectorsFeature.State(server: server)
+                    return .send(.connectors(.task))
+                }
+                return opened == .look ? load(state) : .none
+            case .connectors:
+                return .none
             case .load:
                 return load(state)
             case .style, .looks:
@@ -81,6 +90,8 @@ public struct MenuFeature: Sendable {
                 return look(&state) { $0.icon = icon }
             case .motion(let motion):
                 return look(&state) { $0.motion = motion }
+            case .night(let night):
+                return look(&state) { $0.night = night }
             case .sprite(let seed, let coat):
                 return look(&state) { [theme = state.settings.theme] in $0.sprite(seed, coat, in: theme) }
             case .push(let enabled):
@@ -92,6 +103,7 @@ public struct MenuFeature: Sendable {
         }
         .ifLet(\.$page, action: \.page) { ScreenFeature() }
         .ifLet(\.editor, action: \.editor) { ThemeEditorFeature() }
+        .ifLet(\.connectors, action: \.connectors) { ConnectorsFeature() }
         .keepsLeftScreens { $0.page.map { [$0] } ?? [] }
     }
 
@@ -148,7 +160,9 @@ public struct MenuFeature: Sendable {
         }
         settingsStore.save(state.settings)
     }
+}
 
+extension MenuFeature {
     private func pushed(_ state: inout State, _ action: Action) {
         state.busy = false
         switch action {
@@ -162,9 +176,7 @@ public struct MenuFeature: Sendable {
             break
         }
     }
-}
 
-extension MenuFeature {
     private func editing(_ state: inout State, _ action: Action) -> Effect<Action> {
         switch action {
         case .edit(let pack):

@@ -12,6 +12,7 @@ private let looks = try! served(
             #"""
             {"themes": {
               "farm": {"label": "farm", "scheme": {"dark": "farm", "light": "farm-light"}, "sprites": true},
+              "bush": {"label": "bush", "scheme": {"dark": "farm", "light": "farm-light"}, "sprites": true},
               "tidepool": {"label": "Tidepool", "scheme": {"dark": "tp", "light": "tp-light"}, "sprites": true,
                            "style": "scene"}},
              "schemes": {
@@ -67,6 +68,8 @@ internal struct ThemeEditorFeatureTests {
         let copy = ThemeEditorFeature.State(server: mini, looks: looks, theme: "farm", style: "terminal", new: false)
         #expect(copy.name == "farm-copy" && copy.draft.label == "Farm copy" && copy.draft.style == "terminal")
         #expect(copy.art == nil && own.art?.absoluteString == "https://mini.local/look/tidepool/")
+        let bush = ThemeEditorFeature.State(server: mini, looks: looks, theme: "bush", style: "modern", new: false)
+        #expect(bush.name == "bush-copy" && bush.draft.label == "Bush copy")
         let new = ThemeEditorFeature.State(server: mini, looks: looks, theme: "farm", style: "modern", new: true)
         #expect(new.draft.from == "starter" && new.name == "new-theme" && new.art == nil)
         #expect(new.draft.dark["--a"] == "#f29b4b")

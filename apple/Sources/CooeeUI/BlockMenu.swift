@@ -51,6 +51,7 @@ internal struct MenuBlocks: View {
                         tint: row.string("tone") == "purple"
                             ? look.palette.purple : look.palette.tone(row.string("tone")),
                         value: values[row.string("id") ?? ""] ?? row.string("value") ?? "",
+                        warn: row["warn"]?.bool == true,
                         divider: index < rows.count - 1
                     )
                     .contentShape(.rect)

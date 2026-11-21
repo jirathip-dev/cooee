@@ -81,6 +81,35 @@ async fn apns_remove(cx: &Cx, Json(t): Json<Token>) -> Result<Response> {
 }
 
 #[derive(Deserialize)]
+struct ActivityToken {
+    token: String,
+    #[serde(default)]
+    activity: Option<String>,
+    #[serde(default)]
+    env: Option<cooee_core::ApnsEnv>,
+}
+
+#[route(POST "/push/activity")]
+async fn activity_add(cx: &Cx, Json(t): Json<ActivityToken>) -> Result<Response> {
+    let (hub, me) = (hub(cx), request_context::<Paired>(cx).0.id.clone());
+    let push = move || {
+        hub.push()
+            .register_activity(&me, &t.token, t.activity, t.env)
+    };
+    match tokio::task::spawn_blocking(push).await? {
+        Ok(()) => plain(200, "live activity on"),
+        Err(e) if e.kind() == io::ErrorKind::InvalidInput => plain(400, &e.to_string()),
+        Err(e) => plain(500, &e.to_string()),
+    }
+}
+
+#[route(GET "/glance")]
+async fn glance(cx: &Cx) -> Result<Response> {
+    let hub = hub(cx);
+    Json(tokio::task::spawn_blocking(move || hub.overview()).await?).into_response(cx)
+}
+
+#[derive(Deserialize)]
 struct Endpoint {
     endpoint: String,
 }
@@ -118,6 +147,7 @@ async fn push_test(cx: &Cx) -> Result<Response> {
         tag: "test".to_owned(),
         url: "/".to_owned(),
         item: 0,
+        say: false,
     };
     hub.push().send_to(Some(&me), &note);
     plain(200, "test alert sent")
@@ -129,6 +159,8 @@ pub(super) fn routes(b: RouterBuilder) -> RouterBuilder {
         .route(push_unsubscribe)
         .route(apns_add)
         .route(apns_remove)
+        .route(activity_add)
+        .route(glance)
         .route(push_endpoints)
         .route(push_reset)
         .route(push_test)

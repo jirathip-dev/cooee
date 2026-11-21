@@ -12,14 +12,14 @@ use super::{Agent, Launch, Listed, Record, Shed, ShedError, client::CALL};
 #[derive(Debug)]
 pub enum Streamed {
     /// An event.
-    Event(Event),
+    Event(Box<Event>),
     /// The events up to this seq are gone; resume after it.
     Reset(u64),
 }
 
 fn streamed(line: &str) -> Result<Streamed, serde_json::Error> {
     serde_json::from_str(line)
-        .map(Streamed::Event)
+        .map(|e| Streamed::Event(Box::new(e)))
         .or_else(|e| {
             let note: Request = serde_json::from_str(line)?;
             match (
@@ -87,12 +87,21 @@ impl Shed {
         })
     }
 
-    /// Answers the oldest permission request of ACP terminal `name` with `option` (`shed approve`).
+    /// Answers ACP terminal `name`'s permission request `request` (none: its oldest) with `option` (`shed approve`).
     ///
     /// # Errors
     /// [`ShedError`] when the call fails.
-    pub fn approve(&self, name: &str, option: &str) -> Result<(), ShedError> {
-        self.with(|conn| conn.input(name, &json!({ "approve": option })))
+    pub fn approve(
+        &self,
+        name: &str,
+        option: &str,
+        request: Option<&str>,
+    ) -> Result<(), ShedError> {
+        let line = match request.filter(|r| !r.is_empty()) {
+            Some(r) => json!({ "approve": option, "request": r }),
+            None => json!({ "approve": option }),
+        };
+        self.with(|conn| conn.input(name, &line))
     }
 
     /// Cancels ACP terminal `name`'s turn (`shed cancel`).
@@ -187,6 +196,9 @@ impl Shed {
                 detail: format!("{}: {e}", file.display()),
             })?;
             args.extend(["--mcp", path]);
+        }
+        if let Some(session) = &launch.resume {
+            args.extend(["--resume", session]);
         }
         let meta = launch.meta.as_ref().map(Value::to_string);
         if let Some(meta) = &meta {

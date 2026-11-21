@@ -104,6 +104,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "blocks"
+version = "0.1.0"
+source = "git+https://github.com/jirathip-dev/blocks?rev=d0882093e32c6d752910c459efa04a2a6beb5c3a#d0882093e32c6d752910c459efa04a2a6beb5c3a"
+dependencies = [
+ "schemars",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
 name = "bumpalo"
 version = "3.20.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -158,10 +168,12 @@ name = "cooee"
 version = "0.1.0"
 dependencies = [
  "base64 0.22.1",
+ "blocks",
  "cooee-core",
  "cooee-machines",
  "cooee-server",
  "cooee-terminal",
+ "farrier-service",
  "flate2",
  "p256",
  "qrcode",
@@ -175,6 +187,7 @@ name = "cooee-core"
 version = "0.1.0"
 dependencies = [
  "base64 0.22.1",
+ "blocks",
  "hkdf 0.13.0",
  "rusqlite",
  "ruzstd",
@@ -183,6 +196,7 @@ dependencies = [
  "serde_json",
  "sha2 0.11.1",
  "shed-proto",
+ "swag",
  "thiserror",
  "toml",
  "toml_edit",
@@ -202,6 +216,7 @@ version = "0.1.0"
 dependencies = [
  "aes-gcm",
  "base64 0.22.1",
+ "blocks",
  "cooee-core",
  "cooee-machines",
  "flate2",
@@ -212,6 +227,7 @@ dependencies = [
  "serde",
  "serde_json",
  "sha2 0.11.1",
+ "swag",
  "thiserror",
  "tokio",
  "topcoat",
@@ -495,6 +511,11 @@ name = "fallible-streaming-iterator"
 version = "0.1.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7360491ce676a36bf9bb3c56c1aa791658183a54d2744120f27285738d90465a"
+
+[[package]]
+name = "farrier-service"
+version = "0.1.0"
+source = "git+https://github.com/jirathip-dev/farrier?rev=877d016ab03caf4f97da176663a2e47c259f54e3#877d016ab03caf4f97da176663a2e47c259f54e3"
 
 [[package]]
 name = "fastrand"
@@ -1634,9 +1655,8 @@ dependencies = [
 [[package]]
 name = "shed-proto"
 version = "0.0.0"
-source = "git+https://github.com/jirathip-dev/shed?rev=4ac443dbbcb51227dc9df2fb55e2f0834d6a91eb#4ac443dbbcb51227dc9df2fb55e2f0834d6a91eb"
+source = "git+https://github.com/jirathip-dev/shed?rev=3672ee2fa3f77f71798d56446f7f90403b068dd1#3672ee2fa3f77f71798d56446f7f90403b068dd1"
 dependencies = [
- "schemars",
  "serde",
  "serde_json",
 ]
@@ -1722,6 +1742,11 @@ name = "subtle"
 version = "2.6.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "13c2bddecc57b384dee18652358fb23172facb8a2c51ccc10d74c157bdea3292"
+
+[[package]]
+name = "swag"
+version = "0.1.0"
+source = "git+https://github.com/jirathip-dev/swag?rev=bf9a2c6b5cb837db1e844e4746fe166cbaa06b91#bf9a2c6b5cb837db1e844e4746fe166cbaa06b91"
 
 [[package]]
 name = "syn"

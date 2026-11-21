@@ -37,6 +37,7 @@ internal struct PersonaFeatureTests {
                 return made
             }
             offers(&$0.personas)
+            $0.connectors.list = { _ in throw CancellationError() }
         }
     }
 

@@ -66,7 +66,7 @@ public struct Topics: Equatable, Sendable {
 }
 
 /// A persona's open topics and their summed unread, as `GET /screens/home` counts them (#516).
-public struct TopicCount: Sendable, Equatable {
+public struct TopicCount: Codable, Sendable, Equatable {
     public let topics: Int
     public let unread: Int
 

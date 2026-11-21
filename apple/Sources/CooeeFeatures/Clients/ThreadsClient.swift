@@ -22,12 +22,14 @@ public struct ThreadsClient: Sendable {
     public var input: @Sendable (_ server: Server, _ persona: String, _ input: BrowserInput) async throws -> Void
     public var live: @Sendable (_ server: Server, _ persona: String) -> AsyncThrowingStream<LiveEvent, any Error> =
         { _, _ in .finished() }
+    public var changes: @Sendable (_ server: Server) -> AsyncStream<Void> = { _ in .finished }
     public var events:
         @Sendable (_ server: Server, _ thread: String, _ since: String) -> AsyncThrowingStream<StreamEvent, any Error> =
             { _, _, _ in .finished() }
     public var send:
         @Sendable (_ server: Server, _ thread: String, _ text: String, _ files: [Attachment], _ queue: Bool)
             async throws -> Void
+    public var say: @Sendable (_ server: Server, _ thread: String, _ text: String, _ queue: Bool) async throws -> Void
     public var steer: @Sendable (_ server: Server, _ thread: String, _ randomID: String) async throws -> Void
     public var unqueue: @Sendable (_ server: Server, _ thread: String, _ randomID: String) async throws -> Void
     public var stop: @Sendable (_ server: Server, _ thread: String) async throws -> Void
@@ -38,15 +40,19 @@ public struct ThreadsClient: Sendable {
     public var answer:
         @Sendable (_ server: Server, _ thread: String, _ item: Int, _ option: String, _ value: String?) async throws
             -> Void
+    public var approve:
+        @Sendable (_ server: Server, _ thread: String, _ item: Int, _ value: String?) async throws -> Void
     public var start:
         @Sendable (_ server: Server, _ persona: APIPersona, _ machine: String, _ text: String, _ setup: Bool)
             async throws
             -> String
     public var move: @Sendable (_ server: Server, _ thread: String, _ machine: String) async throws -> Void
     public var retry: @Sendable (_ server: Server, _ thread: String) async throws -> Void
+    public var restart: @Sendable (_ server: Server, _ thread: String) async throws -> Void
     public var topics: @Sendable (_ server: Server, _ owner: TopicsOf) async throws -> [ThreadRow]
     public var retitle: @Sendable (_ server: Server, _ thread: String, _ title: String) async throws -> Void
     public var archive: @Sendable (_ server: Server, _ thread: String, _ archived: Bool) async throws -> Void
+    public var close: @Sendable (_ server: Server, _ thread: String) async throws -> Void
     public var room: @Sendable (_ server: Server, _ title: String, _ members: [String]) async throws -> String
     public var seat:
         @Sendable (_ server: Server, _ room: String, _ persona: String, _ place: Int?, _ remove: Bool) async throws

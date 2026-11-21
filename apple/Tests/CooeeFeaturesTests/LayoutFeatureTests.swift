@@ -51,7 +51,7 @@ internal struct LayoutFeatureTests {
         let drawn = layout(#"{"format":1,"root":{"type":"nav","slots":{"main":[\#(Self.mainHome)]}}}"#, etag: "e1")
         await store.send(.task)
         await store.receive(\.fetched) { $0.layout = drawn }
-        #expect(store.state.layout.resolved(for: .compact).slots["main"]?.map(\.id) == ["home", "pairing"])
+        #expect(store.state.layout.resolved(for: .compact).slots["main"]?.map(\.id) == ["home"])
         #expect(calls.all == ["save e1"])
     }
 
@@ -59,7 +59,7 @@ internal struct LayoutFeatureTests {
         let store = store { $0.layoutClient.fetch = { _, _ in Self.bad } }
         await store.send(.task)
         await store.receive(\.fetched) {
-            $0.broken = #"app can't read this layout: unknownType(path: "root", type: "float") · last good layout kept"#
+            $0.broken = #"app can't read this layout: root: not a nav · last good layout kept"#
         }
         #expect(store.state.layout == testLayout && calls.all.isEmpty)
     }
@@ -71,7 +71,8 @@ internal struct LayoutFeatureTests {
         let store = store { $0.layoutClient.fetch = { _, _ in answer } }
         await store.send(.task)
         await store.receive(\.fetched) {
-            $0.broken = #"app can't read this layout: locked(path: "root.slots.main[0]") · last good layout kept"#
+            $0.broken =
+                #"app can't read this layout: root.slots.main[0]: a locked screen can't be placed: "/screens/pairing" · last good layout kept"#
         }
         #expect(store.state.layout == testLayout && calls.all.isEmpty)
     }

@@ -1,7 +1,7 @@
 public struct APIItem: Codable, Sendable, Equatable, Identifiable {
     private enum CodingKeys: String, CodingKey {
-        case id, kind, text, files, title, status, tool, plugin, block, speaker, persona, name, thread, outcome, secs,
-            note, asked
+        case id, kind, text, files, title, action, status, tool, plugin, block, speaker, persona, name, thread, outcome,
+            secs, note, asked, via, out, line, entries
         case time = "at"
     }
 
@@ -11,6 +11,7 @@ public struct APIItem: Codable, Sendable, Equatable, Identifiable {
     public var text: String?
     public var files: [String]?
     public var title: String?
+    public var action: String?
     public var status: String?
     public var tool: String?
     public var plugin: String?
@@ -23,6 +24,12 @@ public struct APIItem: Codable, Sendable, Equatable, Identifiable {
     public var secs: Int?
     public var note: String?
     public var asked: Bool?
+    public var via: String?
+    public var out: Bool?
+    public var line: String?
+    public var entries: [JSONValue]?
+
+    public var voice: Bool { via == "voice" }
 
     public init(
         id: Int,

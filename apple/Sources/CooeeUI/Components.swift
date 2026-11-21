@@ -64,7 +64,7 @@ internal struct AgentChip: View {
                     .joined(separator: " "))
             Image(systemName: "chevron.down").font(.system(size: 8, weight: .bold))
         }
-        .ui(12, .regular, look).foregroundStyle(palette.mute).lineLimit(1).fixedSize()
+        .ui(12, .regular, look).foregroundStyle(palette.mute).lineLimit(1)
         .padding(.horizontal, 9).padding(.vertical, 4).chip(look, fill: palette.edge.opacity(0.35), edge: palette.edge)
     }
 }

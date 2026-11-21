@@ -48,7 +48,7 @@ type Item = { id: number; at: number; seq?: number } & (
   | { kind: "tool"; call: string; title: string; status: string; ended?: number }
   | { kind: "approval"; tool: string; options: { id: string; name: string; kind: string }[]; tapped?: string; chosen?: string; plugin?: string;
       by?: string; answered?: number; form?: "config" | "secret" | "thread"; detail?: string; line?: string; until?: number;
-      block: Card }  // #138: the #125 card block the native app draws (docs/plugins/screens.schema.json)
+      block: Card }  // #138: the card block the native app draws (blocks' schema/blocks.schema.json, #621)
   | { kind: "link"; text: string; thread: string; title: string; out?: boolean }
   | { kind: "ask"; persona: string; name: string; text: string; thread: string;  // #177: an ask_persona card
       outcome: "asking" | "replied" | "not_allowed" | "depth" | "timeout" | "offline"; secs: number; note?: string }

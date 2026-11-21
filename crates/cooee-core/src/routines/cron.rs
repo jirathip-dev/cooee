@@ -181,6 +181,23 @@ pub fn local(at: u64, offset_min: i32) -> String {
     format!("{y:04}-{mo:02}-{d:02} {:02}:{:02}", t / 60, t % 60)
 }
 
+/// Local `YYYY-MM-DD HH:MM` in UTC offset `offset_min` as Unix ms, the inverse of [`local`]; none when it isn't one.
+#[must_use]
+pub fn parse_local(text: &str, offset_min: i32) -> Option<u64> {
+    let (date, time) = text.split_once(' ')?;
+    let mut d = date.splitn(3, '-').map(str::parse::<i64>);
+    let (y, mo, d) = (d.next()?.ok()?, d.next()?.ok()?, d.next()?.ok()?);
+    let (h, m) = time.split_once(':')?;
+    let (h, m) = (h.parse::<i64>().ok()?, m.parse::<i64>().ok()?);
+    let y = if mo <= 2 { y - 1 } else { y };
+    let era = y.div_euclid(400);
+    let yoe = y - era * 400;
+    let doy = (153 * ((mo + 9) % 12) + 2) / 5 + d - 1;
+    let day = era * 146_097 + yoe * 365 + yoe / 4 - yoe / 100 + doy - 719_468;
+    let at = u64::try_from((day * DAY + h * 60 + m - i64::from(offset_min)) * 60_000).ok()?;
+    (local(at, offset_min) == text).then_some(at)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -198,6 +215,19 @@ mod tests {
         assert_eq!(s.latest(nine - MIN, 420), Some(nine - 7 * 1440 * MIN));
         assert_eq!(local(nine, 420), "2024-11-11 09:00");
         assert_eq!(local(nine, 0), "2024-11-11 02:00");
+        assert_eq!(parse_local("2024-11-11 09:00", 420), Some(nine));
+        assert_eq!(
+            parse_local("2024-03-01 00:00", 0).map(|at| local(at, 0)),
+            Some("2024-03-01 00:00".to_owned())
+        );
+        for bad in [
+            "2024-02-30 09:00",
+            "2024-11-11 9:00",
+            "2024-11-11 24:00",
+            "tomorrow",
+        ] {
+            assert_eq!(parse_local(bad, 0), None, "{bad}");
+        }
         let daily = Schedule::parse("30 18 * * *").unwrap();
         assert_eq!(daily.describe(), "every day 18:30");
         assert_eq!(daily.latest(MON, 0), Some(MON - 330 * MIN));

@@ -25,4 +25,13 @@ pub struct Card {
     /// Until when a conductor's answer may be changed, in Unix milliseconds.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub until: Option<u64>,
+    /// The owner's text sent with a deny (#351): the agent's next message, shown under the denial.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub said: Option<String>,
+    /// A persona harness request's kind of action (#503).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub action: Option<crate::action::Kind>,
+    /// The harness request behind a persona's three-button card, kept so a restart can still answer it.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub request: Option<Box<crate::rules::Asked>>,
 }

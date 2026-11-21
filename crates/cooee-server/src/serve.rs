@@ -31,7 +31,7 @@ fn starter(
         let ask = ("", None, persona);
         recipe(
             &logins,
-            (&data, config.as_deref(), &list),
+            (&data, config.as_deref(), &list, &hub.mcp()?),
             ask,
             PathBuf::new(),
             (empty, false),
@@ -56,7 +56,7 @@ fn runner(
         let list = profiles(hub, (&data, config.as_deref()));
         let (agent, folder, mut recipe) = recipe(
             &logins,
-            (&data, config.as_deref(), &list),
+            (&data, config.as_deref(), &list, &hub.mcp()?),
             (&who.agent, Some(&who.account), &who.profile),
             who.folder.clone(),
             ((who.model.clone(), who.effort.clone()), false),
@@ -197,15 +197,12 @@ pub fn serve(config: &Config, ready: impl FnOnce(SocketAddr)) -> io::Result<()> 
         .get(&looks.default)
         .cloned()
         .ok_or_else(|| io::Error::other(format!("no theme {}", looks.default)))?;
-    let logins = Logins::new(
-        shed.clone(),
-        cooee_core::Providers::load(config.providers.as_deref(), &shed),
-        &data,
-    );
+    let providers = cooee_core::Providers::load(config.providers.as_deref(), &shed);
+    let logins = Logins::new(shed.clone(), providers.clone(), &data);
     let listener = std::net::TcpListener::bind((config.bind, config.port))?;
     listener.set_nonblocking(true)?;
     let hub = Hub::open(
-        shed,
+        (shed, providers),
         &data,
         (config.roots.clone(), config.path.clone()),
         theme,
@@ -248,7 +245,7 @@ pub fn serve(config: &Config, ready: impl FnOnce(SocketAddr)) -> io::Result<()> 
         (&data, config.dir.as_deref()),
         config.bind,
         &config.allowed_hosts,
-        Layouts::watch(config.dir.clone()),
+        Layouts::watch(config.dir.clone()).map_err(|b| io::Error::other(b.why))?,
     );
     let served = tokio::runtime::Builder::new_multi_thread()
         .enable_all()

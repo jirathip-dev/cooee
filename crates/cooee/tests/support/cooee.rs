@@ -333,3 +333,21 @@ pub fn others_go_on(cooee: &Cooee, other: &str) {
     });
     events.until(|e| is_item(e, "agent"));
 }
+
+/// `served` with each `varying` value and persona `version` standing in, equal to `tests/snapshots/<name>.json`.
+pub fn snapshot(name: &str, served: &Value, varying: &[(&str, &str)]) {
+    let mut text = served.to_string();
+    for (value, stands) in varying {
+        text = text.replace(value, stands);
+    }
+    let mut served: Value = serde_json::from_str(&text).unwrap();
+    let personas = served.get_mut("personas").and_then(Value::as_array_mut);
+    for p in personas.into_iter().flatten() {
+        p["version"] = Value::from("<version>");
+    }
+    let path = Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("tests/snapshots")
+        .join(format!("{name}.json"));
+    let staging: Value = serde_json::from_str(&fs::read_to_string(&path).unwrap()).unwrap();
+    assert_eq!(served, staging, "{name}");
+}

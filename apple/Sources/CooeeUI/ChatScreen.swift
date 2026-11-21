@@ -25,7 +25,9 @@ internal struct ChatScreen: View {
             back: onBack
         )
         actions.retry = { store.send(.outbox(.retry($0))) }
+        actions.restart = store.turn.state == "ended" ? { store.send(.outbox(.restart)) } : nil
         actions.sending = store.sending
+        actions.denying = store.denying != nil
         actions.view = { store.send(.delegate(.persona(store.persona.id))) }
         let places = store.places
         actions.places = places.map(\.label)
@@ -38,6 +40,7 @@ internal struct ChatScreen: View {
 
     private static func extras(_ store: StoreOf<ChatFeature>, _ chat: ChatActions) -> ChatActions {
         var actions = chat
+        actions.voice = voice(store)
         actions.workflow = store.workflow.map { Workflow.issues($0).count(where: \.needsYou) }
         actions.showWorkflow = { store.send(.workflow(.show(true))) }
         actions.workflowOpen = store.workflowOpen
@@ -63,8 +66,11 @@ internal struct ChatScreen: View {
         actions.showMachine = { store.send(.machine(.show(true))) }
         actions.topics = store.bar.map { Self.topics(store, $0) }
         actions.live = { store.live }
+        (actions.sync, actions.asOf, actions.stopping) = (store.status.sync, store.status.asOf, store.status.stopping)
         actions.edit = { store.send(.compose(.edit($0))) }
         actions.older = { store.send(.older(.load)) }
+        actions.status = store.laneStatus
+        actions.close = store.closable ? { store.send(.lane(.ask(true))) } : nil
         actions.message.photos = FrameImages(images: store.photos) { store.send(.photo($0)) }
         actions.message.source = { store.state.source($0) }
         actions.message.quote = { store.send(.compose(.quote($0))) }
@@ -86,6 +92,7 @@ internal struct ChatScreen: View {
             )
             if !back && store.panel { panel(column: true).frame(width: 360) }
         }
+        .modifier(Refreshing { store.send(.link(.refresh)) }).modifier(Toasting(toast: store.error))
         .sheet(
             isPresented: Binding(get: { back && store.panel }, set: { store.send(.panel(.show($0))) }),
             onDismiss: { store.send(.panel(.dismissed)) },
@@ -98,9 +105,20 @@ internal struct ChatScreen: View {
         .task { await store.send(.pick(.load)).finish() }
         .task { await store.send(.machine(.load)).finish() }
         .task { await store.send(.topics(.load)).finish() }
-        .modifier(TopicSheets(store: store))
+        .modifier(TopicSheets(store: store)).modifier(CallCover(store: store))
+        .confirmationDialog(
+            "Close this session?",
+            isPresented: Binding(
+                get: { store.session?.confirming == true }, set: { store.send(.lane(.ask($0))) })
+        ) {
+            Button("Close session", role: .destructive) { store.send(.lane(.close)) }
+        } message: {
+            Text("It ends and its thread is archived.")
+        }
         .modifier(BrowserPresenting(store: store, wide: !back && store.browser != nil))
-        .sheet(item: $store.scope(state: \.screen, action: \.screen)) { PluginScreenSheet(store: $0) }
+        .sheet(item: $store.scope(state: \.screen, action: \.screen)) {
+            PluginScreenSheet(store: $0).presentationDetents([.medium, .fraction(0.75), .large])
+        }
         .sheet(item: $store.scope(state: \.attaching, action: \.attaching)) { AttachScreen(store: $0) }
         .sheet(isPresented: Binding(get: { store.workflowOpen }, set: { store.send(.workflow(.show($0))) })) {
             WorkflowSheet(

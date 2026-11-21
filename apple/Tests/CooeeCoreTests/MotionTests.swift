@@ -42,6 +42,10 @@ internal struct MotionTests {
         #expect(!settings.moves(reduceMotion: true))
         settings.motion = false
         #expect(!settings.moves(reduceMotion: false))
+        #expect(settings.night == nil)
+        settings.night = true
+        let kept = try JSONDecoder().decode(Settings.self, from: JSONEncoder().encode(settings))
+        #expect(kept.night == true && kept.motion == false)
     }
 
     @Test internal func eachRowStateMapsToItsMotion() {

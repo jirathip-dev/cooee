@@ -1,9 +1,6 @@
-//! `GET /screens/plugins/{name}/attach?persona=` (#312): the attach sheet as data, one `permissions` card of what
-//! installed plugin `name` may do for the persona. Only core serves this card kind.
-
+use blocks::{Block, Card, CardKind, Label, List, Row, RowStyle, Screen, Text, Tone};
 use cooee_core::{agents, plugins::PlaceKind};
 use serde::Deserialize;
-use serde_json::{Value, json};
 use topcoat::{
     Result,
     context::{Cx, app_context},
@@ -17,7 +14,7 @@ use topcoat::{
 
 use crate::{
     http::{Data, Name, manager, plain},
-    manage::Row,
+    manage,
 };
 
 #[derive(Deserialize)]
@@ -45,12 +42,12 @@ pub async fn attach(cx: &Cx) -> Result<Response> {
     })
     .await??;
     match found {
-        Ok(screen) => Json(super::core(screen)).into_response(cx),
+        Ok(screen) => Json(crate::http::core(screen)).into_response(cx),
         Err(why) => plain(404, &why),
     }
 }
 
-fn may(p: &Row) -> Vec<String> {
+fn may(p: &manage::Row) -> Vec<String> {
     let places = p.places.iter().map(|place| match place.kind {
         PlaceKind::HeaderStrip => format!("{} chip on the header strip", place.label),
         PlaceKind::ChatCards => "cards in its chats".to_owned(),
@@ -62,33 +59,30 @@ fn may(p: &Row) -> Vec<String> {
     places.chain(claims).chain(push).collect()
 }
 
-fn sheet(p: &Row, persona: &str) -> Value {
+fn sheet(p: &manage::Row, persona: &str) -> Screen {
     let (l, perms) = (&p.locked, &p.permissions);
-    let row = |title: &str| json!({ "type": "row", "id": title, "title": title });
+    let row = |title: &str| Block::Row(Box::new(Row::new(title).id(title)));
     let actions = perms.actions.iter().map(|a| {
-        let mut r = row(a);
-        if perms.destructive.contains(a) {
-            if let Some(o) = r.as_object_mut() {
-                o.insert("style".to_owned(), json!("destructive"));
-            }
-            if let Some(o) = r.as_object_mut() {
-                o.insert(
-                    "badge".to_owned(),
-                    json!({ "text": "always confirmed first", "tone": "bad" }),
-                );
-            }
+        let r = Row::new(a.as_str()).id(a.as_str());
+        if !perms.destructive.contains(a) {
+            return Block::Row(Box::new(r));
         }
-        r
+        let badge = Label {
+            text: "always confirmed first".to_owned(),
+            tone: Some(Tone::Bad),
+        };
+        Block::Row(Box::new(r.style(RowStyle::Destructive).badge(badge)))
     });
-    let network: Vec<Value> = if perms.network.is_empty() {
+    let network: Vec<Block> = if perms.network.is_empty() {
         vec![row("nothing")]
     } else {
         perms.network.iter().map(|h| row(h)).collect()
     };
-    let section = |id: &str, header: String, rows: Vec<Value>| {
+    let section = |id: &str, header: String, rows: Vec<Block>| {
+        let header = Text::default().id(format!("{id}-header")).markdown(header);
         [
-            json!({ "type": "text", "id": format!("{id}-header"), "markdown": header }),
-            json!({ "type": "list", "id": id, "rows": rows }),
+            Block::Text(Box::new(header)),
+            Block::List(Box::new(List::new(rows).id(id))),
         ]
     };
     let blocks = [
@@ -103,7 +97,18 @@ fn sheet(p: &Row, persona: &str) -> Value {
     .concat();
     let source = if l.listed { "cooee's index" } else { &l.url };
     let commit: String = l.commit.chars().take(7).collect();
-    let card = json!({ "type": "card", "id": "permissions", "kind": "permissions", "title": l.name,
-                       "subtitle": format!("{} {} · {commit} · {source}", l.name, l.version), "blocks": blocks });
-    json!({ "type": "screen", "id": "attach", "title": format!("Attach {}", l.name), "blocks": [card] })
+    let card = Card::default()
+        .id("permissions")
+        .kind(CardKind::Other("permissions".to_owned()))
+        .title(l.name.as_str())
+        .subtitle(format!("{} {} · {commit} · {source}", l.name, l.version))
+        .blocks(blocks);
+    Screen::default()
+        .id("attach")
+        .title(format!("Attach {}", l.name))
+        .blocks(vec![Block::Card(Box::new(card))])
+}
+
+pub(super) fn routes(b: topcoat::router::RouterBuilder) -> topcoat::router::RouterBuilder {
+    b.route(attach)
 }

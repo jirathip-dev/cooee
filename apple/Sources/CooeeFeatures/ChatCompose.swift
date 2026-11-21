@@ -25,6 +25,7 @@ extension ChatFeature {
         switch action {
         case .draftChanged(let text):
             state.draft = text
+            state.edited(text)
         case .attach(let files):
             state.files += files
         case .detach(let index):
@@ -32,6 +33,7 @@ extension ChatFeature {
         case .send:
             return send(&state)
         case .stop:
+            state.status.stopping = state.target.started
             return act(state) { threads, server, thread in try await threads.stop(server, thread) }
         case .steer(let index), .unqueue(let index):
             return queued(state, action, index)

@@ -1,0 +1,20 @@
+{
+  "type": "screen",
+  "id": "machines",
+  "title": "Machines",
+  "blocks": [
+    {
+      "type": "list",
+      "id": "machines",
+      "rows": [
+        {
+          "type": "row",
+          "id": "<host>",
+          "title": "<host>",
+          "subtitle": "offline"
+        }
+      ]
+    }
+  ],
+  "source": "core"
+}

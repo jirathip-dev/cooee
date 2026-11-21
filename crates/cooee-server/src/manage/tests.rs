@@ -175,6 +175,33 @@ fn the_supervisor_restarts_a_crashing_backend_then_turns_it_off_with_an_alert() 
 }
 
 #[test]
+fn the_supervisor_keeps_a_plugin_off_when_it_or_cooee_is_too_old_for_the_other() {
+    for (field, needed) in [
+        ("version = \"0.0.9\"", "it needs x 0.1.0 or newer"),
+        (
+            "version = \"1\"\nmin_cooee = \"99.0.0\"",
+            "x needs cooee 99.0.0 or newer",
+        ),
+    ] {
+        let (data, build, m) = installed("unfit", "echo ran >> runs; exec sleep 30", 1);
+        let file = build.join("cooee-plugin.toml");
+        let manifest = fs::read_to_string(&file).unwrap();
+        fs::write(&file, manifest.replace("version = \"1\"", field)).unwrap();
+        let alerts = m.tick(0);
+        assert!(
+            alerts.len() == 1 && alerts[0].contains(needed),
+            "{alerts:?}"
+        );
+        let x = &m.installed().unwrap()[0];
+        assert!(!x.enabled && x.note.contains(needed), "{x:?}");
+        assert!(m.list().unwrap()[0].state.contains(needed));
+        m.tick(60 * MIN);
+        assert_eq!(runs(&build), 0);
+        fs::remove_dir_all(&data).unwrap();
+    }
+}
+
+#[test]
 fn an_idle_supervisor_reads_the_lock_only_once_it_changed_within_five_seconds() {
     let (data, _, m) = installed("idle", "exec sleep 600", 1);
     m.tick(0);

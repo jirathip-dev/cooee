@@ -67,11 +67,28 @@ internal struct TraceSheet: View {
             }
             .foregroundStyle(tint)
             VStack(alignment: .leading, spacing: 6) {
-                Text(step.title).ui(14, .regular, look).lineLimit(2).truncationMode(.middle)
+                Text(step.said).ui(14, .regular, look).lineLimit(2).truncationMode(.middle)
                 if let frame = step.frame { FrameThumb(name: frame) }
+                ForEach(Array(step.plan.enumerated()), id: \.offset) { _, entry in PlanLine(entry: entry) }
             }
             Spacer(minLength: 0)
         }
         .padding(.horizontal, 14).padding(.vertical, 10)
+    }
+}
+
+internal struct PlanLine: View {
+    @Environment(\.look) private var look
+    internal let entry: PlanEntry
+
+    internal var body: some View {
+        HStack(spacing: 6) {
+            Mark(text: entry.done ? "[x]" : "[ ]") {
+                Image(systemName: entry.done ? "checkmark.square" : "square").font(.system(size: 12))
+            }
+            .foregroundStyle(look.palette.mute)
+            Text(entry.text).ui(13, .regular, look)
+        }
+        .accessibilityElement(children: .combine)
     }
 }

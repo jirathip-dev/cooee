@@ -11,6 +11,7 @@ publish.workspace = true
 [dependencies]
 aes-gcm.workspace = true
 base64.workspace = true
+blocks.workspace = true
 hkdf.workspace = true
 p256.workspace = true
 qrcode = { workspace = true, features = ["svg"] }
@@ -20,6 +21,7 @@ flate2.workspace = true
 futures-util.workspace = true
 serde.workspace = true
 serde_json.workspace = true
+swag.workspace = true
 sha2.workspace = true
 thiserror.workspace = true
 topcoat.workspace = true

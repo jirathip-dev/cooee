@@ -46,8 +46,13 @@ impl FakeShed {
             };
             let turn = EventKind::Turn {
                 prompt: prompt.clone(),
+                agent: Vec::new(),
             };
             self.emit(name, turn);
+            if prompt.contains("long tool run") {
+                self.long_tool_run(name);
+                continue;
+            }
             let Some((events, stop)) = self.script(name, &prompt, rx) else {
                 continue;
             };
@@ -81,7 +86,6 @@ impl FakeShed {
         let prompt = topic
             .and_then(|t| t.split_once(").\n\n"))
             .map_or(prompt, |t| t.1);
-        let read = "Read src/lib.rs";
         if let Some(turn) = self.conformance(name, prompt, rx) {
             return Some(turn);
         }
@@ -97,7 +101,7 @@ impl FakeShed {
             let said = "Questions for you:\n1. **HTML or SwiftUI?**\n\n**Call voice:** the iOS target building.";
             (vec![reply(said, "end_turn")], "end_turn")
         } else if prompt.contains("commands") {
-            let mut events = Vec::new();
+            let mut events = vec![plan("Run the checks", "in_progress")];
             for (id, title) in [
                 ("k1", "$ cargo fmt"),
                 ("k2", "$ cargo clippy"),
@@ -109,9 +113,9 @@ impl FakeShed {
             (events, "end_turn")
         } else if prompt.contains("tool") {
             let events = [
-                tool("c1", read, "pending"),
-                tool("c1", read, "in_progress"),
-                tool("c1", read, "completed"),
+                read_file("pending", &["src/lib.rs"]),
+                read_file("in_progress", &[]),
+                read_file("completed", &[]),
                 text("Read "),
                 text("it."),
                 reply("Read it.", "end_turn"),
@@ -207,12 +211,15 @@ impl FakeShed {
         } else if prompt.contains("Run `sleep 120`") {
             return Some(self.sleep_until_cancel(name, rx));
         } else {
-            return None;
+            let command = prompt.split("Run `").nth(1)?.split('`').next()?;
+            return Some(self.asks(name, command, rx));
         };
         let usage = AcpUsage {
             used: 1200,
             size: 200_000,
             cost: None,
+            turn: None,
+            total: None,
         };
         Some((
             vec![EventKind::Usage(usage), reply(&said, "end_turn")],
@@ -277,6 +284,80 @@ impl FakeShed {
         (vec![reply("", "cancelled")], "cancelled")
     }
 
+    fn long_tool_run(&self, name: &str) {
+        self.report(name, "working", None);
+        let call = "cargo test --workspace";
+        self.emit(name, tool("t1", call, "pending"));
+        self.emit(name, tool("t1", call, "in_progress"));
+        for line in ["running 3 tests\n", "test a ... ok\n", "test b ... ok\n"] {
+            self.report(name, "working", Some(call));
+            self.emit(name, text(line));
+        }
+        self.emit(name, tool("t1", call, "completed"));
+        self.emit(name, reply("Tests pass.", "end_turn"));
+        self.report(name, "idle", None);
+    }
+
+    fn asks(
+        &self,
+        name: &str,
+        command: &str,
+        rx: &Receiver<Input>,
+    ) -> (Vec<EventKind>, &'static str) {
+        let n = self.shared.lock().unwrap().seq;
+        let (call, input) = (format!("r{n}"), json!({ "command": command }));
+        let row = |status: &str| EventKind::ToolCall {
+            id: call.clone(),
+            title: command.to_owned(),
+            status: status.to_owned(),
+            kind: Some("execute".to_owned()),
+            locations: Vec::new(),
+            raw_input: Some(input.clone()),
+        };
+        self.emit(name, row("pending"));
+        let option = |id: &str, kind: &str| ApprovalOption {
+            id: id.to_owned(),
+            name: id.to_owned(),
+            kind: kind.to_owned(),
+        };
+        let acp =
+            json!({ "toolCallId": call, "title": command, "kind": "execute", "rawInput": input });
+        self.emit(
+            name,
+            EventKind::ApprovalRequest {
+                id: format!("q{n}"),
+                tool: command.to_owned(),
+                options: vec![
+                    option("allow", "allow_once"),
+                    option("always", "allow_always"),
+                    option("reject", "reject_once"),
+                ],
+                call: Some(acp),
+            },
+        );
+        self.report(name, "blocked", Some(command));
+        let Ok(Input::Approve(chosen)) = rx.recv() else {
+            return (vec![reply("", "cancelled")], "cancelled");
+        };
+        let ran = chosen != "reject";
+        self.emit(name, EventKind::Approved { option: chosen });
+        let cwd = fs::read_to_string(self.dir.join(format!("cwd-{name}"))).unwrap();
+        if ran && command.starts_with("printf ") {
+            Command::new("sh")
+                .args(["-c", command])
+                .current_dir(cwd)
+                .status()
+                .unwrap();
+        }
+        self.report(name, "working", None);
+        let (status, said) = if ran {
+            ("completed", "Ran it.")
+        } else {
+            ("failed", "Denied.")
+        };
+        (vec![row(status), reply(said, "end_turn")], "end_turn")
+    }
+
     fn approval(&self, name: &str, rx: &Receiver<Input>) -> (Vec<EventKind>, &'static str) {
         let call = "Edit src/lib.rs";
         self.emit(name, tool("c2", call, "pending"));
@@ -294,8 +375,10 @@ impl FakeShed {
         self.emit(
             name,
             EventKind::ApprovalRequest {
+                id: String::new(),
                 tool: tool_name,
                 options,
+                call: None,
             },
         );
         self.report(name, "blocked", Some(call));
@@ -363,6 +446,26 @@ fn tool(id: &str, title: &str, status: &str) -> EventKind {
         title: title.to_owned(),
         status: status.to_owned(),
         kind: None,
+        locations: Vec::new(),
+        raw_input: None,
+    }
+}
+
+fn read_file(status: &str, at: &[&str]) -> EventKind {
+    EventKind::ToolCall {
+        id: "c1".to_owned(),
+        title: "Read src/lib.rs".to_owned(),
+        status: status.to_owned(),
+        kind: Some("read".to_owned()),
+        locations: at.iter().map(Into::into).collect(),
+        raw_input: None,
+    }
+}
+
+fn plan(content: &str, status: &str) -> EventKind {
+    let entry = json!({ "content": content, "priority": "high", "status": status });
+    EventKind::Plan {
+        entries: vec![entry],
     }
 }
 

@@ -2,6 +2,14 @@
   "originHash" : "a7d57b3a62c9117ee7b16eae9fbf207894d71a08b23ac8c2f94f95bfd27b2ae9",
   "pins" : [
     {
+      "identity" : "blocks",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/jirathip-dev/blocks",
+      "state" : {
+        "revision" : "d0882093e32c6d752910c459efa04a2a6beb5c3a"
+      }
+    },
+    {
       "identity" : "combine-schedulers",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/pointfreeco/combine-schedulers",

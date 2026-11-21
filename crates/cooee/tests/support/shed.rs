@@ -27,7 +27,7 @@ use super::Input;
 
 #[derive(Default)]
 pub(super) struct Shared {
-    seq: u64,
+    pub(super) seq: u64,
     floor: u64,
     ring: Vec<Event>,
     subs: Vec<Sender<Event>>,
@@ -74,7 +74,7 @@ const CLI: &str = r#"#!/bin/sh
 # machines.json; `[--on <m>] machine stats` prints stats-<m>.json (stats-local.json), exit 1 when offline; its
 # `history` only the first time, as `--since` the last sample leaves nothing new. A `run` with an adapter command
 # after `--` runs it, as the terminal would: the fake adapter `fake-acp` notes its variables in adapter.env and adapter-<name>.env. A `--mcp`
-# file is kept as mcp-<name>.json, a `--meta` as meta-<name>.json. `--on <m> run` starts on machine <m> (#149): the terminal is `<m>/<name>`.
+# file is kept as mcp-<name>.json, a `--meta` as meta-<name>.json, a `--cwd` as cwd-<name>. `--on <m> run` starts on machine <m> (#149): the terminal is `<m>/<name>`.
 gates=$(dirname "$0")
 printf '%s\n' "$*" >>"$gates/cli.log"
 case "$*" in
@@ -97,6 +97,7 @@ case "$*" in
     [ "$1" = -- ] && { shift; break; }
     shift
   done
+  [ -n "$cwd" ] && printf '%s' "$cwd" >"$gates/cwd-$name"
   f=${cwd:+${cwd##*/}}
   while [ -e "$gates/hold-run" ] || [ -e "$gates/hold-in-${f:-/}" ]; do sleep 0.02; done
   [ -e "$gates/run-fails" ] && { echo 'fake shed: timed out' >&2; exit 1; }
@@ -241,8 +242,23 @@ impl FakeShed {
         };
         let tool = "Edit early.rs".to_owned();
         let options = vec![option("allow"), option("reject")];
-        self.emit(name, EventKind::ApprovalRequest { tool, options });
+        let (id, call) = (String::new(), None);
+        self.emit(
+            name,
+            EventKind::ApprovalRequest {
+                id,
+                tool,
+                options,
+                call,
+            },
+        );
         self.report(name, "blocked", Some("Edit early.rs"));
+    }
+
+    /// Terminal `name`'s program exits with code 1 by itself.
+    pub fn end(&self, name: &str) {
+        self.shared.lock().unwrap().stopped.insert(name.to_owned());
+        self.emit(name, EventKind::Exited { code: Some(1) });
     }
 
     /// Starts ACP terminal `name` as another tool would, with `labels` (a Workflow session, #33).
@@ -288,9 +304,12 @@ impl FakeShed {
         procs.insert(name.to_owned(), Proc::default());
     }
 
-    /// Terminal `name` is gone, as after a shed restart.
+    /// Terminal `name` is gone and event seqs start again from 1, as after a shed restart.
     pub fn vanish(&self, name: &str) {
-        self.shared.lock().unwrap().gone.insert(name.to_owned());
+        let mut s = self.shared.lock().unwrap();
+        s.gone.insert(name.to_owned());
+        (s.seq, s.floor) = (0, 0);
+        s.ring.clear();
     }
 
     /// The variables the fake adapter last ran with, as `env` printed them.
@@ -519,7 +538,7 @@ impl FakeShed {
         let has = |l: &BTreeMap<String, String>| {
             want.iter().all(|(k, v)| l.get(k).is_some_and(|x| v == x))
         };
-        let listed = all.iter().filter(|(_, l)| has(l));
+        let listed = all.iter().filter(|(n, l)| has(l) && !self.no_link(n));
         let listed = listed.filter_map(|(n, _)| self.terminal(n).ok());
         json!(listed.collect::<Vec<_>>())
     }

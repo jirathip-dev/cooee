@@ -21,7 +21,7 @@ impl Hub {
                     .items
                     .iter()
                     .filter(|i| now >= i.at.saturating_add(self.expiry) && unattended(&l, i));
-                due.find_map(|i| deny(i).map(|o| (l.meta.id.clone(), i.id, o)))
+                due.find_map(|i| i.deny().map(|o| (l.meta.id.clone(), i.id, o.id.clone())))
             };
             let Some((id, item, option)) = due else {
                 continue;
@@ -51,17 +51,6 @@ fn unattended(live: &Live, card: &Item) -> bool {
     sent.map_or(started, |(random_id, routine)| {
         routine.is_some() || (started && *random_id == live.meta.random_id)
     })
-}
-
-fn deny(card: &Item) -> Option<String> {
-    let Body::Approval { options, .. } = &card.body else {
-        return None;
-    };
-    let reject = |kind: &str| options.iter().find(|o| o.kind == kind);
-    reject("reject_once")
-        .or_else(|| reject("reject_always"))
-        .or_else(|| options.iter().find(|o| o.id == "decline"))
-        .map(|o| o.id.clone())
 }
 
 #[cfg(test)]
@@ -99,6 +88,9 @@ mod tests {
                         let req: Request = serde_json::from_str(&line).unwrap();
                         let result = match req.method.as_str() {
                             "hello" => json!(Hello::ours()),
+                            "state" => {
+                                json!({ "name": "x", "labels": {}, "cwd": "/", "cmd": [], "keep": false, "state": "running" })
+                            }
                             "send" => {
                                 log.lock().unwrap().push(req.params.clone());
                                 json!({})
@@ -182,7 +174,7 @@ mod tests {
         hub.watch(t0 + 2 * EXPIRY);
         for id in ["chat", "run"] {
             assert_eq!(denials(&sent, id), 1, "{id}");
-            let block = card(&hub, id).block().unwrap();
+            let block = serde_json::to_value(card(&hub, id).block()).unwrap();
             let line = block["blocks"].as_array().unwrap().last().unwrap()["markdown"].clone();
             assert_eq!(line, "✓ reject · expired", "{id}");
         }
@@ -195,6 +187,44 @@ mod tests {
         assert!(matches!(
             card(&hub, "early").body,
             Body::Approval { tapped: Some(t), card, .. } if t == "allow" && card.by.as_deref() == Some("phone")
+        ));
+    }
+
+    #[test]
+    fn a_background_persona_card_expires_as_the_harnesss_one_time_deny_of_its_request() {
+        let dir = scratch("expire-persona");
+        let sent = fake_shed(&dir);
+        let t0 = super::super::now();
+        let mark = json!({ "id": "r-1", "name": "nightly" });
+        let meta = json!({ "routine": mark, "random_id": "r1" });
+        seed(&dir, "run", &meta, None, t0);
+        let jsonl = dir.join("data/threads/run.jsonl");
+        let you = fs::read_to_string(&jsonl)
+            .unwrap()
+            .lines()
+            .next()
+            .unwrap()
+            .to_owned();
+        let option = |id: &str, kind: &str| json!({ "id": id, "name": id, "kind": kind });
+        let rule = json!({ "effect": "allow", "kind": "run", "pattern": "cargo test *" });
+        let ask = json!({ "id": 2, "at": t0, "seq": 1, "kind": "approval", "tool": "cargo test -p x",
+            "action": "run", "request": { "id": "q7", "allow": "once", "deny": "no", "rule": rule },
+            "options": [option("allow", "allow_once"), option("always", "allow_always"), option("deny", "reject_once")] });
+        fs::write(&jsonl, format!("{you}\n{ask}\n")).unwrap();
+        let hub = hub(&dir);
+        hub.watch(t0 + EXPIRY);
+        hub.watch(t0 + 2 * EXPIRY);
+        let answers: Vec<Value> = (sent.lock().unwrap().iter())
+            .filter(|p| p["name"] == "cooee-run")
+            .map(|p| p["text"].clone())
+            .collect();
+        assert_eq!(
+            answers,
+            [json!("\u{1e}{\"approve\":\"no\",\"request\":\"q7\"}\n")]
+        );
+        assert!(matches!(
+            card(&hub, "run").body,
+            Body::Approval { chosen: Some(c), card, .. } if c == "deny" && card.by.as_deref() == Some(EXPIRED)
         ));
     }
 
@@ -231,7 +261,7 @@ mod tests {
             waiting[0].try_recv(),
             Err(std::sync::mpsc::TryRecvError::Disconnected)
         );
-        let block = card(&hub, "run").block().unwrap();
+        let block = serde_json::to_value(card(&hub, "run").block()).unwrap();
         let line = block["blocks"].as_array().unwrap().last().unwrap()["markdown"].clone();
         assert_eq!(line, "declined");
         assert_eq!(
@@ -242,5 +272,48 @@ mod tests {
             card(&hub, "mine").body,
             Body::Approval { tapped: None, .. }
         ));
+    }
+
+    #[test]
+    fn deny_and_say_rejects_once_and_its_text_goes_once_but_not_on_an_expired_card() {
+        let dir = scratch("deny-say");
+        let sent = fake_shed(&dir);
+        let t0 = super::super::now();
+        seed(&dir, "mine", &json!({}), None, t0);
+        let mark = json!({ "id": "r-1", "name": "nightly" });
+        seed(&dir, "chat", &json!({}), Some(mark), t0);
+        let hub = hub(&dir);
+        let prompts = |id: &str| {
+            let sent = sent.lock().unwrap();
+            let said = |p: &&Value| {
+                p["name"] == format!("cooee-{id}")
+                    && p["text"] == "\u{1e}{\"prompt\":\"use a branch\"}\n"
+            };
+            sent.iter().filter(said).count()
+        };
+        assert!(hub.approve("mine", 2, "say", Some(" "), "phone").is_err());
+        assert_eq!(denials(&sent, "mine"), 0);
+        for _ in 0..2 {
+            hub.approve("mine", 2, "say", Some("use a branch"), "phone")
+                .unwrap();
+        }
+        assert_eq!((denials(&sent, "mine"), prompts("mine")), (1, 1));
+        let items = hub.slice("mine", None, 10, 0).unwrap().items;
+        assert_eq!(items.len(), 2, "{items:?}");
+        let block = serde_json::to_value(card(&hub, "mine").block()).unwrap();
+        let lines: Vec<&Value> = block["blocks"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|b| &b["markdown"])
+            .collect();
+        assert_eq!(lines, ["✓ reject · phone", "use a branch"]);
+        assert_eq!(hub.thread("mine").unwrap().0.queue, []);
+
+        hub.watch(t0 + EXPIRY);
+        assert_eq!(denials(&sent, "chat"), 1);
+        hub.approve("chat", 2, "say", Some("use a branch"), "phone")
+            .unwrap();
+        assert_eq!((denials(&sent, "chat"), prompts("chat")), (1, 0));
     }
 }

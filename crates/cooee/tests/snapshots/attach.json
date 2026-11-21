@@ -1,0 +1,85 @@
+{
+  "type": "screen",
+  "id": "attach",
+  "title": "Attach drover",
+  "blocks": [
+    {
+      "type": "card",
+      "id": "permissions",
+      "kind": "permissions",
+      "title": "drover",
+      "subtitle": "drover 0.1.0 · c0ffee1 · cooee's index",
+      "blocks": [
+        {
+          "type": "text",
+          "id": "may-header",
+          "markdown": "To Coder, it may"
+        },
+        {
+          "type": "list",
+          "id": "may",
+          "rows": [
+            {
+              "type": "row",
+              "id": "Queue row in Plugins",
+              "title": "Queue row in Plugins"
+            },
+            {
+              "type": "row",
+              "id": "sessions labelled source=lab in its Workflow sheet",
+              "title": "sessions labelled source=lab in its Workflow sheet"
+            },
+            {
+              "type": "row",
+              "id": "notifications",
+              "title": "notifications"
+            }
+          ]
+        },
+        {
+          "type": "text",
+          "id": "actions-header",
+          "markdown": "Actions"
+        },
+        {
+          "type": "list",
+          "id": "actions",
+          "rows": [
+            {
+              "type": "row",
+              "id": "merge",
+              "title": "merge",
+              "style": "destructive",
+              "badge": {
+                "text": "always confirmed first",
+                "tone": "bad"
+              }
+            },
+            {
+              "type": "row",
+              "id": "wave",
+              "title": "wave"
+            }
+          ]
+        },
+        {
+          "type": "text",
+          "id": "network-header",
+          "markdown": "Its backend reaches"
+        },
+        {
+          "type": "list",
+          "id": "network",
+          "rows": [
+            {
+              "type": "row",
+              "id": "api.github.com",
+              "title": "api.github.com"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "source": "core"
+}

@@ -3,7 +3,7 @@ import Foundation
 /// A theme the editor makes, `PUT /api/v1/themes/{name}`: the pack it copies figures, scene and words from, its own
 /// label and style, its colours per mode, and the figures and backdrop drawn over the copy.
 public struct ThemeDraft: Codable, Sendable, Equatable {
-    public static let builtIn: Set<String> = ["plain", "farm", "kitchen", "garden", "starter"]
+    public static let builtIn: Set<String> = ["plain", "farm", "kitchen", "garden", "bush", "starter"]
 
     public var from: String
     public var label: String

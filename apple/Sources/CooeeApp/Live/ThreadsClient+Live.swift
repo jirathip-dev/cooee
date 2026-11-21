@@ -23,9 +23,13 @@ extension ThreadsClient: DependencyKey {
         resume: { server, thread, note in try await client(server).resumeHandoff(thread, note: note) },
         input: { server, persona, input in try await client(server).input(persona, input) },
         live: { server, persona in client(server).live(persona) },
+        changes: { server in client(server).homeChanges() },
         events: { server, thread, since in client(server).events(thread, since: since) },
         send: { server, thread, text, files, queue in
             try await client(server).send(thread, text: text, files: files, queue: queue)
+        },
+        say: { server, thread, text, queue in
+            try await client(server).send(thread, text: text, queue: queue, voice: true)
         },
         steer: { server, thread, randomID in try await client(server).steer(thread, randomID) },
         unqueue: { server, thread, randomID in try await client(server).unqueue(thread, randomID) },
@@ -38,14 +42,20 @@ extension ThreadsClient: DependencyKey {
         answer: { server, thread, item, option, value in
             try await client(server).answer(thread, item: item, option: option, value: value)
         },
+        approve: { server, thread, item, value in
+            let key = try DeviceKeychain(server: server.url).key()
+            try await client(server).answer(thread, item: item, option: "approve", value: value, key: key)
+        },
         start: { server, persona, machine, text, setup in
             try await client(server).newThread(persona: persona, machine: machine, text: text, setup: setup)
         },
         move: { server, thread, machine in try await client(server).move(thread, to: machine) },
         retry: { server, thread in try await client(server).retry(thread) },
+        restart: { server, thread in try await client(server).restart(thread) },
         topics: { server, owner in try await client(server).topics(of: owner) },
         retitle: { server, thread, title in try await client(server).retitle(thread, title) },
         archive: { server, thread, archived in try await client(server).archive(thread, archived) },
+        close: { server, thread in try await client(server).close(thread) },
         room: { server, title, members in try await client(server).newRoom(title: title, members: members) },
         seat: { server, room, persona, place, remove in
             try await client(server).seat(room, persona: persona, place: place, remove: remove)

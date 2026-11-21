@@ -1,6 +1,7 @@
 import CooeeCore
 @testable import CooeeUI
 import Foundation
+import SwiftUI
 import Testing
 
 extension Style {
@@ -51,11 +52,35 @@ internal struct PackFrames {
     }
 
     private static let terminal = sheet("terminal", "dark", .farmDark)
-    private static let scene = sheet("scene", "light", .farmLight)
+    private static let scene = sheet("scene", "light", .farmLight) + skies
+
+    private static let skies: [Frame] = [
+        ("clear", 0.2, false), ("cloudy", 0.6, false), ("storm", 1.2, false),
+        ("night", 0.2, true),
+    ].map { name, load, night in
+        .phone("scene-sky-\(name)-light", .farmLight) { SkyStrip(load: load, night: night) }
+    }
 
     internal static let all =
         terminal.map { PackFrame(pack: "terminal", frame: $0) } + scene.map { PackFrame(pack: "scene", frame: $0) }
 
     @MainActor @Test(arguments: all)
     internal func matchesThePack(_ frame: PackFrame) throws { try frame.matchesItsDesign() }
+}
+
+private struct SkyStrip: View {
+    fileprivate let load: Double
+    fileprivate let night: Bool
+
+    fileprivate var body: some View {
+        let lanes = ["needs", "working", "done", "idle"].enumerated().map { index, state in
+            JSONValue.object(["id": .string("l\(index)"), "title": .string("#\(index + 1)"), "state": .string(state)])
+        }
+        let scene = JSONValue.object([
+            "type": .string("scene"), "label": .string("lanes"), "lanes": .array(lanes), "load": .number(load),
+            "next": .object(["action": .string("filter"), "values": .object(["repo": .string("cooee")])]),
+        ])
+        Color.clear.overlay(alignment: .top) { BlocksView(scene, source: .plugin("drover")).padding(BlocksView.inset) }
+            .transformEnvironment(\.look) { $0.night = night }
+    }
 }

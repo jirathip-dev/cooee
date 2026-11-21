@@ -1,32 +1,37 @@
-//! `GET /screens/menu` (#312): the app's bundled avatar menu, the rows that open a server screen given a `value`
-//! from the same data that screen lists; the device-local rows as bundled.
-
-use serde_json::{Value, json};
+use blocks::{Block, Label, Row, Tone, Toned};
+use serde_json::Value;
 use topcoat::{Result, context::Cx, router::route};
 
-use super::settings;
-use crate::{
-    HubError,
-    http::{Answer, refused},
-};
+use super::{connectors, settings};
+use crate::{HubError, http::Answer};
 
 const BUNDLED: &str = include_str!("../../../../apple/Sources/CooeeUI/Default/screens/menu.json");
 
 /// `{type: screen, source: core, id, title, blocks}`: `signins` valued with the signed-in accounts, `devices` with
-/// the paired count, `machines` with the hosts and `plugins` with the installed count.
+/// the paired count, `machines` with the hosts, `plugins` with the installed count and `connectors` with theirs (or
+/// `warn` and the count that needs sign-in).
 #[route(GET "/screens/menu")]
-pub async fn menu(cx: &Cx) -> Result<Answer<Value>> {
+pub async fn menu(cx: &Cx) -> Result<Answer<Block>> {
     Ok(Answer(fill(cx).await))
 }
 
-async fn fill(cx: &Cx) -> Result<Value, HubError> {
-    let mut screen: Value = serde_json::from_str(BUNDLED).map_err(refused)?;
-    let titles = |rows: &[Value]| {
-        let titles: Vec<_> = rows.iter().filter_map(|r| r["title"].as_str()).collect();
+async fn fill(cx: &Cx) -> Result<Block, HubError> {
+    let mut screen = crate::http::bundled(BUNDLED)?;
+    let titles = |rows: &[Row]| {
+        let titles: Vec<_> = rows.iter().map(|r| r.title.as_str()).collect();
         titles.join(", ")
     };
     let mut signins = settings::signin_rows(cx).await?;
-    signins.retain(|r| r.pointer("/subtitle/tone").is_some_and(|t| t == "ok"));
+    signins.retain(|r| {
+        matches!(
+            &r.subtitle,
+            Some(Toned::Label(Label {
+                tone: Some(Tone::Ok),
+                ..
+            }))
+        )
+    });
+    let (linked, warn) = connectors::menu_value(&connectors::connector_rows(cx).await?);
     let values = [
         ("signins", titles(&signins)),
         (
@@ -38,17 +43,23 @@ async fn fill(cx: &Cx) -> Result<Value, HubError> {
             "plugins",
             settings::plugin_rows(cx).await?.len().to_string(),
         ),
+        ("connectors", linked),
     ];
-    let groups = screen
-        .get_mut("blocks")
-        .and_then(Value::as_array_mut)
-        .into_iter()
-        .flatten();
-    let rows = groups.filter_map(|g| g.get_mut("rows").and_then(Value::as_array_mut));
-    for row in rows.flatten() {
+    let groups = screen.blocks.iter_mut().flatten().filter_map(|g| match g {
+        Block::App(g) => g.more.get_mut("rows").and_then(Value::as_array_mut),
+        _ => None,
+    });
+    for row in groups.flatten() {
         if let Some((_, v)) = values.iter().find(|(id, _)| row["id"] == *id) {
-            row["value"] = json!(v);
+            row["value"] = Value::from(v.as_str());
+        }
+        if warn && row["id"] == "connectors" {
+            row["warn"] = Value::Bool(true);
         }
     }
-    Ok(super::core(screen))
+    Ok(crate::http::core(screen))
+}
+
+pub(super) fn routes(b: topcoat::router::RouterBuilder) -> topcoat::router::RouterBuilder {
+    b.route(menu)
 }

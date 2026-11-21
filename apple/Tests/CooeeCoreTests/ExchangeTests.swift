@@ -87,7 +87,8 @@ internal struct ExchangeTests {
                 .divider(id: Int.min, text: "Today \(time) · ask_persona"),
                 .said(id: 1, speaker: "coder", time: "asked · \(time)", markdown: [.text("Q3?")]),
                 .said(id: -2, speaker: "res", time: time, markdown: []),
-                .tools(id: 2, rows: [ToolRow("search sec.gov", "done"), ToolRow("fetch sec.gov", "done")]),
+                .tools(
+                    id: 2, rows: [ToolRow(.other, "search sec.gov", "done"), ToolRow(.other, "fetch sec.gov", "done")]),
                 .you(id: 4, text: "Use the 10-Q"),
                 .asked(id: 3, try #require(Ask(ask("replied")))),
                 .said(id: 6, speaker: "res", time: "replied · \(time)", markdown: [.text("$4.1M")]),

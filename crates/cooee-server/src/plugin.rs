@@ -10,6 +10,10 @@ use cooee_core::{Plugin, Profile};
 use futures_util::{Stream, stream};
 use tokio::io::{AsyncBufReadExt, AsyncReadExt};
 
+mod feed;
+
+pub use feed::{follow, share};
+
 const MAX_BODY: u64 = 16 << 20;
 
 /// The most calls one backend has in flight; one more fails at once instead of taking a blocking thread.
@@ -140,6 +144,12 @@ impl Reply {
             .map(|(_, v)| v.as_str())
     }
 
+    /// Whether the answer is an event stream.
+    pub fn streams(&self) -> bool {
+        self.header("content-type")
+            .is_some_and(|t| t.starts_with("text/event-stream"))
+    }
+
     /// The whole body (at most 16 MiB); a kept-alive connection read to its end goes back for the next call.
     pub fn bytes(self) -> io::Result<Vec<u8>> {
         let Self {
@@ -253,6 +263,7 @@ pub fn call(
 }
 
 /// One event of a backend's stream.
+#[derive(Clone)]
 pub struct Sse {
     pub id: Option<String>,
     pub event: String,

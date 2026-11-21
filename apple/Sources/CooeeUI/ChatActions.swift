@@ -18,6 +18,7 @@ public struct ChatActions {
     public var back: () -> Void
     public var retry: (Int) -> Void = { _ in }
     public var view: () -> Void = {}
+    public var restart: (() -> Void)?
     public var places: [String] = []
     public var counts: [Int?] = []
     public var new: (() -> Void)?
@@ -40,7 +41,14 @@ public struct ChatActions {
     public var frames = FrameImages()
     public var topics: TopicActions?
     public var live: () -> LiveReply = { LiveReply() }
+    public var sync: Sync?
+    public var asOf: Date?
+    public var stopping = false
+    public var denying = false
     public var older: (() -> Void)?
+    public var status: String?
+    public var close: (() -> Void)?
+    public var voice = VoiceActs()
 
     public init(
         draft: Binding<String>? = nil,
