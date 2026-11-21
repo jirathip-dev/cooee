@@ -7,5 +7,6 @@ mod support;
 
 mod protocol;
 mod reconnect;
+mod screen;
 mod setup;
 mod turns;
