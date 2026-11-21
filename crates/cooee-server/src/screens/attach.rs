@@ -1,4 +1,4 @@
-use blocks::{Block, Card, CardKind, Label, List, Row, RowStyle, Screen, Text, Tone};
+use blocks::{Block, Card, CardKind, Label, List, Row, RowStyle, Screen, Text, Tone, Toned};
 use cooee_core::{agents, plugins::PlaceKind};
 use serde::Deserialize;
 use topcoat::{
@@ -68,7 +68,7 @@ fn sheet(p: &manage::Row, persona: &str) -> Screen {
             return Block::Row(Box::new(r));
         }
         let badge = Label {
-            text: "always confirmed first".to_owned(),
+            text: "always confirmed first".into(),
             tone: Some(Tone::Bad),
         };
         Block::Row(Box::new(r.style(RowStyle::Destructive).badge(badge)))
@@ -101,7 +101,10 @@ fn sheet(p: &manage::Row, persona: &str) -> Screen {
         .id("permissions")
         .kind(CardKind::Other("permissions".to_owned()))
         .title(l.name.as_str())
-        .subtitle(format!("{} {} · {commit} · {source}", l.name, l.version))
+        .subtitle(Toned::Text(format!(
+            "{} {} · {commit} · {source}",
+            l.name, l.version
+        )))
         .blocks(blocks);
     Screen::default()
         .id("attach")
