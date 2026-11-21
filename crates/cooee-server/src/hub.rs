@@ -492,6 +492,15 @@ impl Live {
     }
 }
 
+fn mcp_key(key: &Path) -> Result<String, HubError> {
+    if let Ok(k) = fs::read_to_string(key) {
+        return Ok(k);
+    }
+    let k = cooee_core::random(32).map(|r| cooee_core::sha256(&r));
+    let k = k.and_then(|k| cooee_core::write_private(key, k.as_bytes()).map(|()| k));
+    k.map_err(|e| refused(key, &e))
+}
+
 impl Hub {
     /// Loads every stored thread's meta and list row (its items on first open), re-attaches the open ones to their shed terminals by name, and starts
     /// following shed's events, each tool call read by its agent's provider in `providers`. A push speaks `theme`'s words; `plugins` may post choice cards and get their answers;
@@ -510,14 +519,7 @@ impl Hub {
         expiry: u64,
     ) -> Result<Arc<Self>, HubError> {
         let store = Store::open(data)?;
-        let key = data.join("mcp.key");
-        let mcp_key = if let Ok(k) = fs::read_to_string(&key) {
-            k
-        } else {
-            let k = cooee_core::random(32).map(|r| cooee_core::sha256(&r));
-            let k = k.and_then(|k| cooee_core::write_private(&key, k.as_bytes()).map(|()| k));
-            k.map_err(|e| refused(&key, &e))?
-        };
+        let mcp_key = mcp_key(&data.join("mcp.key"))?;
         let (mut threads, mut terminals) = (BTreeMap::new(), HashMap::new());
         for id in store.ids()? {
             let mut meta = store.load(&id)?;
