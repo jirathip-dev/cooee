@@ -29,6 +29,7 @@ mod approvals;
 mod ask;
 mod cards;
 mod chief;
+mod desk;
 mod events;
 mod expire;
 mod fallback;
@@ -293,6 +294,7 @@ pub struct Hub {
     models: Mutex<Vec<cooee_core::models::Offered>>,
     expiry: u64,
     desks: screen::Desks,
+    leases: desk::Leases,
     surface: Mutex<surface::Surface>,
     home: home::Home,
 }
@@ -570,6 +572,7 @@ impl Hub {
             models: Mutex::new(cooee_core::models::load(&data.join("models.json"))),
             expiry,
             desks: screen::Desks::default(),
+            leases: desk::Leases::default(),
             surface: Mutex::default(),
         });
         let worker = Arc::clone(&hub);
