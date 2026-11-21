@@ -1,7 +1,7 @@
 #!/bin/sh
 # drover's arch-check and lesson-check on fixtures (#202, #203): with .drover/arch.toml's bans, a `Command::new` outside
 # crates/cooee-core/src/runner.rs fails, and so do sleeping or reading the time outside clock.rs and the environment
-# outside config.rs; a failing lesson check fails only once it is active.
+# outside config/; a failing lesson check fails only once it is active.
 set -eu
 here=$(cd "$(dirname "$0")/.." && pwd)
 t=$(mktemp -d)
@@ -15,9 +15,9 @@ printf 'fn f() {\n    std::process::Command::new("sh");\n}\n' > crates/x/src/lib
 if drover arch-check > out; then echo "expected Command::new in crates/x/src to fail arch-check"; exit 1; fi
 grep -q 'crates/x/src/lib.rs:2' out || { cat out; echo "expected arch-check to name crates/x/src/lib.rs:2"; exit 1; }
 printf 'fn f() {}\n' > crates/x/src/lib.rs
-mkdir -p crates/cooee-core/src
+mkdir -p crates/cooee-core/src/config
 printf 'fn f() {\n    std::thread::sleep(d);\n    std::time::SystemTime::now();\n    std::time::Instant::now();\n}\n' > crates/cooee-core/src/clock.rs
-printf 'fn f() {\n    std::env::var_os("HOME");\n}\n' > crates/cooee-core/src/config.rs
+printf 'fn f() {\n    std::env::var_os("HOME");\n}\n' > crates/cooee-core/src/config/env.rs
 drover arch-check
 for ban in 'std::thread::sleep(d)' 'std::time::SystemTime::now()' 'std::time::Instant::now()' 'std::env::var("HOME")'; do
   printf 'fn f() {\n    %s;\n}\n' "$ban" > crates/x/src/lib.rs
