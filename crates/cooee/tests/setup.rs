@@ -62,7 +62,7 @@ esac"#,
 */releases/latest) echo '{"tag_name":"build-2222222"}' ;;
 */releases/download/*/SHA256SUMS) cat "$HOME/SHA256SUMS" ;;
 */releases/download/*) for a; do [ "$prev" = -o ] && out=$a; prev=$a; done; cp "$HOME/new-cooee" "$out" ;;
-*127.0.0.1*) "$HOME/serving" ;;
+*127.0.0.1*) "$HOME/serving" >/dev/null && exec /usr/bin/curl "$@" ;;
 *) [ -e "$HOME/tailnet" ] || exit 0
    for a; do shift; case $a in https://*) a="http://$(cat "$HOME/tailnet")/${a#https://*/}" ;; esac; set -- "$@" "$a"; done
    exec /usr/bin/curl "$@" ;;
@@ -660,6 +660,21 @@ fn updating(name: &str, released: bool, new: &str) -> Mac {
     fs::write(mac.config(), format!("port = {}\n", mac.port)).unwrap();
     fs::create_dir_all(mac.data()).unwrap();
     fs::write(mac.home.join("loaded-dev.cooee.cooee"), "").unwrap();
+    let server = mac._listener.try_clone().unwrap();
+    std::thread::spawn(move || {
+        for mut conn in server.incoming().flatten() {
+            let mut buf = [0; 4096];
+            let n = std::io::Read::read(&mut conn, &mut buf).unwrap();
+            let status = if buf[..n].starts_with(b"GET /pair ") {
+                "405 Method Not Allowed"
+            } else {
+                "401 Unauthorized"
+            };
+            let reply =
+                format!("HTTP/1.1 {status}\r\ncontent-length: 0\r\nconnection: close\r\n\r\n");
+            std::io::Write::write_all(&mut conn, reply.as_bytes()).unwrap();
+        }
+    });
     mac
 }
 
