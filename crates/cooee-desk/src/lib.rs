@@ -20,6 +20,7 @@ pub const MAX_MEMORY_MIB: u32 = 8192;
 pub const PROVIDER: &str = "container";
 /// The label a desk carries its provider in, set when it is created.
 pub const PROVIDER_LABEL: &str = "cooee.provider";
+const DISPLAY: &str = "DISPLAY=:1";
 
 /// Why a desk step failed.
 #[derive(Debug, thiserror::Error)]
@@ -231,6 +232,40 @@ impl Desks {
                 })
             })
             .collect())
+    }
+
+    /// A PNG of `name`'s whole screen.
+    ///
+    /// # Errors
+    /// [`Error::Cli`] when the CLI or the screenshot fails.
+    pub fn screenshot(&self, name: &Name) -> Result<Vec<u8>, Error> {
+        self.on_screen(name, &["import", "-window", "root", "png:-"])
+            .map(|o| o.stdout)
+    }
+
+    /// Clicks `name`'s screen at `x`, `y` pixels from its top left.
+    ///
+    /// # Errors
+    /// [`Error::Cli`] when the CLI or the click fails.
+    pub fn click(&self, name: &Name, x: u32, y: u32) -> Result<(), Error> {
+        let (x, y) = (x.to_string(), y.to_string());
+        let args = ["xdotool", "mousemove", &x, &y, "click", "1"];
+        self.on_screen(name, &args).map(drop)
+    }
+
+    /// Types `text` on `name`'s keyboard, into whatever has the focus.
+    ///
+    /// # Errors
+    /// [`Error::Cli`] when the CLI or the typing fails.
+    pub fn type_text(&self, name: &Name, text: &str) -> Result<(), Error> {
+        self.on_screen(name, &["xdotool", "type", "--", text])
+            .map(drop)
+    }
+
+    fn on_screen(&self, name: &Name, command: &[&str]) -> Result<Output, Error> {
+        let mut args = vec!["exec", &name.0, "env", DISPLAY];
+        args.extend_from_slice(command);
+        self.run(&args)
     }
 
     fn network(&self) -> Result<(), Error> {

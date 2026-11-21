@@ -230,6 +230,7 @@ dependencies = [
  "base64 0.22.1",
  "blocks",
  "cooee-core",
+ "cooee-desk",
  "cooee-machines",
  "flate2",
  "futures-util",
