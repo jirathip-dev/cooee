@@ -79,7 +79,7 @@ internal final class Ear {
     private static func start(call: Bool) async throws -> Ear {
         guard await AVAudioApplication.requestRecordPermission() else { throw Refused.microphone }
         let allowed = await withCheckedContinuation { done in
-            SFSpeechRecognizer.requestAuthorization { done.resume(returning: $0) }
+            SFSpeechRecognizer.requestAuthorization { @Sendable in done.resume(returning: $0) }
         }
         guard allowed == .authorized else { throw Refused.speech }
         try session(call: call)
@@ -120,7 +120,7 @@ internal final class Ear {
     ) {
         let source = node.outputFormat(forBus: 0)
         let resample = Resample(from: source, to: format)
-        node.installTap(onBus: 0, bufferSize: 4096, format: source) { buffer, _ in
+        node.installTap(onBus: 0, bufferSize: 4096, format: source) { @Sendable buffer, _ in
             if let converted = resample?.convert(buffer) { input.yield(AnalyzerInput(buffer: converted)) }
         }
     }
