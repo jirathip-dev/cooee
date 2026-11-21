@@ -1,8 +1,7 @@
 import AVFoundation
+@testable import CooeeApp
 import Speech
 import Testing
-
-@testable import CooeeApp
 
 @MainActor
 internal struct EarTests {
@@ -10,8 +9,7 @@ internal struct EarTests {
         let source = try #require(AVAudioFormat(standardFormatWithSampleRate: 48_000, channels: 1))
         let wanted = try #require(
             AVAudioFormat(commonFormat: .pcmFormatInt16, sampleRate: 16_000, channels: 1, interleaved: false))
-        // SAFETY: the engine is set up here before the render task starts, then rendered only there.
-        nonisolated(unsafe) let engine = AVAudioEngine()
+        let engine = AVAudioEngine()
         try engine.enableManualRenderingMode(.offline, format: source, maximumFrameCount: 4096)
         let player = AVAudioPlayerNode()
         engine.attach(player)
