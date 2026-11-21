@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use blocks::{AppBlock, Block};
+use blocks::{Action, AppBlock, Block};
 use cooee_core::{
     Config, Kind,
     agents::{self, Agent},
@@ -9,7 +9,7 @@ use cooee_core::{
     routines::{Mark, Place, Routine},
     skills,
 };
-use serde::{Deserialize, Serialize};
+use serde::Serialize;
 use serde_json::{Map, Value};
 use topcoat::{
     Result,
@@ -53,36 +53,21 @@ pub async fn persona(cx: &Cx) -> Result<Response> {
     }
 }
 
-/// `{screen, block, action, values}` from a core screen's block.
-#[derive(Deserialize)]
-pub struct Act {
-    pub(super) screen: String,
-    pub(super) action: String,
-    #[serde(default)]
-    pub(super) values: Map<String, Value>,
+pub(super) async fn act(cx: &Cx, a: &Action) -> Option<Result<Response>> {
+    let id = a.screen.strip_prefix("/screens/persona/")?.to_owned();
+    Some(Answer(persona_act(cx, id, a).await).into_response(cx))
 }
 
-/// `POST /screens/action`: on `/screens/persona/<id>`, `save` puts `values` as the persona and answers it, `clear`
-/// forgets its memory, `test` runs webhook routine `values.routine` on a test POST, each answering the screen, and
-/// `skill` and `routine` queue their marked message in `values.thread` and answer its queue.
-#[route(POST "/screens/action")]
-pub async fn action(cx: &Cx, Json(a): Json<Act>) -> Result<Answer<Value>> {
-    let Some(id) = a
-        .screen
-        .strip_prefix("/screens/persona/")
-        .map(str::to_owned)
-    else {
-        return Ok(Answer(super::routines::action(cx, a).await));
-    };
+async fn persona_act(cx: &Cx, id: String, a: &Action) -> Result<Value, HubError> {
     match a.action.as_str() {
         "save" => {
             let named = a.values.contains_key("mcp");
-            match serde_json::from_value::<Agent>(Value::Object(a.values)) {
-                Ok(p) => Ok(Answer(save(cx, Agent { id, ..p }, named).await)),
-                Err(e) => Ok(Answer(Err(refused(e)))),
+            match serde_json::from_value::<Agent>(Value::Object(a.values.clone())) {
+                Ok(p) => save(cx, Agent { id, ..p }, named).await,
+                Err(e) => Err(refused(e)),
             }
         }
-        "clear" => Ok(Answer(clear(cx, id).await)),
+        "clear" => clear(cx, id).await,
         "test" => {
             let routine = a
                 .values
@@ -90,11 +75,8 @@ pub async fn action(cx: &Cx, Json(a): Json<Act>) -> Result<Answer<Value>> {
                 .and_then(Value::as_str)
                 .unwrap_or_default()
                 .to_owned();
-            let tested = routines::on(cx, move |r| r.test(&routine, crate::hub::now())).await;
-            Ok(Answer(match tested {
-                Ok(_) => screen(cx, id).await,
-                Err(e) => Err(e),
-            }))
+            routines::on(cx, move |r| r.test(&routine, crate::hub::now())).await?;
+            screen(cx, id).await
         }
         "add_skill" => {
             let name = a
@@ -102,15 +84,15 @@ pub async fn action(cx: &Cx, Json(a): Json<Act>) -> Result<Answer<Value>> {
                 .get("name")
                 .and_then(Value::as_str)
                 .unwrap_or_default();
-            Ok(Answer(add_skill(cx, id, name.to_owned()).await))
+            add_skill(cx, id, name.to_owned()).await
         }
         other => match TEACH.iter().find(|(t, ..)| *t == other) {
             Some(&teaching) => {
                 let thread = a.values.get("thread").and_then(Value::as_str);
                 let thread = thread.unwrap_or_default().to_owned();
-                Ok(Answer(teach(cx, id, teaching, thread).await))
+                teach(cx, id, teaching, thread).await
             }
-            None => Ok(Answer(Err(refused(format!("no action {other}"))))),
+            None => Err(refused(format!("no action {other}"))),
         },
     }
 }
@@ -389,5 +371,5 @@ fn routine(((url, next, when), r): &(Shown, Routine)) -> Value {
 }
 
 pub(super) fn routes(b: topcoat::router::RouterBuilder) -> topcoat::router::RouterBuilder {
-    b.route(persona).route(action)
+    b.route(persona)
 }
