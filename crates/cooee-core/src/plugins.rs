@@ -1,4 +1,4 @@
-//! Installed plugins (docs/plugins.md): a plugin is a git repo with a `cooee-plugin.toml` at its root. cooee keeps
+//! Installed plugins (docs/plugins/): a plugin is a git repo with a `cooee-plugin.toml` at its root. cooee keeps
 //! it in `<data>/plugins/<name>/`, pins it in `<data>/plugins.lock` and writes its tabs as `[[plugins]]` entries in
 //! `<data>/plugins/plugins.toml`, read beside the config's own. The curated index, `plugins/index.toml`, is built in.
 
