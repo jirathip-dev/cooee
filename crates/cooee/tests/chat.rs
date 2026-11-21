@@ -716,11 +716,11 @@ fn a_reply_streams_into_one_message_by_appends_beside_its_tool_row_and_keeps_its
         "the tool row, then the text last"
     );
     assert_eq!(block(&shown, "i2").unwrap()["summary"], "cargo test");
-    assert_eq!(text(block(&shown, "m2-text").unwrap()), "w0 ");
+    assert_eq!(text(block(&shown, "m2-text").unwrap()), "w0");
 
     s.shed.says(&terminal(&id), "w1 ");
     let grew = follow(&mut events, &mut m, &key, |v| {
-        block(v, "m2-text").is_some_and(|p| text(p) == "w0 w1 ")
+        block(v, "m2-text").is_some_and(|p| text(p) == "w0 w1")
     });
     let added: Vec<&Value> = ops(&grew, "append").map(|o| &o["id"]).collect();
     assert_eq!(added, ["m2-text"], "{grew:?}");
