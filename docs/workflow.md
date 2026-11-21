@@ -19,4 +19,4 @@ push (approvals and errors still push).
 
 herdsman's lanes (its impl, review and fix agents) are what fill this list: each runs as a shed ACP session labelled by
 its source (the tool), `group` its repo, `item` its issue, with its `role` and `round`. So a lane is opened as a chat in
-cooee core, never in a drover screen; those show the queue, events, asks and fleets ([Plugins](plugins.md)).
+cooee core, never in a drover screen; those show the queue, events, asks and fleets ([Plugins](plugins/README.md)).

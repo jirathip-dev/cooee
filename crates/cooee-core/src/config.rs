@@ -142,7 +142,7 @@ impl Default for History {
 }
 
 /// A plugin: a tab whose page is an ES module served by the plugin's own backend, which cooee reaches with the
-/// plugin's token (docs/plugins.md).
+/// plugin's token (docs/plugins/).
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct Plugin {

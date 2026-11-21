@@ -6,7 +6,7 @@ use serde::Deserialize;
 
 use super::{CHANGE, Hub, HubError, live::Live, lock, now};
 
-/// A plugin's card (`POST /plugin/card`, docs/plugins.md).
+/// A plugin's card (`POST /plugin/card`, docs/plugins/).
 #[derive(Debug, Deserialize)]
 pub struct CardSpec {
     /// The thread it goes in.

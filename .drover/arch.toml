@@ -1,5 +1,5 @@
 # Written by scripts/gen.sh from .drover/arch/ (docs/architecture/hotspots-2026-11-16). Never edit it.
-frozen = ["apple/Sources/CooeeApp/Live.swift", "apple/Sources/CooeeCore/Models.swift", "apple/Sources/CooeeFeatures/Clients.swift", "apple/Tests/CooeeUITests/Frames.swift", "apple/UITests/LiveUITests.swift", "crates/cooee-core/src/root.rs", "crates/cooee-server/src/root.rs", "docs/api.md", "docs/architecture.md", "justfile"]
+frozen = ["apple/Sources/CooeeApp/Live.swift", "apple/Sources/CooeeCore/Models.swift", "apple/Sources/CooeeFeatures/Clients.swift", "apple/Tests/CooeeUITests/Frames.swift", "apple/UITests/LiveUITests.swift", "crates/cooee-core/src/root.rs", "crates/cooee-server/src/root.rs", "docs/api.md", "docs/architecture.md", "docs/plugins.md", "justfile"]
 generated = [".drover/arch.toml", "Cargo.lock", "README.md", "crates/cooee-core/src/chat.rs", "crates/cooee-core/src/lib.rs", "crates/cooee-core/src/shed.rs", "crates/cooee-core/src/store.rs", "crates/cooee-server/src/chief/tools/mod.rs", "crates/cooee-server/src/hub.rs", "crates/cooee-server/src/hub/areas.rs", "crates/cooee-server/src/lib.rs", "crates/cooee-server/src/login.rs", "crates/cooee-server/src/mcp.rs", "crates/cooee-server/src/push.rs", "crates/cooee-server/src/routes/mod.rs", "crates/cooee-server/src/screens/mod.rs", "crates/cooee/src/cmd/mod.rs", "crates/cooee/tests/support/mod.rs"]
 shared = [".github/workflows/apple.yml", ".github/workflows/ci.yml", "Cargo.toml", "crates/cooee-server/src/serve.rs", "crates/cooee/src/main.rs"]
 generate = "scripts/gen.sh"
@@ -157,6 +157,10 @@ pattern = "\"curl\""
 paths = ["crates/cooee-server/src/**"]
 except = ["crates/cooee-server/src/net.rs"]
 reason = "#497: only net.rs starts curl: use net::fetch or net::stream, which follow no redirect and take headers on stdin"
+
+[[collect]]
+dir = "docs/plugins"
+glob = "*.md"
 
 [[ban]]
 pattern = "history::watermark"
