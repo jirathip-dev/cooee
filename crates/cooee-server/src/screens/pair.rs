@@ -4,7 +4,8 @@ use blocks::{
     Action, Block, Button, FieldValue, Fields, Form, Screen, Submit, Tap, Text, TextField, Toast,
     Tone,
 };
-use cooee_core::{Claim, Devices, Peek, device_key};
+use cooee_core::blocks::device_key;
+use cooee_core::{Claim, Devices, Peek};
 use serde::Deserialize;
 use serde_json::Value;
 use topcoat::{

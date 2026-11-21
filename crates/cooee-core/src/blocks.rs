@@ -1,3 +1,5 @@
+//! The chat block shapes items render to, and the `device-key` island.
+
 use blocks::{
     Block, Card, CardKind, Choice, ChoiceOption, Fallback, Fields, Island, Other, Run, Secret,
     Text, TextStyle,

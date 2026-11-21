@@ -1,5 +1,4 @@
 pub use crate::accounts::{Account, Accounts, Sheet, Usage, Window};
-pub use crate::blocks::device_key;
 pub use crate::chat::{Body, Card, Change, Chat, Item, Summary, Turn, Via};
 pub use crate::config::{
     Apns, ApnsEnv, Config, ConfigError, Perf, Plugin, ROOTS_FIX, env_var, save_roots,
