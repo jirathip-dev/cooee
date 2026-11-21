@@ -57,7 +57,7 @@ pub(super) async fn signin_rows(cx: &Cx) -> Result<Vec<Row>, HubError> {
                     (false, false) => ("signed out", Tone::Bad),
                 };
                 let subtitle = Label {
-                    text: text.to_owned(),
+                    text: text.into(),
                     tone: Some(tone),
                 };
                 Row::new(format!("{} · {}", s.provider.name, a.shown(st)))

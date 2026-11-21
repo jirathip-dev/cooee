@@ -12,7 +12,7 @@ pub use pack::{LoadScene, STYLES, Style, check, read_pack};
 /// # Errors
 /// Each check it fails, with its value and minimum.
 pub fn gate(s: &Scheme) -> Result<(), String> {
-    let fails: Vec<String> = blocks::theme::gate(s)
+    let fails: Vec<String> = blocks::theme::gate(s, blocks::theme::Fills::Tint)
         .iter()
         .map(|m| format!("{} {:.2} (min {})", m.what, m.got, m.min))
         .collect();

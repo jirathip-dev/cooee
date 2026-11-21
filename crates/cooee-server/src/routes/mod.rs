@@ -15,6 +15,7 @@ mod routines;
 mod rules;
 mod screen;
 mod skills;
+mod stream;
 mod threads;
 
 use topcoat::router::RouterBuilder;
@@ -37,5 +38,6 @@ pub(crate) fn routes(b: RouterBuilder) -> RouterBuilder {
     let b = rules::routes(b);
     let b = screen::routes(b);
     let b = skills::routes(b);
+    let b = stream::routes(b);
     threads::routes(b)
 }

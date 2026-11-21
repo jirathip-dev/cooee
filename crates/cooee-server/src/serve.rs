@@ -14,7 +14,7 @@ use crate::{
     Hub, Layouts, Logins, Manager, connectors, editor,
     gate::{Gate, Gzip, Timing, names},
     http::{Data, profiles, provider_name, recipe},
-    hub, layout, look, pairing,
+    hub, layout, live, look, pairing,
     passkey::Unlocks,
     plugin, routes, routines, screens, themes,
 };
@@ -108,6 +108,7 @@ pub fn router(
     .route(layout::events)
     .route(layout::reset)
     .app_context(layouts)
+    .app_context(Arc::new(live::Live::new(Arc::clone(&hub))))
     .app_context(hub)
     .app_context(runner)
     .app_context(Arc::new(Unlocks::default()))

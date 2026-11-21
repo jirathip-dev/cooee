@@ -10,6 +10,7 @@ mod gate;
 mod http;
 mod hub;
 mod layout;
+mod live;
 mod login;
 mod look;
 pub mod machine;
