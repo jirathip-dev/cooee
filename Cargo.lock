@@ -170,6 +170,7 @@ dependencies = [
  "base64 0.22.1",
  "blocks",
  "cooee-core",
+ "cooee-desk",
  "cooee-machines",
  "cooee-server",
  "cooee-terminal",
@@ -216,6 +217,8 @@ name = "cooee-machines"
 version = "0.1.0"
 dependencies = [
  "cooee-core",
+ "cooee-desk",
+ "serde",
  "serde_json",
 ]
 

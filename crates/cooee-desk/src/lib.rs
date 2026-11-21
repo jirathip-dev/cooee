@@ -16,6 +16,10 @@ pub const MAX_CPUS: u8 = 4;
 pub const MIN_MEMORY_MIB: u32 = 1024;
 /// The most memory a desk may have, in MiB.
 pub const MAX_MEMORY_MIB: u32 = 8192;
+/// The provider every desk made here is labelled with.
+pub const PROVIDER: &str = "container";
+/// The label a desk carries its provider in, set when it is created.
+pub const PROVIDER_LABEL: &str = "cooee.provider";
 
 /// Why a desk step failed.
 #[derive(Debug, thiserror::Error)]
@@ -99,6 +103,17 @@ pub enum State {
     Awake,
 }
 
+/// A desk this provider made, as the CLI lists it.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Desk {
+    /// Its name.
+    pub name: String,
+    /// The provider its label names.
+    pub provider: String,
+    /// Where it is in its life.
+    pub state: State,
+}
+
 /// The desk provider: the `container` CLI and the addresses no desk may reach.
 #[derive(Debug, Clone)]
 pub struct Desks {
@@ -123,10 +138,13 @@ impl Desks {
             return Ok(());
         }
         let (cpus, memory) = (caps.cpus.to_string(), format!("{}M", caps.memory_mib));
+        let label = format!("{PROVIDER_LABEL}={PROVIDER}");
         let args = [
             "create",
             "--name",
             &name.0,
+            "--label",
+            &label,
             "--cpus",
             &cpus,
             "--memory",
@@ -192,11 +210,27 @@ impl Desks {
         let desk = list
             .iter()
             .find(|c| c.pointer("/configuration/id") == Some(&Value::from(name.0.as_str())));
-        Ok(match desk.map(|c| c.get("status")) {
-            None => State::Gone,
-            Some(s) if s.and_then(Value::as_str) == Some("running") => State::Awake,
-            Some(_) => State::Asleep,
-        })
+        Ok(desk.map_or(State::Gone, status))
+    }
+
+    /// The desks this provider made: the containers labelled with their provider, no others.
+    ///
+    /// # Errors
+    /// [`Error::Cli`] when the CLI fails or its list is not JSON.
+    pub fn made(&self) -> Result<Vec<Desk>, Error> {
+        let list = self.list(&["ls", "--all", "--format", "json"])?;
+        Ok(list
+            .iter()
+            .filter_map(|c| {
+                let config = c.get("configuration")?;
+                let provider = config.get("labels")?.get(PROVIDER_LABEL)?.as_str()?;
+                Some(Desk {
+                    name: config.get("id")?.as_str()?.to_owned(),
+                    provider: provider.to_owned(),
+                    state: status(c),
+                })
+            })
+            .collect())
     }
 
     fn network(&self) -> Result<(), Error> {
@@ -236,6 +270,14 @@ impl Desks {
             .args(args)
             .output()
             .map_err(|e| cli_error(args, &e.to_string()))
+    }
+}
+
+fn status(container: &Value) -> State {
+    if container.get("status").and_then(Value::as_str) == Some("running") {
+        State::Awake
+    } else {
+        State::Asleep
     }
 }
 

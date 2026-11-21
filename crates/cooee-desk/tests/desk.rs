@@ -10,7 +10,8 @@ use std::{
 };
 
 use cooee_desk::{
-    Caps, Desks, Error, MAX_CPUS, MAX_MEMORY_MIB, MIN_MEMORY_MIB, NETWORK, Name, State,
+    Caps, Desk, Desks, Error, MAX_CPUS, MAX_MEMORY_MIB, MIN_MEMORY_MIB, NETWORK, Name, PROVIDER,
+    State,
 };
 
 const CONTAINER: &str = r#"#!/bin/sh
@@ -25,10 +26,12 @@ case "$1 $2" in
   printf '['; sep=
   for f in "$d"/c/*; do
     [ -e "$f" ] || continue
-    printf '%s{"configuration":{"id":"%s"},"status":"%s"}' "$sep" "$(basename "$f")" "$(cat "$f")"; sep=,
+    n=$(basename "$f"); l=
+    [ -e "$d/l/$n" ] && l=$(sed 's/\(.*\)=\(.*\)/"\1":"\2"/' "$d/l/$n")
+    printf '%s{"configuration":{"id":"%s","labels":{%s}},"status":"%s"}' "$sep" "$n" "$l" "$(cat "$f")"; sep=,
   done
   printf ']' ;;
-"create --name") echo stopped >"$d/c/$3" ;;
+"create --name") echo stopped >"$d/c/$3"; mkdir -p "$d/l"; [ "$4" = --label ] && printf '%s' "$5" >"$d/l/$3" ;;
 "start "*) [ -e "$d/c/$2" ] || { echo "no such container" >&2; exit 1; }; echo running >"$d/c/$2" ;;
 "stop "*) echo stopped >"$d/c/$2" ;;
 "delete --force") rm "$d/c/$3" ;;
@@ -141,7 +144,7 @@ fn a_desk_gets_its_caps_and_caps_outside_the_limits_are_refused() {
     assert_eq!(
         fake.calls("create "),
         [format!(
-            "create --name capped --cpus 2 --memory 2048M --network {NETWORK} img"
+            "create --name capped --label cooee.provider=container --cpus 2 --memory 2048M --network {NETWORK} img"
         )]
     );
 }
@@ -200,6 +203,24 @@ fn a_desk_that_reaches_the_lan_or_the_tailnet_is_stopped_and_one_that_does_not_s
     desks.wake(&desk).unwrap();
     assert_eq!(desks.state(&desk).unwrap(), State::Awake);
     assert_eq!(fake.calls("exec ").len(), 2);
+}
+
+#[test]
+fn only_the_desks_the_provider_created_are_listed_with_their_provider() {
+    let fake = Fake::new("made");
+    let desks = fake.desks(&[]);
+    fs::write(fake.dir.join("c/by-hand"), "running").unwrap();
+    let desk = Name::new("made-1").unwrap();
+    desks.create(&desk, "img", caps()).unwrap();
+    desks.wake(&desk).unwrap();
+    assert_eq!(
+        desks.made().unwrap(),
+        [Desk {
+            name: "made-1".to_owned(),
+            provider: PROVIDER.to_owned(),
+            state: State::Awake,
+        }]
+    );
 }
 
 #[test]

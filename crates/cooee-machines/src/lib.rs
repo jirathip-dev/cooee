@@ -23,6 +23,8 @@ use cooee_core::{
     Plugin,
     shed_proto::{MachineStats, Sample},
 };
+use cooee_desk::Desks;
+use serde::Serialize;
 use serde_json::{Value, json};
 
 pub use html::{ago, render};
@@ -36,11 +38,29 @@ pub const DAY: u64 = 86_400;
 
 const TAB: &str = include_str!("tab.js");
 
+/// What a machine is: a real computer, or a desk its provider made on a host.
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize)]
+#[serde(tag = "kind", rename_all = "lowercase")]
+pub enum Kind {
+    /// A real computer: this one or one `shed machine add` gave.
+    #[default]
+    Host,
+    /// A desk, as the provider that created it labelled it.
+    Desk {
+        /// The provider that created it.
+        provider: String,
+        /// The host it runs on.
+        parent: String,
+    },
+}
+
 /// One machine's card: what shed last said about it.
 #[derive(Debug, Clone, Default, PartialEq)]
 pub struct Card {
     /// Its name: this machine's host name, or the one `shed machine add` gave it.
     pub name: String,
+    /// What it is.
+    pub kind: Kind,
     /// Whether it answered the last time.
     pub online: bool,
     /// When it last answered, unix seconds.
@@ -69,8 +89,8 @@ impl Card {
     #[must_use]
     pub fn problems(&self) -> Vec<Problem> {
         match (&self.now, self.online) {
-            (_, false) => vec![Problem::Offline],
-            (None, true) => Vec::new(),
+            (_, false) if self.kind == Kind::Host => vec![Problem::Offline],
+            (None, _) | (_, false) => Vec::new(),
             (Some(s), true) => [
                 (s.disk_free_mb < DISK_LOW_MB, Problem::DiskLow),
                 (
@@ -111,6 +131,7 @@ pub struct Machines {
     shed: PathBuf,
     dir: Option<PathBuf>,
     local: String,
+    desks: Option<Desks>,
     cards: Mutex<Vec<Card>>,
     pushed: Mutex<BTreeMap<String, Vec<Problem>>>,
     dot: Mutex<Option<bool>>,
@@ -163,13 +184,20 @@ pub fn unix_now() -> u64 {
 }
 
 impl Machines {
-    /// The plugin for the `shed` binary `shed` (with `--dir dir`), this machine named `local`.
+    /// The plugin for the `shed` binary `shed` (with `--dir dir`), this machine named `local`, its desks from the
+    /// `container` CLI when one is set.
     #[must_use]
-    pub fn new(shed: PathBuf, dir: Option<PathBuf>, local: String) -> Self {
+    pub fn new(
+        shed: PathBuf,
+        dir: Option<PathBuf>,
+        local: String,
+        container: Option<PathBuf>,
+    ) -> Self {
         Self {
             shed,
             dir,
             local,
+            desks: container.map(|c| Desks::new(c, Vec::new())),
             cards: Mutex::default(),
             pushed: Mutex::default(),
             dot: Mutex::default(),
@@ -207,10 +235,10 @@ impl Machines {
     }
 
     /// Asks shed about this machine and each added one, keeping 24 h of samples per machine (only the new ones
-    /// are asked for); the new cards.
+    /// are asked for), then the desk provider for the desks it made on this machine; the new cards.
     pub fn poll(&self, now: u64) -> Vec<Card> {
         let old = self.cards();
-        let cards: Vec<Card> = std::iter::once(None)
+        let mut cards: Vec<Card> = std::iter::once(None)
             .chain(self.added().into_iter().map(Some))
             .map(|on| {
                 let name = on.clone().unwrap_or_else(|| self.local.clone());
@@ -251,6 +279,22 @@ impl Machines {
                 card
             })
             .collect();
+        let desks = self.desks.iter().flat_map(|d| match d.made() {
+            Ok(made) => made,
+            Err(e) => {
+                cooee_core::note!("cooee-machines: desks: {e}");
+                Vec::new()
+            }
+        });
+        cards.extend(desks.map(|d| Card {
+            name: d.name,
+            kind: Kind::Desk {
+                provider: d.provider,
+                parent: self.local.clone(),
+            },
+            online: d.state == cooee_desk::State::Awake,
+            ..Card::default()
+        }));
         lock(&self.cards).clone_from(&cards);
         cards
     }
@@ -354,8 +398,8 @@ pub fn local_name() -> String {
     }
 }
 
-/// Runs the plugin for `plugin` (its backend at its `url`), reaching shed with `shed`/`dir` and cooee at `cooee`:
-/// polls once a minute.
+/// Runs the plugin for `plugin` (its backend at its `url`), reaching shed with `shed`/`dir`, the desks with
+/// `container` and cooee at `cooee`: polls once a minute.
 ///
 /// # Errors
 /// When the plugin's address can't be bound.
@@ -363,11 +407,12 @@ pub fn start(
     plugin: &Plugin,
     shed: PathBuf,
     dir: Option<PathBuf>,
+    container: Option<PathBuf>,
     cooee: SocketAddr,
 ) -> io::Result<()> {
     let rest = plugin.url.trim_start_matches("http://");
     let listener = TcpListener::bind(rest.split('/').next().unwrap_or(rest))?;
-    let machines = Arc::new(Machines::new(shed, dir, local_name()));
+    let machines = Arc::new(Machines::new(shed, dir, local_name(), container));
     let (m, token) = (Arc::clone(&machines), plugin.token.clone());
     thread::spawn(move || serve(&listener, &token, &m));
     let cooee = Cooee {
