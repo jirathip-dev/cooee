@@ -26,25 +26,21 @@ const UNSENT: usize = 1 << 20;
 const PACE: Duration = Duration::from_millis(50);
 const IDLE: Duration = Duration::from_secs(300);
 
-/// Who holds a stream: a paired device.
 pub(crate) enum Who {
     Device(Device),
 }
 
-/// What wakes a held key to be built again: a change of the thread list.
 pub(crate) enum Wake {
     Home,
 }
 
 type Build = dyn Fn(&Hub) -> Result<Block, HubError> + Send + std::marker::Sync;
 
-/// How a screen is published: what wakes it, and the one function its `GET` and its stream both build it with.
 pub(crate) struct Source {
     pub(crate) wake: Wake,
     pub(crate) build: Box<Build>,
 }
 
-/// What a stream sends: one key's frame, or why it ends.
 pub(crate) enum Sent {
     Frame(Arc<str>),
     Bye(Why),
@@ -78,7 +74,6 @@ impl Tap {
     }
 }
 
-/// One stream's events, in order; dropping it lets go of every key it held.
 pub(crate) struct Frames {
     rx: mpsc::UnboundedReceiver<Sent>,
     tap: Arc<Tap>,
@@ -86,7 +81,6 @@ pub(crate) struct Frames {
 }
 
 impl Frames {
-    /// The next frame or `bye`; none once the stream ended.
     pub(crate) async fn next(&mut self) -> Option<Sent> {
         let sent = self.rx.recv().await?;
         if let Sent::Frame(f) = &sent {
@@ -146,7 +140,6 @@ impl State {
     }
 }
 
-/// The publisher: per key somebody holds, its `Shelf`, its holders and the task that builds it again when woken.
 pub(crate) struct Live {
     hub: Arc<Hub>,
     epoch: String,
@@ -168,7 +161,6 @@ impl Live {
         }
     }
 
-    /// A new stream for `who` at the version `accept` names: its `hello` and its frames.
     pub(crate) fn attach(
         self: &Arc<Self>,
         who: &Who,
@@ -210,7 +202,6 @@ impl Live {
         Ok((hello, Frames { rx, tap, live }))
     }
 
-    /// Stream `sid`'s sync: closes its keys, then answers each key it opens; none when `sid` is not `who`'s stream.
     pub(crate) async fn sync(self: &Arc<Self>, sid: &str, who: &Who, s: Sync) -> Option<Synced> {
         let Who::Device(device) = who;
         let tap = {
