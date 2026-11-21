@@ -427,9 +427,6 @@ fn propose_server_shows_the_exact_command_runs_nothing_and_needs_face_id_to_add_
         "nothing runs before approval"
     );
 
-    let choice = &card["block"]["blocks"][1];
-    assert_eq!(choice["options"][0]["value"], "decline", "{choice}");
-    assert_eq!(choice["options"].as_array().unwrap().len(), 1, "{choice}");
     let island = &card["block"]["blocks"][2];
     assert_eq!(
         (&island["name"], &island["props"]["mode"], &island["events"]),

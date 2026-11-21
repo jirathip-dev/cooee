@@ -64,8 +64,8 @@ impl Item {
 
     /// The card block an approval is drawn as: an `ask` (a choice, or a thread to pick), `config` (its diff with
     /// apply or discard), `secret` (one masked field) or `run` card. Its action is `answer`, sent back as
-    /// `POST /threads/<id>/approve`; once settled it shows its line instead. A proposal's approve is the
-    /// `device-key` island.
+    /// `POST /threads/<id>/approve`; once settled it shows its line instead. A proposal also carries the
+    /// `device-key` island that signs its approve.
     #[must_use]
     pub fn block(&self) -> Option<Block> {
         let Body::Approval {
@@ -114,7 +114,6 @@ impl Item {
             _ => {
                 let mut shown: Vec<_> = options
                     .iter()
-                    .filter(|o| !(self.needs_key() && o.id == "approve"))
                     .map(|o| ChoiceOption {
                         value: o.id.clone(),
                         label: o.name.clone(),
