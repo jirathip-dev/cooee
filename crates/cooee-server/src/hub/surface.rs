@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, sync::Mutex};
 
 use cooee_core::{Body, Summary};
 
@@ -9,6 +9,11 @@ use crate::push::{Overview, Shown, due, kind, overview, rank};
 pub(super) struct Surface {
     since: HashMap<String, (String, u64)>,
     sent: Option<(Shown, u64)>,
+}
+
+#[derive(Default)]
+pub(super) struct State {
+    surface: Mutex<Surface>,
 }
 
 impl Surface {
@@ -37,7 +42,7 @@ impl Hub {
     #[must_use]
     pub fn overview(&self) -> Overview {
         let (rows, at) = (self.list(), now());
-        let mut s = lock(&self.surface);
+        let mut s = lock(&self.areas.surface.surface);
         s.seen(&rows, at);
         overview(&rows, s.since(at), at)
     }
@@ -56,7 +61,7 @@ impl Hub {
 
     pub(super) fn surface(&self, at: u64) {
         let rows = self.list();
-        let mut s = lock(&self.surface);
+        let mut s = lock(&self.areas.surface.surface);
         s.seen(&rows, at);
         let mut next = rank(&rows, s.since(at));
         if let Some(n) = next.as_mut() {

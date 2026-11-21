@@ -2,7 +2,39 @@ use std::io;
 
 use cooee_core::{Body, Card, Change, Item, Plugin, Queued, agents, shed_proto::ApprovalOption};
 
-use super::{CHANGE, CardSpec, Hub, HubError, Live, lock, now};
+use serde::Deserialize;
+
+use super::{CHANGE, Hub, HubError, live::Live, lock, now};
+
+/// A plugin's card (`POST /plugin/card`, docs/plugins/).
+#[derive(Debug, Deserialize)]
+pub struct CardSpec {
+    /// The thread it goes in.
+    pub thread: String,
+    /// The question, a config change's name or why a secret is wanted.
+    pub text: String,
+    /// The choices (none for a form's card).
+    #[serde(default)]
+    pub options: Vec<String>,
+    /// The option shown first, marked recommended.
+    #[serde(default)]
+    pub recommend: Option<String>,
+    /// `config`, `secret`, `thread` or `run-card`; none: choices.
+    #[serde(default)]
+    pub form: Option<String>,
+    /// A config card's diff, a secret card's name, or a run card's command.
+    #[serde(default)]
+    pub detail: Option<String>,
+    /// A run card's command sha.
+    #[serde(default)]
+    pub sha: Option<String>,
+    /// The conductor's own answer: shown answered, and the owner may change it for 30 minutes.
+    #[serde(default)]
+    pub answered: Option<String>,
+    /// Who gave that answer (default: the plugin's label).
+    #[serde(default)]
+    pub by: Option<String>,
+}
 
 impl Hub {
     /// `by`'s answer to approval `item`: sent once (stored first) to shed, or to the plugin whose card it is (then

@@ -1,4 +1,8 @@
-use std::{sync::mpsc, time::Duration};
+use std::{
+    collections::HashMap,
+    sync::{Mutex, mpsc},
+    time::Duration,
+};
 
 use cooee_core::{Body, Change, Item, agents};
 
@@ -10,6 +14,11 @@ pub(super) const OWNER_NOTE: &str = "[The owner's note; the asker gets it with y
 
 fn no<T>(code: &str, why: &str) -> Result<T, HubError> {
     Err(HubError::Refused(format!("{code}: {why}")))
+}
+
+#[derive(Default)]
+pub(super) struct State {
+    pub(super) asks: Mutex<HashMap<String, mpsc::Sender<String>>>,
 }
 
 impl Hub {
@@ -57,7 +66,7 @@ impl Hub {
         }
         let key = format!("{id}>{target}");
         let (tx, rx) = mpsc::channel();
-        lock(&self.asks).insert(key.clone(), tx);
+        lock(&self.areas.ask.asks).insert(key.clone(), tx);
         let open = self.all().into_iter().find_map(|l| {
             let m = &lock(&l).meta;
             (m.asked_by == id && m.profile == target && !m.closed).then(|| m.id.clone())
@@ -78,7 +87,7 @@ impl Hub {
         let x = match sent {
             Ok(x) => x,
             Err(e) => {
-                lock(&self.asks).remove(&key);
+                lock(&self.areas.ask.asks).remove(&key);
                 self.say(id, card("", "offline"))?;
                 return no("OFFLINE", &format!("{target} can't take it: {e}"));
             }
@@ -90,7 +99,7 @@ impl Hub {
         )?;
         let ask = self.say(id, card(&x, "asking"))?.id;
         let got = rx.recv_timeout(wait);
-        lock(&self.asks).remove(&key);
+        lock(&self.areas.ask.asks).remove(&key);
         let secs = start.elapsed().as_secs();
         let Ok(reply) = got else {
             self.answered(id, ask, "timeout", secs, "")?;

@@ -61,6 +61,11 @@ pub enum Input {
     Text(String),
 }
 
+#[derive(Default)]
+pub(super) struct State {
+    desks: Desks,
+}
+
 impl Hub {
     fn known(&self, persona: &str) -> Result<(), HubError> {
         if self.persona(persona).id == persona {
@@ -75,7 +80,7 @@ impl Hub {
     /// [`HubError::Refused`] for an unknown persona.
     pub fn screen(&self, persona: &str) -> Result<Screen, HubError> {
         self.known(persona)?;
-        let map = lock(&self.desks.map);
+        let map = lock(&self.areas.screen.desks.map);
         let desk = map.get(persona);
         Ok(Screen {
             control: desk.map(|d| d.control.clone()).unwrap_or_default(),
@@ -90,7 +95,7 @@ impl Hub {
     /// [`HubError::Refused`] for an unknown persona.
     pub fn take_control(&self, persona: &str) -> Result<Screen, HubError> {
         self.known(persona)?;
-        let mut map = lock(&self.desks.map);
+        let mut map = lock(&self.areas.screen.desks.map);
         let desk = map.entry(persona.to_owned()).or_default();
         let at = now();
         if !matches!(desk.control, Control::Owner { until } if until > at) {
@@ -108,7 +113,7 @@ impl Hub {
     /// [`HubError::Refused`] unless the owner holds control.
     pub fn hand_back(&self, persona: &str, note: String, skill: bool) -> Result<Screen, HubError> {
         {
-            let mut map = lock(&self.desks.map);
+            let mut map = lock(&self.areas.screen.desks.map);
             let desk = map.entry(persona.to_owned()).or_default();
             let mut note = note;
             if skill {
@@ -123,12 +128,12 @@ impl Hub {
                 .ok_or_else(|| HubError::Refused(format!("you don't hold {persona}'s browser")))?;
             desk.steps.clear();
         }
-        self.desks.handed.notify_all();
+        self.areas.screen.desks.handed.notify_all();
         self.screen(persona)
     }
 
     pub(super) fn wait_turn(&self, persona: &str) -> Option<String> {
-        let mut map = lock(&self.desks.map);
+        let mut map = lock(&self.areas.screen.desks.map);
         let mut waited = false;
         loop {
             let desk = map.entry(persona.to_owned()).or_default();
@@ -142,6 +147,8 @@ impl Hub {
             desk.waiting += 1;
             waited = true;
             map = self
+                .areas
+                .screen
                 .desks
                 .handed
                 .wait_timeout(map, d)
@@ -183,7 +190,7 @@ impl Hub {
     /// [`HubError::Refused`] unless the owner holds control, or when the browser doesn't take it.
     pub fn input(&self, persona: &str, input: &Input) -> Result<(), HubError> {
         let held = matches!(
-            lock(&self.desks.map).get(persona).map(|d| &d.control),
+            lock(&self.areas.screen.desks.map).get(persona).map(|d| &d.control),
             Some(Control::Owner { until }) if now() < *until
         );
         if !held {
@@ -217,7 +224,7 @@ impl Hub {
             .map_err(|e| HubError::Refused(e.to_string()))?;
         let sites = self.persona(persona).sites;
         let step = browser::step(&sites, &tab.url, &tab.title, &did(label));
-        if let Some(desk) = lock(&self.desks.map).get_mut(persona) {
+        if let Some(desk) = lock(&self.areas.screen.desks.map).get_mut(persona) {
             desk.steps.push(step);
         }
         Ok(())

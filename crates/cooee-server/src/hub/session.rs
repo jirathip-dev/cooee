@@ -9,7 +9,7 @@ use cooee_core::{
 use super::{HubError, Recipe};
 use crate::login::Logins;
 
-pub(crate) fn persona(
+pub fn persona(
     logins: &Logins,
     a: &Agent,
     account: Option<&str>,
