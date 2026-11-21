@@ -1,7 +1,7 @@
 public struct APIPersona: Codable, Sendable, Equatable, Identifiable {
     private enum CodingKeys: String, CodingKey {
         case id, name, role, style, fleets, avatar, agent, model, effort, folder, machine, character, instructions,
-            plugins, pinned, profile, version
+            plugins, pinned, profile, version, mcp
         case canMessage = "can_message"
     }
 
@@ -23,6 +23,7 @@ public struct APIPersona: Codable, Sendable, Equatable, Identifiable {
     public var pinned: Bool
     public var profile: String?
     public var version: String?
+    public var mcp: [MCPPick]?
 
     public init(
         id: String,

@@ -84,10 +84,6 @@ impl Push {
         s: &Sub,
         note: &Note,
     ) -> Post {
-        let host = a.url.as_deref().unwrap_or(match env {
-            ApnsEnv::Sandbox => "https://api.sandbox.push.apple.com",
-            ApnsEnv::Production => "https://api.push.apple.com",
-        });
         let mut aps = serde_json::json!({"alert": {"title": note.title, "body": note.body}, "thread-id": note.tag, "sound": "default"});
         if let Some(aps) = aps.as_object_mut().filter(|_| note.say) {
             aps.insert("category".to_owned(), "approval".into());
@@ -97,16 +93,36 @@ impl Push {
             "url": note.url,
             "item": note.item,
         });
-        let h = [
+        let mut post = self.apns_request(a, k, (env, &s.endpoint), "alert", &body);
+        post.1.push(format!("apns-collapse-id: {}", note.tag));
+        post
+    }
+
+    pub(super) fn apns_request(
+        &self,
+        a: &Apns,
+        k: &SecretKey,
+        (env, token): (ApnsEnv, &str),
+        kind: &str,
+        body: &serde_json::Value,
+    ) -> Post {
+        let host = a.url.as_deref().unwrap_or(match env {
+            ApnsEnv::Sandbox => "https://api.sandbox.push.apple.com",
+            ApnsEnv::Production => "https://api.push.apple.com",
+        });
+        let topic = match kind {
+            "alert" => a.topic.clone(),
+            _ => format!("{}.push-type.{kind}", a.topic),
+        };
+        let h = vec![
             format!("authorization: bearer {}", self.bearer(a, k, now())),
-            format!("apns-topic: {}", a.topic),
-            "apns-push-type: alert".to_owned(),
+            format!("apns-topic: {topic}"),
+            format!("apns-push-type: {kind}"),
             "apns-priority: 10".to_owned(),
-            format!("apns-collapse-id: {}", note.tag),
             "content-type: application/json".to_owned(),
         ];
-        let url = format!("{host}/3/device/{}", s.endpoint);
-        (url, h.to_vec(), body.to_string().into_bytes())
+        let url = format!("{host}/3/device/{token}");
+        (url, h, body.to_string().into_bytes())
     }
 }
 
@@ -160,7 +176,7 @@ pub(super) mod tests {
         }
     }
 
-    fn fake_apns(
+    pub(in crate::push) fn fake_apns(
         answer: fn(&str) -> (u16, &'static str),
     ) -> (String, std::sync::mpsc::Receiver<(String, String)>) {
         use std::io::{BufRead, BufReader, Read};

@@ -81,17 +81,23 @@ public struct Look: Sendable {
     public var art: URL?
     public var moving = false
     public var night: Bool?
+    public var sign = false
     public var cast = Cast.farm
     public var sprites: [String: String] = [:]
     public var drawn: [String: PixelFigure] = [:]
     public var vectors: [String: String] = [:]
     public var tokens: [String: String] = [:]
+    public var words: [String: String] = [:]
 
     public init(palette: Palette = .farmDark, style: Style = .bundled, still: Bool = false, art: URL? = nil) {
         self.palette = palette
         self.style = style
         self.still = still
         self.art = art
+    }
+
+    internal func word(_ state: LaneState) -> String {
+        words[state.rawValue] ?? state.word
     }
 
     internal func coat(_ persona: Persona) -> String {

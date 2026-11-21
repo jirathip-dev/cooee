@@ -9,7 +9,11 @@ use std::{
 
 use cooee_core::Config;
 
-use crate::{devices::now, service::label, setup};
+use crate::{
+    devices::now,
+    service::{label, service},
+    setup,
+};
 
 /// The commit this binary was built at: `COOEE_REV`, set by the release workflow.
 pub const REV: Option<&str> = option_env!("COOEE_REV");
@@ -198,10 +202,8 @@ fn install(config: &Config, bin: &Path, sha: &str, sum: &str) -> Result<(), Stri
 }
 
 fn restart(config: &Config) -> bool {
-    let uid = setup::output(&["id", "-u"]).unwrap_or_default();
-    let job = format!("gui/{}/{}", uid.trim(), label(&config.instance));
     let url = format!("http://127.0.0.1:{}/pair", config.port);
-    setup::ok(&["launchctl", "kickstart", "-k", &job])
+    service(config, None, "serve").is_ok_and(|s| s.restart().is_ok())
         && setup::wait(|| setup::ok(&["curl", "-sf", "-o", "/dev/null", "--max-time", "2", &url]))
 }
 

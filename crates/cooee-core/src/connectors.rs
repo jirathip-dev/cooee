@@ -108,13 +108,36 @@ pub enum Target {
         /// How it speaks MCP.
         transport: Transport,
     },
-    /// A connector built into cooee.
-    Builtin(Builtin),
+    /// A connector built into cooee: its own read-only tools over the provider's API at `url`.
+    Builtin {
+        /// Which one.
+        builtin: Builtin,
+        /// The API it reads.
+        url: HttpsUrl,
+    },
 }
 
-/// The built-in connectors (#497 slice F).
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum Builtin {}
+/// The built-in connectors (#497 slice F): read-only, with no write call in their code.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum Builtin {
+    /// Gmail's API.
+    Gmail,
+    /// Google Calendar's API.
+    GoogleCalendar,
+}
+
+impl Builtin {
+    /// What its sign-in URL adds: Google answers a refresh token only to an offline, consented sign-in.
+    #[must_use]
+    pub const fn authorize_extra(self) -> &'static [(&'static str, &'static str)] {
+        match self {
+            Self::Gmail | Self::GoogleCalendar => {
+                &[("access_type", "offline"), ("prompt", "consent")]
+            }
+        }
+    }
+}
 
 /// An MCP transport over HTTP.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize)]
@@ -240,7 +263,10 @@ struct Raw {
     label: String,
     publisher: String,
     url: HttpsUrl,
-    transport: Transport,
+    #[serde(default)]
+    transport: Option<Transport>,
+    #[serde(default)]
+    builtin: Option<Builtin>,
     leaves: String,
     reviewed: toml::value::Datetime,
     auth: Auth,
@@ -264,14 +290,26 @@ pub fn parse(name: &str, text: &str) -> Result<Entry, String> {
     else {
         return Err(at("`reviewed` is a date, as 2026-11-17".to_owned()));
     };
+    let target = match (raw.transport, raw.builtin) {
+        (Some(transport), None) => Target::Url {
+            url: raw.url,
+            transport,
+        },
+        (None, Some(builtin)) => Target::Builtin {
+            builtin,
+            url: raw.url,
+        },
+        _ => {
+            return Err(at(
+                "an entry has one of `transport` and `builtin`".to_owned()
+            ));
+        }
+    };
     Ok(Entry {
         name,
         label: raw.label,
         publisher: raw.publisher,
-        target: Target::Url {
-            url: raw.url,
-            transport: raw.transport,
-        },
+        target,
         auth: raw.auth,
         tools: raw.tools,
         leaves: raw.leaves,
@@ -308,22 +346,25 @@ pub fn challenge(verifier: &str) -> String {
     B64.encode(Sha256::digest(verifier.as_bytes()))
 }
 
+/// `v`, percent-encoded but for letters, digits and `-._~`.
+#[must_use]
+pub fn encode(v: &str) -> String {
+    v.bytes().fold(String::new(), |mut s, b| {
+        if b.is_ascii_alphanumeric() || b"-._~".contains(&b) {
+            s.push(char::from(b));
+        } else {
+            write!(s, "%{b:02X}").ok();
+        }
+        s
+    })
+}
+
 /// `pairs`, percent-encoded as a form or a query.
 #[must_use]
 pub fn form(pairs: &[(&str, &str)]) -> String {
-    let enc = |v: &str| {
-        v.bytes().fold(String::new(), |mut s, b| {
-            if b.is_ascii_alphanumeric() || b"-._~".contains(&b) {
-                s.push(char::from(b));
-            } else {
-                write!(s, "%{b:02X}").ok();
-            }
-            s
-        })
-    };
     let pairs: Vec<String> = pairs
         .iter()
-        .map(|(k, v)| format!("{}={}", enc(k), enc(v)))
+        .map(|(k, v)| format!("{}={}", encode(k), encode(v)))
         .collect();
     pairs.join("&")
 }
@@ -407,7 +448,7 @@ impl Endpoints {
 }
 
 /// What the owner opens to sign in: `authorize` asked for a code for `client` at `redirect`, with the PKCE
-/// `challenge`, `state`, `scopes` and the MCP server's `resource`.
+/// `challenge`, `state`, `scopes` and the MCP server's `resource` (none when empty).
 #[must_use]
 pub fn authorize_url(
     authorize: &HttpsUrl,
@@ -424,8 +465,10 @@ pub fn authorize_url(
         ("state", state),
         ("code_challenge", challenge),
         ("code_challenge_method", "S256"),
-        ("resource", resource),
     ];
+    if !resource.is_empty() {
+        pairs.push(("resource", resource));
+    }
     if !scope.is_empty() {
         pairs.push(("scope", &scope));
     }
@@ -515,6 +558,16 @@ never = ["drop"]
         }
         let e = parse("thing", &GOOD.replace("2026-11-17", "2026-11-17T10:00:00")).unwrap_err();
         assert!(e.contains("`reviewed` is a date"), "{e}");
+        for bad in [
+            GOOD.replace(
+                "transport = \"http\"",
+                "transport = \"http\"\nbuiltin = \"gmail\"",
+            ),
+            GOOD.replace("transport = \"http\"", ""),
+        ] {
+            let e = parse("thing", &bad).unwrap_err();
+            assert!(e.contains("one of `transport` and `builtin`"), "{e}");
+        }
         assert!(parse("Thing", GOOD).is_err());
         assert!(HttpsUrl::try_from("http://localhost:8080/mcp".to_owned()).is_ok());
         assert!(HttpsUrl::try_from("http://localhost.evil.example/mcp".to_owned()).is_err());

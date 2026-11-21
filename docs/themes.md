@@ -14,11 +14,19 @@ A theme is one coherent pack: a folder, or a folder of a git repo. Only `plain` 
 
 | File | Required | What it is |
 |---|---|---|
-| `theme.json` | yes | `label`, `scheme: {dark, light}` (the default scheme per mode), `sprites` (bool), `moments` (bool), `words`, `scene` (the Scene's layers: element ids in `scene.svg`), and optional `style` (`modern` or a style pack's name: the Style a device takes once when it picks the theme; without it the device keeps its own) |
+| `theme.json` | yes | `label`, `scheme: {dark, light}` (the default scheme per mode), `sprites` (bool), `moments` (bool), `words`, `scene` (the Scene's layers: element ids in `scene.svg`), optional `style` (`modern` or a style pack's name: the Style a device takes once when it picks the theme; without it the device keeps its own), and optional `load_scene` (below) |
 | `sprites.svg` | when `sprites` | `<symbol>`s `s-edit s-read s-run s-idle s-done s-needs s-merged s-fail` (24 px) and `s-loading s-empty` (132 × 100), optionally Scene's 132 × 100 poses `s-scene-edit s-scene-idle s-scene-done s-scene-needs s-scene-merged s-scene-fail` (#115: farm and kitchen carry vector figures; without them Scene draws `s-<state>`); two-frame loops use `.kf1/.kf2` or `.f1/.f2`; pages `<use>` it by URL, so it loads only once a sprite shows |
 | `scene.svg` | when `sprites` or `scene` | Scene's backdrop (#34): the strip on top of each page, drawn at the page's width (`object-fit: cover`, bottom-aligned), its `viewBox` at most 400 × 320 (the first-party packs' scenes are 390 × 320 or 392 × 188), holding each layer `scene` names. A `#night` element styled by `:target` gives the night look (`scene.svg#night`, 19:00 to 07:00 on the device's clock); herdsman's load layers (`.h-busy .h-held .l-overcast .l-rain`) stay hidden, as cooee has no host load |
 | `schemes/<name>.json` | no | the pack's own colour schemes (below); its `theme.json` may name them |
 | `icon.png` | no | the tile in the look sheet, the favicon and the home-screen icon (else cooee's icon) |
+
+**`load_scene`** (optional; a theme without it draws the weather sky, #382): `{"kind": "sign"}` draws the Scene's
+host load as a Fire Danger Rating sign. `sprites.svg` then holds `s-sign-moderate s-sign-high s-sign-catastrophic`,
+each a layer the size of `scene.svg` drawn over it (the sign at the clearing's edge, with its heat shimmer and
+cicadas). The Scene picks one from the drover scene block's `level`: `calm` moderate, `busy` high, `held`
+catastrophic. Without a `level` it uses the block's `load`, at the weather's thresholds. The sheet's `.f2` frames
+stay hidden, so the sign is still. swag's bush pack (its `packs/bush/`, from
+`design/bush/`) is the first to use it.
 
 `words` maps cooee's state keys to the theme's words: `working needs done fail idle ended merged loading
 empty-threads`. A missing key says the plain word (`working`, `needs you`, `done`, `failed`, …). The theme words dress

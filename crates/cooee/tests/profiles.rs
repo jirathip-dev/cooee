@@ -52,7 +52,8 @@ fn setup(name: &str) -> Setup {
     agent(&dir, "leak", &leak, "");
     let shed = FakeShed::start(&dir.join("shed"), version());
     let extra = "[[providers]]\nname = \"fake\"\nbase = \"claude\"\nagent = \"fake-acp\"\nhome = \"FAKE_HOME\"\n\
-                 settings = \"FAKE_SETTINGS\"\nlogin = [\"true\"]\nstatus = [\"true\"]\n";
+                 settings = \"FAKE_SETTINGS\"\nlogin = [\"true\"]\nstatus = [\"true\"]\n\n\
+                 [[mcp]]\nname = \"search\"\ncommand = \"true\"\nprovides = [\"web\"]\n";
     let cooee = Cooee::start_with(&dir, &shed.dir, extra);
     Setup {
         dir,
@@ -143,7 +144,7 @@ fn plain_adds_nothing_a_file_profile_is_applied_at_spawn_a_guard_that_cant_run_i
     let data = s.dir.join("data");
     let work = data.join("accounts/fake/work");
     let settings = s.dir.join("agents/coder/settings.json");
-    assert!(line.contains(" --policy allow "), "{line}");
+    assert!(line.contains(" --policy ask "), "{line}");
     let terminal = format!("cooee-{id}");
     let meta = s.shed.meta(&terminal).expect("#320: no personal setup");
     claude_switches(&meta, &format!("Follow the house rules.\n\n{PLAIN}"));
@@ -547,6 +548,21 @@ fn a_persona_with_no_profile_and_a_room_member_start_without_personal_setup_plai
 }
 
 #[test]
+fn a_persona_with_a_web_connector_starts_with_the_harnesss_own_web_tools_off() {
+    let s = setup("persona-web");
+    let pick = "name = \"Wes\"\nagent = \"fake-acp\"\n\n[[mcp]]\nserver = \"search\"\n";
+    agent(&s.dir, "wes", pick, "");
+
+    let (_, line) = s.thread("wes", "hi");
+    let o = options(&s.shed, &line).unwrap_or_else(|| panic!("no options in {line}"));
+    let tools = o["tools"].as_array().unwrap();
+    for web in ["WebSearch", "WebFetch"] {
+        assert!(!tools.contains(&json!(web)), "{web}: {o}");
+    }
+    assert!(tools.contains(&json!("Read")), "{o}");
+}
+
+#[test]
 fn a_persona_on_codex_or_geminis_default_login_starts_with_one_line_an_added_account_without() {
     for base in ["codex", "gemini"] {
         let dir = scratch(&format!("profiles-{base}"));
@@ -650,6 +666,13 @@ fn claude_switches(meta: &Value, brief: &str) {
         "{meta}"
     );
     assert_eq!(options["settings"]["autoMemoryEnabled"], false, "{meta}");
+    let permissions = &options["settings"]["permissions"];
+    assert_eq!(permissions["defaultMode"], "default", "{meta}");
+    assert_eq!(permissions["disableAutoMode"], "disable", "{meta}");
+    let ask = permissions["ask"].as_array().unwrap();
+    for t in ["Read", "Grep", "Bash", "Edit", "WebFetch"] {
+        assert!(ask.contains(&json!(t)), "#503: {t} asks: {meta}");
+    }
     let tools = options["tools"].as_array().unwrap();
     for off in ["Agent", "Skill", "WebSearch"] {
         assert_eq!(

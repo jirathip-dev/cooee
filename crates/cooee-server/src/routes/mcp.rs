@@ -23,6 +23,18 @@ async fn mcp_remember(cx: &Cx, Json(a): Json<AgentAsk>) -> Result<Answer<String>
     ))
 }
 
+#[route(POST "/mcp/agent/mail")]
+async fn mcp_mail(cx: &Cx, Json(a): Json<AgentAsk>) -> Result<Answer<String>> {
+    let token = bearer(cx);
+    Ok(Answer(
+        blocking(cx, move |hub| {
+            let m = serde_json::from_value(a.server).map_err(refused)?;
+            hub.mail(&a.thread, &token, m)
+        })
+        .await,
+    ))
+}
+
 #[route(POST "/mcp/agent/persona")]
 async fn mcp_persona(cx: &Cx, Json(a): Json<AgentAsk>) -> Result<Answer<String>> {
     let token = bearer(cx);
@@ -194,6 +206,7 @@ pub(super) fn routes(b: RouterBuilder) -> RouterBuilder {
         .route(mcp_ask)
         .route(mcp_handoff)
         .route(mcp_remember)
+        .route(mcp_mail)
         .route(mcp_persona)
         .route(mcp_history)
         .route(mcp_skill)

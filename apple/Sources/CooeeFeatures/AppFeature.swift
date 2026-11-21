@@ -62,6 +62,7 @@ public struct AppFeature: Sendable {
     @Dependency(\.serverStore) internal var serverStore
     @Dependency(\.loginItems) private var loginItems
     @Dependency(\.push) internal var push
+    @Dependency(\.surface) internal var surface
     @Dependency(\.voice) internal var voice
     @Dependency(\.date.now) internal var now
     @Dependency(\.continuousClock) internal var clock
@@ -93,7 +94,7 @@ public struct AppFeature: Sendable {
                 state.notice = Self.retired
                 return .none
             case .taps:
-                return taps(state)
+                return .merge(taps(state), surfaces())
             case .call(let name):
                 return call(&state, name)
             case .persona(.presented(.delegate(.saved))), .persona(.presented(.delegate(.deleted))):
@@ -106,12 +107,15 @@ public struct AppFeature: Sendable {
                     ChatFeature.State(server: $0.server, target: .setup(persona), persona: Persona(persona))
                 }
                 return .send(.home(.refresh))
+            case .persona(.presented(.delegate(.connectors))):
+                state.persona = nil
+                return .concatenate(.send(.menu(.open(true))), .send(.menu(.path([.connectors]))))
             case .chat(.delegate(let delegate)):
                 return relay(&state, delegate)
             case .home(.loaded):
                 let workflow = state.home?.lists(now: now).workflow[state.chat?.persona.id ?? ""]
                 state.chat?.workflow = workflow
-                return .none
+                return keepGlance(state)
             case .room:
                 state.newRoom = state.home.map { NewRoomFeature.State(server: $0.server, personas: $0.personas) }
                 return .none

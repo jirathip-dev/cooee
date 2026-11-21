@@ -12,7 +12,7 @@
      "type": "card",
      "kind": "proposal",
      "id": "c12",
-     "title": "synergy · serial_max 3 → 6",
+     "title": "acme · serial_max 3 → 6",
      "meta": "now",
      "subtitle": "orchestrator · thread t55",
      "blocks": [
@@ -22,7 +22,7 @@
       },
       {
        "type": "diff",
-       "file": "[fleet.synergy]",
+       "file": "[fleet.acme]",
        "summary": "valid ✓",
        "hunks": [
         {
@@ -63,22 +63,22 @@
      "rows": [
       {
        "type": "row",
-       "id": "f-synergy",
+       "id": "f-acme",
        "figure": {
         "state": "working",
         "coat": "ch"
        },
-       "title": "synergy",
-       "subtitle": "4 lanes · synergy-apps",
+       "title": "acme",
+       "subtitle": "4 lanes · acme-co",
        "button": {
         "label": "Pause",
         "action": "pause",
         "values": {
-         "fleet": "synergy"
+         "fleet": "acme"
         }
        },
        "tap": {
-        "sheet": "/screens/fleets/synergy"
+        "sheet": "/screens/fleets/acme"
        }
       },
       {

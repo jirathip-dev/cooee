@@ -67,7 +67,7 @@ internal struct TraceSheet: View {
             }
             .foregroundStyle(tint)
             VStack(alignment: .leading, spacing: 6) {
-                Text(step.title).ui(14, .regular, look).lineLimit(2).truncationMode(.middle)
+                Text(step.said).ui(14, .regular, look).lineLimit(2).truncationMode(.middle)
                 if let frame = step.frame { FrameThumb(name: frame) }
                 ForEach(Array(step.plan.enumerated()), id: \.offset) { _, entry in PlanLine(entry: entry) }
             }

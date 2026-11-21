@@ -30,7 +30,7 @@
             keep("conductor")
             app.buttons["More"].firstMatch.tap()
             XCTAssert(app.buttons["Edit Conductor"].waitForExistence(timeout: 10), "the … opened no Edit Conductor")
-            XCTAssert(app.buttons["New chat with Conductor"].exists, "the … opened no New chat with Conductor")
+            XCTAssert(app.buttons["New topic with Conductor"].exists, "the … opened no New topic with Conductor")
             XCTAssertFalse(labelled(app, "Attach ").exists, "Conductor still has a plugin to attach")
             XCTAssert(labelled(app, "WORKFLOW").exists, "the panel has no Workflow for Conductor")
             XCTAssert(app.buttons["Add routine"].exists, "the panel has no Routines + Add for Conductor")

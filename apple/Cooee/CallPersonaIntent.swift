@@ -14,11 +14,3 @@ internal struct CallPersonaIntent: AppIntent {
         return .result()
     }
 }
-
-internal struct CooeeShortcuts: AppShortcutsProvider {
-    internal static var appShortcuts: [AppShortcut] {
-        AppShortcut(
-            intent: CallPersonaIntent(), phrases: ["Call a persona in \(.applicationName)"], shortTitle: "Call",
-            systemImageName: "phone.fill")
-    }
-}

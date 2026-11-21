@@ -1,30 +1,6 @@
 import CooeeCore
 import SwiftUI
 
-internal struct PersonaActions {
-    internal var close: () -> Void
-    internal var save: () -> Void
-    internal var clear: () -> Void
-    internal var chat: () -> Void
-    internal var agent: @MainActor @Sendable (String) -> Void = { _ in }
-    internal var browse: () -> Void = {}
-    internal var more: () -> Void = {}
-    internal var delete: (() -> Void)?
-    internal var photo: () -> Void = {}
-    internal var sprite: (String?) -> Void = { _ in }
-    internal var skill: (String) -> Void = { _ in }
-
-    internal init(
-        close: @escaping () -> Void = {}, save: @escaping () -> Void = {}, clear: @escaping () -> Void = {},
-        chat: @escaping () -> Void = {}
-    ) {
-        self.close = close
-        self.save = save
-        self.clear = clear
-        self.chat = chat
-    }
-}
-
 public struct PersonaEditBlocks: View {
     @Environment(\.look) private var look
     @Binding private var draft: APIPersona
@@ -110,14 +86,7 @@ extension PersonaEditBlocks {
             }
             Group2 {
                 field("Name", $draft.name)
-                HStack {
-                    Text("Agent").ui(16, .regular, look)
-                    Spacer()
-                    AgentMenu(persona: Persona(draft), choices: choices, pick: actions.agent) {
-                        (draft.model, draft.effort) = ($0, $1)
-                    }
-                }
-                .padding(.horizontal, 14).frame(height: 48)
+                PersonaAgentRows(draft: $draft, choices: choices, pick: actions.agent, rules: actions.rules)
                 if !look.still {
                     style
                     Toggle("Pin to Home", isOn: $draft.pinned).ui(16, .regular, look).padding(.horizontal, 14)
@@ -127,6 +96,7 @@ extension PersonaEditBlocks {
             }
             Group2(header: "Character") { paragraph("Character", $draft.character) }
             Group2(header: "Instructions") { instructions }
+            PersonaConnectors(draft: $draft, list: choices.connectors, catalogue: actions.catalogue)
             if !look.still {
                 Button(action: actions.chat) {
                     Text(draft.id.isEmpty ? "Set up by chat instead" : "Refine by chat").ui(15, .medium, look)

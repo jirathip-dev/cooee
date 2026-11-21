@@ -11,7 +11,7 @@ fn hub_on(dir: &Path, bin: PathBuf) -> Arc<Hub> {
     let (looks, _) = crate::look::Looks::load(None, None);
     let theme = looks.themes[&looks.default].clone();
     Hub::open(
-        shed,
+        (shed, cooee_core::Providers::default()),
         &dir.join("data"),
         (Vec::new(), None),
         theme,
@@ -157,7 +157,16 @@ fn a_members_ask_shows_in_its_room_and_pauses_its_deadline() {
         kind: "allow_once".into(),
     };
     let (tool, options) = ("fetch sec.gov".to_owned(), vec![option]);
-    hub.apply(event("s1", 1, EventKind::ApprovalRequest { tool, options }));
+    hub.apply(event(
+        "s1",
+        1,
+        EventKind::ApprovalRequest {
+            id: String::new(),
+            tool,
+            options,
+            call: None,
+        },
+    ));
     let ask = rx.try_recv().unwrap();
     let data: serde_json::Value = serde_json::from_str(&ask.data).unwrap();
     assert_eq!(ask.event, "room-ask");
@@ -319,13 +328,14 @@ fn an_idle_threads_chat_unloads_and_reloads_intact() {
     hub.apply(event("a", 3, EventKind::State(done.clone())));
     hub.apply(event("a", 4, EventKind::State(done)));
     let replayed = |hub: &Hub, cursor: &str| match hub.subscribe("a", cursor).unwrap().0 {
-        Resume::Replay(outs) => Some(outs.iter().map(|o| o.seq).collect::<Vec<_>>()),
+        Resume::Replay(outs) => Some(outs.iter().map(|o| o.rev).collect::<Vec<_>>()),
         Resume::Reset => None,
     };
 
     hub.unload(t0 + REPLAY - 1_000);
     assert!(!unloaded(&hub));
-    assert_eq!(replayed(&hub, &before.cursor), Some(vec![1, 2]));
+    let revs = replayed(&hub, &before.cursor).unwrap();
+    assert!(revs.len() == 2 && revs[0] < revs[1], "{revs:?}");
 
     let row = json!(hub.list());
     hub.unload(t0 + IDLE + REPLAY);
@@ -375,6 +385,8 @@ fn a_busy_thread_does_not_hold_up_another_threads_event() {
         title: "ls".to_owned(),
         status: status.to_owned(),
         kind: None,
+        locations: Vec::new(),
+        raw_input: None,
     };
     let round = |r: u64| {
         let dir = scratch(&format!("head-of-line-{r}"));
@@ -477,6 +489,46 @@ fn a_reply_delivers_its_text_before_its_item_and_replays_only_the_item() {
 }
 
 #[test]
+fn the_glance_shows_a_working_thread_as_running_then_its_ask() {
+    let dir = scratch("glance");
+    seed(&dir, "run", "");
+    let hub = hub(&dir);
+    let report = |seq, state: &str| {
+        let r = Reported {
+            state: state.to_owned(),
+            ..Reported::default()
+        };
+        hub.apply(event("run", seq, EventKind::State(Box::new(r))));
+    };
+    report(1, "working");
+    let first = hub.overview();
+    let running: Vec<&str> = first.running.iter().map(|r| r.thread.as_str()).collect();
+    assert_eq!((running, first.asks.len()), (vec!["run"], 0));
+    assert!(first.running[0].since <= first.at && first.at <= now());
+    report(2, "blocked");
+    let asked = hub.overview();
+    assert_eq!(
+        (asked.running.len(), asked.asks[0].thread.as_str()),
+        (0, "run")
+    );
+}
+
+#[test]
+fn the_activity_counts_the_tools_of_the_current_turn_only() {
+    let dir = scratch("tools");
+    let lines = [
+        json!({ "id": 1, "at": 1, "seq": 1, "kind": "you", "text": "go", "random_id": "r1" }),
+        json!({ "id": 2, "at": 2, "seq": 2, "kind": "tool", "call": "a", "title": "ls", "status": "completed" }),
+        json!({ "id": 3, "at": 3, "seq": 3, "kind": "you", "text": "more", "random_id": "r2" }),
+        json!({ "id": 4, "at": 4, "seq": 4, "kind": "tool", "call": "b", "title": "ls", "status": "completed" }),
+        json!({ "id": 5, "at": 5, "seq": 5, "kind": "tool", "call": "c", "title": "cat", "status": "completed" }),
+    ];
+    seed(&dir, "t", &lines.map(|l| l.to_string() + "\n").concat());
+    let hub = hub(&dir);
+    assert_eq!((hub.tools("t"), hub.tools("gone")), (2, 0));
+}
+
+#[test]
 fn a_hundred_lists_with_nothing_changed_read_no_persona_file_after_the_first() {
     let dir = scratch("personas-kept");
     let toml = dir.join("config/agents/ada/agent.toml");
@@ -489,7 +541,16 @@ fn a_hundred_lists_with_nothing_changed_read_no_persona_file_after_the_first() {
     let (looks, _) = crate::look::Looks::load(None, None);
     let theme = looks.themes[&looks.default].clone();
     let config = (Vec::new(), Some(dir.join("config/config.toml")));
-    let hub = Hub::open(shed, &dir.join("data"), config, theme, Vec::new(), None, 0).unwrap();
+    let hub = Hub::open(
+        (shed, cooee_core::Providers::default()),
+        &dir.join("data"),
+        config,
+        theme,
+        Vec::new(),
+        None,
+        0,
+    )
+    .unwrap();
     let name = |hub: &Hub| hub.list()[0].persona_name.clone();
     assert_eq!(name(&hub), "Ada");
     let was = fs::metadata(&toml).unwrap().modified().unwrap();
@@ -548,7 +609,16 @@ fn an_approval_in_a_background_thread_tells_home_at_once() {
         kind: "allow_once".into(),
     };
     let (tool, options) = ("Edit a.rs".to_owned(), vec![option]);
-    hub.apply(event("bg", 3, EventKind::ApprovalRequest { tool, options }));
+    hub.apply(event(
+        "bg",
+        3,
+        EventKind::ApprovalRequest {
+            id: String::new(),
+            tool,
+            options,
+            call: None,
+        },
+    ));
     assert!(home.try_recv().is_ok(), "the approval did not tell home");
     let row = hub.list().into_iter().find(|r| r.id == "bg").unwrap();
     assert_eq!((row.last.as_str(), row.unseen), ("Edit a.rs", 1));

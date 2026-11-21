@@ -30,7 +30,7 @@ impl Hub {
                         match item {
                             Streamed::Event(event) => {
                                 last = Some(event.seq);
-                                self.apply(event);
+                                self.apply(*event);
                             }
                             Streamed::Reset(seq) => {
                                 last = Some(seq);
@@ -112,7 +112,7 @@ impl Hub {
             live.chat.turn.note = None;
             changes.push(Change::State(live.chat.turn.clone()));
         }
-        if let (Some(_), shed_proto::EventKind::Turn { prompt }) =
+        if let (Some(_), shed_proto::EventKind::Turn { prompt, .. }) =
             (&live.meta.workflow, &event.kind)
         {
             let own = live
@@ -131,7 +131,19 @@ impl Hub {
                 changes.push(Change::Item(live.chat.push(now(), event.seq, body)));
             }
         }
-        changes.extend(live.chat.apply(now(), event.seq, event.kind));
+        let was = live.chat.turn.state.clone();
+        let read = |c: &cooee_core::action::Call| self.providers.action(&live.meta.agent, c);
+        changes.extend(match event.kind {
+            k if !live.meta.profile.is_empty()
+                && matches!(&k, shed_proto::EventKind::ApprovalRequest { id, .. } if !id.is_empty()) =>
+            {
+                self.asked(live, event.seq, k)
+            }
+            k => live.chat.apply(now(), event.seq, k, &read),
+        });
+        if was != "limited" && live.chat.turn.state == "limited" {
+            changes.extend(self.capped(live).map(Change::Item));
+        }
         let chunk = changes.iter().any(|c| match c {
             Change::Text(_) => true,
             Change::Item(i) => matches!(i.body, Body::Agent { .. }),
@@ -146,6 +158,9 @@ impl Hub {
             }
             _ => None,
         });
+        if reply.is_some() {
+            self.uncapped(live);
+        }
         let seat = (live.meta.room.clone(), live.meta.profile.clone());
         let asked = format!("{}>{}", live.meta.asked_by, seat.1);
         let next = live

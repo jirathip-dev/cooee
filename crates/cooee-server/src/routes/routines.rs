@@ -28,6 +28,24 @@ async fn mcp_routine(cx: &Cx, Json(a): Json<AgentAsk>) -> Result<Answer<String>>
     ))
 }
 
+#[derive(serde::Deserialize)]
+#[serde(deny_unknown_fields)]
+struct Stop {
+    id: String,
+}
+
+#[route(POST "/mcp/agent/routine/stop")]
+async fn mcp_routine_stop(cx: &Cx, Json(a): Json<AgentAsk>) -> Result<Answer<String>> {
+    let token = bearer(cx);
+    Ok(Answer(
+        on(cx, move |r| {
+            let ask: Stop = serde_json::from_value(a.server).map_err(refused)?;
+            r.stop((&a.thread, &token), &ask.id, now())
+        })
+        .await,
+    ))
+}
+
 #[route(GET "/routines.json")]
 async fn routine_list(cx: &Cx) -> Result<Answer<Vec<Routine>>> {
     Ok(Answer(on(cx, |r| r.list()).await))
@@ -54,6 +72,7 @@ async fn routine_delete(cx: &Cx) -> Result<Response> {
 
 pub(super) fn routes(b: RouterBuilder) -> RouterBuilder {
     b.route(mcp_routine)
+        .route(mcp_routine_stop)
         .route(routine_list)
         .route(routine_edit)
         .route(routine_delete)

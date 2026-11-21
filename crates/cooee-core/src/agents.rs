@@ -113,7 +113,7 @@ what you found matches the owner's notify rule, else SILENT: and why.";
 
 /// A persona's heartbeat (#498): off unless `on`; at `when` (default hourly) a run looks at what is new and stays
 /// silent unless its notify rule matches, on `model` and `effort` (empty: its provider's cheapest), at most `per_day`
-/// runs in any 24 hours (none: [`Heartbeat::PER_DAY`]).
+/// runs a local day (none: [`Heartbeat::PER_DAY`]).
 #[derive(Debug, Clone, Default, PartialEq, Eq, Deserialize, Serialize)]
 #[serde(default, deny_unknown_fields)]
 pub struct Heartbeat {
@@ -128,14 +128,14 @@ pub struct Heartbeat {
     /// Its effort (empty: the provider's lowest).
     #[serde(skip_serializing_if = "String::is_empty")]
     pub effort: String,
-    /// At most this many runs in any 24 hours.
+    /// At most this many runs a local day.
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub per_day: Option<usize>,
+    pub per_day: Option<crate::routines::Cap>,
 }
 
 impl Heartbeat {
-    /// The runs in any 24 hours when `per_day` is unset.
-    pub const PER_DAY: usize = 4;
+    /// The runs a local day when `per_day` is unset.
+    pub const PER_DAY: crate::routines::Cap = crate::routines::Cap(4);
 
     /// When it runs: `when`, else hourly on the hour.
     #[must_use]
@@ -210,12 +210,18 @@ pub struct Agent {
     /// shed's approval policy: `ask`, `allow` or `deny`.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub policy: Option<String>,
+    /// The agents its chats may continue on when this one hits a usage limit (#76), in the order offered.
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub fallback: Vec<Seat>,
     /// Its consolidation routine (#219); a save that leaves it out keeps it.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub consolidate: Option<Consolidate>,
     /// Its heartbeat (#498); a save that leaves it out keeps it.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub heartbeat: Option<Heartbeat>,
+    /// Its inbox (#220); set on the Mac, a save keeps it.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub mail: Option<crate::mail::Inbox>,
     /// What a call's utterance is told before it (#663), in place of [`SPOKEN`]; empty: nothing. A save that leaves
     /// it out keeps it.
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -226,6 +232,31 @@ pub struct Agent {
     /// Set for a plugin's profile read as an agent: read-only, no folder.
     #[serde(skip)]
     pub lent: Option<Lent>,
+}
+
+/// One agent and account of a fallback chain (#76).
+#[derive(Debug, Clone, Default, PartialEq, Eq, Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct Seat {
+    /// The ACP agent (`shed agents` id).
+    pub agent: String,
+    /// Its provider's account (none: the provider's default).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub account: Option<String>,
+}
+
+/// An agent and account a thread saw hit its usage limit (#76).
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct Capped {
+    /// The ACP agent.
+    pub agent: String,
+    /// Its account (empty: the system default).
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    pub account: String,
+    /// When it resets, as the harness said it (empty: not said).
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    pub resets: String,
 }
 
 /// What only a plugin's agent has.
@@ -531,6 +562,8 @@ pub fn save(config: &Path, data: &Path, mut a: Agent) -> io::Result<Agent> {
         mcp: old.mcp,
         sites: old.sites,
         policy: old.policy,
+        fallback: old.fallback,
+        mail: old.mail,
         consolidate: a.consolidate.or(old.consolidate),
         heartbeat: a.heartbeat.or(old.heartbeat),
         spoken: a.spoken.or(old.spoken),
@@ -554,6 +587,22 @@ pub fn save(config: &Path, data: &Path, mut a: Agent) -> io::Result<Agent> {
         }
     }
     find(Some(config), data, &a.id)
+}
+
+/// Replaces agent `id`'s `[[mcp]]` picks (#524: the phone's attach and detach), changing no other key.
+///
+/// # Errors
+/// An unknown id, or an `agent.toml` that can't be read or written.
+pub fn pick(config: &Path, data: &Path, id: &str, mcp: Vec<mcp::Pick>) -> io::Result<Agent> {
+    let what = home(config, id)?.0.join("agent.toml");
+    let text = fs::read_to_string(&what)?;
+    let old = parse(&what).map_err(refused)?;
+    let new = Agent { mcp, ..old.clone() };
+    crate::write_private(
+        &what,
+        disk::patch(&text, &card(&old), &card(&new))?.as_bytes(),
+    )?;
+    find(Some(config), data, id)
 }
 
 /// Deletes agent `id`'s whole folder; its chats stay. Chief (#664) is never deleted.
@@ -660,15 +709,22 @@ impl Agent {
         Ok((plain, secret))
     }
 
-    /// The harness built-ins its sessions turn off (#503): every one cooee replaces; web stays the harness's.
+    /// The harness built-ins its sessions turn off (#503): every one cooee replaces; web once a pick provides it.
     #[must_use]
-    pub fn off(&self) -> Vec<Builtin> {
-        vec![
+    pub fn off(&self, registry: &[mcp::Server]) -> Vec<Builtin> {
+        let picked = |s: &&mcp::Server| s.enabled && self.mcp.iter().any(|p| p.server == s.name);
+        let mut off = vec![
             Builtin::Browser,
             Builtin::Memory,
             Builtin::SubAgents,
             Builtin::Skills,
-        ]
+        ];
+        let web = registry
+            .iter()
+            .filter(picked)
+            .any(|s| s.provides.contains(&mcp::Provides::Web));
+        off.extend(web.then_some(Builtin::Web));
+        off
     }
 
     /// The folder its chats work in; none: each chat's own.

@@ -2,7 +2,11 @@ use std::{
     collections::{BTreeMap, HashMap, VecDeque},
     fs, io,
     path::{Path, PathBuf},
-    sync::{Arc, Condvar, Mutex, MutexGuard, OnceLock, PoisonError, atomic::AtomicBool, mpsc},
+    sync::{
+        Arc, Condvar, Mutex, MutexGuard, OnceLock, PoisonError,
+        atomic::{AtomicBool, AtomicU64, Ordering},
+        mpsc,
+    },
     thread,
     time::{Duration, Instant, UNIX_EPOCH},
 };
@@ -21,11 +25,13 @@ use tokio::sync::broadcast;
 use crate::push::{Push, note};
 use glance::{Glance, glance, summary};
 
+mod approvals;
 mod ask;
 mod cards;
 mod chief;
 mod events;
 mod expire;
+mod fallback;
 mod folders;
 mod frames;
 mod glance;
@@ -33,6 +39,7 @@ mod handoff;
 mod heartbeat;
 mod home;
 mod lanes;
+mod mail;
 mod mcp;
 mod models;
 mod plugins;
@@ -45,6 +52,7 @@ mod send;
 pub(crate) mod session;
 mod setup;
 mod start;
+mod surface;
 #[cfg(test)]
 mod tests;
 mod threads;
@@ -54,6 +62,8 @@ use mcp::Proposed;
 pub use rooms::Starter;
 pub use screen::{Input, Screen};
 pub use setup::Update;
+
+static REV: AtomicU64 = AtomicU64::new(0);
 
 const REPLAY: u64 = 5 * 60 * 1000;
 
@@ -99,8 +109,8 @@ pub enum HubError {
 /// One page event: its number in the thread, its SSE event name and its JSON.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Out {
-    /// Counts up from 1 per thread since this server started.
-    pub seq: u64,
+    /// The hub-wide rev: counts up from 1 across every thread since this server started.
+    pub rev: u64,
     /// `item`, `text` or `state`.
     pub event: &'static str,
     /// The JSON data.
@@ -111,7 +121,6 @@ struct Live {
     meta: Thread,
     chat: Chat,
     applied: u64,
-    seq: u64,
     ring: VecDeque<(u64, Out)>,
     trimmed: u64,
     unsent: String,
@@ -149,7 +158,7 @@ pub struct Slice {
     pub skipped_after: usize,
     /// The turn in progress.
     pub turn: Turn,
-    /// Resume the event stream after this (`<boot>.<seq>`).
+    /// Resume the event stream after this (`<boot>.<rev>`).
     pub cursor: String,
     /// The first message while its thread connects, not yet an item.
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -253,6 +262,7 @@ pub struct Recipe {
 /// The threads and the shed they run on.
 pub struct Hub {
     shed: Shed,
+    providers: cooee_core::Providers,
     store: Store,
     scratch: PathBuf,
     files: PathBuf,
@@ -273,6 +283,7 @@ pub struct Hub {
     url: OnceLock<String>,
     mcp_key: String,
     proposals: Mutex<HashMap<(String, u64), Proposed>>,
+    codes: Mutex<HashMap<String, String>>,
     updates: Mutex<HashMap<(String, u64), (String, Update)>>,
     registry: Mutex<()>,
     turns: mpsc::Sender<String>,
@@ -282,6 +293,7 @@ pub struct Hub {
     models: Mutex<Vec<cooee_core::models::Offered>>,
     expiry: u64,
     desks: screen::Desks,
+    surface: Mutex<surface::Surface>,
     home: home::Home,
 }
 
@@ -334,7 +346,6 @@ impl Live {
             was: chat.turn.state.clone(),
             meta,
             chat,
-            seq: 0,
             ring: VecDeque::new(),
             trimmed: 0,
             unsent: String::new(),
@@ -356,7 +367,7 @@ impl Live {
 
     fn trim(&mut self, now: u64) {
         while let Some((_, out)) = self.ring.pop_front_if(|(at, _)| *at + REPLAY < now) {
-            self.trimmed = out.seq;
+            self.trimmed = out.rev;
         }
     }
 
@@ -413,9 +424,8 @@ impl Live {
         if event != "text" && !self.unsent.is_empty() {
             self.flush(now());
         }
-        self.seq += 1;
         let out = Out {
-            seq: self.seq,
+            rev: REV.fetch_add(1, Ordering::Relaxed) + 1,
             event,
             data,
         };
@@ -482,16 +492,25 @@ impl Live {
     }
 }
 
+fn mcp_key(key: &Path) -> Result<String, HubError> {
+    if let Ok(k) = fs::read_to_string(key) {
+        return Ok(k);
+    }
+    let k = cooee_core::random(32).map(|r| cooee_core::sha256(&r));
+    let k = k.and_then(|k| cooee_core::write_private(key, k.as_bytes()).map(|()| k));
+    k.map_err(|e| refused(key, &e))
+}
+
 impl Hub {
     /// Loads every stored thread's meta and list row (its items on first open), re-attaches the open ones to their shed terminals by name, and starts
-    /// following shed's events. A push speaks `theme`'s words; `plugins` may post choice cards and get their answers;
+    /// following shed's events, each tool call read by its agent's provider in `providers`. A push speaks `theme`'s words; `plugins` may post choice cards and get their answers;
     /// roots added or removed on the phone are saved in `config`; a routine's approval
     /// waits `expiry` milliseconds before it counts as Deny.
     ///
     /// # Errors
     /// [`HubError::Store`] when the store can't be read.
     pub fn open(
-        shed: Shed,
+        (shed, providers): (Shed, cooee_core::Providers),
         data: &Path,
         (roots, config): (Vec<PathBuf>, Option<PathBuf>),
         theme: crate::look::Theme,
@@ -500,14 +519,7 @@ impl Hub {
         expiry: u64,
     ) -> Result<Arc<Self>, HubError> {
         let store = Store::open(data)?;
-        let key = data.join("mcp.key");
-        let mcp_key = if let Ok(k) = fs::read_to_string(&key) {
-            k
-        } else {
-            let k = cooee_core::random(32).map(|r| cooee_core::sha256(&r));
-            let k = k.and_then(|k| cooee_core::write_private(&key, k.as_bytes()).map(|()| k));
-            k.map_err(|e| refused(&key, &e))?
-        };
+        let mcp_key = mcp_key(&data.join("mcp.key"))?;
         let (mut threads, mut terminals) = (BTreeMap::new(), HashMap::new());
         for id in store.ids()? {
             let mut meta = store.load(&id)?;
@@ -530,6 +542,7 @@ impl Hub {
             listed: Condvar::new(),
             served: Mutex::default(),
             shed,
+            providers,
             store,
             scratch: data.join("scratch"),
             files: data.join("files"),
@@ -547,6 +560,7 @@ impl Hub {
             url: OnceLock::new(),
             mcp_key,
             proposals: Mutex::default(),
+            codes: Mutex::default(),
             updates: Mutex::default(),
             registry: Mutex::default(),
             turns,
@@ -556,6 +570,7 @@ impl Hub {
             models: Mutex::new(cooee_core::models::load(&data.join("models.json"))),
             expiry,
             desks: screen::Desks::default(),
+            surface: Mutex::default(),
         });
         let worker = Arc::clone(&hub);
         thread::spawn(move || {

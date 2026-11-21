@@ -84,7 +84,6 @@ public struct Persona: Identifiable, Sendable, Equatable {
     public var id: String { api.id }
     public var name: String { api.name }
     public var figure: String { state.figure }
-    public var word: String { state.word }
     public var pose: String { state.pose }
 
     public init(api: APIPersona, look: PersonaLook, state: LaneState, seed: String? = nil) {
@@ -161,11 +160,23 @@ public struct ListedChat: Identifiable, Sendable, Equatable {
 public struct AgentOption: Codable, Sendable, Equatable, Identifiable {
     public let id: String
     public let efforts: [String]
+    public let gaps: [Gap]
 
-    public init(id: String, efforts: [String] = []) {
+    public init(id: String, efforts: [String] = [], gaps: [Gap] = []) {
         self.id = id
         self.efforts = efforts
+        self.gaps = gaps
     }
+
+    public init(from decoder: any Decoder) throws {
+        let values = try decoder.container(keyedBy: CodingKeys.self)
+        id = try values.decode(String.self, forKey: .id)
+        efforts = try values.decodeIfPresent([String].self, forKey: .efforts) ?? []
+        gaps = try values.decodeIfPresent([Gap].self, forKey: .gaps) ?? []
+    }
+
+    /// The kinds of action it never asks before.
+    public var silent: Set<ToolKind> { Set(gaps.compactMap(\.kind)) }
 }
 
 public struct ModelList: Codable, Sendable, Equatable {

@@ -97,7 +97,9 @@ jobs:
           xcodebuild archive -skipMacroValidation -project Cooee.xcodeproj -scheme Cooee -destination 'generic/platform=${{ matrix.platform }}' \
             -archivePath "$RUNNER_TEMP/Cooee.xcarchive" CODE_SIGNING_ALLOWED=NO CURRENT_PROJECT_VERSION="$BUILD" \
             INFOPLIST_KEY_ITSAppUsesNonExemptEncryption=NO 2>&1 | tee -a "$LOG"
-          codesign --force --sign - --entitlements ${{ matrix.entitlements }} "$RUNNER_TEMP/Cooee.xcarchive/Products/Applications/Cooee.app"
+          app="$RUNNER_TEMP/Cooee.xcarchive/Products/Applications/Cooee.app"
+          [ ! -d "$app/PlugIns/CooeeWidgets.appex" ] || codesign --force --sign - --entitlements CooeeWidgets.entitlements "$app/PlugIns/CooeeWidgets.appex"
+          codesign --force --sign - --entitlements ${{ matrix.entitlements }} "$app"
       - name: the Mac icon has every App Store size
         if: matrix.platform == 'macOS'
         run: |

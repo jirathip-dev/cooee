@@ -21,7 +21,7 @@
         "options": [ { "value": "move", "label": "move it out, wip/ first" }, { "value": "refuse", "label": "refuse LANE_LIVE" } ],
         "other": { "placeholder": "other…" },
         "default": { "value": "move", "until": "2026-11-09T09:53:00Z", "label": "takes the recommendation in {rel}" } } ] },
-  { "type": "card", "id": "nh-2708", "kind": "ask", "tone": "bad", "title": "synergy #2708 · review 3", "meta": "needs-human · 12m",
+  { "type": "card", "id": "nh-2708", "kind": "ask", "tone": "bad", "title": "acme #2708 · review 3", "meta": "needs-human · 12m",
     "blocks": [
       { "type": "text", "markdown": "**Round limit: review 3 FAIL · 1 finding**" },
       { "type": "choice", "id": "nh2708", "action": "needs-human",

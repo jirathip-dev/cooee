@@ -44,6 +44,9 @@ pub struct Profile {
     /// shed's approval policy: `ask` (shed's default), `allow` or `deny`.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub policy: Option<String>,
+    /// The agents its chats may continue on at a usage limit (#76), in order.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub fallback: Vec<agents::Seat>,
     /// Not offered nor started (a plugin's, while its guard can't be proven); `why` says why.
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     pub hidden: bool,
@@ -97,6 +100,7 @@ impl Profile {
             env: self.env,
             mcp: self.mcp,
             policy: self.policy,
+            fallback: self.fallback,
             ..Agent::default()
         }
     }

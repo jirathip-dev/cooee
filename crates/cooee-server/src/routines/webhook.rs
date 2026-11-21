@@ -1,7 +1,9 @@
 use std::sync::Arc;
 
 use cooee_core::{
-    routines::{Inbound, Trigger},
+    Body,
+    mail::{self, Mail},
+    routines::{Inbound, Routine, Trigger, local},
     secrets,
 };
 use topcoat::{
@@ -17,8 +19,44 @@ use crate::{
 };
 
 impl Runner {
+    pub(super) fn note(&self, r: &Routine, line: &str) {
+        let text = format!("⟳ {}: {line}", r.name);
+        if let Err(e) = self.hub.say(&r.made_in, Body::Note { text }) {
+            cooee_core::note!("cooee: routines: {}: {e}", r.id);
+        }
+    }
+
+    /// Routine `r`'s last signed POST, as its row shows it, when it has a silence rule.
+    #[must_use]
+    pub fn heard(&self, r: &Routine, now: u64) -> Option<String> {
+        let Trigger::Webhook(h) = &r.trigger else {
+            return None;
+        };
+        h.silence?;
+        Some(match r.heard {
+            None => "no signed POST yet".to_owned(),
+            Some(at) => format!("last POST {}", local(at, self.offset(now))),
+        })
+    }
+
+    pub(crate) fn hear(&self, id: &str, now: u64) {
+        let back = self.change(|b| {
+            let r = b.routines.iter_mut().find(|r| r.id == id);
+            Ok(r.and_then(|r| r.hear(now).map(|m| (r.clone(), m))))
+        });
+        match back {
+            Ok(Some((r, m))) => self.note(
+                &r,
+                &format!("signed POSTs are back after {m} min of silence"),
+            ),
+            Ok(None) => {}
+            Err(e) => cooee_core::note!("cooee: routines: {id}: {e}"),
+        }
+    }
+
     /// `POST /hooks/in/<id>`'s answer for a POST with headers `Idempotency-Key` and `X-Signature-256`: 404 for no
-    /// such webhook routine, 503 without its secret, 401 for a wrong signature, else [`Runner::accept`]'s.
+    /// such webhook routine, 503 without its secret, 401 for a wrong signature, 200 `alive` for a `{"kind":"alive"}`
+    /// body (it only feeds the silence clock), else [`Runner::accept`]'s.
     #[must_use]
     pub fn inbound(
         self: &Arc<Self>,
@@ -38,9 +76,66 @@ impl Runner {
             Err(e) => return (503, e.to_string()),
         };
         match Inbound::signed(headers, body, secret.as_bytes()) {
-            Ok(i) => self.accept(id, &i, now),
+            Ok(i) => {
+                self.hear(id, now);
+                if i.alive() {
+                    return (200, "alive".to_owned());
+                }
+                self.accept(id, &i, now)
+            }
             Err(e) => (e.status(), e.to_string()),
         }
+    }
+
+    /// `POST /hooks/mail/<persona>`'s answer for a catch-all router's POST of one mail (JSON `from`, `subject`, `text`,
+    /// `attachments`) signed as `/hooks/in` is with its inbox's `hook` secret: 404 for no such inbox on, 503 without
+    /// the secret, 401 for a wrong signature, 400 for no mail, 200 when kept already, else 202 and each routine on mail
+    /// at `persona` runs on it once.
+    #[must_use]
+    pub fn mail_in(
+        self: &Arc<Self>,
+        persona: &str,
+        headers: (&str, &str),
+        body: &[u8],
+        now: u64,
+    ) -> (u16, String) {
+        let inbox = self.hub.persona(persona).mail;
+        let Some(inbox) = inbox.filter(|m| m.on && !m.hook.is_empty()) else {
+            return (404, format!("no catch-all inbox {persona}"));
+        };
+        let secret = match secrets::get(&self.data, &inbox.hook) {
+            Ok(Some(s)) => s,
+            Ok(None) => return (503, format!("no secret:{}", inbox.hook)),
+            Err(e) => return (503, e.to_string()),
+        };
+        let key = match Inbound::signed(headers, body, secret.as_bytes()) {
+            Ok(i) => cooee_core::sha256(i.key().as_bytes()),
+            Err(e) => return (e.status(), e.to_string()),
+        };
+        let Ok(mut m) = serde_json::from_slice::<Mail>(body) else {
+            return (400, "the body isn't one mail".to_owned());
+        };
+        m.id = format!("m-{}", key.get(..12).unwrap_or(&key));
+        m.date = local(now, self.offset(now));
+        m.read = false;
+        match mail::keep(&self.data, persona, m.clone()) {
+            Ok(true) => {}
+            Ok(false) => return (200, "seen".to_owned()),
+            Err(e) => return (500, e),
+        }
+        let said =
+            serde_json::json!({ "id": m.id, "from": m.from, "subject": mail::hide(&m.subject).0 });
+        let arrived = Inbound::of(m.id, said.to_string());
+        let on = Trigger::Mail(persona.to_owned());
+        for r in self
+            .list()
+            .unwrap_or_default()
+            .iter()
+            .filter(|r| r.trigger == on)
+        {
+            self.accept(&r.id, &arrived, now);
+        }
+        (202, "kept".to_owned())
     }
 
     /// Settings' test button: routine `id` runs on a test POST as a signed one does.
@@ -63,8 +158,19 @@ impl Runner {
     }
 }
 
+#[route(POST "/hooks/mail/{id}")]
+pub(super) async fn mail_hook(cx: &Cx, body: Raw) -> Result<Response> {
+    signed_post(cx, body, Runner::mail_in).await
+}
+
 #[route(POST "/hooks/in/{id}")]
 pub(super) async fn inbound_hook(cx: &Cx, body: Raw) -> Result<Response> {
+    signed_post(cx, body, Runner::inbound).await
+}
+
+type Answered = fn(&Arc<Runner>, &str, (&str, &str), &[u8], u64) -> (u16, String);
+
+async fn signed_post(cx: &Cx, body: Raw, answer: Answered) -> Result<Response> {
     let h = |n: &str| crate::http::header(cx, n).unwrap_or_default().to_owned();
     let (id, key, sig) = (
         crate::http::thread_id(cx),
@@ -73,7 +179,7 @@ pub(super) async fn inbound_hook(cx: &Cx, body: Raw) -> Result<Response> {
     );
     let r = runner(cx);
     let (status, text) =
-        tokio::task::spawn_blocking(move || r.inbound(&id, (&key, &sig), &body, now()))
+        tokio::task::spawn_blocking(move || answer(&r, &id, (&key, &sig), &body, now()))
             .await
             .unwrap_or_else(|e| (500, e.to_string()));
     Ok(Response::builder().status(status).body(Bytes::from(text))?)

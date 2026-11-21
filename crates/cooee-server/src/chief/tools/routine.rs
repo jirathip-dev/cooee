@@ -51,8 +51,11 @@ fn create(d: &Desk, me: &Me, ask: Ask) -> Result<String, HubError> {
         when: ask.when,
         github: None,
         webhook: None,
+        mail: false,
         prompt,
+        script: None,
         place,
+        until: None,
     };
     let r = d.runner.make(me.thread(), made, &from, now())?;
     Ok(format!(
@@ -77,6 +80,7 @@ fn run(d: &Desk, me: &Me, args: Value) -> Result<String, HubError> {
         when: ask.when,
         prompt: ask.prompt,
         paused,
+        per_day: None,
     };
     let r = d.runner.edit(&ask.id, e, now())?;
     let text = format!("{verb} routine {}", r.name);

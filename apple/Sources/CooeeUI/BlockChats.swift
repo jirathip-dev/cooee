@@ -10,7 +10,9 @@ internal struct PinnedRow: View {
     private var stage: CooeeCore.Stage? { look.stage }
 
     internal var body: some View {
-        Stage(height: 180, title: "pinned") { strip.padding(.bottom, stage == nil ? 0 : 8) }
+        if !pins.isEmpty {
+            Stage(height: 180, title: "pinned") { strip.padding(.bottom, stage == nil ? 0 : 8) }
+        }
     }
 
     private var strip: some View {
@@ -55,7 +57,7 @@ internal struct PinnedRow: View {
                 .padding(.horizontal, stage == nil ? 0 : 6).padding(.vertical, stage == nil ? 0 : 2)
                 .background(stage?.color(\.paper).opacity(0.85) ?? .clear, in: .capsule)
             if look.figures != .avatar {
-                Text(persona.word).ui(10, .regular, look)
+                Text(look.word(persona.state)).ui(10, .regular, look).lineLimit(1).minimumScaleFactor(0.7)
                     .foregroundStyle(persona.state == .needs ? palette.red : stage == nil ? palette.mute : ink)
             }
         }
