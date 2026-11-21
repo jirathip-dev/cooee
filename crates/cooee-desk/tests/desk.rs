@@ -1,7 +1,13 @@
 //! The desk provider against a fake `container` CLI that keeps each desk's status in a file beside it: the lifecycle,
 //! the caps, the host-only network and the reach probe that stops a desk reaching the LAN or the tailnet.
 
-use std::{env, fs, net::SocketAddr, os::unix::fs::PermissionsExt, path::PathBuf};
+use std::{
+    env, fs,
+    net::SocketAddr,
+    os::unix::fs::{PermissionsExt, symlink},
+    path::PathBuf,
+    sync::OnceLock,
+};
 
 use cooee_desk::{
     Caps, Desks, Error, MAX_CPUS, MAX_MEMORY_MIB, MIN_MEMORY_MIB, NETWORK, Name, State,
@@ -34,6 +40,16 @@ case "$1 $2" in
 esac
 "#;
 
+fn container() -> &'static PathBuf {
+    static BIN: OnceLock<PathBuf> = OnceLock::new();
+    BIN.get_or_init(|| {
+        let bin = PathBuf::from(env!("CARGO_TARGET_TMPDIR")).join("cooee-desk-container");
+        fs::write(&bin, CONTAINER).unwrap();
+        fs::set_permissions(&bin, fs::Permissions::from_mode(0o755)).unwrap();
+        bin
+    })
+}
+
 struct Fake {
     dir: PathBuf,
 }
@@ -45,9 +61,7 @@ impl Fake {
         );
         fs::remove_dir_all(&dir).ok();
         fs::create_dir_all(dir.join("c")).unwrap();
-        let bin = dir.join("container");
-        fs::write(&bin, CONTAINER).unwrap();
-        fs::set_permissions(&bin, fs::Permissions::from_mode(0o755)).unwrap();
+        symlink(container(), dir.join("container")).unwrap();
         Self { dir }
     }
 
@@ -160,10 +174,10 @@ fn desks_join_only_a_host_only_network_and_refuse_one_that_is_not() {
 
 #[test]
 fn a_desk_that_reaches_the_lan_or_the_tailnet_is_stopped_and_one_that_does_not_stays_awake() {
-    let blocked = ["192.168.1.1:80", "100.101.102.103:22"];
+    let blocked = ["203.0.113.7:80", "198.51.100.7:22"];
     for (open, target) in [
-        ("192.168.1.1/80", blocked[0]),
-        ("100.101.102.103/22", blocked[1]),
+        ("203.0.113.7/80", blocked[0]),
+        ("198.51.100.7/22", blocked[1]),
     ] {
         let fake = Fake::new("reach");
         let desks = fake.desks(&blocked);
