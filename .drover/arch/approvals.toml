@@ -1,0 +1,5 @@
+[[ban]]
+pattern = "shed.approve"
+paths = ["crates/cooee-server/src/**"]
+except = ["crates/cooee-server/src/hub/approvals.rs"]
+reason = "#503: a harness's permission request is answered only where cooee's rules decided: hub/approvals.rs"
