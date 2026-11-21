@@ -23,5 +23,8 @@ internal struct CooeeShortcuts: AppShortcutsProvider {
         AppShortcut(
             intent: OpenAskIntent(), phrases: ["Open \(\.$thread) in \(.applicationName)"],
             shortTitle: "Open a thread", systemImageName: "text.bubble.fill")
+        AppShortcut(
+            intent: CallPersonaIntent(), phrases: ["Call a persona in \(.applicationName)"], shortTitle: "Call",
+            systemImageName: "phone.fill")
     }
 }
