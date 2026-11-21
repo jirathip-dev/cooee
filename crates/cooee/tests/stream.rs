@@ -189,3 +189,75 @@ fn the_sessions_screen_is_core_kinds_grouped_by_persona_with_the_rows_of_get_thr
         json!([])
     );
 }
+
+#[test]
+fn a_stream_without_a_device_opens_only_the_pair_screen() {
+    const PAIR: &str = "/screens/pair";
+    let dir = scratch("stream-pair");
+    let shed = FakeShed::start(&dir.join("shed"), version());
+    let mut cooee = Cooee::start(&dir, &shed.dir);
+    let paired = std::mem::take(&mut cooee.cookie);
+    let ask = json!({ "screen": PAIR, "action": "ask" });
+    let (head, _) = cooee.raw(
+        "POST",
+        "/screens/pair/action",
+        &[("Content-Type", "application/json")],
+        &ask.to_string(),
+    );
+    let claim = head
+        .lines()
+        .find_map(|l| l.strip_prefix("set-cookie: cooee_claim="))
+        .unwrap();
+    cooee.cookie = format!("cooee_claim={}", claim.split(';').next().unwrap());
+
+    let mut first = cooee.sse("/stream?v=2", "");
+    let hello1 = hello(&mut first);
+    let mut events = cooee.sse("/stream?v=2", "");
+    let e = first.next();
+    assert_eq!(
+        (e.event.as_str(), &e.data),
+        ("bye", &json!({ "why": "evicted" })),
+        "a waiting request holds one stream"
+    );
+    let (status, _) = cooee.post(&format!("/stream/{}", hello1.sid), &json!({ "open": [] }));
+    assert_eq!(status, 404, "the evicted stream is gone");
+    let hello = hello(&mut events);
+    let mut m = Mirror::new(2);
+    m.hello(&hello).unwrap();
+    m.open(PAIR);
+    m.open(KEY);
+    let sent = m.have();
+    let synced = sync(&cooee, &hello.sid, &sent);
+    let gone: Vec<_> = synced.keys.iter().map(|k| (k.k.as_str(), k.gone)).collect();
+    assert_eq!(gone, [(PAIR, None), (KEY, Some(404))]);
+    m.synced(&sent, synced);
+    let pair = |m: &Mirror| serde_json::to_value(m.screen(PAIR).unwrap()).unwrap();
+    assert_eq!(pair(&m)["blocks"][3]["action"], "cancel");
+
+    let id = {
+        let mut c = std::mem::replace(&mut cooee.cookie, paired);
+        let id = cooee.json("/pair/asks")[0]["id"]
+            .as_str()
+            .unwrap()
+            .to_owned();
+        std::mem::swap(&mut cooee.cookie, &mut c);
+        id
+    };
+    cooee.cli(&["pair", "approve", &id]);
+    while pair(&m)["blocks"][1]["action"] != "collect" {
+        let f = frame(&mut events);
+        assert_ne!(m.frame(f), Took::Gap);
+    }
+    assert_eq!(
+        pair(&m),
+        cooee.json(PAIR),
+        "the stream shows what GET shows"
+    );
+
+    let collect = json!({ "screen": PAIR, "action": "collect" });
+    assert_eq!(cooee.post("/screens/pair/action", &collect).0, 200);
+    let bye = events.until(|e| e.event == "bye");
+    assert_eq!(bye.last().unwrap().data, json!({ "why": "handover" }));
+    let (status, _) = cooee.post(&format!("/stream/{}", hello.sid), &json!({ "open": [] }));
+    assert_eq!(status, 401, "a collected claim reaches no stream");
+}
