@@ -16,7 +16,6 @@
 - Don't name a provider (claude, anthropic, codex, openai, gemini, hermes) outside crates/cooee-core/src/providers/ and tests (enforced by: scripts/neutral-core.sh)
 - don't push a PR body without a For humans section, with a placeholder, or with evidence at an older sha than the head (enforced by: pr-body `scripts/pr-body.sh`, active since 2026-11-21)
 - Don't break .drover/arch.toml's bans, size baselines, frozen or generated files (enforced by: CI arch-check (drover arch-check, ci/drover-checks-test.sh))
-- Don't fail an active lesson check here (a shadow one only reports) (enforced by: CI lessons (drover lesson-check, ci/drover-checks-test.sh))
 - Don't start a process outside crates/cooee-core/src/runner.rs: use `runner::command` (enforced by: CI arch-check `Command::new` ban)
 - Don't leave a temp folder behind a test, pass or fail (enforced by: ci/gates/test.sh (fresh TMPDIR, ci/test-gate-test.sh))
 - Don't unwrap, expect, panic, `todo!`, `unimplemented!`, `dbg!`, index or slice, `as`-cast, print outside `cooee_core::out` (`say!`, `note!`), `let _ =` a must-use value, allow without a reason or write `unsafe` in Rust (tests may unwrap, expect, panic and index) (enforced by: clippy deny lints in Cargo.toml (ci/gates/clippy.sh, fixtures in ci/bans-test.sh))
