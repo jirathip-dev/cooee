@@ -1,0 +1,5 @@
+[[ban]]
+pattern = "history::watermark"
+paths = ["crates/cooee-server/src/**"]
+except = ["crates/cooee-server/src/routines/guard.rs", "crates/cooee-server/src/routines/builtin.rs", "crates/cooee-server/src/hub/heartbeat.rs", "crates/cooee-server/src/hub/mcp.rs"]
+reason = "#690: a routine's line, cap and tally change only through the guard: use Runner::admit_due, admit_event, admit_wake, count"
