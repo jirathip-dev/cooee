@@ -7,7 +7,7 @@ use cooee_core::Shed;
 
 use crate::{
     cli::{Failed, Flag, Invocation, load},
-    service::{plist, tailnet_name, write_plist},
+    service::{service, tailnet_name},
 };
 
 pub(super) const USAGE: &str = "install --port <p>";
@@ -41,10 +41,12 @@ fn install(path: Option<PathBuf>, instance: &str, port: u16, explicit: bool) -> 
             config.port
         ));
     }
-    let (file, plist) = plist(&config, &path, explicit, "serve")?;
-    write_plist(&config, &file, &plist)?;
-    cooee_core::say!("wrote {}\n\nrun these yourself:", file.display());
-    cooee_core::say!("  launchctl bootstrap gui/$(id -u) {}", file.display());
+    let service = service(&config, explicit.then_some(&path), "serve")?;
+    let done = service.install().map_err(|e| e.to_string())?;
+    let commands = service.commands();
+    cooee_core::say!("{} {done}", service.label());
+    cooee_core::say!("  restart: {}\n  log: {}", commands.restart, commands.log);
+    cooee_core::say!("\nrun these yourself:");
     cooee_core::say!("  tailscale serve --bg --https={port} http://127.0.0.1:{port}");
     if Shed::new(config.shed.clone(), config.shed_dir.clone())
         .hello()

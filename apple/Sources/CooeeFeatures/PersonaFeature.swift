@@ -14,6 +14,7 @@ public struct PersonaFeature: Sendable {
         public var machines: [MachineRow] = []
         public var folders: FolderListing?
         public var connectors = ConnectorList()
+        public var rules: RulesFeature.State
         public var search = ""
         public var busy = false
         public var error: String?
@@ -29,6 +30,7 @@ public struct PersonaFeature: Sendable {
         public init(server: Server, persona: APIPersona) {
             self.server = server
             draft = persona
+            rules = RulesFeature.State(server: server, persona: persona.id)
         }
     }
 
@@ -40,6 +42,7 @@ public struct PersonaFeature: Sendable {
         case listed([ModelList])
         case machines([MachineRow])
         case linked(ConnectorList)
+        case rules(RulesFeature.Action)
         case agent(String)
         case browse(String?)
         case browsed(FolderListing)
@@ -77,9 +80,10 @@ public struct PersonaFeature: Sendable {
 
     public var body: some ReducerOf<Self> {
         BindingReducer()
+        Scope(state: \.rules, action: \.rules) { RulesFeature() }
         Reduce { state, action in
             switch action {
-            case .binding, .delegate:
+            case .binding, .delegate, .rules:
                 return .none
             case .task:
                 return .concatenate(

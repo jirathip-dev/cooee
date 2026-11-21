@@ -489,6 +489,46 @@ fn a_reply_delivers_its_text_before_its_item_and_replays_only_the_item() {
 }
 
 #[test]
+fn the_glance_shows_a_working_thread_as_running_then_its_ask() {
+    let dir = scratch("glance");
+    seed(&dir, "run", "");
+    let hub = hub(&dir);
+    let report = |seq, state: &str| {
+        let r = Reported {
+            state: state.to_owned(),
+            ..Reported::default()
+        };
+        hub.apply(event("run", seq, EventKind::State(Box::new(r))));
+    };
+    report(1, "working");
+    let first = hub.overview();
+    let running: Vec<&str> = first.running.iter().map(|r| r.thread.as_str()).collect();
+    assert_eq!((running, first.asks.len()), (vec!["run"], 0));
+    assert!(first.running[0].since <= first.at && first.at <= now());
+    report(2, "blocked");
+    let asked = hub.overview();
+    assert_eq!(
+        (asked.running.len(), asked.asks[0].thread.as_str()),
+        (0, "run")
+    );
+}
+
+#[test]
+fn the_activity_counts_the_tools_of_the_current_turn_only() {
+    let dir = scratch("tools");
+    let lines = [
+        json!({ "id": 1, "at": 1, "seq": 1, "kind": "you", "text": "go", "random_id": "r1" }),
+        json!({ "id": 2, "at": 2, "seq": 2, "kind": "tool", "call": "a", "title": "ls", "status": "completed" }),
+        json!({ "id": 3, "at": 3, "seq": 3, "kind": "you", "text": "more", "random_id": "r2" }),
+        json!({ "id": 4, "at": 4, "seq": 4, "kind": "tool", "call": "b", "title": "ls", "status": "completed" }),
+        json!({ "id": 5, "at": 5, "seq": 5, "kind": "tool", "call": "c", "title": "cat", "status": "completed" }),
+    ];
+    seed(&dir, "t", &lines.map(|l| l.to_string() + "\n").concat());
+    let hub = hub(&dir);
+    assert_eq!((hub.tools("t"), hub.tools("gone")), (2, 0));
+}
+
+#[test]
 fn a_hundred_lists_with_nothing_changed_read_no_persona_file_after_the_first() {
     let dir = scratch("personas-kept");
     let toml = dir.join("config/agents/ada/agent.toml");

@@ -160,11 +160,23 @@ public struct ListedChat: Identifiable, Sendable, Equatable {
 public struct AgentOption: Codable, Sendable, Equatable, Identifiable {
     public let id: String
     public let efforts: [String]
+    public let gaps: [Gap]
 
-    public init(id: String, efforts: [String] = []) {
+    public init(id: String, efforts: [String] = [], gaps: [Gap] = []) {
         self.id = id
         self.efforts = efforts
+        self.gaps = gaps
     }
+
+    public init(from decoder: any Decoder) throws {
+        let values = try decoder.container(keyedBy: CodingKeys.self)
+        id = try values.decode(String.self, forKey: .id)
+        efforts = try values.decodeIfPresent([String].self, forKey: .efforts) ?? []
+        gaps = try values.decodeIfPresent([Gap].self, forKey: .gaps) ?? []
+    }
+
+    /// The kinds of action it never asks before.
+    public var silent: Set<ToolKind> { Set(gaps.compactMap(\.kind)) }
 }
 
 public struct ModelList: Codable, Sendable, Equatable {

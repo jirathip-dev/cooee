@@ -4,7 +4,7 @@ use cooee_core::{Plugin, Profile};
 
 use crate::plugin;
 
-use super::{Hub, lock};
+use super::{Hub, lock, now};
 
 impl Hub {
     /// Installed plugin `name`'s backend: its first tab's entry (its URL and token).
@@ -42,6 +42,7 @@ impl Hub {
             }
         }
         *lock(&self.served) = fresh;
+        self.surface(now());
     }
 
     /// The plugins: the config's own and the installed ones' tabs.

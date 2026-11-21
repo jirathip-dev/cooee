@@ -52,6 +52,7 @@ mod send;
 pub(crate) mod session;
 mod setup;
 mod start;
+mod surface;
 #[cfg(test)]
 mod tests;
 mod threads;
@@ -292,6 +293,7 @@ pub struct Hub {
     models: Mutex<Vec<cooee_core::models::Offered>>,
     expiry: u64,
     desks: screen::Desks,
+    surface: Mutex<surface::Surface>,
     home: home::Home,
 }
 
@@ -566,6 +568,7 @@ impl Hub {
             models: Mutex::new(cooee_core::models::load(&data.join("models.json"))),
             expiry,
             desks: screen::Desks::default(),
+            surface: Mutex::default(),
         });
         let worker = Arc::clone(&hub);
         thread::spawn(move || {

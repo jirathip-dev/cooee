@@ -18,7 +18,7 @@ public struct CooeeRoot: View {
     private let store = Self.live
 
     public var body: some View {
-        AppRoot(store: store).task {
+        AppRoot(store: store).onOpenURL { Routes.open($0) }.task {
             if Self.mac { try? await AppIconClient.liveValue.set(SettingsStore.liveValue.load().appIcon) }
         }
     }
