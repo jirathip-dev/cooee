@@ -38,6 +38,20 @@ fn mail_tool() -> Value {
     })
 }
 
+fn desk_tool() -> Value {
+    json!({
+        "name": "desk",
+        "description": "Drive your persona's desk, a Linux desktop: give one of screenshot (the whole screen, sent to you), click (x, y pixels from the top left) or type (text, into what has the focus). Each action leaves the owner a replay frame of the screen after it; you see only a screenshot you ask for. A refusal starts with NO_DESK.",
+        "inputSchema": { "type": "object", "properties": {
+            "screenshot": { "type": "object" },
+            "click": { "type": "object", "required": ["x", "y"], "properties": {
+                "x": { "type": "integer", "minimum": 0 }, "y": { "type": "integer", "minimum": 0 }
+            } },
+            "type": { "type": "object", "required": ["text"], "properties": { "text": { "type": "string" } } }
+        } }
+    })
+}
+
 fn handoff_tool() -> Value {
     json!({
         "name": "handoff",
@@ -164,7 +178,8 @@ fn own_tools() -> Value {
         stop_routine_tool(),
         skill,
         secret_tool(),
-        mail_tool()
+        mail_tool(),
+        desk_tool()
     ])
 }
 
@@ -187,7 +202,7 @@ fn merged(own: &Value, mut mine: Vec<Value>) -> Value {
 }
 
 /// `cooee mcp serve --thread <id>`: cooee's own MCP server: `propose_server`, and `remember` (#126),
-/// `ask_persona` (#156), `handoff` (#164), `history` (#217), `update_persona` (#270), `skill` (#218) and `secret` (#163) and `mail` (#220) for a persona's,
+/// `ask_persona` (#156), `handoff` (#164), `history` (#217), `update_persona` (#270), `skill` (#218) and `secret` (#163), `mail` (#220) and `desk` (#172) for a persona's,
 /// and in Chief's own chat its tools (#664).
 ///
 /// # Errors
@@ -238,6 +253,7 @@ pub fn serve(thread: &str) -> Result<(), String> {
                     Some("skill") => ("/mcp/agent/skill", ""),
                     Some("secret") => ("/mcp/agent/secret", ""),
                     Some("mail") => ("/mcp/agent/mail", ""),
+                    Some("desk") => ("/mcp/agent/desk", ""),
                     _ => ("/mcp/agent/chief", ""),
                 };
                 let server = if path == "/mcp/agent/chief" {
@@ -246,12 +262,17 @@ pub fn serve(thread: &str) -> Result<(), String> {
                     args
                 };
                 let got = ask(path, &json!({ "thread": thread, "server": server }));
-                let said = got.map(|v| v.as_str().unwrap_or(said).to_owned());
+                let image = got.as_ref().ok().and_then(|v| v.get("image")).cloned();
+                let said = got.map(|v| {
+                    let v = v.get("text").unwrap_or(&v);
+                    v.as_str().unwrap_or(said).to_owned()
+                });
                 let (text, failed) = said.map_or_else(|e| (e, true), |s| (s, false));
-                reply(
-                    id,
-                    &json!({ "content": [{ "type": "text", "text": text }], "isError": failed }),
-                )
+                let mut content = vec![json!({ "type": "text", "text": text })];
+                if let Some(data) = image.filter(Value::is_string) {
+                    content.push(json!({ "type": "image", "data": data, "mimeType": "image/png" }));
+                }
+                reply(id, &json!({ "content": content, "isError": failed }))
             }
             m => error(id, -32601, &format!("no method {m}")),
         };

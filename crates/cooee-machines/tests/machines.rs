@@ -15,7 +15,7 @@ use std::{
     thread,
 };
 
-use cooee_machines::{Cooee, DAY, Machines, render, serve};
+use cooee_machines::{Card, Cooee, DAY, Kind, Machines, Problem, render, serve};
 use serde_json::{Value, json};
 
 const SHED: &str = r#"#!/bin/sh
@@ -59,7 +59,7 @@ fn scratch(name: &str) -> PathBuf {
 }
 
 fn machines(dir: &Path) -> Machines {
-    Machines::new(dir.join("shed"), None, "mini".to_owned())
+    Machines::new(dir.join("shed"), None, "mini".to_owned(), None)
 }
 
 fn sample(at: u64, load: f64, mem: u64, disk_mb: u64) -> Value {
@@ -361,4 +361,22 @@ fn the_backend_answers_only_with_the_plugin_token() {
         "{tab}"
     );
     assert!(get(port, "/nope", ok).starts_with("HTTP/1.0 404"));
+}
+
+#[test]
+fn an_asleep_desk_is_no_problem_but_a_host_that_does_not_answer_is_offline() {
+    let desk = Card {
+        name: "research-1".to_owned(),
+        kind: Kind::Desk {
+            provider: "container".to_owned(),
+            parent: "mini".to_owned(),
+        },
+        ..Card::default()
+    };
+    assert_eq!(desk.problems(), []);
+    let host = Card {
+        name: "air".to_owned(),
+        ..Card::default()
+    };
+    assert_eq!(host.problems(), [Problem::Offline]);
 }

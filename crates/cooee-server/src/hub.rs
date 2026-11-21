@@ -29,6 +29,7 @@ mod approvals;
 mod ask;
 mod cards;
 mod chief;
+mod desk;
 mod events;
 mod expire;
 mod fallback;
@@ -57,6 +58,7 @@ mod surface;
 mod tests;
 mod threads;
 pub(crate) use chief::Me;
+pub use desk::DeskSeen;
 pub use mcp::Called;
 use mcp::Proposed;
 pub use rooms::Starter;
@@ -181,7 +183,7 @@ pub struct Pending {
     pub random_id: String,
 }
 
-/// A plugin's card (`POST /plugin/card`, docs/plugins.md).
+/// A plugin's card (`POST /plugin/card`, docs/plugins/).
 #[derive(Debug, Deserialize)]
 pub struct CardSpec {
     /// The thread it goes in.
@@ -293,6 +295,7 @@ pub struct Hub {
     models: Mutex<Vec<cooee_core::models::Offered>>,
     expiry: u64,
     desks: screen::Desks,
+    leases: desk::Leases,
     surface: Mutex<surface::Surface>,
     home: home::Home,
 }
@@ -570,6 +573,7 @@ impl Hub {
             models: Mutex::new(cooee_core::models::load(&data.join("models.json"))),
             expiry,
             desks: screen::Desks::default(),
+            leases: desk::Leases::default(),
             surface: Mutex::default(),
         });
         let worker = Arc::clone(&hub);

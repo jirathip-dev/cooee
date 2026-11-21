@@ -1,9 +1,15 @@
-use blocks::{Block, Label, List, Row, Screen, Tone, Toned};
+use blocks::{Action, Block, Label, List, Row, Screen, Tone, Toned};
 use cooee_core::routines::{Edit, Mode};
 use serde_json::Value;
-use topcoat::{Result, context::Cx, router::route};
+use topcoat::{
+    Result,
+    context::Cx,
+    router::{
+        response::{IntoResponse, Response},
+        route,
+    },
+};
 
-use super::persona::Act;
 use crate::{
     HubError,
     http::{Answer, refused},
@@ -65,17 +71,21 @@ fn row(g: &Guarded) -> Row {
     if capped && r.paused.is_none() {
         let tone = Some(Tone::Warn);
         return row.badge(Label {
-            text: "capped today".to_owned(),
+            text: "capped today".into(),
             tone,
         });
     }
     row
 }
 
-pub(super) async fn action(cx: &Cx, a: Act) -> Result<Value, HubError> {
+pub(super) async fn act(cx: &Cx, a: &Action) -> Option<Result<Response>> {
     if a.screen != PATH {
-        return Err(refused(format!("no screen {}", a.screen)));
+        return None;
     }
+    Some(Answer(guard(cx, a).await).into_response(cx))
+}
+
+async fn guard(cx: &Cx, a: &Action) -> Result<Value, HubError> {
     let value = |k: &str| match a.values.get(k) {
         Some(Value::String(s)) => s.clone(),
         Some(v @ Value::Number(_)) => v.to_string(),

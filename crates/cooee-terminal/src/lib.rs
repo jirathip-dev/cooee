@@ -1,4 +1,4 @@
-//! cooee's first-party plugin `terminal` (docs/plugins.md): the owner's shells on the Mac, from the phone. A shell is
+//! cooee's first-party plugin `terminal` (docs/plugins/): the owner's shells on the Mac, from the phone. A shell is
 //! a login shell (`$SHELL -l` in `~`) in a shed terminal labelled `cooee.owner=1`, so it outlives the page and cooee;
 //! the other shed terminals (agents') are listed too, to watch but never type into. The screen comes from shed's
 //! `screen.watch` (cell runs with colours) and goes to the tab as an event stream: no terminal emulator on the phone.

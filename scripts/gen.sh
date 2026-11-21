@@ -57,6 +57,31 @@ routes() {
   mv "$dir/mod.rs.gen" "$dir/mod.rs"
 }
 
+# screens DIR: DIR/mod.rs as `routes` writes it, then one `source` and one `act`, each trying every module that has one, in name order.
+screens() {
+  dir=$1
+  routes "$dir"
+  set -- $(for m in $(modules "$dir"); do if grep -q '^pub(super) fn source(' "$dir/$m.rs"; then echo "$m"; fi; done)
+  {
+    cat "$dir/mod.rs"
+    printf '\npub(crate) fn source(path: &str, who: &crate::live::Who) -> Option<crate::live::Source> {\n'
+    if [ $# -eq 0 ]; then printf '    None\n'; fi
+    for m in "$@"; do
+      if [ "$m" = "$1" ]; then printf '    %s::source(path, who)\n' "$m"; else printf '        .or_else(|| %s::source(path, who))\n' "$m"; fi
+    done
+    printf '}\n'
+  } | rustfmt --edition 2024 >"$dir/mod.rs.gen"
+  mv "$dir/mod.rs.gen" "$dir/mod.rs"
+  set -- $(for m in $(modules "$dir"); do if grep -q '^pub(super) async fn act(' "$dir/$m.rs"; then echo "$m"; fi; done)
+  {
+    cat "$dir/mod.rs"
+    printf '\npub(crate) async fn act(cx: &topcoat::context::Cx, a: &blocks::Action) -> Option<topcoat::Result<topcoat::router::response::Response>> {\n'
+    for m in "$@"; do printf '    if let Some(done) = %s::act(cx, a).await {\n        return Some(done);\n    }\n' "$m"; done
+    printf '    None\n}\n'
+  } | rustfmt --edition 2024 >"$dir/mod.rs.gen"
+  mv "$dir/mod.rs.gen" "$dir/mod.rs"
+}
+
 # flat DIR: DIR/mod.rs, a private `mod` line per module, all re-exported flat (the test support's index).
 flat() {
   dir=$1 ms=$(modules "$1")
@@ -95,27 +120,39 @@ tools() {
   mv "$dir/mod.rs.gen" "$dir/mod.rs"
 }
 
-crate crates/cooee-core/src "cooee's core: the model and its files. No HTTP." \
-  accounts blocks chat config devices login providers root shed store
-module crates/cooee-core/src/chat
-module crates/cooee-core/src/shed
-module crates/cooee-core/src/store
-module crates/cooee-server/src/login
-module crates/cooee-server/src/mcp
-module crates/cooee-server/src/push
-routes crates/cooee-server/src/routes
-routes crates/cooee-server/src/screens
-crate crates/cooee-server/src "cooee's HTTP server: the native app's JSON API (docs/README.md)." \
-  chief connectors contrast editor gate http hub layout login look manage pairing passkey net plugin push root routes routines screens serve themes
-tools crates/cooee-server/src/chief/tools
-cmds crates/cooee/src/cmd
-flat crates/cooee/tests/support
-# today: README.md's list between its markers, from the `## Today` bullets of docs/*.md in file-name order, their ../ links made the README's.
-for f in $(printf '%s\n' docs/*.md | LC_ALL=C sort); do
-  awk '/^## / { on = $0 == "## Today"; next } on && /^- / { gsub(/\]\(\.\.\//, "]("); print }' "$f"
+# arch: .drover/arch.toml (#729): every `frozen`, `generated` and `shared` line of .drover/arch/*.list, sorted, then each *.toml in name order.
+arch() {
+  {
+    printf '# Written by scripts/gen.sh from .drover/arch/ (docs/architecture/hotspots-2026-11-16). Never edit it.\n'
+    for k in frozen generated shared; do
+      printf '%s = [%s]\n' "$k" "$(awk -v k="$k" '$1 == k { print $2 }' .drover/arch/*.list | LC_ALL=C sort -u | awk '{ printf "%s\"%s\"", (NR > 1 ? ", " : ""), $0 }')"
+    done
+    printf 'generate = "scripts/gen.sh"\n'
+    for f in .drover/arch/*.toml; do
+      printf '\n'
+      cat "$f"
+    done
+  } >.drover/arch.toml.gen
+  mv .drover/arch.toml.gen .drover/arch.toml
+}
+
+# The inputs: each file of scripts/gen.d/ in name order, one `<kind> <args>` a line.
+for f in $(printf '%s\n' scripts/gen.d/* | LC_ALL=C sort); do . "./$f"; done
+arch
+
+# today: README.md's list between its markers, from the `## Today` bullets of docs/*.md and docs/*/README.md in file-name order, their ../ links made the README's.
+for f in $(printf '%s\n' docs/*.md docs/*/README.md | LC_ALL=C sort); do
+  awk '/^## / { on = $0 == "## Today"; next } on && /^- / { gsub(/\]\((\.\.\/)+/, "]("); print }' "$f"
 done >README.md.today
 awk -v f=README.md.today '/^<!-- \/today -->$/ { while ((getline l < f) > 0) print l; skip = 0 } !skip { print } /^<!-- today:/ { skip = 1 }' \
   README.md >README.md.gen
 mv README.md.gen README.md
 rm README.md.today
+
+# scope: README.md's Scope and Non-goals between their markers, from docs/scope.md's `## ` sections, its ../ links made the README's.
+awk '/^## / { on = 1 } on { gsub(/\]\((\.\.\/)+/, "]("); print }' docs/scope.md >README.md.scope
+awk -v f=README.md.scope '/^<!-- \/scope -->$/ { while ((getline l < f) > 0) print l; skip = 0 } !skip { print } /^<!-- scope:/ { skip = 1 }' \
+  README.md >README.md.gen
+mv README.md.gen README.md
+rm README.md.scope
 cargo update --workspace --quiet
