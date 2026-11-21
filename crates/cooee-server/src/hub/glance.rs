@@ -1,6 +1,6 @@
 use cooee_core::{Body, Item, Thread};
 
-use super::{Live, waits};
+use super::{live::Live, waits};
 
 #[derive(Clone)]
 pub(super) struct Glance {

@@ -11,7 +11,8 @@ use cooee_core::{
 };
 use tokio::sync::broadcast;
 
-use super::{Hub, Live, glance, lock, rooms};
+use super::glance::glance;
+use super::{Hub, live::Live, lock, rooms};
 
 type Stamp = Vec<(PathBuf, Option<(SystemTime, u64)>)>;
 

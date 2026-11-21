@@ -1,7 +1,7 @@
 use std::{
     fs,
     path::PathBuf,
-    sync::{Arc, Mutex},
+    sync::{Arc, Mutex, OnceLock},
 };
 
 use cooee_core::{
@@ -11,7 +11,7 @@ use cooee_core::{
 use serde::Serialize;
 use serde_json::json;
 
-use super::{Hub, HubError, Live, Recipe, Upload, lock, now};
+use super::{Hub, HubError, Recipe, Upload, live::Live, lock, now};
 use crate::push::Note;
 
 /// A member's ask as its room shows it (#178): the member, its session (where the answer goes) and the card.
@@ -109,6 +109,11 @@ fn refused(why: impl Into<String>) -> HubError {
     HubError::Refused(why.into())
 }
 
+#[derive(Default)]
+pub(super) struct State {
+    starter: OnceLock<Starter>,
+}
+
 impl Hub {
     pub(super) fn routed(&self, meta: &Thread, note: Note) -> Note {
         let room = Some(&meta.room).filter(|r| !r.is_empty());
@@ -162,7 +167,7 @@ impl Hub {
 
     /// Sets how a member's session starts (once).
     pub fn set_starter(&self, starter: Starter) {
-        self.starter.set(starter).ok();
+        self.areas.rooms.starter.set(starter).ok();
     }
 
     /// A new room of `members` (persona ids, in room order), titled `title` (empty: their ids); once per
@@ -426,7 +431,12 @@ impl Hub {
         (prompt, random_id): (&str, &str),
         seat: impl FnOnce(&mut Recipe),
     ) -> Result<String, HubError> {
-        let starter = self.starter.get().ok_or_else(|| refused("no starter"))?;
+        let starter = self
+            .areas
+            .rooms
+            .starter
+            .get()
+            .ok_or_else(|| refused("no starter"))?;
         let (agent, folder, mut recipe) = starter(self, persona)?;
         seat(&mut recipe);
         let seated = self

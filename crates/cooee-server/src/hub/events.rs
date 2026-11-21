@@ -1,6 +1,9 @@
 use std::{
     collections::BTreeMap,
-    sync::{Mutex, atomic::Ordering},
+    sync::{
+        Mutex,
+        atomic::{AtomicBool, Ordering},
+    },
     time::Duration,
 };
 
@@ -12,7 +15,21 @@ use serde_json::json;
 
 use crate::push::Note;
 
-use super::{After, Hub, HubError, Live, STUCK, lock, now};
+use super::live::{After, Live};
+use super::{Hub, HubError, Out, STUCK, lock, now};
+
+/// What a page subscription starts with: replayed events, or a reset (the page reloads its slice).
+pub enum Resume {
+    /// The events after the page's cursor.
+    Replay(Vec<Out>),
+    /// The cursor is from another run or too old.
+    Reset,
+}
+
+#[derive(Default)]
+pub(super) struct State {
+    shed_version: AtomicBool,
+}
 
 impl Hub {
     pub(super) fn follow(&self) {
@@ -54,7 +71,12 @@ impl Hub {
     pub(super) fn shed_seen(&self, error: Option<&ShedError>) -> bool {
         let version = matches!(error, Some(ShedError::Version { .. }));
         if error.is_some() && !version
-            || self.shed_version.swap(version, Ordering::SeqCst) == version
+            || self
+                .areas
+                .events
+                .shed_version
+                .swap(version, Ordering::SeqCst)
+                == version
         {
             return version;
         }
@@ -189,7 +211,9 @@ impl Hub {
         let done = match reply {
             Some(body) if !seat.0.is_empty() => done.and(self.replied(&seat.0, &seat.1, body)),
             Some(Body::Agent { text, .. }) => {
-                lock(&self.asks).remove(&asked).map(|tx| tx.send(text));
+                lock(&self.areas.ask.asks)
+                    .remove(&asked)
+                    .map(|tx| tx.send(text));
                 done
             }
             _ => done,

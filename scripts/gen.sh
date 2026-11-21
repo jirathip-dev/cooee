@@ -29,18 +29,47 @@ crate() {
   mv "$dir/lib.rs.gen" "$dir/lib.rs"
 }
 
-# module DIR: DIR.rs, its leading `//!` lines kept, a `mod` line per file of DIR and a `pub use` of each with a `pub ` item.
+# module DIR: DIR.rs, its leading `//!` lines kept, a `mod` line per file of DIR (`tests` under `#[cfg(test)]`) and a `pub use` of each with a `pub ` item.
 module() {
   dir=$1
   {
     awk '!/^\/\/!/ { exit } { print }' "$dir.rs"
-    for m in $(modules "$dir"); do printf 'mod %s;\n' "$m"; done
+    for m in $(modules "$dir"); do
+      [ "$m" != tests ] || printf '#[cfg(test)]\n'
+      printf 'mod %s;\n' "$m"
+    done
     printf '\n'
     for m in $(modules "$dir"); do
       if grep -q '^pub ' "$dir/$m.rs" 2>/dev/null || grep -q '^pub ' "$dir/$m/mod.rs" 2>/dev/null; then printf 'pub use %s::*;\n' "$m"; fi
     done
   } | rustfmt --edition 2024 >"$dir.rs.gen"
   mv "$dir.rs.gen" "$dir.rs"
+}
+
+# areas DIR (#729): DIR/areas.rs, a field per file of DIR with a `pub(super) struct State`, built by its `open(seed)` (`?` when it returns a Result) or its default.
+areas() {
+  dir=$1 ms=
+  for m in $(modules "$dir"); do
+    if grep -q '^pub(super) struct State ' "$dir/$m.rs" 2>/dev/null; then ms="$ms $m"; fi
+  done
+  {
+    printf 'use super::{HubError, Seed%s};\n\n' "$(for m in $ms; do printf ', %s' "$m"; done)"
+    printf 'pub(super) struct Areas {\n'
+    for m in $ms; do printf '    pub(super) %s: %s::State,\n' "$m" "$m"; done
+    printf '}\n\nimpl Areas {\n'
+    printf "    pub(super) fn open(seed: &Seed<'_>) -> Result<Self, HubError> {\n        Ok(Self {\n"
+    for m in $ms; do
+      if grep -q "fn open(seed: &Seed<'_>) -> Result<Self, HubError>" "$dir/$m.rs"; then
+        printf '            %s: %s::State::open(seed)?,\n' "$m" "$m"
+      elif grep -q "fn open(seed: &Seed<'_>) -> Self" "$dir/$m.rs"; then
+        printf '            %s: %s::State::open(seed),\n' "$m" "$m"
+      else
+        printf '            %s: %s::State::default(),\n' "$m" "$m"
+      fi
+    done
+    printf '        })\n    }\n}\n'
+  } | rustfmt --edition 2024 >"$dir/areas.rs.gen"
+  mv "$dir/areas.rs.gen" "$dir/areas.rs"
 }
 
 # routes DIR: DIR/mod.rs, a `mod` line per area and one `routes` that chains every area's `routes`.

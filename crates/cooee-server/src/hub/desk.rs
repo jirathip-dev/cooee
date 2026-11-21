@@ -20,6 +20,11 @@ fn refused(e: &impl ToString) -> HubError {
     HubError::Refused(e.to_string())
 }
 
+#[derive(Default)]
+pub(super) struct State {
+    leases: Leases,
+}
+
 impl Hub {
     fn desk(&self, desk: &str) -> Result<(Desks, Name), HubError> {
         let config = self.config.as_deref().map(Config::load).transpose();
@@ -41,7 +46,7 @@ impl Hub {
     }
 
     fn held(&self, desk: &str) -> Control {
-        let map = lock(&self.leases.0);
+        let map = lock(&self.areas.desk.leases.0);
         let held = map
             .get(desk)
             .filter(|c| matches!(c, Control::Owner { until } if now() < *until));
@@ -64,7 +69,7 @@ impl Hub {
     pub fn desk_take(&self, desk: &str) -> Result<Control, HubError> {
         self.desk(desk)?;
         let taken = self.held(desk).take(now());
-        lock(&self.leases.0).insert(desk.to_owned(), taken.clone());
+        lock(&self.areas.desk.leases.0).insert(desk.to_owned(), taken.clone());
         Ok(taken)
     }
 
@@ -73,7 +78,7 @@ impl Hub {
     /// # Errors
     /// [`HubError::Refused`] unless they hold it.
     pub fn desk_back(&self, desk: &str) -> Result<Control, HubError> {
-        match lock(&self.leases.0).remove(desk) {
+        match lock(&self.areas.desk.leases.0).remove(desk) {
             Some(Control::Owner { .. }) => Ok(Control::Agent),
             _ => Err(refused(&format!("you don't hold desk {desk}"))),
         }

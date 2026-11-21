@@ -1,3 +1,5 @@
+use std::{collections::HashMap, sync::Mutex};
+
 use cooee_core::{action::Action, mail, rules::Effect};
 use serde::Deserialize;
 
@@ -43,6 +45,11 @@ fn refused(e: String) -> HubError {
     HubError::Refused(e)
 }
 
+#[derive(Default)]
+pub(super) struct State {
+    codes: Mutex<HashMap<String, String>>,
+}
+
 impl Hub {
     /// An agent's `mail` in thread `id`, on its persona's inbox: a send goes at once only when a rule allows
     /// `mail/<to>`, else on the owner's approved card; a read's verification code is kept for `secret MAIL_CODE`.
@@ -61,7 +68,7 @@ impl Hub {
         if let Some(m) = a.read {
             let (text, code) = mail::read(b.as_ref(), &m).map_err(refused)?;
             if let Some(code) = code {
-                lock(&self.codes).insert(persona.id, code);
+                lock(&self.areas.mail.codes).insert(persona.id, code);
             }
             return Ok(text);
         }
@@ -95,6 +102,6 @@ impl Hub {
     }
 
     pub(super) fn mail_code(&self, persona: &str) -> Option<String> {
-        lock(&self.codes).remove(persona)
+        lock(&self.areas.mail.codes).remove(persona)
     }
 }
