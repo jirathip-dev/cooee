@@ -52,6 +52,11 @@ typed; a `no_frames` or `account` site gives its origin only), and asks the pers
 `{"click": {"x", "y"}}` or `{"text": "…"}` on the current tab. `GET /personas/{id}/screen` answers who drives it
 (`agent`, `owner` with `until` in ms, or `back` with the note) and how many agent calls wait.
 
+A desk (#171) has the same Screen under `/desks/{name}/screen`, `…/live`, `…/control`, `…/back` and `…/input`, for a
+desk cooee made only: cooee captures each frame and sends each click or text with `container exec` inside the desk
+(ImageMagick `import` and `xdotool` on `DISPLAY=:1`), so no screen-sharing port or password ever leaves the Mac, and
+input is refused unless the owner holds the desk's 10-minute lease.
+
 ## API
 
 The registry is the Mac's: `cooee mcp add|rm|enable|disable`.
