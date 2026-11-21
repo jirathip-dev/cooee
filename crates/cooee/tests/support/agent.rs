@@ -227,6 +227,17 @@ impl FakeShed {
         ))
     }
 
+    /// Terminal `name`'s agent writes `t`: a turn's text still coming.
+    pub fn says(&self, name: &str, t: &str) {
+        self.emit(name, text(t));
+    }
+
+    /// Terminal `name`'s agent stores its reply `t` and is done.
+    pub fn replies(&self, name: &str, t: &str) {
+        self.emit(name, reply(t, "end_turn"));
+        self.report(name, "done", Some("end_turn"));
+    }
+
     /// Terminal `name`'s agent hits its account limit as shed reports it: the limit line, then `rate-limited`.
     pub fn limit(&self, name: &str) {
         self.emit(

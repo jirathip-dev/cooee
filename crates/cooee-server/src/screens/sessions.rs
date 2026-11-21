@@ -1,16 +1,16 @@
-use blocks::{Act, Block, Fields, Label, Row, Screen, Section, Tap, Tone, Toned};
+use blocks::{Act, Action, Answer, Block, Fields, Label, Row, Screen, Section, Tap, Tone, Toned};
 use cooee_core::Summary;
 use serde::Deserialize;
 use serde_json::Value;
 use topcoat::{
     Result,
     context::Cx,
-    router::{parse_query_params, route},
+    router::{parse_query_params, response::Response, route},
 };
 
 use crate::{
     Hub,
-    http::{Answer, blocking},
+    http::{self, blocking, refused},
     live::{Source, Wake, Who},
 };
 
@@ -23,10 +23,10 @@ struct Archived {
 
 /// `{type: screen, source: core, id: sessions}`: one section of chats per persona, then the chats with none.
 #[route(GET "/screens/sessions")]
-pub async fn sessions(cx: &Cx) -> Result<Answer<Block>> {
+pub async fn sessions(cx: &Cx) -> Result<http::Answer<Block>> {
     let q: Option<Archived> = parse_query_params(cx).ok();
     let archived = q.and_then(|q| q.archived) == Some(1);
-    Ok(Answer(
+    Ok(http::Answer(
         blocking(cx, move |hub| Ok(screen(hub, archived))).await,
     ))
 }
@@ -40,7 +40,8 @@ pub(super) fn source(path: &str, who: &Who) -> Option<Source> {
     let Who::Device(_) = who;
     Some(Source {
         wake: Wake::Home,
-        build: Box::new(move |hub| Ok(screen(hub, archived))),
+        build: Box::new(move |hub, _| Ok(screen(hub, archived))),
+        seen: None,
     })
 }
 
@@ -114,6 +115,17 @@ fn row(s: &Summary) -> Block {
         });
     }
     Block::Row(Box::new(row))
+}
+
+pub(super) async fn act(cx: &Cx, a: &Action) -> Option<Result<Response>> {
+    a.screen.strip_prefix(PATH)?;
+    let thread = a.values.get("thread").and_then(Value::as_str);
+    let thread = thread.unwrap_or_default().to_owned();
+    let done = match a.action.as_str() {
+        "archive" => blocking(cx, move |hub| hub.archive(&thread, true)).await,
+        other => Err(refused(format!("no action {other}"))),
+    };
+    Some(super::chat::answer(done.map(|()| Answer::default())))
 }
 
 pub(super) fn routes(b: topcoat::router::RouterBuilder) -> topcoat::router::RouterBuilder {
