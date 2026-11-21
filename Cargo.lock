@@ -170,6 +170,7 @@ dependencies = [
  "base64 0.22.1",
  "blocks",
  "cooee-core",
+ "cooee-desk",
  "cooee-machines",
  "cooee-server",
  "cooee-terminal",
@@ -203,10 +204,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "cooee-desk"
+version = "0.1.0"
+dependencies = [
+ "cooee-core",
+ "serde_json",
+ "thiserror",
+]
+
+[[package]]
 name = "cooee-machines"
 version = "0.1.0"
 dependencies = [
  "cooee-core",
+ "cooee-desk",
+ "serde",
  "serde_json",
 ]
 
@@ -218,6 +230,7 @@ dependencies = [
  "base64 0.22.1",
  "blocks",
  "cooee-core",
+ "cooee-desk",
  "cooee-machines",
  "flate2",
  "futures-util",

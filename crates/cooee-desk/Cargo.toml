@@ -1,0 +1,17 @@
+[package]
+name = "cooee-desk"
+description = "cooee's desks: Linux desktops on Apple's container CLI, capped and kept off the LAN and the tailnet."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+publish.workspace = true
+
+[dependencies]
+cooee-core.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+
+[lints]
+workspace = true

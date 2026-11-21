@@ -88,6 +88,7 @@ mod tests {
             when: Some(when.to_owned()),
             github: None,
             webhook: None,
+            mail: false,
             prompt: "watch".to_owned(),
             script: None,
             place: String::new(),

@@ -32,6 +32,8 @@ struct Def {
     github: Option<Github>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     webhook: Option<Webhook>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    mail: Option<String>,
     #[serde(default)]
     prompt: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -89,10 +91,11 @@ pub(crate) fn files(
         seen: seen.to_vec(),
     };
     for r in routines {
-        let (when, github, webhook) = match r.trigger.clone() {
-            Trigger::Schedule(s) => (Some(s), None, None),
-            Trigger::Github(g) => (None, Some(g), None),
-            Trigger::Webhook(h) => (None, None, Some(h)),
+        let (when, github, webhook, mail) = match r.trigger.clone() {
+            Trigger::Schedule(s) => (Some(s), None, None, None),
+            Trigger::Github(g) => (None, Some(g), None, None),
+            Trigger::Webhook(h) => (None, None, Some(h), None),
+            Trigger::Mail(p) => (None, None, None, Some(p)),
         };
         let (chat_gone, ended) = match &r.paused {
             Some(Paused::ChatGone { thread }) => (Some(thread.clone()), None),
@@ -105,6 +108,7 @@ pub(crate) fn files(
             when,
             github,
             webhook,
+            mail,
             prompt: r.prompt.clone(),
             script: r.script.clone(),
             paused: r.paused == Some(Paused::Owner),
@@ -186,13 +190,14 @@ impl Routines {
                 .ended
                 .map(Paused::Ended)
                 .or_else(|| s.chat_gone.map(|thread| Paused::ChatGone { thread }));
-            let trigger = match (d.when, d.github, d.webhook) {
-                (Some(w), None, None) => Trigger::Schedule(w),
-                (None, Some(g), None) => Trigger::Github(g),
-                (None, None, Some(h)) => Trigger::Webhook(h),
+            let trigger = match (d.when, d.github, d.webhook, d.mail) {
+                (Some(w), None, None, None) => Trigger::Schedule(w),
+                (None, Some(g), None, None) => Trigger::Github(g),
+                (None, None, Some(h), None) => Trigger::Webhook(h),
+                (None, None, None, Some(p)) => Trigger::Mail(p),
                 _ => {
                     return Err(io::Error::other(format!(
-                        "{}: routine {} needs when, github or webhook, one of them",
+                        "{}: routine {} needs when, github, webhook or mail, one of them",
                         self.settings.display(),
                         d.id
                     )));

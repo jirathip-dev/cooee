@@ -7,7 +7,7 @@ here=$(cd "$(dirname "$0")/.." && pwd)
 t=$(mktemp -d)
 trap 'rm -rf "${t:?}"' EXIT
 mkdir -p "$t/.drover" "$t/crates/cooee-core/src" "$t/crates/x/src"
-grep -v '^\(frozen\|generated\|generate\) =' "$here/.drover/arch.toml" > "$t/.drover/arch.toml"
+grep -v '^\(frozen\|generated\|shared\|generate\) =' "$here/.drover/arch.toml" > "$t/.drover/arch.toml"
 cd "$t"
 printf 'pub fn command() { std::process::Command::new("sh"); }\n' > crates/cooee-core/src/runner.rs
 drover arch-check

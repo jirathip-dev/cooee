@@ -1,0 +1,75 @@
+[[size]]
+paths = ["crates/*/src/**/*.rs"]
+max_file_lines = 800
+
+[[collect]]
+dir = "crates/cooee-core/src"
+glob = "*/*.rs"
+
+[[collect]]
+dir = "crates/cooee-server/src"
+glob = "*/*.rs"
+
+[[collect]]
+dir = "crates/cooee-server/src/routes"
+glob = "*.rs"
+
+[[collect]]
+dir = "crates/cooee-server/src/hub"
+glob = "*.rs"
+
+[[collect]]
+dir = "apple/Sources/CooeeCore/Models"
+glob = "*.swift"
+
+[[collect]]
+dir = "apple/UITests/Live"
+glob = "*.swift"
+
+[[ban]]
+pattern = "routes::"
+paths = ["crates/cooee-server/src/**"]
+except = ["crates/cooee-server/src/serve.rs", "crates/cooee-server/src/routes/mod.rs"]
+reason = "#356: a route area is reached only through routes::routes, from serve.rs; areas share through http.rs and the hub"
+
+[[collect]]
+dir = "apple/Sources/CooeeFeatures/Clients"
+glob = "*.swift"
+
+[[collect]]
+dir = "apple/Sources/CooeeApp/Live"
+glob = "*.swift"
+
+[[collect]]
+dir = "crates/cooee/src/cmd"
+glob = "*.rs"
+
+[[ban]]
+pattern = "cmd::"
+paths = ["crates/cooee/src/**"]
+except = ["crates/cooee/src/main.rs", "crates/cooee/src/cmd/mod.rs"]
+reason = "#356: a command is reached only through cmd::ALL, from main.rs; commands share through cli.rs"
+
+[[collect]]
+dir = "crates/cooee/tests/support"
+glob = "*.rs"
+
+[[collect]]
+dir = "ci/gates"
+glob = "*.sh"
+
+[[collect]]
+dir = "scripts"
+glob = "*.sh"
+
+[[collect]]
+dir = "apple/e2e/steps"
+glob = "*.sh"
+
+[[collect]]
+dir = "connectors"
+glob = "*.toml"
+
+[[collect]]
+dir = "apple/Tests/CooeeUITests/Frames"
+glob = "*.swift"

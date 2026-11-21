@@ -95,21 +95,26 @@ tools() {
   mv "$dir/mod.rs.gen" "$dir/mod.rs"
 }
 
-crate crates/cooee-core/src "cooee's core: the model and its files. No HTTP." \
-  accounts blocks chat config devices login providers root shed store
-module crates/cooee-core/src/chat
-module crates/cooee-core/src/shed
-module crates/cooee-core/src/store
-module crates/cooee-server/src/login
-module crates/cooee-server/src/mcp
-module crates/cooee-server/src/push
-routes crates/cooee-server/src/routes
-routes crates/cooee-server/src/screens
-crate crates/cooee-server/src "cooee's HTTP server: the native app's JSON API (docs/README.md)." \
-  chief connectors contrast editor gate http hub layout login look manage pairing passkey net plugin push root routes routines screens serve themes
-tools crates/cooee-server/src/chief/tools
-cmds crates/cooee/src/cmd
-flat crates/cooee/tests/support
+# arch: .drover/arch.toml (#729): every `frozen`, `generated` and `shared` line of .drover/arch/*.list, sorted, then each *.toml in name order.
+arch() {
+  {
+    printf '# Written by scripts/gen.sh from .drover/arch/ (docs/architecture/hotspots-2026-11-16). Never edit it.\n'
+    for k in frozen generated shared; do
+      printf '%s = [%s]\n' "$k" "$(awk -v k="$k" '$1 == k { print $2 }' .drover/arch/*.list | LC_ALL=C sort -u | awk '{ printf "%s\"%s\"", (NR > 1 ? ", " : ""), $0 }')"
+    done
+    printf 'generate = "scripts/gen.sh"\n'
+    for f in .drover/arch/*.toml; do
+      printf '\n'
+      cat "$f"
+    done
+  } >.drover/arch.toml.gen
+  mv .drover/arch.toml.gen .drover/arch.toml
+}
+
+# The inputs: each file of scripts/gen.d/ in name order, one `<kind> <args>` a line.
+for f in $(printf '%s\n' scripts/gen.d/* | LC_ALL=C sort); do . "./$f"; done
+arch
+
 # today: README.md's list between its markers, from the `## Today` bullets of docs/*.md in file-name order, their ../ links made the README's.
 for f in $(printf '%s\n' docs/*.md | LC_ALL=C sort); do
   awk '/^## / { on = $0 == "## Today"; next } on && /^- / { gsub(/\]\(\.\.\//, "]("); print }' "$f"
