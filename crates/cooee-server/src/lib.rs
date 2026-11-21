@@ -27,5 +27,6 @@ mod routines;
 mod screens;
 mod serve;
 mod themes;
+mod turns;
 
 pub use root::*;
