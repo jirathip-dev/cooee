@@ -173,6 +173,7 @@ dependencies = [
  "cooee-machines",
  "cooee-server",
  "cooee-terminal",
+ "farrier-service",
  "flate2",
  "p256",
  "qrcode",
@@ -510,6 +511,11 @@ name = "fallible-streaming-iterator"
 version = "0.1.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7360491ce676a36bf9bb3c56c1aa791658183a54d2744120f27285738d90465a"
+
+[[package]]
+name = "farrier-service"
+version = "0.1.0"
+source = "git+https://github.com/jirathip-dev/farrier?rev=877d016ab03caf4f97da176663a2e47c259f54e3#877d016ab03caf4f97da176663a2e47c259f54e3"
 
 [[package]]
 name = "fastrand"

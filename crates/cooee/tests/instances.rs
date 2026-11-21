@@ -1,5 +1,5 @@
 //! Named instances: two `cooee serve --instance` on one shed keep their own data folders, threads and devices;
-//! `cooee install` writes a launchd plist and prints the commands to run; `cooee doctor` reports a missing shed.
+//! `cooee install` writes and loads the launchd or systemd job; `cooee doctor` reports a missing shed.
 
 mod support;
 
@@ -48,12 +48,18 @@ fn two_instances_never_see_each_others_threads_or_devices() {
 fn cooee(home: &Path, args: &[&str]) -> std::process::Output {
     let bin = home.join("bin");
     fs::create_dir_all(&bin).unwrap();
-    fs::write(bin.join("launchctl"), "#!/bin/sh\nexit 1\n").unwrap();
-    fs::set_permissions(
-        bin.join("launchctl"),
-        std::os::unix::fs::PermissionsExt::from_mode(0o755),
-    )
-    .unwrap();
+    for (name, body) in [
+        ("launchctl", "[ \"$1\" = bootstrap ]"),
+        ("systemctl", "true"),
+    ] {
+        let log = format!("printf '%s\\n' \"{name} $*\" >>\"$HOME/calls.log\"");
+        fs::write(bin.join(name), format!("#!/bin/sh\n{log}\n{body}\n")).unwrap();
+        fs::set_permissions(
+            bin.join(name),
+            std::os::unix::fs::PermissionsExt::from_mode(0o755),
+        )
+        .unwrap();
+    }
     Command::new(BIN)
         .args(args)
         .env("HOME", home)
@@ -65,40 +71,58 @@ fn cooee(home: &Path, args: &[&str]) -> std::process::Output {
 }
 
 #[test]
-fn install_writes_a_plist_and_prints_the_commands() {
+fn install_writes_and_loads_the_job() {
     let home = scratch("install");
     let out = cooee(&home, &["install", "--instance", "cooee", "--port", "4799"]);
     let stdout = String::from_utf8_lossy(&out.stdout);
     assert!(out.status.success(), "{out:?}");
 
-    let plist = home.join("Library/LaunchAgents/dev.cooee.cooee.plist");
-    let text = fs::read_to_string(&plist).unwrap();
     let log = home.join(".local/share/cooee/cooee/cooee.log");
-    for want in [
-        "<string>dev.cooee.cooee</string>".to_owned(),
-        format!(
-            "<string>{BIN}</string>\n    <string>serve</string>\n    <string>--instance</string>\n    <string>cooee</string>\n  </array>"
-        ),
-        "<key>KeepAlive</key>\n  <true/>".to_owned(),
-        format!(
-            "<key>StandardErrorPath</key>\n  <string>{}</string>",
-            log.display()
-        ),
-    ] {
+    let uid = String::from_utf8(Command::new("id").arg("-u").output().unwrap().stdout).unwrap();
+    let (file, wants, load) = if cfg!(target_os = "macos") {
+        let plist = home.join("Library/LaunchAgents/dev.cooee.cooee.plist");
+        let load = format!("launchctl bootstrap gui/{} {}", uid.trim(), plist.display());
+        let wants = vec![
+            "<string>dev.cooee.cooee</string>".to_owned(),
+            format!(
+                "<string>{BIN}</string>\n    <string>serve</string>\n    <string>--instance</string>\n    <string>cooee</string>\n  </array>"
+            ),
+            "<key>KeepAlive</key>\n  <true/>".to_owned(),
+            format!(
+                "<key>StandardErrorPath</key>\n  <string>{}</string>",
+                log.display()
+            ),
+        ];
+        (plist, wants, load)
+    } else {
+        let unit = home.join(".config/systemd/user/dev.cooee.cooee.service");
+        let wants = vec![
+            format!("ExecStart={BIN} serve --instance cooee\n"),
+            "Restart=always\n".to_owned(),
+            format!("StandardError=append:{}\n", log.display()),
+        ];
+        let load = "systemctl --user enable --now dev.cooee.cooee.service".to_owned();
+        (unit, wants, load)
+    };
+    let text = fs::read_to_string(&file).unwrap();
+    for want in wants {
         assert!(text.contains(&want), "{want} not in {text}");
     }
     if cfg!(target_os = "macos") {
         let lint = Command::new("plutil")
             .arg("-lint")
-            .arg(&plist)
+            .arg(&file)
             .output()
             .unwrap();
         assert!(lint.status.success(), "{lint:?}");
     }
+    let calls = fs::read_to_string(home.join("calls.log")).unwrap();
+    assert!(calls.lines().any(|l| l == load), "{load} not in {calls}");
+    assert!(stdout.contains("dev.cooee.cooee written\n"), "{stdout}");
+    assert!(!stdout.contains(&load), "{stdout}");
     let config = home.join(".config/cooee/cooee/config.toml");
     assert_eq!(fs::read_to_string(config).unwrap(), "port = 4799\n");
     for want in [
-        format!("launchctl bootstrap gui/$(id -u) {}", plist.display()),
         "tailscale serve --bg --https=4799 http://127.0.0.1:4799".to_owned(),
         "shed isn't running: install or update shed to protocol 1 or newer from https://github.com/jirathip-dev/shed/releases".to_owned(),
     ] {

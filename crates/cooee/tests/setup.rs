@@ -1,9 +1,9 @@
-//! `cooee setup` with fake `shed`, `launchctl`, `tailscale` and `curl` on `PATH` (each logs its arguments to
+//! `cooee setup` with fake `shed`, `launchctl`, `systemctl`, `tailscale` and `curl` on `PATH` (each logs its arguments to
 //! `$HOME/calls.log` and keeps its state in `$HOME`) and a fake shed server for doctor's hello: a fresh machine runs
 //! every step once, in order; a second run skips them all; `--dry-run` writes nothing; a doctor failure stops with its
 //! fix; an existing config keeps its keys; a shed below the minimum protocol stops setup before it changes anything.
 //! Also `scripts/install.sh`, and `cooee update` (#332, #584) against fake GitHub releases (`curl`), with the fake
-//! `launchctl kickstart` serving the installed binary that `curl` asks on the port.
+//! `launchctl kickstart` (`systemctl restart` on Linux) serving the installed binary that `curl` asks on the port.
 
 mod support;
 
@@ -32,8 +32,19 @@ esac"#,
         "launchctl",
         r#"case "$1" in
 list) test -e "$HOME/loaded-$2" ;;
+print) test -e "$HOME/loaded-${2##*/}" ;;
 bootstrap) touch "$HOME/loaded-$(basename "$3" .plist)" ;;
+bootout) rm -f "$HOME/loaded-${2##*/}" ;;
 kickstart) cp "$HOME/.local/bin/cooee" "$HOME/serving" 2>/dev/null || true ;;
+esac"#,
+    ),
+    (
+        "systemctl",
+        r#"case "$2" in
+show) shift 8; for u; do [ -e "$HOME/loaded-${u%.*}" ] && s=active || s=inactive; printf 'ActiveState=%s\nMainPID=0\nResult=success\n\n' $s; done ;;
+enable) touch "$HOME/loaded-${4%.*}" ;;
+disable) rm -f "$HOME/loaded-${4%.*}" ;;
+restart) cp "$HOME/.local/bin/cooee" "$HOME/serving" 2>/dev/null || true ;;
 esac"#,
     ),
     (
@@ -64,8 +75,37 @@ const CHANGES: &[&str] = &[
     "launchctl bootstrap",
     "launchctl kickstart",
     "launchctl bootout",
+    "systemctl --user enable",
+    "systemctl --user restart",
+    "systemctl --user disable",
     "tailscale serve --bg",
 ];
+
+const LAUNCHD: bool = cfg!(target_os = "macos");
+const RESTART: &str = if LAUNCHD {
+    "launchctl kickstart -k gui/"
+} else {
+    "systemctl --user restart dev.cooee.cooee.service"
+};
+
+fn job_file(home: &Path, label: &str, unit: &str) -> PathBuf {
+    if LAUNCHD {
+        home.join(format!("Library/LaunchAgents/{label}.plist"))
+    } else {
+        home.join(format!(".config/systemd/user/{label}.{unit}"))
+    }
+}
+
+fn load_line(home: &Path, label: &str, unit: &str) -> String {
+    let uid = Command::new("id").arg("-u").output().unwrap().stdout;
+    if LAUNCHD {
+        let file = job_file(home, label, unit);
+        let uid = String::from_utf8(uid).unwrap();
+        format!("launchctl bootstrap gui/{} {}", uid.trim(), file.display())
+    } else {
+        format!("systemctl --user enable --now {label}.{unit}")
+    }
+}
 
 struct Mac {
     home: PathBuf,
@@ -202,22 +242,13 @@ fn a_fresh_machine_runs_every_step_once_in_order_and_a_second_run_skips_them() {
     let out = mac.setup(&["--yes"]);
     let stdout = String::from_utf8_lossy(&out.stdout);
     assert!(out.status.success(), "{out:?}");
-    let (port, home) = (mac.port, mac.home.display());
-    let plist = format!("{home}/Library/LaunchAgents/dev.cooee.cooee.plist");
-    let gui = format!(
-        "gui/{}",
-        String::from_utf8(Command::new("id").arg("-u").output().unwrap().stdout)
-            .unwrap()
-            .trim()
-    );
+    let port = mac.port;
     assert_eq!(
         mac.changes(),
         [
             "shed agents add claude-acp".to_owned(),
-            format!("launchctl bootstrap {gui} {plist}"),
-            format!(
-                "launchctl bootstrap {gui} {home}/Library/LaunchAgents/dev.cooee.cooee.update.plist"
-            ),
+            load_line(&mac.home, "dev.cooee.cooee", "service"),
+            load_line(&mac.home, "dev.cooee.cooee.update", "timer"),
             format!("tailscale serve --bg --https={port} http://127.0.0.1:{port}"),
         ]
     );
@@ -231,21 +262,19 @@ fn a_fresh_machine_runs_every_step_once_in_order_and_a_second_run_skips_them() {
             terminal(port, &config)
         )
     );
-    assert!(
-        fs::read_to_string(&plist)
-            .unwrap()
-            .contains("<string>dev.cooee.cooee</string>")
-    );
-    let timer = fs::read_to_string(
-        mac.home
-            .join("Library/LaunchAgents/dev.cooee.cooee.update.plist"),
-    )
-    .unwrap();
-    assert!(
-        timer.contains("<string>update</string>")
-            && timer.contains("<key>StartInterval</key>\n  <integer>900</integer>"),
-        "{timer}"
-    );
+    let (keep, every) = if LAUNCHD {
+        (
+            "<key>KeepAlive</key>\n  <true/>",
+            "<key>StartInterval</key>\n  <integer>900</integer>",
+        )
+    } else {
+        ("Restart=always", "OnUnitActiveSec=900")
+    };
+    let serve = fs::read_to_string(job_file(&mac.home, "dev.cooee.cooee", "service")).unwrap();
+    assert!(serve.contains(keep), "{serve}");
+    let timer = job_file(&mac.home, "dev.cooee.cooee.update", "timer");
+    let timer = fs::read_to_string(timer).unwrap();
+    assert!(timer.contains(every), "{timer}");
     let chief = fs::read_to_string(mac.chief()).unwrap();
     assert!(
         chief.contains("role = \"chief\"") && chief.contains("agent = \"claude-acp\""),
@@ -346,12 +375,10 @@ fn dry_run_writes_nothing_and_prints_every_command() {
     for line in [
         format!("would write {}:\nport = {port}\n", mac.config().display()),
         "would run: shed agents add claude-acp".to_owned(),
-        "would write ".to_owned()
-            + &mac
-                .home
-                .join("Library/LaunchAgents/dev.cooee.cooee.plist")
-                .display()
-                .to_string(),
+        format!(
+            "would write {}",
+            job_file(&mac.home, "dev.cooee.cooee", "service").display()
+        ),
         format!("would run: tailscale serve --bg --https={port} http://127.0.0.1:{port}"),
         "would run: cooee doctor, then cooee pair".to_owned(),
     ] {
@@ -632,6 +659,7 @@ fn updating(name: &str, released: bool, new: &str) -> Mac {
     fs::create_dir_all(mac.config().parent().unwrap()).unwrap();
     fs::write(mac.config(), format!("port = {}\n", mac.port)).unwrap();
     fs::create_dir_all(mac.data()).unwrap();
+    fs::write(mac.home.join("loaded-dev.cooee.cooee"), "").unwrap();
     mac
 }
 
@@ -689,7 +717,7 @@ fn update_installs_main_heads_release_with_no_build_or_signing_and_doctor_shows_
         asset()
     );
     assert!(calls.contains(&at), "{calls}");
-    assert!(calls.contains("launchctl kickstart -k gui/"), "{calls}");
+    assert!(calls.contains(RESTART), "{calls}");
     assert_eq!(mac.prints("serving"), format!("cooee 0.1.0 ({SHA})\n"));
     assert!(!mac.home.join(".local/bin/cooee.new").exists());
     assert!(
@@ -762,7 +790,7 @@ fn a_download_that_fails_its_checksum_or_names_another_sha_is_never_swapped_in()
             "{err}"
         );
         let calls = fs::read_to_string(mac.home.join("calls.log")).unwrap();
-        assert!(!calls.contains("launchctl kickstart"), "{calls}");
+        assert!(!calls.contains(RESTART), "{calls}");
         assert_eq!(mac.prints(".local/bin/cooee"), "old\n");
         assert!(!mac.home.join(".local/bin/cooee.new").exists());
         assert_eq!(
@@ -787,11 +815,7 @@ fn a_new_build_that_does_not_answer_is_rolled_back_and_the_old_one_serves_again(
         "{err}"
     );
     let calls = fs::read_to_string(mac.home.join("calls.log")).unwrap();
-    assert_eq!(
-        calls.matches("launchctl kickstart -k").count(),
-        2,
-        "{calls}"
-    );
+    assert_eq!(calls.matches(RESTART).count(), 2, "{calls}");
     assert_eq!(
         (mac.prints(".local/bin/cooee"), mac.prints("serving")),
         ("old\n".into(), "old\n".into())
