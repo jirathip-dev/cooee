@@ -55,6 +55,13 @@ impl Hub {
                 a.terminal
             )));
         }
+        if let Some(code) = (a.name == cooee_core::mail::CODE)
+            .then(|| self.mail_code(&persona))
+            .flatten()
+        {
+            self.shed.type_line(&a.terminal, &code)?;
+            return Ok(entered(&a.name));
+        }
         let key = secrets::persona(&persona, &a.name);
         let saved = if persona.is_empty() {
             None
