@@ -156,4 +156,25 @@ internal struct PersonasTests {
         let sent = try server.decoded("/threads", as: [String: JSONValue].self)
         #expect(sent["model"] == .string("opus") && sent["effort"] == .string("high"))
     }
+
+    @Test internal func theGlanceDecodesTheServersRowsAndEachActivityTokenIsPostedWithItsActivity() async throws {
+        let row =
+            #"{"thread":"a","title":"Kestrel","persona":"res","name":"Researcher","machine":"mini","#
+            + #""line":"Allow fetch?","since":7,"lane":false}"#
+        let glance = #"{"at":42,"asks":[\#(row)],"blocked":[],"running":[]}"#
+        let posted = Answer(chunks: ["live activity on"])
+        let server = CannedServer(["/glance": [Answer(headers: json, chunks: [glance])], "/push/activity": [posted]])
+        let client = server.client()
+        let got = try await client.glance()
+        let ask = GlanceRow(
+            thread: "a", title: "Kestrel", persona: "res", name: "Researcher", machine: "mini", line: "Allow fetch?",
+            since: 7)
+        #expect(got == Snapshot(time: 42, asks: [ask]))
+        try await client.activity("ab12", for: nil)
+        try await client.activity("cd34", for: "act-1")
+        let bodies = try server.requests("/push/activity").map {
+            try JSONDecoder().decode([String: String].self, from: try #require($0.httpBody))
+        }
+        #expect(bodies == [["token": "ab12"], ["token": "cd34", "activity": "act-1"]])
+    }
 }

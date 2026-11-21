@@ -22,6 +22,16 @@ extension Client {
         _ = try await send(request(enabled ? "POST" : "DELETE", "/push/apns", json: ["token": token]))
     }
 
+    /// What the widgets show: the asks, the blocked lanes and what runs (#662).
+    public func glance() async throws -> Snapshot { try await call("GET", "/glance") }
+
+    /// The Live Activity's push-to-start token (no `activity`), or the running activity's update token (#662).
+    public func activity(_ token: String, for activity: String?) async throws {
+        var body = ["token": token]
+        body["activity"] = activity
+        try await post("/push/activity", body)
+    }
+
     /// One of the app's timings into the server's perf log (#606).
     public func perf(_ name: String, millis: Int) async throws {
         try await post("/perf", Sample(name: name, millis: millis))
