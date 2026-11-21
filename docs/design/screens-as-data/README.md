@@ -374,7 +374,7 @@ older app.
 4. **Offline:** the per-screen cache, the offline line, and actions off.
 5. **drover on screens:** herdsman serves Queue, Events, Fleets and its cards in these shapes, attached to the
    Conductor.
-6. **Docs:** `docs/plugins.md` gets the hello example and the block and place reference.
+6. **Docs:** `docs/plugins/` gets the hello example and the block and place reference.
 
 ## Open questions for the owner
 
