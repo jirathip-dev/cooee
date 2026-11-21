@@ -27,7 +27,7 @@
 "crates/cooee-core/*" = "all"
 "crates/cooee-machines/*" = "all"
 "crates/cooee/src/main.rs" = "all"
-"crates/cooee/tests/chat.rs" = "all"
+"crates/cooee/tests/chat/*" = "all"
 "crates/cooee/tests/support/*" = "all"
 "Cargo.toml" = "all"
 "Cargo.lock" = "all"
