@@ -14,6 +14,7 @@ internal struct PersonaActions {
     internal var sprite: (String?) -> Void = { _ in }
     internal var skill: (String) -> Void = { _ in }
     internal var catalogue: () -> Void = {}
+    internal var rules: () -> Void = {}
 
     internal init(
         close: @escaping () -> Void = {}, save: @escaping () -> Void = {}, clear: @escaping () -> Void = {},
@@ -32,6 +33,8 @@ internal struct PersonaChoices {
     internal var efforts: [String]
     internal var machines: [MachineRow]
     internal var connectors: ConnectorList
+    internal var lists: [ModelList] = []
+    internal var rules: Int?
 
     internal init(
         agents: [AgentOption] = [],

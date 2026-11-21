@@ -86,14 +86,7 @@ extension PersonaEditBlocks {
             }
             Group2 {
                 field("Name", $draft.name)
-                HStack {
-                    Text("Agent").ui(16, .regular, look)
-                    Spacer()
-                    AgentMenu(persona: Persona(draft), choices: choices, pick: actions.agent) {
-                        (draft.model, draft.effort) = ($0, $1)
-                    }
-                }
-                .padding(.horizontal, 14).frame(height: 48)
+                PersonaAgentRows(draft: $draft, choices: choices, pick: actions.agent, rules: actions.rules)
                 if !look.still {
                     style
                     Toggle("Pin to Home", isOn: $draft.pinned).ui(16, .regular, look).padding(.horizontal, 14)

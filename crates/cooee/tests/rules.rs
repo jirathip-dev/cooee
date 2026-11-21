@@ -263,3 +263,26 @@ fn a_persona_with_no_rules_file_has_two_removable_starter_rules_and_its_agent_ch
     assert_eq!(s.rules(), listed);
     fs::remove_dir_all(&s.dir).ok();
 }
+
+#[test]
+fn a_rule_added_in_settings_answers_the_next_request_and_removing_it_brings_the_card_back() {
+    let mut s = setup("rules-settings");
+    assert_eq!(s.run("make lint")["kind"], "approval");
+    let first = Setup::of(&s.items(), "approval")[0].clone();
+    s.tap(&first, "allow");
+    let rule = s.rule("allow", "make *");
+    assert_eq!(
+        (&rule["by"], &rule["words"]),
+        (&json!("settings"), &json!("Allow running make …"))
+    );
+    assert_eq!(s.run("make test")["text"], "Ran it.");
+    assert_eq!(Setup::of(&s.items(), "approval").len(), 1);
+    let gone = format!("/personas/scout/rules/{}", rule["id"].as_str().unwrap());
+    assert_eq!(s.cooee.request("DELETE", &gone, None).0, 200);
+    let card = s.run("make docs");
+    assert_eq!(
+        (&card["kind"], &card["tool"]),
+        (&json!("approval"), &json!("make docs"))
+    );
+    fs::remove_dir_all(&s.dir).ok();
+}

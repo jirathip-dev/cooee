@@ -25,6 +25,7 @@
             XCTAssert(app.descendants(matching: .any).matching(character).firstMatch.waitForExistence(timeout: 10))
             XCTAssertEqual(app.switches["Pin to Home"].firstMatch.value as? String, "1")
             picksAgentAndFolder(app)
+            for _ in 0..<3 where !field(app, "Instructions").isHittable { app.buttons["Folder"].firstMatch.swipeDown() }
             type(app, "Instructions", "Cite every source.")
             app.buttons["Detailed"].firstMatch.tap()
             XCTAssert(app.buttons["Detailed"].firstMatch.isSelected)
@@ -40,6 +41,7 @@
             XCTAssert(agent.waitForExistence(timeout: 10))
             keep("persona-menu")
             agent.tap()
+            app.buttons["Done"].firstMatch.tap()
             app.buttons["Folder"].firstMatch.tap()
             let root = app.buttons["root"].firstMatch
             XCTAssert(root.waitForExistence(timeout: 10))
