@@ -63,3 +63,19 @@ taken under the thread's lock with the subscription, so nothing is lost or doubl
 The event stream's events, each with an id `<boot>.<rev>` to resume after (`rev` counts up across every thread, [sync](sync.md)): `item` (an `Item`, new or changed), `text`
 (`{text}`: the reply so far grows by it), `state` (a `Turn` without `text`), `queue` (the `Queued[]` now), in a room `room-ask` (a `RoomAsk`, opened or settled; the room's 10 minutes pause while one is open), and `reset` (`{}`: too far behind or
 another run; load the newest slice again).
+
+## The chat screen (#714, #719)
+
+`GET /screens/chat/{id}` (404 for no such thread) is the chat as a screen of core blocks kinds, and the key
+`/screens/chat/{id}` on the [device stream](stream.md). It holds the newest 50 items: a `section` `log` of
+`message`s, a `state` row while the turn is `unconnected`, `error`, `limited` or `ended`, and the composer `say`
+(`working.since` while a turn runs).
+
+- The owner's message is `m<id>`, its text the `prose` `i<id>`, its files attachments opening
+  `/threads/{id}/files/{name}` (an image's also its `src`). Notes, links, routines and ends are `system` messages.
+- An agent's run of items is one `message` `m<n>` (`n` its first item's id): a `tool` per call, an approval's
+  card, a plan's `steps`, a frame's `images`, its text last as the `prose` `m<n>-text`. The text still coming has
+  `streaming` and grows by `append`; before the turn has an item the message is `m<last id + 1>`, the id its first
+  item takes, so the block that streams is the block that is stored.
+- While a device holds the key the thread is open: it sends no push, and it is marked read up to its newest item
+  each time a frame goes out.
