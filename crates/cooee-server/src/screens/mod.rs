@@ -3,6 +3,7 @@ mod connectors;
 mod home;
 mod locked;
 mod menu;
+mod pair;
 mod persona;
 mod routines;
 mod sessions;
@@ -16,6 +17,7 @@ pub(crate) fn routes(b: RouterBuilder) -> RouterBuilder {
     let b = home::routes(b);
     let b = locked::routes(b);
     let b = menu::routes(b);
+    let b = pair::routes(b);
     let b = persona::routes(b);
     let b = routines::routes(b);
     let b = sessions::routes(b);
@@ -23,5 +25,5 @@ pub(crate) fn routes(b: RouterBuilder) -> RouterBuilder {
 }
 
 pub(crate) fn source(path: &str, who: &crate::live::Who) -> Option<crate::live::Source> {
-    sessions::source(path, who)
+    pair::source(path, who).or_else(|| sessions::source(path, who))
 }

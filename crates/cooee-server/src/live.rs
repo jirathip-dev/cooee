@@ -1,5 +1,6 @@
 use std::{
     collections::HashMap,
+    path::PathBuf,
     sync::{
         Arc, Mutex, MutexGuard, PoisonError,
         atomic::{AtomicBool, AtomicU64, AtomicUsize, Ordering},
@@ -28,10 +29,64 @@ const IDLE: Duration = Duration::from_secs(300);
 
 pub(crate) enum Who {
     Device(Device),
+    Asking { claim: String, data: PathBuf },
+}
+
+fn asker(claim: &str) -> String {
+    format!("claim-{}", cooee_core::sha256(claim.as_bytes()))
+}
+
+impl Who {
+    fn id(&self) -> String {
+        match self {
+            Self::Device(d) => d.id.clone(),
+            Self::Asking { claim, .. } => asker(claim),
+        }
+    }
+
+    fn scope(&self) -> String {
+        match self {
+            Self::Device(_) => String::new(),
+            Self::Asking { claim, .. } => format!("{} ", asker(claim)),
+        }
+    }
+
+    fn streams(&self) -> usize {
+        match self {
+            Self::Device(_) => STREAMS,
+            Self::Asking { .. } => 1,
+        }
+    }
 }
 
 pub(crate) enum Wake {
     Home,
+    Every(Duration),
+}
+
+enum Waker {
+    Hub(broadcast::Receiver<()>),
+    Tick(tokio::time::Interval),
+}
+
+impl Waker {
+    async fn next(&mut self) -> bool {
+        match self {
+            Self::Hub(wake) => {
+                if let Err(RecvError::Closed) = wake.recv().await {
+                    return false;
+                }
+                while !matches!(
+                    wake.try_recv(),
+                    Err(TryRecvError::Empty | TryRecvError::Closed)
+                ) {}
+            }
+            Self::Tick(every) => {
+                every.tick().await;
+            }
+        }
+        true
+    }
 }
 
 type Build = dyn Fn(&Hub) -> Result<Block, HubError> + Send + std::marker::Sync;
@@ -49,6 +104,7 @@ pub(crate) enum Sent {
 struct Tap {
     sid: String,
     device: String,
+    scope: String,
     tx: mpsc::UnboundedSender<Sent>,
     unsent: AtomicUsize,
     closed: AtomicBool,
@@ -122,7 +178,7 @@ impl State {
         };
         let open = self.streams.remove(at);
         for k in &open.keys {
-            self.release(k, sid);
+            self.release(&format!("{}{k}", open.tap.scope), sid);
         }
     }
 
@@ -167,12 +223,13 @@ impl Live {
         accept: &str,
     ) -> Result<(Hello, Frames), Outdated> {
         let media = MediaType::pick(accept)?;
-        let Who::Device(device) = who;
+        let device = who.id();
         let n = self.next.fetch_add(1, Ordering::Relaxed);
         let (tx, rx) = mpsc::unbounded_channel();
         let tap = Arc::new(Tap {
             sid: format!("{}-{n}", self.epoch),
-            device: device.id.clone(),
+            device: device.clone(),
+            scope: who.scope(),
             tx,
             unsent: AtomicUsize::new(0),
             closed: AtomicBool::new(false),
@@ -181,10 +238,13 @@ impl Live {
         let mine: Vec<Arc<Tap>> = st
             .streams
             .iter()
-            .filter(|o| o.tap.device == device.id)
+            .filter(|o| o.tap.device == device)
             .map(|o| Arc::clone(&o.tap))
             .collect();
-        for old in mine.iter().take((mine.len() + 1).saturating_sub(STREAMS)) {
+        for old in mine
+            .iter()
+            .take((mine.len() + 1).saturating_sub(who.streams()))
+        {
             old.bye(Why::Evicted);
             st.end(&old.sid);
         }
@@ -203,17 +263,17 @@ impl Live {
     }
 
     pub(crate) async fn sync(self: &Arc<Self>, sid: &str, who: &Who, s: Sync) -> Option<Synced> {
-        let Who::Device(device) = who;
+        let device = who.id();
         let tap = {
             let mut st = lock(&self.state);
             let open = st
                 .streams
                 .iter_mut()
-                .find(|o| o.tap.sid == sid && o.tap.device == device.id)?;
+                .find(|o| o.tap.sid == sid && o.tap.device == device)?;
             open.keys.retain(|k| !s.close.contains(k));
             let tap = Arc::clone(&open.tap);
             for k in &s.close {
-                st.release(k, sid);
+                st.release(&format!("{}{k}", tap.scope), sid);
             }
             st.keys
                 .retain(|_, h| h.task.is_some() || h.idle.is_none_or(|i| i.elapsed() < IDLE));
@@ -237,6 +297,7 @@ impl Live {
         let Some(source) = crate::screens::source(&have.k, who) else {
             return gone(404);
         };
+        let at = format!("{}{}", tap.scope, have.k);
         let kept = {
             let mut st = lock(&self.state);
             let Some(open) = st.streams.iter_mut().find(|o| o.tap.sid == tap.sid) else {
@@ -248,7 +309,7 @@ impl Live {
                 }
                 open.keys.push(have.k.clone());
             }
-            let held = st.keys.entry(have.k.clone()).or_insert_with(|| Held {
+            let held = st.keys.entry(at.clone()).or_insert_with(|| Held {
                 shelf: Arc::default(),
                 holders: vec![],
                 task: None,
@@ -260,31 +321,33 @@ impl Live {
         let mut kept = kept.lock().await;
         let started = lock(&self.state)
             .keys
-            .get(&have.k)
+            .get(&at)
             .is_some_and(|h| h.task.is_some());
         if !started {
             let wake = match source.wake {
-                Wake::Home => self.hub.home(),
+                Wake::Home => Waker::Hub(self.hub.home()),
+                Wake::Every(every) => Waker::Tick(tokio::time::interval(every)),
             };
             let source = Arc::new(source);
             if let Some(block) = self.build(&have.k, &source).await {
                 put(&mut kept, &have.k, &block);
             }
-            let task = tokio::spawn(Arc::clone(self).run(have.k.clone(), source, wake));
-            if let Some(held) = lock(&self.state).keys.get_mut(&have.k) {
+            let task =
+                tokio::spawn(Arc::clone(self).run((at.clone(), have.k.clone()), source, wake));
+            if let Some(held) = lock(&self.state).keys.get_mut(&at) {
                 held.task.replace(task).inspect(JoinHandle::abort);
             }
         }
         {
             let mut st = lock(&self.state);
             let open = st.streams.iter().any(|o| o.tap.sid == tap.sid);
-            match st.keys.get_mut(&have.k) {
+            match st.keys.get_mut(&at) {
                 Some(held) if open => {
                     held.holders.retain(|t| t.sid != tap.sid);
                     held.holders.push(Arc::clone(tap));
                 }
                 _ => {
-                    st.release(&have.k, &tap.sid);
+                    st.release(&at, &tap.sid);
                     return gone(404);
                 }
             }
@@ -293,6 +356,21 @@ impl Live {
             cooee_core::note!("cooee: stream {}: {e}", have.k);
             gone(500)
         })
+    }
+
+    pub(crate) fn hand_over(&self, claim: &str) {
+        let id = asker(claim);
+        let mut st = lock(&self.state);
+        let taps: Vec<Arc<Tap>> = st
+            .streams
+            .iter()
+            .filter(|o| o.tap.device == id)
+            .map(|o| Arc::clone(&o.tap))
+            .collect();
+        for tap in taps {
+            tap.bye(Why::Handover);
+            st.end(&tap.sid);
+        }
     }
 
     async fn build(&self, k: &str, source: &Arc<Source>) -> Option<Block> {
@@ -310,30 +388,21 @@ impl Live {
         }
     }
 
-    async fn run(
-        self: Arc<Self>,
-        k: String,
-        source: Arc<Source>,
-        mut wake: broadcast::Receiver<()>,
-    ) {
-        loop {
-            if let Err(RecvError::Closed) = wake.recv().await {
-                return;
-            }
-            while !matches!(
-                wake.try_recv(),
-                Err(TryRecvError::Empty | TryRecvError::Closed)
-            ) {}
+    async fn run(self: Arc<Self>, (at, k): (String, String), source: Arc<Source>, mut wake: Waker) {
+        while wake.next().await {
             let start = clock::instant();
             if let Some(block) = self.build(&k, &source).await {
-                let kept = lock(&self.state).keys.get(&k).map(|h| Arc::clone(&h.shelf));
+                let kept = lock(&self.state)
+                    .keys
+                    .get(&at)
+                    .map(|h| Arc::clone(&h.shelf));
                 let Some(kept) = kept else { return };
                 let mut kept = kept.lock().await;
                 if let Some(frame) = put(&mut kept, &k, &block) {
                     let st = lock(&self.state);
                     for tap in st
                         .keys
-                        .get(&k)
+                        .get(&at)
                         .map(|h| h.holders.as_slice())
                         .unwrap_or_default()
                     {

@@ -58,6 +58,8 @@ pub(crate) fn header<'a>(cx: &'a Cx, name: &str) -> Option<&'a str> {
 
 pub(crate) struct Paired(pub(crate) Device);
 
+pub(crate) struct Asking(pub(crate) String);
+
 pub(crate) struct Caller(pub(crate) Plugin);
 
 path_param!(pub(crate) id: String);

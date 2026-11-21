@@ -84,6 +84,19 @@ pub enum Claim {
     Paired(String),
 }
 
+/// A new device's request as it stands, read without collecting it.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum Peek {
+    /// Not answered yet: its check word and when it runs out, in Unix milliseconds.
+    Waiting(String, u64),
+    /// Approved by this device: `collect` makes its token.
+    Approved(String),
+    /// Declined by this device.
+    Declined(String),
+    /// No such request: run out, cancelled, collected or never made.
+    Gone,
+}
+
 /// An open request as paired devices see it: its id, check word, what asks and when.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub struct Asking {
@@ -427,6 +440,20 @@ impl Devices {
         })
     }
 
+    /// The new device's request, changing nothing: [`Devices::collect`] stays the only call that makes a token.
+    ///
+    /// # Errors
+    /// When the file can't be read.
+    pub fn peek(&self, claim: &str, now: u64) -> io::Result<Peek> {
+        let (hash, mut asks) = (sha256(claim.as_bytes()), self.load()?.asks.into_iter());
+        let found = asks.find(|r| same(&r.claim, &hash) && r.at + ASK_TTL > now);
+        Ok(found.map_or(Peek::Gone, |r| match r.answer {
+            None => Peek::Waiting(r.word, r.at + ASK_TTL),
+            Some((true, by)) => Peek::Approved(by),
+            Some((false, by)) => Peek::Declined(by),
+        }))
+    }
+
     /// Drops the new device's request.
     ///
     /// # Errors
@@ -651,6 +678,7 @@ mod tests {
         let (word, claim) = d.ask("Mozilla/5.0 (iPad)", 0).unwrap();
         assert_eq!(word.split(' ').count(), 2);
         assert_eq!(d.collect(&claim, 1).unwrap(), Claim::Waiting);
+        assert!(matches!(d.peek(&claim, 1).unwrap(), Peek::Waiting(w, ASK_TTL) if w == word));
         let open = d.asking(1).unwrap();
         assert_eq!(
             (open[0].word.as_str(), open[0].label.as_str()),
@@ -659,6 +687,7 @@ mod tests {
         assert!(!d.answer("deadbeef", true, "iPhone", 1).unwrap());
         assert!(d.answer(&open[0].id, true, "iPhone", 1).unwrap());
         assert_eq!(d.asking(1).unwrap(), []);
+        assert_eq!(d.peek(&claim, 1).unwrap(), Peek::Approved("iPhone".into()));
         assert!(d.rename(&open[0].id, "Kim's iPad").unwrap());
         let Claim::Paired(token) = d.collect(&claim, 2).unwrap() else {
             panic!("not paired");
