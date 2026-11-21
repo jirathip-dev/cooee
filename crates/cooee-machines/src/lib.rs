@@ -1,4 +1,4 @@
-//! cooee's first-party plugin `machines` (docs/plugins.md): the health of the machines shed runs on, from shed only
+//! cooee's first-party plugin `machines` (docs/plugins/): the health of the machines shed runs on, from shed only
 //! (`shed machine ls`, `shed [--on <m>] machine stats --since <t>`; shed does the SSH, cooee never does). One card per
 //! machine: online or offline with when it was last seen, load per CPU, memory pressure, swap, free disk, shed's
 //! terminals by state and 24 h sparklines that open a chart. A machine going offline or over a threshold sends one

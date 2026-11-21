@@ -25,7 +25,7 @@ token = "a-third-long-random-secret"
   while it is open: Esc, Ctrl (sticky for the next letter), Tab, ↑ ↓ ← →, ^C, paste and ↑ history (the lines typed
   here, to type again).
 - **Gate:** the device's passkey (Face ID) opens the tab, registered on first use; 10 minutes without a touch or key
-  lock it (blurred, no input) until Face ID again, and the shells keep running ([plugins.md](plugins.md)).
+  lock it (blurred, no input) until Face ID again, and the shells keep running ([plugins/](plugins/README.md)).
 - **Insert text:** `POST /insert` `{"text"}` (through the tab's proxy) types into the shell used last, else the
   newest, else a new one, and never presses Enter: trailing line ends go, a `\` continuation joins its lines and any
   other line end becomes `; `. It answers `{"terminal"}`. A chat's code block has **[▸ terminal]** beside [copy] when this plugin is on
