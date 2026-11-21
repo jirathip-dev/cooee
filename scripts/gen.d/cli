@@ -1,1 +1,2 @@
 cmds crates/cooee/src/cmd
+module crates/cooee/src/setup
