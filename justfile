@@ -1,6 +1,6 @@
-# Every CI gate, locally (ci/gates/, one file each); `just check fmt clippy` runs only those.
-check *gates:
-    ci/gates.sh {{gates}}
+# Every CI gate, locally, the same as CI and `drover turn done` (gatekeeper; a repo gate is one file in .gatekeeper/gates/).
+check:
+    ./.gatekeeper/run check
 
 # Rewrites every generated file (#356): the crate indexes and Cargo.lock. A conflict in one: take either side, run it.
 gen:

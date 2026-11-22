@@ -1,16 +1,13 @@
 #!/bin/sh
-# scripts/line-cap.sh on a fixture tree: Swift test targets, #Preview blocks, apple/design/,
+# scripts/apple-cap.sh on a fixture tree: Swift test targets, #Preview blocks, apple/design/,
 # *Preview*.swift and Fixtures/ don't count toward apple_cap; a plain view file does; a raise in ci/cap.d/ counts.
 set -eu
 here=$(cd "$(dirname "$0")/.." && pwd)
 t=$(mktemp -d)
 trap 'rm -rf "${t:?}"' EXIT
-mkdir -p "$t/scripts" "$t/ci" "$t/crates/a/src" \
-  "$t/apple/App/Views" "$t/apple/AppTests" "$t/apple/design" "$t/apple/App/Fixtures"
-cp "$here/scripts/line-cap.sh" "$t/scripts/"
+mkdir -p "$t/scripts" "$t/ci" "$t/apple/App/Views" "$t/apple/AppTests" "$t/apple/design" "$t/apple/App/Fixtures"
+cp "$here/scripts/apple-cap.sh" "$t/scripts/"
 printf '[fleet.cooee]\nline_cap = 100\napple_cap = 5\n' > "$t/ci/cap.toml"
-printf 'fn a() {}\n' > "$t/crates/a/src/lib.rs"
-# 5 counted lines: the view, blank lines skipped, the #Preview block (with a nested brace) skipped.
 cat > "$t/apple/App/Views/Home.swift" <<'EOF'
 import SwiftUI
 
@@ -29,20 +26,13 @@ printf 'import XCTest\nfinal class T: XCTestCase {}\n' > "$t/apple/AppTests/Home
 printf 'let mock = 1\nlet mock2 = 2\n' > "$t/apple/design/Mock.swift"
 printf 'let p = 1\n' > "$t/apple/App/Views/HomePreviews.swift"
 printf 'let f = 1\n' > "$t/apple/App/Fixtures/Data.swift"
-out=$("$t/scripts/line-cap.sh")
-echo "$out"
-test "$out" = "non-test lines: 1 / 100
-apple lines: 5 / 5"
-# One more plain line goes over apple_cap and fails.
+test "$("$t/scripts/apple-cap.sh")" = "apple lines: 5 / 5"
 echo 'let more = 2' >> "$t/apple/App/Views/Home.swift"
-if "$t/scripts/line-cap.sh"; then echo "expected over apple_cap to fail"; exit 1; fi
-# A raise in ci/cap.d/ counts: the highest value of each key wins, a lower one changes nothing.
+if "$t/scripts/apple-cap.sh"; then echo "expected over apple_cap to fail"; exit 1; fi
 mkdir "$t/ci/cap.d"
 printf 'apple_cap = 6\nwhy = "#1: raise"\n' > "$t/ci/cap.d/2026-11-21-1.toml"
 printf 'line_cap = 50\napple_cap = 4\nwhy = "#2: lower"\n' > "$t/ci/cap.d/2026-11-21-2.toml"
-test "$("$t/scripts/line-cap.sh")" = "non-test lines: 1 / 100
-apple lines: 6 / 6"
-# No apple/ counts 0.
+test "$("$t/scripts/apple-cap.sh")" = "apple lines: 6 / 6"
 rm -rf "${t:?}/apple"
-test "$("$t/scripts/line-cap.sh" | tail -1)" = "apple lines: 0 / 6"
-echo "line-cap test ok"
+test "$("$t/scripts/apple-cap.sh")" = "apple lines: 0 / 6"
+echo "apple-cap test ok"

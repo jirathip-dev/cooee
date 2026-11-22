@@ -7,8 +7,7 @@ no longer a cooee runner (#565, q1940). The macOS jobs:
 
 | Job | Variable | Pull request | Push (staging, main), schedule, manual |
 | --- | --- | --- | --- |
-| `ci.yml`: `stable (macos-latest)` (the check name stays as the staging ruleset requires) | `MAC_RUNNER_CI` | GitHub-hosted `xcode-27` | mini-cooee |
-| `apple.yml`: `apple` (#277: the builds, `just apple-check` and the simulator e2e in one job; #328: a PR push runs only the builds, the `merge-ready` run all of it) | `MAC_RUNNER_APPLE` | GitHub-hosted `xcode-27` | mini-cooee |
+| `apple.yml`: `apple` (#277: the builds, `just apple-check` and the simulator e2e in one job; #328: a PR push runs only the builds, the `merge-ready` run all of it, with the macOS `cargo test` on stable that was ci.yml's `stable (macos-latest)`) | `MAC_RUNNER_APPLE` | GitHub-hosted `xcode-27` | mini-cooee |
 | `apple-testflight.yml`: `testflight (iOS)`, `testflight (macOS)` | `MAC_RUNNER_TESTFLIGHT` | — | mini-cooee |
 | `conformance.yml` | — | — | mini-cooee |
 

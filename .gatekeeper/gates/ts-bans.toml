@@ -1,0 +1,6 @@
+about = "the TypeScript bans on every tracked .ts file, and each ban failing on its fixture"
+fix = "narrow the type or drop the banned call the log names"
+budget_secs = 10
+versions = ["python3 --version"]
+paths = ["**/*.ts", "**/*.tsx", "**/tsconfig.json", "scripts/ts-bans.py", "ci/ts-bans-test.sh"]
+run = "scripts/ts-bans.py && ci/ts-bans-test.sh"

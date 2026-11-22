@@ -1,0 +1,90 @@
+[[collect]]
+dir = ".gatekeeper/gates"
+glob = "*.toml"
+
+[[layer]]
+name = "core"
+paths = ["crates/cooee-core/src/**"]
+mods = ["cooee_core"]
+may_use = []
+
+[[layer]]
+name = "desk"
+paths = ["crates/cooee-desk/src/**"]
+mods = ["cooee_desk"]
+may_use = ["core"]
+
+[[layer]]
+name = "terminal"
+paths = ["crates/cooee-terminal/src/**"]
+mods = ["cooee_terminal"]
+may_use = ["core"]
+
+[[layer]]
+name = "machines"
+paths = ["crates/cooee-machines/src/**"]
+mods = ["cooee_machines"]
+may_use = ["core", "desk"]
+
+[[layer]]
+name = "server"
+paths = ["crates/cooee-server/src/**"]
+mods = ["cooee_server"]
+may_use = ["core", "desk", "machines"]
+
+[[layer]]
+name = "cli"
+paths = ["crates/cooee/src/**"]
+mods = ["cooee"]
+may_use = ["core", "desk", "terminal", "machines", "server"]
+
+[[ban]]
+pattern = "claude"
+paths = ["crates/*/src/**"]
+except = ["crates/cooee-core/src/providers/**", "crates/*/src/**/tests.rs"]
+reason = "#200: core never names a provider: move it into crates/cooee-core/src/providers/"
+comments = true
+ignore_case = true
+
+[[ban]]
+pattern = "anthropic"
+paths = ["crates/*/src/**"]
+except = ["crates/cooee-core/src/providers/**", "crates/*/src/**/tests.rs"]
+reason = "#200: core never names a provider: move it into crates/cooee-core/src/providers/"
+comments = true
+ignore_case = true
+
+[[ban]]
+pattern = "codex"
+paths = ["crates/*/src/**"]
+except = ["crates/cooee-core/src/providers/**", "crates/*/src/**/tests.rs"]
+reason = "#200: core never names a provider: move it into crates/cooee-core/src/providers/"
+comments = true
+ignore_case = true
+
+[[ban]]
+pattern = "openai"
+paths = ["crates/*/src/**"]
+except = ["crates/cooee-core/src/providers/**", "crates/*/src/**/tests.rs"]
+reason = "#200: core never names a provider: move it into crates/cooee-core/src/providers/"
+comments = true
+ignore_case = true
+
+[[ban]]
+pattern = "gemini"
+paths = ["crates/*/src/**"]
+except = ["crates/cooee-core/src/providers/**", "crates/*/src/**/tests.rs"]
+reason = "#200: core never names a provider: move it into crates/cooee-core/src/providers/"
+comments = true
+ignore_case = true
+
+[[ban]]
+pattern = "hermes"
+paths = ["crates/*/src/**"]
+except = ["crates/cooee-core/src/providers/**", "crates/*/src/**/tests.rs"]
+reason = "#200: core never names a provider: move it into crates/cooee-core/src/providers/"
+comments = true
+ignore_case = true
+
+[comments]
+policy = "on"

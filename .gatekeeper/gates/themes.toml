@@ -1,0 +1,6 @@
+about = "the theme check on the two style packs and the starter (docs/themes.md, docs/styles.md)"
+fix = "fix the pack the theme check names"
+budget_secs = 300
+setup = ["rust"]
+run = "cargo run --quiet --locked -p cooee -- theme check packs/terminal packs/scene packs/starter"
+paths = ["crates/**", "Cargo.toml", "Cargo.lock", "rust-toolchain.toml", "connectors/**", "packs/**", "plugins/**", "examples/**", "docs/**", "scripts/install.sh", "apple/Package.swift", "apple/Sources/CooeeUI/Default/**", "apple/Tests/schemes.json", "ci/test.sh"]
