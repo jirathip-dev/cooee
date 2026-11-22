@@ -89,28 +89,30 @@ fn key(mode: &str) -> Block {
     device_key("key", mode, mode, Fields::new(), instead)
 }
 
+fn unpaired(host: &str, code: &str) -> (String, Vec<Block>) {
+    let mut field = TextField::new("code").label("Six-digit code");
+    if !code.is_empty() {
+        field = field.value(FieldValue::Text(code.to_owned()));
+    }
+    let form = Form::new(vec![field.into()])
+        .id("code")
+        .action("code")
+        .submit(Submit {
+            label: "Pair".into(),
+            action: "code".into(),
+            ..Submit::default()
+        });
+    let blocks = vec![
+        Block::Form(Box::new(form)),
+        button("Ask to pair", "ask"),
+        key("signin"),
+    ];
+    (format!("Pair with {host}"), blocks)
+}
+
 fn screen(c: &Caller, now: u64) -> Block {
     let (title, blocks) = match c {
-        Caller::Nobody { host, code } => {
-            let mut field = TextField::new("code").label("Six-digit code");
-            if !code.is_empty() {
-                field = field.value(FieldValue::Text(code.clone()));
-            }
-            let form = Form::new(vec![field.into()])
-                .id("code")
-                .action("code")
-                .submit(Submit {
-                    label: "Pair".into(),
-                    action: "code".into(),
-                    ..Submit::default()
-                });
-            let blocks = vec![
-                Block::Form(Box::new(form)),
-                button("Ask to pair", "ask"),
-                key("signin"),
-            ];
-            (format!("Pair with {host}"), blocks)
-        }
+        Caller::Nobody { host, code } => unpaired(host, code),
         Caller::Asking(Peek::Waiting(word, until)) => {
             let left = until.saturating_sub(now).div_ceil(1000);
             let blocks = vec![

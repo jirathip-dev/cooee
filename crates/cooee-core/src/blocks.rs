@@ -117,14 +117,7 @@ impl Item {
             _ => self.choice(options, plugin.is_some() && card.form.is_none(), answer),
         }));
         let keyed = open && self.needs_key() && options.iter().any(|o| o.id == "approve");
-        blocks.extend(keyed.then(|| {
-            let values = Fields::from_iter([
-                ("item".to_owned(), Value::from(self.id)),
-                ("choice".to_owned(), Value::from("approve")),
-            ]);
-            let instead = "Approve it on a device with a passkey";
-            device_key(&format!("{id}-key"), "approve", "answer", values, instead)
-        }));
+        blocks.extend(keyed.then(|| self.key(&id)));
         let line = settled_line(card, chosen.as_ref().or(tapped.as_ref()));
         blocks.extend(line.into_iter().chain(card.said.clone()).map(|l| {
             Block::Text(Box::new(
@@ -133,6 +126,15 @@ impl Item {
         }));
         let card = Card::default().id(id).kind(kind).title(tool).blocks(blocks);
         Some(Block::Card(Box::new(card)))
+    }
+
+    fn key(&self, id: &str) -> Block {
+        let values = Fields::from_iter([
+            ("item".to_owned(), Value::from(self.id)),
+            ("choice".to_owned(), Value::from("approve")),
+        ]);
+        let instead = "Approve it on a device with a passkey";
+        device_key(&format!("{id}-key"), "approve", "answer", values, instead)
     }
 
     fn choice(&self, options: &[ApprovalOption], other: bool, answer: String) -> Block {

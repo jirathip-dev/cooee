@@ -195,6 +195,21 @@ fn the_sessions_screen_is_core_kinds_grouped_by_persona_with_the_rows_of_get_thr
     );
 }
 
+fn ask_to_pair(cooee: &Cooee) -> String {
+    let ask = json!({ "screen": "/screens/pair", "action": "ask" });
+    let (head, _) = cooee.raw(
+        "POST",
+        "/screens/pair/action",
+        &[("Content-Type", "application/json")],
+        &ask.to_string(),
+    );
+    let claim = head
+        .lines()
+        .find_map(|l| l.strip_prefix("set-cookie: cooee_claim="))
+        .unwrap();
+    format!("cooee_claim={}", claim.split(';').next().unwrap())
+}
+
 #[test]
 fn a_stream_without_a_device_opens_only_the_pair_screen() {
     const PAIR: &str = "/screens/pair";
@@ -206,18 +221,7 @@ fn a_stream_without_a_device_opens_only_the_pair_screen() {
     let mut cooee = Cooee::start(&dir, &shed.dir);
     let thread = format!("/screens/chat/{}", chat(&cooee, "one"));
     let paired = std::mem::take(&mut cooee.cookie);
-    let ask = json!({ "screen": PAIR, "action": "ask" });
-    let (head, _) = cooee.raw(
-        "POST",
-        "/screens/pair/action",
-        &[("Content-Type", "application/json")],
-        &ask.to_string(),
-    );
-    let claim = head
-        .lines()
-        .find_map(|l| l.strip_prefix("set-cookie: cooee_claim="))
-        .unwrap();
-    cooee.cookie = format!("cooee_claim={}", claim.split(';').next().unwrap());
+    cooee.cookie = ask_to_pair(&cooee);
 
     let mut first = cooee.sse("/stream?v=2", "");
     let hello1 = hello(&mut first);
@@ -247,15 +251,12 @@ fn a_stream_without_a_device_opens_only_the_pair_screen() {
     let pair = |m: &Mirror| serde_json::to_value(m.screen(PAIR).unwrap()).unwrap();
     assert_eq!(pair(&m)["blocks"][3]["action"], "cancel");
 
-    let id = {
-        let mut c = std::mem::replace(&mut cooee.cookie, paired);
-        let id = cooee.json("/pair/asks")[0]["id"]
-            .as_str()
-            .unwrap()
-            .to_owned();
-        std::mem::swap(&mut cooee.cookie, &mut c);
-        id
-    };
+    let claim = std::mem::replace(&mut cooee.cookie, paired);
+    let id = cooee.json("/pair/asks")[0]["id"]
+        .as_str()
+        .unwrap()
+        .to_owned();
+    cooee.cookie = claim;
     cooee.cli(&["pair", "approve", &id]);
     while pair(&m)["blocks"][1]["action"] != "collect" {
         let f = frame(&mut events);

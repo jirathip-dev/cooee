@@ -680,10 +680,8 @@ fn works(c: &Cooee, token: &str) -> bool {
     status(&c.raw("GET", "/threads", &[("Cookie", &cookie)], "").0) == 200
 }
 
-#[test]
-fn a_typed_code_pairs_and_five_wrong_codes_lock_the_form_and_post_pair_together() {
-    let (_dir, _shed, c) = setup("pair-screen-code", "");
-    let screen = pair_screen(&c, "", "/screens/pair?code=123456");
+fn assert_the_unpaired_screen_offers_a_code_an_ask_and_a_key(c: &Cooee) -> String {
+    let screen = pair_screen(c, "", "/screens/pair?code=123456");
     let host = c.addr.split(':').next().unwrap();
     assert_eq!(
         (&screen["id"], &screen["title"]),
@@ -697,6 +695,13 @@ fn a_typed_code_pairs_and_five_wrong_codes_lock_the_form_and_post_pair_together(
         (&json!("device-key"), &json!("signin"))
     );
     assert!(blocks[2]["fallback"]["title"].is_string(), "{screen}");
+    host.to_owned()
+}
+
+#[test]
+fn a_typed_code_pairs_and_five_wrong_codes_lock_the_form_and_post_pair_together() {
+    let (_dir, _shed, c) = setup("pair-screen-code", "");
+    let host = assert_the_unpaired_screen_offers_a_code_an_ask_and_a_key(&c);
 
     let pin = new_code(&c);
     let wrong = json!({ "code": if pin == "000000" { "111111" } else { "000000" } });
