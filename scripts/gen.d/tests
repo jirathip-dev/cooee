@@ -1,5 +1,9 @@
 flat crates/cooee/tests/support
 tests crates/cooee/tests/chat
 tests crates/cooee/tests/first_run
+tests crates/cooee/tests/mcp
+tests crates/cooee/tests/personas
+tests crates/cooee/tests/plugins
+tests crates/cooee/tests/profiles
 tests crates/cooee/tests/reliability
 tests crates/cooee/tests/setup
