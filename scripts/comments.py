@@ -176,7 +176,7 @@ def public(lines, n, lang):
 
 
 def public_module(path):
-    if re.search(r"(^|/)(src/(lib|main)\.rs|build\.rs|(tests|examples|benches|src/bin)/[^/]+\.rs)$", path):
+    if re.search(r"(^|/)(src/(lib|main)\.rs|build\.rs|(tests|examples|benches|src/bin)/[^/]+(/main)?\.rs)$", path):
         return True
     parts = path.split("/")
     name, parent = (parts[-2], parts[:-2]) if parts[-1] == "mod.rs" else (parts[-1][:-3], parts[:-1])

@@ -1,0 +1,8 @@
+frozen crates/cooee/tests/chat.rs
+frozen crates/cooee/tests/first_run.rs
+frozen crates/cooee/tests/reliability.rs
+frozen crates/cooee/tests/setup.rs
+generated crates/cooee/tests/chat/main.rs
+generated crates/cooee/tests/first_run/main.rs
+generated crates/cooee/tests/reliability/main.rs
+generated crates/cooee/tests/setup/main.rs

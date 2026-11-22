@@ -4,3 +4,7 @@ node_modules/
 /.verify/
 target*/
 *.profraw
+/packs/themes/
+/packs/themes.commit
+*.orig
+/pr-body.md
