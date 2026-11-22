@@ -140,24 +140,7 @@ fn an_allowed_ask_returns_the_reply_in_a_linked_thread_the_owner_reads_and_steer
         &json!({ "persona": "bo", "message": "what is for dinner?" }),
     );
     assert_eq!((reply.as_str(), failed), ("Hello", false));
-
-    let card = &s.cards(&ada)[0];
-    let asked = (
-        &card["persona"],
-        &card["name"],
-        &card["text"],
-        &card["outcome"],
-    );
-    assert_eq!(
-        asked,
-        (
-            &json!("bo"),
-            &json!("Bo"),
-            &json!("what is for dinner?"),
-            &json!("replied")
-        )
-    );
-    assert!(card.get("note").is_none(), "{card}");
+    assert_asked_bo_for_dinner(&s.cards(&ada)[0]);
 
     let linked = s.linked(&ada);
     assert_eq!(linked.len(), 1, "{:?}", s.items(&ada));
@@ -192,6 +175,29 @@ fn an_allowed_ask_returns_the_reply_in_a_linked_thread_the_owner_reads_and_steer
     let replies = s.items(x).iter().filter(|i| i["kind"] == "agent").count();
     assert_eq!(replies, 2);
 
+    assert_owner_steer_reaches(&s, x);
+}
+
+fn assert_asked_bo_for_dinner(card: &Value) {
+    let asked = (
+        &card["persona"],
+        &card["name"],
+        &card["text"],
+        &card["outcome"],
+    );
+    assert_eq!(
+        asked,
+        (
+            &json!("bo"),
+            &json!("Bo"),
+            &json!("what is for dinner?"),
+            &json!("replied")
+        )
+    );
+    assert!(card.get("note").is_none(), "{card}");
+}
+
+fn assert_owner_steer_reaches(s: &Setup, x: &str) {
     let steer = json!({ "text": "keep it short", "random_id": "steer" });
     assert_eq!(s.cooee.post(&format!("/threads/{x}/send"), &steer).0, 200);
     let marked = r#""[The owner's note; the asker gets it with your reply]:\n\nkeep it short""#;

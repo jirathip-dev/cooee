@@ -1,8 +1,10 @@
+#[cfg(not(target_os = "macos"))]
 use std::{fs, os::unix::fs::PermissionsExt};
 
 use serde_json::{Value, json};
 
 use crate::setup::{DROPPED, drop_setup};
+#[cfg(not(target_os = "macos"))]
 use crate::support::agent;
 
 #[test]

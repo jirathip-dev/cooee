@@ -263,22 +263,8 @@ impl Plan {
         let mut made: Vec<(Agent, Vec<PathBuf>)> = Vec::new();
         for file in tomls(&self.config.join("personas")) {
             let (id, shown) = (stem(&file).to_owned(), self.show(&file));
-            let read = fs::read_to_string(&file).map_err(|e| e.kind().to_string());
-            let parsed = read.and_then(|t| {
-                toml::from_str::<Persona>(&t).map_err(|_| "it doesn't parse".to_owned())
-            });
-            let p = match parsed {
-                Ok(p) if agents::is_id(&id) => p,
-                Ok(_) => {
-                    self.warn(format!("{shown}: its name isn't an id; not migrated"));
-                    continue;
-                }
-                Err(e) => {
-                    self.warn(format!(
-                        "{shown}: not migrated ({e}); its notes and skills move to agents/{id}/"
-                    ));
-                    continue;
-                }
+            let Some(p) = self.persona(&file, &id, &shown) else {
+                continue;
             };
             let runs = p.profile.as_deref().map(|name| {
                 let owner = profiles.iter().find(|(_, a)| a.id == name).cloned();
@@ -288,30 +274,7 @@ impl Plan {
                     .map(|a| (PathBuf::new(), a.clone()));
                 (name.to_owned(), owner.or(theirs))
             });
-            let role = p.role.unwrap_or(if id == "conductor" {
-                Role::Orchestrator
-            } else {
-                Role::Plain
-            });
-            let mut a = Agent {
-                id: id.clone(),
-                name: p.name,
-                role,
-                style: agents::style(role, p.style),
-                fleets: p.fleets,
-                avatar: p.avatar,
-                character: p.character,
-                instructions: p.instructions,
-                folder: p.folder,
-                agent: p.agent,
-                model: p.model,
-                effort: p.effort,
-                machine: p.machine,
-                plugins: p.plugins,
-                can_message: p.can_message,
-                pinned: p.pinned,
-                ..Agent::default()
-            };
+            let mut a = from_persona(id, p);
             let mut from = vec![file];
             match runs {
                 Some((_, Some((pf, f)))) => {
@@ -352,6 +315,25 @@ impl Plan {
             if d.path().is_dir() && agents::is_id(&id) && !ids.contains(&id) {
                 self.kept(&id);
                 ids.push(id);
+            }
+        }
+    }
+
+    fn persona(&mut self, file: &Path, id: &str, shown: &str) -> Option<Persona> {
+        let read = fs::read_to_string(file).map_err(|e| e.kind().to_string());
+        let parsed = read
+            .and_then(|t| toml::from_str::<Persona>(&t).map_err(|_| "it doesn't parse".to_owned()));
+        match parsed {
+            Ok(p) if agents::is_id(id) => Some(p),
+            Ok(_) => {
+                self.warn(format!("{shown}: its name isn't an id; not migrated"));
+                None
+            }
+            Err(e) => {
+                self.warn(format!(
+                    "{shown}: not migrated ({e}); its notes and skills move to agents/{id}/"
+                ));
+                None
             }
         }
     }
@@ -555,5 +537,32 @@ impl Plan {
         }
         self.summary().iter().for_each(|l| log(l));
         Ok(())
+    }
+}
+
+fn from_persona(id: String, p: Persona) -> Agent {
+    let role = p.role.unwrap_or(if id == "conductor" {
+        Role::Orchestrator
+    } else {
+        Role::Plain
+    });
+    Agent {
+        id,
+        name: p.name,
+        role,
+        style: agents::style(role, p.style),
+        fleets: p.fleets,
+        avatar: p.avatar,
+        character: p.character,
+        instructions: p.instructions,
+        folder: p.folder,
+        agent: p.agent,
+        model: p.model,
+        effort: p.effort,
+        machine: p.machine,
+        plugins: p.plugins,
+        can_message: p.can_message,
+        pinned: p.pinned,
+        ..Agent::default()
     }
 }

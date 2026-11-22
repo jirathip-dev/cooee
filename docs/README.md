@@ -28,7 +28,7 @@ keeps them going while the phone is away; cooee talks to shed and pings the phon
 | `cooee-server` | `crates/cooee-server` | HTTP, the threads' JSON API and SSE (M1), the Host/pairing gate, push (M2), logins (M3), `GET /machines` (the machines plugin's data, #148) | core, machines |
 | `cooee` | `crates/cooee` | the binary: arguments and wiring only | all |
 
-`scripts/dep-direction.sh` enforces the last column in CI.
+core/arch's `[[layer]]` entries (`.drover/arch/gatekeeper.toml`) enforce the last column in CI.
 
 Each area has its own doc beside this one, `docs/<area>.md`: what it does today, how it works and its API.
 

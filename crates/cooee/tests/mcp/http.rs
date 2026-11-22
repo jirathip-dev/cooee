@@ -3,10 +3,12 @@ use std::{
     io::{Read, Write},
     net::TcpStream,
     os::unix::fs::PermissionsExt,
+    path::{Path, PathBuf},
+    sync::{Arc, Mutex},
     thread,
 };
 
-use serde_json::json;
+use serde_json::{Value, json};
 
 use crate::setup::{Agent, Mcp, Setup, fake_web, files, named};
 use crate::support::{Cooee, FakeShed, agent, is_item, scratch, version};
@@ -18,35 +20,11 @@ fn a_streamable_http_and_an_sse_server_answer_through_the_pipe_with_headers_on_c
     let token = format!("tk-{}", "w3".repeat(16));
     fs::create_dir_all(dir.join("data/secrets")).unwrap();
     fs::write(dir.join("data/secrets/WEB"), format!("Bearer {token}\n")).unwrap();
-    let real = std::env::split_paths(&std::env::var_os("PATH").unwrap())
-        .map(|p| p.join("curl"))
-        .find(|p| p.is_file())
-        .unwrap();
-    let wrap = dir.join("wrap/curl");
-    fs::create_dir_all(wrap.parent().unwrap()).unwrap();
-    let log = dir.join("curl-argv");
-    fs::write(
-        &wrap,
-        format!("#!/bin/sh\nprintf '%s\\n' \"$*\" >>{log:?}\nexec {real:?} \"$@\"\n"),
-    )
-    .unwrap();
-    fs::set_permissions(&wrap, fs::Permissions::from_mode(0o755)).unwrap();
-    let path = format!(
-        "{}:{}",
-        wrap.parent().unwrap().display(),
-        std::env::var("PATH").unwrap()
-    );
+    let (log, path) = logging_curl_on_path(&dir);
     let picks = "name = \"Web\"\nagent = \"fake-acp\"\n\n[[mcp]]\nserver = \"web\"\ntools = [\"a\"]\n\n[[mcp]]\nserver = \"old\"\n\n[[mcp]]\nserver = \"moved\"\n";
     agent(&dir, "web", picks, "");
     let (port, seen) = fake_web(token.clone());
-    let server = |name: &str, kind: &str, at: &str| {
-        format!(
-            "[[mcp]]\nname = \"{name}\"\ntype = \"{kind}\"\nurl = \"http://127.0.0.1:{port}/{at}\"\nheaders = {{ Authorization = \"secret:WEB\" }}\nread = [\"a\", \"c\"]\n\n"
-        )
-    };
-    let extra = server("web", "http", "mcp")
-        + &server("old", "sse", "sse")
-        + &server("moved", "http", "moved");
+    let extra = web_old_and_moved_servers(port);
     let shed = FakeShed::start(&dir.join("shed"), version());
     let cooee = Cooee::start_env(&dir, &shed.dir, &extra, &[("PATH", &path)]);
     let s = Setup {
@@ -90,22 +68,7 @@ fn a_streamable_http_and_an_sse_server_answer_through_the_pipe_with_headers_on_c
             .any(|h| h.contains("redirected"))
     );
 
-    let var = named(&servers, "web")["env"][0]["value"]
-        .as_str()
-        .unwrap()
-        .to_owned();
-    let (url, bearer) = var.split_once(' ').unwrap();
-    let mut c = TcpStream::connect(url.strip_prefix("http://").unwrap()).unwrap();
-    let body = json!({ "thread": id, "server": "web" }).to_string();
-    write!(c, "POST /mcp/agent/grant HTTP/1.0\r\nHost: 127.0.0.1\r\nAuthorization: Bearer {bearer}\r\nContent-Type: application/json\r\nContent-Length: {}\r\n\r\n{body}", body.len()).unwrap();
-    let mut grant = String::new();
-    c.read_to_string(&mut grant).unwrap();
-    assert!(grant.ends_with("\"pipe\""), "{grant}");
-    assert!(
-        !grant.contains(&s.token) && !grant.contains(&port.to_string()),
-        "{grant}"
-    );
-
+    assert_the_grant_is_a_pipe_with_no_token_or_port(&s, &servers, &id, port);
     let argv = fs::read_to_string(&log).unwrap();
     assert!(argv.lines().count() >= 8, "{argv}");
     assert!(argv.lines().all(|l| l == "-K -"), "{argv}");
@@ -119,22 +82,7 @@ fn a_streamable_http_and_an_sse_server_answer_through_the_pipe_with_headers_on_c
 fn a_read_tool_runs_with_no_card_and_a_write_tool_runs_only_once_its_card_is_allowed() {
     let dir = scratch("mcp-gate");
     let token = format!("tk-{}", "g5".repeat(16));
-    fs::create_dir_all(dir.join("data/secrets")).unwrap();
-    fs::write(dir.join("data/secrets/WEB"), format!("Bearer {token}\n")).unwrap();
-    let picks = "name = \"Web\"\nagent = \"fake-acp\"\n\n[[mcp]]\nserver = \"web\"\n";
-    agent(&dir, "web", picks, "");
-    let (port, seen) = fake_web(token.clone());
-    let extra = format!(
-        "[[mcp]]\nname = \"web\"\ntype = \"http\"\nurl = \"http://127.0.0.1:{port}/mcp\"\nheaders = {{ Authorization = \"secret:WEB\" }}\nread = [\"a\"]\n"
-    );
-    let shed = FakeShed::start(&dir.join("shed"), version());
-    let cooee = Cooee::start_with(&dir, &shed.dir, &extra);
-    let s = Setup {
-        dir,
-        shed,
-        cooee,
-        token,
-    };
+    let (s, seen) = gate_setup(dir, token);
     let (id, servers) = s.thread("web");
     let messages = || s.cooee.json(&format!("/threads/{id}/messages"));
     let sent = |tool: &str| {
@@ -146,20 +94,7 @@ fn a_read_tool_runs_with_no_card_and_a_write_tool_runs_only_once_its_card_is_all
             .count()
     };
     let mut web = Mcp::start(named(&servers, "web"), Agent::Claude);
-
-    assert_eq!(
-        web.run("a", &json!({})),
-        Ok("a ran; the token matches".to_owned())
-    );
-    let items = messages()["items"].clone();
-    assert!(
-        !items
-            .as_array()
-            .unwrap()
-            .iter()
-            .any(|i| i["kind"] == "approval"),
-        "{items}"
-    );
+    assert_a_read_tool_runs_with_no_card(&s, &id, &mut web);
 
     for (tool, option) in [("b", "approve"), ("c", "decline")] {
         let cursor = messages()["cursor"].as_str().unwrap().to_owned();
@@ -195,4 +130,98 @@ fn a_read_tool_runs_with_no_card_and_a_write_tool_runs_only_once_its_card_is_all
             assert_eq!(sent(tool), 0);
         }
     }
+}
+
+fn logging_curl_on_path(dir: &Path) -> (PathBuf, String) {
+    let real = std::env::split_paths(&std::env::var_os("PATH").unwrap())
+        .map(|p| p.join("curl"))
+        .find(|p| p.is_file())
+        .unwrap();
+    let wrap = dir.join("wrap/curl");
+    fs::create_dir_all(wrap.parent().unwrap()).unwrap();
+    let log = dir.join("curl-argv");
+    fs::write(
+        &wrap,
+        format!(
+            "#!/bin/sh\nprintf '%s\\n' \"$*\" >>{:?}\nexec {:?} \"$@\"\n",
+            log.to_string_lossy(),
+            real.to_string_lossy()
+        ),
+    )
+    .unwrap();
+    fs::set_permissions(&wrap, fs::Permissions::from_mode(0o755)).unwrap();
+    let path = format!(
+        "{}:{}",
+        wrap.parent().unwrap().display(),
+        std::env::var("PATH").unwrap()
+    );
+    (log, path)
+}
+
+fn assert_the_grant_is_a_pipe_with_no_token_or_port(
+    s: &Setup,
+    servers: &[Value],
+    id: &str,
+    port: u16,
+) {
+    let var = named(servers, "web")["env"][0]["value"]
+        .as_str()
+        .unwrap()
+        .to_owned();
+    let (url, bearer) = var.split_once(' ').unwrap();
+    let mut c = TcpStream::connect(url.strip_prefix("http://").unwrap()).unwrap();
+    let body = json!({ "thread": id, "server": "web" }).to_string();
+    write!(c, "POST /mcp/agent/grant HTTP/1.0\r\nHost: 127.0.0.1\r\nAuthorization: Bearer {bearer}\r\nContent-Type: application/json\r\nContent-Length: {}\r\n\r\n{body}", body.len()).unwrap();
+    let mut grant = String::new();
+    c.read_to_string(&mut grant).unwrap();
+    assert!(grant.ends_with("\"pipe\""), "{grant}");
+    assert!(
+        !grant.contains(&s.token) && !grant.contains(&port.to_string()),
+        "{grant}"
+    );
+}
+
+fn gate_setup(dir: PathBuf, token: String) -> (Setup, Arc<Mutex<Vec<String>>>) {
+    fs::create_dir_all(dir.join("data/secrets")).unwrap();
+    fs::write(dir.join("data/secrets/WEB"), format!("Bearer {token}\n")).unwrap();
+    let picks = "name = \"Web\"\nagent = \"fake-acp\"\n\n[[mcp]]\nserver = \"web\"\n";
+    agent(&dir, "web", picks, "");
+    let (port, seen) = fake_web(token.clone());
+    let extra = format!(
+        "[[mcp]]\nname = \"web\"\ntype = \"http\"\nurl = \"http://127.0.0.1:{port}/mcp\"\nheaders = {{ Authorization = \"secret:WEB\" }}\nread = [\"a\"]\n"
+    );
+    let shed = FakeShed::start(&dir.join("shed"), version());
+    let cooee = Cooee::start_with(&dir, &shed.dir, &extra);
+    let s = Setup {
+        dir,
+        shed,
+        cooee,
+        token,
+    };
+    (s, seen)
+}
+
+fn web_old_and_moved_servers(port: u16) -> String {
+    let server = |name: &str, kind: &str, at: &str| {
+        format!(
+            "[[mcp]]\nname = \"{name}\"\ntype = \"{kind}\"\nurl = \"http://127.0.0.1:{port}/{at}\"\nheaders = {{ Authorization = \"secret:WEB\" }}\nread = [\"a\", \"c\"]\n\n"
+        )
+    };
+    server("web", "http", "mcp") + &server("old", "sse", "sse") + &server("moved", "http", "moved")
+}
+
+fn assert_a_read_tool_runs_with_no_card(s: &Setup, id: &str, web: &mut Mcp) {
+    assert_eq!(
+        web.run("a", &json!({})),
+        Ok("a ran; the token matches".to_owned())
+    );
+    let items = s.cooee.json(&format!("/threads/{id}/messages"))["items"].clone();
+    assert!(
+        !items
+            .as_array()
+            .unwrap()
+            .iter()
+            .any(|i| i["kind"] == "approval"),
+        "{items}"
+    );
 }

@@ -659,6 +659,30 @@ impl FakeShed {
         }
     }
 
+    fn answer_hello(&self, params: &Value) -> Result<Value, RpcError> {
+        let theirs: Hello = serde_json::from_value(params.clone()).unwrap();
+        let ours = &self.hello;
+        let protocol = ours.protocol == 0
+            || theirs.protocol == ours.protocol
+            || theirs.protocol + 1 == ours.protocol;
+        if theirs.product == ours.product && theirs.version == ours.version && protocol {
+            Ok(json!(ours))
+        } else {
+            Err(RpcError::version(&theirs, ours))
+        }
+    }
+
+    fn kill(&self, name: &str) -> Result<Value, RpcError> {
+        let procs = self.procs.by_name.lock().unwrap();
+        if let Some(p) = procs.get(name).filter(|p| p.exit.is_none()) {
+            Command::new("kill").arg(p.pid.to_string()).status().ok();
+        }
+        drop(procs);
+        self.shared.lock().unwrap().stopped.insert(name.to_owned());
+        self.emit(name, EventKind::Killed);
+        self.terminal(name)
+    }
+
     fn serve(&self, conn: UnixStream) {
         let mut writer = conn.try_clone().unwrap();
         let mut lines = BufReader::new(conn).lines();
@@ -677,19 +701,7 @@ impl FakeShed {
             let result = match req.method.as_str() {
                 _ if self.no_link(&name) => Err(RpcError::new(ErrorCode::NoLink, &name)),
                 "machine.links" => Ok(self.links()),
-                "hello" => {
-                    let theirs: Hello = serde_json::from_value(req.params.clone()).unwrap();
-                    let ours = &self.hello;
-                    let protocol = ours.protocol == 0
-                        || theirs.protocol == ours.protocol
-                        || theirs.protocol + 1 == ours.protocol;
-                    if theirs.product == ours.product && theirs.version == ours.version && protocol
-                    {
-                        Ok(json!(ours))
-                    } else {
-                        Err(RpcError::version(&theirs, ours))
-                    }
-                }
+                "hello" => self.answer_hello(&req.params),
                 "get" => self.terminal(&name),
                 "run" => self.run(&req.params),
                 "ls" => Ok(self.ls(&req.params["labels"])),
@@ -713,16 +725,7 @@ impl FakeShed {
                     self.terminal(&name)
                 }
                 "send" => self.send(&name, req.params["text"].as_str().unwrap()),
-                "kill" => {
-                    let procs = self.procs.by_name.lock().unwrap();
-                    if let Some(p) = procs.get(&name).filter(|p| p.exit.is_none()) {
-                        Command::new("kill").arg(p.pid.to_string()).status().ok();
-                    }
-                    drop(procs);
-                    self.shared.lock().unwrap().stopped.insert(name.clone());
-                    self.emit(&name, EventKind::Killed);
-                    self.terminal(&name)
-                }
+                "kill" => self.kill(&name),
                 "rm" => {
                     let t = self.terminal(&name);
                     self.shared.lock().unwrap().gone.insert(name);

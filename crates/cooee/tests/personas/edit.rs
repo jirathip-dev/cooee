@@ -3,12 +3,10 @@ use std::fs;
 use cooee_core::agents::PLAIN;
 use serde_json::{Value, json};
 
-use crate::setup::setup;
+use crate::setup::{Setup, setup};
 use crate::support::agent;
 
-#[test]
-fn a_persona_is_created_edited_and_deleted_and_its_notes_reach_its_next_session() {
-    let s = setup("personas");
+fn create_chief_cook(s: &Setup) -> (Value, std::path::PathBuf) {
     let new = json!({ "name": "Chief Cook", "character": "A calm chef.", "instructions": "Answer in one line.",
                       "agent": "fake-acp", "folder": "scratch" });
     let (status, chief) = s.call("POST", "/personas", Some(&new));
@@ -27,7 +25,10 @@ fn a_persona_is_created_edited_and_deleted_and_its_notes_reach_its_next_session(
     );
 
     assert_eq!(chief["pinned"], false);
+    (chief, file)
+}
 
+fn edit_chief_cook_and_pin_it(s: &Setup, file: &std::path::Path) {
     let edit = json!({ "name": "Chief", "character": "A calm chef.", "instructions": "Answer in two lines.",
                        "agent": "fake-acp", "folder": "scratch", "pinned": true });
     let (status, edited) = s.call("PUT", "/personas/chief-cook", Some(&edit));
@@ -36,17 +37,12 @@ fn a_persona_is_created_edited_and_deleted_and_its_notes_reach_its_next_session(
     assert_eq!(read["name"], "Chief");
     assert_eq!(read["instructions"], "Answer in two lines.");
     assert_eq!(read["pinned"], true);
-    assert!(fs::read_to_string(&file).unwrap().contains("pinned = true"));
+    assert!(fs::read_to_string(file).unwrap().contains("pinned = true"));
     assert_eq!(s.call("PUT", "/personas/nobody", Some(&edit)).0, 400);
+}
 
-    assert_eq!(chief["style"], "chat");
-    let chat = format!("A calm chef.\n\nAnswer in two lines.\n\n{PLAIN}\n\nhi");
-    let (id, line, prompt) = s.start("chief-cook");
-    assert!(line.contains(" --acp fake-acp "), "{line}");
-    assert_eq!(prompt, chat);
-    assert_eq!(s.row_persona(&id), "chief-cook");
-
-    let said = s.remember(&id, &json!({ "text": "The owner takes tea, no sugar." }));
+fn notes_reach_the_next_session(s: &Setup, id: &str) -> String {
+    let said = s.remember(id, &json!({ "text": "The owner takes tea, no sugar." }));
     assert_eq!(said["isError"], false, "{said}");
     let (status, owner) = s.call(
         "POST",
@@ -79,17 +75,10 @@ fn a_persona_is_created_edited_and_deleted_and_its_notes_reach_its_next_session(
     );
     let (plain, _, _) = s.start("");
     assert_eq!(s.remember(&plain, &json!({ "text": "x" }))["isError"], true);
+    next
+}
 
-    assert_eq!(s.call("DELETE", "/personas/chief-cook/memory", None).0, 200);
-    assert_eq!(s.cooee.json("/personas/chief-cook/memory"), json!([]));
-    assert_eq!(s.cooee.json("/personas/chief-cook")["name"], "Chief");
-    let (_, _, prompt) = s.start("chief-cook");
-    assert_eq!(prompt, chat);
-    assert_eq!(
-        s.cooee.json(&format!("/threads/{id}/messages"))["items"][0]["text"],
-        "hi"
-    );
-
+fn deleting_the_persona_keeps_its_threads(s: &Setup, id: &str, next: &str) {
     assert_eq!(s.call("DELETE", "/personas/chief-cook", None).0, 200);
     assert!(!s.dir.join("agents/chief-cook").exists());
     assert_eq!(s.call("GET", "/personas/chief-cook", None).0, 400);
@@ -101,13 +90,41 @@ fn a_persona_is_created_edited_and_deleted_and_its_notes_reach_its_next_session(
             .iter()
             .all(|p| p["id"] != "chief-cook")
     );
-    for t in [&id, &next] {
+    for t in [id, next] {
         assert_eq!(s.row_persona(t), "");
         assert_eq!(
             s.cooee.json(&format!("/threads/{t}/messages"))["items"][0]["text"],
             "hi"
         );
     }
+}
+
+#[test]
+fn a_persona_is_created_edited_and_deleted_and_its_notes_reach_its_next_session() {
+    let s = setup("personas");
+    let (chief, file) = create_chief_cook(&s);
+    edit_chief_cook_and_pin_it(&s, &file);
+
+    assert_eq!(chief["style"], "chat");
+    let chat = format!("A calm chef.\n\nAnswer in two lines.\n\n{PLAIN}\n\nhi");
+    let (id, line, prompt) = s.start("chief-cook");
+    assert!(line.contains(" --acp fake-acp "), "{line}");
+    assert_eq!(prompt, chat);
+    assert_eq!(s.row_persona(&id), "chief-cook");
+
+    let next = notes_reach_the_next_session(&s, &id);
+
+    assert_eq!(s.call("DELETE", "/personas/chief-cook/memory", None).0, 200);
+    assert_eq!(s.cooee.json("/personas/chief-cook/memory"), json!([]));
+    assert_eq!(s.cooee.json("/personas/chief-cook")["name"], "Chief");
+    let (_, _, prompt) = s.start("chief-cook");
+    assert_eq!(prompt, chat);
+    assert_eq!(
+        s.cooee.json(&format!("/threads/{id}/messages"))["items"][0]["text"],
+        "hi"
+    );
+
+    deleting_the_persona_keeps_its_threads(&s, &id, &next);
 
     let (head, _) = s.cooee.raw("GET", "/personas", &[], "");
     assert!(
@@ -183,9 +200,7 @@ fn an_agents_launch_keys_are_read_only_and_an_edit_keeps_them() {
     assert_eq!(s.cooee.json("/personas"), json!([]));
 }
 
-#[test]
-fn a_persona_and_its_threads_name_their_machine() {
-    let s = setup("persona-machine");
+fn air_offline_and_local_busy(s: &Setup) {
     let write = |name: &str, v: &Value| fs::write(s.shed.dir.join(name), v.to_string()).unwrap();
     write(
         "machines.json",
@@ -201,7 +216,9 @@ fn a_persona_and_its_threads_name_their_machine() {
         &json!({ "machine": "air", "online": false, "last_seen": 1_700_000_000u64 }),
     );
     s.shed.link("air", "up", 1_700_000_000, None);
+}
 
+fn old_persona_with_its_character_kept(s: &Setup) -> (std::path::PathBuf, Value) {
     let old = "name = \"Old\"\nfolder = \"scratch\"\nagent = \"fake-acp\"\nmodel = \"\"\neffort = \"\"\nplugins = []\n";
     let home = agent(&s.dir, "old", old, "Still.");
     fs::write(home.join("CHARACTER.md"), "Kept.").unwrap();
@@ -217,6 +234,51 @@ fn a_persona_and_its_threads_name_their_machine() {
     assert_eq!(s.cooee.json("/personas/coder")["machine"], "");
     let (plain, _, _) = s.start("old");
     assert_eq!(s.row(&plain)["machine"], "");
+    (home, read)
+}
+
+fn an_unknown_machine_is_refused(s: &Setup, read: &Value) {
+    let mut nowhere = read.clone();
+    nowhere["machine"] = json!("nowhere");
+    let (status, why) = s.call("PUT", "/personas/old", Some(&nowhere));
+    assert_eq!(status, 400, "{why}");
+    assert!(why.to_string().contains("no machine nowhere"), "{why}");
+    assert_eq!(s.cooee.json("/personas/old")["machine"], "air");
+    let rows = s.cooee.json("/threads").as_array().unwrap().len();
+    let new =
+        json!({ "agent": "fake-acp", "text": "hi", "random_id": "far", "machine": "nowhere" });
+    let (status, why) = s.call("POST", "/threads", Some(&new));
+    assert_eq!(status, 400, "{why}");
+    assert_eq!(s.cooee.json("/threads").as_array().unwrap().len(), rows);
+}
+
+fn assert_machines_list_local_and_air(s: &Setup) {
+    let machines = s.cooee.json("/machines");
+    let machines = machines.as_array().unwrap();
+    assert_eq!(machines.len(), 2, "{machines:?}");
+    assert_eq!(
+        (
+            &machines[0]["name"],
+            &machines[0]["online"],
+            &machines[0]["health"]["load_per_cpu"]
+        ),
+        (&json!(""), &json!(true), &json!(0.42))
+    );
+    assert_eq!(
+        (
+            &machines[1]["name"],
+            &machines[1]["online"],
+            &machines[1]["last_seen"]
+        ),
+        (&json!("air"), &json!(false), &json!(1_700_000_000u64))
+    );
+}
+
+#[test]
+fn a_persona_and_its_threads_name_their_machine() {
+    let s = setup("persona-machine");
+    air_offline_and_local_busy(&s);
+    let (home, read) = old_persona_with_its_character_kept(&s);
 
     let mut on_air = read.clone();
     on_air["machine"] = json!("air");
@@ -238,18 +300,7 @@ fn a_persona_and_its_threads_name_their_machine() {
     assert_eq!(s.row(body["id"].as_str().unwrap())["machine"], "");
     assert_eq!(s.cooee.json("/personas/old")["machine"], "air");
 
-    let mut nowhere = read.clone();
-    nowhere["machine"] = json!("nowhere");
-    let (status, why) = s.call("PUT", "/personas/old", Some(&nowhere));
-    assert_eq!(status, 400, "{why}");
-    assert!(why.to_string().contains("no machine nowhere"), "{why}");
-    assert_eq!(s.cooee.json("/personas/old")["machine"], "air");
-    let rows = s.cooee.json("/threads").as_array().unwrap().len();
-    let new =
-        json!({ "agent": "fake-acp", "text": "hi", "random_id": "far", "machine": "nowhere" });
-    let (status, why) = s.call("POST", "/threads", Some(&new));
-    assert_eq!(status, 400, "{why}");
-    assert_eq!(s.cooee.json("/threads").as_array().unwrap().len(), rows);
+    an_unknown_machine_is_refused(&s, &read);
 
     let (status, cleared) = s.call("PUT", "/personas/old", Some(&read));
     assert_eq!(
@@ -260,23 +311,5 @@ fn a_persona_and_its_threads_name_their_machine() {
     let (id, _, _) = s.start("old");
     assert_eq!(s.row(&id)["machine"], "");
 
-    let machines = s.cooee.json("/machines");
-    let machines = machines.as_array().unwrap();
-    assert_eq!(machines.len(), 2, "{machines:?}");
-    assert_eq!(
-        (
-            &machines[0]["name"],
-            &machines[0]["online"],
-            &machines[0]["health"]["load_per_cpu"]
-        ),
-        (&json!(""), &json!(true), &json!(0.42))
-    );
-    assert_eq!(
-        (
-            &machines[1]["name"],
-            &machines[1]["online"],
-            &machines[1]["last_seen"]
-        ),
-        (&json!("air"), &json!(false), &json!(1_700_000_000u64))
-    );
+    assert_machines_list_local_and_air(&s);
 }

@@ -207,11 +207,7 @@ fn a_shed_of_another_protocol_fails_the_list_naming_both_sides() {
     assert!(body.contains(&said), "{body}\nwanted: {said}");
 }
 
-#[test]
-fn a_shell_starts_its_screen_diffs_stream_and_typed_text_and_keys_arrive() {
-    let m = mac("term-shell");
-    m.ceremony(true);
-    m.shed.lane("lane-7", &[("herdsman", "1")]);
+fn start_an_owner_shell(m: &Mac) -> String {
     let (status, body) = m.api("/shell", &json!({}));
     assert_eq!(status, 200, "{body}");
     let name = serde_json::from_str::<Value>(&body).unwrap()["terminal"]
@@ -227,15 +223,11 @@ fn a_shell_starts_its_screen_diffs_stream_and_typed_text_and_keys_arrive() {
         (log[1]["event"].as_str(), log[1]["terminal"].as_str()),
         (Some("shell"), Some(name.as_str()))
     );
+    name
+}
 
-    let list = m.list();
-    assert_eq!(list[0]["name"], name.as_str());
-    assert_eq!(
-        (&list[0]["owner"], &list[1]["name"], &list[1]["owner"]),
-        (&json!(true), &json!("lane-7"), &json!(false))
-    );
-
-    let mut screen = m.watch(&name);
+fn type_and_see_it_on_the_screen(m: &Mac, name: &str) -> impl Iterator<Item = Value> {
+    let mut screen = m.watch(name);
     let first = screen.next().unwrap();
     assert_eq!(
         (
@@ -275,13 +267,31 @@ fn a_shell_starts_its_screen_diffs_stream_and_typed_text_and_keys_arrive() {
         (&json!(2), &json!(true))
     );
     assert_eq!(
-        m.shed.calls("terminal.input", &name)[0]["text"],
+        m.shed.calls("terminal.input", name)[0]["text"],
         "echo ok สวัสดี"
     );
     assert_eq!(
-        m.shed.calls("terminal.keys", &name)[0]["keys"],
+        m.shed.calls("terminal.keys", name)[0]["keys"],
         json!(["enter"])
     );
+    screen
+}
+
+#[test]
+fn a_shell_starts_its_screen_diffs_stream_and_typed_text_and_keys_arrive() {
+    let m = mac("term-shell");
+    m.ceremony(true);
+    m.shed.lane("lane-7", &[("herdsman", "1")]);
+    let name = start_an_owner_shell(&m);
+
+    let list = m.list();
+    assert_eq!(list[0]["name"], name.as_str());
+    assert_eq!(
+        (&list[0]["owner"], &list[1]["name"], &list[1]["owner"]),
+        (&json!(true), &json!("lane-7"), &json!(false))
+    );
+
+    let _screen = type_and_see_it_on_the_screen(&m, &name);
     assert_eq!(
         m.api(
             "/resize",

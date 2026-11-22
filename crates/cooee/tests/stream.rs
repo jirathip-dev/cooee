@@ -72,6 +72,13 @@ fn start(dir: &Path, shed: &FakeShed) -> (Cooee, Events, Hello) {
     (cooee, events, hello)
 }
 
+fn write_coder_profile(dir: &Path) {
+    let profiles = dir.join("profiles");
+    fs::create_dir_all(&profiles).unwrap();
+    let coder = "name = \"coder\"\nlabel = \"Coder\"\nagent = \"fake-acp\"\n";
+    fs::write(profiles.join("coder.toml"), coder).unwrap();
+}
+
 fn chat(cooee: &Cooee, text: &str) -> String {
     let new = json!({ "agent": "fake-acp", "profile": "coder", "text": text, "random_id": text });
     let (status, body) = cooee.post("/threads", &new);
@@ -82,30 +89,18 @@ fn chat(cooee: &Cooee, text: &str) -> String {
         .to_owned()
 }
 
-#[test]
-fn a_mirror_follows_the_sessions_list_through_drops_doubles_and_a_restart() {
-    let dir = scratch("stream-sessions");
-    let profiles = dir.join("profiles");
-    fs::create_dir_all(&profiles).unwrap();
-    let coder = "name = \"coder\"\nlabel = \"Coder\"\nagent = \"fake-acp\"\n";
-    fs::write(profiles.join("coder.toml"), coder).unwrap();
-    let shed = FakeShed::start(&dir.join("shed"), version());
-    let (cooee, mut events, first) = start(&dir, &shed);
-    let mut m = Mirror::new(2);
-    m.hello(&first).unwrap();
-    m.open(KEY);
-
+fn assert_first_syncs_and_unknown_keys(cooee: &Cooee, m: &mut Mirror, sid: &str) {
     let sent = m.have();
-    let synced = sync(&cooee, &first.sid, &sent);
+    let synced = sync(cooee, sid, &sent);
     assert!(
         synced.keys[0].screen.is_some(),
         "a first sync gets the whole screen"
     );
     assert_eq!(m.synced(&sent, synced), [Took::Replaced]);
-    assert_eq!(shown(&m), cooee.json(KEY));
+    assert_eq!(shown(m), cooee.json(KEY));
 
     let sent = m.have();
-    let synced = sync(&cooee, &first.sid, &sent);
+    let synced = sync(cooee, sid, &sent);
     let same = &synced.keys[0];
     assert_eq!(
         (same.rev, &same.ops, &same.screen),
@@ -117,9 +112,22 @@ fn a_mirror_follows_the_sessions_list_through_drops_doubles_and_a_restart() {
         k: "/screens/nope".into(),
         rev: None,
     }];
-    assert_eq!(sync(&cooee, &first.sid, &nope).keys[0].gone, Some(404));
+    assert_eq!(sync(cooee, sid, &nope).keys[0].gone, Some(404));
     let (status, _) = cooee.post("/stream/no-such-sid", &json!({ "open": sent }));
     assert_eq!(status, 404);
+}
+
+#[test]
+fn a_mirror_follows_the_sessions_list_through_drops_doubles_and_a_restart() {
+    let dir = scratch("stream-sessions");
+    write_coder_profile(&dir);
+    let shed = FakeShed::start(&dir.join("shed"), version());
+    let (cooee, mut events, first) = start(&dir, &shed);
+    let mut m = Mirror::new(2);
+    m.hello(&first).unwrap();
+    m.open(KEY);
+
+    assert_first_syncs_and_unknown_keys(&cooee, &mut m, &first.sid);
 
     let one = chat(&cooee, "one");
     follow(&cooee, &mut events, &mut m, &[&one]);
@@ -159,10 +167,7 @@ fn a_mirror_follows_the_sessions_list_through_drops_doubles_and_a_restart() {
 #[test]
 fn the_sessions_screen_is_core_kinds_grouped_by_persona_with_the_rows_of_get_threads() {
     let dir = scratch("sessions-screen");
-    let profiles = dir.join("profiles");
-    fs::create_dir_all(&profiles).unwrap();
-    let coder = "name = \"coder\"\nlabel = \"Coder\"\nagent = \"fake-acp\"\n";
-    fs::write(profiles.join("coder.toml"), coder).unwrap();
+    write_coder_profile(&dir);
     let shed = FakeShed::start(&dir.join("shed"), version());
     let cooee = Cooee::start(&dir, &shed.dir);
     let one = chat(&cooee, "one");
