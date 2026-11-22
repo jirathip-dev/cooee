@@ -6,6 +6,7 @@ use blocks::{
 };
 use serde::{Serialize, Serializer};
 use serde_json::Value;
+use shed_proto::ApprovalOption;
 
 use crate::chat::{Body, Item};
 
@@ -113,31 +114,7 @@ impl Item {
                 let sha = card.sha.as_deref().unwrap_or("");
                 Block::Run(Box::new(Run::new("answer", detail, sha).id(answer)))
             }
-            _ => {
-                let mut shown: Vec<_> = options
-                    .iter()
-                    .map(|o| ChoiceOption {
-                        value: o.id.clone(),
-                        label: o.name.clone(),
-                        ..ChoiceOption::default()
-                    })
-                    .collect();
-                shown.extend(self.sayable().map(|_| ChoiceOption {
-                    value: Item::SAY.to_owned(),
-                    label: "Deny and say…".to_owned(),
-                    ..ChoiceOption::default()
-                }));
-                let mut choice = Choice::new("answer", shown).id(answer);
-                let recommended = options.iter().find(|o| o.kind == "recommended");
-                choice.recommended = recommended.map(|r| r.id.clone());
-                if plugin.is_some() && card.form.is_none() {
-                    choice = choice.other(Other {
-                        placeholder: Some("other…".to_owned()),
-                        ..Other::default()
-                    });
-                }
-                Block::Choice(Box::new(choice))
-            }
+            _ => self.choice(options, plugin.is_some() && card.form.is_none(), answer),
         }));
         let keyed = open && self.needs_key() && options.iter().any(|o| o.id == "approve");
         blocks.extend(keyed.then(|| {
@@ -148,17 +125,7 @@ impl Item {
             let instead = "Approve it on a device with a passkey";
             device_key(&format!("{id}-key"), "approve", "answer", values, instead)
         }));
-        let by = card
-            .by
-            .as_deref()
-            .map(|b| format!(" · {b}"))
-            .unwrap_or_default();
-        let line = card.line.clone().or_else(|| {
-            chosen
-                .as_ref()
-                .or(tapped.as_ref())
-                .map(|c| format!("✓ {c}{by}"))
-        });
+        let line = settled_line(card, chosen.as_ref().or(tapped.as_ref()));
         blocks.extend(line.into_iter().chain(card.said.clone()).map(|l| {
             Block::Text(Box::new(
                 Text::default().style(TextStyle::Footnote).markdown(l),
@@ -167,6 +134,43 @@ impl Item {
         let card = Card::default().id(id).kind(kind).title(tool).blocks(blocks);
         Some(Block::Card(Box::new(card)))
     }
+
+    fn choice(&self, options: &[ApprovalOption], other: bool, answer: String) -> Block {
+        let mut shown: Vec<_> = options
+            .iter()
+            .map(|o| ChoiceOption {
+                value: o.id.clone(),
+                label: o.name.clone(),
+                ..ChoiceOption::default()
+            })
+            .collect();
+        shown.extend(self.sayable().map(|_| ChoiceOption {
+            value: Item::SAY.to_owned(),
+            label: "Deny and say…".to_owned(),
+            ..ChoiceOption::default()
+        }));
+        let mut choice = Choice::new("answer", shown).id(answer);
+        let recommended = options.iter().find(|o| o.kind == "recommended");
+        choice.recommended = recommended.map(|r| r.id.clone());
+        if other {
+            choice = choice.other(Other {
+                placeholder: Some("other…".to_owned()),
+                ..Other::default()
+            });
+        }
+        Block::Choice(Box::new(choice))
+    }
+}
+
+fn settled_line(card: &crate::chat::Card, picked: Option<&String>) -> Option<String> {
+    let by = card
+        .by
+        .as_deref()
+        .map(|b| format!(" · {b}"))
+        .unwrap_or_default();
+    card.line
+        .clone()
+        .or_else(|| picked.map(|c| format!("✓ {c}{by}")))
 }
 
 #[cfg(test)]

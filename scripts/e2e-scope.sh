@@ -4,7 +4,7 @@
 # simulator steps run), `only` (their `-only-testing:` arguments; empty runs every test) and `persona` (LivePersonaTests
 # runs). A pull request runs the tests apple/e2e/map.toml pairs with the paths it changes; any other event runs them all.
 # #475: on a pull request the Mac waits for the merge-ready run (the `labeled` event, or a push while the PR carries
-# merge-ready), as in ci-scope.sh. With SUMMARY set, it appends each changed path and its tests there.
+# merge-ready). With SUMMARY set, it appends each changed path and its tests there.
 # In: EVENT, ACTION, CARRIES (true when the PR has merge-ready); on a pull request HEAD is GitHub's merge commit, so
 # HEAD^1..HEAD is the change.
 set -eu

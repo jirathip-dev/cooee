@@ -68,7 +68,17 @@ impl Hub {
             }
             _ => return self.shed_approve(&live, &terminal, tapped, option),
         };
-        let mut live = lock(&live);
+        self.settle_answer(&live, item, option, sent)
+    }
+
+    fn settle_answer(
+        &self,
+        live: &std::sync::Mutex<Live>,
+        item: u64,
+        option: &str,
+        sent: Result<Result<Option<String>, String>, HubError>,
+    ) -> Result<Option<Item>, HubError> {
+        let mut live = lock(live);
         let done = live.chat.update(item, 0, |b| {
             if let Body::Approval {
                 tapped,
@@ -89,6 +99,32 @@ impl Hub {
         });
         live.publish(self, done.clone().map(Change::Item).into_iter().collect())?;
         sent.map(|_| done)
+    }
+
+    fn card_options(&self, c: &CardSpec) -> Result<Vec<ApprovalOption>, HubError> {
+        let plain = |o: &str| ApprovalOption {
+            id: o.to_owned(),
+            name: o.to_owned(),
+            kind: String::new(),
+        };
+        Ok(match c.form.as_deref() {
+            None => c.options.iter().map(|o| plain(o)).collect(),
+            Some("config") => vec![plain("apply"), plain("discard")],
+            Some("secret") => vec![plain("save"), plain("dismiss")],
+            Some("run-card") => vec![plain("approve"), plain("deny")],
+            Some("thread") => self
+                .list()
+                .into_iter()
+                .filter(|t| t.id != c.thread && t.state != "ended")
+                .take(6)
+                .map(|t| ApprovalOption {
+                    id: t.id,
+                    name: t.title,
+                    kind: String::new(),
+                })
+                .collect(),
+            Some(f) => return Err(HubError::Refused(format!("no card form {f:?}"))),
+        })
     }
 
     fn deny_saying(
@@ -150,29 +186,7 @@ impl Hub {
                 c.thread
             )));
         }
-        let plain = |o: &str| ApprovalOption {
-            id: o.to_owned(),
-            name: o.to_owned(),
-            kind: String::new(),
-        };
-        let mut options: Vec<ApprovalOption> = match c.form.as_deref() {
-            None => c.options.iter().map(|o| plain(o)).collect(),
-            Some("config") => vec![plain("apply"), plain("discard")],
-            Some("secret") => vec![plain("save"), plain("dismiss")],
-            Some("run-card") => vec![plain("approve"), plain("deny")],
-            Some("thread") => self
-                .list()
-                .into_iter()
-                .filter(|t| t.id != c.thread && t.state != "ended")
-                .take(6)
-                .map(|t| ApprovalOption {
-                    id: t.id,
-                    name: t.title,
-                    kind: String::new(),
-                })
-                .collect(),
-            Some(f) => return Err(HubError::Refused(format!("no card form {f:?}"))),
-        };
+        let mut options = self.card_options(&c)?;
         let set = |v: &Option<String>| v.as_deref().is_some_and(|d| !d.trim().is_empty());
         if c.text.trim().is_empty()
             || options.is_empty()

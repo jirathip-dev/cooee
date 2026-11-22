@@ -1,0 +1,6 @@
+about = "the workspace tests pass (upgrade compatibility and crash injection included) and leave no temp folder"
+fix = "fix the failing test the log names; a test removes what it puts in TMPDIR, pass or fail"
+budget_secs = 600
+setup = ["rust"]
+run = "ci/test.sh"
+paths = ["crates/**", "Cargo.toml", "Cargo.lock", "rust-toolchain.toml", "connectors/**", "packs/**", "plugins/**", "examples/**", "docs/**", "scripts/install.sh", "apple/Package.swift", "apple/Sources/CooeeUI/Default/**", "apple/Tests/schemes.json", "ci/test.sh"]

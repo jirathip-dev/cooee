@@ -23,7 +23,7 @@ reloads its slice, which loses nothing.
    and a cursor means nothing outside its own thread. Fixed: one hub-wide counter (`crates/cooee-server/src/hub.rs`,
    `REV`); every event of every thread takes the next rev. Test:
    `a_reconnect_with_last_event_id_replays_without_gaps_or_duplicates_and_revs_count_up_across_threads`
-   (`crates/cooee/tests/chat.rs`): a reconnect after each of a turn's N events gets exactly the missed ones in order,
+   (`crates/cooee/tests/chat/reconnect.rs`): a reconnect after each of a turn's N events gets exactly the missed ones in order,
    and a second thread's revs all come after the first's.
 2. An untagged send is swallowed. Repro: on a workflow thread (whose agent-typed prompts are stored as `you` items with
    no `random_id`), or after one earlier send with `"random_id": ""`, `POST /threads/<id>/send {"text": "two",

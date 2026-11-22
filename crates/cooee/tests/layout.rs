@@ -127,27 +127,7 @@ fn a_bad_write_keeps_the_last_good_layout_and_reset_restores_the_default() {
     assert_eq!(layout(&c, &good_tag).0, 304);
     assert_eq!(Events::open(&c).next().0, "broken");
 
-    fs::write(dir.join("default.json"), DEFAULT).unwrap();
-    assert!(check(&c, &dir.join("default.json")).0);
-    let faded = DEFAULT.replace(
-        r#""place": "sheet" }"#,
-        r#""place": "sheet", "transition": "fade" }"#,
-    );
-    assert_ne!(faded, DEFAULT);
-    fs::write(dir.join("faded.json"), &faded).unwrap();
-    assert!(check(&c, &dir.join("faded.json")).0);
-    fs::write(
-        dir.join("duplicate.json"),
-        r#"{ "format": 1, "root": { "type": "nav", "slots": { "main": [{ "type": "nav" }] } } }"#,
-    )
-    .unwrap();
-    let (ok, out) = check(&c, &dir.join("duplicate.json"));
-    assert!(!ok && out.contains(r#"id "nav" is taken"#), "{out}");
-    let (ok, out) = check(&c, &file);
-    assert!(
-        !ok && out.contains(&format!("line {line}: ")) && out.contains("float"),
-        "{out}"
-    );
+    assert_layout_check_uses_the_same_rules(&c, &dir, &file, line);
 
     let (code, body) = c.post("/layout/reset", &Value::Null);
     let reset: Value = serde_json::from_str(&body).unwrap();
@@ -159,6 +139,30 @@ fn a_bad_write_keeps_the_last_good_layout_and_reset_restores_the_default() {
     );
     assert_eq!(events.next().0, "changed");
     assert_eq!(layout(&c, &tag).0, 304);
+}
+
+fn assert_layout_check_uses_the_same_rules(c: &Cooee, dir: &Path, file: &Path, line: usize) {
+    fs::write(dir.join("default.json"), DEFAULT).unwrap();
+    assert!(check(c, &dir.join("default.json")).0);
+    let faded = DEFAULT.replace(
+        r#""place": "sheet" }"#,
+        r#""place": "sheet", "transition": "fade" }"#,
+    );
+    assert_ne!(faded, DEFAULT);
+    fs::write(dir.join("faded.json"), &faded).unwrap();
+    assert!(check(c, &dir.join("faded.json")).0);
+    fs::write(
+        dir.join("duplicate.json"),
+        r#"{ "format": 1, "root": { "type": "nav", "slots": { "main": [{ "type": "nav" }] } } }"#,
+    )
+    .unwrap();
+    let (ok, out) = check(c, &dir.join("duplicate.json"));
+    assert!(!ok && out.contains(r#"id "nav" is taken"#), "{out}");
+    let (ok, out) = check(c, file);
+    assert!(
+        !ok && out.contains(&format!("line {line}: ")) && out.contains("float"),
+        "{out}"
+    );
 }
 
 const MANIFEST: &str = "name = \"drover\"\nversion = \"0.1.0\"\nbuild = \"true\"\nrun = \"true\"\n\n[[places]]\n\
@@ -176,7 +180,6 @@ fn a_plugins_places_are_merged_and_a_place_its_manifest_lacks_is_skipped() {
     fs::write(dir.join("data/plugins.lock"), lock.to_string()).unwrap();
     let shed = FakeShed::start(&dir.join("shed"), version());
     let c = Cooee::start(&dir, &shed.dir);
-    let served = |c: &Cooee| serde_json::from_str::<Value>(&layout(c, "").2).unwrap();
 
     let first = served(&c);
     let strip = &first["layout"]["root"]["slots"]["main"][1]["slots"]["strip"];
@@ -189,15 +192,7 @@ fn a_plugins_places_are_merged_and_a_place_its_manifest_lacks_is_skipped() {
     assert_eq!(first["skipped"], serde_json::json!([]));
 
     let mut events = Events::open(&c);
-    let moved = DEFAULT
-        .replace(
-            r#"{ "type": "sidebar", "#,
-            r#"{ "type": "sidebar", "slots": { "top": [{ "type": "screen", "source": "drover", "path": "/screens/queue", "label": "Queue", "place": { "wide": "column", "compact": "menu" } }] }, "#,
-        )
-        .replace(
-            r#""config": { "composer": true"#,
-            r#""slots": { "cards": [{ "type": "screen", "source": "drover", "path": "/screens/cards", "place": "cards" }] }, "config": { "composer": true"#,
-        );
+    let moved = moved_layout();
     fs::write(dir.join("layout.json"), &moved).unwrap();
     assert_eq!(events.next().0, "changed");
     let answer = served(&c);
@@ -220,22 +215,7 @@ fn a_plugins_places_are_merged_and_a_place_its_manifest_lacks_is_skipped() {
     );
     assert_ne!(answer["etag"], first["etag"]);
 
-    fs::remove_file(build.join("cooee-plugin.toml")).unwrap();
-    for _ in 0..100 {
-        assert_eq!(served(&c), answer);
-    }
-    let off = lock
-        .to_string()
-        .replace("\"enabled\":true", "\"enabled\":false");
-    fs::write(dir.join("data/plugins.lock"), off).unwrap();
-    let off = served(&c);
-    assert_eq!(
-        off["skipped"],
-        serde_json::json!([
-            r#"root.slots.main[1].slots.cards[0]: no enabled plugin "drover""#,
-            r#"root.slots.side[0].slots.top[0]: no enabled plugin "drover""#
-        ])
-    );
+    assert_a_gone_manifest_keeps_and_a_disabled_plugin_skips(&c, &dir, &build, &lock, &answer);
 }
 
 const PAIRING: &str = include_str!("../../../apple/Sources/CooeeUI/Default/screens/pairing.json");
@@ -302,4 +282,45 @@ fn the_app_and_the_server_read_layouts_with_the_same_blocks() {
     let swift = pin(include_str!("../../../apple/Package.swift"), "revision: \"");
     assert_eq!(cargo.len(), 40, "{cargo}");
     assert_eq!(swift, cargo);
+}
+
+fn served(c: &Cooee) -> Value {
+    serde_json::from_str::<Value>(&layout(c, "").2).unwrap()
+}
+
+fn moved_layout() -> String {
+    DEFAULT
+        .replace(
+            r#"{ "type": "sidebar", "#,
+            r#"{ "type": "sidebar", "slots": { "top": [{ "type": "screen", "source": "drover", "path": "/screens/queue", "label": "Queue", "place": { "wide": "column", "compact": "menu" } }] }, "#,
+        )
+        .replace(
+            r#""config": { "composer": true"#,
+            r#""slots": { "cards": [{ "type": "screen", "source": "drover", "path": "/screens/cards", "place": "cards" }] }, "config": { "composer": true"#,
+        )
+}
+
+fn assert_a_gone_manifest_keeps_and_a_disabled_plugin_skips(
+    c: &Cooee,
+    dir: &Path,
+    build: &Path,
+    lock: &Value,
+    answer: &Value,
+) {
+    fs::remove_file(build.join("cooee-plugin.toml")).unwrap();
+    for _ in 0..100 {
+        assert_eq!(&served(c), answer);
+    }
+    let off = lock
+        .to_string()
+        .replace("\"enabled\":true", "\"enabled\":false");
+    fs::write(dir.join("data/plugins.lock"), off).unwrap();
+    let off = served(c);
+    assert_eq!(
+        off["skipped"],
+        serde_json::json!([
+            r#"root.slots.main[1].slots.cards[0]: no enabled plugin "drover""#,
+            r#"root.slots.side[0].slots.top[0]: no enabled plugin "drover""#
+        ])
+    );
 }

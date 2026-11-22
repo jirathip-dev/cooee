@@ -45,43 +45,7 @@ impl Hub {
             .chain(p.fallback)
             .filter(|s| !runs(s, &live.meta))
             .collect();
-        let capped = |s: &Seat| {
-            live.meta
-                .capped
-                .iter()
-                .find(|c| c.agent == s.agent && s.account.as_ref().is_none_or(|a| *a == c.account))
-        };
-        let text = match live.meta.capped.first() {
-            Some(c) if others.iter().all(|s| capped(s).is_some()) => format!(
-                "{hit}: every agent in this chat's chain is capped; {} resets first{}",
-                seat(&c.agent, &c.account),
-                Some(&c.resets)
-                    .filter(|r| !r.is_empty())
-                    .map(|r| format!(", {r}"))
-                    .unwrap_or_default()
-            ),
-            _ => format!("{hit}, continue on"),
-        };
-        let mut options: Vec<ApprovalOption> = others
-            .iter()
-            .map(|s| {
-                let id = seat(&s.agent, s.account.as_deref().unwrap_or_default());
-                let name = capped(s).map_or_else(
-                    || id.clone(),
-                    |c| format!("{id} (capped{})", until(&c.resets)),
-                );
-                ApprovalOption {
-                    id,
-                    name,
-                    kind: String::new(),
-                }
-            })
-            .collect();
-        options.push(ApprovalOption {
-            id: WAIT.to_owned(),
-            name: WAIT.to_owned(),
-            kind: String::new(),
-        });
+        let (text, options) = fallback_choices(&hit, &others, &live.meta.capped);
         if let Err(e) = self.save(live) {
             cooee_core::note!("cooee: {e}");
         }
@@ -193,6 +157,45 @@ pub(super) fn waited(option: &str) -> Result<Option<String>, String> {
 
 fn runs(s: &Seat, m: &Thread) -> bool {
     s.agent == m.agent && s.account.as_ref().is_none_or(|a| *a == m.account)
+}
+
+fn fallback_choices(hit: &str, others: &[Seat], all: &[Capped]) -> (String, Vec<ApprovalOption>) {
+    let capped = |s: &Seat| {
+        all.iter()
+            .find(|c| c.agent == s.agent && s.account.as_ref().is_none_or(|a| *a == c.account))
+    };
+    let text = match all.first() {
+        Some(c) if others.iter().all(|s| capped(s).is_some()) => format!(
+            "{hit}: every agent in this chat's chain is capped; {} resets first{}",
+            seat(&c.agent, &c.account),
+            Some(&c.resets)
+                .filter(|r| !r.is_empty())
+                .map(|r| format!(", {r}"))
+                .unwrap_or_default()
+        ),
+        _ => format!("{hit}, continue on"),
+    };
+    let mut options: Vec<ApprovalOption> = others
+        .iter()
+        .map(|s| {
+            let id = seat(&s.agent, s.account.as_deref().unwrap_or_default());
+            let name = capped(s).map_or_else(
+                || id.clone(),
+                |c| format!("{id} (capped{})", until(&c.resets)),
+            );
+            ApprovalOption {
+                id,
+                name,
+                kind: String::new(),
+            }
+        })
+        .collect();
+    options.push(ApprovalOption {
+        id: WAIT.to_owned(),
+        name: WAIT.to_owned(),
+        kind: String::new(),
+    });
+    (text, options)
 }
 
 fn seat(agent: &str, account: &str) -> String {

@@ -7,8 +7,7 @@ no longer a cooee runner (#565, q1940). The macOS jobs:
 
 | Job | Variable | Pull request | Push (staging, main), schedule, manual |
 | --- | --- | --- | --- |
-| `ci.yml`: `stable (macos-latest)` (the check name stays as the staging ruleset requires) | `MAC_RUNNER_CI` | GitHub-hosted `xcode-27` | mini-cooee |
-| `apple.yml`: `apple` (#277: the builds, `just apple-check` and the simulator e2e in one job; #328: a PR push runs only the builds, the `merge-ready` run all of it) | `MAC_RUNNER_APPLE` | GitHub-hosted `xcode-27` | mini-cooee |
+| `apple.yml`: `apple` (#277: the builds, `just apple-check` and the simulator e2e in one job; #328: a PR push runs only the builds, the `merge-ready` run all of it, with the macOS `cargo test` on stable that was ci.yml's `stable (macos-latest)`) | `MAC_RUNNER_APPLE` | GitHub-hosted `xcode-27` | mini-cooee |
 | `apple-testflight.yml`: `testflight (iOS)`, `testflight (macOS)` | `MAC_RUNNER_TESTFLIGHT` | — | mini-cooee |
 | `conformance.yml` | — | — | mini-cooee |
 
@@ -26,10 +25,9 @@ Flip one when hosted macOS jobs queue for long (to `self-hosted`) or the Mini is
 delete it to go back to the default:
 
 ```sh
-gh variable set MAC_RUNNER_CI --repo jirathip-dev/cooee --body self-hosted          # ci's stable-mac on mini-cooee
 gh variable set MAC_RUNNER_APPLE --repo jirathip-dev/cooee --body self-hosted       # apple on mini-cooee
 gh variable set MAC_RUNNER_TESTFLIGHT --repo jirathip-dev/cooee --body hosted       # testflight on xcode-27
-gh variable delete MAC_RUNNER_CI --repo jirathip-dev/cooee                          # back to the default
+gh variable delete MAC_RUNNER_APPLE --repo jirathip-dev/cooee                       # back to the default
 ```
 
 Any variable takes `hosted` or `self-hosted` the same way. A run picks the value when it starts: re-run (or push) to
@@ -42,7 +40,7 @@ the live cooee and the owner's keychain. So every job that can land on our runne
 runners need none), with its own workflow's variable:
 
 ```yaml
-if: github.event_name != 'pull_request' || vars.MAC_RUNNER_CI != 'self-hosted' ||
+if: github.event_name != 'pull_request' || vars.MAC_RUNNER_APPLE != 'self-hosted' ||
   github.event.pull_request.head.repo.full_name == github.repository
 ```
 
