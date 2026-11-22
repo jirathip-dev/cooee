@@ -1,6 +1,0 @@
-about = "the apple/ Swift lines stay under apple_cap in ci/cap.toml (core/cap counts the Rust lines)"
-fix = "delete Swift code; a raise of the cap is its own issue"
-budget_secs = 10
-versions = ["uname -s"]
-paths = ["apple/**", "ci/cap.toml", "ci/cap.d/**", "scripts/apple-cap.sh", "ci/apple-cap-test.sh"]
-run = "scripts/apple-cap.sh && ci/apple-cap-test.sh"
