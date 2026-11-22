@@ -1,4 +1,3 @@
-mod accounts;
 mod agent;
 mod config;
 mod devices;
@@ -24,12 +23,6 @@ mod update;
 use crate::cli::Command;
 
 pub(crate) const ALL: &[Command] = &[
-    Command {
-        name: "accounts",
-        usage: accounts::USAGE,
-        flags: accounts::FLAGS,
-        run: accounts::run,
-    },
     Command {
         name: "agent",
         usage: agent::USAGE,

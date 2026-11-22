@@ -1,33 +1,29 @@
-use std::path::Path;
+use std::{fs, path::Path};
 
 use cooee_core::{
     Launch,
     agents::Agent,
     provider::{Gap, Setup, Want},
 };
+use serde_json::{Map, Value};
 
 use super::Logins;
 use crate::hub::HubError;
 
 impl Logins {
-    /// What a thread of ACP agent `agent` runs with: its account's name (empty for the system default, or an agent
-    /// no provider signs in), and its config folder in the provider's variable (none for the system default). `account` none:
-    /// the system default.
-    ///
-    /// # Errors
-    /// [`HubError::Refused`] for an account the agent's provider doesn't have.
-    pub fn home(&self, agent: &str, account: Option<&str>) -> Result<(String, Launch), HubError> {
-        let Some(p) = self.providers.for_agent(agent) else {
-            return Ok((String::new(), Launch::default()));
-        };
-        let a = self.account(&p.spec().name, account.unwrap_or_default())?;
-        let env = p.env(a.dir.as_deref()).into_iter();
-        let env = env.map(|(var, dir)| (var.to_owned(), dir.display().to_string()));
+    /// What a thread of ACP agent `agent` runs with: its account's name (empty for shed's own login, or an agent no
+    /// provider signs in) and the [`Launch`] that names it to shed; shed sets the account's folder itself.
+    #[must_use]
+    pub fn home(&self, agent: &str, account: Option<&str>) -> (String, Launch) {
+        let signs_in = self.providers.for_agent(agent).is_some();
+        let account = account
+            .filter(|a| signs_in && !a.is_empty())
+            .map(str::to_owned);
         let launch = Launch {
-            env: env.collect(),
+            account: account.clone(),
             ..Launch::default()
         };
-        Ok((a.name, launch))
+        (account.unwrap_or_default(), launch)
     }
 
     /// How agent `agent`'s provider sets up a persona session for `want` (#503); none: no provider signs it in.
@@ -49,36 +45,32 @@ impl Logins {
         setup.unwrap_or_else(|| Setup::plain(&want)).gaps
     }
 
-    /// What a thread of agent `a` runs with: its account's label (`a`'s, else `account`) and [`Launch`] (the account's
-    /// folder, the settings file in the provider's `settings` variable (in place of the account's folder when it is
-    /// the same variable), the env, its secrets read from `data` through a file there, and the policy). An agent whose ACP agent can't run it as written is refused: settings
-    /// with no `settings` variable (its guard can't run).
+    /// What a thread of agent `a` runs with: its account's label (`a`'s, else `account`) and [`Launch`] (the account,
+    /// the session's `meta` with the profile's settings file at its provider's `settings` key, the env, its secrets
+    /// read from `data` through a file there, and the policy). A profile with settings whose provider takes none is
+    /// refused (its guard can't run).
     ///
     /// # Errors
-    /// [`HubError::Refused`] as above, for an unknown account or a missing secret.
+    /// [`HubError::Refused`] as above, for an unreadable settings file or a missing secret.
     pub fn agent(
         &self,
         a: &Agent,
-        account: Option<&str>,
+        (account, meta): (Option<&str>, Option<Value>),
         data: &Path,
     ) -> Result<(String, Launch), HubError> {
         let refused = |why: String| HubError::Refused(why);
-        let (account, mut launch) = self.home(&a.agent, a.account.as_deref().or(account))?;
-        let provider = self.providers.for_agent(&a.agent);
+        let (account, mut launch) = self.home(&a.agent, a.account.as_deref().or(account));
+        launch.meta = meta;
         if let Some(settings) = &a.settings {
-            let var = provider
-                .map(|v| v.spec().settings.as_str())
-                .filter(|v| !v.is_empty());
-            let Some(var) = var else {
+            let provider = self.providers.for_agent(&a.agent);
+            let key = provider.map(|p| p.spec().settings.as_str());
+            let Some(key) = key.filter(|k| !k.is_empty()) else {
                 return Err(refused(format!(
-                    "this profile's guard can't run with {}: its ACP adapter has no settings variable",
+                    "this profile's guard can't run with {}: its ACP adapter takes no settings",
                     a.agent
                 )));
             };
-            launch.env.retain(|(k, _)| k != var);
-            launch
-                .env
-                .push((var.to_owned(), settings.display().to_string()));
+            launch.meta = Some(with_settings(launch.meta.take(), key, settings).map_err(refused)?);
         }
         let (plain, secret) = a.env(data).map_err(refused)?;
         launch.env.extend(plain);
@@ -123,4 +115,32 @@ impl Logins {
         };
         words.ok_or_else(|| HubError::Refused(format!("{agent} offers no effort {effort:?}")))
     }
+}
+
+fn with_settings(meta: Option<Value>, key: &str, settings: &Path) -> Result<Value, String> {
+    let file = if settings.is_dir() {
+        settings.join("settings.json")
+    } else {
+        settings.to_path_buf()
+    };
+    let read = fs::read(&file).ok();
+    let Some(Value::Object(read)) = read.and_then(|b| serde_json::from_slice(&b).ok()) else {
+        return Err(format!("{}: no settings object", file.display()));
+    };
+    let mut meta = meta.unwrap_or_else(|| Value::Object(Map::new()));
+    let mut at = &mut meta;
+    for k in key.split('.') {
+        if !at.is_object() {
+            *at = Value::Object(Map::new());
+        }
+        let Value::Object(o) = at else {
+            break;
+        };
+        at = o.entry(k).or_insert_with(|| Value::Object(Map::new()));
+    }
+    match at {
+        Value::Object(o) => o.extend(read),
+        other => *other = Value::Object(read),
+    }
+    Ok(meta)
 }

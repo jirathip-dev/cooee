@@ -124,7 +124,10 @@ fn install_writes_and_loads_the_job() {
     assert_eq!(fs::read_to_string(config).unwrap(), "port = 4799\n");
     for want in [
         "tailscale serve --bg --https=4799 http://127.0.0.1:4799".to_owned(),
-        "shed isn't running: install or update shed to protocol 1 or newer from https://github.com/jirathip-dev/shed/releases".to_owned(),
+        format!(
+            "shed isn't running: install or update shed to protocol {} or newer from https://github.com/jirathip-dev/shed/releases",
+            cooee_core::SHED_MIN_PROTOCOL
+        ),
     ] {
         assert!(stdout.contains(&want), "{want} not in {stdout}");
     }
@@ -155,7 +158,7 @@ fn doctor_reports_a_missing_shed() {
         stdout.contains("FAIL shed: ")
             && stdout.contains(&no_shed.join("shed.sock").display().to_string())
             && stdout.contains(
-                "fix: install or update shed to protocol 1 or newer from https://github.com/jirathip-dev/shed/releases"
+                &format!("fix: install or update shed to protocol {} or newer from https://github.com/jirathip-dev/shed/releases", cooee_core::SHED_MIN_PROTOCOL)
             ),
         "{stdout}"
     );

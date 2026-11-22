@@ -27,28 +27,21 @@ fn plain_adds_nothing_a_file_profile_is_applied_at_spawn_a_guard_that_cant_run_i
 
     let (id, line) = s.thread("coder", "hi");
     let data = s.dir.join("data");
-    let work = data.join("accounts/fake/work");
-    let settings = s.dir.join("agents/coder/settings.json");
-    assert!(line.contains(" --policy ask "), "{line}");
+    assert!(line.contains(" --policy ask --account work "), "{line}");
     let terminal = format!("cooee-{id}");
     let meta = s.shed.meta(&terminal).expect("#320: no personal setup");
     claude_switches(&meta, &format!("Follow the house rules.\n\n{PLAIN}"));
-    let head = format!(
-        " -- env FAKE_HOME={} FAKE_SETTINGS={} MODE=review sh -c ",
-        work.display(),
-        settings.display()
+    assert_eq!(
+        meta["fakeSettings"],
+        json!({ "hooks": { "PreToolUse": [] } }),
+        "{meta}"
     );
     assert!(
-        line.contains(&head) && line.ends_with(" fake-acp"),
+        line.contains(" -- env MODE=review sh -c ") && line.ends_with(" fake-acp"),
         "{line}"
     );
     let env = s.shed.adapter_env();
-    for var in [
-        format!("FAKE_HOME={}", work.display()),
-        format!("FAKE_SETTINGS={}", settings.display()),
-        "MODE=review".to_owned(),
-        format!("API_KEY={}", s.token),
-    ] {
+    for var in ["MODE=review".to_owned(), format!("API_KEY={}", s.token)] {
         assert!(env.lines().any(|l| l == var), "{var} not in {env}");
     }
     let left: Vec<_> = fs::read_dir(data.join("secrets"))
@@ -106,43 +99,26 @@ fn plain_adds_nothing_a_file_profile_is_applied_at_spawn_a_guard_that_cant_run_i
 }
 
 #[test]
-fn a_claude_profiles_settings_folder_is_its_config_folder_and_its_hook_refuses_a_command() {
+fn a_claude_profiles_settings_go_in_its_session_meta_never_in_the_account_folder_variable() {
     let dir = scratch("profiles-claude");
-    let data = dir.join("data");
-    fs::create_dir_all(data.join("accounts/claude/work")).unwrap();
     let claude = dir.join("agents/guarded/claude");
     fs::create_dir_all(&claude).unwrap();
-    let guard = claude.join("guard.sh");
+    let hooks = json!({ "PreToolUse": [
+        { "matcher": "Bash", "hooks": [{ "type": "command", "command": "/x/guard.sh" }] } ] });
     fs::write(
-        &guard,
-        "#!/bin/sh\ngrep -q 'git push origin main' && { echo 'REFUSED MAIN_TARGET' >&2; exit 2; }\nexit 0\n",
+        claude.join("settings.json"),
+        json!({ "hooks": hooks }).to_string(),
     )
     .unwrap();
-    let hooks = json!({ "hooks": { "PreToolUse": [
-        { "matcher": "Bash", "hooks": [{ "type": "command", "command": guard }] } ] } });
-    fs::write(claude.join("settings.json"), hooks.to_string()).unwrap();
     fs::write(
         dir.join("agents/guarded/agent.toml"),
         "name = \"Guarded\"\nagent = \"fake-acp\"\naccount = \"work\"\nsettings = \"claude\"\n",
     )
     .unwrap();
     let shed = FakeShed::start(&dir.join("shed"), version());
-    let adapter = shed.dir.join("fake-acp");
-    fs::write(
-        &adapter,
-        "#!/bin/sh\nout=\"$(dirname \"$0\")/hook.out\"\n\
-         hook=$(sed -n 's/.*\"command\":\"\\([^\"]*\\)\".*/\\1/p' \"$CLAUDE_CONFIG_DIR/settings.json\")\n\
-         echo '{\"tool_name\":\"Bash\",\"tool_input\":{\"command\":\"git push origin main\"}}' | sh \"$hook\" >\"$out\" 2>&1\n\
-         echo \"exit $?\" >>\"$out\"\n",
-    )
-    .unwrap();
     let mut provider = cooee_core::provider::defaults().remove(0);
     provider.agent = "fake-acp".to_owned();
-    (provider.login, provider.status, provider.usage) = (
-        vec!["true".to_owned()],
-        vec!["true".to_owned()],
-        vec!["true".to_owned()],
-    );
+    (provider.login, provider.status) = (vec!["true".to_owned()], vec!["true".to_owned()]);
     let mut extra = "[[providers]]\n".to_owned();
     for (k, v) in serde_json::to_value(&provider)
         .unwrap()
@@ -159,15 +135,24 @@ fn a_claude_profiles_settings_folder_is_its_config_folder_and_its_hook_refuses_a
     assert_eq!(status, 200, "{body}");
     let log = shed.cli_log();
     let line = log.lines().rfind(|l| l.contains(" run ")).unwrap();
+    assert!(line.contains(" --account work "), "{line}");
+    assert!(!line.contains("CLAUDE_CONFIG_DIR"), "{line}");
+    let terminal = line
+        .split(" --name ")
+        .nth(1)
+        .unwrap()
+        .split(' ')
+        .next()
+        .unwrap();
+    let meta = shed.meta(terminal).unwrap();
+    let options = &meta["claudeCode"]["options"];
+    assert_eq!(options["settings"]["hooks"], hooks, "{meta}");
     assert_eq!(
-        line.matches("CLAUDE_CONFIG_DIR=").count(),
-        1,
-        "the settings folder replaces the account's: {line}"
+        options["strictMcpConfig"], true,
+        "the persona's own options stay: {meta}"
     );
-    assert!(
-        line.contains(&format!(" -- env CLAUDE_CONFIG_DIR={} ", claude.display())),
-        "{line}"
+    assert_eq!(
+        options["settings"]["permissions"]["defaultMode"], "default",
+        "{meta}"
     );
-    let out = fs::read_to_string(shed.dir.join("hook.out")).unwrap();
-    assert_eq!(out, "REFUSED MAIN_TARGET\nexit 2\n");
 }

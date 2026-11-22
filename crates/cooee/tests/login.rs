@@ -1,13 +1,14 @@
-//! Provider logins end to end: `cooee serve` against the fake shed (tests/support), which really runs a fake login
-//! program in a plain terminal. Its link reaches `GET /logins/{id}`, a typed code reaches the program, success shows as
-//! signed in; the 10-minute timeout kills and removes the terminal; the screen is redacted and never stored.
+//! Sign-ins end to end: `cooee serve` against the fake shed (tests/support), whose `account.*` keeps the accounts and
+//! really runs a fake login program in the login terminal. The sheet lists `account.ls`, a new account is
+//! `account.add` then `account.login`, the typed code reaches the program, the outcome is `account.status`, a thread
+//! names its account to shed and `account.rm` signs it out; an older cooee's folders are handed to shed in place.
 
 mod support;
 
 use std::{
     fs,
     os::unix::fs::PermissionsExt,
-    path::{Path, PathBuf},
+    path::PathBuf,
     thread,
     time::{Duration, Instant},
 };
@@ -17,84 +18,29 @@ use support::{Cooee, FakeShed, scratch, version};
 
 const LINK: &str = "https://login.example.com/device?client_id=cooee&state=s1";
 
+const PROVIDERS: &str = "[[providers]]\nname = \"fake\"\nagent = \"fake-acp\"\nlogin = [\"fake\"]\nstatus = [\"fake\"]\n";
+
 struct Setup {
     dir: PathBuf,
     shed: FakeShed,
     cooee: Cooee,
-    token: String,
-}
-
-fn script(path: &Path, body: &str) {
-    fs::write(path, format!("#!/bin/sh\n{body}")).unwrap();
-    fs::set_permissions(path, fs::Permissions::from_mode(0o755)).unwrap();
 }
 
 fn setup(name: &str) -> Setup {
-    setup_with(name, None)
-}
-
-fn setup_with(name: &str, check: Option<&str>) -> Setup {
-    setup_from(name, check, true)
-}
-
-fn setup_from(name: &str, check: Option<&str>, rows: bool) -> Setup {
     let dir = scratch(name);
-    let token = format!("sk-{}", "q7".repeat(16));
-    let flag = dir.join("signed-in");
-    let login = dir.join("login.sh");
-    script(
-        &login,
-        &format!(
-            "echo 'Open this link to sign in:'\necho '{LINK}'\necho 'session {token}'\necho 'Paste code here >'\n\
-             read code\nif [ \"$code\" = good-code ]; then touch '{}'; echo 'Signed in.'; exit 0; fi\nexit 1\n",
-            flag.display()
-        ),
-    );
-    let status = dir.join("status.sh");
-    let body = format!(
-        "test -f '{}' || {{ echo 'Not signed in'; exit 1; }}\necho 'Signed in as owner@example.com'\n",
-        flag.display()
-    );
-    script(&status, check.unwrap_or(&body));
     let shed = FakeShed::start(&dir.join("shed"), version());
-    let extra = format!(
-        "[[providers]]\nname = \"fake\"\nagent = \"fake-acp\"\nlogin = [{:?}]\nstatus = [{:?}]\n",
-        login.to_string_lossy(),
-        status.to_string_lossy()
-    );
-    let signed_out = json!({ "login": "true", "status": "false" });
-    let record = |id: &str, agent: &str, facts: Value| {
-        let mut p = json!({ "id": id, "agent": agent });
-        p.as_object_mut()
-            .unwrap()
-            .extend(facts.as_object().unwrap().clone());
-        json!({ "id": id, "source": "built-in", "installed": null, "provider": p })
-    };
-    let mut fake = record(
-        "fake-acp",
-        "fake",
-        json!({ "login": login, "status": status, "efforts": ["high"], "effort_args": ["--effort", "{effort}"] }),
-    );
-    fake["installed"] =
-        json!({ "id": "fake-acp", "version": "1.0.0", "distribution": "npx", "cmd": ["fake-acp"] });
-    let records = json!([
-        fake,
-        record("claude-acp", "claude", signed_out.clone()),
-        record("codex-acp", "codex", signed_out),
-    ]);
-    let extra = if rows {
-        extra
-    } else {
-        fs::write(shed.dir.join("agents.json"), records.to_string()).unwrap();
-        "# providers: shed's records\n".to_owned()
-    };
-    let cooee = Cooee::start_with(&dir, &shed.dir, &extra);
-    Setup {
-        dir,
-        shed,
-        cooee,
-        token,
-    }
+    let login = shed.dir.join("login-fake");
+    fs::write(
+        &login,
+        format!(
+            "#!/bin/sh\necho 'Open this link to sign in:'\necho '{LINK}'\necho 'Paste code here >'\nread code\n\
+             if [ \"$code\" = good-code ]; then touch \"$1\"; echo 'Signed in.'; exit 0; fi\nexit 1\n"
+        ),
+    )
+    .unwrap();
+    fs::set_permissions(&login, fs::Permissions::from_mode(0o755)).unwrap();
+    let cooee = Cooee::start_with(&dir, &shed.dir, PROVIDERS);
+    Setup { dir, shed, cooee }
 }
 
 impl Setup {
@@ -110,12 +56,43 @@ impl Setup {
         }
     }
 
-    fn start(&self) -> (String, Value) {
-        assert_eq!(self.cooee.post("/logins/fake", &json!(null)).0, 200);
+    fn sign_in(&self, start: &Value, code: &str) -> (String, Value) {
+        let (status, body) = self.cooee.post("/logins/fake", start);
+        assert_eq!(status, 200, "{body}");
         let v = self.until(|v| v["screen"].as_str().unwrap().contains("Paste code"));
-        let runs = self.shed.runs();
-        assert_eq!(runs.len(), 1, "{runs:?}");
-        (runs[0].clone(), v)
+        assert_eq!(v["links"], json!([LINK]), "{v}");
+        let terminal = self.shed.runs().last().unwrap().clone();
+        let (status, body) = self
+            .cooee
+            .post("/logins/fake/send", &json!({ "text": code }));
+        assert_eq!(status, 200, "{body}");
+        assert_eq!(self.shed.sent(&terminal), [code]);
+        (terminal, self.until(|v| v["state"] == "ended"))
+    }
+
+    fn sheet(&self) -> Vec<(String, String)> {
+        let v = self.cooee.json("/screens/settings/signins");
+        let rows = v["blocks"][0]["rows"]
+            .as_array()
+            .cloned()
+            .unwrap_or_default();
+        let field = |r: &Value, k: &str| r[k].as_str().map(str::to_owned).unwrap_or_default();
+        rows.iter()
+            .map(|r| (field(r, "title"), field(&r["subtitle"], "text")))
+            .collect()
+    }
+
+    fn thread(&self, account: &str) -> String {
+        fs::create_dir_all(self.dir.join("root")).unwrap();
+        let new = json!({ "agent": "fake-acp", "account": account, "folder": self.dir.join("root"),
+                          "text": "hi", "random_id": format!("r-{account}") });
+        let (status, body) = self.cooee.post("/threads", &new);
+        assert_eq!(status, 200, "{body}");
+        let log = self.shed.cli_log();
+        log.lines()
+            .rfind(|l| l.contains(" run --acp"))
+            .unwrap()
+            .to_owned()
     }
 
     fn written(&self) -> String {
@@ -135,69 +112,48 @@ impl Setup {
 }
 
 #[test]
-fn with_no_providers_rows_the_sign_in_and_a_new_thread_run_on_sheds_records() {
-    let s = setup_from("login-records", None, false);
-    let v = s.until(|v| v["status"]["unknown"] == false);
-    assert_eq!(v["status"]["signed_in"], false, "{v}");
-    let (terminal, _) = s.start();
-    let run = &s.shed.calls("run", &terminal)[0];
-    assert!(
-        run["cmd"][0].as_str().unwrap().ends_with("login.sh"),
-        "{run}"
+fn a_new_account_signs_in_through_shed_a_thread_runs_on_it_and_sign_out_removes_it() {
+    let s = setup("login-new");
+    let (terminal, v) = s.sign_in(&json!({ "new": true }), "good-code");
+    assert_eq!(terminal, "login-fake-account-2");
+    assert_eq!(
+        s.shed.calls("account.add", "account-2"),
+        [json!({ "provider": "fake", "name": "account-2" })]
     );
-    let (code, body) = s
-        .cooee
-        .post("/logins/fake/send", &json!({ "text": "good-code" }));
-    assert_eq!(code, 200, "{body}");
-    let v = s.until(|v| v["status"]["signed_in"] == true);
-    assert_eq!(v["status"]["line"], "Signed in as owner@example.com");
-
-    fs::create_dir_all(s.dir.join("root")).unwrap();
-    let new = json!({ "agent": "fake-acp", "folder": s.dir.join("root"), "text": "hi", "random_id": "r1", "effort": "high" });
-    let (code, body) = s.cooee.post("/threads", &new);
-    assert_eq!(code, 200, "{body}");
-    let log = s.shed.cli_log();
-    let line = log.lines().rfind(|l| l.contains(" run --acp")).unwrap();
-    assert!(line.ends_with(" -- env fake-acp --effort high"), "{line}");
-}
-
-#[test]
-fn login_shows_the_link_sends_the_code_and_detects_success_never_storing_the_screen() {
-    let s = setup("login");
-    let v = s.until(|v| v["status"]["unknown"] == false);
-    assert_eq!(v["status"]["signed_in"], false, "{v}");
-
-    let (terminal, v) = s.start();
-    assert_eq!(v["state"], "running");
-    assert_eq!(v["links"], json!([LINK]));
-    let screen = v["screen"].as_str().unwrap();
-    assert!(
-        screen.contains(LINK) && screen.contains("session [redacted]"),
-        "{screen}"
+    assert_eq!(v["why"], "the login command finished", "{v}");
+    assert_eq!(
+        (&v["account"]["state"], &v["account"]["who"]),
+        (&json!("ready"), &json!("account-2@example.com")),
+        "{v}"
     );
-    assert!(!screen.contains(&s.token), "{screen}");
-    let run = &s.shed.calls("run", &terminal)[0];
-    assert!(run["acp"].is_null() && run["cmd"][0].as_str().unwrap().ends_with("login.sh"));
+    assert_eq!(s.shed.calls("rm", &terminal).len(), 1);
+    assert_eq!(
+        s.sheet(),
+        [(
+            "fake · account-2@example.com".to_owned(),
+            "signed in".to_owned()
+        )]
+    );
+
+    let line = s.thread("account-2");
+    assert!(line.contains(" --account account-2"), "{line}");
+    assert!(!line.contains(" -- env"), "no folder variable: {line}");
+    let line = s.thread("");
+    assert!(!line.contains("--account"), "{line}");
 
     let (status, body) = s
         .cooee
-        .post("/logins/fake/send", &json!({ "text": "good-code" }));
+        .post("/logins/fake/signout", &json!({ "account": "account-2" }));
     assert_eq!(status, 200, "{body}");
-    assert_eq!(s.shed.sent(&terminal), ["good-code"]);
-    assert_eq!(s.shed.calls("keys", &terminal).len(), 1);
-
-    let v = s.until(|v| v["state"] != "running");
-    assert_eq!(v["state"], "ended");
-    assert_eq!(v["why"], "the login command finished");
-    assert_eq!(
-        v["status"],
-        json!({ "signed_in": true, "unknown": false, "line": "Signed in as owner@example.com", "install": null, "who": null, "usage": null })
-    );
-    assert_eq!(s.shed.calls("kill", &terminal).len(), 1);
-    assert_eq!(s.shed.calls("rm", &terminal).len(), 1);
+    assert!(s.shed.account_of("fake", "account-2").is_none());
+    assert_eq!(s.sheet(), Vec::<(String, String)>::new());
+    let (status, _) = s
+        .cooee
+        .post("/logins/fake/signout", &json!({ "account": "default" }));
+    assert_eq!(status, 502, "shed keeps default");
 
     let written = s.written();
-    for secret in [s.token.as_str(), "Paste code", "good-code", LINK] {
+    for secret in ["Paste code", "good-code", LINK] {
         assert!(!written.contains(secret), "{secret} was written");
     }
     assert_eq!(
@@ -207,131 +163,94 @@ fn login_shows_the_link_sends_the_code_and_detects_success_never_storing_the_scr
 }
 
 #[test]
-fn a_login_left_for_10_minutes_is_killed_and_removed() {
+fn a_new_account_whose_login_fails_is_removed_again() {
+    let s = setup("login-new-fails");
+    let (_, v) = s.sign_in(&json!({ "new": true }), "bad-code");
+    assert_eq!(v["why"], "the login command exited 1", "{v}");
+    assert!(v["account"].is_null(), "{v}");
+    assert_eq!(s.shed.calls("account.rm", "account-2").len(), 1);
+    assert!(s.shed.account_of("fake", "account-2").is_none());
+    assert_eq!(s.cooee.post("/logins/nope", &json!(null)).0, 400);
+}
+
+#[test]
+fn a_login_left_for_10_minutes_ends_and_its_terminal_is_removed() {
     let s = setup("login-timeout");
-    let (terminal, _) = s.start();
+    assert_eq!(s.cooee.post("/logins/fake", &json!(null)).0, 200);
+    s.until(|v| v["state"] == "running");
+    let terminal = "login-fake-default";
     let start = Instant::now();
     let wait = loop {
-        if let Some(w) = s.shed.calls("wait", &terminal).into_iter().next() {
+        if let Some(w) = s.shed.calls("wait", terminal).into_iter().next() {
             break w;
         }
         assert!(start.elapsed() < Duration::from_secs(10), "no wait call");
         thread::sleep(Duration::from_millis(20));
     };
-    assert_eq!(wait["timeout"], json!(600.0));
-    assert!(!s.shed.exited(&terminal));
-
-    s.shed.expire(&terminal);
+    assert_eq!(wait["timeout"], json!(630.0));
+    s.shed.expire(terminal);
     let v = s.until(|v| v["state"] != "running");
     assert_eq!(v["why"], "timed out after 10 minutes");
-    assert_eq!(v["status"]["signed_in"], false);
-    assert_eq!(s.shed.calls("kill", &terminal).len(), 1);
-    assert_eq!(s.shed.calls("rm", &terminal).len(), 1);
-    let start = Instant::now();
-    while !s.shed.exited(&terminal) {
-        assert!(start.elapsed() < Duration::from_secs(10), "still running");
-        thread::sleep(Duration::from_millis(20));
-    }
-    assert_eq!(s.cooee.post("/logins/nope", &json!(null)).0, 400);
-}
-
-#[test]
-fn a_hanging_status_check_never_holds_a_request_and_runs_once() {
-    let dir = scratch("login-hang-runs");
-    let runs = dir.join("runs");
-    let s = setup_with(
-        "login-hang",
-        Some(&format!(
-            "echo run >> '{}'\nexec sleep 30\n",
-            runs.display()
-        )),
-    );
-    let ran = || {
-        fs::read_to_string(&runs)
-            .unwrap_or_default()
-            .lines()
-            .count()
-    };
-    let start = Instant::now();
-    while ran() == 0 {
-        assert!(start.elapsed() < Duration::from_secs(10), "no check ran");
-        thread::sleep(Duration::from_millis(20));
-    }
-    let start = Instant::now();
-    let v = s.cooee.json("/logins/fake");
-    assert!(
-        start.elapsed() < Duration::from_secs(2),
-        "{:?}",
-        start.elapsed()
-    );
-    assert_eq!(v["status"]["unknown"], true, "{v}");
-    assert_eq!(v["status"]["line"], "not checked yet");
-    assert!(v["age"].is_null(), "{v}");
-    assert_eq!(s.cooee.post("/logins", &json!({})).0, 200);
-
-    let v = s.until(|v| v["status"]["line"] != "not checked yet");
-    assert_eq!(
-        (&v["status"]["unknown"], &v["status"]["signed_in"]),
-        (&json!(true), &json!(false)),
-        "{v}"
-    );
-    assert_eq!(
-        v["status"]["line"],
-        "can't tell: the status command timed out"
-    );
-    assert_eq!(s.cooee.post("/logins", &json!({})).0, 200);
-    thread::sleep(Duration::from_millis(1500));
-    assert_eq!(ran(), 1);
-}
-
-#[test]
-fn a_failed_sign_out_keeps_the_last_known_status() {
-    let dir = scratch("login-signout-fails-flag");
-    let once = dir.join("checked");
-    let s = setup_with(
-        "login-signout-fails",
-        Some(&format!(
-            "test -f '{0}' && exec sleep 30\ntouch '{0}'\necho 'Signed in as owner@example.com'\n",
-            once.display()
-        )),
-    );
-    s.until(|v| v["status"]["signed_in"] == true);
-    let (code, _) = s
-        .cooee
-        .post("/logins/fake/signout", &json!({ "account": "" }));
-    assert_eq!(code, 400);
-    let v = s.cooee.json("/logins/fake");
-    assert_eq!(v["status"]["signed_in"], true, "{v}");
-}
-
-#[test]
-fn a_sign_in_started_for_a_remote_machine_runs_there() {
-    let s = setup("login-remote");
-    s.shed.link("box", "up", 1, None);
-    let new = json!({ "new": true, "machine": "box" });
-    assert_eq!(s.cooee.post("/logins/fake", &new).0, 400);
-
-    let (status, body) = s.cooee.post("/logins/fake", &json!({ "machine": "box" }));
-    assert_eq!(status, 200, "{body}");
-    let v = s.until(|v| v["screen"].as_str().unwrap().contains("Paste code"));
-    assert_eq!(v["links"], json!([LINK]));
-    let runs = s.shed.runs();
-    assert!(
-        runs.len() == 1 && runs[0].starts_with("box/cooee-login-fake-"),
-        "{runs:?}"
-    );
-    let terminal = &runs[0];
-    let requests = s.shed.requests.lock().unwrap().clone();
-    let run = requests.iter().find(|(m, _)| m == "run").unwrap();
-    assert_eq!(
-        (&run.1["machine"], &run.1["cwd"]),
-        (&json!("box"), &json!("/"))
-    );
-
-    s.cooee
-        .post("/logins/fake/send", &json!({ "text": "good-code" }));
-    assert_eq!(s.shed.sent(terminal), ["good-code"]);
-    let v = s.until(|v| v["state"] != "running");
-    assert_eq!(v["why"], "the login command finished on box");
+    assert_eq!(v["account"]["state"], "signed-out", "{v}");
     assert_eq!(s.shed.calls("rm", terminal).len(), 1);
+}
+
+#[test]
+fn an_older_cooees_account_folders_and_token_files_are_handed_to_shed_in_place() {
+    let dir = scratch("login-adopt");
+    let accounts = dir.join("data/accounts/fake");
+    let elsewhere = dir.join("own-folder");
+    for d in [
+        accounts.join("work"),
+        accounts.join(".new-account-3"),
+        elsewhere.clone(),
+    ] {
+        fs::create_dir_all(d).unwrap();
+    }
+    std::os::unix::fs::symlink(&elsewhere, accounts.join("mine")).unwrap();
+    fs::write(accounts.join(".cooee.json"), "{}").unwrap();
+    fs::write(accounts.join("ci.token"), "t").unwrap();
+    let shed = FakeShed::start(&dir.join("shed"), version());
+    let added = || {
+        let mut all: Vec<Value> = shed
+            .requests
+            .lock()
+            .unwrap()
+            .iter()
+            .filter(|(m, _)| m == "account.add")
+            .map(|(_, p)| p.clone())
+            .collect();
+        all.sort_by_key(|p| p["name"].as_str().unwrap().to_owned());
+        all
+    };
+    let want = json!([
+        { "provider": "fake", "name": "ci", "token_file": accounts.join("ci.token") },
+        { "provider": "fake", "name": "mine", "folder": elsewhere },
+        { "provider": "fake", "name": "work", "folder": accounts.join("work") },
+    ]);
+    let cooee = Cooee::start_with(&dir, &shed.dir, PROVIDERS);
+    let start = Instant::now();
+    while json!(added()) != want {
+        assert!(start.elapsed() < Duration::from_secs(10), "{:?}", added());
+        thread::sleep(Duration::from_millis(20));
+    }
+    assert_eq!(
+        shed.account_of("fake", "ci").unwrap()["state"],
+        "signed-out"
+    );
+    drop(cooee);
+    let again = Cooee::start_with(&dir, &shed.dir, PROVIDERS);
+    while added().len() < 6 {
+        assert!(start.elapsed() < Duration::from_secs(10), "{:?}", added());
+        thread::sleep(Duration::from_millis(20));
+    }
+    assert_eq!(
+        shed.account_of("fake", "work").unwrap()["folder"],
+        json!(accounts.join("work"))
+    );
+    assert!(
+        accounts.join("work").is_dir() && elsewhere.is_dir(),
+        "the folders stay"
+    );
+    drop(again);
 }

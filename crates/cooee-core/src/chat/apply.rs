@@ -56,7 +56,9 @@ impl Chat {
             | EventKind::Resources(_)
             | EventKind::Mode { .. }
             | EventKind::Turn { .. }
-            | EventKind::Session(_) => Vec::new(),
+            | EventKind::Session(_)
+            | EventKind::MemLimit { .. }
+            | EventKind::Account { .. } => Vec::new(),
             EventKind::Usage(u) => {
                 self.turn.context = Some(u);
                 vec![Change::State(self.turn.clone())]

@@ -13,14 +13,14 @@ reason = "#503: a harness's permission request is answered only where cooee's ru
 [[ban]]
 pattern = "logout"
 paths = ["crates/*/src/**"]
-except = ["crates/cooee-core/src/login.rs", "crates/cooee-core/src/provider.rs", "crates/cooee-core/src/providers/claude.rs", "crates/cooee-core/src/providers/codex.rs", "crates/cooee-core/src/providers/gemini.rs", "crates/cooee-core/src/shed/launch.rs", "crates/cooee-server/src/login/sign_out.rs"]
-reason = "#762: provider facts (login, status, logout and usage commands, limits, resets, token var, config dir, adapter) are shed-catalog data; #760 empties this list"
+except = ["crates/cooee-core/src/provider.rs"]
+reason = "#762: provider facts (login, status, logout and usage commands, limits, resets, token var, config dir, adapter) are shed-catalog data; #764 moved accounts and their login to shed, #760 empties this list"
 
 [[ban]]
 pattern = "generic-password"
 paths = ["crates/*/src/**"]
 except = ["crates/cooee/src/keychain.rs"]
-reason = "#762: shed stores credentials, tokens, secrets and account folders; #760 empties this list"
+reason = "#762: shed stores credentials, tokens, secrets and account folders; #764 moved the account folders to shed, #760 empties this list"
 
 [[ban]]
 pattern = "docker"

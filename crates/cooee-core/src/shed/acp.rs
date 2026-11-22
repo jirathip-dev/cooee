@@ -188,6 +188,9 @@ impl Shed {
         if let Some(policy) = &launch.policy {
             args.extend(["--policy", policy]);
         }
+        if let Some(account) = &launch.account {
+            args.extend(["--account", account]);
+        }
         let mcp = launch.mcp.as_ref().map(|(f, _)| f.to_string_lossy());
         if let (Some((file, servers)), Some(path)) = (&launch.mcp, &mcp) {
             let text = serde_json::to_vec(servers).unwrap_or_default();

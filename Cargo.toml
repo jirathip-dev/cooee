@@ -27,7 +27,7 @@ qrcode = { version = "=0.14.1", default-features = false }
 serde = { version = "=1.0.229", features = ["derive"] }
 serde_json = { version = "=1.0.154", features = ["preserve_order"] }
 # shed's API types, pinned to a shed merge commit; the hello needs the same shed protocol.
-shed-proto = { git = "https://github.com/jirathip-dev/shed", rev = "3672ee2fa3f77f71798d56446f7f90403b068dd1" }
+shed-proto = { git = "https://github.com/jirathip-dev/shed", rev = "86d9651b6156a9a1003e8b8fe4de7ae9292a59d4" }
 # The typed UI blocks and their JSON Schema (#621, q2236), pinned to a blocks staging commit.
 blocks = { git = "https://github.com/jirathip-dev/blocks", rev = "3fe520837652f6a5eda3c5954aabaf1e5cd1a77c" }
 # The colour schemes and theme packs (#622, q2122), pinned to a swag staging commit beside blocks.
