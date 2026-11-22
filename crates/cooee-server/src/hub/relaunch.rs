@@ -4,10 +4,10 @@ use std::{
     path::{Path, PathBuf},
 };
 
-use cooee_core::history;
+use cooee_core::{history, shed_proto::AcpSession};
 
 use super::{
-    Body, Change, Hub, HubError, Item, LABEL, Recipe, lock, now, on_machine, outside, short,
+    Body, Change, Hub, HubError, Item, LABEL, Live, Recipe, lock, now, on_machine, outside, short,
 };
 
 impl Hub {
@@ -68,6 +68,31 @@ impl Hub {
         ))
     }
 
+    fn start_terminal(
+        &self,
+        id: &str,
+        (terminal, folder): (&str, &Path),
+        agent: &str,
+        recipe: &Recipe,
+    ) -> Result<Option<AcpSession>, HubError> {
+        let labels = BTreeMap::from([
+            (LABEL.to_owned(), "1".to_owned()),
+            (format!("{LABEL}.thread"), id.to_owned()),
+        ]);
+        let started = self
+            .mcp_launch(id, recipe)
+            .and_then(|launch| {
+                let cmd = self.adapter(agent);
+                let run = (agent, cmd.as_slice());
+                Ok(self.shed.run_acp(terminal, run, folder, &labels, &launch)?)
+            })
+            .and_then(|_| Ok(self.shed.ready(terminal)?));
+        if let Some((file, _)) = &recipe.launch.secrets {
+            fs::remove_file(file).ok();
+        }
+        started
+    }
+
     fn relaunch(
         &self,
         id: &str,
@@ -86,66 +111,24 @@ impl Hub {
             l.meta.terminal.clone()
         };
         let terminal = on_machine(machine, &format!("cooee-{id}-{:x}", now()));
-        let labels = BTreeMap::from([
-            (LABEL.to_owned(), "1".to_owned()),
-            (format!("{LABEL}.thread"), id.to_owned()),
-        ]);
-        let started = self
-            .mcp_launch(id, recipe)
-            .and_then(|launch| {
-                let cmd = self.adapter(agent);
-                let run = (agent, cmd.as_slice());
-                Ok(self
-                    .shed
-                    .run_acp(&terminal, run, folder, &labels, &launch)?)
-            })
-            .and_then(|_| Ok(self.shed.ready(&terminal)?));
-        if let Some((file, _)) = &recipe.launch.secrets {
-            fs::remove_file(file).ok();
-        }
-        let session = started?;
+        let session = self.start_terminal(id, (&terminal, folder), agent, recipe)?;
         let mut live = lock(&live);
         let was = live
             .meta
             .folder
             .clone()
             .unwrap_or_else(|| self.scratch.join(id));
-        let place = |f: &Path, m: &str| match m {
-            "" => f.display().to_string(),
-            m => format!("{} on {m}", f.display()),
-        };
-        let story = handoff.map_or_else(
-            || {
-                format!(
-                    "This chat moved from {} to {}, where you now run; what it made before is still there. Its last turns:\n\n{}",
-                    place(&was, &live.meta.machine),
-                    place(folder, machine),
-                    last_turns(&live.chat.items)
-                )
-            },
-            str::to_owned,
-        );
+        let story = story(&live, &was, (folder, machine), handoff);
         let handover = format!("{}\n\n{story}", recipe.instructions.trim_end());
         handover.trim_start().clone_into(&mut live.meta.handover);
         live.meta.terminal.clone_from(&terminal);
         self.retarget(&old, &terminal);
-        let text = if handoff.is_some() {
-            agent.clone_into(&mut live.meta.agent);
-            live.meta.account.clone_from(&recipe.account);
-            (live.meta.model, live.meta.effort) = (recipe.model.clone(), recipe.effort.clone());
-            let on = Some(recipe.account.as_str()).filter(|a| !a.is_empty());
-            let on = on.map_or_else(|| agent.to_owned(), |a| format!("{agent} · {a}"));
-            format!("now on {on} · later turns run there")
-        } else if live.meta.machine == machine {
-            format!("now in {} · later turns run here", short(folder))
-        } else {
-            format!(
-                "moved to {}",
-                Some(machine)
-                    .filter(|m| !m.is_empty())
-                    .unwrap_or("this host")
-            )
-        };
+        let text = moved_line(
+            &mut live,
+            (folder, machine),
+            (agent, recipe),
+            handoff.is_some(),
+        );
         if was != folder {
             live.meta.folder = Some(folder.to_owned());
         }
@@ -185,4 +168,52 @@ fn last_turns(items: &[Item]) -> String {
         .collect();
     let from = turns.len().saturating_sub(6);
     turns.get(from..).unwrap_or_default().join("\n\n")
+}
+
+fn story(
+    live: &Live,
+    was: &Path,
+    (folder, machine): (&Path, &str),
+    handoff: Option<&str>,
+) -> String {
+    let place = |f: &Path, m: &str| match m {
+        "" => f.display().to_string(),
+        m => format!("{} on {m}", f.display()),
+    };
+    handoff.map_or_else(
+        || {
+            format!(
+                "This chat moved from {} to {}, where you now run; what it made before is still there. Its last turns:\n\n{}",
+                place(was, &live.meta.machine),
+                place(folder, machine),
+                last_turns(&live.chat.items)
+            )
+        },
+        str::to_owned,
+    )
+}
+
+fn moved_line(
+    live: &mut Live,
+    (folder, machine): (&Path, &str),
+    (agent, recipe): (&str, &Recipe),
+    switched: bool,
+) -> String {
+    if switched {
+        agent.clone_into(&mut live.meta.agent);
+        live.meta.account.clone_from(&recipe.account);
+        (live.meta.model, live.meta.effort) = (recipe.model.clone(), recipe.effort.clone());
+        let on = Some(recipe.account.as_str()).filter(|a| !a.is_empty());
+        let on = on.map_or_else(|| agent.to_owned(), |a| format!("{agent} · {a}"));
+        format!("now on {on} · later turns run there")
+    } else if live.meta.machine == machine {
+        format!("now in {} · later turns run here", short(folder))
+    } else {
+        format!(
+            "moved to {}",
+            Some(machine)
+                .filter(|m| !m.is_empty())
+                .unwrap_or("this host")
+        )
+    }
 }

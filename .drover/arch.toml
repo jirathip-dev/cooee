@@ -1,7 +1,7 @@
 # Written by scripts/gen.sh from .drover/arch/ (docs/architecture/hotspots-2026-11-16). Never edit it.
-frozen = ["apple/Sources/CooeeApp/Live.swift", "apple/Sources/CooeeCore/Models.swift", "apple/Sources/CooeeFeatures/Clients.swift", "apple/Sources/CooeeUI/Chat.swift", "apple/Sources/CooeeUI/Items.swift", "apple/Tests/CooeeUITests/Frames.swift", "apple/UITests/LiveUITests.swift", "crates/cooee-core/src/root.rs", "crates/cooee-server/src/root.rs", "crates/cooee/tests/chat.rs", "crates/cooee/tests/first_run.rs", "crates/cooee/tests/mcp.rs", "crates/cooee/tests/personas.rs", "crates/cooee/tests/plugins.rs", "crates/cooee/tests/profiles.rs", "crates/cooee/tests/reliability.rs", "crates/cooee/tests/setup.rs", "docs/api.md", "docs/architecture.md", "docs/plugins.md", "justfile"]
+frozen = [".github/workflows/ci.yml", "apple/Sources/CooeeApp/Live.swift", "apple/Sources/CooeeCore/Models.swift", "apple/Sources/CooeeFeatures/Clients.swift", "apple/Sources/CooeeUI/Chat.swift", "apple/Sources/CooeeUI/Items.swift", "apple/Tests/CooeeUITests/Frames.swift", "apple/UITests/LiveUITests.swift", "crates/cooee-core/src/root.rs", "crates/cooee-server/src/root.rs", "crates/cooee/tests/chat.rs", "crates/cooee/tests/first_run.rs", "crates/cooee/tests/mcp.rs", "crates/cooee/tests/personas.rs", "crates/cooee/tests/plugins.rs", "crates/cooee/tests/profiles.rs", "crates/cooee/tests/reliability.rs", "crates/cooee/tests/setup.rs", "docs/api.md", "docs/architecture.md", "docs/plugins.md", "justfile"]
 generated = [".drover/arch.toml", "Cargo.lock", "README.md", "crates/cooee-core/src/chat.rs", "crates/cooee-core/src/config.rs", "crates/cooee-core/src/lib.rs", "crates/cooee-core/src/shed.rs", "crates/cooee-core/src/store.rs", "crates/cooee-server/src/chief/tools/mod.rs", "crates/cooee-server/src/lib.rs", "crates/cooee-server/src/login.rs", "crates/cooee-server/src/mcp.rs", "crates/cooee-server/src/push.rs", "crates/cooee-server/src/routes/mod.rs", "crates/cooee-server/src/routines.rs", "crates/cooee-server/src/screens/mod.rs", "crates/cooee/src/cmd/mod.rs", "crates/cooee/src/setup.rs", "crates/cooee/tests/chat/main.rs", "crates/cooee/tests/first_run/main.rs", "crates/cooee/tests/mcp/main.rs", "crates/cooee/tests/personas/main.rs", "crates/cooee/tests/plugins/main.rs", "crates/cooee/tests/profiles/main.rs", "crates/cooee/tests/reliability/main.rs", "crates/cooee/tests/setup/main.rs", "crates/cooee/tests/support/mod.rs"]
-shared = [".github/workflows/apple.yml", ".github/workflows/ci.yml", "Cargo.toml", "apple/Sources/CooeeUI/Chat/ChatHeader.swift", "apple/Sources/CooeeUI/Chat/ChatView.swift", "crates/cooee-core/src/config/keys.rs", "crates/cooee-server/src/serve.rs", "crates/cooee/src/main.rs"]
+shared = [".github/workflows/apple.yml", "Cargo.toml", "apple/Sources/CooeeUI/Chat/ChatHeader.swift", "apple/Sources/CooeeUI/Chat/ChatView.swift", "crates/cooee-core/src/config/keys.rs", "crates/cooee-server/src/serve.rs", "crates/cooee/src/main.rs"]
 generate = "scripts/gen.sh"
 
 [[ban]]
@@ -90,6 +90,97 @@ paths = ["crates/*/src/**"]
 except = ["crates/cooee-core/src/config/**"]
 reason = "#203: only the config module reads the environment: use cooee_core::env_var"
 
+[[collect]]
+dir = ".gatekeeper/gates"
+glob = "*.toml"
+
+[[layer]]
+name = "core"
+paths = ["crates/cooee-core/src/**"]
+mods = ["cooee_core"]
+may_use = []
+
+[[layer]]
+name = "desk"
+paths = ["crates/cooee-desk/src/**"]
+mods = ["cooee_desk"]
+may_use = ["core"]
+
+[[layer]]
+name = "terminal"
+paths = ["crates/cooee-terminal/src/**"]
+mods = ["cooee_terminal"]
+may_use = ["core"]
+
+[[layer]]
+name = "machines"
+paths = ["crates/cooee-machines/src/**"]
+mods = ["cooee_machines"]
+may_use = ["core", "desk"]
+
+[[layer]]
+name = "server"
+paths = ["crates/cooee-server/src/**"]
+mods = ["cooee_server"]
+may_use = ["core", "desk", "machines"]
+
+[[layer]]
+name = "cli"
+paths = ["crates/cooee/src/**"]
+mods = ["cooee"]
+may_use = ["core", "desk", "terminal", "machines", "server"]
+
+[[ban]]
+pattern = "claude"
+paths = ["crates/*/src/**"]
+except = ["crates/cooee-core/src/providers/**", "crates/*/src/**/tests.rs"]
+reason = "#200: core never names a provider: move it into crates/cooee-core/src/providers/"
+comments = true
+ignore_case = true
+
+[[ban]]
+pattern = "anthropic"
+paths = ["crates/*/src/**"]
+except = ["crates/cooee-core/src/providers/**", "crates/*/src/**/tests.rs"]
+reason = "#200: core never names a provider: move it into crates/cooee-core/src/providers/"
+comments = true
+ignore_case = true
+
+[[ban]]
+pattern = "codex"
+paths = ["crates/*/src/**"]
+except = ["crates/cooee-core/src/providers/**", "crates/*/src/**/tests.rs"]
+reason = "#200: core never names a provider: move it into crates/cooee-core/src/providers/"
+comments = true
+ignore_case = true
+
+[[ban]]
+pattern = "openai"
+paths = ["crates/*/src/**"]
+except = ["crates/cooee-core/src/providers/**", "crates/*/src/**/tests.rs"]
+reason = "#200: core never names a provider: move it into crates/cooee-core/src/providers/"
+comments = true
+ignore_case = true
+
+[[ban]]
+pattern = "gemini"
+paths = ["crates/*/src/**"]
+except = ["crates/cooee-core/src/providers/**", "crates/*/src/**/tests.rs"]
+reason = "#200: core never names a provider: move it into crates/cooee-core/src/providers/"
+comments = true
+ignore_case = true
+
+[[ban]]
+pattern = "hermes"
+paths = ["crates/*/src/**"]
+except = ["crates/cooee-core/src/providers/**", "crates/*/src/**/tests.rs"]
+reason = "#200: core never names a provider: move it into crates/cooee-core/src/providers/"
+comments = true
+ignore_case = true
+
+[comments]
+policy = "off"
+
 [[size]]
 paths = ["crates/*/src/**/*.rs"]
 max_file_lines = 800
@@ -145,10 +236,6 @@ reason = "#356: a command is reached only through cmd::ALL, from main.rs; comman
 [[collect]]
 dir = "crates/cooee/tests/support"
 glob = "*.rs"
-
-[[collect]]
-dir = "ci/gates"
-glob = "*.sh"
 
 [[collect]]
 dir = "scripts"

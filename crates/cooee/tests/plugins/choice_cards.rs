@@ -145,27 +145,17 @@ fn a_card_to_a_thread_of_a_persona_its_plugin_isnt_attached_to_is_refused() {
     assert_eq!(code, 200, "{body}");
 }
 
-#[test]
-fn cooees_own_cards_go_out_as_blocks_and_settle_to_their_line() {
-    let s = setup("card-blocks");
-    let id = new_thread(&s, "Say hello");
-    let cards = [
-        json!({ "thread": id, "text": "Which first?", "options": ["#43", "#44"], "recommend": "#44" }),
-        json!({ "thread": id, "text": "config c1", "form": "config", "detail": "+max_impl = 3" }),
-        json!({ "thread": id, "text": "for the bot", "form": "secret", "detail": "BOT_TOKEN" }),
-        json!({ "thread": id, "text": "re-tag", "form": "run-card", "detail": "git tag -f v1", "sha": "9f86d081" }),
-    ];
-    let items: Vec<Value> = cards.iter().map(|c| s.card(c).1).collect();
-    let shape = |b: &Value| {
-        let inner: Vec<&Value> = b["blocks"]
-            .as_array()
-            .unwrap()
-            .iter()
-            .map(|x| &x["type"])
-            .collect();
-        (b["kind"].clone(), json!(inner))
-    };
-    let blocks: Vec<&Value> = items.iter().map(|i| &i["block"]).collect();
+fn shape(b: &Value) -> (Value, Value) {
+    let inner: Vec<&Value> = b["blocks"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|x| &x["type"])
+        .collect();
+    (b["kind"].clone(), json!(inner))
+}
+
+fn assert_each_card_is_its_block(items: &[Value], blocks: &[&Value]) {
     assert_eq!(
         blocks.iter().map(|b| shape(b)).collect::<Vec<_>>(),
         [
@@ -198,6 +188,21 @@ fn cooees_own_cards_go_out_as_blocks_and_settle_to_their_line() {
         ),
         (&json!("git tag -f v1"), &json!("9f86d081"))
     );
+}
+
+#[test]
+fn cooees_own_cards_go_out_as_blocks_and_settle_to_their_line() {
+    let s = setup("card-blocks");
+    let id = new_thread(&s, "Say hello");
+    let cards = [
+        json!({ "thread": id, "text": "Which first?", "options": ["#43", "#44"], "recommend": "#44" }),
+        json!({ "thread": id, "text": "config c1", "form": "config", "detail": "+max_impl = 3" }),
+        json!({ "thread": id, "text": "for the bot", "form": "secret", "detail": "BOT_TOKEN" }),
+        json!({ "thread": id, "text": "re-tag", "form": "run-card", "detail": "git tag -f v1", "sha": "9f86d081" }),
+    ];
+    let items: Vec<Value> = cards.iter().map(|c| s.card(c).1).collect();
+    let blocks: Vec<&Value> = items.iter().map(|i| &i["block"]).collect();
+    assert_each_card_is_its_block(&items, &blocks);
     let (ok, said) = checked(&s, &json!(blocks));
     assert!(ok, "{said}");
     let slice = s.cooee.json(&format!("/threads/{id}/messages"))["items"].clone();

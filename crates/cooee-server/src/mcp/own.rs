@@ -100,7 +100,7 @@ fn stop_routine_tool() -> Value {
     })
 }
 
-fn own_tools() -> Value {
+fn propose_tool() -> Value {
     let schema = json!({
         "type": "object",
         "required": ["name", "type", "why"],
@@ -113,11 +113,30 @@ fn own_tools() -> Value {
             "why": { "type": "string", "description": "what the owner gets from it" }
         }
     });
-    let tool = json!({
+    json!({
         "name": "propose_server",
         "description": "Propose an MCP server for cooee's registry. The owner sees the exact command or URL and approves it with Face ID; it is added switched off, and nothing runs before that.",
         "inputSchema": schema
-    });
+    })
+}
+
+fn skill_tool() -> Value {
+    json!({
+        "name": "skill",
+        "description": "Read one of your skills (read: its name), or propose a new one or an edit (propose); the owner approves a proposal before it is saved.",
+        "inputSchema": { "type": "object", "properties": {
+            "read": { "type": "string" },
+            "propose": { "type": "object", "required": ["name", "description", "body"], "properties": {
+                "name": { "type": "string", "description": "lowercase letters, digits and -" },
+                "description": { "type": "string", "description": "one line, at most 120 characters" },
+                "body": { "type": "string" },
+                "replaces": { "type": "string", "description": "the skill it edits" }
+            } }
+        } }
+    })
+}
+
+fn own_tools() -> Value {
     let remember = json!({
         "name": "remember",
         "description": "Add a note to your persona's memory (2,000 characters in all), replace one with text, or forget some by id. Your notes reach you as `- [id] text` in every new session.",
@@ -154,21 +173,8 @@ fn own_tools() -> Value {
             "instructions": { "type": "string", "description": "your standing rules" }
         } }
     });
-    let skill = json!({
-        "name": "skill",
-        "description": "Read one of your skills (read: its name), or propose a new one or an edit (propose); the owner approves a proposal before it is saved.",
-        "inputSchema": { "type": "object", "properties": {
-            "read": { "type": "string" },
-            "propose": { "type": "object", "required": ["name", "description", "body"], "properties": {
-                "name": { "type": "string", "description": "lowercase letters, digits and -" },
-                "description": { "type": "string", "description": "one line, at most 120 characters" },
-                "body": { "type": "string" },
-                "replaces": { "type": "string", "description": "the skill it edits" }
-            } }
-        } }
-    });
     json!([
-        tool,
+        propose_tool(),
         remember,
         ask_persona,
         handoff_tool(),
@@ -176,7 +182,7 @@ fn own_tools() -> Value {
         update,
         routine_tool(),
         stop_routine_tool(),
-        skill,
+        skill_tool(),
         secret_tool(),
         mail_tool(),
         desk_tool()
@@ -199,6 +205,53 @@ fn merged(own: &Value, mut mine: Vec<Value>) -> Value {
         .collect();
     kept.append(&mut mine);
     Value::Array(kept)
+}
+
+fn route(name: Option<&str>) -> (&'static str, &'static str) {
+    match name {
+        Some("propose_server") => (
+            "/mcp/agent/propose",
+            "Proposed. The owner sees a card with the exact command or URL; once approved with Face ID it is added switched off. Nothing has run.",
+        ),
+        Some("remember") => ("/mcp/agent/remember", ""),
+        Some("ask_persona") => ("/mcp/agent/ask", ""),
+        Some("handoff") => ("/mcp/agent/handoff", ""),
+        Some("history") => ("/mcp/agent/history", ""),
+        Some("update_persona") => ("/mcp/agent/persona", ""),
+        Some("create_routine") => ("/mcp/agent/routine", ""),
+        Some("stop_routine") => ("/mcp/agent/routine/stop", ""),
+        Some("skill") => ("/mcp/agent/skill", ""),
+        Some("secret") => ("/mcp/agent/secret", ""),
+        Some("mail") => ("/mcp/agent/mail", ""),
+        Some("desk") => ("/mcp/agent/desk", ""),
+        _ => ("/mcp/agent/chief", ""),
+    }
+}
+
+fn call(thread: &str, id: &Value, msg: &Value) -> Value {
+    let args = msg
+        .pointer("/params/arguments")
+        .cloned()
+        .unwrap_or_default();
+    let name = msg.pointer("/params/name").and_then(Value::as_str);
+    let (path, said) = route(name);
+    let server = if path == "/mcp/agent/chief" {
+        json!({ "tool": name, "arguments": args })
+    } else {
+        args
+    };
+    let got = ask(path, &json!({ "thread": thread, "server": server }));
+    let image = got.as_ref().ok().and_then(|v| v.get("image")).cloned();
+    let said = got.map(|v| {
+        let v = v.get("text").unwrap_or(&v);
+        v.as_str().unwrap_or(said).to_owned()
+    });
+    let (text, failed) = said.map_or_else(|e| (e, true), |s| (s, false));
+    let mut content = vec![json!({ "type": "text", "text": text })];
+    if let Some(data) = image.filter(Value::is_string) {
+        content.push(json!({ "type": "image", "data": data, "mimeType": "image/png" }));
+    }
+    reply(id, &json!({ "content": content, "isError": failed }))
 }
 
 /// `cooee mcp serve --thread <id>`: cooee's own MCP server: `propose_server`, and `remember` (#126),
@@ -232,48 +285,7 @@ pub fn serve(thread: &str) -> Result<(), String> {
             ),
             "ping" => reply(id, &json!({})),
             "tools/list" => reply(id, &json!({ "tools": merged(&tools, chief_tools(thread)) })),
-            "tools/call" => {
-                let args = msg
-                    .pointer("/params/arguments")
-                    .cloned()
-                    .unwrap_or_default();
-                let name = msg.pointer("/params/name").and_then(Value::as_str);
-                let (path, said) = match name {
-                    Some("propose_server") => (
-                        "/mcp/agent/propose",
-                        "Proposed. The owner sees a card with the exact command or URL; once approved with Face ID it is added switched off. Nothing has run.",
-                    ),
-                    Some("remember") => ("/mcp/agent/remember", ""),
-                    Some("ask_persona") => ("/mcp/agent/ask", ""),
-                    Some("handoff") => ("/mcp/agent/handoff", ""),
-                    Some("history") => ("/mcp/agent/history", ""),
-                    Some("update_persona") => ("/mcp/agent/persona", ""),
-                    Some("create_routine") => ("/mcp/agent/routine", ""),
-                    Some("stop_routine") => ("/mcp/agent/routine/stop", ""),
-                    Some("skill") => ("/mcp/agent/skill", ""),
-                    Some("secret") => ("/mcp/agent/secret", ""),
-                    Some("mail") => ("/mcp/agent/mail", ""),
-                    Some("desk") => ("/mcp/agent/desk", ""),
-                    _ => ("/mcp/agent/chief", ""),
-                };
-                let server = if path == "/mcp/agent/chief" {
-                    json!({ "tool": name, "arguments": args })
-                } else {
-                    args
-                };
-                let got = ask(path, &json!({ "thread": thread, "server": server }));
-                let image = got.as_ref().ok().and_then(|v| v.get("image")).cloned();
-                let said = got.map(|v| {
-                    let v = v.get("text").unwrap_or(&v);
-                    v.as_str().unwrap_or(said).to_owned()
-                });
-                let (text, failed) = said.map_or_else(|e| (e, true), |s| (s, false));
-                let mut content = vec![json!({ "type": "text", "text": text })];
-                if let Some(data) = image.filter(Value::is_string) {
-                    content.push(json!({ "type": "image", "data": data, "mimeType": "image/png" }));
-                }
-                reply(id, &json!({ "content": content, "isError": failed }))
-            }
+            "tools/call" => call(thread, id, &msg),
             m => error(id, -32601, &format!("no method {m}")),
         };
         put(&out, &answer);

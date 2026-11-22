@@ -147,6 +147,19 @@ fn the_attach_sheet_is_one_permissions_card() {
             json!("Its backend reaches")
         ]
     );
+    assert_the_cards_places_actions_and_hosts(blocks);
+
+    assert_eq!(
+        cooee.get("/screens/plugins/nope/attach?persona=coder").0,
+        404
+    );
+    assert_eq!(
+        cooee.get("/screens/plugins/drover/attach?persona=nobody").0,
+        404
+    );
+}
+
+fn assert_the_cards_places_actions_and_hosts(blocks: &[Value]) {
     let titles = |i: usize| -> Vec<Value> {
         blocks[i]["rows"]
             .as_array()
@@ -173,15 +186,6 @@ fn the_attach_sheet_is_one_permissions_card() {
     );
     assert_eq!(actions[1]["title"], "wave");
     assert!(actions[1].get("style").is_none() && actions[1].get("badge").is_none());
-
-    assert_eq!(
-        cooee.get("/screens/plugins/nope/attach?persona=coder").0,
-        404
-    );
-    assert_eq!(
-        cooee.get("/screens/plugins/drover/attach?persona=nobody").0,
-        404
-    );
 }
 
 #[test]

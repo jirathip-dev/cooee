@@ -102,6 +102,9 @@ jobs:
         if: env.MAC == 'true'
       - uses: Swatinem/rust-cache@v2
         if: env.MAC == 'true'
+      - name: cargo test (macOS, stable; ci.yml's stable-mac until the Swift-half issue)
+        if: env.MAC == 'true' && env.FULL == 'true'
+        run: rustup toolchain install stable --profile minimal --no-self-update && RUSTUP_TOOLCHAIN=stable cargo test --workspace --locked
       - name: xcodebuild (iOS Simulator, macOS)
         if: github.event_name == 'pull_request' && env.MAC == 'true'
         working-directory: apple

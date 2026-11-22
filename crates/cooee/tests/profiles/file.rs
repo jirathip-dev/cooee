@@ -6,10 +6,7 @@ use serde_json::json;
 use crate::setup::{Setup, claude_switches, setup};
 use crate::support::{Cooee, FakeShed, scratch, version};
 
-#[test]
-fn plain_adds_nothing_a_file_profile_is_applied_at_spawn_a_guard_that_cant_run_is_refused() {
-    let s = setup("profiles");
-
+fn a_plain_thread_adds_nothing(s: &Setup) {
     let (id, line) = s.thread("", "hi");
     assert!(
         !line.contains(" -- ") && !line.contains("--policy") && !line.contains("--meta"),
@@ -24,7 +21,9 @@ fn plain_adds_nothing_a_file_profile_is_applied_at_spawn_a_guard_that_cant_run_i
         (&json!(""), &json!("fake-acp"), &json!("")),
         "{row}"
     );
+}
 
+fn the_coder_profile_is_applied_at_spawn(s: &Setup) {
     let (id, line) = s.thread("coder", "hi");
     let data = s.dir.join("data");
     let work = data.join("accounts/fake/work");
@@ -72,6 +71,16 @@ fn plain_adds_nothing_a_file_profile_is_applied_at_spawn_a_guard_that_cant_run_i
         (&json!("coder"), &json!("work")),
         "{row}"
     );
+}
+
+#[test]
+fn plain_adds_nothing_a_file_profile_is_applied_at_spawn_a_guard_that_cant_run_is_refused() {
+    let s = setup("profiles");
+
+    a_plain_thread_adds_nothing(&s);
+
+    the_coder_profile_is_applied_at_spawn(&s);
+    let data = s.dir.join("data");
 
     let runs = s.shed.cli_log().matches(" run ").count();
     let (status, body) = s.start("guard", "hi");
@@ -105,9 +114,7 @@ fn plain_adds_nothing_a_file_profile_is_applied_at_spawn_a_guard_that_cant_run_i
     assert!(!written.contains(&s.token), "a secret was written");
 }
 
-#[test]
-fn a_claude_profiles_settings_folder_is_its_config_folder_and_its_hook_refuses_a_command() {
-    let dir = scratch("profiles-claude");
+fn guarded_profile_with_a_hook(dir: &std::path::Path) -> std::path::PathBuf {
     let data = dir.join("data");
     fs::create_dir_all(data.join("accounts/claude/work")).unwrap();
     let claude = dir.join("agents/guarded/claude");
@@ -126,7 +133,10 @@ fn a_claude_profiles_settings_folder_is_its_config_folder_and_its_hook_refuses_a
         "name = \"Guarded\"\nagent = \"fake-acp\"\naccount = \"work\"\nsettings = \"claude\"\n",
     )
     .unwrap();
-    let shed = FakeShed::start(&dir.join("shed"), version());
+    claude
+}
+
+fn fake_acp_running_the_hook(shed: &FakeShed) {
     let adapter = shed.dir.join("fake-acp");
     fs::write(
         &adapter,
@@ -136,8 +146,11 @@ fn a_claude_profiles_settings_folder_is_its_config_folder_and_its_hook_refuses_a
          echo \"exit $?\" >>\"$out\"\n",
     )
     .unwrap();
+}
+
+fn fake_acp_provider() -> String {
     let mut provider = cooee_core::provider::defaults().remove(0);
-    provider.agent = "fake-acp".to_owned();
+    "fake-acp".clone_into(&mut provider.agent);
     (provider.login, provider.status, provider.usage) = (
         vec!["true".to_owned()],
         vec!["true".to_owned()],
@@ -151,7 +164,16 @@ fn a_claude_profiles_settings_folder_is_its_config_folder_and_its_hook_refuses_a
     {
         writeln!(extra, "{k} = {v}").unwrap();
     }
-    let cooee = Cooee::start_with(&dir, &shed.dir, &extra);
+    extra
+}
+
+#[test]
+fn a_claude_profiles_settings_folder_is_its_config_folder_and_its_hook_refuses_a_command() {
+    let dir = scratch("profiles-claude");
+    let claude = guarded_profile_with_a_hook(&dir);
+    let shed = FakeShed::start(&dir.join("shed"), version());
+    fake_acp_running_the_hook(&shed);
+    let cooee = Cooee::start_with(&dir, &shed.dir, &fake_acp_provider());
 
     let new = json!({ "agent": "fake-acp", "profile": "guarded", "folder": dir.join("root"),
                       "text": "hi", "random_id": "claude-1" });

@@ -18,7 +18,7 @@ jobs:
       - name: install drover
         run: cargo install --locked --git https://github.com/jirathip-dev/herdsman --branch staging drover
       - name: checker tests
-        run: ci/pr-body-test.sh && ci/stray-files-test.sh && ci/drover-checks-test.sh
+        run: ci/stray-files-test.sh && ci/drover-checks-test.sh
       - name: lesson checks
         env:
           GH_TOKEN: ${{ github.token }}

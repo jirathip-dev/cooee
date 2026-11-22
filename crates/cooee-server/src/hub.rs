@@ -7,7 +7,6 @@ use std::{
         atomic::{AtomicBool, AtomicU64, Ordering},
         mpsc,
     },
-    thread,
     time::{Duration, Instant, UNIX_EPOCH},
 };
 
@@ -24,6 +23,8 @@ use tokio::sync::broadcast;
 
 use crate::push::{Push, note};
 use glance::{Glance, glance, summary};
+#[cfg(test)]
+use std::thread;
 
 mod approvals;
 mod ask;
@@ -57,6 +58,7 @@ mod surface;
 #[cfg(test)]
 mod tests;
 mod threads;
+mod workers;
 pub(crate) use chief::Me;
 pub use desk::DeskSeen;
 pub use mcp::Called;
@@ -576,45 +578,7 @@ impl Hub {
             leases: desk::Leases::default(),
             surface: Mutex::default(),
         });
-        let worker = Arc::clone(&hub);
-        thread::spawn(move || {
-            for room in next {
-                if let Err(e) = worker.take_turn(&room) {
-                    cooee_core::note!("cooee: room {room}: {e}");
-                }
-            }
-        });
-        let flusher = Arc::clone(&hub);
-        thread::spawn(move || {
-            for id in unsent {
-                flusher.flush_text(id);
-            }
-        });
-        let follower = Arc::clone(&hub);
-        thread::spawn(move || follower.follow());
-        let asker = Arc::clone(&hub);
-        thread::spawn(move || {
-            loop {
-                let began = cooee_core::clock::instant();
-                asker.refresh_served();
-                cooee_core::clock::sleep(SERVED_EVERY.saturating_sub(began.elapsed()));
-            }
-        });
-        let ticker = Arc::clone(&hub);
-        thread::spawn(move || {
-            ticker.refresh(now(), false);
-            loop {
-                cooee_core::clock::sleep(TICK);
-                ticker.refresh(now(), false);
-                ticker.personas();
-                ticker.watch(now());
-                ticker.unload(now());
-                let at = now();
-                if let Ok(terminals) = ticker.shed.ls(BTreeMap::new()) {
-                    ticker.prune(&terminals, at);
-                }
-            }
-        });
+        hub.start_workers(next, unsent);
         Ok(hub)
     }
 

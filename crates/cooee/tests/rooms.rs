@@ -164,6 +164,53 @@ fn members_are_given_final_replies_only() {
     assert!(!bo.contains("Read src/lib.rs"), "{bo}");
 }
 
+fn members_join_move_and_stop_at_five(cooee: &Cooee, path: &str) {
+    let (status, members) = post(cooee, path, &json!({ "persona": "conductor" }));
+    assert_eq!((status, members), (200, json!(["ada", "bo", "conductor"])));
+    assert_eq!(post(cooee, path, &json!({ "persona": "cy" })).0, 200);
+    let (_, members) = post(cooee, path, &json!({ "persona": "cy" }));
+    assert_eq!(members, json!(["ada", "bo", "conductor", "cy"]));
+    let moved = json!({ "persona": "cy", "at": 0 });
+    assert_eq!(
+        post(cooee, path, &moved).1,
+        json!(["cy", "ada", "bo", "conductor"])
+    );
+    assert_eq!(
+        post(cooee, path, &moved).1,
+        json!(["cy", "ada", "bo", "conductor"])
+    );
+    let back = json!({ "persona": "cy", "at": 9 });
+    assert_eq!(
+        post(cooee, path, &back).1,
+        json!(["ada", "bo", "conductor", "cy"])
+    );
+    assert_eq!(post(cooee, path, &json!({ "persona": "di" })).0, 200);
+    let (status, why) = post(cooee, path, &json!({ "persona": "ed" }));
+    assert!(
+        status == 400 && why.to_string().contains("at most 5"),
+        "{why}"
+    );
+    assert_eq!(post(cooee, path, &json!({ "persona": "nobody" })).0, 400);
+}
+
+fn a_lane_never_joins_and_members_leave(shed: &FakeShed, cooee: &Cooee, path: &str) {
+    let labels = [("source", "drover"), ("group", "cooee"), ("item", "#33")];
+    shed.lane("drover-cooee-33-impl", &labels);
+    let lane = "w-drover-cooee-33-impl";
+    eventually(|| cooee.json("/threads").to_string().contains(lane));
+    let (status, why) = post(cooee, path, &json!({ "persona": "ed", "remove": true }));
+    assert_eq!(status, 200, "{why}");
+    let (_, why) = post(cooee, path, &json!({ "persona": "di", "remove": true }));
+    assert_eq!(why, json!(["ada", "bo", "conductor", "cy"]));
+    let (status, why) = post(cooee, path, &json!({ "persona": lane }));
+    assert!(
+        status == 400 && why.to_string().contains("lane thread"),
+        "{why}"
+    );
+    let new = json!({ "members": ["ada", lane], "random_id": "lane" });
+    assert_eq!(post(cooee, "/rooms", &new).0, 400);
+}
+
 #[test]
 fn members_join_and_leave_up_to_five_the_conductor_but_never_a_lane() {
     let (dir, shed, cooee) = setup("room-members");
@@ -174,48 +221,9 @@ fn members_join_and_leave_up_to_five_the_conductor_but_never_a_lane() {
 
     let id = room(&cooee, &["ada", "bo"]);
     let path = format!("/threads/{id}/members");
-    let (status, members) = post(&cooee, &path, &json!({ "persona": "conductor" }));
-    assert_eq!((status, members), (200, json!(["ada", "bo", "conductor"])));
-    assert_eq!(post(&cooee, &path, &json!({ "persona": "cy" })).0, 200);
-    let (_, members) = post(&cooee, &path, &json!({ "persona": "cy" }));
-    assert_eq!(members, json!(["ada", "bo", "conductor", "cy"]));
-    let moved = json!({ "persona": "cy", "at": 0 });
-    assert_eq!(
-        post(&cooee, &path, &moved).1,
-        json!(["cy", "ada", "bo", "conductor"])
-    );
-    assert_eq!(
-        post(&cooee, &path, &moved).1,
-        json!(["cy", "ada", "bo", "conductor"])
-    );
-    let back = json!({ "persona": "cy", "at": 9 });
-    assert_eq!(
-        post(&cooee, &path, &back).1,
-        json!(["ada", "bo", "conductor", "cy"])
-    );
-    assert_eq!(post(&cooee, &path, &json!({ "persona": "di" })).0, 200);
-    let (status, why) = post(&cooee, &path, &json!({ "persona": "ed" }));
-    assert!(
-        status == 400 && why.to_string().contains("at most 5"),
-        "{why}"
-    );
-    assert_eq!(post(&cooee, &path, &json!({ "persona": "nobody" })).0, 400);
+    members_join_move_and_stop_at_five(&cooee, &path);
 
-    let labels = [("source", "drover"), ("group", "cooee"), ("item", "#33")];
-    shed.lane("drover-cooee-33-impl", &labels);
-    let lane = "w-drover-cooee-33-impl";
-    eventually(|| cooee.json("/threads").to_string().contains(lane));
-    let (status, why) = post(&cooee, &path, &json!({ "persona": "ed", "remove": true }));
-    assert_eq!(status, 200, "{why}");
-    let (_, why) = post(&cooee, &path, &json!({ "persona": "di", "remove": true }));
-    assert_eq!(why, json!(["ada", "bo", "conductor", "cy"]));
-    let (status, why) = post(&cooee, &path, &json!({ "persona": lane }));
-    assert!(
-        status == 400 && why.to_string().contains("lane thread"),
-        "{why}"
-    );
-    let new = json!({ "members": ["ada", lane], "random_id": "lane" });
-    assert_eq!(post(&cooee, "/rooms", &new).0, 400);
+    a_lane_never_joins_and_members_leave(&shed, &cooee, &path);
 
     send(&cooee, &id, "hi all");
     replies(&cooee, &id, 4);

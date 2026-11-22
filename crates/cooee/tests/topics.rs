@@ -55,23 +55,20 @@ fn topic(cooee: &Cooee, id: &str) -> Value {
     rows.into_iter().find(|r| r["id"] == id).expect("listed")
 }
 
-#[test]
-fn a_personas_topics_carry_their_fields_and_home_counts_the_open_ones() {
-    let (dir, _shed, cooee) = setup("topics-list", "");
-    let folder = dir.join("root/project");
-    let plain = create(&cooee, &folder, "", "Say hello from a plain chat");
-    let read = create(&cooee, &folder, "coder", "Say hello, then read");
-    eventually(|| topic(&cooee, &read)["unseen"] == 1);
+fn open_one_topic_of_each_kind(cooee: &Cooee, folder: &Path) -> [String; 5] {
+    let plain = create(cooee, folder, "", "Say hello from a plain chat");
+    let read = create(cooee, folder, "coder", "Say hello, then read");
+    eventually(|| topic(cooee, &read)["unseen"] == 1);
     let last = cooee.json(&format!("/threads/{read}/messages"))["items"][1]["id"].clone();
     let mark = format!("/threads/{read}/read");
     assert_eq!(cooee.post(&mark, &json!({ "item": last })).0, 200);
-    let archived = create(&cooee, &folder, "coder", "Say hello, then archive");
-    eventually(|| topic(&cooee, &archived)["unseen"] == 1);
+    let archived = create(cooee, folder, "coder", "Say hello, then archive");
+    eventually(|| topic(cooee, &archived)["unseen"] == 1);
     let archive = format!("/threads/{archived}/archive");
     assert_eq!(cooee.post(&archive, &json!({ "on": true })).0, 200);
-    let unread = create(&cooee, &folder, "coder", "Say hello and stay unread");
-    eventually(|| topic(&cooee, &unread)["unseen"] == 1);
-    let working = create(&cooee, &folder, "coder", "hang on");
+    let unread = create(cooee, folder, "coder", "Say hello and stay unread");
+    eventually(|| topic(cooee, &unread)["unseen"] == 1);
+    let working = create(cooee, folder, "coder", "hang on");
     let said = |id: &str| {
         let items = cooee.json(&format!("/threads/{id}/messages"))["items"].clone();
         items
@@ -80,7 +77,36 @@ fn a_personas_topics_carry_their_fields_and_home_counts_the_open_ones() {
             .iter()
             .any(|i| i["kind"] == "tool")
     };
-    eventually(|| topic(&cooee, &working)["state"] == "working" && said(&working));
+    eventually(|| topic(cooee, &working)["state"] == "working" && said(&working));
+    [plain, read, archived, unread, working]
+}
+
+fn topic_fields(cooee: &Cooee, id: &str) -> (Value, Value, Value, Value, Value) {
+    let r = topic(cooee, id);
+    (
+        r["title"].clone(),
+        r["folder"].clone(),
+        r["unseen"].clone(),
+        r["state"].clone(),
+        r["archived"].clone(),
+    )
+}
+
+fn assert_home_counts_open_and_unread_topics(cooee: &Cooee) {
+    let home = cooee.json("/screens/home");
+    let coder = &home["personas"][0];
+    assert_eq!(coder["id"], "coder");
+    assert_eq!(
+        (coder["topics"].clone(), coder["unread"].clone()),
+        (json!(3), json!(2))
+    );
+}
+
+#[test]
+fn a_personas_topics_carry_their_fields_and_home_counts_the_open_ones() {
+    let (dir, _shed, cooee) = setup("topics-list", "");
+    let folder = dir.join("root/project");
+    let [plain, read, archived, unread, working] = open_one_topic_of_each_kind(&cooee, &folder);
 
     let rows = topics(&cooee);
     let ids: Vec<&str> = rows.iter().map(|r| r["id"].as_str().unwrap()).collect();
@@ -88,16 +114,7 @@ fn a_personas_topics_carry_their_fields_and_home_counts_the_open_ones() {
     assert_eq!(ids.len(), 4, "{ids:?}");
     let at: Vec<u64> = rows.iter().map(|r| r["at"].as_u64().unwrap()).collect();
     assert!(at.windows(2).all(|w| w[0] >= w[1]), "{at:?}");
-    let field = |id: &str| {
-        let r = topic(&cooee, id);
-        (
-            r["title"].clone(),
-            r["folder"].clone(),
-            r["unseen"].clone(),
-            r["state"].clone(),
-            r["archived"].clone(),
-        )
-    };
+    let field = |id: &str| topic_fields(&cooee, id);
     let f = json!(fs::canonicalize(&folder).unwrap());
     assert_eq!(
         field(&read),
@@ -140,13 +157,7 @@ fn a_personas_topics_carry_their_fields_and_home_counts_the_open_ones() {
         )
     );
 
-    let home = cooee.json("/screens/home");
-    let coder = &home["personas"][0];
-    assert_eq!(coder["id"], "coder");
-    assert_eq!(
-        (coder["topics"].clone(), coder["unread"].clone()),
-        (json!(3), json!(2))
-    );
+    assert_home_counts_open_and_unread_topics(&cooee);
 }
 
 #[test]

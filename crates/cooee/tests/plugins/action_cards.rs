@@ -1,6 +1,6 @@
 use serde_json::{Value, json};
 
-use crate::setup::{TOKEN_A, me, new_thread, setup};
+use crate::setup::{Setup, TOKEN_A, me, new_thread, setup};
 
 #[test]
 fn row_32_config_card_waits_applies_with_the_plugins_line_or_goes_stale() {
@@ -143,18 +143,16 @@ fn row_35_handoff_chips_flow_back_lines_and_pick_a_thread() {
     );
 }
 
-#[test]
-fn a_run_card_approves_once_with_its_sha_and_shows_the_tail() {
-    let s = setup("card-83");
-    let id = new_thread(&s, "Say hello");
-    let sha = "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08";
-    let run = |sha: Option<&str>| {
-        let mut c = json!({ "thread": id, "text": "run r1: re-tag the release", "form": "run-card", "detail": "git tag -f v1" });
-        if let Some(sha) = sha {
-            c["sha"] = sha.into();
-        }
-        c
-    };
+fn run_card(id: &str, sha: Option<&str>) -> Value {
+    let mut c = json!({ "thread": id, "text": "run r1: re-tag the release", "form": "run-card", "detail": "git tag -f v1" });
+    if let Some(sha) = sha {
+        c["sha"] = sha.into();
+    }
+    c
+}
+
+fn r1_approves_once_with_its_sha(s: &Setup, id: &str, sha: &str) {
+    let run = |sha: Option<&str>| run_card(id, sha);
     assert_eq!(s.card(&run(None)).0, 400, "a run card needs its sha");
     let (_, r1) = s.card(&run(Some(sha)));
     assert_eq!(
@@ -174,22 +172,29 @@ fn a_run_card_approves_once_with_its_sha_and_shows_the_tail() {
     let line = "run r1 approved by owner, ran in /repo: exit 0\n```\nUpdated tag 'v1'\n```";
     *s.a.choice.lock().unwrap() = Some((200, json!({ "line": line })));
     let ran = s.tap(
-        &id,
+        id,
         &json!({ "item": r1["id"], "option": "approve", "value": "0000" }),
     );
     assert_eq!(
         (&ran["chosen"], &ran["line"], &ran["by"]),
-        (&json!("approve"), &json!(line), &json!(me(&s)))
+        (&json!("approve"), &json!(line), &json!(me(s)))
     );
-    let again = s.tap(&id, &json!({ "item": r1["id"], "option": "approve" }));
+    let again = s.tap(id, &json!({ "item": r1["id"], "option": "approve" }));
     assert_eq!(again["line"], line);
     assert_eq!(
         s.a.choices(),
-        [
-            json!({ "thread": id, "item": r1["id"], "option": "approve", "by": me(&s), "value": sha })
-        ],
+        [json!({ "thread": id, "item": r1["id"], "option": "approve", "by": me(s), "value": sha })],
         "approved once, with the card's sha"
     );
+}
+
+#[test]
+fn a_run_card_approves_once_with_its_sha_and_shows_the_tail() {
+    let s = setup("card-83");
+    let id = new_thread(&s, "Say hello");
+    let sha = "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08";
+    let run = |sha: Option<&str>| run_card(&id, sha);
+    r1_approves_once_with_its_sha(&s, &id, sha);
 
     let (_, r2) = s.card(&run(Some(sha)));
     let denied = s.tap(&id, &json!({ "item": r2["id"], "option": "deny" }));
