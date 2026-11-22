@@ -1,0 +1,4 @@
+frozen apple/Sources/CooeeUI/Chat.swift
+frozen apple/Sources/CooeeUI/Items.swift
+shared apple/Sources/CooeeUI/Chat/ChatHeader.swift
+shared apple/Sources/CooeeUI/Chat/ChatView.swift
