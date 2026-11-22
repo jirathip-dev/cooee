@@ -4,9 +4,6 @@ use serde_json::{Value, json};
 use super::FakeShed;
 
 impl FakeShed {
-    /// shed's `account.*`: `ls`, `add` (twice is once), `login` (runs `<dir>/login-<provider>` in the terminal
-    /// `login-<provider>-<name>`, the account's signed-in flag file its argument), `status` (ready once that file or a
-    /// token is there) and `rm` (refused for `default`).
     pub(super) fn account(&self, method: &str, p: &Value) -> Result<Value, RpcError> {
         let provider = p["provider"].as_str().unwrap_or_default().to_owned();
         let name = p["name"].as_str().unwrap_or_default().to_owned();
