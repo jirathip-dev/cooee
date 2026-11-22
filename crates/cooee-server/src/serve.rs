@@ -163,47 +163,6 @@ fn housekeep(config: &Config, data: &std::path::Path) -> io::Result<()> {
     Ok(())
 }
 
-fn reachable(config: &Config) -> io::Result<()> {
-    if !config.bind.is_loopback() && config.allowed_hosts.is_empty() {
-        return Err(io::Error::other(format!(
-            "listening on {} needs `allowed_hosts` (the names the phone uses, e.g. the Tailscale name)",
-            config.bind
-        )));
-    }
-    let own = config.path.is_some() && config.path == Config::default_path(&config.instance);
-    if let Some(dir) = config.dir.as_deref().filter(|d| own && d.is_dir()) {
-        cooee_core::gitignore::write(dir)?;
-    }
-    Ok(())
-}
-
-fn default_theme(config: &Config) -> io::Result<look::Theme> {
-    let (looks, refused) = look::Looks::load(config.dir.as_deref(), config.theme.as_deref());
-    for why in refused {
-        cooee_core::note!("cooee: refused {why}");
-    }
-    looks
-        .themes
-        .get(&looks.default)
-        .cloned()
-        .ok_or_else(|| io::Error::other(format!("no theme {}", looks.default)))
-}
-
-fn probe_daily(daily: Arc<Hub>, signins: Arc<Logins>) {
-    std::thread::spawn(move || {
-        loop {
-            for (agent, account) in daily.stale(hub::now()) {
-                let launch = signins.home(&agent, Some(&account));
-                let probed = launch.and_then(|(_, l)| daily.probe(&agent, &account, &l));
-                if let Err(e) = probed {
-                    cooee_core::note!("cooee: models of {agent}: {e}");
-                }
-            }
-            cooee_core::clock::sleep(Duration::from_hours(1));
-        }
-    });
-}
-
 /// Opens the threads (`config`'s data folder and shed) and the default theme (for push wording), and serves the API
 /// on `bind:port` until Ctrl+C or `SIGTERM`. `ready` gets the bound address first (port 0 picks a free one).
 ///
@@ -264,6 +223,47 @@ pub fn serve(config: &Config, ready: impl FnOnce(SocketAddr)) -> io::Result<()> 
     let served = run(listener, (hub, &manager, runner), router, ready);
     manager.stop_all();
     served
+}
+
+fn reachable(config: &Config) -> io::Result<()> {
+    if !config.bind.is_loopback() && config.allowed_hosts.is_empty() {
+        return Err(io::Error::other(format!(
+            "listening on {} needs `allowed_hosts` (the names the phone uses, e.g. the Tailscale name)",
+            config.bind
+        )));
+    }
+    let own = config.path.is_some() && config.path == Config::default_path(&config.instance);
+    if let Some(dir) = config.dir.as_deref().filter(|d| own && d.is_dir()) {
+        cooee_core::gitignore::write(dir)?;
+    }
+    Ok(())
+}
+
+fn default_theme(config: &Config) -> io::Result<look::Theme> {
+    let (looks, refused) = look::Looks::load(config.dir.as_deref(), config.theme.as_deref());
+    for why in refused {
+        cooee_core::note!("cooee: refused {why}");
+    }
+    looks
+        .themes
+        .get(&looks.default)
+        .cloned()
+        .ok_or_else(|| io::Error::other(format!("no theme {}", looks.default)))
+}
+
+fn probe_daily(daily: Arc<Hub>, signins: Arc<Logins>) {
+    std::thread::spawn(move || {
+        loop {
+            for (agent, account) in daily.stale(hub::now()) {
+                let launch = signins.home(&agent, Some(&account));
+                let probed = launch.and_then(|(_, l)| daily.probe(&agent, &account, &l));
+                if let Err(e) = probed {
+                    cooee_core::note!("cooee: models of {agent}: {e}");
+                }
+            }
+            cooee_core::clock::sleep(Duration::from_hours(1));
+        }
+    });
 }
 
 fn run(

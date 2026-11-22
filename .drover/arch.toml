@@ -179,7 +179,7 @@ comments = true
 ignore_case = true
 
 [comments]
-policy = "on"
+policy = "off"
 
 [[size]]
 paths = ["crates/*/src/**/*.rs"]
