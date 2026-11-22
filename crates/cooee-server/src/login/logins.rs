@@ -35,8 +35,7 @@ pub struct Logins {
 }
 
 impl Logins {
-    /// The providers' logins on `shed`; hands shed the account folders and token files an older cooee kept in
-    /// `data/accounts`, in place, so nobody signs in again.
+    /// The providers' logins on `shed`, which adopts an older cooee's `data/accounts` in place.
     #[must_use]
     pub fn new(shed: Shed, providers: Providers, data: &Path) -> Arc<Self> {
         let logins = Arc::new(Self {

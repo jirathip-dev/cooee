@@ -11,8 +11,7 @@ use super::Logins;
 use crate::hub::HubError;
 
 impl Logins {
-    /// What a thread of ACP agent `agent` runs with: its account's name (empty for shed's own login, or an agent no
-    /// provider signs in) and the [`Launch`] that names it to shed; shed sets the account's folder itself.
+    /// ACP agent `agent`'s account name (empty: shed's own login) and the [`Launch`] that names it to shed.
     #[must_use]
     pub fn home(&self, agent: &str, account: Option<&str>) -> (String, Launch) {
         let signs_in = self.providers.for_agent(agent).is_some();
@@ -45,13 +44,7 @@ impl Logins {
         setup.unwrap_or_else(|| Setup::plain(&want)).gaps
     }
 
-    /// What a thread of agent `a` runs with: its account's label (`a`'s, else `account`) and [`Launch`] (the account,
-    /// the session's `meta` with the profile's settings file at its provider's `settings` key, the env, its secrets
-    /// read from `data` through a file there, and the policy). A profile with settings whose provider takes none is
-    /// refused (its guard can't run).
-    ///
-    /// # Errors
-    /// [`HubError::Refused`] as above, for an unreadable settings file or a missing secret.
+    /// # Errors [`HubError::Refused`] for settings its provider can't take, an unreadable settings file or a missing secret.
     pub fn agent(
         &self,
         a: &Agent,

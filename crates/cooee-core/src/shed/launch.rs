@@ -18,9 +18,7 @@ pub struct Agent {
     pub models: Vec<String>,
 }
 
-/// What a thread's agent runs with besides its folder: shed's account, variables on its adapter's command line,
-/// secret ones through a file (see [`Shed::run_acp`](super::Shed::run_acp)), and shed's approval policy (none: shed's
-/// default, `ask`).
+/// What a thread's agent runs with besides its folder: shed's account, its adapter's variables and approval policy.
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct Launch {
     /// `--account`: the account of the agent's provider shed runs it on (`account.ls`); none: shed's own login.

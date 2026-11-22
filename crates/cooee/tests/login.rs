@@ -1,7 +1,6 @@
-//! Sign-ins end to end: `cooee serve` against the fake shed (tests/support), whose `account.*` keeps the accounts and
-//! really runs a fake login program in the login terminal. The sheet lists `account.ls`, a new account is
-//! `account.add` then `account.login`, the typed code reaches the program, the outcome is `account.status`, a thread
-//! names its account to shed and `account.rm` signs it out; an older cooee's folders are handed to shed in place.
+//! Provider logins end to end: `cooee serve` against the fake shed (tests/support), which really runs a fake login
+//! program in a plain terminal. Its link reaches `GET /logins/{id}`, a typed code reaches the program, success shows as
+//! signed in; the 10-minute timeout kills and removes the terminal; the screen is redacted and never stored.
 
 mod support;
 

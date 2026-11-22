@@ -37,11 +37,7 @@ impl Logins {
         }
     }
 
-    /// Starts provider `name`'s login in shed's redacted terminal (a running one is kept): for account `account`
-    /// (none: `default`), or with `new` for a new account shed makes.
-    ///
-    /// # Errors
-    /// [`HubError::Refused`] for an unknown provider; [`HubError::Shed`] when shed refuses the account or the login.
+    /// # Errors [`HubError::Refused`] for an unknown provider; [`HubError::Shed`] when shed refuses the account or login.
     pub fn start(
         self: &Arc<Self>,
         name: &str,
@@ -121,10 +117,7 @@ impl Logins {
         }
     }
 
-    /// Provider `name`'s login: its screen while it runs, else how it ended and its account.
-    ///
-    /// # Errors
-    /// [`HubError::Refused`] for an unknown provider.
+    /// # Errors [`HubError::Refused`] for an unknown provider.
     pub fn view(&self, name: &str) -> Result<View, HubError> {
         self.provider(name)?;
         if let Some(screen) = self.running(name).and_then(|t| self.shed.screen(&t).ok()) {
@@ -174,10 +167,7 @@ impl Logins {
         Ok(())
     }
 
-    /// Signs provider `name`'s account `account` out and removes it (`account.rm`; shed keeps `default`).
-    ///
-    /// # Errors
-    /// [`HubError::Refused`] for an unknown provider; [`HubError::Shed`] when shed refuses.
+    /// # Errors [`HubError::Refused`] for an unknown provider; [`HubError::Shed`] when shed refuses `account.rm`.
     pub fn sign_out(&self, name: &str, account: &str) -> Result<(), HubError> {
         self.provider(name)?;
         Ok(self.shed.account_rm(name, account)?)

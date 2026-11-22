@@ -15,8 +15,7 @@ pub struct Spec {
     /// The line that installs its CLI, shown when the login command isn't found.
     #[serde(default)]
     pub install: String,
-    /// The dotted `_meta` key its ACP adapter takes an enforced settings object at, hooks included. Without it an
-    /// agent profile with `settings` can't start with its agent.
+    /// The dotted `_meta` key its ACP adapter takes an enforced settings object at; none: no profile `settings`.
     #[serde(default)]
     pub settings: String,
     /// The efforts a thread may pick (#553 row 34; its models are the agent's own, #193).

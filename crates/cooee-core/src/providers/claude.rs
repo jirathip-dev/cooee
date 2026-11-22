@@ -8,8 +8,7 @@ use crate::{
     provider::{Builtin, Channel, Setup, Want},
 };
 
-/// Claude Code: a persona's session options and a profile's settings in claude-acp's `_meta.claudeCode.options`, and
-/// its MCP tools read from their `mcp__<server>__<tool>` titles.
+/// Claude Code: session options and profile settings in claude-acp's `_meta.claudeCode.options`; MCP tools by title.
 #[derive(Debug)]
 pub struct Claude(Spec);
 

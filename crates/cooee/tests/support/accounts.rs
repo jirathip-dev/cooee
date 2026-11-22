@@ -1,7 +1,14 @@
+use std::path::Path;
+
 use cooee_core::shed_proto::{ErrorCode, RpcError};
 use serde_json::{Value, json};
 
 use super::FakeShed;
+
+fn valid(name: &str) -> bool {
+    let ok = |b: u8| b.is_ascii_lowercase() || b.is_ascii_digit() || b == b'-';
+    !name.is_empty() && name != "default" && name.bytes().all(ok)
+}
 
 impl FakeShed {
     pub(super) fn account(&self, method: &str, p: &Value) -> Result<Value, RpcError> {
@@ -18,10 +25,7 @@ impl FakeShed {
                 Ok(json!(all))
             }
             "account.add" => {
-                let valid = name
-                    .bytes()
-                    .all(|b| b.is_ascii_lowercase() || b.is_ascii_digit() || b == b'-');
-                if name.is_empty() || name == "default" || !valid {
+                if !valid(&name) {
                     return Err(RpcError::new(ErrorCode::InvalidParams, &name));
                 }
                 let token = p["token_file"].as_str().map(|_| json!({ "saved_at": 1 }));
@@ -40,11 +44,7 @@ impl FakeShed {
                 if !known {
                     return Err(RpcError::new(ErrorCode::NoAccount, &name));
                 }
-                let terminal = format!("login-{provider}-{name}");
-                let script = self.dir.join(format!("login-{provider}"));
-                let run = json!({ "name": terminal, "cwd": self.dir, "cmd": [script, flag] });
-                self.run(&run)?;
-                Ok(json!({ "terminal": terminal }))
+                self.login(&provider, &name, &flag)
             }
             "account.status" => {
                 let a = s.accounts.entry(key).or_insert_with(|| {
@@ -69,6 +69,14 @@ impl FakeShed {
             },
             other => Err(RpcError::new(ErrorCode::MethodNotFound, other)),
         }
+    }
+
+    fn login(&self, provider: &str, name: &str, flag: &Path) -> Result<Value, RpcError> {
+        let terminal = format!("login-{provider}-{name}");
+        let script = self.dir.join(format!("login-{provider}"));
+        let run = json!({ "name": terminal, "cwd": self.dir, "cmd": [script, flag] });
+        self.run(&run)?;
+        Ok(json!({ "terminal": terminal }))
     }
 
     /// Account `name` of `provider` as shed lists it.
