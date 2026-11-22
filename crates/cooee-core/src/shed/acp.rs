@@ -204,32 +204,8 @@ impl Shed {
         if let Some(meta) = &meta {
             args.extend(["--meta", meta]);
         }
-        let mut tail: Vec<String> = Vec::new();
-        if !launch.env.is_empty() || launch.secrets.is_some() || !launch.args.is_empty() {
-            if cmd.is_empty() {
-                return Err(ShedError::Cli {
-                    args: "agents".to_owned(),
-                    detail: format!("ACP agent {agent} is not installed"),
-                });
-            }
-            tail.push("env".to_owned());
-            tail.extend(launch.env.iter().map(|(k, v)| format!("{k}={v}")));
-            if let Some((file, vars)) = &launch.secrets {
-                let q = |v: &str| format!("'{}'", v.replace('\'', r"'\''"));
-                let text = vars.iter().fold(String::new(), |mut t, (k, v)| {
-                    writeln!(t, "{k}={}", q(v)).ok();
-                    t
-                });
-                crate::write_private(file, text.as_bytes()).map_err(|e| ShedError::Cli {
-                    args: "run".to_owned(),
-                    detail: format!("{}: {e}", file.display()),
-                })?;
-                let read = r#"set -a; . "$0"; rm -f -- "$0"; set +a; exec "$@""#;
-                tail.extend(["sh".to_owned(), "-c".to_owned(), read.to_owned()]);
-                tail.push(file.to_string_lossy().into_owned());
-            }
-            tail.extend(cmd.iter().cloned());
-            tail.extend(launch.args.iter().cloned());
+        let tail = launch_tail(agent, cmd, launch)?;
+        if !tail.is_empty() {
             args.push("--");
             args.extend(tail.iter().map(String::as_str));
         }
@@ -239,4 +215,36 @@ impl Shed {
         }
         run
     }
+}
+
+fn launch_tail(agent: &str, cmd: &[String], launch: &Launch) -> Result<Vec<String>, ShedError> {
+    let mut tail: Vec<String> = Vec::new();
+    if launch.env.is_empty() && launch.secrets.is_none() && launch.args.is_empty() {
+        return Ok(tail);
+    }
+    if cmd.is_empty() {
+        return Err(ShedError::Cli {
+            args: "agents".to_owned(),
+            detail: format!("ACP agent {agent} is not installed"),
+        });
+    }
+    tail.push("env".to_owned());
+    tail.extend(launch.env.iter().map(|(k, v)| format!("{k}={v}")));
+    if let Some((file, vars)) = &launch.secrets {
+        let q = |v: &str| format!("'{}'", v.replace('\'', r"'\''"));
+        let text = vars.iter().fold(String::new(), |mut t, (k, v)| {
+            writeln!(t, "{k}={}", q(v)).ok();
+            t
+        });
+        crate::write_private(file, text.as_bytes()).map_err(|e| ShedError::Cli {
+            args: "run".to_owned(),
+            detail: format!("{}: {e}", file.display()),
+        })?;
+        let read = r#"set -a; . "$0"; rm -f -- "$0"; set +a; exec "$@""#;
+        tail.extend(["sh".to_owned(), "-c".to_owned(), read.to_owned()]);
+        tail.push(file.to_string_lossy().into_owned());
+    }
+    tail.extend(cmd.iter().cloned());
+    tail.extend(launch.args.iter().cloned());
+    Ok(tail)
 }

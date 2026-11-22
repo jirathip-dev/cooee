@@ -62,8 +62,7 @@ fn only_an_approval_the_agent_can_deny_asks_for_text_from_its_push() {
     assert!(!says(vec![reject], Some("drover")));
 }
 
-#[test]
-fn a_push_for_each_trigger_and_none_otherwise() {
+fn finished_chat() -> Chat {
     let mut chat = Chat::default();
     chat.push(
         1,
@@ -84,30 +83,40 @@ fn a_push_for_each_trigger_and_none_otherwise() {
             stop_reason: "end_turn".to_owned(),
         },
     );
-    let approval = |tapped: Option<&str>| {
-        Change::Item(Item {
-            id: 3,
-            at: 3,
-            seq: 2,
-            speaker: String::new(),
-            body: Body::Approval {
-                tool: "Edit src/lib.rs".to_owned(),
-                options: Vec::new(),
-                tapped: tapped.map(str::to_owned),
-                chosen: None,
-                plugin: None,
-                card: cooee_core::Card::default(),
-            },
-        })
-    };
-    let n = |body: &str, item| Note {
+    chat
+}
+
+fn approval(tapped: Option<&str>) -> Change {
+    Change::Item(Item {
+        id: 3,
+        at: 3,
+        seq: 2,
+        speaker: String::new(),
+        body: Body::Approval {
+            tool: "Edit src/lib.rs".to_owned(),
+            options: Vec::new(),
+            tapped: tapped.map(str::to_owned),
+            chosen: None,
+            plugin: None,
+            card: cooee_core::Card::default(),
+        },
+    })
+}
+
+fn n(body: &str, item: u64) -> Note {
+    Note {
         title: "Fix the build".to_owned(),
         body: body.to_owned(),
         tag: "t1".to_owned(),
         url: "/t/t1".to_owned(),
         item,
         say: false,
-    };
+    }
+}
+
+#[test]
+fn a_push_for_each_trigger_and_none_otherwise() {
+    let chat = finished_chat();
     let t = thread();
     let packs = crate::look::tests::first_party("note-words");
     let (looks, _) = crate::look::Looks::load(Some(&packs), None);

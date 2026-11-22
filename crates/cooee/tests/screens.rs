@@ -87,23 +87,11 @@ fn next_data(r: &mut BufReader<TcpStream>) -> Value {
     }
 }
 
-#[test]
-fn a_plugin_screen_streams_its_ops_and_an_action_outside_its_permissions_is_refused() {
-    let dir = scratch("screens");
-    let shed = FakeShed::start(&dir.join("shed"), version());
-    hello_repo(&dir.join("hello.git"));
-    let py = no_dns(&dir);
-    let serve = Serve(Cooee::start_env(
-        &dir,
-        &shed.dir,
-        "",
-        &[("PYTHONPATH", &py)],
-    ));
-    let cooee = &serve.0;
+fn add_hello_and_wait_for_its_screen(cooee: &Cooee, dir: &Path, py: &str) {
     let url = dir.join("hello.git").to_string_lossy().into_owned();
     let add = cooee
         .command()
-        .env("PYTHONPATH", &py)
+        .env("PYTHONPATH", py)
         .args(["plugin", "add", &url, "--yes"])
         .output()
         .unwrap();
@@ -120,14 +108,9 @@ fn a_plugin_screen_streams_its_ops_and_an_action_outside_its_permissions_is_refu
             .then_some(())
             .ok_or_else(|| format!("{status} after {took:?}: {body}\nplugin.log:\n{log}"))
     });
+}
 
-    let screen = cooee.json("/p/hello/screens/hello");
-    assert_eq!(
-        (&screen["title"], &screen["blocks"][1]["value"]),
-        (&json!("Hello"), &json!("0"))
-    );
-    assert_eq!(cooee.get("/p/hello/frame").0, 404);
-
+fn open_hello_stream(cooee: &Cooee) -> BufReader<TcpStream> {
     let mut stream = TcpStream::connect(&cooee.addr).unwrap();
     stream
         .set_read_timeout(Some(Duration::from_secs(20)))
@@ -138,22 +121,10 @@ fn a_plugin_screen_streams_its_ops_and_an_action_outside_its_permissions_is_refu
         cooee.addr, cooee.cookie
     )
     .unwrap();
-    let mut events = BufReader::new(stream);
-    assert_eq!(next_data(&mut events)["seq"], 0);
+    BufReader::new(stream)
+}
 
-    let wave = json!({ "screen": "hello", "block": "wave", "action": "wave", "values": {} });
-    let (status, body) = cooee.post("/p/hello/action", &wave);
-    let ops: Value = serde_json::from_str(&body).unwrap();
-    assert_eq!(
-        (status, &ops["ops"][0]["fields"]["value"]),
-        (200, &json!("1"))
-    );
-    let live = next_data(&mut events);
-    assert_eq!(
-        (&live["seq"], &live["ops"][0]["id"]),
-        (&json!(1), &json!("waves"))
-    );
-
+fn assert_actions_outside_permissions_are_refused(cooee: &Cooee, wave: &Value) {
     let drop = json!({ "screen": "hello", "block": "wave", "action": "drop" });
     let (status, body) = cooee.post("/p/hello/action", &drop);
     assert_eq!(status, 403, "{body}");
@@ -174,7 +145,48 @@ fn a_plugin_screen_streams_its_ops_and_an_action_outside_its_permissions_is_refu
         let (status, body) = cooee.get(off);
         assert_eq!(status, 403, "{off}: {body}");
     }
-    assert_eq!(cooee.post("/p/nope/action", &wave).0, 404);
+    assert_eq!(cooee.post("/p/nope/action", wave).0, 404);
+}
+
+#[test]
+fn a_plugin_screen_streams_its_ops_and_an_action_outside_its_permissions_is_refused() {
+    let dir = scratch("screens");
+    let shed = FakeShed::start(&dir.join("shed"), version());
+    hello_repo(&dir.join("hello.git"));
+    let py = no_dns(&dir);
+    let serve = Serve(Cooee::start_env(
+        &dir,
+        &shed.dir,
+        "",
+        &[("PYTHONPATH", &py)],
+    ));
+    let cooee = &serve.0;
+    add_hello_and_wait_for_its_screen(cooee, &dir, &py);
+
+    let screen = cooee.json("/p/hello/screens/hello");
+    assert_eq!(
+        (&screen["title"], &screen["blocks"][1]["value"]),
+        (&json!("Hello"), &json!("0"))
+    );
+    assert_eq!(cooee.get("/p/hello/frame").0, 404);
+
+    let mut events = open_hello_stream(cooee);
+    assert_eq!(next_data(&mut events)["seq"], 0);
+
+    let wave = json!({ "screen": "hello", "block": "wave", "action": "wave", "values": {} });
+    let (status, body) = cooee.post("/p/hello/action", &wave);
+    let ops: Value = serde_json::from_str(&body).unwrap();
+    assert_eq!(
+        (status, &ops["ops"][0]["fields"]["value"]),
+        (200, &json!("1"))
+    );
+    let live = next_data(&mut events);
+    assert_eq!(
+        (&live["seq"], &live["ops"][0]["id"]),
+        (&json!(1), &json!("waves"))
+    );
+
+    assert_actions_outside_permissions_are_refused(cooee, &wave);
 
     pals_places(cooee);
     let row = &cooee.json("/plugins")["installed"][0];

@@ -1,8 +1,8 @@
-use std::fs;
+use std::{fs, path::Path};
 
 use serde_json::{Value, json};
 
-use crate::setup::{Agent, Mcp, desk_setup, named};
+use crate::setup::{Agent, Mcp, Setup, desk_setup, named};
 use crate::support::scratch;
 
 #[test]
@@ -50,17 +50,7 @@ fn each_desk_action_leaves_one_captioned_encrypted_frame_and_only_an_asked_scree
     );
     drop(ann);
 
-    let ran = fs::read_to_string(bin.join("desk.log")).unwrap();
-    let on = "exec ann-desk env DISPLAY=:1";
-    let import = format!("{on} import -window root png:-");
-    let want = [
-        format!("{on} xdotool mousemove 120 340 click 1"),
-        import.clone(),
-        format!("{on} xdotool type -- hello"),
-        import.clone(),
-        import,
-    ];
-    assert_eq!(ran.lines().collect::<Vec<_>>(), want);
+    assert_the_desk_ran_each_action(&bin);
     let items = s.cooee.json(&format!("/threads/{id}/messages"))["items"].clone();
     let frames: Vec<(String, bool, String)> = items
         .as_array()
@@ -84,8 +74,31 @@ fn each_desk_action_leaves_one_captioned_encrypted_frame_and_only_an_asked_scree
             ("screenshot", true)
         ]
     );
-    let stored = dir.join("data/frames").join(&id);
-    for (_, _, name) in &frames {
+    assert_frames_are_sealed_and_each_action_is_logged(&s, &dir, &id, &frames);
+}
+
+fn assert_the_desk_ran_each_action(bin: &Path) {
+    let ran = fs::read_to_string(bin.join("desk.log")).unwrap();
+    let on = "exec ann-desk env DISPLAY=:1";
+    let import = format!("{on} import -window root png:-");
+    let want = [
+        format!("{on} xdotool mousemove 120 340 click 1"),
+        import.clone(),
+        format!("{on} xdotool type -- hello"),
+        import.clone(),
+        import,
+    ];
+    assert_eq!(ran.lines().collect::<Vec<_>>(), want);
+}
+
+fn assert_frames_are_sealed_and_each_action_is_logged(
+    s: &Setup,
+    dir: &Path,
+    id: &str,
+    frames: &[(String, bool, String)],
+) {
+    let stored = dir.join("data/frames").join(id);
+    for (_, _, name) in frames {
         let served = s.cooee.get(&format!("/threads/{id}/frames/{name}"));
         assert_eq!(served, (200, "desk-pixels".to_owned()));
         let sealed = fs::read(stored.join(name)).unwrap();

@@ -32,64 +32,70 @@ fn when(e: &Value, at: &str) -> String {
         .to_owned()
 }
 
+fn list_calendars(api: &Api<'_>, args: &Value, out: &mut String) -> Result<(), String> {
+    let got = api.get(
+        &["users", "me", "calendarList"],
+        &[("maxResults", &limit(args))],
+    )?;
+    for c in list(&got, "items") {
+        let primary = if c.get("primary") == Some(&Value::Bool(true)) {
+            " (primary)"
+        } else {
+            ""
+        };
+        writeln!(out, "{} · {}{primary}", arg(c, "id"), arg(c, "summary")).ok();
+    }
+    Ok(())
+}
+
+fn list_events(api: &Api<'_>, args: &Value, out: &mut String) -> Result<(), String> {
+    let now = format!(
+        "{}:00Z",
+        cooee_core::routines::local(api.now, 0).replace(' ', "T")
+    );
+    let from = Some(arg(args, "from"))
+        .filter(|f| !f.is_empty())
+        .unwrap_or(&now);
+    let cal = Some(arg(args, "calendar"))
+        .filter(|c| !c.is_empty())
+        .unwrap_or("primary");
+    let max = limit(args);
+    let mut q = vec![
+        ("singleEvents", "true"),
+        ("orderBy", "startTime"),
+        ("timeMin", from),
+        ("maxResults", max.as_str()),
+    ];
+    q.extend(
+        [("timeMax", arg(args, "to")), ("q", arg(args, "query"))]
+            .into_iter()
+            .filter(|(_, v)| !v.is_empty()),
+    );
+    let got = api.get(&["calendars", cal, "events"], &q)?;
+    for e in list(&got, "items") {
+        let s = |k: &str| e[k].as_str().unwrap_or_default();
+        writeln!(
+            out,
+            "{} · {} – {} · {} · {}",
+            s("id"),
+            when(e, "start"),
+            when(e, "end"),
+            s("summary"),
+            s("location")
+        )
+        .ok();
+        if !s("description").is_empty() {
+            writeln!(out, "  {}", cut(s("description"), 500)).ok();
+        }
+    }
+    Ok(())
+}
+
 pub(super) fn call(api: &Api<'_>, tool: &str, args: &Value) -> Result<String, String> {
     let mut out = String::new();
     match tool {
-        "list_calendars" => {
-            let got = api.get(
-                &["users", "me", "calendarList"],
-                &[("maxResults", &limit(args))],
-            )?;
-            for c in list(&got, "items") {
-                let primary = if c.get("primary") == Some(&Value::Bool(true)) {
-                    " (primary)"
-                } else {
-                    ""
-                };
-                writeln!(out, "{} · {}{primary}", arg(c, "id"), arg(c, "summary")).ok();
-            }
-        }
-        "list_events" => {
-            let now = format!(
-                "{}:00Z",
-                cooee_core::routines::local(api.now, 0).replace(' ', "T")
-            );
-            let from = Some(arg(args, "from"))
-                .filter(|f| !f.is_empty())
-                .unwrap_or(&now);
-            let cal = Some(arg(args, "calendar"))
-                .filter(|c| !c.is_empty())
-                .unwrap_or("primary");
-            let max = limit(args);
-            let mut q = vec![
-                ("singleEvents", "true"),
-                ("orderBy", "startTime"),
-                ("timeMin", from),
-                ("maxResults", max.as_str()),
-            ];
-            q.extend(
-                [("timeMax", arg(args, "to")), ("q", arg(args, "query"))]
-                    .into_iter()
-                    .filter(|(_, v)| !v.is_empty()),
-            );
-            let got = api.get(&["calendars", cal, "events"], &q)?;
-            for e in list(&got, "items") {
-                let s = |k: &str| e[k].as_str().unwrap_or_default();
-                writeln!(
-                    out,
-                    "{} · {} – {} · {} · {}",
-                    s("id"),
-                    when(e, "start"),
-                    when(e, "end"),
-                    s("summary"),
-                    s("location")
-                )
-                .ok();
-                if !s("description").is_empty() {
-                    writeln!(out, "  {}", cut(s("description"), 500)).ok();
-                }
-            }
-        }
+        "list_calendars" => list_calendars(api, args, &mut out)?,
+        "list_events" => list_events(api, args, &mut out)?,
         _ => {
             return Err(format!(
                 "{tool} isn't a Google Calendar tool: it reads only"

@@ -253,6 +253,28 @@ pub(super) mod tests {
         assert_eq!(claims["iat"], 4000);
     }
 
+    fn assert_an_alert(head: &str, body: &str, bearer: &str) {
+        assert!(head.starts_with("post "), "{head}");
+        for h in [
+            format!("authorization: bearer {}", bearer.to_ascii_lowercase()),
+            "apns-topic: dev.cooee.app".to_owned(),
+            "apns-push-type: alert".to_owned(),
+            "apns-collapse-id: t1".to_owned(),
+        ] {
+            assert!(head.contains(&format!("{h}\r\n")), "{h} in {head}");
+        }
+        let body: serde_json::Value = serde_json::from_str(body).unwrap();
+        assert_eq!(
+            body["aps"]["alert"],
+            serde_json::json!({"title": "Fix the build", "body": "needs you"})
+        );
+        assert_eq!(
+            (&body["aps"]["thread-id"], &body["url"]),
+            (&"t1".into(), &"/t/t1".into())
+        );
+        assert!(body["aps"].get("category").is_none(), "{body}");
+    }
+
     #[test]
     fn a_push_goes_to_each_apns_token_and_a_410_drops_it() {
         let dir = dir("apns");
@@ -290,25 +312,7 @@ pub(super) mod tests {
         );
         let bearer = push.bearer(&apns(&url), &k, now());
         for (head, body) in &sent {
-            assert!(head.starts_with("post "), "{head}");
-            for h in [
-                format!("authorization: bearer {}", bearer.to_ascii_lowercase()),
-                "apns-topic: dev.cooee.app".to_owned(),
-                "apns-push-type: alert".to_owned(),
-                "apns-collapse-id: t1".to_owned(),
-            ] {
-                assert!(head.contains(&format!("{h}\r\n")), "{h} in {head}");
-            }
-            let body: serde_json::Value = serde_json::from_str(body).unwrap();
-            assert_eq!(
-                body["aps"]["alert"],
-                serde_json::json!({"title": "Fix the build", "body": "needs you"})
-            );
-            assert_eq!(
-                (&body["aps"]["thread-id"], &body["url"]),
-                (&"t1".into(), &"/t/t1".into())
-            );
-            assert!(body["aps"].get("category").is_none(), "{body}");
+            assert_an_alert(head, body, &bearer);
         }
         let ask = Note {
             say: true,

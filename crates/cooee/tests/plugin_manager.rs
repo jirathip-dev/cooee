@@ -155,17 +155,7 @@ impl Setup {
     }
 }
 
-#[test]
-fn add_from_the_index_clones_builds_writes_the_entry_and_token_starts_it_and_locks_it() {
-    let s = setup("pm-add");
-    let out = s.cooee.cli(&["plugin", "add", "greet", "--yes"]);
-    assert!(out.contains(&format!("commit {}", s.v1)), "{out}");
-    assert!(
-        out.contains(&format!("build: {BUILD}\nrun: {RUN}")),
-        "{out}"
-    );
-    assert!(!out.contains("not reviewed"), "{out}");
-
+fn assert_greet_is_built_with_its_entry_token_and_lock(s: &Setup) -> PathBuf {
     let folder = s.data().join("plugins/greet");
     assert_eq!(git(&folder.join("repo"), &["rev-parse", "HEAD"]), s.v1);
     assert_eq!(
@@ -198,6 +188,21 @@ fn add_from_the_index_clones_builds_writes_the_entry_and_token_starts_it_and_loc
         (&lock["name"], &lock["url"], &lock["commit"]),
         (&json!("greet"), &json!(s.repo), &json!(s.v1))
     );
+    folder
+}
+
+#[test]
+fn add_from_the_index_clones_builds_writes_the_entry_and_token_starts_it_and_locks_it() {
+    let s = setup("pm-add");
+    let out = s.cooee.cli(&["plugin", "add", "greet", "--yes"]);
+    assert!(out.contains(&format!("commit {}", s.v1)), "{out}");
+    assert!(
+        out.contains(&format!("build: {BUILD}\nrun: {RUN}")),
+        "{out}"
+    );
+    assert!(!out.contains("not reviewed"), "{out}");
+
+    let folder = assert_greet_is_built_with_its_entry_token_and_lock(&s);
 
     s.tab_says("greet", "greet v1");
     let (status, body) = s.cooee.get("/p/greet/api/whoami");

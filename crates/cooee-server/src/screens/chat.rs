@@ -217,6 +217,28 @@ fn file(thread: &str, name: &str) -> Attachment {
     }
 }
 
+fn tool_part(
+    id: String,
+    (subject, action): (&str, &str),
+    status: &str,
+    ruled: Option<&str>,
+) -> Block {
+    let state = match status {
+        "completed" => ToolState::Done,
+        "failed" | "cancelled" => ToolState::Failed,
+        _ => ToolState::Running,
+    };
+    let summary: String = subject.chars().take(SUMMARY).collect();
+    let name = action.to_lowercase();
+    let tool = Tool::new(name, state).id(id);
+    let tool = match ruled {
+        Some(rule) => tool.body(format!("{subject}\n{rule}")),
+        None if summary.len() < subject.len() => tool.body(subject.to_owned()),
+        None => tool,
+    };
+    Block::Tool(Box::new(tool.summary(summary)))
+}
+
 fn part(thread: &str, item: &Item) -> Option<Block> {
     let id = format!("i{}", item.id);
     Some(match &item.body {
@@ -226,22 +248,12 @@ fn part(thread: &str, item: &Item) -> Option<Block> {
             status,
             ruled,
             ..
-        } => {
-            let state = match status.as_str() {
-                "completed" => ToolState::Done,
-                "failed" | "cancelled" => ToolState::Failed,
-                _ => ToolState::Running,
-            };
-            let summary: String = subject.chars().take(SUMMARY).collect();
-            let name = format!("{action:?}").to_lowercase();
-            let tool = Tool::new(name, state).id(id);
-            let tool = match ruled {
-                Some(rule) => tool.body(format!("{subject}\n{rule}")),
-                None if summary.len() < subject.len() => tool.body(subject.clone()),
-                None => tool,
-            };
-            Block::Tool(Box::new(tool.summary(summary)))
-        }
+        } => tool_part(
+            id,
+            (subject, &format!("{action:?}")),
+            status,
+            ruled.as_deref(),
+        ),
         Body::Approval { .. } => return item.block(),
         Body::Plan { entries } => {
             let steps = entries.iter().enumerate().map(|(n, e)| Stage {
@@ -410,18 +422,7 @@ async fn begin(cx: &Cx, persona: String, a: &Action) -> Result<blocks::Answer, H
 async fn on(cx: &Cx, id: String, a: &Action) -> Result<(), HubError> {
     let (text, nonce, dir) = (word(a, "text"), word(a, "nonce"), uploads(cx));
     let shown = a.values.get("q").and_then(Value::as_u64);
-    let files: Vec<String> =
-        a.values
-            .get("files")
-            .and_then(Value::as_array)
-            .map_or_else(Vec::new, |all| {
-                let id = |f: &Value| {
-                    f.as_str()
-                        .or_else(|| f.get("id")?.as_str())
-                        .map(str::to_owned)
-                };
-                all.iter().filter_map(id).collect()
-            });
+    let files = picked_files(a);
     let sent = move || {
         if nonce.is_empty() {
             return Err(refused("a send needs its nonce"));
@@ -440,19 +441,7 @@ async fn on(cx: &Cx, id: String, a: &Action) -> Result<(), HubError> {
         }
         "queue" | "steer" => {
             blocking(cx, move |hub| {
-                if let Some(shown) = shown {
-                    let random_id = queued(hub, &id, shown)?;
-                    hub.unqueue(&id, &random_id, steer)?;
-                    if steer {
-                        return Ok(());
-                    }
-                }
-                let (nonce, files) = sent()?;
-                hub.queue(&id, &text, &nonce, &files, None)?;
-                if steer {
-                    hub.unqueue(&id, &nonce, true)?;
-                }
-                Ok(())
+                queue_or_steer(hub, (&id, &text), shown, steer, sent)
             })
             .await
         }
@@ -484,6 +473,42 @@ async fn on(cx: &Cx, id: String, a: &Action) -> Result<(), HubError> {
         "close" => blocking(cx, move |hub| hub.close(&id)).await,
         other => Err(refused(format!("no action {other}"))),
     }
+}
+
+fn picked_files(a: &Action) -> Vec<String> {
+    a.values
+        .get("files")
+        .and_then(Value::as_array)
+        .map_or_else(Vec::new, |all| {
+            let id = |f: &Value| {
+                f.as_str()
+                    .or_else(|| f.get("id")?.as_str())
+                    .map(str::to_owned)
+            };
+            all.iter().filter_map(id).collect()
+        })
+}
+
+fn queue_or_steer(
+    hub: &Hub,
+    (id, text): (&str, &str),
+    shown: Option<u64>,
+    steer: bool,
+    sent: impl FnOnce() -> Result<(String, Vec<Upload>), HubError>,
+) -> Result<(), HubError> {
+    if let Some(shown) = shown {
+        let random_id = queued(hub, id, shown)?;
+        hub.unqueue(id, &random_id, steer)?;
+        if steer {
+            return Ok(());
+        }
+    }
+    let (nonce, files) = sent()?;
+    hub.queue(id, text, &nonce, &files, None)?;
+    if steer {
+        hub.unqueue(id, &nonce, true)?;
+    }
+    Ok(())
 }
 
 fn queued(hub: &Hub, id: &str, shown: u64) -> Result<String, HubError> {

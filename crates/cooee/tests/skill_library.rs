@@ -245,6 +245,29 @@ fn a_tampered_commit_or_a_file_the_gate_refuses_is_never_added() {
     assert_eq!(s.add("nope").unwrap_err(), "the skill library has no nope");
 }
 
+fn the_notes_update_card(s: &Setup, id: &str) -> Value {
+    let items = s.cooee.json(&format!("/threads/{id}/messages"));
+    let card = items["items"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .rfind(|i| i["form"] == "skill")
+        .unwrap()
+        .clone();
+    assert!(
+        card["tool"]
+            .as_str()
+            .unwrap()
+            .starts_with("update ada's skill notes"),
+        "{card}"
+    );
+    assert_eq!(
+        card["detail"],
+        "  ---\n  name: notes\n  description: Take notes.\n  ---\n- 1. Listen.\n- 2. Mine.\n+ 1. Listen well.\n"
+    );
+    card
+}
+
 #[test]
 fn an_update_replaces_an_unedited_skill_and_keeps_an_edited_one_behind_its_diff_card() {
     let s = setup("library-update");
@@ -289,25 +312,7 @@ fn an_update_replaces_an_unedited_skill_and_keeps_an_edited_one_behind_its_diff_
         skill_file("plan", "Plan a day.", "1. List it.\n2. Order it.")
     );
 
-    let items = s.cooee.json(&format!("/threads/{id}/messages"));
-    let card = items["items"]
-        .as_array()
-        .unwrap()
-        .iter()
-        .rfind(|i| i["form"] == "skill")
-        .unwrap()
-        .clone();
-    assert!(
-        card["tool"]
-            .as_str()
-            .unwrap()
-            .starts_with("update ada's skill notes"),
-        "{card}"
-    );
-    assert_eq!(
-        card["detail"],
-        "  ---\n  name: notes\n  description: Take notes.\n  ---\n- 1. Listen.\n- 2. Mine.\n+ 1. Listen well.\n"
-    );
+    let card = the_notes_update_card(&s, &id);
     let (status, body) = s.cooee.post(&update, &json!({}));
     assert_eq!(
         (status, body.as_str()),

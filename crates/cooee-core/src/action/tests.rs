@@ -84,6 +84,11 @@ fn same(action: &str, providers: &[(&str, Vec<Update>)]) {
 
 #[test]
 fn the_same_action_from_each_providers_tool_name_gives_the_same_row() {
+    same_reads_and_edits();
+    same_runs_and_tools();
+}
+
+fn same_reads_and_edits() {
     let file = json!({ "file_path": CSV[0] });
     same(
         "read",
@@ -142,6 +147,9 @@ fn the_same_action_from_each_providers_tool_name_gives_the_same_row() {
             ),
         ],
     );
+}
+
+fn same_runs_and_tools() {
     let shell = json!({ "command": "/bin/zsh -lc 'cargo test -p export'", "cwd": "/w" });
     same(
         "run",

@@ -217,91 +217,97 @@ impl Looks {
     /// catch) is left out.
     #[must_use]
     pub fn load(config_dir: Option<&Path>, default: Option<&str>) -> (Self, Vec<String>) {
-        let (mut refused, mut styles, mut broken) = (Vec::new(), BTreeMap::new(), BTreeMap::new());
-        let mut schemes = builtin_schemes();
-        let mut themes: BTreeMap<String, Theme> = THEMES
-            .iter()
-            .filter_map(|(n, json, sprites, icon, scene)| {
-                let mut t: Theme = serde_json::from_str(json).ok()?;
-                t.sprite_sheet = sprites.map(<[u8]>::to_vec);
-                t.icon = Some(icon.to_vec());
-                t.scene_art = scene.map(<[u8]>::to_vec);
-                Some(((*n).to_owned(), t))
-            })
-            .collect();
+        let mut refused = Vec::new();
+        let mut looks = Self {
+            default: String::new(),
+            themes: builtin_themes(),
+            schemes: builtin_schemes(),
+            ascii: &ASCII,
+            styles: BTreeMap::new(),
+            broken: BTreeMap::new(),
+        };
         if let Some(dir) = config_dir {
-            for (name, path) in entries(&dir.join("schemes"), &mut refused) {
-                let Some(name) = name.strip_suffix(".json") else {
-                    continue;
-                };
-                match read_scheme(&path).and_then(|s| gate(&s).map(|()| s)) {
-                    Ok(s) if valid_name(name) => drop(schemes.insert(name.to_owned(), s)),
-                    Ok(_) => refused.push(format!("{}: not a-z, 0-9 and -", path.display())),
-                    Err(e) => refused.push(format!("{}: {e}", path.display())),
-                }
-            }
-            for (name, path) in entries(&dir.join("themes"), &mut refused) {
-                match read_pack(&path, &schemes) {
-                    _ if !valid_name(&name) => {
-                        refused.push(format!("{}: not a-z, 0-9 and -", path.display()));
-                    }
-                    Ok(p) => {
-                        schemes.extend(p.schemes);
-                        themes.extend(p.theme.map(|t| (name.clone(), t)));
-                        styles.extend(p.style.map(|s| (name, s)));
-                    }
-                    Err(e) => {
-                        refused.push(format!("{}: {}", path.display(), e.join("; ")));
-                        let style = |w: &String| w.starts_with("style.json");
-                        let why = e
-                            .iter()
-                            .find(|w| style(w))
-                            .or(e.first())
-                            .cloned()
-                            .unwrap_or_default();
-                        if let (true, Ok(Some((t, own)))) =
-                            (e.iter().all(style), read_theme(&path, &schemes))
-                        {
-                            schemes.extend(own);
-                            themes.insert(name.clone(), t);
-                            broken.insert(name, why);
-                        } else if let Ok(p) = read_pack(&last_good(dir, &name), &schemes) {
-                            schemes.extend(p.schemes);
-                            themes.extend(p.theme.map(|t| (name.clone(), t)));
-                            styles.extend(p.style.map(|s| (name.clone(), s)));
-                            broken.insert(name, why);
-                        } else if e.iter().any(style) {
-                            broken.insert(name, why);
-                        }
-                    }
-                }
-            }
+            looks.load_own(dir, &mut refused);
         }
-        let fallback = if themes.contains_key("farm") {
+        let fallback = if looks.themes.contains_key("farm") {
             "farm"
         } else {
             "plain"
         };
-        let default = match default.map(|d| Self::renamed(&themes, d)) {
-            Some(d) if themes.contains_key(d) => d.to_owned(),
+        looks.default = match default.map(|d| Self::renamed(&looks.themes, d)) {
+            Some(d) if looks.themes.contains_key(d) => d.to_owned(),
             Some(d) => {
                 refused.push(format!("theme = {d:?}: no such theme, showing {fallback}"));
                 fallback.to_owned()
             }
             None => fallback.to_owned(),
         };
-        (
-            Self {
-                default,
-                themes,
-                schemes,
-                ascii: &ASCII,
-                styles,
-                broken,
-            },
-            refused,
-        )
+        (looks, refused)
     }
+
+    fn load_own(&mut self, dir: &Path, refused: &mut Vec<String>) {
+        for (name, path) in entries(&dir.join("schemes"), refused) {
+            let Some(name) = name.strip_suffix(".json") else {
+                continue;
+            };
+            match read_scheme(&path).and_then(|s| gate(&s).map(|()| s)) {
+                Ok(s) if valid_name(name) => drop(self.schemes.insert(name.to_owned(), s)),
+                Ok(_) => refused.push(format!("{}: not a-z, 0-9 and -", path.display())),
+                Err(e) => refused.push(format!("{}: {e}", path.display())),
+            }
+        }
+        for (name, path) in entries(&dir.join("themes"), refused) {
+            match read_pack(&path, &self.schemes) {
+                _ if !valid_name(&name) => {
+                    refused.push(format!("{}: not a-z, 0-9 and -", path.display()));
+                }
+                Ok(p) => self.add_pack(&name, p),
+                Err(e) => {
+                    refused.push(format!("{}: {}", path.display(), e.join("; ")));
+                    self.keep_broken(dir, (name, &path), &e);
+                }
+            }
+        }
+    }
+
+    fn add_pack(&mut self, name: &str, p: pack::Pack) {
+        self.schemes.extend(p.schemes);
+        self.themes.extend(p.theme.map(|t| (name.to_owned(), t)));
+        self.styles.extend(p.style.map(|s| (name.to_owned(), s)));
+    }
+
+    fn keep_broken(&mut self, dir: &Path, (name, path): (String, &Path), e: &[String]) {
+        let style = |w: &String| w.starts_with("style.json");
+        let why = e
+            .iter()
+            .find(|w| style(w))
+            .or(e.first())
+            .cloned()
+            .unwrap_or_default();
+        if let (true, Ok(Some((t, own)))) = (e.iter().all(style), read_theme(path, &self.schemes)) {
+            self.schemes.extend(own);
+            self.themes.insert(name.clone(), t);
+            self.broken.insert(name, why);
+        } else if let Ok(p) = read_pack(&last_good(dir, &name), &self.schemes) {
+            self.add_pack(&name, p);
+            self.broken.insert(name, why);
+        } else if e.iter().any(style) {
+            self.broken.insert(name, why);
+        }
+    }
+}
+
+fn builtin_themes() -> BTreeMap<String, Theme> {
+    THEMES
+        .iter()
+        .filter_map(|(n, json, sprites, icon, scene)| {
+            let mut t: Theme = serde_json::from_str(json).ok()?;
+            t.sprite_sheet = sprites.map(<[u8]>::to_vec);
+            t.icon = Some(icon.to_vec());
+            t.scene_art = scene.map(<[u8]>::to_vec);
+            Some(((*n).to_owned(), t))
+        })
+        .collect()
 }
 
 fn builtin_schemes() -> BTreeMap<String, Scheme> {
@@ -428,18 +434,41 @@ fn read_theme(dir: &Path, schemes: &BTreeMap<String, Scheme>) -> Result<Option<O
     for k in t.words.keys().filter(|k| !WORDS.contains(&k.as_str())) {
         fails.push(format!("words.{k}: not one of {}", WORDS.join(" ")));
     }
+    let own = own_schemes(dir, &mut fails);
+    check_modes(&t, (&own, schemes), &mut fails);
+    if t.sprites {
+        t.sprite_sheet = sprite_sheet(dir, &mut fails);
+    }
+    t.scene_art = scene_art(dir, &t, &mut fails);
+    t.icon = file(dir, "icon.png", &mut fails);
+    if fails.is_empty() {
+        Ok(Some((t, own)))
+    } else {
+        Err(fails)
+    }
+}
+
+fn own_schemes(dir: &Path, fails: &mut Vec<String>) -> BTreeMap<String, Scheme> {
     let mut own = BTreeMap::new();
-    for (name, path) in entries(&dir.join("schemes"), &mut fails) {
+    for (name, path) in entries(&dir.join("schemes"), fails) {
         let Some(n) = name.strip_suffix(".json") else {
             continue;
         };
-        let _ = file(dir, &format!("schemes/{name}"), &mut fails);
+        let _ = file(dir, &format!("schemes/{name}"), fails);
         match read_scheme(&path).and_then(|s| gate(&s).map(|()| s)) {
             Ok(s) if valid_name(n) => drop(own.insert(n.to_owned(), s)),
             Ok(_) => fails.push(format!("schemes/{name}: not a-z, 0-9 and -")),
             Err(e) => fails.push(format!("schemes/{name}: {e}")),
         }
     }
+    own
+}
+
+fn check_modes(
+    t: &Theme,
+    (own, schemes): (&BTreeMap<String, Scheme>, &BTreeMap<String, Scheme>),
+    fails: &mut Vec<String>,
+) {
     let modes = [
         ("dark", Mode::Dark, &t.scheme.dark),
         ("light", Mode::Light, &t.scheme.light),
@@ -457,22 +486,26 @@ fn read_theme(dir: &Path, schemes: &BTreeMap<String, Scheme>) -> Result<Option<O
             None => fails.push(format!("scheme.{mode} {name:?}: no such scheme")),
         }
     }
-    if t.sprites {
-        let svg = file(dir, "sprites.svg", &mut fails);
-        let text = String::from_utf8_lossy(svg.as_deref().unwrap_or_default());
-        let missing: Vec<String> = SPRITES
-            .iter()
-            .filter(|s| !text.contains(&format!("id=\"s-{s}\"")))
-            .map(|s| format!("s-{s}"))
-            .collect();
-        if svg.is_none() {
-            fails.push("sprites.svg: missing (theme.json says sprites)".to_owned());
-        } else if !missing.is_empty() {
-            fails.push(format!("sprites.svg: no {}", missing.join(", ")));
-        }
-        t.sprite_sheet = svg;
+}
+
+fn sprite_sheet(dir: &Path, fails: &mut Vec<String>) -> Option<Vec<u8>> {
+    let svg = file(dir, "sprites.svg", fails);
+    let text = String::from_utf8_lossy(svg.as_deref().unwrap_or_default());
+    let missing: Vec<String> = SPRITES
+        .iter()
+        .filter(|s| !text.contains(&format!("id=\"s-{s}\"")))
+        .map(|s| format!("s-{s}"))
+        .collect();
+    if svg.is_none() {
+        fails.push("sprites.svg: missing (theme.json says sprites)".to_owned());
+    } else if !missing.is_empty() {
+        fails.push(format!("sprites.svg: no {}", missing.join(", ")));
     }
-    let svg = file(dir, "scene.svg", &mut fails);
+    svg
+}
+
+fn scene_art(dir: &Path, t: &Theme, fails: &mut Vec<String>) -> Option<Vec<u8>> {
+    let svg = file(dir, "scene.svg", fails);
     let text = String::from_utf8_lossy(svg.as_deref().unwrap_or_default());
     let view = text
         .split_once("viewBox=\"")
@@ -503,13 +536,7 @@ fn read_theme(dir: &Path, schemes: &BTreeMap<String, Scheme>) -> Result<Option<O
     {
         fails.push(format!("scene.svg: no layer {l:?}"));
     }
-    t.scene_art = svg;
-    t.icon = file(dir, "icon.png", &mut fails);
-    if fails.is_empty() {
-        Ok(Some((t, own)))
-    } else {
-        Err(fails)
-    }
+    svg
 }
 
 fn entries(dir: &Path, refused: &mut Vec<String>) -> Vec<(String, std::path::PathBuf)> {

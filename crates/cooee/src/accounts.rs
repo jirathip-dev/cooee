@@ -96,10 +96,6 @@ fn entries<'a>(providers: &'a Providers, data: &Path) -> Vec<Entry<'a>> {
 
 /// Runs `cooee accounts …`: 0 done, 1 refused (stderr says why), 2 usage, 3 signed out with `--require-signed-in`.
 pub fn run(config: &Config, args: &[&str], json: bool, require: bool) -> ExitCode {
-    let refuse = |code: u8, why: &str| {
-        cooee_core::note!("cooee: {why}");
-        ExitCode::from(code)
-    };
     let Some(data) = config.data_dir() else {
         return refuse(1, "no data folder: set `data` or HOME");
     };
@@ -126,73 +122,87 @@ pub fn run(config: &Config, args: &[&str], json: bool, require: bool) -> ExitCod
                 Err(e) => refuse(1, &e.to_string()),
             }
         }
-        ["ls"] => {
-            let rows: Vec<Value> = all.iter().map(|e| row(e, &accounts)).collect();
-            if json {
-                cooee_core::say!("{}", Value::Array(rows));
-            } else {
-                for r in rows {
-                    let field = |k: &str| r.get(k).and_then(Value::as_str);
-                    let at = field("folder").or(field("token_file"));
-                    let state = if r.get("signed_in") == Some(&Value::Bool(true)) {
-                        "signed in"
-                    } else {
-                        "signed out"
-                    };
-                    let name = field("name").filter(|n| !n.is_empty());
-                    cooee_core::say!(
-                        "{}  {}  {state}  {}",
-                        field("provider").unwrap_or_default(),
-                        name.unwrap_or("(system default)"),
-                        at.unwrap_or("~")
-                    );
-                }
-            }
-            ExitCode::SUCCESS
-        }
-        ["env", provider, name] => {
-            if providers.named(provider).is_none() {
-                return refuse(1, &format!("no provider `{provider}`"));
-            }
-            let Some(e) = all
-                .iter()
-                .find(|e| e.provider.spec().name == *provider && e.name == *name)
-            else {
-                return refuse(1, &format!("no account `{name}` of provider `{provider}`"));
-            };
-            let (signed_in, why) = e.state();
-            if let Some(why) = why {
-                return refuse(1, &why);
-            }
-            let mut env = Map::new();
-            match &e.login {
-                Login::Folder(dir) => {
-                    if let Some((var, dir)) = e.provider.env(dir.as_deref()) {
-                        env.insert(var.to_owned(), json!(dir));
-                    }
-                }
-                Login::Token(path, var) => match fs::read_to_string(path) {
-                    Ok(t) if !t.trim().is_empty() => {
-                        env.insert((*var).to_owned(), json!(t.trim()));
-                    }
-                    _ => return refuse(1, &format!("{}: empty or unreadable", path.display())),
-                },
-            }
-            if !signed_in {
-                if require {
-                    return refuse(3, &format!("{provider}/{name} is signed out"));
-                }
-                cooee_core::note!("cooee: {provider}/{name} is signed out");
-            }
-            cooee_core::say!("{}", Value::Object(env));
-            ExitCode::SUCCESS
-        }
+        ["ls"] => list(&all, &accounts, json),
+        ["env", provider, name] => print_env(&providers, &all, (provider, name), require),
         _ => refuse(
             2,
             "usage: cooee accounts <ls [--json] | env <provider> <name> [--require-signed-in] \
              | add <provider> <name> --folder <path> | rm <provider> <name>>",
         ),
     }
+}
+
+fn refuse(code: u8, why: &str) -> ExitCode {
+    cooee_core::note!("cooee: {why}");
+    ExitCode::from(code)
+}
+
+fn list(all: &[Entry], accounts: &Accounts, json: bool) -> ExitCode {
+    let rows: Vec<Value> = all.iter().map(|e| row(e, accounts)).collect();
+    if json {
+        cooee_core::say!("{}", Value::Array(rows));
+    } else {
+        for r in rows {
+            let field = |k: &str| r.get(k).and_then(Value::as_str);
+            let at = field("folder").or(field("token_file"));
+            let state = if r.get("signed_in") == Some(&Value::Bool(true)) {
+                "signed in"
+            } else {
+                "signed out"
+            };
+            let name = field("name").filter(|n| !n.is_empty());
+            cooee_core::say!(
+                "{}  {}  {state}  {}",
+                field("provider").unwrap_or_default(),
+                name.unwrap_or("(system default)"),
+                at.unwrap_or("~")
+            );
+        }
+    }
+    ExitCode::SUCCESS
+}
+
+fn print_env(
+    providers: &Providers,
+    all: &[Entry],
+    (provider, name): (&str, &str),
+    require: bool,
+) -> ExitCode {
+    if providers.named(provider).is_none() {
+        return refuse(1, &format!("no provider `{provider}`"));
+    }
+    let Some(e) = all
+        .iter()
+        .find(|e| e.provider.spec().name == provider && e.name == name)
+    else {
+        return refuse(1, &format!("no account `{name}` of provider `{provider}`"));
+    };
+    let (signed_in, why) = e.state();
+    if let Some(why) = why {
+        return refuse(1, &why);
+    }
+    let mut env = Map::new();
+    match &e.login {
+        Login::Folder(dir) => {
+            if let Some((var, dir)) = e.provider.env(dir.as_deref()) {
+                env.insert(var.to_owned(), json!(dir));
+            }
+        }
+        Login::Token(path, var) => match fs::read_to_string(path) {
+            Ok(t) if !t.trim().is_empty() => {
+                env.insert((*var).to_owned(), json!(t.trim()));
+            }
+            _ => return refuse(1, &format!("{}: empty or unreadable", path.display())),
+        },
+    }
+    if !signed_in {
+        if require {
+            return refuse(3, &format!("{provider}/{name} is signed out"));
+        }
+        cooee_core::note!("cooee: {provider}/{name} is signed out");
+    }
+    cooee_core::say!("{}", Value::Object(env));
+    ExitCode::SUCCESS
 }
 
 fn row(e: &Entry, accounts: &Accounts) -> Value {

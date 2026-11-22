@@ -168,21 +168,7 @@ impl Routines {
             io::Error::other(format!("{}: {}", self.settings.display(), e.message()))
         };
         let settings: Settings = toml::from_str(&text).map_err(bad)?;
-        let runs: RunFile = match read(&self.runs)? {
-            Some(bytes) => serde_json::from_slice(&bytes)?,
-            None => RunFile {
-                format: RUNS_FORMAT,
-                runs: BTreeMap::new(),
-                seen: Vec::new(),
-            },
-        };
-        if runs.format > RUNS_FORMAT {
-            return Err(io::Error::other(format!(
-                "{} is format {}, newer than this cooee",
-                self.runs.display(),
-                runs.format
-            )));
-        }
+        let runs = self.read_runs()?;
         let mut routines = Vec::new();
         for d in settings.routine {
             let s = runs.runs.get(&d.id).cloned().unwrap_or_default();
@@ -227,6 +213,25 @@ impl Routines {
             per_day: settings.per_day,
             seen: runs.seen,
         })
+    }
+
+    fn read_runs(&self) -> io::Result<RunFile> {
+        let runs: RunFile = match read(&self.runs)? {
+            Some(bytes) => serde_json::from_slice(&bytes)?,
+            None => RunFile {
+                format: RUNS_FORMAT,
+                runs: BTreeMap::new(),
+                seen: Vec::new(),
+            },
+        };
+        if runs.format > RUNS_FORMAT {
+            return Err(io::Error::other(format!(
+                "{} is format {}, newer than this cooee",
+                self.runs.display(),
+                runs.format
+            )));
+        }
+        Ok(runs)
     }
 
     /// Writes `book` (write-temp, fsync, rename), each file only when its part changed; `routines.toml` changes

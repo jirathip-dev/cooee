@@ -99,7 +99,7 @@ pub(super) fn set(dir: &Path, key: &str, value: serde_json::Value) {
 }
 
 #[test]
-fn the_theme_gate_fails_a_missing_state_low_contrast_an_oversize_scene_and_more() {
+fn the_theme_gate_fails_a_missing_state_a_missing_scene_and_low_contrast() {
     let fails = |dir: &Path| check(dir).unwrap_err().join("\n");
     let gone = farm_with("gate-state", |d| {
         let svg = fs::read_to_string(d.join("sprites.svg")).unwrap();
@@ -138,6 +138,11 @@ fn the_theme_gate_fails_a_missing_state_low_contrast_an_oversize_scene_and_more(
         got.ends_with("scheme.dark \"murky\": no such scheme"),
         "{got}"
     );
+}
+
+#[test]
+fn the_theme_gate_fails_an_oversize_scene_a_missing_layer_and_unknown_words() {
+    let fails = |dir: &Path| check(dir).unwrap_err().join("\n");
     let scene = |view: &str| {
         format!(
             "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"{view}\"><g id=\"sky\"/></svg>"

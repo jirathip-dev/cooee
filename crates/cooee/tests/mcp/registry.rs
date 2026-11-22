@@ -41,6 +41,28 @@ fn a_literal_token_in_the_registry_is_refused_at_load_naming_the_key_only() {
     );
 }
 
+const ADD_DOCS: [&str; 9] = [
+    "mcp",
+    "add",
+    "docs",
+    "--type",
+    "sse",
+    "--url",
+    "https://docs.example/sse",
+    "--header",
+    "Authorization=secret:DOCS",
+];
+
+const ADD_GIT: [&str; 7] = [
+    "mcp",
+    "add",
+    "git",
+    "uvx",
+    "mcp-server-git",
+    "--env",
+    "GIT_TOKEN=env:GIT_TOKEN",
+];
+
 #[test]
 fn the_mac_adds_toggles_and_removes_servers_with_references_only() {
     let dir = scratch("mcp-cli");
@@ -59,33 +81,14 @@ fn the_mac_adds_toggles_and_removes_servers_with_references_only() {
                 + &String::from_utf8_lossy(&out.stderr),
         )
     };
-    let add = [
-        "mcp",
-        "add",
-        "docs",
-        "--type",
-        "sse",
-        "--url",
-        "https://docs.example/sse",
-        "--header",
-        "Authorization=secret:DOCS",
-    ];
     assert_eq!(
-        cooee(&add),
+        cooee(&ADD_DOCS),
         (
             true,
             "added docs: [sse] https://docs.example/sse\n".to_owned()
         )
     );
-    let (ok, said) = cooee(&[
-        "mcp",
-        "add",
-        "git",
-        "uvx",
-        "mcp-server-git",
-        "--env",
-        "GIT_TOKEN=env:GIT_TOKEN",
-    ]);
+    let (ok, said) = cooee(&ADD_GIT);
     assert!(ok, "{said}");
     let (ok, said) = cooee(&["mcp", "add", "bad", "x", "--env", "T=literal"]);
     assert!(!ok && said.contains("env T: only a reference"), "{said}");
