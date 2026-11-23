@@ -24,8 +24,7 @@ extension ChatFeature {
     private func composed(_ state: inout State, _ action: Compose) -> Effect<Action> {
         switch action {
         case .draftChanged(let text):
-            state.draft = text
-            state.edited(text)
+            return typed(&state, text)
         case .attach(let files):
             state.files += files
         case .detach(let index):
@@ -41,6 +40,18 @@ extension ChatFeature {
             revise(&state, action)
         }
         return .none
+    }
+
+    private func typed(_ state: inout State, _ text: String) -> Effect<Action> {
+        let started = state.draft.isEmpty && !text.isEmpty
+        state.draft = text
+        state.edited(text)
+        guard started, case .thread(let thread) = state.target else { return .none }
+        let server = state.server
+        return .run { _ in
+            @Dependency(\.desk) var desk
+            try? await desk.warm(server, thread)
+        }
     }
 
     private func revise(_ state: inout State, _ action: Compose) {

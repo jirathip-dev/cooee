@@ -36,7 +36,7 @@ pub fn persona(
     launch.policy = Some("ask".to_owned());
     launch.env.extend(setup.env);
     launch.args.extend(setup.args);
-    let own = signed && account.is_empty();
+    let own = signed && launch.account.is_none();
     let gaps = setup.gaps.into_iter();
     Ok(Recipe {
         account,

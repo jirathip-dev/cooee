@@ -2,8 +2,9 @@ use std::{fs, path::Path};
 
 use cooee_core::{
     Launch,
-    agents::Agent,
+    agents::{AUTO, Agent, DEFAULT},
     provider::{Gap, Setup, Want},
+    shed_proto::Account,
 };
 use serde_json::{Map, Value};
 
@@ -11,18 +12,26 @@ use super::Logins;
 use crate::hub::HubError;
 
 impl Logins {
-    /// ACP agent `agent`'s account name (empty: shed's own login) and the [`Launch`] that names it to shed.
+    /// `agent`'s account (unset: `auto`; empty: no provider) and its [`Launch`] (no account: shed's own login).
     #[must_use]
     pub fn home(&self, agent: &str, account: Option<&str>) -> (String, Launch) {
-        let signs_in = self.providers.for_agent(agent).is_some();
-        let account = account
-            .filter(|a| signs_in && !a.is_empty())
-            .map(str::to_owned);
+        let Some(p) = self.providers.for_agent(agent) else {
+            return (String::new(), Launch::default());
+        };
+        let account = account.filter(|a| !a.is_empty()).unwrap_or(AUTO).to_owned();
+        let named = |a: &Account| a.name != DEFAULT;
+        let on = match account.as_str() {
+            DEFAULT => None,
+            AUTO => (self.shed.accounts(Some(&p.spec().name)))
+                .is_ok_and(|all| all.iter().any(named))
+                .then(|| account.clone()),
+            _ => Some(account.clone()),
+        };
         let launch = Launch {
-            account: account.clone(),
+            account: on,
             ..Launch::default()
         };
-        (account.unwrap_or_default(), launch)
+        (account, launch)
     }
 
     /// How agent `agent`'s provider sets up a persona session for `want` (#503); none: no provider signs it in.

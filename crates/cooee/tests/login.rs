@@ -9,7 +9,7 @@ use std::{
     os::unix::fs::PermissionsExt,
     path::PathBuf,
     thread,
-    time::{Duration, Instant},
+    time::{Duration, Instant, SystemTime, UNIX_EPOCH},
 };
 
 use serde_json::{Value, json};
@@ -94,6 +94,21 @@ impl Setup {
             .to_owned()
     }
 
+    fn notes(&self, id: &str, n: usize) -> Vec<String> {
+        let start = Instant::now();
+        loop {
+            let items = self.cooee.json(&format!("/threads/{id}/messages"))["items"].clone();
+            let notes: Vec<String> = (items.as_array().unwrap().iter())
+                .filter(|i| i["kind"] == "note")
+                .map(|i| i["text"].as_str().unwrap().to_owned())
+                .collect();
+            if notes.len() >= n || start.elapsed() > Duration::from_secs(10) {
+                return notes;
+            }
+            thread::sleep(Duration::from_millis(20));
+        }
+    }
+
     fn written(&self) -> String {
         let mut out = fs::read_to_string(self.dir.join("cooee.err")).unwrap();
         let mut dirs = vec![self.dir.join("data")];
@@ -137,8 +152,6 @@ fn a_new_account_signs_in_through_shed_a_thread_runs_on_it_and_sign_out_removes_
     let line = s.thread("account-2");
     assert!(line.contains(" --account account-2"), "{line}");
     assert!(!line.contains(" -- env"), "no folder variable: {line}");
-    let line = s.thread("");
-    assert!(!line.contains("--account"), "{line}");
 
     let (status, body) = s
         .cooee
@@ -159,6 +172,61 @@ fn a_new_account_signs_in_through_shed_a_thread_runs_on_it_and_sign_out_removes_
         s.cooee.post("/logins/fake/send", &json!({ "text": "x" })).0,
         400
     );
+}
+
+#[test]
+fn a_thread_on_auto_runs_on_the_account_shed_picks_and_says_each_switch() {
+    let s = setup("login-auto");
+    s.sign_in(&json!({ "new": true }), "good-code");
+    let line = s.thread("");
+    assert!(line.contains(" --account auto"), "unset is auto: {line}");
+    let terminal = line
+        .split("--name ")
+        .nth(1)
+        .unwrap()
+        .split(' ')
+        .next()
+        .unwrap();
+    s.shed.on_account(terminal, "account-2", None);
+    s.shed.on_account(terminal, "account-3", Some("account-2"));
+    s.shed.limit(terminal);
+    let said = [
+        "on account-2",
+        "account-2 hit its limit; now on account-3",
+        "every fake-acp account is limited until 3pm",
+    ];
+    assert_eq!(s.notes(terminal.strip_prefix("cooee-").unwrap(), 3), said);
+    let own = s.thread("default");
+    assert!(!own.contains("--account"), "{own}");
+}
+
+#[test]
+fn every_account_limited_says_so_with_the_first_reset_and_auto_without_a_named_account_is_the_own_login()
+ {
+    let s = setup("login-limited");
+    s.sign_in(&json!({ "new": true }), "good-code");
+    let resets = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap()
+        .as_secs()
+        + 3600;
+    let refused = format!(
+        "ACCOUNT_LIMITED: every account is limited; the first resets at {resets} (unix seconds)"
+    );
+    fs::write(s.shed.dir.join("run-fails"), refused).unwrap();
+    let new = json!({ "agent": "fake-acp", "folder": s.dir.join("root"), "text": "hi", "random_id": "limited" });
+    let (status, body) = s.cooee.post("/threads", &new);
+    assert_eq!(
+        (status, body.as_str()),
+        (429, "All accounts are limited; the first resets in 1h 00m.")
+    );
+    s.shed.gate("run-fails", false);
+    let (status, body) = s
+        .cooee
+        .post("/logins/fake/signout", &json!({ "account": "account-2" }));
+    assert_eq!(status, 200, "{body}");
+    let line = s.thread("auto");
+    assert!(!line.contains("--account"), "{line}");
 }
 
 #[test]

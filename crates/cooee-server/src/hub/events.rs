@@ -238,6 +238,7 @@ impl Hub {
     pub fn watch(&self, now: u64) {
         self.deadlines(now);
         self.expire(now);
+        self.sleep_idle(now);
         for live in self.all() {
             let mut live = lock(&live);
             if live.stuck || live.chat.turn.state != "working" || now < live.moved + STUCK {
