@@ -6,7 +6,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/jirathip-dev/blocks",
       "state" : {
-        "revision" : "ec4563f81c095b85edbedb9a459f0ba322cd29c4"
+        "revision" : "a42e7570e1bed499cd927b26913ec23d3e7cb2ae",
+        "version" : "2.1.0"
       }
     },
     {
