@@ -150,7 +150,7 @@ pub fn options(shed: &FakeShed, line: &str) -> Option<Value> {
     Some(shed.meta(name)?["claudeCode"]["options"].clone())
 }
 
-pub fn switches(base: &str, dir: &Path, env: &str, sent: &str) {
+pub fn switches(base: &str, meta: Option<&Value>, env: &str, sent: &str) {
     if base == "codex" {
         let config = env.lines().find_map(|l| l.strip_prefix("CODEX_CONFIG="));
         let config: Value = serde_json::from_str(config.expect(env)).unwrap();
@@ -168,25 +168,24 @@ pub fn switches(base: &str, dir: &Path, env: &str, sent: &str) {
             config["tools"]["web_search"], true,
             "web stays until a connector"
         );
-        assert!(
-            !sent.contains("Be brief."),
-            "the brief is in the system channel: {sent}"
-        );
     } else {
-        let file = env
-            .lines()
-            .find_map(|l| l.strip_prefix("GEMINI_CLI_SYSTEM_SETTINGS_PATH="));
-        let file = Path::new(file.expect(env));
-        assert_eq!(file, dir.join("data/run/ada/gemini-settings.json"));
-        let settings: Value = serde_json::from_str(&fs::read_to_string(file).unwrap()).unwrap();
-        let core = settings["tools"]["core"].as_array().unwrap();
-        assert!(core.contains(&json!("web_fetch")) && !core.contains(&json!("save_memory")));
-        assert_eq!(settings["experimental"]["enableAgents"], false);
+        let options = &meta.expect("antigravity's switches are its _meta")["antigravity"];
         assert!(
-            sent.contains("Be brief."),
-            "the brief is the first prompt: {sent}"
+            options["systemPrompt"]["append"]
+                .as_str()
+                .unwrap()
+                .starts_with("Be brief.")
+        );
+        assert_eq!(
+            options["disabledTools"],
+            json!(["invoke_subagent", "run_workflow"]),
+            "web stays until a connector"
         );
     }
+    assert!(
+        !sent.contains("Be brief."),
+        "the brief is in the system channel: {sent}"
+    );
 }
 
 pub fn claude_switches(meta: &Value, brief: &str) {

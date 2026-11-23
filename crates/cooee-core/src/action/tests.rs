@@ -120,7 +120,7 @@ fn same_reads_and_edits() {
                 )],
             ),
             (
-                "gemini",
+                "antigravity-acp",
                 vec![("crates/export/src/csv.rs", Some("read"), CSV, Value::Null)],
             ),
         ],
@@ -142,7 +142,7 @@ fn same_reads_and_edits() {
                 )],
             ),
             (
-                "gemini",
+                "antigravity-acp",
                 vec![("csv.rs: let a => let b", Some("edit"), CSV, Value::Null)],
             ),
         ],

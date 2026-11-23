@@ -8,7 +8,7 @@
 
 Each provider is one row of the `providers` table in the config: its name, the ACP agent it signs in, its CLI's own
 login, logout and read-only status commands, and the variable that points its CLI at a config folder (`home`:
-`CLAUDE_CONFIG_DIR`, `CODEX_HOME`, `GEMINI_CLI_HOME`). There is no provider-specific code beyond that table. The
+`CLAUDE_CONFIG_DIR`, `CODEX_HOME`, `GEMINI_HOME`). There is no provider-specific code beyond that table. The
 status command signs an account in when it exits 0; its output, on one line and redacted, is the status line (a
 JSON status, as `claude auth status` prints, becomes a plain line, its email or org and any `usage` shown apart). A
 status command that runs past 10 s is killed and the account reads `unknown`: "can't tell: the status command timed

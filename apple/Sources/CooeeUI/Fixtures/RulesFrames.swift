@@ -63,7 +63,7 @@ internal enum RulesStory {
                 Gap(kind: .search, words: "Never asks before a search in its sandbox"),
                 Gap(kind: .run, words: "Never asks before a command in its sandbox"),
             ]),
-        AgentOption(id: "Gemini", gaps: [personal]),
+        AgentOption(id: "Antigravity", gaps: [personal]),
     ]
 
     internal static let persona: APIPersona = {
@@ -78,7 +78,7 @@ internal enum RulesStory {
         choices.lists = [
             ModelList(agent: "Claude Code", models: [["haiku 5.5"], ["opus 5.5"], ["sonnet 5.5"]]),
             ModelList(agent: "Codex", models: [["gpt-5.5"], ["gpt-5.5-mini"]]),
-            ModelList(agent: "Gemini", models: [["gemini 3 flash"], ["gemini 3 pro"]]),
+            ModelList(agent: "Antigravity", models: [["gemini 3 flash"], ["gemini 3 pro"]]),
         ]
         choices.rules = coder.count
         return choices

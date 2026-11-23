@@ -17,7 +17,7 @@ One table, the config's `[[providers]]` `home` variable (`docs/configuration.md`
 |---|---|
 | `claude` | `CLAUDE_CONFIG_DIR` |
 | `codex` | `CODEX_HOME` |
-| `gemini` | `GEMINI_CLI_HOME` |
+| `antigravity` | `GEMINI_HOME` |
 
 ## `cooee accounts env <provider> <name> [--require-signed-in]`
 

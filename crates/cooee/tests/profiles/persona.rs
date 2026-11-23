@@ -63,8 +63,9 @@ fn a_persona_with_a_web_connector_starts_with_the_harnesss_own_web_tools_off() {
 }
 
 #[test]
-fn a_persona_on_codex_or_geminis_default_login_starts_with_one_line_an_added_account_without() {
-    for base in ["codex", "gemini"] {
+fn a_persona_on_codex_or_antigravitys_default_login_starts_with_one_line_an_added_account_without()
+{
+    for base in ["codex", "antigravity"] {
         let dir = scratch(&format!("profiles-{base}"));
         fs::create_dir_all(dir.join("data/accounts/fake/work")).unwrap();
         fs::create_dir_all(dir.join("root")).unwrap();
@@ -101,7 +102,8 @@ fn a_persona_on_codex_or_geminis_default_login_starts_with_one_line_an_added_acc
         let (id, notes) = start("ada");
         assert_eq!(notes, [json!(personal)], "{base}");
         let sent = shed.sent(&format!("cooee-{id}")).concat();
-        switches(base, &dir, &shed.adapter_env(), &sent);
+        let meta = shed.meta(&format!("cooee-{id}"));
+        switches(base, meta.as_ref(), &shed.adapter_env(), &sent);
 
         let (_, notes) = start("wes");
         assert_eq!(

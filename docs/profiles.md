@@ -53,7 +53,7 @@ At spawn the agent's adapter runs as `env <account folder> <settings variable>=<
 through a 0600 file that the adapter's shell reads and removes (`sh -c '. file; rm file; exec adapter'`), so no
 secret is on a command line, in shed's state or in cooee's files or log. **Guarded profiles:** `settings` reaches the
 agent only through its provider's `settings` variable, the one its ACP adapter reads an extra settings file from
-and enforces, hooks included; an agent with none (Codex's and Gemini's) can't start the profile: "this profile's guard
+and enforces, hooks included; an agent with none (Codex's and Antigravity's) can't start the profile: "this profile's guard
 can't run with <agent>". Claude Code's is `CLAUDE_CONFIG_DIR` (herdsman#565: claude-acp enforces the user settings
 there), so a Claude profile's `settings` is a config folder (its `settings.json` holds the hooks), in place of the
 account's. The form preselects each folder's last-used profile.
