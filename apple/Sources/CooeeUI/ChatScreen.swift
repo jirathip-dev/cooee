@@ -137,5 +137,6 @@ internal struct ChatScreen: View {
             )
             .presentationDetents([.medium])
         }
+        .modifier(ChatScreenAreas(store: store))
     }
 }
