@@ -73,6 +73,10 @@ extension Client {
         try await post("/threads/\(id)/cancel", [String: String]())
     }
 
+    public func typing(_ id: String) async throws {
+        try await post("/threads/\(id)/typing", [String: String]())
+    }
+
     public func newThread(
         persona: APIPersona,
         machine: String,

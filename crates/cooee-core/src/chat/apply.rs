@@ -43,6 +43,14 @@ impl Chat {
         item.map(Change::Item).into_iter().collect()
     }
 
+    fn account(&mut self, at: u64, seq: u64, account: &str, was: Option<String>) -> Change {
+        let text = was.map_or_else(
+            || format!("on {account}"),
+            |was| format!("{was} hit its limit; now on {account}"),
+        );
+        Change::Item(self.push(at, seq, Body::Note { text }))
+    }
+
     /// Applies shed event `seq` of this thread's terminal at time `at`, a tool call's action as `read` reads it.
     pub fn apply(
         &mut self,
@@ -57,8 +65,8 @@ impl Chat {
             | EventKind::Mode { .. }
             | EventKind::Turn { .. }
             | EventKind::Session(_)
-            | EventKind::MemLimit { .. }
-            | EventKind::Account { .. } => Vec::new(),
+            | EventKind::MemLimit { .. } => Vec::new(),
+            EventKind::Account { account, was, .. } => vec![self.account(at, seq, &account, was)],
             EventKind::Usage(u) => {
                 self.turn.context = Some(u);
                 vec![Change::State(self.turn.clone())]

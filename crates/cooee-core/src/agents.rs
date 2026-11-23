@@ -243,6 +243,12 @@ pub struct Agent {
     pub lent: Option<Lent>,
 }
 
+/// The account that asks shed to pick the one with the most headroom and switch on a limit (#765).
+pub const AUTO: &str = "auto";
+
+/// The account that is the provider's own login.
+pub const DEFAULT: &str = "default";
+
 /// One agent and account of a fallback chain (#76).
 #[derive(Debug, Clone, Default, PartialEq, Eq, Deserialize, Serialize)]
 #[serde(deny_unknown_fields)]
