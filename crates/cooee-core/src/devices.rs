@@ -87,13 +87,9 @@ pub enum Claim {
 /// A new device's request as it stands, read without collecting it.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Peek {
-    /// Not answered yet: its check word and when it runs out, in Unix milliseconds.
     Waiting(String, u64),
-    /// Approved by this device: `collect` makes its token.
     Approved(String),
-    /// Declined by this device.
     Declined(String),
-    /// No such request: run out, cancelled, collected or never made.
     Gone,
 }
 
@@ -440,10 +436,7 @@ impl Devices {
         })
     }
 
-    /// The new device's request, changing nothing: [`Devices::collect`] stays the only call that makes a token.
-    ///
-    /// # Errors
-    /// When the file can't be read.
+    /// The new device's request, read without collecting it; errors when the file can't be read.
     pub fn peek(&self, claim: &str, now: u64) -> io::Result<Peek> {
         let (hash, mut asks) = (sha256(claim.as_bytes()), self.load()?.asks.into_iter());
         let found = asks.find(|r| same(&r.claim, &hash) && r.at + ASK_TTL > now);

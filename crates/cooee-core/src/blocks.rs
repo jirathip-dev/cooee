@@ -1,5 +1,3 @@
-//! The chat block shapes items render to, and the `device-key` island.
-
 use blocks::{
     Block, Card, CardKind, Choice, ChoiceOption, Fallback, Fields, Island, Other, Run, Secret,
     Text, TextStyle,
@@ -36,8 +34,7 @@ impl Serialize for Item {
     }
 }
 
-/// The `device-key` island `id`: the device signs with its own key in mode `mode` and sends `send` with `values`
-/// and `{id, client, auth, sig}`; a client without it draws `instead`.
+/// The `device-key` island: the device signs `values` with its own key; a client without it draws `instead`.
 #[must_use]
 pub fn device_key(id: &str, mode: &str, send: &str, values: Fields, instead: &str) -> Block {
     let props = Fields::from_iter([
@@ -67,8 +64,7 @@ impl Item {
 
     /// The card block an approval is drawn as: an `ask` (a choice, or a thread to pick), `config` (its diff with
     /// apply or discard), `secret` (one masked field) or `run` card. Its action is `answer`, sent back as
-    /// `POST /threads/<id>/approve`; once settled it shows its line instead. A proposal also carries the
-    /// `device-key` island that signs its approve.
+    /// `POST /threads/<id>/approve`; once settled it shows its line instead.
     #[must_use]
     pub fn block(&self) -> Option<Block> {
         let Body::Approval {
