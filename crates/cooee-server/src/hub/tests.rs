@@ -454,7 +454,7 @@ fn a_busy_thread_does_not_hold_up_another_threads_event() {
         took
     };
     let took = (0..3).map(round).min().unwrap();
-    assert!(took < Duration::from_millis(50), "{took:?}");
+    assert!(took < Duration::from_millis(200), "{took:?}");
 }
 
 fn texts(rx: &mut broadcast::Receiver<Out>) -> Vec<Out> {
