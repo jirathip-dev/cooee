@@ -35,7 +35,8 @@ id. `--wait` blocks until the turn ends, an approval is pending or `--timeout` (
 `scripts/blocks-eval-model.sh <persona> [cooee flags]` is blocks' `blocks eval --model` command: it reads
 `{system, messages}` on stdin, sends the system text and the messages as the first message of a new chat with
 `<persona>` (`cooee send --new … --wait`) and prints the reply. Give it a persona with an empty Character and
-Instructions, `style = "detailed"` and no plugins, so the prompt is blocks' alone:
+Instructions, `style = "detailed"`, no plugins, and `policy = "deny"` in its agent.toml (a tool call is refused,
+never an approval card), so the prompt is blocks' alone and the reply is text:
 
 ```sh
 blocks eval fixtures/evals --replies fixtures/evals/replies/<model> \
