@@ -7,6 +7,7 @@ use topcoat::{
 use crate::{
     HubError,
     http::{AgentAsk, Answer, bearer, blocking},
+    hub::Proposal,
 };
 
 #[route(POST "/mcp/agent/propose")]
@@ -14,7 +15,7 @@ async fn mcp_propose(cx: &Cx, Json(a): Json<AgentAsk>) -> Result<Answer<cooee_co
     let token = bearer(cx);
     Ok(Answer(
         blocking(cx, move |hub| {
-            let p =
+            let p: Proposal =
                 serde_json::from_value(a.server).map_err(|e| HubError::Refused(e.to_string()))?;
             hub.propose(&a.thread, &token, p)
         })
