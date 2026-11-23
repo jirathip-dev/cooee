@@ -1,0 +1,279 @@
+## head 43d763ad89fe34be8c968657cf3a034da6ce38f3, cooee serve on http://127.0.0.1:41656
+## AC2/gate: unpaired GET /threads, /screens/sessions -> 401; GET /screens/pair?code=123456 -> 200
+$ curl -s -o /dev/null -w %{http_code}
+ http://127.0.0.1:41656/threads
+401
+[exit=0]
+$ curl -s -o /dev/null -w %{http_code}
+ http://127.0.0.1:41656/screens/sessions
+401
+[exit=0]
+$ curl -s -w 
+%{http_code}
+ http://127.0.0.1:41656/screens/pair?code=123456
+{"type":"screen","id":"pair","title":"Pair with 127.0.0.1","blocks":[{"type":"form","id":"code","submit":{"label":"Pair","action":"code"},"action":"code","fields":[{"type":"text","name":"code","label":"Six-digit code","value":"123456"}]},{"type":"button","id":"ask","label":"Ask to pair","action":"ask"},{"type":"island","id":"key","name":"device-key","fallback":{"title":"This app keeps no device key","subtitle":"Pair with the code instead"},"props":{"mode":"signin","send":"signin","values":{}},"events":["signin"]}],"source":"core"}
+200
+[exit=0]
+## AC1 code + AC2 rate limit: cooee pair, 4 wrong codes on the screen from 203.0.113.9, the 5th via POST /pair, then the screen is locked even for the right code
+[cooee pair exit=0]
+Type the link into the cooee app on the new device.
+code  NNN NNN  (one use, 10 minutes)
+$ act 203.0.113.9 code  {"code":"000000"}
+HTTP/1.1 200 OK
+content-type: application/json
+content-length: 69
+date: Sun, 22 Nov 2026 09:57:49 GMT
+
+{"toast":{"tone":"fail","title":"That code is wrong: 4 tries left."}}
+[exit=0]
+$ act 203.0.113.9 code  {"code":"000000"}
+HTTP/1.1 200 OK
+content-type: application/json
+content-length: 69
+date: Sun, 22 Nov 2026 09:57:49 GMT
+
+{"toast":{"tone":"fail","title":"That code is wrong: 3 tries left."}}
+[exit=0]
+$ act 203.0.113.9 code  {"code":"000000"}
+HTTP/1.1 200 OK
+content-type: application/json
+content-length: 69
+date: Sun, 22 Nov 2026 09:57:49 GMT
+
+{"toast":{"tone":"fail","title":"That code is wrong: 2 tries left."}}
+[exit=0]
+$ act 203.0.113.9 code  {"code":"000000"}
+HTTP/1.1 200 OK
+content-type: application/json
+content-length: 69
+date: Sun, 22 Nov 2026 09:57:49 GMT
+
+{"toast":{"tone":"fail","title":"That code is wrong: 1 tries left."}}
+[exit=0]
+$ curl -s -o /dev/null -w %{http_code} -> %{redirect_url}
+ -H x-forwarded-for: 203.0.113.9 -d code=000000 http://127.0.0.1:41656/pair
+303 -> http://127.0.0.1:41656/pair?bad=limit&wait=60
+[exit=0]
+$ act 203.0.113.9 code  {"code":"000000"}
+HTTP/1.1 200 OK
+content-type: application/json
+content-length: 62
+date: Sun, 22 Nov 2026 09:57:49 GMT
+
+{"toast":{"tone":"fail","title":"Too many tries: wait 60 s."}}
+[exit=0]
+$ act 203.0.113.9 code  {"code":"<pin1>"}
+HTTP/1.1 200 OK
+content-type: application/json
+content-length: 62
+date: Sun, 22 Nov 2026 09:57:49 GMT
+
+{"toast":{"tone":"fail","title":"Too many tries: wait 60 s."}}
+[exit=0]
+## right code from 203.0.113.10
+HTTP/1.1 200 OK
+content-type: application/json
+content-length: 90
+date: Sun, 22 Nov 2026 09:57:49 GMT
+
+{"toast":{"tone":"fail","title":"That code ran out or was used: run `cooee pair` again."}}
+$ curl -s -o /dev/null -w GET /threads with that cookie: %{http_code}
+ -H cookie: cooee= http://127.0.0.1:41656/threads
+GET /threads with that cookie: 401
+[exit=0]
+## paired caller's pair screen
+$ curl -s -H cookie: cooee= http://127.0.0.1:41656/screens/pair
+{"type":"screen","id":"pair","title":"Pair with 127.0.0.1","blocks":[{"type":"form","id":"code","submit":{"label":"Pair","action":"code"},"action":"code","fields":[{"type":"text","name":"code","label":"Six-digit code"}]},{"type":"button","id":"ask","label":"Ask to pair","action":"ask"},{"type":"island","id":"key","name":"device-key","fallback":{"title":"This app keeps no device key","subtitle":"Pair with the code instead"},"props":{"mode":"signin","send":"signin","values":{}},"events":["signin"]}],"source":"core"}[exit=0]
+## the same code again
+$ act 203.0.113.11 code  {"code":"<pin1>"}
+HTTP/1.1 200 OK
+content-type: application/json
+content-length: 90
+date: Sun, 22 Nov 2026 09:57:49 GMT
+
+{"toast":{"tone":"fail","title":"That code ran out or was used: run `cooee pair` again."}}
+[exit=0]
+## (the lockout burned that code, as POST /pair always did; the repo's own test also mints a new one) fresh code, right code from 203.0.113.10
+[cooee pair exit=0]
+$ act 203.0.113.10 code {"code":"<pin2>"}
+HTTP/1.1 200 OK
+content-type: application/json
+set-cookie: cooee=<token>; Path=/; Max-Age=31536000; HttpOnly; SameSite=Strict
+content-length: 28
+
+{"open":"/screens/sessions"}
+$ curl -H 'cookie: cooee=<token>' http://127.0.0.1:41656/threads
+200
+$ curl -H 'cookie: cooee=<token>' http://127.0.0.1:41656/screens/pair
+{"type":"screen","id":"pair","title":"Paired","blocks":[{"type":"text","id":"paired","text":"Paired with 127.0.0.1"},{"type":"island","id":"key","name":"device-key","fallback":{"title":"This app keeps no device key","subtitle":"Pair with the code instead"},"props":{"mode":"enroll","send":"enroll","values":{}},"events":["enroll"]},{"type":"button","id":"open","label":"Open cooee","tap":{"open":"/screens/sessions"}}],"source":"core"}
+## the same code again from 203.0.113.11
+HTTP/1.1 200 OK
+content-type: application/json
+content-length: 90
+
+{"toast":{"tone":"fail","title":"That code ran out or was used: run `cooee pair` again."}}
+## AC1 word + AC2 unpaired stream: ask from 'local'
+$ act local ask
+HTTP/1.1 200 OK
+content-type: application/json
+set-cookie: cooee_claim=<claim>; Path=/; Max-Age=300; HttpOnly; SameSite=Strict
+content-length: 24
+
+{"open":"/screens/pair"}
+$ GET /screens/pair with claim
+{"type":"screen","id":"pair","title":"Waiting for approval","blocks":[{"type":"text","id":"word","text":"Check word: velvet walrus"},{"type":"text","id":"left","text":"Runs out in 5:00"},{"type":"text","id":"how","text":"Approve it on a paired device, or run `cooee pair approve` on the server."},{"type":"button","id":"cancel","label":"Cancel","action":"cancel"}],"source":"core"}
+$ GET /pair/asks (paired device)
+[{"id":"a39253a5","word":"velvet walrus","label":"browser","at":1795341487708}]
+$ GET /threads with only the claim: 401
+$ GET /screens/sessions with only the claim: 401
+$ GET /pair/asks with only the claim: 401
+$ collect before approval
+HTTP/1.1 400 Bad Request
+connection: close
+content-length: 0
+
+
+## (the 400 above was my zsh helper sending '-H cookie: …' as one argument; inline curl from here)
+$ curl -X POST /screens/pair/action collect, cookie cooee_claim=<claim>   (before approval)
+HTTP/1.1 200 OK
+content-type: application/json
+content-length: 53
+
+{"toast":{"tone":"fail","title":"Not approved yet."}}
+
+## two GET /stream?v=2 with only the claim
+-- stream 1:
+event: hello
+data: {"v":2,"sid":"1a202b05d29-0","epoch":"1a202b05d29","keys":16}
+
+event: bye
+data: {"why":"evicted"}
+
+-- stream 2:
+event: hello
+data: {"v":2,"sid":"1a202b05d29-1","epoch":"1a202b05d29","keys":16}
+
+$ POST /stream/1a202b05d29-0 {open:[]} (evicted)
+404
+$ POST /stream/1a202b05d29-1 open /screens/pair, /screens/sessions, /screens/chat/x
+{"keys":[{"k":"/screens/pair","rev":1,"screen":{"type":"screen","id":"pair","title":"Waiting for approval","blocks":[{"type":"text","id":"word","text":"Check word: velvet walrus"},{"type":"text","id":"left","text":"Runs out in 4:27"},{"type":"text","id":"how","text":"Approve it on a paired device, or run `cooee pair approve` on the server."},{"type":"button","id":"cancel","label":"Cancel","action":"cancel"}],"source":"core"}},{"k":"/screens/sessions","gone":404},{"k":"/screens/chat/x","gone":404}]}
+200
+$ cooee pair approve a39253a5
+[exit=0]
+-- stream 2 frames after approve (title lines):
+   1 "title":"Approved"
+$ curl -X POST /screens/pair/action collect, cookie cooee_claim=<claim>
+HTTP/1.1 200 OK
+content-type: application/json
+set-cookie: cooee=<token2>; Path=/; Max-Age=31536000; HttpOnly; SameSite=Strict
+set-cookie: cooee_claim=; Path=/; Max-Age=0; HttpOnly; SameSite=Strict
+content-length: 28
+
+{"open":"/screens/sessions"}
+
+-- stream 2 tail:
+
+event: bye
+data: {"why":"handover"}
+
+$ POST /stream/<sid2> {open:[]} with the old claim after collect
+401
+## AC2 requests 4 at once: 5 asks from distinct addresses
+$ ask #1
+HTTP/1.1 200 OK
+set-cookie: cooee_claim=<claim>; Path=/; Max-Age=300; HttpOnly; SameSite=Strict
+
+{"open":"/screens/pair"}
+
+$ ask #2
+HTTP/1.1 200 OK
+set-cookie: cooee_claim=<claim>; Path=/; Max-Age=300; HttpOnly; SameSite=Strict
+
+{"open":"/screens/pair"}
+
+$ ask #3
+HTTP/1.1 200 OK
+set-cookie: cooee_claim=<claim>; Path=/; Max-Age=300; HttpOnly; SameSite=Strict
+
+{"open":"/screens/pair"}
+
+$ ask #4
+HTTP/1.1 200 OK
+set-cookie: cooee_claim=<claim>; Path=/; Max-Age=300; HttpOnly; SameSite=Strict
+
+{"open":"/screens/pair"}
+
+$ ask #5
+HTTP/1.1 200 OK
+set-cookie: cooee_claim=<claim>; Path=/; Max-Age=300; HttpOnly; SameSite=Strict
+
+{"open":"/screens/pair"}
+
+$ GET /pair/asks count: 4
+## AC1 key: a signin with a bad signature
+HTTP/1.1 200 OK
+content-type: application/json
+content-length: 71
+
+{"toast":{"tone":"fail","title":"That passkey answer isn't readable."}}
+
+## supporting: the PR's own end-to-end tests (real cooee serve) for a key sign-in and a key-approved proposal card
+$ cargo test --locked -p cooee --test pairing pair_screen device_key asking declined typed_code ; cargo test -p cooee --test mcp ; cargo test -p cooee --test stream pair_screen
+test a_foreign_host_or_origin_is_refused_even_paired ... ok
+test a_report_is_kept_and_listed ... ok
+test a_qr_codes_link_carries_a_code_that_pairs_at_once ... ok
+test a_device_key_signs_in_and_a_wrong_signature_does_not ... ok
+test a_declined_request_tells_the_new_device_who_said_no ... ok
+test alerts_status_test_and_off_are_this_devices ... ok
+test a_passkey_signs_a_device_back_in_and_can_be_removed ... ok
+test an_asking_device_sees_its_word_then_approved_and_gets_its_cookie_only_when_it_collects ... ok
+test a_declined_or_expired_request_never_gets_a_cookie ... ok
+test a_wrong_expired_or_reused_code_says_so ... ok
+test a_typed_code_pairs_and_five_wrong_codes_lock_the_form_and_post_pair_together ... ok
+test devices_are_listed_and_removed_from_the_phone ... ok
+test push_subscriptions_are_checked_and_tied_to_the_device ... ok
+test pair_use_remove_and_only_the_hash_on_disk ... ok
+test the_mac_declines_a_request_from_the_cli ... ok
+test unpaired_reads_and_writes_are_refused ... ok
+test a_new_device_asks_and_a_paired_one_approves_it_with_its_passkey ... ok
+test the_new_calls_need_a_paired_device_but_pairing_requests_do_not ... ok
+test five_wrong_codes_a_minute_refuse_that_address ... ok
+test the_mac_lists_and_approves_a_request_from_the_cli ... ok
+test result: ok. 20 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.70s
+[pairing exit=]
+test a_literal_token_in_the_registry_is_refused_at_load_naming_the_key_only ... ok
+test the_mac_adds_toggles_and_removes_servers_with_references_only ... ok
+test a_read_tool_runs_with_no_card_and_a_write_tool_runs_only_once_its_card_is_allowed ... ok
+test propose_server_shows_the_exact_command_runs_nothing_and_needs_face_id_to_add_it_off ... ok
+test a_persona_with_no_desk_or_a_desk_the_provider_did_not_make_is_refused_and_nothing_runs ... ok
+test a_secret_dropped_once_is_typed_into_its_terminal_and_reaches_no_transcript_event_file_log_or_model ... ok
+test a_lease_saved_as_a_skill_hands_the_persona_its_steps_and_no_typed_value_and_a_declined_card_saves_nothing ... ok
+test each_desk_action_leaves_one_captioned_encrypted_frame_and_only_an_asked_screenshot_reaches_the_agent ... ok
+test the_agent_sees_and_calls_only_the_allowed_tools_under_claude_and_codex_and_no_value_is_written ... ok
+test a_streamable_http_and_an_sse_server_answer_through_the_pipe_with_headers_on_curls_stdin_and_no_redirect ... ok
+test each_browser_action_leaves_one_captioned_encrypted_frame_and_a_no_frames_site_none ... ok
+test each_persona_gets_its_own_browser_and_every_call_is_checked_and_logged ... ok
+test mail_sends_only_on_its_card_or_an_allowed_recipient_and_a_read_code_reaches_no_transcript ... ok
+test the_owner_watches_takes_control_and_hands_back_with_a_note_the_waiting_call_carries ... ok
+test result: ok. 14 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.21s
+[mcp exit=]
+test the_sessions_screen_is_core_kinds_grouped_by_persona_with_the_rows_of_get_threads ... ok
+test a_mirror_follows_the_sessions_list_through_drops_doubles_and_a_restart ... ok
+test a_stream_without_a_device_opens_only_the_pair_screen ... ok
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.18s
+[stream exit=]
+## AC3: the cookie(cx ban
+$ drover arch-check
+arch-check: 2478 files, 0 violations
+[exit=0]
+$ grep -rn "cookie(cx" crates/cooee-server/src
+crates/cooee-server/src/pairing.rs:65:pub(crate) fn cookie(cx: &Cx, token: &str) -> String {
+crates/cooee-server/src/pairing.rs:69:pub(crate) fn claim_cookie(cx: &Cx, claim: Option<&str>) -> String {
+crates/cooee-server/src/screens/pair.rs:194:                Tried::Paired(token) => answer(&open(OPEN), &[cookie(cx, &token)]),
+crates/cooee-server/src/screens/pair.rs:202:            answer(&open(PATH), &[claim_cookie(cx, Some(&claim))])
+crates/cooee-server/src/screens/pair.rs:209:            answer(&open(PATH), &[claim_cookie(cx, None)])
+crates/cooee-server/src/screens/pair.rs:218:                    let cookies = [cookie(cx, &token), claim_cookie(cx, None)];
+crates/cooee-server/src/screens/pair.rs:232:                Ok(token) => answer(&open(OPEN), &[cookie(cx, &token)]),
+crates/cooee-server/src/routes/pairing.rs:56:        Tried::Paired(token) => see_other("/?paired", Some(cookie(cx, &token))),
+crates/cooee-server/src/routes/pairing.rs:78:            .header("Set-Cookie", cookie(cx, &token))
+crates/cooee-server/src/routes/pairing.rs:225:        .header("Set-Cookie", cookie(cx, &token))
