@@ -5,7 +5,7 @@ use cooee_core::{
     disk, mcp, secrets,
 };
 
-use super::{Hub, HubError, mcp::Proposed};
+use super::{Hub, HubError, proposals::Proposed};
 
 pub struct Me(String);
 
