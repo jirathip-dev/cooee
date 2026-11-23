@@ -1,5 +1,5 @@
 crate crates/cooee-core/src "cooee's core: the model and its files. No HTTP." \
-  accounts chat config devices login providers root shed store
+  accounts blocks chat config devices login providers root shed store
 module crates/cooee-core/src/chat
 module crates/cooee-core/src/config
 module crates/cooee-core/src/shed

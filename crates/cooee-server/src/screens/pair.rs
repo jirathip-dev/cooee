@@ -4,8 +4,7 @@ use blocks::{
     Action, Block, Button, FieldValue, Fields, Form, Screen, Submit, Tap, Text, TextField, Toast,
     Tone,
 };
-use cooee_core::blocks::device_key;
-use cooee_core::{Claim, Devices, Peek};
+use cooee_core::{Claim, Devices, Item, Peek};
 use serde::Deserialize;
 use serde_json::Value;
 use topcoat::{
@@ -86,7 +85,7 @@ fn button(label: &str, act: &str) -> Block {
 
 fn key(mode: &str) -> Block {
     let instead = "Pair with the code instead";
-    device_key("key", mode, mode, Fields::new(), instead)
+    Item::device_key("key", mode, mode, Fields::new(), instead)
 }
 
 fn unpaired(host: &str, code: &str) -> (String, Vec<Block>) {
@@ -113,7 +112,7 @@ fn unpaired(host: &str, code: &str) -> (String, Vec<Block>) {
 fn screen(c: &Caller, now: u64) -> Block {
     let (title, blocks) = match c {
         Caller::Nobody { host, code } => unpaired(host, code),
-        Caller::Asking(Peek::Waiting(word, until)) => {
+        Caller::Asking(Peek::Waiting { word, until }) => {
             let left = until.saturating_sub(now).div_ceil(1000);
             let blocks = vec![
                 text("word", format!("Check word: {word}")),
@@ -129,7 +128,7 @@ fn screen(c: &Caller, now: u64) -> Block {
             ];
             ("Waiting for approval".to_owned(), blocks)
         }
-        Caller::Asking(Peek::Approved(by)) => {
+        Caller::Asking(Peek::Approved { by }) => {
             let blocks = vec![
                 text("by", format!("{by} approved this device.")),
                 button("Continue", "collect"),
@@ -138,7 +137,7 @@ fn screen(c: &Caller, now: u64) -> Block {
         }
         Caller::Asking(peek) => {
             let why = match peek {
-                Peek::Declined(by) => format!("{by} said no."),
+                Peek::Declined { by } => format!("{by} said no."),
                 _ => "The request ran out.".to_owned(),
             };
             let blocks = vec![text("why", why), button("Ask again", "ask")];

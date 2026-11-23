@@ -5,7 +5,7 @@
 mod accounts;
 pub mod action;
 pub mod agents;
-pub mod blocks;
+mod blocks;
 pub mod browser;
 pub mod cdp;
 mod chat;

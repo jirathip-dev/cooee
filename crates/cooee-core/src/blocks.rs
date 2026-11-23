@@ -34,27 +34,27 @@ impl Serialize for Item {
     }
 }
 
-/// The `device-key` island: the device signs `values` with its own key; a client without it draws `instead`.
-#[must_use]
-pub fn device_key(id: &str, mode: &str, send: &str, values: Fields, instead: &str) -> Block {
-    let props = Fields::from_iter([
-        ("mode".to_owned(), Value::from(mode)),
-        ("send".to_owned(), Value::from(send)),
-        ("values".to_owned(), Value::Object(values)),
-    ]);
-    let fallback = Fallback {
-        title: "This app keeps no device key".into(),
-        subtitle: Some(instead.into()),
-        ..Fallback::default()
-    };
-    let island = Island::new("device-key", fallback)
-        .id(id)
-        .props(props)
-        .events(vec![send.to_owned()]);
-    Block::Island(Box::new(island))
-}
-
 impl Item {
+    /// The `device-key` island: the device signs `values` with its own key; a client without it draws `instead`.
+    #[must_use]
+    pub fn device_key(id: &str, mode: &str, send: &str, values: Fields, instead: &str) -> Block {
+        let props = Fields::from_iter([
+            ("mode".to_owned(), Value::from(mode)),
+            ("send".to_owned(), Value::from(send)),
+            ("values".to_owned(), Value::Object(values)),
+        ]);
+        let fallback = Fallback {
+            title: "This app keeps no device key".into(),
+            subtitle: Some(instead.into()),
+            ..Fallback::default()
+        };
+        let island = Island::new("device-key", fallback)
+            .id(id)
+            .props(props)
+            .events(vec![send.to_owned()]);
+        Block::Island(Box::new(island))
+    }
+
     /// Whether approving this card needs the device key: cooee's own proposals.
     #[must_use]
     pub fn needs_key(&self) -> bool {
@@ -130,7 +130,7 @@ impl Item {
             ("choice".to_owned(), Value::from("approve")),
         ]);
         let instead = "Approve it on a device with a passkey";
-        device_key(&format!("{id}-key"), "approve", "answer", values, instead)
+        Self::device_key(&format!("{id}-key"), "approve", "answer", values, instead)
     }
 
     fn choice(&self, options: &[ApprovalOption], other: bool, answer: String) -> Block {
