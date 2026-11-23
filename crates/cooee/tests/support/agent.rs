@@ -223,6 +223,13 @@ impl FakeShed {
         self.report(name, "done", Some("end_turn"));
     }
 
+    /// shed runs terminal `name` on `account`: picked at its start, or switched from `was` on a limit.
+    pub fn on_account(&self, name: &str, account: &str, was: Option<&str>) {
+        let why = if was.is_some() { "limit" } else { "start" };
+        let (account, was, why) = (account.to_owned(), was.map(str::to_owned), why.to_owned());
+        self.emit(name, EventKind::Account { account, was, why });
+    }
+
     /// Terminal `name`'s agent hits its account limit as shed reports it: the limit line, then `rate-limited`.
     pub fn limit(&self, name: &str) {
         self.emit(
