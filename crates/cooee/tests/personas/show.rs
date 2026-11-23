@@ -17,7 +17,12 @@ fn persona(s: &Setup, name: &str, blocks: Option<&str>) -> (String, String) {
     assert_eq!(status, 200, "{body}");
     let (id, _, brief) = s.start(body["id"].as_str().unwrap());
     let got = s.cooee.json(&format!("/threads/{id}/messages"));
-    if !got["items"].as_array().unwrap().iter().any(|i| i["kind"] == "agent") {
+    if !got["items"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .any(|i| i["kind"] == "agent")
+    {
         let mut events = s.cooee.events(&id, got["cursor"].as_str().unwrap(), false);
         events.until(|e| is_item(e, "agent"));
     }
