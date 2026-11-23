@@ -57,6 +57,7 @@ public struct ChatFeature: Sendable {
         public var call: Calling?
         @Presents public var screen: ScreenFeature.State?
         @Presents public var attaching: AttachFeature.State?
+        public var area = Areas()
 
         public var working: Bool { turn.working }
         public var sending: Bool { outbox.contains { $0.failure == nil } }
@@ -119,6 +120,7 @@ public struct ChatFeature: Sendable {
         case browse(Browse)
         case voice(Voice)
         case call(CallAction)
+        case area(AreaAction)
     }
 
     @Dependency(\.threads) internal var threads
@@ -163,6 +165,7 @@ public struct ChatFeature: Sendable {
             .ifLet(\.$screen, action: \.screen) { ScreenFeature() }
             .ifLet(\.$attaching, action: \.attaching) { AttachFeature() }
             .keepsLeftScreens { $0.screen.map { [$0] } ?? [] }
+        areas
     }
 }
 
@@ -177,60 +180,4 @@ extension ChatFeature.Action {
         case topic(String)
         case closed
     }
-}
-
-extension ChatFeature {
-    private func listen(_ state: inout State, _ action: Action) -> Effect<Action> {
-        switch action {
-        case .task:
-            restore(&state)
-            return open(state)
-        case .loaded(let slice):
-            load(&state, slice)
-            return keepSlice(state)
-        case .older(let older):
-            return self.older(&state, older)
-        case .event(let event):
-            return heard(&state, event)
-        case .failed(let error):
-            state.status.stopping = false
-            return toast(&state, error)
-        case .link(let action):
-            return link(&state, action)
-        default:
-            break
-        }
-        return .none
-    }
-
-    internal func apply(_ state: inout State, _ event: StreamEvent) {
-        switch event {
-        case .item(let item):
-            upsert(&state, item)
-        case .state(let turn):
-            if turn.state != state.turn.state { state.since = now }
-            state.turn = Turn(text: nil, state: turn.state, note: turn.note)
-            if !state.working { (state.live, state.status.stopping) = (LiveReply(), false) }
-        case .queue(let queue):
-            state.queue = queue
-        case .sync(let sync):
-            state.status.sync = sync
-        case .text, .reset, .roomTurn, .roomStop, .roomAsk:
-            break
-        }
-    }
-}
-
-extension ChatFeature.State {
-    public var current: String {
-        switch target {
-        case .thread(let id): id
-        case .new(let persona), .setup(let persona): "new:\(persona.id)"
-        }
-    }
-
-    public var filmstrip: [APIItem] { items.filter { $0.kind == "frame" && $0.name != nil } }
-    public var handoff: APIItem? { items.last { $0.kind == "handoff" && $0.outcome == "waiting" } }
-
-    public var step: String? { persona.api.style == .chat ? ChatItems.step(items) : nil }
 }
