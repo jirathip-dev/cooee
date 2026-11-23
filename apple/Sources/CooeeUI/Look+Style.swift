@@ -1,3 +1,4 @@
+import Blocks
 import CooeeCore
 import SwiftUI
 
@@ -10,6 +11,7 @@ extension Look {
     internal var figures: Figures { style.figures }
     internal var stage: CooeeCore.Stage? { style.stage }
     internal var square: Bool { style.radius == 0 }
+    internal var blocksStyle: Blocks.Style { (try? JSONValue(style).decode(Blocks.Style.self)) ?? .bundled }
     internal var pill: AnyShape { square ? AnyShape(Rectangle()) : AnyShape(Capsule()) }
 
     internal func label(_ role: LabelRole, _ text: String) -> String { style.labels[role]?.apply(text) ?? text }

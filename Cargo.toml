@@ -29,7 +29,7 @@ serde_json = { version = "=1.0.154", features = ["preserve_order"] }
 # shed's API types, pinned to a shed merge commit; the hello needs the same shed protocol.
 shed-proto = { git = "https://github.com/jirathip-dev/shed", rev = "ed9129cecbc49245a0a41f60327af8d37ec6872a" }
 # The typed UI blocks and their JSON Schema (#621, q2236), pinned to a blocks staging commit.
-blocks = { git = "https://github.com/jirathip-dev/blocks", rev = "cf626c63789e8bb46b164ee37b3ca4d589527f11" }
+blocks = { git = "https://github.com/jirathip-dev/blocks", rev = "a42e7570e1bed499cd927b26913ec23d3e7cb2ae" }
 # The colour schemes and theme packs (#622, q2122), pinned to a swag staging commit beside blocks.
 swag = { git = "https://github.com/jirathip-dev/swag", rev = "bf9a2c6b5cb837db1e844e4746fe166cbaa06b91" }
 # launchd and systemd jobs (#711): written, loaded and restarted by farrier, pinned to a farrier staging commit.

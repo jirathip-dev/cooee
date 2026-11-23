@@ -86,7 +86,7 @@ extension BlocksUI.Look {
                 foreground: palette.foreground, mute: palette.mute, lead: palette.lead, link: palette.link,
                 green: palette.green, amber: palette.amber, red: palette.red, purple: palette.purple,
                 cyan: palette.cyan, dark: palette.dark),
-            style: (try? JSONValue(look.style).decode(Blocks.Style.self)) ?? .bundled, still: look.still, tiles: nil)
+            style: look.blocksStyle, still: look.still, tiles: nil)
     }
 }
 
