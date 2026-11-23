@@ -29,6 +29,7 @@ use super::Input;
 pub(super) struct Shared {
     pub(super) seq: u64,
     floor: u64,
+    churn: bool,
     ring: Vec<Event>,
     subs: Vec<Sender<Event>>,
     reported: BTreeMap<String, Reported>,
@@ -175,6 +176,11 @@ impl FakeShed {
         s.floor = s.seq;
         s.ring.clear();
         s.floor
+    }
+
+    /// Makes its ring full and busy: each `reset` it sends loses one more seq, as a busy shed's ring does.
+    pub fn churn(&self) {
+        self.shared.lock().unwrap().churn = true;
     }
 
     /// How many connections it accepted.
@@ -647,6 +653,11 @@ impl FakeShed {
             let reset =
                 format!(r#"{{"jsonrpc":"2.0","method":"reset","params":{{"seq":{floor}}}}}"#);
             writeln!(writer, "{reset}").unwrap();
+            let mut s = self.shared.lock().unwrap();
+            if s.churn {
+                s.seq += 1;
+                s.floor = s.seq;
+            }
         }
         for event in replay.into_iter().chain(rx) {
             if writeln!(writer, "{}", json!(event)).is_err() {

@@ -34,7 +34,10 @@ impl Hub {
                             }
                             Streamed::Reset(seq) => {
                                 last = Some(seq);
-                                break;
+                                if let Err(e) = self.reattach() {
+                                    cooee_core::note!("cooee: {e}");
+                                    break;
+                                }
                             }
                         }
                     }
