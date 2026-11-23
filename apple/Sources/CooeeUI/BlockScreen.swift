@@ -70,7 +70,6 @@ private struct MemberPoster: View {
 }
 
 extension JSONValue {
-    /// The block this JSON holds, typed as the blocks package draws it; one that does not fit is an app block.
     internal var typed: Blocks.Block { (try? decode(Blocks.Block.self)) ?? .appBlock(self) }
 }
 
@@ -92,7 +91,6 @@ extension BlocksUI.Look {
 }
 
 extension Source {
-    /// What a JSON act sends: its action, tap and values.
     internal init(_ json: JSONValue) {
         self.init(
             action: json.string("action"), tap: try? json["tap"]?.decode(Tap.self), values: json["values"]?.fields)

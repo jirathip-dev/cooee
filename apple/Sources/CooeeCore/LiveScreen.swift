@@ -24,15 +24,17 @@ public struct LiveScreen: Sendable, Equatable {
     public mutating func apply(_ change: JSONValue) {
         var change = change
         let deck = change["screen"]?.isDeck ?? root.isDeck
-        if let cards = change["screen"], deck { change = .object(change.fields.merging(["screen": cards.dealt]) { $1 }) }
-        guard let op = try? change.decode(Blocks.Op.self) else { return }
-        switch op {
+        if let cards = change["screen"], deck {
+            change = .object(change.fields.merging(["screen": cards.dealt]) { $1 })
+        }
+        guard let edit = try? change.decode(Blocks.Op.self) else { return }
+        switch edit {
         case .screen(let screen): root = (try? JSONValue(screen.screen)).map { $0.opened(deck) } ?? root
         case .badge(let badge): count = Int(badge.count)
         case .dot(let dot): self.dot = dot.on
         default:
             let tree = deck ? root.dealt : root
-            guard var block = try? tree.decode(Blocks.Block.self), (try? block.apply([op])) != nil else { return }
+            guard var block = try? tree.decode(Blocks.Block.self), (try? block.apply([edit])) != nil else { return }
             root = (try? JSONValue(block)).map { $0.opened(deck) } ?? root
         }
     }

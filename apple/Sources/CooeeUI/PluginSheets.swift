@@ -1,5 +1,5 @@
-import ComposableArchitecture
 import BlocksUI
+import ComposableArchitecture
 import CooeeCore
 import CooeeFeatures
 import SwiftUI
@@ -92,7 +92,7 @@ internal struct PluginScreenSheet: View {
                     screen.root, source: store.source, focus: store.focus, picked: wide ? store.beside : nil,
                     beside: wide ? store.besideScreen : nil, refresh: wide ? refresh : nil, pending: store.pending,
                     act: { store.send(.act($0)) }, open: { store.send(.navigate($0)) },
-                    openThread: { size == .compact ? store.send(.push($0)) : store.send(.open($0)) },
+                    openThread: { store.send(size == .compact ? .push($0) : .open($0)) },
                     openBeside: wide ? { store.send(.beside($0)) } : nil
                 )
                 .disabled(store.offline).opacity(store.offline ? 0.6 : 1)
