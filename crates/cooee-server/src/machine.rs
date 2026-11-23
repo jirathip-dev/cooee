@@ -115,9 +115,7 @@ impl Ctx {
             Ok(true) => (true, what),
             Ok(false) => (
                 false,
-                format!(
-                    "{what}: no\n     fix: sign in to {name} on {machine}"
-                ),
+                format!("{what}: no\n     fix: sign in to {name} on {machine}"),
             ),
             Err(e) => (false, format!("{what}: {e}")),
         }

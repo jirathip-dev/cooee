@@ -90,7 +90,11 @@ impl Config {
             path: path.to_owned(),
             why,
         })?;
-        provider::specs(config.providers.as_deref(), &shed_catalog::Catalog::default()).map_err(|why| ConfigError::Invalid {
+        provider::specs(
+            config.providers.as_deref(),
+            &shed_catalog::Catalog::default(),
+        )
+        .map_err(|why| ConfigError::Invalid {
             path: path.to_owned(),
             why,
         })?;

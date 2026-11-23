@@ -8,7 +8,7 @@ use std::{
         net::{UnixListener, UnixStream},
     },
     path::{Path, PathBuf},
-    process::{ChildStdin, Command, Stdio},
+    process::{ChildStdin, Command, Output, Stdio},
     sync::{
         Arc, Condvar, Mutex,
         mpsc::{self, Sender},
@@ -18,8 +18,8 @@ use std::{
 };
 
 use cooee_core::shed_proto::{
-    ApprovalOption, ErrorCode, Event, EventKind, Hello, Reported, Request, Response, RpcError, RunParams,
-    State, TerminalInfo,
+    ApprovalOption, ErrorCode, Event, EventKind, ExecParams, ExecResult, FileParams, Hello,
+    Reported, Request, Response, RpcError, RunParams, State, TerminalInfo,
 };
 use serde_json::{Value, json};
 
@@ -280,6 +280,18 @@ impl FakeShed {
         s.ring.clear();
     }
 
+    /// shed's record of `fake-acp` takes `facts` (its login, status, install) over its efforts `low` and `high`.
+    pub fn record(&self, facts: Value) {
+        let mut provider = json!({ "id": "fake-acp", "efforts": ["low", "high"] });
+        provider
+            .as_object_mut()
+            .unwrap()
+            .extend(facts.as_object().unwrap().clone());
+        let installed = json!({ "id": "fake-acp", "version": "1.0.0", "distribution": "npx", "cmd": ["fake-acp"] });
+        let agents = json!([{ "id": "fake-acp", "installed": installed, "provider": provider }]);
+        fs::write(self.dir.join("agents.json"), agents.to_string()).unwrap();
+    }
+
     /// The variables the last ACP `run` with any passed, a `K=V` a line.
     pub fn adapter_env(&self) -> String {
         fs::read_to_string(self.dir.join("adapter.env")).unwrap_or_default()
@@ -296,7 +308,7 @@ impl FakeShed {
         fs::read_to_string(self.dir.join(format!("adapter-{name}.env"))).unwrap_or_default()
     }
 
-    /// The fake CLI's argument lines, and a line in its words for each `agents` and ACP `run`.
+    /// The fake CLI's argument lines, and a line in its words for each ACP `run`.
     pub fn cli_log(&self) -> String {
         fs::read_to_string(self.dir.join("cli.log")).unwrap_or_default()
     }
@@ -341,7 +353,6 @@ impl FakeShed {
     }
 
     fn agents(&self) -> Result<Value, RpcError> {
-        self.log_line("agents");
         if self.dir.join("agents-fails").exists() {
             return Err(RpcError::new(ErrorCode::Internal, "fake shed: agents down"));
         }
@@ -355,7 +366,14 @@ impl FakeShed {
                 json!({ "id": a["id"], "installed": a, "provider": record })
             }
         };
-        Ok(json!(listed.as_array().unwrap().iter().map(info).collect::<Vec<_>>()))
+        Ok(json!(
+            listed
+                .as_array()
+                .unwrap()
+                .iter()
+                .map(info)
+                .collect::<Vec<_>>()
+        ))
     }
 
     fn log_line(&self, line: &str) {
@@ -364,13 +382,17 @@ impl FakeShed {
             .append(true)
             .open(self.dir.join("cli.log"))
             .unwrap();
-        writeln!(log, "--json {line}").unwrap();
+        writeln!(log, "--dir {} --json {line}", self.dir.display()).unwrap();
     }
 
     fn run_acp(&self, params: &Value) -> Result<Value, RpcError> {
         let run: RunParams = serde_json::from_value(params.clone()).unwrap();
         let name = run.name.clone().unwrap();
-        let mut line = run.machine.iter().map(|m| format!("--on {m} ")).collect::<String>();
+        let mut line = run
+            .machine
+            .iter()
+            .map(|m| format!("--on {m} "))
+            .collect::<String>();
         let cwd = run.cwd.display().to_string();
         let acp = run.acp.clone().unwrap();
         line += &format!("run --acp {acp} --name {name} --cwd {cwd}");
@@ -394,13 +416,24 @@ impl FakeShed {
         }
         self.log_line(&line);
         if !run.mcp_servers.is_empty() {
-            fs::write(self.dir.join(format!("mcp-{name}.json")), json!(run.mcp_servers).to_string()).unwrap();
+            fs::write(
+                self.dir.join(format!("mcp-{name}.json")),
+                json!(run.mcp_servers).to_string(),
+            )
+            .unwrap();
         }
         if let Some(meta) = &run.meta {
-            fs::write(self.dir.join(format!("meta-{name}.json")), json!(meta).to_string()).unwrap();
+            fs::write(
+                self.dir.join(format!("meta-{name}.json")),
+                json!(meta).to_string(),
+            )
+            .unwrap();
         }
         fs::write(self.dir.join(format!("cwd-{name}")), &cwd).unwrap();
-        let folder = run.cwd.file_name().map_or("/".to_owned(), |f| f.to_string_lossy().into_owned());
+        let folder = run
+            .cwd
+            .file_name()
+            .map_or("/".to_owned(), |f| f.to_string_lossy().into_owned());
         self.hold("hold-run");
         self.hold(&format!("hold-in-{folder}"));
         if self.dir.join("run-fails").exists() {
@@ -418,6 +451,60 @@ impl FakeShed {
         let mut t = Self::info(&name, true, None);
         t["labels"] = json!(run.labels);
         Ok(t)
+    }
+
+    fn on(&self, machine: Option<&str>, cmd: &[String], stdin: &[u8]) -> Result<Output, RpcError> {
+        let mut path = env::var("PATH").unwrap_or_default();
+        if let Some(m) = machine {
+            if self.links()[m]["state"] != "up" {
+                return Err(RpcError::new(ErrorCode::NoLink, m));
+            }
+            path = format!("{}:{path}", self.dir.join(format!("on-{m}")).display());
+        }
+        let mut child = Command::new(&cmd[0])
+            .args(&cmd[1..])
+            .env("PATH", path)
+            .current_dir("/")
+            .stdin(Stdio::piped())
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped())
+            .spawn()
+            .map_err(|e| RpcError::new(ErrorCode::SpawnFailed, e))?;
+        child.stdin.take().unwrap().write_all(stdin).unwrap();
+        Ok(child.wait_with_output().unwrap())
+    }
+
+    fn exec(&self, params: &Value) -> Result<Value, RpcError> {
+        let exec: ExecParams = serde_json::from_value(params.clone()).unwrap();
+        let out = self.on(exec.machine.as_deref(), &exec.cmd, &exec.stdin)?;
+        let code = out.status.code().unwrap_or(143);
+        Ok(json!(ExecResult {
+            code,
+            stdout: out.stdout,
+            stderr: out.stderr
+        }))
+    }
+
+    fn file(&self, params: &Value) -> Result<Value, RpcError> {
+        let file: FileParams = serde_json::from_value(params.clone()).unwrap();
+        let path = file.path.to_string_lossy().into_owned();
+        let (script, data) = match &file.data {
+            Some(data) => (r#"mkdir -p "$(dirname "$1")" && cat > "$1""#, data.clone()),
+            None => (r#"cat "$1""#, Vec::new()),
+        };
+        let cmd = ["sh", "-c", script, "sh", &path].map(str::to_owned);
+        let out = self.on(file.machine.as_deref(), &cmd, &data)?;
+        if !out.status.success() {
+            return Err(RpcError::new(
+                ErrorCode::Internal,
+                String::from_utf8_lossy(&out.stderr),
+            ));
+        }
+        Ok(if file.data.is_some() {
+            json!({})
+        } else {
+            json!(out.stdout)
+        })
     }
 
     pub(super) fn run(&self, params: &Value) -> Result<Value, RpcError> {
@@ -606,7 +693,7 @@ impl FakeShed {
         let session = fs::read_to_string(self.dir.join("session.json"));
         if outcome == "matched" {
             t["session"] = session.map_or_else(
-                |_| json!({ "id": format!("s-{name}") }),
+                |_| json!({ "id": "" }),
                 |s| serde_json::from_str(&s).unwrap(),
             );
         }
@@ -757,6 +844,8 @@ impl FakeShed {
                 "run" if req.params["acp"].is_string() => self.run_acp(&req.params),
                 "run" => self.run(&req.params),
                 "agents" => self.agents(),
+                "exec" => self.exec(&req.params),
+                "file.read" | "file.write" => self.file(&req.params),
                 "ls" => Ok(self.ls(&req.params["labels"])),
                 "resize" | "terminal.resize" | "acp.model" => Ok(json!({})),
                 "screen.watch" => return self.watch(id, &req.params, &mut writer),

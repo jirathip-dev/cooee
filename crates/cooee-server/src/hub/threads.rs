@@ -1,7 +1,6 @@
-use cooee_core::Calls as _;
 use std::{path::PathBuf, sync::atomic::Ordering};
 
-use cooee_core::{Kind, Thread, Turn};
+use cooee_core::{Calls as _, Kind, Thread, Turn};
 use tokio::sync::broadcast;
 
 use super::{Hub, HubError, LAG, Out, Pending, REV, Resume, Slice, lock, now, waits};

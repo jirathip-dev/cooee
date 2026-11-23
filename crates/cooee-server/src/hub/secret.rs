@@ -1,5 +1,4 @@
-use cooee_core::Calls as _;
-use cooee_core::{mcp, secrets};
+use cooee_core::{Calls as _, mcp, secrets};
 use serde::Deserialize;
 
 use super::{Hub, HubError, LABEL, mcp::Proposed};

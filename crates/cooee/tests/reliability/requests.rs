@@ -64,8 +64,8 @@ fn agents_are_listed_from_the_hub_and_a_failed_refresh_keeps_the_list() {
         shed,
     };
     let lists = || {
-        let log = s.shed.cli_log();
-        log.lines().filter(|l| l.ends_with(" agents")).count()
+        let requests = s.shed.requests.lock().unwrap();
+        requests.iter().filter(|(m, _)| m == "agents").count()
     };
     assert_ne!(s.cooee.get("/agents").0, 200);
     s.shed.gate("agents-fails", false);

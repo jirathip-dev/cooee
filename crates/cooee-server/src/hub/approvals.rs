@@ -1,8 +1,7 @@
-use cooee_core::Calls as _;
 use std::{path::PathBuf, sync::Mutex};
 
 use cooee_core::{
-    Body, Card, Change, Item,
+    Body, Calls as _, Card, Change, Item,
     action::{Action, Call},
     agents::{self, Agent, Home},
     rules::{Asked, Effect, Rule, Rules},

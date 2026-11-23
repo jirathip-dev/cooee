@@ -92,13 +92,15 @@ impl<T: Serialize> IntoResponse for Answer<T> {
             Err(e @ HubError::NoThread(_)) => (404, e.to_string()),
             Err(e @ HubError::Refused(_)) => (400, e.to_string()),
             Err(e @ HubError::Stale(_)) => (409, e.to_string()),
-            Err(HubError::Shed(e)) if e.code() == Some(cooee_core::shed_proto::ErrorCode::NoSuchTerminal) => (
-                410,
-                "Not delivered: this thread's agent is gone.".to_owned(),
-            ),
-            Err(HubError::Shed(
-                e @ (ShedError::Rpc(_) | ShedError::Bad(_)),
-            )) => {
+            Err(HubError::Shed(e))
+                if e.code() == Some(cooee_core::shed_proto::ErrorCode::NoSuchTerminal) =>
+            {
+                (
+                    410,
+                    "Not delivered: this thread's agent is gone.".to_owned(),
+                )
+            }
+            Err(HubError::Shed(e @ (ShedError::Rpc(_) | ShedError::Bad(_)))) => {
                 cooee_core::note!("cooee: {e}");
                 (
                     502,

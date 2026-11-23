@@ -1,7 +1,6 @@
-use cooee_core::Calls as _;
 use std::{collections::BTreeMap, sync::Mutex};
 
-use cooee_core::{Body, Change, Kind, Launch, shed_proto};
+use cooee_core::{Body, Calls as _, Change, Kind, Launch, shed_proto};
 
 use super::{Hub, HubError, LABEL, Live, Recipe, lock, now, on_machine};
 

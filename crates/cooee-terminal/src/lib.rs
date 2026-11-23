@@ -93,7 +93,11 @@ impl Terminal {
     /// When shed can't list them.
     pub fn list(&self) -> Result<Vec<Value>, Refused> {
         let mut out = Vec::new();
-        for t in self.shed.ls(&LsParams::default()).map_err(|e| shed_error(&e))? {
+        for t in self
+            .shed
+            .ls(&LsParams::default())
+            .map_err(|e| shed_error(&e))?
+        {
             let owner = t.labels.get(OWNER).is_some_and(|v| v == "1");
             if t.labels.contains_key("cooee-login") {
                 continue;

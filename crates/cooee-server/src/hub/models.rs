@@ -1,8 +1,7 @@
-use cooee_core::Calls as _;
 use std::{collections::BTreeMap, fs};
 
 use cooee_core::{
-    Body, Change, Launch, agents, memory,
+    Body, Calls as _, Change, Launch, agents, memory,
     models::{self, Offered},
     shed_proto::AcpSession,
 };

@@ -35,12 +35,12 @@ fn setup(name: &str) -> (PathBuf, FakeShed, Cooee) {
         &dir.join("status.sh"),
         &format!("test -f {:?}\n", flag.to_string_lossy()),
     );
-    let provider = format!(
-        "[[providers]]\nname = \"fake\"\nagent = \"fake-acp\"\nlogin = [{:?}]\nstatus = [{:?}]\ninstall = \"get fake-cli\"\n",
-        dir.join("bin/fake-cli").to_string_lossy(),
-        dir.join("status.sh").to_string_lossy(),
+    shed.record(
+        json!({ "login": dir.join("bin/fake-cli"), "status": dir.join("status.sh"),
+        "install": "get fake-cli" }),
     );
-    let cooee = Cooee::start_with(&dir, &shed.dir, &provider);
+    let provider = "[[providers]]\nname = \"fake\"\nagent = \"fake-acp\"\n";
+    let cooee = Cooee::start_with(&dir, &shed.dir, provider);
     (dir, shed, cooee)
 }
 
@@ -95,7 +95,7 @@ fn checks_on_box(shed: &FakeShed) -> usize {
     let requests = shed.requests.lock().unwrap();
     let runs = requests
         .iter()
-        .filter(|(m, p)| m == "run" && p["machine"] == "box");
+        .filter(|(m, p)| ["exec", "file.read"].contains(&m.as_str()) && p["machine"] == "box");
     runs.count()
 }
 

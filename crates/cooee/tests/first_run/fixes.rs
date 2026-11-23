@@ -6,7 +6,7 @@ use crate::support::{Cooee, FakeShed, scratch, version};
 fn no_agents_and_no_roots_show_the_fix_lines_and_doctor_warns() {
     let dir = scratch("first-run");
     let shed = FakeShed::start(&dir.join("shed"), version());
-    fs::write(shed.dir.join("shed"), "#!/bin/sh\necho '[]'\n").unwrap();
+    fs::write(shed.dir.join("agents.json"), "[]").unwrap();
     let codex = "[[providers]]\nname = \"codex\"\nagent = \"codex-acp\"\nlogin = [\"no-such-codex\"]\n\
                  status = [\"true\"]\ninstall = \"npm install -g @openai/codex\"\n";
     let cooee = Cooee::start_with(&dir, &shed.dir, &format!("roots = []\n{codex}"));

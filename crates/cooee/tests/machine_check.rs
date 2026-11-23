@@ -79,16 +79,17 @@ fn setup(name: &str) -> Setup {
     fs::write(
         dir.join("config.toml"),
         format!(
-            "port = 0\ndata = {}\nshed = {}\nshed_dir = {}\n[[providers]]\nname = \"fake\"\nagent = \"fake-acp\"\n\
-             login = [{}]\nstatus = [{}]\ninstall = \"get fake-cli\"\n",
+            "port = 0\ndata = {}\nshed = {}\nshed_dir = {}\n[[providers]]\nname = \"fake\"\nagent = \"fake-acp\"\n",
             q(dir.join("data")),
             q(shed.dir.join("shed")),
             q(shed.dir.clone()),
-            q(dir.join("bin/fake-cli")),
-            q(dir.join("status.sh")),
         ),
     )
     .unwrap();
+    shed.record(
+        serde_json::json!({ "login": dir.join("bin/fake-cli"), "status": dir.join("status.sh"),
+        "install": "get fake-cli" }),
+    );
     Setup { dir, shed }
 }
 
@@ -134,7 +135,11 @@ impl Setup {
 
     fn all_on_box(&self) {
         let requests = self.shed.requests.lock().unwrap().clone();
-        let runs: Vec<_> = requests.iter().filter(|(m, _)| m == "run").collect();
+        let on = ["exec", "file.read", "file.write"];
+        let runs: Vec<_> = requests
+            .iter()
+            .filter(|(m, _)| on.contains(&m.as_str()))
+            .collect();
         assert_ne!(runs.len(), 0);
         assert!(runs.iter().all(|(_, p)| p["machine"] == "box"), "{runs:?}");
     }

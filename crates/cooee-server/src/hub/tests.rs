@@ -238,7 +238,10 @@ fn the_agent_list_is_refreshed_at_most_once_a_minute() {
     let dir = scratch("agents");
     let server = shed_client::fake::Server::start().unwrap();
     let installed = json!({ "id": "a", "version": "1", "distribution": "npx", "cmd": [] });
-    server.answer(Method::Agents, json!([{ "id": "a", "installed": installed }]));
+    server.answer(
+        Method::Agents,
+        json!([{ "id": "a", "installed": installed }]),
+    );
     let hub = hub_on(&dir, server.socket().parent().unwrap());
     let count = || {
         let seen = server.seen().into_iter();

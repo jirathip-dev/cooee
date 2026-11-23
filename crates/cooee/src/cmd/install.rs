@@ -48,10 +48,7 @@ fn install(path: Option<PathBuf>, instance: &str, port: u16, explicit: bool) -> 
     cooee_core::say!("  restart: {}\n  log: {}", commands.restart, commands.log);
     cooee_core::say!("\nrun these yourself:");
     cooee_core::say!("  tailscale serve --bg --https={port} http://127.0.0.1:{port}");
-    if Shed::new(config.shed_dir.as_deref())
-        .hello()
-        .is_err()
-    {
+    if Shed::new(config.shed_dir.as_deref()).hello().is_err() {
         cooee_core::say!("  shed isn't running: {}", cooee_core::shed_fix());
     }
     Ok(())

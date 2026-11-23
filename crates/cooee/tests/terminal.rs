@@ -195,15 +195,13 @@ fn a_shed_of_another_protocol_fails_the_list_naming_both_sides() {
     m.ceremony(true);
     let (status, body) = m.cooee.get("/p/terminal/api/list");
     assert_eq!(status, 502, "{body}");
-    let (v, b) = (&version().version, &version().build);
-    let said = format!(
-        "SHED_VERSION: cooee speaks shed {v} ({b}) protocol {PROTOCOL}; the server refused it: {}",
-        RpcError::version(&version(), &theirs)
-            .message
-            .split_once(": ")
-            .unwrap()
-            .1
-    );
+    let ours = Hello {
+        oldest: Some(3),
+        ..version()
+    };
+    let refused = RpcError::version(&ours, &theirs).message;
+    let why = refused.trim_start_matches("SHED_VERSION: ");
+    let said = format!("; the server refused it ({why}); update the side it names");
     assert!(body.contains(&said), "{body}\nwanted: {said}");
 }
 

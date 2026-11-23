@@ -206,10 +206,15 @@ impl Providers {
         self.built.iter()
     }
 
-    /// Every provider over shed's records (the built-in ones when shed can't be asked), by `rows` (see [`specs`]).
+    /// Every provider over shed's records (the built-in ones when shed can't be asked or `rows` is empty), by `rows`
+    /// (see [`specs`]).
     #[must_use]
     pub fn load(rows: Option<&[Table]>, shed: &Shed) -> Self {
-        let catalog = shed.agents().map_or_else(|_| Catalog::built_in(), |a| Catalog::served(&a));
+        let served = match rows {
+            Some([]) => None,
+            _ => shed.agents().ok(),
+        };
+        let catalog = served.map_or_else(Catalog::built_in, |a| Catalog::served(&a));
         Self::with(&specs(rows, &catalog).unwrap_or_default(), catalog)
     }
 
@@ -251,7 +256,9 @@ pub fn specs(rows: Option<&[Table]>, catalog: &Catalog) -> Result<Vec<Spec>, Str
         .collect();
     let field = |t: &Table, k: &str| t.get(k).and_then(Value::as_str).map(str::to_owned);
     for r in catalog.iter().map(|e| &e.provider) {
-        let known_agent = known.iter().any(|t| field(t, "agent").as_ref() == Some(&r.id));
+        let known_agent = known
+            .iter()
+            .any(|t| field(t, "agent").as_ref() == Some(&r.id));
         if !known_agent && r.login.is_some() && r.status.is_some() {
             let name = if r.agent.is_empty() { &r.id } else { &r.agent };
             let mut t = Table::new();

@@ -78,11 +78,10 @@ fn requests_and_shed_calls_are_timed_by_route_and_method_and_slow_ones_warn() {
         );
     };
     via("hello", "socket");
-    via("run", "cli");
+    via("run", "socket");
     via("wait", "socket");
     via("state", "socket");
     via("send", "socket");
-    assert!(named(&log, "shed", "run").iter().all(|l| l["via"] == "cli"));
 }
 
 #[test]

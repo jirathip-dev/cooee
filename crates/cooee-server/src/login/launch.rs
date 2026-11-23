@@ -85,7 +85,10 @@ impl Logins {
         let p = self.providers.for_agent(agent).map(|p| p.spec());
         p.map(|s| {
             let efforts = self.efforts(agent);
-            (s.cheapest.clone(), efforts.first().cloned().unwrap_or_default())
+            (
+                s.cheapest.clone(),
+                efforts.first().cloned().unwrap_or_default(),
+            )
         })
         .unwrap_or_default()
     }
@@ -99,7 +102,9 @@ impl Logins {
             return Ok(None);
         }
         if !self.efforts(agent).iter().any(|e| e == effort) {
-            return Err(HubError::Refused(format!("{agent} offers no effort {effort:?}")));
+            return Err(HubError::Refused(format!(
+                "{agent} offers no effort {effort:?}"
+            )));
         }
         Ok(Some(effort.to_owned()))
     }

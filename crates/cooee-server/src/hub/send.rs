@@ -1,7 +1,8 @@
-use cooee_core::Calls as _;
 use std::{fs, sync::Mutex, time::Instant};
 
-use cooee_core::{Body, Change, Item, Kind, Queued, Via, agents, routines::Mark, shed_proto};
+use cooee_core::{
+    Body, Calls as _, Change, Item, Kind, Queued, Via, agents, routines::Mark, shed_proto,
+};
 
 use super::{Hub, HubError, Live, Upload, lock, now, refused};
 
@@ -235,7 +236,9 @@ impl Hub {
     ) -> Result<(), HubError> {
         let got = ended.then(|| self.shed.get(terminal));
         match got {
-            Some(Err(e)) if e.code() == Some(cooee_core::shed_proto::ErrorCode::NoSuchTerminal) => return Err(e.into()),
+            Some(Err(e)) if e.code() == Some(cooee_core::shed_proto::ErrorCode::NoSuchTerminal) => {
+                return Err(e.into());
+            }
             Some(t)
                 if !t
                     .as_ref()

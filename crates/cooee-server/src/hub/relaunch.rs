@@ -1,10 +1,9 @@
-use cooee_core::Calls as _;
 use std::{
     collections::BTreeMap,
     path::{Path, PathBuf},
 };
 
-use cooee_core::{history, shed_proto::AcpSession};
+use cooee_core::{Calls as _, history, shed_proto::AcpSession};
 
 use super::{
     Body, Change, Hub, HubError, Item, LABEL, Live, Recipe, lock, now, on_machine, outside, short,

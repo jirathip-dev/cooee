@@ -11,7 +11,10 @@ use serde_json::Value;
 pub use shed_client::{Calls, Error as ShedError, Streamed};
 use shed_client::{
     Stream,
-    proto::{Event, EventsParams, Hello, Method, RunParams, ScreenUpdate, SendParams, TerminalInfo},
+    proto::{
+        Event, EventsParams, Hello, Input, Method, Reported, RunParams, ScreenUpdate, SendParams,
+        TerminalInfo, frame,
+    },
 };
 
 /// The oldest shed protocol cooee accepts (5: a run on a named account); any newer one is accepted too.
@@ -35,7 +38,9 @@ pub struct Shed {
 
 impl fmt::Debug for Shed {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("Shed").field("socket", &self.socket).finish()
+        f.debug_struct("Shed")
+            .field("socket", &self.socket)
+            .finish()
     }
 }
 
@@ -82,7 +87,10 @@ impl Shed {
     /// # Errors
     /// [`ShedError::Version`] on another protocol; [`ShedError::Io`] when nothing listens.
     pub fn hello(&self) -> Result<(), ShedError> {
-        let theirs = self.client.hello()?;
+        let start = crate::clock::instant();
+        let theirs = self.client.hello();
+        crate::perf::shed(Method::Hello.name(), "socket", start);
+        let theirs = theirs?;
         if theirs.protocol >= SHED_MIN_PROTOCOL {
             return Ok(());
         }
@@ -123,7 +131,9 @@ impl Shed {
         labels: &BTreeMap<String, String>,
         launch: &Launch,
     ) -> Result<TerminalInfo, ShedError> {
-        let run = launch.run(name, agent, cwd, labels).map_err(ShedError::Bad)?;
+        let run = launch
+            .run(name, agent, cwd, labels)
+            .map_err(ShedError::Bad)?;
         self.run(&run)
     }
 
@@ -165,6 +175,20 @@ impl Calls for Shed {
         let answer = self.client.call_raw(method, params);
         crate::perf::shed(method.name(), "socket", start);
         answer
+    }
+
+    fn prompt(&self, name: &str, text: &str) -> Result<(), ShedError> {
+        let working = Reported {
+            state: "working".to_owned(),
+            ..Reported::default()
+        };
+        self.state(name, &working)?;
+        self.send(&SendParams {
+            name: name.to_owned(),
+            text: frame(&Input::Prompt(text.to_owned())),
+            draft_wait: Some(0),
+            ..SendParams::default()
+        })
     }
 }
 

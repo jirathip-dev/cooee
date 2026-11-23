@@ -1,4 +1,3 @@
-use cooee_core::Calls as _;
 use std::{
     collections::{BTreeMap, HashMap, VecDeque},
     fs, io,
@@ -12,8 +11,8 @@ use std::{
 };
 
 use cooee_core::{
-    Agent, Body, Change, Chat, Item, Kind, Launch, Plugin, Profile, Queued, Shed, ShedError, Store,
-    StoreError, Thread, Turn, Workflow,
+    Agent, Body, Calls as _, Change, Chat, Item, Kind, Launch, Plugin, Profile, Queued, Shed,
+    ShedError, Store, StoreError, Thread, Turn, Workflow,
     provider::Gap,
     routines::Mark,
     shed_proto::{self, Event, TerminalInfo},
@@ -677,10 +676,9 @@ impl Hub {
                     Vec::new()
                 }
                 Ok(_) => live.chat.ended(now(), 0, "The agent stopped.".to_owned()),
-                Err(e) if e.code() == Some(shed_proto::ErrorCode::NoSuchTerminal) => {
-                    live.chat
-                        .ended(now(), 0, "The agent is gone (shed restarted).".to_owned())
-                }
+                Err(e) if e.code() == Some(shed_proto::ErrorCode::NoSuchTerminal) => live
+                    .chat
+                    .ended(now(), 0, "The agent is gone (shed restarted).".to_owned()),
                 Err(e) if e.code() == Some(shed_proto::ErrorCode::NoLink) => Vec::new(),
                 Err(e) => return Err(e),
             };

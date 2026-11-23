@@ -35,10 +35,7 @@ fn the_coder_profile_is_applied_at_spawn(s: &Setup) {
         json!({ "hooks": { "PreToolUse": [] } }),
         "{meta}"
     );
-    assert!(
-        line.contains(" -- env MODE=review sh -c ") && line.ends_with(" fake-acp"),
-        "{line}"
-    );
+    assert!(!line.contains(" -- ") && !line.contains(&s.token), "{line}");
     let env = s.shed.adapter_env();
     for var in ["MODE=review".to_owned(), format!("API_KEY={}", s.token)] {
         assert!(env.lines().any(|l| l == var), "{var} not in {env}");
@@ -99,8 +96,9 @@ fn plain_adds_nothing_a_file_profile_is_applied_at_spawn_a_guard_that_cant_run_i
     );
     written.push_str(&s.shed.cli_log());
     written.push_str(&fs::read_to_string(&s.cooee.config).unwrap());
-    for (method, params) in s.shed.requests.lock().unwrap().iter() {
-        written.extend([method.clone(), params.to_string()]);
+    for (method, mut params) in s.shed.requests.lock().unwrap().clone() {
+        params.as_object_mut().map(|p| p.remove("env"));
+        written.extend([method, params.to_string()]);
     }
     Setup::files(&data.join("threads"), &mut written);
     Setup::files(&data.join("accounts"), &mut written);

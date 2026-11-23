@@ -1,4 +1,3 @@
-use cooee_core::Calls as _;
 use std::{
     collections::BTreeMap,
     fs,
@@ -7,7 +6,7 @@ use std::{
     thread,
 };
 
-use cooee_core::{Agent, Body, Change, Chat, Thread, provider::Gap, shed_proto};
+use cooee_core::{Agent, Body, Calls as _, Change, Chat, Thread, provider::Gap, shed_proto};
 
 use super::{
     AGENTS_FOR, AGENTS_WAIT, Hub, HubError, LABEL, Live, Recipe, lock, now, on_machine, refused,

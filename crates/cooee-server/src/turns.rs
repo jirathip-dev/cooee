@@ -143,7 +143,11 @@ impl Again {
     ) -> Result<Item, HubError> {
         let send = || self.hub.send(&self.id, text, random_id, files, via);
         match send() {
-            Err(HubError::Shed(e)) if e.code() == Some(cooee_core::shed_proto::ErrorCode::NoSuchTerminal) => self.restart().and_then(|()| send()),
+            Err(HubError::Shed(e))
+                if e.code() == Some(cooee_core::shed_proto::ErrorCode::NoSuchTerminal) =>
+            {
+                self.restart().and_then(|()| send())
+            }
             done => done,
         }
     }

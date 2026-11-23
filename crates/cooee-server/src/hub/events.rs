@@ -1,11 +1,10 @@
-use cooee_core::Calls as _;
 use std::{
     sync::{Mutex, atomic::Ordering},
     time::Duration,
 };
 
 use cooee_core::{
-    Body, Change, Queued, ShedError, Streamed, Workflow,
+    Body, Calls as _, Change, Queued, ShedError, Streamed, Workflow,
     shed_proto::{self, Event},
 };
 use serde_json::json;
