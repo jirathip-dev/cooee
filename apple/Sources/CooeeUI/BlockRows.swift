@@ -40,8 +40,8 @@ internal struct RowView: View {
                     .foregroundStyle(
                         row.string("style") == "destructive"
                             ? palette.red : row.string("style") == "link" ? palette.link : palette.foreground)
-                if let text = subtitle?.string ?? subtitle?.string("text") {
-                    Text(text).ui(12, .regular, look).foregroundStyle(
+                if let text = subtitle?.string == nil ? subtitle?["text"] : subtitle {
+                    RelativeValue(value: text).ui(12, .regular, look).foregroundStyle(
                         palette.tone(subtitle?.string("tone")) ?? palette.mute
                     ).lineLimit(1)
                 }

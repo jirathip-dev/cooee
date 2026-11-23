@@ -42,7 +42,7 @@ internal struct Pill: View {
 
     internal var body: some View {
         let tint = look.palette.tone(badge.string("tone")) ?? look.palette.mute
-        Text(badge.string("text") ?? "").ui(11, .bold, look).foregroundStyle(tint)
+        RelativeValue(value: badge["text"] ?? .string("")).ui(11, .bold, look).foregroundStyle(tint)
             .padding(.horizontal, 8).padding(.vertical, 3)
             .background(tint.opacity(0.15), in: look.pill)
     }

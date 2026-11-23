@@ -88,6 +88,11 @@ internal struct ScreenTests {
         let since = JSONValue.object(["since": .string("2026-11-09T09:32:00Z")])
         let until = JSONValue.object(["until": .string("2026-11-09T12:52:00Z")])
         #expect(since.text(at: now) == "9m" && until.text(at: now) == "3h")
+        let resets = JSONValue.object([
+            "until": .string("2026-11-09T11:55:00Z"), "label": .string("at its limit · resets in {rel}"),
+        ])
+        let read = JSONValue.object(["since": .string("2026-11-09T09:39:00Z"), "label": .string("{} ago")])
+        #expect(resets.text(at: now) == "at its limit · resets in 2h" && read.text(at: now) == "2m ago")
         #expect(JSONValue.number(14).text(at: now) == "14" && JSONValue.bool(true).text(at: now) == nil)
         #expect(
             JSONValue.object([:]).text(at: now) == nil && Relative.text(-5) == "now" && Relative.text(90_000) == "1d")

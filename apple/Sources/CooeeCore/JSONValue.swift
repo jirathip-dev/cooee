@@ -87,8 +87,12 @@ public enum JSONValue: Sendable, Hashable, Codable {
         case .string(let string): return string
         case .number(let number): return number.formatted()
         case .object:
-            if let since = self["since"]?.date { return Relative.text(now.timeIntervalSince(since)) }
-            return self["until"]?.date.map { Relative.text($0.timeIntervalSince(now)) }
+            let since = self["since"]?.date.map { Relative.text(now.timeIntervalSince($0)) }
+            guard let rel = since ?? self["until"]?.date.map({ Relative.text($0.timeIntervalSince(now)) }) else {
+                return nil
+            }
+            let label = string("label") ?? "{}"
+            return label.replacingOccurrences(of: "{rel}", with: rel).replacingOccurrences(of: "{}", with: rel)
         default: return nil
         }
     }
