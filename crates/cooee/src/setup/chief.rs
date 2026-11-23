@@ -1,6 +1,6 @@
 use std::{io, path::Path};
 
-use cooee_core::{Config, Shed, chief};
+use cooee_core::{Config, Calls as _, Shed, chief};
 
 use super::{Setup, step};
 
@@ -28,8 +28,8 @@ impl Setup {
         cooee_core::say!(
             "  Chief is cooee's own persona: it sets up personas and routines for you."
         );
-        let shed = Shed::new(config.shed.clone(), config.shed_dir.clone());
-        let agents = shed.agents().unwrap_or_default().into_iter().map(|a| a.id);
+        let shed = Shed::new(config.shed_dir.as_deref());
+        let agents = shed.installed().unwrap_or_default().into_iter().map(|a| a.id);
         let linked = shed.links().unwrap_or_default().into_keys();
         let machines: Vec<String> = std::iter::once("here".to_owned()).chain(linked).collect();
         let agent = self.pick(

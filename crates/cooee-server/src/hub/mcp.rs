@@ -194,11 +194,7 @@ impl Hub {
                 .iter()
                 .map(|s| entry(&s.name, &["mcp", "proxy", &s.name, "--thread", id])),
         );
-        let file = self
-            .data
-            .join("secrets")
-            .join(format!(".mcp-{id}-{:x}.json", now()));
-        launch.mcp = Some((file, all));
+        launch.mcp = all;
         Ok(launch)
     }
 

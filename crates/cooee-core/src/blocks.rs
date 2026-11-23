@@ -3,7 +3,7 @@ use blocks::{
 };
 use serde::{Serialize, Serializer};
 use serde_json::Value;
-use shed_proto::ApprovalOption;
+use crate::shed_proto::ApprovalOption;
 
 use crate::chat::{Body, Item};
 

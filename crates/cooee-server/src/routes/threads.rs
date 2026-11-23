@@ -315,7 +315,7 @@ async fn model(cx: &Cx, Json(p): Json<ModelPick>) -> Result<Answer<cooee_core::I
     Ok(Answer(
         blocking(cx, move |hub| {
             let agent = hub.thread(&id)?.0.agent;
-            logins.picks(&agent, &p.effort)?;
+            logins.effort(&agent, &p.effort)?;
             hub.pick(&id, &p.model, &p.effort)
         })
         .await,

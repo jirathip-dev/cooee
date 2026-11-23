@@ -1,3 +1,4 @@
+use cooee_core::Calls as _;
 use std::{
     collections::BTreeMap,
     fs,
@@ -35,7 +36,7 @@ impl Hub {
         if !now && at.saturating_sub(lock(&self.agents).1) < AGENTS_FOR {
             return;
         }
-        let fresh = self.shed.agents().map_err(|e| e.to_string());
+        let fresh = self.shed.installed().map_err(|e| e.to_string());
         let mut agents = lock(&self.agents);
         agents.1 = at;
         match fresh {
@@ -91,11 +92,7 @@ impl Hub {
         random_id: &str,
         recipe: &Recipe,
     ) -> Result<String, HubError> {
-        let started = self.start_in(agent, folder, (text, random_id), recipe);
-        if let Some((file, _)) = &recipe.launch.secrets {
-            fs::remove_file(file).ok();
-        }
-        started
+        self.start_in(agent, folder, (text, random_id), recipe)
     }
 
     fn start_in(
@@ -164,9 +161,6 @@ impl Hub {
             let done = done.and_then(|()| hub.reachable(&recipe.machine));
             let done =
                 done.and_then(|()| hub.connect(&id, (fresh, true), &text, &random_id, &recipe));
-            if let Some((file, _)) = &recipe.launch.secrets {
-                fs::remove_file(file).ok();
-            }
             let mut l = lock(&live);
             match done {
                 Ok(()) if l.chat.turn.state == "connecting" => {
@@ -237,7 +231,7 @@ impl Hub {
         if machine.is_empty() {
             return Ok(());
         }
-        match self.shed.link(machine) {
+        match self.shed.links().map(|mut l| l.remove(machine)) {
             Ok(Some(l)) if l.state != shed_proto::LinkState::Up => {
                 let why = l.error.map(|e| format!(": {e}")).unwrap_or_default();
                 let seen = cooee_machines::ago(cooee_machines::unix_now(), l.since);
@@ -328,9 +322,8 @@ impl Hub {
                 return Err(e.into());
             }
         }
-        if let Some(s) = self.shed.ready(&terminal)?
-            && let Err(e) = self.settle(id, &terminal, &s)
-        {
+        let session = self.shed.ready(&terminal, super::READY)?;
+        if let Err(e) = self.settle(id, &terminal, &session) {
             cooee_core::note!("cooee: {id}: model: {e}");
         }
         let note = self.unconnected(recipe)?;

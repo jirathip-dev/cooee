@@ -20,8 +20,8 @@ use std::{
 };
 
 use cooee_core::{
-    Plugin, Shed, ShedError,
-    shed_proto::{Method, ReadResult, RunParams, State},
+    Calls as _, Plugin, Shed, ShedError, Streamed,
+    shed_proto::{ErrorCode, LsParams, Method, ReadParams, RunParams, State},
 };
 use serde_json::{Value, json};
 
@@ -38,7 +38,7 @@ const MAX_BODY: u64 = 1 << 20;
 type Refused = (u16, String);
 
 fn shed_error(e: &ShedError) -> Refused {
-    if e.no_such_terminal() {
+    if e.code() == Some(ErrorCode::NoSuchTerminal) {
         (404, "That terminal is gone.".to_owned())
     } else {
         (502, format!("shed couldn't do that: {e}"))
@@ -93,7 +93,7 @@ impl Terminal {
     /// When shed can't list them.
     pub fn list(&self) -> Result<Vec<Value>, Refused> {
         let mut out = Vec::new();
-        for t in self.shed.ls(BTreeMap::new()).map_err(|e| shed_error(&e))? {
+        for t in self.shed.ls(&LsParams::default()).map_err(|e| shed_error(&e))? {
             let owner = t.labels.get(OWNER).is_some_and(|v| v == "1");
             if t.labels.contains_key("cooee-login") {
                 continue;
@@ -160,9 +160,8 @@ impl Terminal {
         if let Some(p) = params.as_object_mut() {
             p.insert("terminal".to_owned(), name.into());
         }
-        let _: Value = self
-            .shed
-            .call(method, &params)
+        self.shed
+            .call_raw(method, params)
             .map_err(|e| shed_error(&e))?;
         Ok(json!({}))
     }
@@ -244,11 +243,12 @@ impl Terminal {
                 Ok(done(json!({})))
             }
             ("POST", "/scrollback") => {
-                let read = json!({ "name": name()?, "history": true });
-                let r: ReadResult = self
-                    .shed
-                    .call(Method::Read, &read)
-                    .map_err(|e| shed_error(&e))?;
+                let read = ReadParams {
+                    name: name()?.to_owned(),
+                    history: true,
+                    ..ReadParams::default()
+                };
+                let r = self.shed.read(&read).map_err(|e| shed_error(&e))?;
                 Ok(done(json!({ "text": r.text })))
             }
             _ => Err((404, "No such path.".to_owned())),
@@ -267,8 +267,9 @@ impl Terminal {
         s.write_all(b"HTTP/1.0 200 OK\r\nContent-Type: text/event-stream\r\nCache-Control: no-store\r\n\r\n: open\n\n")?;
         for u in updates {
             match u {
-                Some(u) => write!(s, "event: screen\ndata: {}\n\n", json!(u))?,
-                None => s.write_all(b": quiet\n\n")?,
+                Streamed::Item(u) => write!(s, "event: screen\ndata: {}\n\n", json!(u))?,
+                Streamed::Quiet => s.write_all(b": quiet\n\n")?,
+                _ => continue,
             }
             s.flush()?;
         }

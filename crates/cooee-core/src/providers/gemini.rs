@@ -15,7 +15,6 @@ pub struct Gemini(Spec);
 pub const ENTRY: Entry = Entry {
     name: "gemini",
     defaults,
-    keep: &[],
     build: |s| Arc::new(Gemini(s)),
 };
 
@@ -70,14 +69,9 @@ impl Provider for Gemini {
 }
 
 fn defaults() -> Spec {
-    let creds = "\"${GEMINI_CLI_HOME:-$HOME}/.gemini/oauth_creds.json\"";
-    let sh = |line: String| vec!["sh".into(), "-c".into(), line];
     Spec {
         name: "gemini".into(),
         agent: "gemini".into(),
-        login: vec!["gemini".into()],
-        status: sh(format!("test -s {creds} && echo signed in with Google")),
-        install: "npm install -g @google/gemini-cli".into(),
         cheapest: "flash".into(),
         ..Spec::default()
     }

@@ -1,5 +1,4 @@
 use std::{
-    fs,
     path::PathBuf,
     sync::{Arc, Mutex},
 };
@@ -434,9 +433,6 @@ impl Hub {
         let seated = self
             .place(&folder)
             .and_then(|folder| self.start(&agent, &folder, prompt, random_id, &recipe));
-        if let Some((file, _)) = &recipe.launch.secrets {
-            fs::remove_file(file).ok();
-        }
         seated
     }
 

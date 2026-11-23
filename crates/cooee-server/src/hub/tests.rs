@@ -3,11 +3,11 @@ use cooee_core::shed_proto::{ApprovalOption, EventKind, Reported};
 use super::*;
 
 pub(super) fn hub(dir: &Path) -> Arc<Hub> {
-    hub_on(dir, dir.join("no-shed"))
+    hub_on(dir, &dir.join("no-shed-dir"))
 }
 
-fn hub_on(dir: &Path, bin: PathBuf) -> Arc<Hub> {
-    let shed = Shed::new(bin, Some(dir.join("no-shed-dir")));
+fn hub_on(dir: &Path, shed_dir: &Path) -> Arc<Hub> {
+    let shed = Shed::new(Some(shed_dir));
     let (looks, _) = crate::look::Looks::load(None, None);
     let theme = looks.themes[&looks.default].clone();
     Hub::open(
@@ -234,17 +234,16 @@ fn only_a_stop_cancels_a_members_session_as_it_starts() {
 
 #[test]
 fn the_agent_list_is_refreshed_at_most_once_a_minute() {
-    use std::os::unix::fs::PermissionsExt;
+    use cooee_core::shed_proto::{ErrorCode, Method, RpcError};
     let dir = scratch("agents");
-    let (bin, runs) = (dir.join("shed"), dir.join("runs"));
-    let cli = format!(
-        "#!/bin/sh\necho run >>{runs:?}\n[ -e {:?} ] && exit 1\necho '[{{\"id\":\"a\",\"version\":\"1\"}}]'\n",
-        dir.join("fails")
-    );
-    fs::write(&bin, cli).unwrap();
-    fs::set_permissions(&bin, fs::Permissions::from_mode(0o755)).unwrap();
-    let hub = hub_on(&dir, bin);
-    let count = || fs::read_to_string(&runs).unwrap().lines().count();
+    let server = shed_client::fake::Server::start().unwrap();
+    let installed = json!({ "id": "a", "version": "1", "distribution": "npx", "cmd": [] });
+    server.answer(Method::Agents, json!([{ "id": "a", "installed": installed }]));
+    let hub = hub_on(&dir, server.socket().parent().unwrap());
+    let count = || {
+        let seen = server.seen().into_iter();
+        seen.filter(|(m, _)| *m == Method::Agents).count()
+    };
     assert_eq!(hub.agents().unwrap()[0].id, "a");
     let t0 = now();
     for i in 0..10 {
@@ -254,7 +253,7 @@ fn the_agent_list_is_refreshed_at_most_once_a_minute() {
     assert_eq!(count(), 1);
     hub.refresh(t0 + AGENTS_FOR, false);
     assert_eq!(count(), 2);
-    fs::write(dir.join("fails"), "").unwrap();
+    server.fail(Method::Agents, RpcError::new(ErrorCode::Internal, "down"));
     hub.refresh(t0 + 2 * AGENTS_FOR, false);
     assert_eq!((count(), hub.agents().unwrap()[0].id.as_str()), (3, "a"));
 }
@@ -537,7 +536,7 @@ fn a_hundred_lists_with_nothing_changed_read_no_persona_file_after_the_first() {
     let meta = json!({ "format": 1, "thread": { "id": "a", "title": "a", "messages": [], "terminal": "cooee-a", "profile": "ada" } });
     fs::write(dir.join("data/threads/a.json"), meta.to_string()).unwrap();
     fs::write(dir.join("data/threads/a.jsonl"), "").unwrap();
-    let shed = Shed::new(dir.join("no-shed"), Some(dir.join("no-shed-dir")));
+    let shed = Shed::new(Some(&dir.join("no-shed-dir")));
     let (looks, _) = crate::look::Looks::load(None, None);
     let theme = looks.themes[&looks.default].clone();
     let config = (Vec::new(), Some(dir.join("config/config.toml")));

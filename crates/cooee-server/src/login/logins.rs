@@ -1,3 +1,4 @@
+use cooee_core::Calls as _;
 use std::{
     collections::BTreeMap,
     fs,

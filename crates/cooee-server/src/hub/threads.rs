@@ -1,3 +1,4 @@
+use cooee_core::Calls as _;
 use std::{path::PathBuf, sync::atomic::Ordering};
 
 use cooee_core::{Kind, Thread, Turn};

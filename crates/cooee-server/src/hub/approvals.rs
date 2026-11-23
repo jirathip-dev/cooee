@@ -1,3 +1,4 @@
+use cooee_core::Calls as _;
 use std::{path::PathBuf, sync::Mutex};
 
 use cooee_core::{

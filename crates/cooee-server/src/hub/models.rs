@@ -1,3 +1,4 @@
+use cooee_core::Calls as _;
 use std::{collections::BTreeMap, fs};
 
 use cooee_core::{
@@ -90,7 +91,7 @@ impl Hub {
         }
         drop(live);
         if s.model.as_deref() != Some(r.id.as_str()) {
-            self.shed.set_model(terminal, &r.id)?;
+            self.shed.model(terminal, &r.id)?;
         }
         Ok(())
     }
@@ -115,11 +116,9 @@ impl Hub {
         let started = self
             .shed
             .run_acp(&terminal, (run.0, &run.1), &dir, &BTreeMap::new(), launch);
-        let session = started.and_then(|_| self.shed.ready(&terminal));
+        let session = started.and_then(|_| self.shed.ready(&terminal, super::READY));
         let closed = self.shed.close(&terminal);
-        if let Some(s) = session? {
-            self.seen(agent, account, &s.models);
-        }
+        self.seen(agent, account, &session?.models);
         Ok(closed?)
     }
 }

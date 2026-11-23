@@ -1,3 +1,4 @@
+use cooee_core::Calls as _;
 use cooee_core::{
     Change, plugins,
     shed_proto::{LinkState, TerminalInfo},

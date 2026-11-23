@@ -128,7 +128,6 @@ fn guarded_profile_with_a_hook(dir: &std::path::Path) -> serde_json::Value {
 fn fake_acp_provider() -> String {
     let mut provider = cooee_core::provider::defaults().remove(0);
     "fake-acp".clone_into(&mut provider.agent);
-    (provider.login, provider.status) = (vec!["true".to_owned()], vec!["true".to_owned()]);
     let mut extra = "[[providers]]\n".to_owned();
     for (k, v) in serde_json::to_value(&provider)
         .unwrap()

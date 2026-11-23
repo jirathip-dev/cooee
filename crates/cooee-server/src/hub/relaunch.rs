@@ -1,6 +1,6 @@
+use cooee_core::Calls as _;
 use std::{
     collections::BTreeMap,
-    fs,
     path::{Path, PathBuf},
 };
 
@@ -74,7 +74,7 @@ impl Hub {
         (terminal, folder): (&str, &Path),
         agent: &str,
         recipe: &Recipe,
-    ) -> Result<Option<AcpSession>, HubError> {
+    ) -> Result<AcpSession, HubError> {
         let labels = BTreeMap::from([
             (LABEL.to_owned(), "1".to_owned()),
             (format!("{LABEL}.thread"), id.to_owned()),
@@ -86,10 +86,7 @@ impl Hub {
                 let run = (agent, cmd.as_slice());
                 Ok(self.shed.run_acp(terminal, run, folder, &labels, &launch)?)
             })
-            .and_then(|_| Ok(self.shed.ready(terminal)?));
-        if let Some((file, _)) = &recipe.launch.secrets {
-            fs::remove_file(file).ok();
-        }
+            .and_then(|_| Ok(self.shed.ready(terminal, super::READY)?));
         started
     }
 
@@ -137,9 +134,7 @@ impl Hub {
         let item = live.chat.push(now(), 0, Body::Note { text });
         live.publish(self, vec![Change::Item(item.clone())])?;
         drop(live);
-        if let Some(s) = session
-            && let Err(e) = self.settle(id, &terminal, &s)
-        {
+        if let Err(e) = self.settle(id, &terminal, &session) {
             cooee_core::note!("cooee: {id}: model: {e}");
         }
         if let Err(e) = self.shed.close(&old) {

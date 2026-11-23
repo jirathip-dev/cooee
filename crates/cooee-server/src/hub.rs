@@ -1,3 +1,4 @@
+use cooee_core::Calls as _;
 use std::{
     collections::{BTreeMap, HashMap, VecDeque},
     fs, io,
@@ -86,6 +87,8 @@ const CHANGE: u64 = 30 * 60 * 1000;
 const TICK: Duration = Duration::from_secs(30);
 const AGENTS_FOR: u64 = 60_000;
 const AGENTS_WAIT: Duration = Duration::from_secs(2);
+
+const READY: f64 = 60.0;
 type Listed = Result<Vec<Agent>, String>;
 
 const SERVED_EVERY: Duration = Duration::from_secs(5);
@@ -641,7 +644,7 @@ impl Hub {
 
     fn reattach(&self) -> Result<Option<u64>, ShedError> {
         self.shed.hello()?;
-        let (at, terminals) = (now(), self.shed.ls(BTreeMap::new())?);
+        let (at, terminals) = (now(), self.shed.ls(&shed_proto::LsParams::default())?);
         self.prune(&terminals, at);
         for t in &terminals {
             if !lock(&self.terminals).contains_key(&t.name) {
@@ -674,11 +677,11 @@ impl Hub {
                     Vec::new()
                 }
                 Ok(_) => live.chat.ended(now(), 0, "The agent stopped.".to_owned()),
-                Err(e) if e.no_such_terminal() => {
+                Err(e) if e.code() == Some(shed_proto::ErrorCode::NoSuchTerminal) => {
                     live.chat
                         .ended(now(), 0, "The agent is gone (shed restarted).".to_owned())
                 }
-                Err(e) if e.no_link() => Vec::new(),
+                Err(e) if e.code() == Some(shed_proto::ErrorCode::NoLink) => Vec::new(),
                 Err(e) => return Err(e),
             };
             if let Err(e) = live.publish(self, changes) {

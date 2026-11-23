@@ -14,7 +14,7 @@ pub struct Turn {
     pub note: Option<String>,
     /// The session's context use, as the agent last reported it (ACP's `usage_update`).
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub context: Option<shed_proto::AcpUsage>,
+    pub context: Option<crate::shed_proto::AcpUsage>,
 }
 
 impl Turn {

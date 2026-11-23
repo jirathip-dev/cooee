@@ -1,4 +1,5 @@
-use std::{collections::BTreeMap, fs, sync::Mutex};
+use cooee_core::Calls as _;
+use std::{collections::BTreeMap, sync::Mutex};
 
 use cooee_core::{Body, Change, Kind, Launch, shed_proto};
 
@@ -51,7 +52,7 @@ impl Hub {
             };
             let run = (agent.as_str(), cmd.as_slice());
             let started = self.shed.run_acp(&terminal, run, &folder, &labels, &launch);
-            let ready = started.and_then(|_| self.shed.ready(&terminal));
+            let ready = started.and_then(|_| self.shed.ready(&terminal, super::READY));
             if ready.is_err() {
                 self.shed.close(&terminal).ok();
             }
@@ -59,18 +60,13 @@ impl Hub {
         };
         let resumed = session.and_then(|s| start(Some(s), "").ok());
         let started = resumed.clone().map_or_else(|| start(None, "f"), Ok);
-        if let Some((file, _)) = &recipe.launch.secrets {
-            fs::remove_file(file).ok();
-        }
         let (terminal, ready) = started?;
         self.restarted(
             &live,
             (&old, &terminal),
             resumed.is_none().then_some(recipe),
         )?;
-        if let Some(s) = ready
-            && let Err(e) = self.settle(id, &terminal, &s)
-        {
+        if let Err(e) = self.settle(id, &terminal, &ready) {
             cooee_core::note!("cooee: {id}: model: {e}");
         }
         self.shed.close(&old).ok();

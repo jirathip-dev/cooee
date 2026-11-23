@@ -1,5 +1,5 @@
+use cooee_core::Calls as _;
 use std::{
-    collections::BTreeMap,
     sync::{Mutex, atomic::Ordering},
     time::Duration,
 };
@@ -21,20 +21,24 @@ impl Hub {
         loop {
             let stream = self
                 .reattach()
-                .and_then(|since| self.shed.events(BTreeMap::new(), last.or(since)));
+                .and_then(|since| self.shed.events(last.or(since)));
             match stream {
                 Ok(events) => {
                     self.shed_seen(None);
                     said.clear();
                     for item in events {
                         match item {
-                            Streamed::Event(event) => {
+                            Streamed::Item(event) => {
                                 last = Some(event.seq);
-                                self.apply(*event);
+                                self.apply(event);
                             }
-                            Streamed::Reset(seq) => {
+                            Streamed::Reset(seq) | Streamed::Lagged(seq) => {
                                 last = Some(seq);
                                 break;
+                            }
+                            Streamed::Quiet => {}
+                            Streamed::Skipped(line) => {
+                                cooee_core::note!("cooee: dropped a shed event: {line}");
                             }
                         }
                     }
