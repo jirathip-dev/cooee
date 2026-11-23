@@ -1,4 +1,7 @@
-use cooee_core::{SHED_MIN_PROTOCOL, shed_proto::Hello};
+use cooee_core::{
+    SHED_MIN_PROTOCOL,
+    shed_proto::{Hello, PROTOCOL},
+};
 
 use crate::{
     setup::{Mac, files},
@@ -20,7 +23,7 @@ fn a_missing_or_too_old_shed_stops_setup_naming_the_fix_and_changes_nothing() {
     );
     let old = Hello {
         build: "fffffff".to_owned(),
-        protocol: SHED_MIN_PROTOCOL - 1,
+        protocol: 0,
         ..version()
     };
     let _old = FakeShed::start(&mac.home.join("Library/Caches/shed"), old);
@@ -30,7 +33,7 @@ fn a_missing_or_too_old_shed_stops_setup_naming_the_fix_and_changes_nothing() {
     let stderr = String::from_utf8_lossy(&out.stderr);
     let (v, b) = (&version().version, &version().build);
     let said = format!(
-        "SHED_VERSION: cooee speaks shed {v} ({b}) protocol 1; the server runs {v} (fffffff) protocol 0, older than protocol 1; {fix}\nnothing was changed"
+        "SHED_VERSION: cooee speaks shed {v} ({b}) protocol {PROTOCOL}; the server runs {v} (fffffff) protocol 0, older than protocol {SHED_MIN_PROTOCOL}; {fix}\nnothing was changed"
     );
     assert!(stderr.contains(&said), "{stderr}\nwanted: {said}");
     assert_eq!(files(&mac.home), before);

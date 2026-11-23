@@ -63,8 +63,6 @@ fn defaults() -> Spec {
         login: vec!["agy".into()],
         status: sh(format!("test -s {tokens} && echo signed in with Google")),
         install: "curl -fsSL https://antigravity.google/cli/install.sh | bash".into(),
-        home: "GEMINI_HOME".into(),
-        logout: sh(format!("rm -f {tokens}")),
         cheapest: "flash".into(),
         ..Spec::default()
     }

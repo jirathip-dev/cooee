@@ -20,7 +20,6 @@ pub fn setup(name: &str) -> Setup {
     let dir = scratch(name);
     let token = format!("sk-{}", "p4".repeat(16));
     let data = dir.join("data");
-    fs::create_dir_all(data.join("accounts/fake/work")).unwrap();
     fs::create_dir_all(data.join("secrets")).unwrap();
     fs::write(data.join("secrets/API_KEY"), format!("{token}\n")).unwrap();
     let settings = r#"{"hooks":{"PreToolUse":[]}}"#;
@@ -42,8 +41,8 @@ pub fn setup(name: &str) -> Setup {
     let leak = format!("name = \"Leak\"\nagent = \"fake-acp\"\nenv = {{ T = \"{token}\" }}\n");
     agent(&dir, "leak", &leak, "");
     let shed = FakeShed::start(&dir.join("shed"), version());
-    let extra = "[[providers]]\nname = \"fake\"\nbase = \"claude\"\nagent = \"fake-acp\"\nhome = \"FAKE_HOME\"\n\
-                 settings = \"FAKE_SETTINGS\"\nlogin = [\"true\"]\nstatus = [\"true\"]\n\n\
+    let extra = "[[providers]]\nname = \"fake\"\nbase = \"claude\"\nagent = \"fake-acp\"\n\
+                 settings = \"fakeSettings\"\nlogin = [\"true\"]\nstatus = [\"true\"]\n\n\
                  [[mcp]]\nname = \"search\"\ncommand = \"true\"\nprovides = [\"web\"]\n";
     let cooee = Cooee::start_with(&dir, &shed.dir, extra);
     Setup {

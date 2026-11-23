@@ -11,9 +11,8 @@ use serde_json::Value as Json;
 use toml::{Table, Value};
 
 use crate::{
-    Shed, Usage,
+    Shed, Spec,
     action::{Action, Call, Kind},
-    login::{Ran, Spec, Status, plain_status},
     providers::REGISTRY,
     shed::Record,
 };
@@ -133,26 +132,6 @@ pub trait Provider: Send + Sync + fmt::Debug {
     /// Its data, as `[[providers]]` or its module's defaults set it.
     fn spec(&self) -> &Spec;
 
-    /// Its signed-in state from the status command's run: exit 0 is signed in, the output its line.
-    fn read_status(&self, ran: &Ran) -> Status {
-        plain_status(ran)
-    }
-
-    /// The variables removed from every command it runs.
-    fn scrub(&self) -> &'static [&'static str] {
-        &[]
-    }
-
-    /// The variable a hand-placed `<data>/accounts/<name>/<account>.token` fills; none: no token files.
-    fn token_var(&self) -> Option<&'static str> {
-        None
-    }
-
-    /// Its usage command's stdout read at `now` (s); none: no window read.
-    fn read_usage(&self, _stdout: &str, _now: u64) -> Option<Usage> {
-        None
-    }
-
     /// How a persona session is set up (#503). Default: nothing set, the brief as the first prompt, every gap.
     fn session(&self, want: &Want) -> Setup {
         Setup::plain(want)
@@ -161,6 +140,22 @@ pub trait Provider: Send + Sync + fmt::Debug {
     /// A tool call's kind and subject from ACP's facts; the default reads ACP's own fields only.
     fn action(&self, call: &Call) -> Action {
         Action::plain(call)
+    }
+}
+
+impl dyn Provider + '_ {
+    /// The words that start its agent on `effort` (empty: its own default); `None` when it offers no such pick.
+    #[must_use]
+    pub fn picks(&self, effort: &str) -> Option<Vec<String>> {
+        if effort.is_empty() {
+            return Some(Vec::new());
+        }
+        let s = self.spec();
+        let words = s.effort.iter().map(|w| w.replace("{}", effort));
+        s.efforts
+            .iter()
+            .any(|o| o == effort)
+            .then(|| words.collect())
     }
 }
 
@@ -294,10 +289,15 @@ pub fn specs(rows: Option<&[Table]>, records: &[Record]) -> Result<Vec<Spec>, St
     finish(rows.iter().map(over).collect())
 }
 
+const RETIRED: [&str; 3] = ["home", "logout", "usage"];
+
 fn finish(picked: Vec<Table>) -> Result<Vec<Spec>, String> {
     let specs = picked
         .into_iter()
-        .map(|t| Spec::deserialize(t).map_err(|e| format!("providers: {}", e.message())))
+        .map(|mut t| {
+            t.retain(|k, _| !RETIRED.contains(&k));
+            Spec::deserialize(t).map_err(|e| format!("providers: {}", e.message()))
+        })
         .collect::<Result<Vec<_>, _>>()?;
     let unknown = |b: &&String| !REGISTRY.iter().any(|e| e.name == b.as_str());
     match specs
@@ -314,19 +314,9 @@ fn finish(picked: Vec<Table>) -> Result<Vec<Spec>, String> {
 
 fn facts(r: &Record) -> Table {
     let mut t = Table::new();
-    let lines = [
-        ("login", &r.login),
-        ("status", &r.status),
-        ("logout", &r.logout),
-    ];
-    for (k, line) in lines {
+    for (k, line) in [("login", &r.login), ("status", &r.status)] {
         if let Some(line) = line {
             t.insert(k.into(), line.split_whitespace().collect::<Vec<_>>().into());
-        }
-    }
-    for (k, var) in [("home", &r.config_dir_var), ("settings", &r.settings_var)] {
-        if let Some(var) = var {
-            t.insert(k.into(), var.as_str().into());
         }
     }
     if !r.efforts.is_empty() {

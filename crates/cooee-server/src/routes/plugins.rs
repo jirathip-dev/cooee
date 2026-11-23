@@ -334,7 +334,7 @@ fn agent_thread(
     let agent = agents.first().ok_or_else(|| {
         HubError::Refused("No agents in shed: run cooee doctor on the Mac.".to_owned())
     })?;
-    let (account, launch) = logins.home(&agent.id, None)?;
+    let (account, launch) = logins.home(&agent.id, None);
     let recipe = Recipe {
         account,
         launch,

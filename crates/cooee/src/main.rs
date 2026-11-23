@@ -6,7 +6,6 @@ use std::{env, process::ExitCode};
 
 use cli::{Failed, Invocation};
 
-mod accounts;
 mod check;
 mod cli;
 mod cmd;

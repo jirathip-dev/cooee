@@ -7,9 +7,7 @@ use topcoat::context::{Cx, app_context, request_context};
 
 use crate::{
     Hub, HubError, Logins, Upload,
-    http::{
-        Data, Paired, Tag, allowed, blocking, hub, logins, profiles, provider_name, recipe, seated,
-    },
+    http::{Data, Paired, Tag, allowed, blocking, hub, logins, profiles, recipe, seated},
     pairing, plugin,
 };
 
@@ -58,7 +56,7 @@ pub(crate) async fn start(cx: &Cx, new: Start) -> Result<String, HubError> {
         }
         allowed(&machines, &recipe.machine).map_err(HubError::Refused)?;
         let id = if new.background {
-            let name = provider_name(&agent, &logins.statuses());
+            let name = logins.provider_name(&agent);
             hub.create_later(
                 (&agent, &name),
                 &folder,
@@ -125,7 +123,7 @@ impl Again {
             PathBuf::new(),
             ((t.model, t.effort), t.setup),
         )?;
-        Ok((recipe, provider_name(&t.agent, &self.logins.statuses())))
+        Ok((recipe, self.logins.provider_name(&t.agent)))
     }
 
     pub(crate) fn restart(&self) -> Result<(), HubError> {
