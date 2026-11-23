@@ -5,7 +5,7 @@ use futures_util::{StreamExt, stream};
 use serde::Deserialize;
 use topcoat::{
     Result,
-    context::{Cx, app_context, request_context},
+    context::{Cx, app_context, try_request_context},
     router::{
         RouterBuilder,
         content::{
@@ -20,7 +20,7 @@ use topcoat::{
 };
 
 use crate::{
-    http::{Paired, header, plain},
+    http::{Asking, Data, Paired, header, plain},
     live::{Frames, Live, Sent, Who},
 };
 
@@ -35,8 +35,13 @@ fn live(cx: &Cx) -> Arc<Live> {
     Arc::clone(app_context::<Arc<Live>>(cx))
 }
 
-fn who(cx: &Cx) -> Who {
-    Who::Device(request_context::<Paired>(cx).0.clone())
+fn who(cx: &Cx) -> Option<Who> {
+    if let Some(p) = try_request_context::<Paired>(cx) {
+        return Some(Who::Device(p.0.clone()));
+    }
+    let claim = try_request_context::<Asking>(cx)?.0.clone();
+    let data = app_context::<Data>(cx).0.clone();
+    Some(Who::Asking { claim, data })
 }
 
 #[route(GET "/stream")]
@@ -46,7 +51,10 @@ async fn open(cx: &Cx) -> Result<Response> {
         Some(v) => format!("application/vnd.blocks+json;v={v}"),
         None => header(cx, "accept").unwrap_or_default().to_owned(),
     };
-    let (hello, frames) = match live(cx).attach(&who(cx), &accept) {
+    let Some(who) = who(cx) else {
+        return plain(401, "pair this device first");
+    };
+    let (hello, frames) = match live(cx).attach(&who, &accept) {
         Ok(attached) => attached,
         Err(e) => return plain(406, &e.to_string()),
     };
@@ -71,8 +79,11 @@ async fn sync(cx: &Cx, Json(s): Json<Sync>) -> Result<Json<blocks::Synced>> {
         Ok(sid) => sid.clone(),
         Err(never) => match *never {},
     };
+    let Some(who) = who(cx) else {
+        return Err(not_found().into());
+    };
     live(cx)
-        .sync(&sid, &who(cx), s)
+        .sync(&sid, &who, s)
         .await
         .map(Json)
         .ok_or_else(|| not_found().into())

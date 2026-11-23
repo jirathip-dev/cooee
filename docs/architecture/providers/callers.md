@@ -6,7 +6,7 @@ Written before the types: each block is how the code that uses providers reads a
 
 ```rust
 // crates/cooee-core/src/providers/mod.rs: the whole file
-crate::registry! { claude, codex, gemini, #[cfg(test)] fake }
+crate::registry! { claude, codex, antigravity, #[cfg(test)] fake }
 ```
 
 ```rust

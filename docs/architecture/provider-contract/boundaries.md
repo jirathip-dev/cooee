@@ -15,9 +15,9 @@ flowchart LR
     chat --> action
   end
   subgraph named[cooee-core/src/providers/, may name a harness]
-    claude[claude.rs] & codex[codex.rs] & gemini[gemini.rs] & fake["fake.rs (test)"]
+    claude[claude.rs] & codex[codex.rs] & antigravity[antigravity.rs] & fake["fake.rs (test)"]
   end
-  claude & codex & gemini & fake -- impl session, action --> provider
+  claude & codex & antigravity & fake -- impl session, action --> provider
   subgraph server[cooee-server]
     session[hub/session.rs] --> provider
     approvals[hub/approvals.rs] --> rules & provider

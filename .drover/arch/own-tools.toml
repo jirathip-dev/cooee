@@ -1,0 +1,7 @@
+[[collect]]
+dir = "crates/cooee-server/src/mcp/tools"
+glob = "*.rs"
+
+[[collect]]
+dir = "crates/cooee-server/src/routes/mcp"
+glob = "*.rs"

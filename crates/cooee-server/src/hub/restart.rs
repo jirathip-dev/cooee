@@ -2,7 +2,7 @@ use std::{collections::BTreeMap, fs, sync::Mutex};
 
 use cooee_core::{Body, Change, Kind, Launch, shed_proto};
 
-use super::{Hub, HubError, LABEL, Live, Recipe, lock, now, on_machine};
+use super::{Hub, HubError, LABEL, Recipe, live::Live, lock, now, on_machine};
 
 const FRESH: &str = "The agent started again fresh: it couldn't pick up where it left off.";
 

@@ -13,7 +13,7 @@ use topcoat::router::{BodyLimit, Router};
 use crate::{
     Hub, Layouts, Logins, Manager, connectors, editor,
     gate::{Gate, Gzip, Timing, names},
-    http::{Data, profiles, provider_name, recipe},
+    http::{Data, profiles, recipe},
     hub, layout, live, look, pairing,
     passkey::Unlocks,
     plugin, routes, routines, screens, themes,
@@ -64,7 +64,7 @@ fn runner(
         if recipe.machine.is_empty() {
             recipe.machine.clone_from(&who.machine);
         }
-        let name = provider_name(&agent, &logins.statuses());
+        let name = logins.provider_name(&agent);
         Ok((agent, name, folder, recipe))
     });
     Arc::new(routines::Runner::new(
@@ -185,15 +185,14 @@ pub fn serve(config: &Config, ready: impl FnOnce(SocketAddr)) -> io::Result<()> 
     let logins = Logins::new(shed.clone(), providers.clone(), &data);
     let listener = std::net::TcpListener::bind((config.bind, config.port))?;
     listener.set_nonblocking(true)?;
-    let hub = Hub::open(
-        (shed, providers),
-        &data,
-        (config.roots.clone(), config.path.clone()),
+    let hub = Hub::open(hub::Seed {
+        shed,
+        providers,
+        data: &data,
+        config,
         theme,
-        manager.tabs(),
-        config.apns.clone(),
-        config.approval_expiry_minutes.saturating_mul(60_000),
-    )?;
+        plugins: manager.tabs(),
+    })?;
     retain(config, data.clone());
     probe_daily(Arc::clone(&hub), Arc::clone(&logins));
     let runner = runner(
@@ -255,8 +254,8 @@ fn probe_daily(daily: Arc<Hub>, signins: Arc<Logins>) {
     std::thread::spawn(move || {
         loop {
             for (agent, account) in daily.stale(hub::now()) {
-                let launch = signins.home(&agent, Some(&account));
-                let probed = launch.and_then(|(_, l)| daily.probe(&agent, &account, &l));
+                let (_, launch) = signins.home(&agent, Some(&account));
+                let probed = daily.probe(&agent, &account, &launch);
                 if let Err(e) = probed {
                     cooee_core::note!("cooee: models of {agent}: {e}");
                 }

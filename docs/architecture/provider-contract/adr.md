@@ -9,6 +9,9 @@ Always allow; rules in Settings; limits; switching provider mid-thread; web and 
 Open questions: four, each with a default: personal files on the default Codex and Gemini login; starter rules; the
 nightly run on your plans; web search until you pick a connector.
 
+Amended (#783): Antigravity (`antigravity.rs`, agent `antigravity-acp`) replaces Gemini, which is dropped; its
+switches and gaps are in [`capabilities.md`](capabilities.md).
+
 Files: this ADR, [`capabilities.md`](capabilities.md) (the table and each harness's switches),
 [`callers.md`](callers.md) (how the code reads, written first), [`shapes.md`](shapes.md) (the types and files),
 [`boundaries.md`](boundaries.md) (who calls whom, the statecharts), [`conformance.md`](conformance.md) (the suite).

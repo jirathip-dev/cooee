@@ -3,6 +3,9 @@
 Files: this ADR, [`shapes.md`](shapes.md) (the types), [`boundaries.md`](boundaries.md) (who calls whom, the
 statechart, the CI check), [`callers.md`](callers.md) (how the callers read, written first).
 
+Amended (#783): Antigravity (`antigravity.rs`, agent `antigravity-acp`) replaces Gemini, which is dropped; its
+switches and gaps are in [`../provider-contract/capabilities.md`](../provider-contract/capabilities.md).
+
 ## Question
 
 `crates/cooee-core/src/login.rs` holds Claude, Codex and Gemini in one table (`Provider::defaults`) with Claude's
@@ -52,9 +55,9 @@ register it in one line, keep `[[providers]]` config working, and keep every cal
    as an inherent `impl dyn Provider`, so callers keep writing `p.check(dir)`.
 3. **One module per provider** in `crates/cooee-core/src/providers/`: `claude.rs` (its JSON status, `/usage`
    parser with `window`/`civil_days`, `CLAUDE_CODE_OAUTH_TOKEN` as scrub and token variable, its defaults incl.
-   `settings`), `codex.rs` (defaults incl. efforts), `gemini.rs` (defaults). Each exports `pub const ENTRY: Entry`.
+   `settings`), `codex.rs` (defaults incl. efforts), `antigravity.rs` (defaults; it replaced `gemini.rs` in #783). Each exports `pub const ENTRY: Entry`.
 4. **The registry** is `providers/mod.rs`, one line per provider:
-   `registry! { claude, codex, gemini, #[cfg(test)] fake }`. The macro (in `provider.rs`) expands to `mod x;` and
+   `registry! { claude, codex, antigravity, #[cfg(test)] fake }`. The macro (in `provider.rs`) expands to `mod x;` and
    `REGISTRY: &[Entry]`. Registry order is the default order; the first entry is the default agent (`setup`
    installs it unasked, `cooee doctor`'s fix names it).
 5. **Config to behaviour**: each `[[providers]]` `Spec` is built by the entry named by its `base`, else by its

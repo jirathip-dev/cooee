@@ -29,18 +29,47 @@ crate() {
   mv "$dir/lib.rs.gen" "$dir/lib.rs"
 }
 
-# module DIR: DIR.rs, its leading `//!` lines kept, a `mod` line per file of DIR and a `pub use` of each with a `pub ` item.
+# module DIR: DIR.rs, its leading `//!` lines kept, a `mod` line per file of DIR (`tests` under `#[cfg(test)]`) and a `pub use` of each with a `pub ` item.
 module() {
   dir=$1
   {
     awk '!/^\/\/!/ { exit } { print }' "$dir.rs"
-    for m in $(modules "$dir"); do printf 'mod %s;\n' "$m"; done
+    for m in $(modules "$dir"); do
+      [ "$m" != tests ] || printf '#[cfg(test)]\n'
+      printf 'mod %s;\n' "$m"
+    done
     printf '\n'
     for m in $(modules "$dir"); do
       if grep -q '^pub ' "$dir/$m.rs" 2>/dev/null || grep -q '^pub ' "$dir/$m/mod.rs" 2>/dev/null; then printf 'pub use %s::*;\n' "$m"; fi
     done
   } | rustfmt --edition 2024 >"$dir.rs.gen"
   mv "$dir.rs.gen" "$dir.rs"
+}
+
+# areas DIR (#729): DIR/areas.rs, a field per file of DIR with a `pub(super) struct State`, built by its `open(seed)` (`?` when it returns a Result) or its default.
+areas() {
+  dir=$1 ms=
+  for m in $(modules "$dir"); do
+    if grep -q '^pub(super) struct State ' "$dir/$m.rs" 2>/dev/null; then ms="$ms $m"; fi
+  done
+  {
+    printf 'use super::{HubError, Seed%s};\n\n' "$(for m in $ms; do printf ', %s' "$m"; done)"
+    printf 'pub(super) struct Areas {\n'
+    for m in $ms; do printf '    pub(super) %s: %s::State,\n' "$m" "$m"; done
+    printf '}\n\nimpl Areas {\n'
+    printf "    pub(super) fn open(seed: &Seed<'_>) -> Result<Self, HubError> {\n        Ok(Self {\n"
+    for m in $ms; do
+      if grep -q "fn open(seed: &Seed<'_>) -> Result<Self, HubError>" "$dir/$m.rs"; then
+        printf '            %s: %s::State::open(seed)?,\n' "$m" "$m"
+      elif grep -q "fn open(seed: &Seed<'_>) -> Self" "$dir/$m.rs"; then
+        printf '            %s: %s::State::open(seed),\n' "$m" "$m"
+      else
+        printf '            %s: %s::State::default(),\n' "$m" "$m"
+      fi
+    done
+    printf '        })\n    }\n}\n'
+  } | rustfmt --edition 2024 >"$dir/areas.rs.gen"
+  mv "$dir/areas.rs.gen" "$dir/areas.rs"
 }
 
 # tests DIR: DIR/main.rs (#427), its leading `//!` lines kept, the shared support by path and a `mod` line per file of DIR.
@@ -119,16 +148,41 @@ cmds() {
   mv "$dir/mod.rs.gen" "$dir/mod.rs"
 }
 
-# tools DIR: DIR/mod.rs, a `mod` line per Chief tool file (#664) and the table `ALL` of each file's `TOOL`, in name order.
+# tools DIR TYPE: DIR/mod.rs, a `mod` line per tool file (#664, #778) and the table `ALL` of each file's `TOOL`, a TYPE, in name order.
 tools() {
-  dir=$1
+  dir=$1 ty=$2
   {
     for m in $(modules "$dir"); do printf 'mod %s;\n' "$m"; done
-    printf '\nuse crate::chief::Tool;\n\npub(crate) const ALL: &[Tool] = &[\n'
+    printf '\nuse %s;\n\npub(crate) const ALL: &[%s] = &[\n' "$ty" "${ty##*::}"
     for m in $(modules "$dir"); do printf '    %s::TOOL,\n' "$m"; done
     printf '];\n'
   } >"$dir/mod.rs.gen"
   mv "$dir/mod.rs.gen" "$dir/mod.rs"
+}
+
+# feature DIR NAME (#743): DIR/../NAME+Areas.swift; each `<Prefix><Area>.swift` of DIR adds its State, Action, reducer or scope.
+feature() {
+  dir=$1 name=$2 states='' cases='' reducers=''
+  for f in "$dir"/*.swift; do
+    [ -e "$f" ] || continue
+    a=${f##*/} && a=${a%.swift} && a=${a#"${name%Feature}"}
+    l=$(printf %s "$a" | cut -c1 | tr '[:upper:]' '[:lower:]')$(printf %s "$a" | cut -c2-)
+    if grep -q "struct ${a}State\b" "$f"; then states="$states        public var $l = ${a}State()\n"; fi
+    if grep -q "enum ${a}Action\b" "$f"; then cases="$cases        case $l(${a}Action)\n"; fi
+    if grep -q "var ${l}Scope\b" "$f"; then reducers="$reducers        ${l}Scope\n"; fi
+    if grep -qF "func $l(_ state: inout State, _ action: Action)" "$f"; then
+      reducers="$reducers        Reduce { state, action in $l(&state, action) }\n"
+    fi
+  done
+  [ -n "$reducers" ] || reducers='        EmptyReducer()\n'
+  {
+    printf 'import ComposableArchitecture\n\nextension %s {\n    @ObservableState\n    public struct Areas: Equatable' "$name"
+    if [ -n "$states" ]; then printf ' {\n%b    }\n' "$states"; else printf ' {}\n'; fi
+    printf '\n    @CasePathable\n    public enum AreaAction: Sendable'
+    if [ -n "$cases" ]; then printf ' {\n%b    }\n' "$cases"; else printf ' {}\n'; fi
+    printf '\n    @ReducerBuilder<State, Action>\n    internal var areas: some ReducerOf<Self> {\n%b    }\n}\n' "$reducers"
+  } >"${dir%/*}/$name+Areas.swift.gen"
+  mv "${dir%/*}/$name+Areas.swift.gen" "${dir%/*}/$name+Areas.swift"
 }
 
 # arch: .drover/arch.toml (#729): every `frozen`, `generated` and `shared` line of .drover/arch/*.list, sorted, then each *.toml in name order.

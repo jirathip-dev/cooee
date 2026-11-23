@@ -29,46 +29,28 @@ fn r3_a_store_error_is_a_503_not_unpaired_and_a_401_does_not_latch() {
 
 #[test]
 fn r7_requests_run_no_subprocess() {
-    use std::os::unix::fs::PermissionsExt;
     let dir = scratch("r7-no-io");
     let shed = FakeShed::start(&dir.join("shed"), version());
-    let status = dir.join("status.sh");
-    let log = dir.join("status.log");
-    fs::write(
-        &status,
-        format!("#!/bin/sh\necho checked >>{log:?}\necho 'Signed in'\n"),
-    )
-    .unwrap();
-    fs::set_permissions(&status, fs::Permissions::from_mode(0o755)).unwrap();
-    let provider = format!(
-        "[[providers]]\nname = \"fake\"\nagent = \"fake-acp\"\nlogin = [\"true\"]\nstatus = [{:?}]\n",
-        status.to_string_lossy()
-    );
-    let cooee = Cooee::start_with(&dir, &shed.dir, &provider);
+    let provider = "[[providers]]\nname = \"fake\"\nagent = \"fake-acp\"\nlogin = [\"true\"]\nstatus = [\"true\"]\n";
+    let cooee = Cooee::start_with(&dir, &shed.dir, provider);
     let root = dir.join("root/project");
     let new = json!({ "agent": "fake-acp", "folder": root, "text": "hi", "random_id": "r7" });
     let (code, body) = cooee.post("/threads", &new);
     assert_eq!(code, 200, "{body}");
     let id = id_of(&body);
 
-    let start = std::time::Instant::now();
-    while cooee.json("/logins/fake")["status"]["unknown"] != false {
-        assert!(start.elapsed() < std::time::Duration::from_secs(10));
-        std::thread::sleep(std::time::Duration::from_millis(20));
-    }
-    let calls = || (shed.cli_log(), fs::read_to_string(&log).unwrap());
-    let before = calls();
-    assert_eq!(before.1, "checked\n", "checked once, at start");
+    let statuses = || shed.calls_of("account.status");
+    let before = shed.cli_log();
     for _ in 0..5 {
         assert_eq!(listed(&cooee), std::slice::from_ref(&id));
         cooee.json(&format!("/threads/{id}/messages"));
-        let login = cooee.json("/logins/fake");
-        assert!(login.to_string().contains("Signed in"), "{login}");
+        assert_eq!(cooee.json("/logins/fake")["state"], "none");
         for path in ["/models", "/personas", "/folders"] {
             cooee.json(path);
         }
     }
-    assert_eq!(calls(), before);
+    assert_eq!(shed.cli_log(), before);
+    assert_eq!(statuses(), 0, "no status command runs for a request");
 }
 
 #[test]

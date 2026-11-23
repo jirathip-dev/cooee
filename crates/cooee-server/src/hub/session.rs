@@ -9,7 +9,7 @@ use cooee_core::{
 use super::{HubError, Recipe};
 use crate::login::Logins;
 
-pub(crate) fn persona(
+pub fn persona(
     logins: &Logins,
     a: &Agent,
     account: Option<&str>,
@@ -27,13 +27,12 @@ pub(crate) fn persona(
     let setup = logins.session(&a.agent, &want);
     let signed = setup.is_some();
     let setup = setup.unwrap_or_else(|| Setup::plain(&want));
-    let (account, mut launch) = logins.agent(a, account, data)?;
+    let (account, mut launch) = logins.agent(a, (account, setup.meta), data)?;
     for (file, text) in &setup.files {
         let file = run.join(file);
         cooee_core::write_private(&file, text.as_bytes())
             .map_err(|e| HubError::Refused(format!("{}: {e}", file.display())))?;
     }
-    launch.meta = setup.meta;
     launch.policy = Some("ask".to_owned());
     launch.env.extend(setup.env);
     launch.args.extend(setup.args);
