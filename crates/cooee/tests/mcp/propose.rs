@@ -4,18 +4,18 @@ use crate::setup::{Agent, Mcp, named, setup};
 use crate::support::Authenticator;
 
 const COOEE_TOOLS: [&str; 12] = [
-    "propose_server",
-    "remember",
     "ask_persona",
+    "create_routine",
+    "desk",
     "handoff",
     "history",
-    "update_persona",
-    "create_routine",
-    "stop_routine",
-    "skill",
-    "secret",
     "mail",
-    "desk",
+    "propose_server",
+    "remember",
+    "secret",
+    "skill",
+    "stop_routine",
+    "update_persona",
 ];
 
 #[test]
