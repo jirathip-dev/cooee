@@ -607,6 +607,7 @@ fn an_approval_in_a_background_thread_tells_home_at_once() {
     seed(&dir, "bg", "");
     seed(&dir, "fg", "");
     let hub = hub(&dir);
+    hub.personas();
     let mut home = hub.home();
     hub.apply(event("bg", 1, EventKind::Text { text: "w".into() }));
     while home.try_recv().is_ok() {}

@@ -206,8 +206,7 @@ impl Providers {
         self.built.iter()
     }
 
-    /// Every provider over shed's records (the built-in ones when shed can't be asked or `rows` is empty), by `rows`
-    /// (see [`specs`]).
+    /// Every provider over shed's records (built-in ones when shed can't be asked or rows are empty), by [`specs`].
     #[must_use]
     pub fn load(rows: Option<&[Table]>, shed: &Shed) -> Self {
         let served = match rows {
@@ -244,11 +243,7 @@ impl Providers {
     }
 }
 
-/// The providers: each registered one's defaults, and one named for its program for each record of `catalog` that
-/// logs in and has no provider; with `[[providers]]` set, its rows instead, each over the provider of its name.
-///
-/// # Errors
-/// A row that names no registered `base`, or that leaves a spec incomplete or with a field it doesn't know.
+/// # Errors `String` for a row naming no registered `base`, or leaving a spec incomplete or with an unknown field.
 pub fn specs(rows: Option<&[Table]>, catalog: &Catalog) -> Result<Vec<Spec>, String> {
     let mut known: Vec<Table> = REGISTRY
         .iter()
@@ -290,7 +285,7 @@ fn finish(picked: Vec<Table>) -> Result<Vec<Spec>, String> {
     let specs = picked
         .into_iter()
         .map(|mut t| {
-            t.retain(|k, _| !RETIRED.contains(&k.as_ref()));
+            t.retain(|k, _| !RETIRED.contains(&k));
             Spec::deserialize(t).map_err(|e| format!("providers: {}", e.message()))
         })
         .collect::<Result<Vec<_>, _>>()?;

@@ -430,10 +430,8 @@ impl Hub {
         let starter = self.starter.get().ok_or_else(|| refused("no starter"))?;
         let (agent, folder, mut recipe) = starter(self, persona)?;
         seat(&mut recipe);
-        let seated = self
-            .place(&folder)
-            .and_then(|folder| self.start(&agent, &folder, prompt, random_id, &recipe));
-        seated
+        self.place(&folder)
+            .and_then(|folder| self.start(&agent, &folder, prompt, random_id, &recipe))
     }
 
     pub(super) fn replied(

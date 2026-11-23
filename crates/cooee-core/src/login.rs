@@ -1,7 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-/// A provider as cooee's policy: what `[[providers]]` sets and each provider module's defaults return; its program's
-/// facts are shed-catalog's record of `agent`.
+/// A provider as cooee's policy (`[[providers]]`, a module's defaults); its program's facts are shed's record.
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct Spec {

@@ -86,9 +86,9 @@ fn setup(name: &str) -> Setup {
         ),
     )
     .unwrap();
+    let (login, status) = (dir.join("bin/fake-cli"), dir.join("status.sh"));
     shed.record(
-        serde_json::json!({ "login": dir.join("bin/fake-cli"), "status": dir.join("status.sh"),
-        "install": "get fake-cli" }),
+        &serde_json::json!({ "login": login, "status": status, "install": "get fake-cli" }),
     );
     Setup { dir, shed }
 }

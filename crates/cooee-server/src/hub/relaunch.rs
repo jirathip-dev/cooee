@@ -78,15 +78,13 @@ impl Hub {
             (LABEL.to_owned(), "1".to_owned()),
             (format!("{LABEL}.thread"), id.to_owned()),
         ]);
-        let started = self
-            .mcp_launch(id, recipe)
+        self.mcp_launch(id, recipe)
             .and_then(|launch| {
                 let cmd = self.adapter(agent);
                 let run = (agent, cmd.as_slice());
                 Ok(self.shed.run_acp(terminal, run, folder, &labels, &launch)?)
             })
-            .and_then(|_| Ok(self.shed.ready(terminal, super::READY)?));
-        started
+            .and_then(|_| Ok(self.shed.ready(terminal, super::READY)?))
     }
 
     fn relaunch(

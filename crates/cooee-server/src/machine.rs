@@ -1,8 +1,8 @@
 //! `cooee machine check <m> [--yes]` and `cooee doctor`'s row per machine (#150): whether machine `m` is ready for
 //! the personas that run on it. shed reaches it with the same version; then for each persona its agent's CLI is
 //! installed there, its folder is there, its account is signed in there and its profile's settings (its rules and
-//! hooks) are there as here. Every check runs on `m` through shed's `exec`, `file.read` and `file.write`; cooee never
-//! reaches it but through shed. With `--yes` a missing folder is cloned there from its git origin here, and the settings are copied there.
+//! hooks) are there as here. Every check runs on `m` as a plain shed terminal; cooee never reaches it but through
+//! shed. With `--yes` a missing folder is cloned there from its git origin here, and the settings are copied there.
 
 use std::{collections::BTreeSet, fs, path::Path};
 

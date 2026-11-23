@@ -9,14 +9,12 @@ pub use crate::devices::{
 pub use crate::login::{Spec, links, redact};
 pub use crate::profiles::Profile;
 pub use crate::provider::{Entry, Plain, Provider, Providers, agents_fix};
-pub use crate::shed::{
-    Agent, Calls, Launch, SHED_MIN_PROTOCOL, Shed, ShedError, Streamed, shed_fix,
-};
+pub use crate::shed::{Agent, Launch, SHED_MIN_PROTOCOL, Shed, ShedError, Streamed, shed_fix};
 pub use crate::store::{
     FORMAT, Kind, Member, Message, Queued, Reason, Role, RoomTurn, Store, StoreError, Thread,
     Workflow,
 };
-pub use shed_client::proto as shed_proto;
+pub use shed_client::{Calls, proto as shed_proto};
 
 pub(crate) fn toml_text(v: &serde_json::Value) -> String {
     let mut out = String::new();

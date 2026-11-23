@@ -93,10 +93,7 @@ impl Logins {
         .unwrap_or_default()
     }
 
-    /// `agent`'s effort for shed's `run` (empty: its default).
-    ///
-    /// # Errors
-    /// [`HubError::Refused`] for an effort shed's record of it doesn't offer.
+    /// # Errors [`HubError::Refused`] for an effort shed's record of `agent` doesn't offer; else the `run`'s effort.
     pub fn effort(&self, agent: &str, effort: &str) -> Result<Option<String>, HubError> {
         if effort.is_empty() {
             return Ok(None);

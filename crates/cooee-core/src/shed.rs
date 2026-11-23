@@ -1,5 +1,3 @@
-//! cooee's handle on shed: shed-client's pooled client with every call timed, and what a thread's agent runs with.
-
 use std::{
     collections::BTreeMap,
     fmt,
@@ -8,14 +6,14 @@ use std::{
 };
 
 use serde_json::Value;
-pub use shed_client::{Calls, Error as ShedError, Streamed};
 use shed_client::{
-    Stream,
+    Calls, Stream,
     proto::{
         Event, EventsParams, Hello, Input, Method, Reported, RunParams, ScreenUpdate, SendParams,
         TerminalInfo, frame,
     },
 };
+pub use shed_client::{Error as ShedError, Streamed};
 
 /// The oldest shed protocol cooee accepts (5: a run on a named account); any newer one is accepted too.
 pub const SHED_MIN_PROTOCOL: u32 = 5;
@@ -40,13 +38,12 @@ impl fmt::Debug for Shed {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("Shed")
             .field("socket", &self.socket)
-            .finish()
+            .finish_non_exhaustive()
     }
 }
 
 impl Shed {
-    /// shed's per-user server, or the one in `dir`: `dir/shed.sock`; else on macOS
-    /// `~/Library/Caches/shed/shed.sock`, elsewhere `$XDG_RUNTIME_DIR/shed.sock`.
+    /// The server on `dir/shed.sock`, else shed's per-user one (`~/Library/Caches/shed`, `$XDG_RUNTIME_DIR`).
     #[must_use]
     pub fn new(dir: Option<&Path>) -> Self {
         let var = |k| {
@@ -82,10 +79,7 @@ impl Shed {
         &self.socket
     }
 
-    /// Checks the server answers and speaks [`SHED_MIN_PROTOCOL`] or newer.
-    ///
-    /// # Errors
-    /// [`ShedError::Version`] on another protocol; [`ShedError::Io`] when nothing listens.
+    /// # Errors [`ShedError::Version`] unless the server speaks [`SHED_MIN_PROTOCOL`] or newer; `Io` when none listens.
     pub fn hello(&self) -> Result<(), ShedError> {
         let start = crate::clock::instant();
         let theirs = self.client.hello();
@@ -102,27 +96,18 @@ impl Shed {
         })
     }
 
-    /// The events of every terminal, first the kept ones after `since`.
-    ///
-    /// # Errors
-    /// [`ShedError`] when the subscription fails.
+    /// # Errors [`ShedError`] when the stream of every terminal's events (the kept ones after `since` first) can't start.
     pub fn events(&self, since: Option<u64>) -> Result<Stream<Event>, ShedError> {
         let labels = BTreeMap::new();
         self.client.events(&EventsParams { labels, since })
     }
 
-    /// Terminal `name`'s screen updates: the whole screen first, then the rows that change; quiet each `tick`.
-    ///
-    /// # Errors
-    /// [`ShedError`] when the watch can't start.
+    /// # Errors [`ShedError`] when terminal `name`'s screen updates (all, then changed rows; quiet each `tick`) can't start.
     pub fn watch(&self, name: &str, tick: Duration) -> Result<Stream<ScreenUpdate>, ShedError> {
         Ok(self.client.watch(name, None)?.tick(tick))
     }
 
-    /// Starts ACP agent `agent` in terminal `name` as `launch` says (see [`Launch::run`]).
-    ///
-    /// # Errors
-    /// [`ShedError`] when the run is refused, or [`ShedError::Bad`] when `launch` can't be run.
+    /// # Errors [`ShedError`] when shed refuses the run of `agent` in terminal `name` [`Launch::run`] makes, else `Bad`.
     pub fn run_acp(
         &self,
         name: &str,
@@ -137,10 +122,7 @@ impl Shed {
         self.run(&run)
     }
 
-    /// Types `text` into terminal `name`, then presses enter.
-    ///
-    /// # Errors
-    /// [`ShedError`] when either call fails.
+    /// # Errors [`ShedError`] when typing `text` into terminal `name`, or the enter after it, fails.
     pub fn type_line(&self, name: &str, text: &str) -> Result<(), ShedError> {
         self.send(&SendParams {
             name: name.into(),
@@ -152,10 +134,7 @@ impl Shed {
         self.keys(name, &["enter"])
     }
 
-    /// The installed ACP agents.
-    ///
-    /// # Errors
-    /// [`ShedError`] when `agents` fails.
+    /// # Errors [`ShedError`] when shed's `agents` (of which these are the installed ones) fails.
     pub fn installed(&self) -> Result<Vec<Agent>, ShedError> {
         let agents = self.agents()?.into_iter().filter_map(|a| a.installed);
         Ok(agents
@@ -229,11 +208,7 @@ pub struct Launch {
 }
 
 impl Launch {
-    /// shed's `run` of ACP agent `agent` in terminal `name` (`<machine>/<name>` on that machine) in `cwd`: with
-    /// words after the adapter, `adapter` (its installed command) leads them.
-    ///
-    /// # Errors
-    /// Why not, when there are words but no installed adapter, or the policy is none shed knows.
+    /// # Errors `String` for args without an installed adapter or a policy shed lacks; else `agent`'s run in `name`.
     pub fn run(
         &self,
         name: &str,

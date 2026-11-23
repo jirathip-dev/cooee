@@ -281,7 +281,7 @@ impl FakeShed {
     }
 
     /// shed's record of `fake-acp` takes `facts` (its login, status, install) over its efforts `low` and `high`.
-    pub fn record(&self, facts: Value) {
+    pub fn record(&self, facts: &Value) {
         let mut provider = json!({ "id": "fake-acp", "efforts": ["low", "high"] });
         provider
             .as_object_mut()
@@ -359,12 +359,12 @@ impl FakeShed {
         let fake = json!([{ "id": "fake-acp", "version": "1.0.0", "distribution": "npx", "cmd": ["fake-acp"] }]);
         let listed = fs::read_to_string(self.dir.join("agents.json"))
             .map_or(fake, |t| serde_json::from_str(&t).unwrap());
-        let info = |a: &Value| match a.get("installed").or_else(|| a.get("provider")) {
-            Some(_) => a.clone(),
-            None => {
-                let record = json!({ "id": a["id"], "efforts": ["low", "high"] });
-                json!({ "id": a["id"], "installed": a, "provider": record })
+        let info = |a: &Value| {
+            if a.get("installed").or_else(|| a.get("provider")).is_some() {
+                return a.clone();
             }
+            let record = json!({ "id": a["id"], "efforts": ["low", "high"] });
+            json!({ "id": a["id"], "installed": a, "provider": record })
         };
         Ok(json!(
             listed
@@ -385,36 +385,39 @@ impl FakeShed {
         writeln!(log, "--dir {} --json {line}", self.dir.display()).unwrap();
     }
 
+    fn run_line(run: &RunParams, policy: Option<&str>) -> String {
+        let on = run.machine.as_ref().map(|m| format!("--on {m} "));
+        let (acp, name) = (run.acp.as_deref().unwrap(), run.name.as_deref().unwrap());
+        let mut words = vec![format!(
+            "{}run --acp {acp} --name {name} --cwd {}",
+            on.unwrap_or_default(),
+            run.cwd.display()
+        )];
+        words.extend(run.labels.iter().map(|(k, v)| format!("--label {k}={v}")));
+        let meta = run.meta.as_ref().map(|m| json!(m).to_string());
+        let flags = [
+            ("policy", policy),
+            ("account", run.account.as_deref()),
+            ("resume", run.resume.as_deref()),
+            ("effort", run.effort.as_deref()),
+            ("meta", meta.as_deref()),
+        ];
+        words.extend(
+            flags
+                .iter()
+                .filter_map(|(f, v)| Some(format!("--{f} {}", (*v)?))),
+        );
+        if !run.cmd.is_empty() {
+            words.push(format!("-- {}", run.cmd.join(" ")));
+        }
+        words.join(" ")
+    }
+
     fn run_acp(&self, params: &Value) -> Result<Value, RpcError> {
         let run: RunParams = serde_json::from_value(params.clone()).unwrap();
+        self.log_line(&Self::run_line(&run, params["policy"].as_str()));
         let name = run.name.clone().unwrap();
-        let mut line = run
-            .machine
-            .iter()
-            .map(|m| format!("--on {m} "))
-            .collect::<String>();
-        let cwd = run.cwd.display().to_string();
-        let acp = run.acp.clone().unwrap();
-        line += &format!("run --acp {acp} --name {name} --cwd {cwd}");
-        for (k, v) in &run.labels {
-            line += &format!(" --label {k}={v}");
-        }
-        let flags = [
-            ("policy", params["policy"].as_str().map(str::to_owned)),
-            ("account", run.account.clone()),
-            ("resume", run.resume.clone()),
-            ("effort", run.effort.clone()),
-            ("meta", run.meta.as_ref().map(|m| json!(m).to_string())),
-        ];
-        for (flag, value) in flags {
-            if let Some(v) = value {
-                line += &format!(" --{flag} {v}");
-            }
-        }
-        if !run.cmd.is_empty() {
-            line += &format!(" -- {}", run.cmd.join(" "));
-        }
-        self.log_line(&line);
+        let file = |what: &str| self.dir.join(format!("{what}-{name}"));
         if !run.mcp_servers.is_empty() {
             fs::write(
                 self.dir.join(format!("mcp-{name}.json")),
@@ -429,20 +432,21 @@ impl FakeShed {
             )
             .unwrap();
         }
-        fs::write(self.dir.join(format!("cwd-{name}")), &cwd).unwrap();
+        fs::write(file("cwd"), run.cwd.display().to_string()).unwrap();
         let folder = run
             .cwd
             .file_name()
-            .map_or("/".to_owned(), |f| f.to_string_lossy().into_owned());
+            .map_or("/".into(), |f| f.to_string_lossy());
         self.hold("hold-run");
         self.hold(&format!("hold-in-{folder}"));
         if self.dir.join("run-fails").exists() {
             return Err(RpcError::new(ErrorCode::Internal, "fake shed: timed out"));
         }
         if self.dir.join(format!("fails-in-{folder}")).exists() {
-            fs::write(self.dir.join(format!("ready-timeout-{name}")), "").unwrap();
+            fs::write(file("ready-timeout"), "").unwrap();
         }
-        let env: String = run.env.iter().map(|(k, v)| format!("{k}={v}\n")).collect();
+        let env = run.env.iter().map(|(k, v)| format!("{k}={v}\n"));
+        let env = env.collect::<Vec<_>>().concat();
         if !run.env.is_empty() {
             fs::write(self.dir.join("adapter.env"), &env).unwrap();
             fs::write(self.dir.join(format!("adapter-{name}.env")), &env).unwrap();
@@ -507,7 +511,15 @@ impl FakeShed {
         })
     }
 
+    fn screen(&self, name: &str) -> Value {
+        let procs = self.procs.by_name.lock().unwrap();
+        json!({ "text": procs[name].screen, "cursor": { "seq": 0, "screen": 0 } })
+    }
+
     pub(super) fn run(&self, params: &Value) -> Result<Value, RpcError> {
+        if params["acp"].is_string() {
+            return self.run_acp(params);
+        }
         let mut name = params["name"].as_str().unwrap().to_owned();
         let mut path = env::var("PATH").unwrap_or_default();
         if let Some(m) = params["machine"].as_str() {
@@ -841,7 +853,6 @@ impl FakeShed {
                 "machine.links" => Ok(self.links()),
                 "hello" => self.answer_hello(&req.params),
                 "get" => self.terminal(&name),
-                "run" if req.params["acp"].is_string() => self.run_acp(&req.params),
                 "run" => self.run(&req.params),
                 "agents" => self.agents(),
                 "exec" => self.exec(&req.params),
@@ -850,10 +861,7 @@ impl FakeShed {
                 "resize" | "terminal.resize" | "acp.model" => Ok(json!({})),
                 "screen.watch" => return self.watch(id, &req.params, &mut writer),
                 "terminal.input" | "terminal.keys" => Ok(self.type_keys(&req.params)),
-                "read" => {
-                    let procs = self.procs.by_name.lock().unwrap();
-                    Ok(json!({ "text": procs[&name].screen, "cursor": { "seq": 0, "screen": 0 } }))
-                }
+                "read" => Ok(self.screen(&name)),
                 "keys" => {
                     assert_eq!(req.params["keys"], json!(["enter"]));
                     self.type_in(&name, "\n");
