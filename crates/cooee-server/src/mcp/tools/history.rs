@@ -15,9 +15,4 @@ fn shape() -> Value {
     })
 }
 
-pub(super) const TOOL: Own = Own {
-    name: "history",
-    shape,
-    path: "/mcp/agent/history",
-    said: "",
-};
+pub(super) const TOOL: Own = Own("history", shape, "/mcp/agent/history", "");

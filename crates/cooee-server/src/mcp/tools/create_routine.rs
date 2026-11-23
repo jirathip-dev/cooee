@@ -30,9 +30,4 @@ fn shape() -> Value {
     })
 }
 
-pub(super) const TOOL: Own = Own {
-    name: "create_routine",
-    shape,
-    path: "/mcp/agent/routine",
-    said: "",
-};
+pub(super) const TOOL: Own = Own("create_routine", shape, "/mcp/agent/routine", "");

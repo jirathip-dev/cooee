@@ -17,9 +17,4 @@ fn shape() -> Value {
     })
 }
 
-pub(super) const TOOL: Own = Own {
-    name: "mail",
-    shape,
-    path: "/mcp/agent/mail",
-    said: "",
-};
+pub(super) const TOOL: Own = Own("mail", shape, "/mcp/agent/mail", "");

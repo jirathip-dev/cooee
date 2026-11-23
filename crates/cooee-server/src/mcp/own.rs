@@ -11,15 +11,15 @@ use super::{
     tools::ALL,
 };
 
-pub(crate) struct Own {
-    pub(crate) name: &'static str,
-    pub(crate) shape: fn() -> Value,
-    pub(crate) path: &'static str,
-    pub(crate) said: &'static str,
-}
+pub(crate) struct Own(
+    pub &'static str,
+    pub fn() -> Value,
+    pub &'static str,
+    pub &'static str,
+);
 
 fn own_tools() -> Value {
-    Value::Array(ALL.iter().map(|t| (t.shape)()).collect())
+    Value::Array(ALL.iter().map(|t| (t.1)()).collect())
 }
 
 fn chief_tools(thread: &str) -> Vec<Value> {
@@ -41,8 +41,8 @@ fn merged(own: &Value, mut mine: Vec<Value>) -> Value {
 }
 
 fn route(name: Option<&str>) -> (&'static str, &'static str) {
-    let own = ALL.iter().find(|t| Some(t.name) == name);
-    own.map_or(("/mcp/agent/chief", ""), |t| (t.path, t.said))
+    let own = ALL.iter().find(|t| Some(t.0) == name);
+    own.map_or(("/mcp/agent/chief", ""), |t| (t.2, t.3))
 }
 
 fn call(thread: &str, id: &Value, msg: &Value) -> Value {

@@ -22,9 +22,9 @@ fn shape() -> Value {
     })
 }
 
-pub(super) const TOOL: Own = Own {
-    name: "propose_server",
+pub(super) const TOOL: Own = Own(
+    "propose_server",
     shape,
-    path: "/mcp/agent/propose",
-    said: "Proposed. The owner sees a card with the exact command or URL; once approved with Face ID it is added switched off. Nothing has run.",
-};
+    "/mcp/agent/propose",
+    "Proposed. The owner sees a card with the exact command or URL; once approved with Face ID it is added switched off. Nothing has run.",
+);
