@@ -18,11 +18,12 @@ pub struct Agent {
     pub models: Vec<String>,
 }
 
-/// What a thread's agent runs with besides its folder: variables on its adapter's command line, secret ones through
-/// a file (see [`Shed::run_acp`](super::Shed::run_acp)), and shed's approval policy (none: shed's default, `ask`).
+/// What a thread's agent runs with besides its folder: shed's account, its adapter's variables and approval policy.
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct Launch {
-    /// `K=V` on the adapter's command line (an account's config folder, a profile's plain variables).
+    /// `--account`: the account of the agent's provider shed runs it on (`account.ls`); none: shed's own login.
+    pub account: Option<String>,
+    /// `K=V` on the adapter's command line (a profile's plain variables).
     pub env: Vec<(String, String)>,
     /// The file the secret variables pass through, and the variables.
     pub secrets: Option<(PathBuf, Vec<(String, String)>)>,
@@ -69,12 +70,6 @@ pub struct Record {
     pub login: Option<String>,
     /// The status command line.
     pub status: Option<String>,
-    /// The logout command line.
-    pub logout: Option<String>,
-    /// The variable that moves its config folder.
-    pub config_dir_var: Option<String>,
-    /// The variable that names its settings file.
-    pub settings_var: Option<String>,
     /// The words that set an effort, `{effort}` standing for the pick.
     pub effort_args: Vec<String>,
     /// The efforts it takes.

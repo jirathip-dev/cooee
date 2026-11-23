@@ -37,6 +37,7 @@ pub(super) struct Shared {
     pub(super) agents: BTreeMap<String, Sender<Input>>,
     lanes: BTreeMap<String, BTreeMap<String, String>>,
     cues: BTreeMap<String, VecDeque<String>>,
+    pub(super) accounts: BTreeMap<(String, String), Value>,
 }
 
 #[derive(Default)]
@@ -372,7 +373,7 @@ impl FakeShed {
         self.procs.changed.notify_all();
     }
 
-    fn run(&self, params: &Value) -> Result<Value, RpcError> {
+    pub(super) fn run(&self, params: &Value) -> Result<Value, RpcError> {
         let mut name = params["name"].as_str().unwrap().to_owned();
         let mut path = env::var("PATH").unwrap_or_default();
         if let Some(m) = params["machine"].as_str() {
@@ -512,6 +513,9 @@ impl FakeShed {
             session: None,
             records: Vec::new(),
             parent: None,
+            mem_max_mb: None,
+            redacted: false,
+            account: None,
         })
     }
 
@@ -706,7 +710,7 @@ impl FakeShed {
                 "terminal.input" | "terminal.keys" => Ok(self.type_keys(&req.params)),
                 "read" => {
                     let procs = self.procs.by_name.lock().unwrap();
-                    Ok(json!({ "text": procs[&name].screen }))
+                    Ok(json!({ "text": procs[&name].screen, "cursor": { "seq": 0, "screen": 0 } }))
                 }
                 "keys" => {
                     assert_eq!(req.params["keys"], json!(["enter"]));
@@ -728,6 +732,7 @@ impl FakeShed {
                     t
                 }
                 "events" => return self.subscribe(id, req.params["since"].as_u64(), &mut writer),
+                m if m.starts_with("account.") => self.account(m, &req.params),
                 other => Err(RpcError::new(ErrorCode::MethodNotFound, other)),
             };
             let response = match result {
