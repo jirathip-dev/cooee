@@ -1,0 +1,11 @@
+[[ban]]
+pattern = "Catalog::read"
+paths = ["crates/*/src/**"]
+except = ["crates/cooee-core/src/show/catalogs.rs"]
+reason = "#776: a catalog is one of cooee's shipped files; no other code loads one"
+
+[[ban]]
+pattern = "model::read"
+paths = ["crates/*/src/**"]
+except = ["crates/cooee-core/src/show/read.rs"]
+reason = "#776: a persona's blocks are read under its catalog in one place, the only maker of show::Checked"

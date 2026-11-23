@@ -15,7 +15,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     browser, disk, mcp, memory, plugins, profiles::Profile, provider::Builtin, routines::Schedule,
-    skills,
+    show, skills,
 };
 
 const DROVER: &str = "drover";
@@ -229,6 +229,9 @@ pub struct Agent {
     /// it out keeps it.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub spoken: Option<String>,
+    /// The catalog its replies may use blocks from (#776), one of [`crate::show::NAMES`]; none: text only.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub blocks: Option<String>,
     /// Its files' [`disk::version`] when read; a save naming an older one is refused (#360), one naming none isn't.
     #[serde(skip_serializing_if = "String::is_empty")]
     pub version: String,
@@ -571,6 +574,7 @@ pub fn save(config: &Path, data: &Path, mut a: Agent) -> io::Result<Agent> {
         consolidate: a.consolidate.or(old.consolidate),
         heartbeat: a.heartbeat.or(old.heartbeat),
         spoken: a.spoken.or(old.spoken),
+        blocks: a.blocks.or(old.blocks).filter(|b| !b.is_empty()),
         lent: None,
         ..a
     };
@@ -579,9 +583,7 @@ pub fn save(config: &Path, data: &Path, mut a: Agent) -> io::Result<Agent> {
     } else if a.role == Role::Chief {
         return Err(refused("only cooee's own Chief has that role".to_owned()));
     }
-    a.check().map_err(|_| {
-        refused("a persona needs a name, an agent, and an image or none as its avatar".to_owned())
-    })?;
+    a.check().map_err(refused)?;
     let d = dir(config, &a.id);
     let toml = disk::patch(&text, &card(&was), &card(&a))?;
     let new = [&toml, &a.instructions, &a.character];
@@ -674,6 +676,13 @@ impl Agent {
         {
             return Err("`policy` isn't ask, allow or deny".to_owned());
         }
+        if self
+            .blocks
+            .as_deref()
+            .is_some_and(|b| show::catalog(b).is_none())
+        {
+            return Err(format!("`blocks` isn't one of {}", show::NAMES.join(", ")));
+        }
         for (k, v) in &self.env {
             let inline = match v.strip_prefix("secret:") {
                 Some(name) => !mcp::var(name),
@@ -760,6 +769,8 @@ impl Agent {
             .map(|t| format!("{ROUTINE}\n```toml\n{}\n```", t.trim()))
             .unwrap_or_default();
         let plain = if self.style == Style::Chat { PLAIN } else { "" };
+        let blocks = self.blocks.as_deref().and_then(show::catalog);
+        let blocks = blocks.map(show::brief).unwrap_or_default();
         let parts = [
             self.character.trim(),
             self.instructions.trim(),
@@ -767,6 +778,7 @@ impl Agent {
             &skills,
             &routine,
             plain,
+            &blocks,
         ];
         let parts = parts
             .into_iter()

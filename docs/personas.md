@@ -40,7 +40,8 @@ An `agent.toml` without one reads as `detailed` for an orchestrator and `chat` f
 (#218) is `skills/<name>/SKILL.md` in its folder, front matter (`name`, `description`) and a body, at most 20;
 each session's brief lists them `name: description` by name, never a body, which the persona reads with the `skill`
 tool. Clearing the notes leaves the skills; deleting the persona removes both. An unknown id or a broken rule is a
-400 with the reason.
+400 with the reason. `blocks` (#776) names the catalog its replies may use blocks from, `show` or `ask`
+([show.md](show.md)); none: text only. A save that leaves it out keeps it; an empty one clears it.
 
 | Call | Body | Answer |
 |---|---|---|

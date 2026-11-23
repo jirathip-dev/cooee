@@ -9,18 +9,18 @@ use blocks::{
     Action, Attachment, Block, Card, Composer, Image, Images, Message, Prose, Queued, Role, Row,
     Screen, Section, Stage, Steps, Tap, Text, Toast, Tone, Toned, Tool, ToolState, Working,
 };
-use cooee_core::{Body, Item, routines::local};
+use cooee_core::{Body, Item, routines::local, show};
 use serde::Serialize;
 use serde_json::Value;
 use sha2::{Digest, Sha256};
 use topcoat::{
-    context::{Cx, app_context},
+    context::{Cx, app_context, request_context},
     router::{Body as Bytes, request::Bytes as Raw, response::Response, route},
 };
 
 use crate::{
     Hub, HubError, Slice, Upload,
-    http::{Answer, Data, Tag, blocking, core, header, image, refused, thread_id},
+    http::{Answer, Data, Paired, Tag, blocking, core, header, image, refused, thread_id},
     live::{Live, PAGES, Source, Wake, Who},
     turns::{self, Again, Approve, Start},
 };
@@ -122,6 +122,14 @@ fn log(thread: &str, slice: &Slice, name: &dyn Fn(&str) -> String) -> Vec<Block>
         if let Body::Agent { text, .. } = &item.body {
             g.blocks.push(prose(format!("{}-text", g.id), text, false));
             end(&mut group, &mut out);
+        } else if let Body::Blocks(show::Reply { blocks, sent }) = &item.body {
+            g.blocks.extend(blocks.blocks().iter().cloned());
+            g.blocks.extend(sent.as_ref().map(|s| {
+                let line = format!("✓ {} · {}", s.line, s.by);
+                Block::Text(Box::new(
+                    Text::new().id(format!("b{}-sent", item.id)).text(line),
+                ))
+            }));
         } else {
             g.blocks.extend(part(thread, item));
         }
@@ -422,6 +430,11 @@ async fn begin(cx: &Cx, persona: String, a: &Action) -> Result<blocks::Answer, H
 }
 
 async fn on(cx: &Cx, id: String, a: &Action) -> Result<(), HubError> {
+    if let Some(item) = show::item_of(a) {
+        let by = request_context::<Paired>(cx).0.label.clone();
+        let (t, a) = (Again::of(cx, id), a.clone());
+        return turns::off(move || t.act(item, &a, &by)).await;
+    }
     let (text, nonce, dir) = (word(a, "text"), word(a, "nonce"), uploads(cx));
     let shown = a.values.get("q").and_then(Value::as_u64);
     let files = picked_files(a);

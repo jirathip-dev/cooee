@@ -19,13 +19,22 @@ use crate::{
 async fn chief_tools(cx: &Cx, Json(a): Json<AgentAsk>) -> Result<Answer<Vec<Value>>> {
     let token = bearer(cx);
     Ok(Answer(
-        blocking(cx, move |hub| Ok(chief::list(hub, &a.thread, &token))).await,
+        blocking(cx, move |hub| {
+            let me = (a.thread.as_str(), token.as_str());
+            Ok([chief::list(hub, me.0, me.1), hub.show_tools(me)].concat())
+        })
+        .await,
     ))
 }
 
 #[route(POST "/mcp/agent/chief")]
 async fn chief_call(cx: &Cx, Json(a): Json<AgentAsk>) -> Result<Answer<String>> {
     let token = bearer(cx);
+    if a.server.get("tool").and_then(Value::as_str) == Some("show") {
+        let reply = a.server.get("arguments").cloned().unwrap_or_default();
+        let shown = blocking(cx, move |hub| hub.show((&a.thread, &token), &reply)).await;
+        return Ok(Answer(shown));
+    }
     let data = app_context::<Data>(cx);
     let desk = Desk {
         hub: hub(cx),

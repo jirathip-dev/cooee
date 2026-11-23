@@ -38,6 +38,7 @@ pub mod runner;
 pub mod scratch;
 pub mod secrets;
 mod shed;
+pub mod show;
 pub mod skills;
 mod store;
 pub mod swag;

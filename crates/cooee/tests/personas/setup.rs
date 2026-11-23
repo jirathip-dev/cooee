@@ -75,6 +75,11 @@ impl Setup {
     }
 
     pub fn tool(&self, (id, thread): (&str, &str), name: &str, args: &Value) -> Value {
+        let params = json!({ "name": name, "arguments": args });
+        self.rpc((id, thread), "tools/call", &params)
+    }
+
+    pub fn rpc(&self, (id, thread): (&str, &str), method: &str, params: &Value) -> Value {
         let file = self.shed.dir.join(format!("mcp-cooee-{id}.json"));
         let servers: Value = serde_json::from_str(&fs::read_to_string(file).unwrap()).unwrap();
         let cooee = &servers[0];
@@ -87,8 +92,7 @@ impl Setup {
             .stdout(Stdio::piped())
             .spawn()
             .unwrap();
-        let call = json!({ "jsonrpc": "2.0", "id": 1, "method": "tools/call",
-                           "params": { "name": name, "arguments": args } });
+        let call = json!({ "jsonrpc": "2.0", "id": 1, "method": method, "params": params });
         writeln!(child.stdin.take().unwrap(), "{call}").unwrap();
         let out = child.wait_with_output().unwrap();
         serde_json::from_slice::<Value>(&out.stdout).unwrap()["result"].clone()
