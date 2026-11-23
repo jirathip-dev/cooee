@@ -301,6 +301,12 @@ glob = "*.rs"
 dir = "crates/cooee-server/src/routes/mcp"
 glob = "*.rs"
 
+[[ban]]
+pattern = "cookie(cx"
+paths = ["crates/cooee-server/src/**"]
+except = ["crates/cooee-server/src/pairing.rs", "crates/cooee-server/src/routes/pairing.rs", "crates/cooee-server/src/screens/pair.rs"]
+reason = "#714: a device cookie is set only where a code, a claim or a device key was checked"
+
 [[collect]]
 dir = "docs/plugins"
 glob = "*.md"

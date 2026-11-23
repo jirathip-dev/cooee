@@ -54,6 +54,6 @@ as `env K=V… <adapter>`; secrets go through a 0600 file that the adapter's she
 rm file; exec adapter'`), so no secret is on a command line, in shed's state or in cooee's files or log. **Guarded
 profiles:** `settings` (a JSON settings file, or a folder holding `settings.json`) reaches the agent only in the
 session's `_meta`, at its provider's `settings` key, merged over the persona's own settings; an agent whose provider
-has none (Codex's and Gemini's) can't start the profile: "this profile's guard can't run with <agent>". Claude Code's
+has none (Codex's and Antigravity's) can't start the profile: "this profile's guard can't run with <agent>". Claude Code's
 is `claudeCode.options.settings`, which claude-acp passes to Claude Code as enforced settings, hooks included; it
 never replaces the account's folder. The form preselects each folder's last-used profile.

@@ -1,6 +1,7 @@
 use crate::shed_proto::ApprovalOption;
 use blocks::{
-    Block, Card, CardKind, Choice, ChoiceOption, Fields, Other, Run, Secret, Text, TextStyle,
+    Block, Card, CardKind, Choice, ChoiceOption, Fallback, Fields, Island, Other, Run, Secret,
+    Text, TextStyle,
 };
 use serde::{Serialize, Serializer};
 use serde_json::Value;
@@ -34,6 +35,33 @@ impl Serialize for Item {
 }
 
 impl Item {
+    /// The `device-key` island: the device signs `values` with its own key; a client without it draws `instead`.
+    #[must_use]
+    pub fn device_key(id: &str, mode: &str, send: &str, values: Fields, instead: &str) -> Block {
+        let props = Fields::from_iter([
+            ("mode".to_owned(), Value::from(mode)),
+            ("send".to_owned(), Value::from(send)),
+            ("values".to_owned(), Value::Object(values)),
+        ]);
+        let fallback = Fallback {
+            title: "This app keeps no device key".into(),
+            subtitle: Some(instead.into()),
+            ..Fallback::default()
+        };
+        let island = Island::new("device-key", fallback)
+            .id(id)
+            .props(props)
+            .events(vec![send.to_owned()]);
+        Block::Island(Box::new(island))
+    }
+
+    /// Whether approving this card needs the device key: cooee's own proposals.
+    #[must_use]
+    pub fn needs_key(&self) -> bool {
+        matches!(&self.body, Body::Approval { card, plugin: None, .. }
+            if matches!(card.form.as_deref(), Some("mcp" | "routine" | "secret" | "change")))
+    }
+
     /// The card block an approval is drawn as: an `ask` (a choice, or a thread to pick), `config` (its diff with
     /// apply or discard), `secret` (one masked field) or `run` card. Its action is `answer`, sent back as
     /// `POST /threads/<id>/approve`; once settled it shows its line instead.
@@ -84,6 +112,8 @@ impl Item {
             }
             _ => self.choice(options, plugin.is_some() && card.form.is_none(), answer),
         }));
+        let keyed = open && self.needs_key() && options.iter().any(|o| o.id == "approve");
+        blocks.extend(keyed.then(|| self.key(&id)));
         let line = settled_line(card, chosen.as_ref().or(tapped.as_ref()));
         blocks.extend(line.into_iter().chain(card.said.clone()).map(|l| {
             Block::Text(Box::new(
@@ -92,6 +122,15 @@ impl Item {
         }));
         let card = Card::default().id(id).kind(kind).title(tool).blocks(blocks);
         Some(Block::Card(Box::new(card)))
+    }
+
+    fn key(&self, id: &str) -> Block {
+        let values = Fields::from_iter([
+            ("item".to_owned(), Value::from(self.id)),
+            ("choice".to_owned(), Value::from("approve")),
+        ]);
+        let instead = "Approve it on a device with a passkey";
+        Self::device_key(&format!("{id}-key"), "approve", "answer", values, instead)
     }
 
     fn choice(&self, options: &[ApprovalOption], other: bool, answer: String) -> Block {
