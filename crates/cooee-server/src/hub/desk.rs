@@ -5,7 +5,7 @@ use cooee_core::{
     Config,
     browser::{self, Control},
 };
-use cooee_desk::{Desks, Name};
+use cooee_desk::{Desks, Name, State as Life};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 
@@ -53,19 +53,68 @@ fn refused(e: &impl ToString) -> HubError {
     HubError::Refused(e.to_string())
 }
 
+const IDLE: u64 = 15 * 60_000;
+
 #[derive(Default)]
 pub(super) struct State {
     leases: Leases,
+    used: Mutex<HashMap<String, u64>>,
 }
 
 impl Hub {
-    fn made(&self, desk: &str) -> Result<(Desks, Name), HubError> {
+    pub(crate) fn pre_warm(&self, id: &str) -> Result<(), HubError> {
+        let profile = self.thread(id)?.0.profile;
+        let Some(desk) = self.persona(&profile).desk else {
+            return Ok(());
+        };
+        self.awake(&desk).map(drop)
+    }
+
+    pub(super) fn sleep_idle(&self, now: u64) {
+        let awake = self.desks().and_then(|d| d.made().map_err(|e| refused(&e)));
+        let mut used = lock(&self.areas.desk.used);
+        for d in awake.iter().flatten().filter(|d| d.state == Life::Awake) {
+            used.entry(d.name.clone()).or_insert(now);
+        }
+        let mut idle = Vec::new();
+        used.retain(|desk, at| {
+            let keep = now < at.saturating_add(IDLE);
+            if !keep {
+                idle.push(desk.clone());
+            }
+            keep
+        });
+        drop(used);
+        for desk in idle {
+            let slept = self
+                .made(&desk)
+                .and_then(|(desks, name)| desks.sleep(&name).map_err(|e| refused(&e)));
+            if let Err(e) = slept {
+                cooee_core::note!("cooee: desk {desk}: {e}");
+            }
+        }
+    }
+
+    fn awake(&self, desk: &str) -> Result<(Desks, Name), HubError> {
+        let (desks, name) = self.made(desk)?;
+        lock(&self.areas.desk.used).insert(desk.to_owned(), now());
+        if desks.state(&name).map_err(|e| refused(&e))? == Life::Asleep {
+            desks.wake(&name).map_err(|e| refused(&e))?;
+        }
+        Ok((desks, name))
+    }
+
+    fn desks(&self) -> Result<Desks, HubError> {
         let config = self.config.as_deref().map(Config::load).transpose();
         let container = config.map_err(|e| refused(&e))?.and_then(|c| c.container);
-        let desks = Desks::new(
+        Ok(Desks::new(
             container.ok_or_else(|| refused(&"no desks here"))?,
             Vec::new(),
-        );
+        ))
+    }
+
+    fn made(&self, desk: &str) -> Result<(Desks, Name), HubError> {
+        let desks = self.desks()?;
         let name = Name::new(desk).map_err(|e| refused(&e))?;
         if !desks
             .made()
@@ -100,7 +149,7 @@ impl Hub {
     /// # Errors
     /// [`HubError::Refused`] for a desk cooee didn't make.
     pub fn desk_take(&self, desk: &str) -> Result<Control, HubError> {
-        self.made(desk)?;
+        self.awake(desk)?;
         let taken = self.held(desk).take(now());
         lock(&self.areas.desk.leases.0).insert(desk.to_owned(), taken.clone());
         Ok(taken)
@@ -125,7 +174,7 @@ impl Hub {
         if self.held(desk) == Control::Agent {
             return Err(refused(&format!("take control of desk {desk} first")));
         }
-        let (desks, name) = self.made(desk)?;
+        let (desks, name) = self.awake(desk)?;
         match input {
             Input::Click { x, y } => desks.click(&name, *x, *y),
             Input::Text(text) => desks.type_text(&name, text),
@@ -158,7 +207,7 @@ impl Hub {
             .desk
             .as_deref()
             .ok_or_else(|| no_desk(&format!("{} has no desk", persona.id)))?;
-        let (desks, name) = self.made(desk).map_err(|e| no_desk(&e))?;
+        let (desks, name) = self.awake(desk).map_err(|e| no_desk(&e))?;
         let (caption, asked) = match ask {
             DeskAsk::Screenshot {} => ("screenshot".to_owned(), true),
             DeskAsk::Click { x, y } => (format!("click {x},{y}"), false),
@@ -179,5 +228,91 @@ impl Hub {
             text: format!("{caption} on {desk}: done"),
             image: asked.then(|| STANDARD.encode(&shot)),
         })
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::{fs, os::unix::fs::PermissionsExt, path::Path, sync::Arc};
+
+    use cooee_core::{Config, Shed};
+
+    use super::super::tests::{scratch, seed};
+    use super::super::{Hub, Seed, now};
+    use super::IDLE;
+
+    const CONTAINER: &str = r#"#!/bin/sh
+d=$(dirname "$0")
+case "$1" in
+ls) printf '[{"configuration":{"id":"ann-desk","labels":{"cooee.provider":"container"}},"status":"%s"}]' "$(cat "$d/status")" ;;
+start) printf '%s\n' "$*" >>"$d/calls.log"; echo running >"$d/status" ;;
+stop) printf '%s\n' "$*" >>"$d/calls.log"; echo stopped >"$d/status" ;;
+*) exit 1 ;;
+esac
+"#;
+
+    fn desk_hub(dir: &Path, status: &str) -> Arc<Hub> {
+        let bin = dir.join("bin");
+        fs::create_dir_all(&bin).unwrap();
+        fs::write(bin.join("container"), CONTAINER).unwrap();
+        fs::set_permissions(bin.join("container"), fs::Permissions::from_mode(0o755)).unwrap();
+        fs::write(bin.join("status"), status).unwrap();
+        let ann = dir.join("agents/ann");
+        fs::create_dir_all(&ann).unwrap();
+        let persona = "name = \"ann\"\nagent = \"fake-acp\"\ndesk = \"ann-desk\"\n";
+        fs::write(ann.join("agent.toml"), persona).unwrap();
+        let config = dir.join("config.toml");
+        let container = bin.join("container");
+        fs::write(&config, format!("container = {container:?}\n")).unwrap();
+        let (looks, _) = crate::look::Looks::load(None, None);
+        Hub::open(Seed {
+            shed: Shed::new(dir.join("no-shed"), Some(dir.join("no-shed-dir"))),
+            providers: cooee_core::Providers::default(),
+            data: &dir.join("data"),
+            config: &Config::load(&config).unwrap(),
+            theme: looks.themes[&looks.default].clone(),
+            plugins: Vec::new(),
+        })
+        .unwrap()
+    }
+
+    fn calls(dir: &Path) -> String {
+        fs::read_to_string(dir.join("bin/calls.log")).unwrap_or_default()
+    }
+
+    #[test]
+    fn a_pre_warmed_desk_wakes_once_and_sleeps_after_15_idle_minutes() {
+        let dir = scratch("desk-idle");
+        let meta = serde_json::json!({ "format": 1, "thread": { "id": "t", "title": "t", "messages": [], "terminal": "cooee-t", "profile": "ann" } });
+        seed(&dir, "t", "");
+        fs::write(dir.join("data/threads/t.json"), meta.to_string()).unwrap();
+        let hub = desk_hub(&dir, "stopped");
+
+        hub.pre_warm("t").unwrap();
+        hub.pre_warm("t").unwrap();
+        let t0 = now();
+        assert_eq!(calls(&dir), "start ann-desk\n", "woken once");
+        hub.watch(t0 + IDLE - 60_000);
+        assert_eq!(calls(&dir), "start ann-desk\n", "not idle yet");
+        hub.watch(t0 + IDLE);
+        assert_eq!(calls(&dir), "start ann-desk\nstop ann-desk\n");
+        hub.watch(t0 + 2 * IDLE);
+        assert_eq!(
+            calls(&dir),
+            "start ann-desk\nstop ann-desk\n",
+            "an asleep desk is left"
+        );
+    }
+
+    #[test]
+    fn a_desk_found_awake_sleeps_15_minutes_after_it_was_first_seen() {
+        let dir = scratch("desk-seen");
+        let hub = desk_hub(&dir, "running");
+        let t0 = now();
+        hub.watch(t0);
+        hub.watch(t0 + IDLE - 60_000);
+        assert_eq!(calls(&dir), "", "its idle clock starts when it is seen");
+        hub.watch(t0 + IDLE);
+        assert_eq!(calls(&dir), "stop ann-desk\n");
     }
 }

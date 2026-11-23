@@ -36,6 +36,7 @@ internal struct ChatComposeTests {
                 calls.record("\(queue ? "queue" : "send") \(thread) \(text) \(files.count)")
             }
             $0.threads.unqueue = { _, thread, id in calls.record("unqueue \(thread) \(id)") }
+            $0.desk.warm = { _, thread in calls.record("typing \(thread)") }
         }
     }
 
@@ -74,7 +75,7 @@ internal struct ChatComposeTests {
         }
         await again.receive(\.outbox.delivered) { $0.outbox = [] }
         await reopen("a1")
-        #expect(calls.all == ["send a1 half a thought 1"])
+        #expect(calls.all == ["typing a1", "send a1 half a thought 1"])
     }
 
     @Test internal func aQuotePutsTheMessagesMarkdownAsQuotedLinesInTheDraft() async {
@@ -111,5 +112,17 @@ internal struct ChatComposeTests {
         }
         await store.receive(\.outbox.delivered) { $0.outbox = [] }
         #expect(calls.all == ["unqueue a1 q1", "queue a1 Then open two PRs 0"])
+    }
+
+    @Test internal func startingToTypeInAThreadWakesItsDeskOnceAndANewChatWakesNone() async {
+        let store = store(chat())
+        await store.send(.compose(.draftChanged("h"))) { $0.draft = "h" }
+        await store.send(.compose(.draftChanged("hi"))) { $0.draft = "hi" }
+        await store.send(.compose(.draftChanged(""))) { $0.draft = "" }
+        await store.send(.compose(.draftChanged("o"))) { $0.draft = "o" }
+        let new = self.store(ChatFeature.State(server: mini, target: .new(coder), persona: Persona(coder)))
+        await new.send(.compose(.draftChanged("h"))) { $0.draft = "h" }
+        await store.finish()
+        #expect(calls.all == ["typing a1", "typing a1"])
     }
 }
