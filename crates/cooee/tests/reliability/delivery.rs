@@ -102,7 +102,8 @@ fn r27_a_long_tool_run_is_working_until_its_turn_ends_and_reads_no_screen() {
     let id = id_of(&body);
     let messages = format!("/threads/{id}/messages");
     until("the first turn ends", || {
-        s.cooee.json(&messages)["turn"]["state"] == "done"
+        let turn = &s.cooee.json(&messages)["turn"];
+        turn["state"] == "done" && turn["note"] == "end_turn"
     });
     let cursor = s.cooee.json(&messages)["cursor"]
         .as_str()
