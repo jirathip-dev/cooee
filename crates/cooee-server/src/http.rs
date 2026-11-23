@@ -128,16 +128,6 @@ pub(crate) struct Created {
     pub(crate) id: String,
 }
 
-pub(crate) fn provider_name(agent: &str, providers: &[cooee_core::Sheet]) -> String {
-    providers
-        .iter()
-        .find(|s| s.provider.agent == agent)
-        .map_or_else(
-            || agent.strip_suffix("-acp").unwrap_or(agent).to_owned(),
-            |s| s.provider.name.clone(),
-        )
-}
-
 pub(crate) fn recipe(
     logins: &Logins,
     (data, config, list, registry): (
@@ -151,7 +141,7 @@ pub(crate) fn recipe(
     (mut picked, setup): ((String, String), bool),
 ) -> Result<(String, PathBuf, Recipe), HubError> {
     let (agent, folder, mut recipe) = if id.is_empty() {
-        let (account, launch) = logins.home(agent, account)?;
+        let (account, launch) = logins.home(agent, account);
         let recipe = Recipe {
             account,
             launch,

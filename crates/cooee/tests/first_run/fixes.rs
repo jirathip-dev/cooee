@@ -11,14 +11,6 @@ fn no_agents_and_no_roots_show_the_fix_lines_and_doctor_warns() {
                  status = [\"true\"]\ninstall = \"npm install -g @openai/codex\"\n";
     let cooee = Cooee::start_with(&dir, &shed.dir, &format!("roots = []\n{codex}"));
 
-    let v = cooee.json("/logins/codex");
-    assert_eq!(
-        v["status"]["install"], "npm install -g @openai/codex",
-        "{v}"
-    );
-    assert_eq!(v["status"]["line"], "not installed on this Mac", "{v}");
-    assert_eq!(v["status"]["signed_in"], false, "{v}");
-
     let out = Command::new(env!("CARGO_BIN_EXE_cooee"))
         .arg("--config")
         .arg(&cooee.config)

@@ -7,7 +7,7 @@
 use std::{collections::BTreeSet, fs, path::Path};
 
 use cooee_core::{
-    Accounts, Config, Provider, Providers, Shed,
+    Config, Provider, Providers, Shed,
     agents::{self, Agent},
     shed_proto::LinkState,
 };
@@ -21,7 +21,6 @@ pub type Line = (bool, String);
 struct Ctx {
     shed: Shed,
     providers: Providers,
-    accounts: Option<Accounts>,
     personas: Vec<Agent>,
 }
 
@@ -32,7 +31,6 @@ impl Ctx {
         Self {
             providers: Providers::load(config.providers.as_deref(), &shed),
             shed,
-            accounts: config.data_dir().map(|d| Accounts::new(&d)),
             personas: agents::list(config.dir.as_deref(), &data),
         }
     }
@@ -68,9 +66,8 @@ impl Ctx {
         let mut out = Vec::new();
         match self.providers.for_agent(&p.agent) {
             Some(provider) => {
-                let account = p.account.as_deref();
                 out.push(self.cli(machine, provider.as_ref()));
-                out.push(self.signed_in(machine, provider.as_ref(), account.unwrap_or("")));
+                out.push(self.signed_in(machine, provider.as_ref()));
             }
             None => out.push((false, format!("no provider signs in agent {:?}", p.agent))),
         }
@@ -101,20 +98,10 @@ impl Ctx {
         }
     }
 
-    fn signed_in(&self, machine: &str, provider: &dyn Provider, account: &str) -> Line {
+    fn signed_in(&self, machine: &str, provider: &dyn Provider) -> Line {
         let spec = provider.spec();
-        let home = self
-            .accounts
-            .as_ref()
-            .and_then(|a| a.get(&spec.name, account)?.dir);
-        let cmd = provider.with_home(&spec.status, home.as_deref());
-        let cmd: Vec<&str> = cmd.iter().map(String::as_str).collect();
-        let shown = if account.is_empty() {
-            "default"
-        } else {
-            account
-        };
-        let what = format!("{} account {shown} signed in", spec.name);
+        let cmd: Vec<&str> = spec.status.iter().map(String::as_str).collect();
+        let what = format!("{} account default signed in", spec.name);
         match self.ran(machine, &cmd, PROBE) {
             Ok(true) => (true, what),
             Ok(false) => (

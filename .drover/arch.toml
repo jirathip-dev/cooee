@@ -1,5 +1,5 @@
 # Written by scripts/gen.sh from .drover/arch/ (docs/architecture/hotspots-2026-11-16). Never edit it.
-frozen = [".github/workflows/ci.yml", "apple/Sources/CooeeApp/Live.swift", "apple/Sources/CooeeCore/Models.swift", "apple/Sources/CooeeFeatures/AppFeature.swift", "apple/Sources/CooeeFeatures/ChatFeature.swift", "apple/Sources/CooeeFeatures/Clients.swift", "apple/Sources/CooeeUI/Chat.swift", "apple/Sources/CooeeUI/Items.swift", "apple/Tests/CooeeUITests/Frames.swift", "apple/UITests/LiveUITests.swift", "crates/cooee-core/src/root.rs", "crates/cooee-server/src/mcp/own.rs", "crates/cooee-server/src/root.rs", "crates/cooee-server/src/routes/mcp.rs", "crates/cooee/tests/chat.rs", "crates/cooee/tests/first_run.rs", "crates/cooee/tests/mcp.rs", "crates/cooee/tests/personas.rs", "crates/cooee/tests/plugins.rs", "crates/cooee/tests/profiles.rs", "crates/cooee/tests/reliability.rs", "crates/cooee/tests/setup.rs", "docs/api.md", "docs/architecture.md", "docs/plugins.md", "justfile"]
+frozen = [".github/workflows/ci.yml", "apple/Sources/CooeeAPI/Endpoints.swift", "apple/Sources/CooeeApp/Live.swift", "apple/Sources/CooeeApp/ThreadsClient+Live.swift", "apple/Sources/CooeeCore/Models.swift", "apple/Sources/CooeeFeatures/AppFeature.swift", "apple/Sources/CooeeFeatures/ChatFeature.swift", "apple/Sources/CooeeFeatures/Clients.swift", "apple/Sources/CooeeFeatures/ThreadsClient.swift", "apple/Sources/CooeeUI/Chat.swift", "apple/Sources/CooeeUI/Items.swift", "apple/Tests/CooeeUITests/Frames.swift", "apple/UITests/LiveUITests.swift", "crates/cooee-core/src/root.rs", "crates/cooee-server/src/mcp/own.rs", "crates/cooee-server/src/root.rs", "crates/cooee-server/src/routes/mcp.rs", "crates/cooee/tests/chat.rs", "crates/cooee/tests/first_run.rs", "crates/cooee/tests/mcp.rs", "crates/cooee/tests/personas.rs", "crates/cooee/tests/plugins.rs", "crates/cooee/tests/profiles.rs", "crates/cooee/tests/reliability.rs", "crates/cooee/tests/setup.rs", "docs/api.md", "docs/architecture.md", "docs/plugins.md", "justfile"]
 generated = [".drover/arch.toml", "Cargo.lock", "README.md", "apple/Sources/CooeeFeatures/AppFeature+Areas.swift", "apple/Sources/CooeeFeatures/ChatFeature+Areas.swift", "crates/cooee-core/src/chat.rs", "crates/cooee-core/src/config.rs", "crates/cooee-core/src/lib.rs", "crates/cooee-core/src/shed.rs", "crates/cooee-core/src/store.rs", "crates/cooee-server/src/chief/tools/mod.rs", "crates/cooee-server/src/lib.rs", "crates/cooee-server/src/login.rs", "crates/cooee-server/src/mcp.rs", "crates/cooee-server/src/mcp/tools/mod.rs", "crates/cooee-server/src/push.rs", "crates/cooee-server/src/routes/mcp/mod.rs", "crates/cooee-server/src/routes/mod.rs", "crates/cooee-server/src/routines.rs", "crates/cooee-server/src/screens/mod.rs", "crates/cooee/src/cmd/mod.rs", "crates/cooee/src/setup.rs", "crates/cooee/tests/chat/main.rs", "crates/cooee/tests/first_run/main.rs", "crates/cooee/tests/mcp/main.rs", "crates/cooee/tests/personas/main.rs", "crates/cooee/tests/plugins/main.rs", "crates/cooee/tests/profiles/main.rs", "crates/cooee/tests/reliability/main.rs", "crates/cooee/tests/setup/main.rs", "crates/cooee/tests/support/mod.rs"]
 shared = [".github/workflows/apple.yml", "Cargo.toml", "apple/Sources/CooeeUI/Chat/ChatHeader.swift", "apple/Sources/CooeeUI/Chat/ChatView.swift", "crates/cooee-core/src/config/keys.rs", "crates/cooee-server/src/serve.rs", "crates/cooee/src/main.rs"]
 generate = "scripts/gen.sh"
@@ -13,14 +13,14 @@ reason = "#503: a harness's permission request is answered only where cooee's ru
 [[ban]]
 pattern = "logout"
 paths = ["crates/*/src/**"]
-except = ["crates/cooee-core/src/login.rs", "crates/cooee-core/src/provider.rs", "crates/cooee-core/src/providers/claude.rs", "crates/cooee-core/src/providers/codex.rs", "crates/cooee-core/src/providers/gemini.rs", "crates/cooee-core/src/shed/launch.rs", "crates/cooee-server/src/login/sign_out.rs"]
-reason = "#762: provider facts (login, status, logout and usage commands, limits, resets, token var, config dir, adapter) are shed-catalog data; #760 empties this list"
+except = ["crates/cooee-core/src/provider.rs"]
+reason = "#762: provider facts (login, status, logout and usage commands, limits, resets, token var, config dir, adapter) are shed-catalog data; #764 moved accounts and their login to shed, #760 empties this list"
 
 [[ban]]
 pattern = "generic-password"
 paths = ["crates/*/src/**"]
 except = ["crates/cooee/src/keychain.rs"]
-reason = "#762: shed stores credentials, tokens, secrets and account folders; #760 empties this list"
+reason = "#762: shed stores credentials, tokens, secrets and account folders; #764 moved the account folders to shed, #760 empties this list"
 
 [[ban]]
 pattern = "docker"
@@ -345,6 +345,10 @@ glob = "*/*.swift"
 [[collect]]
 dir = "crates/cooee/src/setup"
 glob = "*.rs"
+
+[[collect]]
+dir = "apple/Sources/CooeeAPI/Endpoints"
+glob = "*.swift"
 
 [[collect]]
 dir = "crates/cooee/tests"

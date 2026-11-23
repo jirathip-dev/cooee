@@ -78,8 +78,6 @@ fn defaults() -> Spec {
         login: vec!["gemini".into()],
         status: sh(format!("test -s {creds} && echo signed in with Google")),
         install: "npm install -g @google/gemini-cli".into(),
-        home: "GEMINI_CLI_HOME".into(),
-        logout: sh(format!("rm -f {creds}")),
         cheapest: "flash".into(),
         ..Spec::default()
     }

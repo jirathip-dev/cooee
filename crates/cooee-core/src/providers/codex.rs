@@ -72,8 +72,6 @@ fn defaults() -> Spec {
         login: v("codex login --device-auth"),
         status: v("codex login status"),
         install: "npm install -g @openai/codex".into(),
-        home: "CODEX_HOME".into(),
-        logout: v("codex logout"),
         efforts: v("low medium high"),
         effort: v("-c model_reasoning_effort={}"),
         cheapest: "mini".into(),

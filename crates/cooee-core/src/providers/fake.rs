@@ -1,6 +1,9 @@
 use std::sync::Arc;
 
-use crate::{Entry, Provider, Ran, Spec, Status, Usage, Window};
+use crate::{
+    Entry, Provider, Spec,
+    action::{Action, Call},
+};
 
 #[derive(Debug)]
 pub struct Fake(Spec);
@@ -26,20 +29,8 @@ impl Provider for Fake {
         &self.0
     }
 
-    fn read_status(&self, ran: &Ran) -> Status {
-        Status::said(ran.stdout.trim() == "yes", "fake reading")
-    }
-
-    fn read_usage(&self, out: &str, now: u64) -> Option<Usage> {
-        let used_pct = out.trim().parse().ok()?;
-        Some(Usage {
-            five_hour: Some(Window {
-                used_pct,
-                resets_at: now + 60,
-            }),
-            seven_day: None,
-            read_at: now,
-        })
+    fn action(&self, _call: &Call) -> Action {
+        Action::tool("fake", "read")
     }
 }
 
@@ -51,32 +42,25 @@ mod tests {
     #[test]
     fn a_new_file_and_one_registry_line_is_a_provider() {
         assert!(provider::defaults().iter().any(|s| s.name == "fake"));
-        let sh = |line: &str| vec!["sh".into(), "-c".into(), line.into()];
-        let spec = Spec {
-            status: sh("echo yes; exit 1"),
-            usage: sh("echo 40"),
-            ..defaults()
+        let call = Call {
+            title: "Read x",
+            kind: Some("read"),
+            locations: &[],
+            raw_input: None,
         };
-        let p = Providers::new(std::slice::from_ref(&spec));
-        let fake = p.named("fake").unwrap();
-        let s = fake.check(None);
-        assert_eq!((s.signed_in, s.line.as_str()), (true, "fake reading"));
-        let u = fake.usage(None, 7).unwrap();
-        assert_eq!((u.five_hour.unwrap().used_pct, u.read_at), (40, 7));
+        let read = |spec: Spec| Providers::new(&[spec]).action("fake-acp", &call);
+        assert_eq!(read(defaults()), Action::tool("fake", "read"));
         let based = Spec {
             name: "other".into(),
             base: Some("fake".into()),
-            ..spec.clone()
+            ..defaults()
         };
-        assert_eq!(Providers::new(&[based]).named("other").unwrap().check(None).line, "fake reading");
+        assert_eq!(read(based), Action::tool("fake", "read"));
         let plain = Spec {
             name: "other".into(),
-            ..spec
+            ..defaults()
         };
-        let plain = Providers::new(&[plain]);
-        let s = plain.named("other").unwrap().check(None);
-        assert_eq!((s.signed_in, s.line.as_str()), (false, "yes"));
-        assert_eq!(plain.named("other").unwrap().usage(None, 7), None);
+        assert_eq!(read(plain), Action::plain(&call));
     }
 
     #[test]
@@ -123,7 +107,7 @@ mod tests {
         let shed = shed(
             "some",
             r#"[{"id":"fake-acp","source":"built-in","installed":{"id":"fake-acp","version":"2.0.0","distribution":"npx","cmd":["fake-acp"]},
-                 "provider":{"id":"fake-acp","agent":"fake","login":"fake auth login","status":"fake auth status","config_dir_var":"FAKE_HOME",
+                 "provider":{"id":"fake-acp","agent":"fake","login":"fake auth login","status":"fake auth status",
                              "effort_args":["--effort","{effort}"],"efforts":["low","high"],"limit":["hit your limit"]}},
                 {"id":"codex-acp","source":"built-in","installed":null,
                  "provider":{"id":"codex-acp","agent":"codex","login":"codex login","status":"codex login status","efforts":["xhigh"]}},
@@ -139,7 +123,6 @@ mod tests {
         let read = Spec {
             login: words("fake auth login"),
             status: words("fake auth status"),
-            home: "FAKE_HOME".into(),
             efforts: words("low high"),
             effort: words("--effort {}"),
             ..defaults()

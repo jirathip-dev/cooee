@@ -13,7 +13,7 @@ use std::{
 };
 
 use base64::{Engine, engine::general_purpose::URL_SAFE_NO_PAD as B64};
-use cooee_core::shed_proto::Hello;
+use cooee_core::shed_proto::{Hello, PROTOCOL, RpcError};
 use p256::ecdsa::{Signature, SigningKey, signature::Signer};
 use serde_json::{Value, json};
 use sha2::{Digest, Sha256};
@@ -188,16 +188,21 @@ fn no_passkey_is_403_a_passkey_unlocks_and_the_token_alone_is_not_enough() {
 fn a_shed_of_another_protocol_fails_the_list_naming_both_sides() {
     let theirs = Hello {
         build: "fffffff".to_owned(),
-        protocol: 3,
+        protocol: PROTOCOL + 2,
         ..version()
     };
-    let m = mac_on("term-version", theirs);
+    let m = mac_on("term-version", theirs.clone());
     m.ceremony(true);
     let (status, body) = m.cooee.get("/p/terminal/api/list");
     assert_eq!(status, 502, "{body}");
     let (v, b) = (&version().version, &version().build);
     let said = format!(
-        "SHED_VERSION: cooee speaks shed {v} ({b}) protocol 1; the server refused it: client {b} / server fffffff: protocol 1 vs 3"
+        "SHED_VERSION: cooee speaks shed {v} ({b}) protocol {PROTOCOL}; the server refused it: {}",
+        RpcError::version(&version(), &theirs)
+            .message
+            .split_once(": ")
+            .unwrap()
+            .1
     );
     assert!(body.contains(&said), "{body}\nwanted: {said}");
 }
