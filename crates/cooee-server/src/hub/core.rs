@@ -26,20 +26,16 @@ pub(super) const SERVED_EVERY: Duration = Duration::from_secs(5);
 
 /// Why a thread action failed.
 #[derive(Debug, thiserror::Error)]
+#[expect(missing_docs, reason = "#737: moved docs")]
 pub enum HubError {
-    /// No such thread.
     #[error("no thread {0}")]
     NoThread(String),
-    /// The request can't be done (a folder outside the roots, a closed thread, an empty message).
     #[error("{0}")]
     Refused(String),
-    /// A save naming a file version older than the disk's (#360): the client reloads.
     #[error("{0}")]
     Stale(String),
-    /// shed failed.
     #[error(transparent)]
     Shed(#[from] ShedError),
-    /// The store failed.
     #[error(transparent)]
     Store(#[from] StoreError),
 }
@@ -123,13 +119,8 @@ pub(super) fn refused(path: &Path, e: &io::Error) -> HubError {
 }
 
 impl Hub {
-    /// Loads every stored thread's meta and list row (its items on first open), re-attaches the open ones to their shed terminals by name, and starts
-    /// following shed's events, each tool call read by its agent's provider in the seed's `providers`. A push speaks `theme`'s words; `plugins` may post choice cards and get their answers;
-    /// roots added or removed on the phone are saved in the `config` file; a routine's approval
-    /// waits `approval_expiry_minutes` before it counts as Deny.
-    ///
-    /// # Errors
-    /// [`HubError::Store`] when the store can't be read.
+    /// Loads the stored threads, re-attaches the open ones to shed and starts the hub's workers.
+    #[expect(clippy::missing_errors_doc, reason = "#737: moved docs")]
     pub fn open(seed: Seed<'_>) -> Result<Arc<Self>, HubError> {
         let store = Store::open(seed.data)?;
         let areas = Areas::open(&seed)?;

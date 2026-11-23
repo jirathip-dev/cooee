@@ -19,10 +19,9 @@ use super::live::{After, Live};
 use super::{Hub, HubError, Out, STUCK, lock, now};
 
 /// What a page subscription starts with: replayed events, or a reset (the page reloads its slice).
+#[expect(missing_docs, reason = "#737: moved docs")]
 pub enum Resume {
-    /// The events after the page's cursor.
     Replay(Vec<Out>),
-    /// The cursor is from another run or too old.
     Reset,
 }
 

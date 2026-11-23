@@ -16,8 +16,7 @@ use super::{Hub, HubError, LABEL, live::Live, lock, now, on_machine, refused};
 pub(super) const AGENTS_FOR: u64 = 60_000;
 const AGENTS_WAIT: Duration = Duration::from_secs(2);
 type Listed = Result<Vec<Agent>, String>;
-/// How a thread starts besides its agent, folder and first message: its account's label, its agent profile's id
-/// (empty: Plain), what its agent runs with, and the instructions sent before the first message.
+/// How a thread starts besides its agent, folder and first message.
 #[derive(Debug, Default)]
 pub struct Recipe {
     /// The account's label, as the header shows it.
