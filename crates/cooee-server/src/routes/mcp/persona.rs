@@ -7,7 +7,7 @@ use topcoat::{
 use crate::{
     HubError,
     http::{AgentAsk, Answer, bearer, blocking, refused},
-    hub::Update,
+    hub::{SkillProposal, Update},
 };
 
 #[route(POST "/mcp/agent/persona")]
@@ -31,8 +31,9 @@ async fn mcp_skill(cx: &Cx, Json(a): Json<AgentAsk>) -> Result<Answer<String>> {
             if let Some(name) = a.server.get("read").and_then(serde_json::Value::as_str) {
                 return hub.read_skill(me, name);
             }
-            let p = serde_json::from_value(a.server.get("propose").cloned().unwrap_or_default())
-                .map_err(|_| HubError::Refused("give read or propose".to_owned()))?;
+            let p: SkillProposal =
+                serde_json::from_value(a.server.get("propose").cloned().unwrap_or_default())
+                    .map_err(|_| HubError::Refused("give read or propose".to_owned()))?;
             hub.propose_skill(me, p).map(|_| {
                 "Proposed. The owner sees a card; nothing is saved until they approve it."
                     .to_owned()
