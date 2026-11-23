@@ -18,7 +18,7 @@ fn a_plain_thread_adds_nothing(s: &Setup) {
     let row = s.row(&id);
     assert_eq!(
         (&row["profile"], &row["agent"], &row["account"]),
-        (&json!(""), &json!("fake-acp"), &json!("")),
+        (&json!(""), &json!("fake-acp"), &json!("auto")),
         "{row}"
     );
 }

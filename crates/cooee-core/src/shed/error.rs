@@ -1,4 +1,4 @@
-use std::{io, path::PathBuf};
+use std::{io, path::PathBuf, time::UNIX_EPOCH};
 
 use shed_proto::{ErrorCode, RpcError};
 
@@ -45,6 +45,27 @@ impl ShedError {
     #[must_use]
     pub fn no_such_terminal(&self) -> bool {
         matches!(self, Self::Rpc(e) if e.code == ErrorCode::NoSuchTerminal.code())
+    }
+
+    /// What a thread says when shed refused a run because every account is limited, with the first reset (#765).
+    #[must_use]
+    pub fn all_limited(&self) -> Option<String> {
+        let said = match self {
+            Self::Rpc(e) => &e.message,
+            Self::Cli { detail, .. } => detail,
+            _ => return None,
+        };
+        let (_, rest) = said.split_once(ErrorCode::AccountLimited.name())?;
+        let at = rest.split("resets at ").nth(1);
+        let at = at.and_then(|r| r.split(' ').next()?.parse::<u64>().ok());
+        let now = crate::clock::now()
+            .duration_since(UNIX_EPOCH)
+            .map_or(0, |d| d.as_secs());
+        let first = at.map_or_else(String::new, |at| {
+            let m = at.saturating_sub(now).div_ceil(60);
+            format!("; the first resets in {}h {:02}m", m / 60, m % 60)
+        });
+        Some(format!("All accounts are limited{first}."))
     }
 
     /// Whether shed refused because the terminal's machine has no link up (#149).
