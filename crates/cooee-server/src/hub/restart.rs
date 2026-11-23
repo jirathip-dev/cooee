@@ -2,7 +2,7 @@ use std::{collections::BTreeMap, sync::Mutex};
 
 use cooee_core::{Body, Calls as _, Change, Kind, Launch, shed_proto};
 
-use super::{Hub, HubError, LABEL, Live, Recipe, lock, now, on_machine};
+use super::{Hub, HubError, LABEL, Recipe, live::Live, lock, now, on_machine};
 
 const FRESH: &str = "The agent started again fresh: it couldn't pick up where it left off.";
 
@@ -51,7 +51,7 @@ impl Hub {
             };
             let run = (agent.as_str(), cmd.as_slice());
             let started = self.shed.run_acp(&terminal, run, &folder, &labels, &launch);
-            let ready = started.and_then(|_| self.shed.ready(&terminal, super::READY));
+            let ready = started.and_then(|_| self.shed.ready(&terminal, super::start::READY));
             if ready.is_err() {
                 self.shed.close(&terminal).ok();
             }

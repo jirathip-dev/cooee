@@ -185,15 +185,14 @@ pub fn serve(config: &Config, ready: impl FnOnce(SocketAddr)) -> io::Result<()> 
     let logins = Logins::new(shed.clone(), providers.clone(), &data);
     let listener = std::net::TcpListener::bind((config.bind, config.port))?;
     listener.set_nonblocking(true)?;
-    let hub = Hub::open(
-        (shed, providers),
-        &data,
-        (config.roots.clone(), config.path.clone()),
+    let hub = Hub::open(hub::Seed {
+        shed,
+        providers,
+        data: &data,
+        config,
         theme,
-        manager.tabs(),
-        config.apns.clone(),
-        config.approval_expiry_minutes.saturating_mul(60_000),
-    )?;
+        plugins: manager.tabs(),
+    })?;
     retain(config, data.clone());
     probe_daily(Arc::clone(&hub), Arc::clone(&logins));
     let runner = runner(

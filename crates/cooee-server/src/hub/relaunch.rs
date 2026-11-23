@@ -1,13 +1,15 @@
 use std::{
     collections::BTreeMap,
     path::{Path, PathBuf},
+    sync::{Arc, Mutex},
 };
 
-use cooee_core::{Calls as _, history, shed_proto::AcpSession};
-
-use super::{
-    Body, Change, Hub, HubError, Item, LABEL, Live, Recipe, lock, now, on_machine, outside, short,
+use cooee_core::{
+    Body, Calls as _, Change, Chat, Item, Kind, ShedError, Thread, Workflow, history,
+    shed_proto::{self, AcpSession, TerminalInfo},
 };
+
+use super::{Hub, HubError, LABEL, Recipe, live::Live, lock, now, on_machine, outside};
 
 impl Hub {
     /// "Use a folder…" (#86): thread `id`'s later turns run in `folder` (inside a root), as `relaunch` says.
@@ -84,7 +86,7 @@ impl Hub {
                 let run = (agent, cmd.as_slice());
                 Ok(self.shed.run_acp(terminal, run, folder, &labels, &launch)?)
             })
-            .and_then(|_| Ok(self.shed.ready(terminal, super::READY)?))
+            .and_then(|_| Ok(self.shed.ready(terminal, super::start::READY)?))
     }
 
     fn relaunch(
@@ -139,6 +141,84 @@ impl Hub {
         }
         Ok(item)
     }
+
+    pub(super) fn reattach(&self) -> Result<Option<u64>, ShedError> {
+        self.shed.hello()?;
+        let (at, terminals) = (now(), self.shed.ls(&shed_proto::LsParams::default())?);
+        self.prune(&terminals, at);
+        for t in &terminals {
+            if !lock(&self.terminals).contains_key(&t.name) {
+                self.adopt(t);
+            }
+        }
+        let mut since: Option<u64> = None;
+        for live in self.all() {
+            let terminal = {
+                let l = lock(&live);
+                let done =
+                    l.meta.closed || l.meta.kind == Kind::Room || l.chat.turn.state == "ended";
+                if done {
+                    continue;
+                }
+                l.meta.terminal.clone()
+            };
+            let got = self.shed.get(&terminal);
+            let mut live = lock(&live);
+            if let Err(e) = self.load(&mut live) {
+                cooee_core::note!("cooee: {e}");
+                continue;
+            }
+            let changes = match got {
+                Ok(t) if t.state == shed_proto::State::Running => {
+                    since = Some(since.map_or(live.applied, |s| s.min(live.applied)));
+                    let r = t.reported.unwrap_or_default();
+                    live.chat.turn.report(&r.state, r.note);
+                    live.chat.turn.context = t.session.and_then(|s| s.usage);
+                    Vec::new()
+                }
+                Ok(_) => live.chat.ended(now(), 0, "The agent stopped.".to_owned()),
+                Err(e) if e.code() == Some(shed_proto::ErrorCode::NoSuchTerminal) => live
+                    .chat
+                    .ended(now(), 0, "The agent is gone (shed restarted).".to_owned()),
+                Err(e) if e.code() == Some(shed_proto::ErrorCode::NoLink) => Vec::new(),
+                Err(e) => return Err(e),
+            };
+            if let Err(e) = live.publish(self, changes) {
+                cooee_core::note!("cooee: {e}");
+            }
+        }
+        Ok(since)
+    }
+
+    pub(super) fn adopt(&self, t: &TerminalInfo) -> Option<Arc<Mutex<Live>>> {
+        let workflow = Workflow::from_labels(&t.labels).filter(|_| t.acp.is_some())?;
+        let safe = |c: char| c.is_ascii_alphanumeric() || c == '-' || c == '_';
+        let id: String = format!("w-{}", t.name)
+            .chars()
+            .map(|c| if safe(c) { c } else { '_' })
+            .take(64)
+            .collect();
+        let title = format!("{} {}", workflow.group, workflow.item);
+        let meta = Thread {
+            id: id.clone(),
+            title: Some(title.trim())
+                .filter(|t| !t.is_empty())
+                .unwrap_or(&t.name)
+                .to_owned(),
+            agent: t.acp.clone().unwrap_or_default(),
+            folder: Some(t.cwd.clone()),
+            terminal: t.name.clone(),
+            workflow: Some(workflow),
+            ..Thread::default()
+        };
+        if let Err(e) = self.store.save(&meta) {
+            cooee_core::note!("cooee: {e}");
+            return None;
+        }
+        let live = Arc::new(Mutex::new(Live::new(meta, Chat::default())));
+        self.insert(id, t.name.clone(), &live);
+        Some(live)
+    }
 }
 
 impl Hub {
@@ -160,6 +240,25 @@ fn last_turns(items: &[Item]) -> String {
         .collect();
     let from = turns.len().saturating_sub(6);
     turns.get(from..).unwrap_or_default().join("\n\n")
+}
+
+fn short(folder: &Path) -> String {
+    if folder.as_os_str().is_empty() {
+        return "scratch".to_owned();
+    }
+    let home = cooee_core::env_var("HOME").map(PathBuf::from);
+    let homes = home
+        .iter()
+        .flat_map(|h| [h.clone(), h.canonicalize().unwrap_or_default()]);
+    let homes = homes.filter(|h| h.has_root());
+    let rest = homes
+        .into_iter()
+        .find_map(|h| folder.strip_prefix(h).ok().map(Path::to_path_buf));
+    match rest {
+        Some(rest) if rest.as_os_str().is_empty() => "~".to_owned(),
+        Some(rest) => format!("~/{}", rest.display()),
+        None => folder.display().to_string(),
+    }
 }
 
 fn story(

@@ -1,4 +1,4 @@
-use std::{io, path::Path};
+use std::{collections::HashMap, fs, io, path::Path, sync::Mutex};
 
 use cooee_core::{
     Body, Card, Change, Config, Item, Launch, Thread,
@@ -15,7 +15,16 @@ use serde_json::{Value, json};
 
 use crate::mcp::{Child, Grant};
 
-use super::{Hub, HubError, Recipe, lock, now, refused};
+use super::{Hub, HubError, Recipe, Seed, lock, now, refused};
+
+fn mcp_key(key: &Path) -> Result<String, HubError> {
+    if let Ok(k) = fs::read_to_string(key) {
+        return Ok(k);
+    }
+    let k = cooee_core::random(32).map(|r| cooee_core::sha256(&r));
+    let k = k.and_then(|k| cooee_core::write_private(key, k.as_bytes()).map(|()| k));
+    k.map_err(|e| refused(key, &e))
+}
 
 /// An agent's `propose_server` (#56): a server for the registry, and why.
 #[derive(Debug, Deserialize)]
@@ -60,6 +69,22 @@ pub struct SkillProposal {
     /// The name of the skill it edits; none: a new one.
     #[serde(default)]
     pub replaces: Option<String>,
+}
+
+pub(super) struct State {
+    mcp_key: String,
+    proposals: Mutex<HashMap<(String, u64), Proposed>>,
+    registry: Mutex<()>,
+}
+
+impl State {
+    pub(super) fn open(seed: &Seed<'_>) -> Result<Self, HubError> {
+        Ok(Self {
+            mcp_key: mcp_key(&seed.data.join("mcp.key"))?,
+            proposals: Mutex::default(),
+            registry: Mutex::default(),
+        })
+    }
 }
 
 impl Proposal {
@@ -114,7 +139,7 @@ impl Hub {
         &self,
         f: impl FnOnce(&mut Vec<Server>) -> Result<String, String>,
     ) -> Result<String, HubError> {
-        let _held = lock(&self.registry);
+        let _held = lock(&self.areas.mcp.registry);
         let Some(c) = &self.config else {
             return Err(HubError::Refused(
                 "there is no config file to save MCP servers in".to_owned(),
@@ -185,7 +210,7 @@ impl Hub {
             }
             s.resolved(&self.data).map_err(HubError::Refused)?;
         }
-        let var = json!([{ "name": crate::mcp::VAR, "value": format!("{url} {}", crate::mcp::token(&self.mcp_key, id)) }]);
+        let var = json!([{ "name": crate::mcp::VAR, "value": format!("{url} {}", crate::mcp::token(&self.areas.mcp.mcp_key, id)) }]);
         let exe = exe.to_string_lossy();
         let entry = |name: &str, args: &[&str]| json!({ "name": name, "command": exe, "args": args, "env": var });
         let mut all = vec![entry(COOEE, &["mcp", "serve", "--thread", id])];
@@ -228,7 +253,7 @@ impl Hub {
                 "this MCP token isn't thread {id}'s, or the thread is closed"
             ))
         };
-        if token != crate::mcp::token(&self.mcp_key, id) {
+        if token != crate::mcp::token(&self.areas.mcp.mcp_key, id) {
             return Err(no());
         }
         let meta = self.thread(id).map_err(|_| no())?.0;
@@ -628,7 +653,7 @@ impl Hub {
         let mut live = lock(&live);
         let item = live.chat.push(now(), 0, body);
         live.publish(self, vec![Change::Item(item.clone())])?;
-        lock(&self.proposals).insert((id.to_owned(), item.id), p);
+        lock(&self.areas.mcp.proposals).insert((id.to_owned(), item.id), p);
         Ok(item)
     }
 
@@ -675,7 +700,7 @@ impl Hub {
         option: &str,
         value: Option<&str>,
     ) -> Result<Option<String>, String> {
-        let p = lock(&self.proposals).remove(&(id.to_owned(), item));
+        let p = lock(&self.areas.mcp.proposals).remove(&(id.to_owned(), item));
         if let Some(Proposed::Change(c)) = &p {
             return self
                 .change_answer((id, item), c, option == "approve", value)

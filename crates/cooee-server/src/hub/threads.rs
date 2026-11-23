@@ -1,9 +1,44 @@
 use std::{path::PathBuf, sync::atomic::Ordering};
 
-use cooee_core::{Calls as _, Kind, Thread, Turn};
+use cooee_core::{Calls as _, Item, Kind, Queued, Thread, Turn};
+use serde::Serialize;
 use tokio::sync::broadcast;
 
-use super::{Hub, HubError, LAG, Out, Pending, REV, Resume, Slice, lock, now, waits};
+use super::{Hub, HubError, LAG, Out, Resume, live::REV, lock, now, rooms, waits};
+
+/// A slice of a thread's items, with the turn in progress and the page event it is current to.
+#[derive(Debug, Clone, Serialize)]
+pub struct Slice {
+    /// The items, oldest first.
+    pub items: Vec<Item>,
+    /// How many older items there are.
+    pub skipped_before: usize,
+    /// How many newer items there are.
+    pub skipped_after: usize,
+    /// The turn in progress.
+    pub turn: Turn,
+    /// Resume the event stream after this (`<boot>.<rev>`).
+    pub cursor: String,
+    /// The first message while its thread connects, not yet an item.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub pending: Option<Pending>,
+    /// The messages queued for the turns after this one.
+    pub queue: Vec<Queued>,
+    /// The oldest config card that waits (#553 row 32), wherever it is.
+    pub waiting: Option<Item>,
+    /// A room's members' open asks (#178).
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub asks: Vec<rooms::RoomAsk>,
+}
+
+/// A thread's first message while it connects: its text and the start's id (the item it becomes has it).
+#[derive(Debug, Clone, Serialize)]
+pub struct Pending {
+    /// The message.
+    pub text: String,
+    /// The start's `random_id`.
+    pub random_id: String,
+}
 
 impl Hub {
     /// Renames the thread.

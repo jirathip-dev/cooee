@@ -2,17 +2,60 @@ use std::{
     collections::BTreeMap,
     fs,
     path::Path,
-    sync::{Arc, Mutex, PoisonError},
+    sync::{Arc, Condvar, Mutex, PoisonError},
     thread,
+    time::Duration,
 };
 
-use cooee_core::{Agent, Body, Calls as _, Change, Chat, Thread, provider::Gap, shed_proto};
-
-use super::{
-    AGENTS_FOR, AGENTS_WAIT, Hub, HubError, LABEL, Live, Recipe, lock, now, on_machine, refused,
+use cooee_core::{
+    Agent, Body, Calls as _, Change, Chat, Launch, Thread, provider::Gap, routines::Mark,
+    shed_proto,
 };
+
+use super::{Hub, HubError, LABEL, live::Live, lock, now, on_machine, refused};
+
+pub(super) const AGENTS_FOR: u64 = 60_000;
+const AGENTS_WAIT: Duration = Duration::from_secs(2);
+pub(super) const READY: f64 = 60.0;
+type Listed = Result<Vec<Agent>, String>;
+/// How a thread starts besides its agent, folder and first message.
+#[derive(Debug, Default)]
+pub struct Recipe {
+    /// The account's label, as the header shows it.
+    pub account: String,
+    /// The profile's id.
+    pub profile: String,
+    /// The account's folder, the profile's settings, env and policy.
+    pub launch: Launch,
+    /// Sent ahead of the first message, which is stored alone.
+    pub instructions: String,
+    /// The model picked (#553 row 34; empty: the agent's default), its words in `launch`.
+    pub model: String,
+    /// The effort picked, as `model`.
+    pub effort: String,
+    /// The MCP servers its profile picks (#56), each run through cooee's proxy.
+    pub mcp: Vec<String>,
+    /// The room it is a member's session of (#154; its persona is `profile`).
+    pub room: String,
+    /// The thread whose persona asked this one's (#156).
+    pub asked_by: String,
+    /// The machine it runs on (#148; empty: this host), one of [`cooee_machines::Machines::added`].
+    pub machine: String,
+    /// A setup chat (#270).
+    pub setup: bool,
+    /// The routine whose run starts it (#75).
+    pub routine: Option<Mark>,
+    /// What its persona's harness can't be told on this account (#503).
+    pub gaps: Vec<Gap>,
+}
 
 const TITLE: usize = 28;
+
+#[derive(Default)]
+pub(super) struct State {
+    agents: Mutex<(Option<Listed>, u64)>,
+    listed: Condvar,
+}
 
 impl Hub {
     /// The installed ACP agents, as last checked; right after start, waits briefly for the first check.
@@ -20,8 +63,10 @@ impl Hub {
     /// # Errors
     /// Why `shed agents` failed, when it did, or that the first check is not done yet.
     pub fn agents(&self) -> Result<Vec<Agent>, String> {
-        let agents = lock(&self.agents);
+        let agents = lock(&self.areas.start.agents);
         let (agents, _) = self
+            .areas
+            .start
             .listed
             .wait_timeout_while(agents, AGENTS_WAIT, |a| a.0.is_none())
             .unwrap_or_else(PoisonError::into_inner);
@@ -32,11 +77,11 @@ impl Hub {
     }
 
     pub(super) fn refresh(&self, at: u64, now: bool) {
-        if !now && at.saturating_sub(lock(&self.agents).1) < AGENTS_FOR {
+        if !now && at.saturating_sub(lock(&self.areas.start.agents).1) < AGENTS_FOR {
             return;
         }
         let fresh = self.shed.installed().map_err(|e| e.to_string());
-        let mut agents = lock(&self.agents);
+        let mut agents = lock(&self.areas.start.agents);
         agents.1 = at;
         match fresh {
             Err(e) if matches!(agents.0, Some(Ok(_))) => {
@@ -44,7 +89,7 @@ impl Hub {
             }
             fresh => agents.0 = Some(fresh),
         }
-        self.listed.notify_all();
+        self.areas.start.listed.notify_all();
     }
 
     pub(super) fn adapter(&self, id: &str) -> Vec<String> {
@@ -321,7 +366,7 @@ impl Hub {
                 return Err(e.into());
             }
         }
-        let session = self.shed.ready(&terminal, super::READY)?;
+        let session = self.shed.ready(&terminal, READY)?;
         if let Err(e) = self.settle(id, &terminal, &session) {
             cooee_core::note!("cooee: {id}: model: {e}");
         }

@@ -1,9 +1,25 @@
 use std::{
     fs,
     path::{Path, PathBuf},
+    sync::Mutex,
 };
 
-use super::{Hub, HubError, Listing, lock, outside, refused};
+use serde::Serialize;
+
+use super::{Hub, HubError, Seed, lock, outside, refused};
+
+/// Settings › Folders' view of one folder.
+#[derive(Debug, Serialize)]
+pub struct Listing {
+    /// The folder shown, resolved.
+    pub path: PathBuf,
+    /// The home folder, resolved: browsing stops there.
+    pub home: PathBuf,
+    /// The names of the folders inside it.
+    pub dirs: Vec<String>,
+    /// The roots.
+    pub roots: Vec<PathBuf>,
+}
 
 fn dirs(dir: &Path, hidden: bool) -> Vec<PathBuf> {
     let mut out: Vec<PathBuf> = fs::read_dir(dir)
@@ -41,13 +57,25 @@ fn in_home(path: Option<&Path>) -> Result<(PathBuf, PathBuf), HubError> {
     }
 }
 
+pub(super) struct State {
+    roots: Mutex<Vec<PathBuf>>,
+}
+
+impl State {
+    pub(super) fn open(seed: &Seed<'_>) -> Self {
+        Self {
+            roots: Mutex::new(seed.config.roots.clone()),
+        }
+    }
+}
+
 impl Hub {
     /// The folders a thread may work in, with their depth: each root (0), then the folders inside it (1) and inside
     /// those (2), by name; never hidden ones or symlinks.
     #[must_use]
     pub fn folders(&self) -> Vec<(PathBuf, u8)> {
         let mut out = Vec::new();
-        for root in lock(&self.roots).iter() {
+        for root in lock(&self.areas.folders.roots).iter() {
             out.push((root.clone(), 0));
             for a in dirs(root, false) {
                 let inside = dirs(&a, false);
@@ -68,12 +96,15 @@ impl Hub {
     pub(super) fn allowed(&self, folder: &Path) -> Option<PathBuf> {
         let folder = folder.canonicalize().ok()?;
         let inside = |root: &PathBuf| root.canonicalize().is_ok_and(|r| folder.starts_with(r));
-        lock(&self.roots).iter().any(inside).then_some(folder)
+        lock(&self.areas.folders.roots)
+            .iter()
+            .any(inside)
+            .then_some(folder)
     }
 
     fn in_root(&self, folder: &Path) -> Option<PathBuf> {
         let real = folder.canonicalize().ok().filter(|p| p.is_dir())?;
-        lock(&self.roots).iter().find_map(|root| {
+        lock(&self.areas.folders.roots).iter().find_map(|root| {
             let rest = real.strip_prefix(root.canonicalize().ok()?).ok()?;
             Some(if rest.as_os_str().is_empty() {
                 root.clone()
@@ -101,7 +132,7 @@ impl Hub {
             dirs: dirs.collect(),
             path,
             home,
-            roots: lock(&self.roots).clone(),
+            roots: lock(&self.areas.folders.roots).clone(),
         })
     }
 
@@ -111,7 +142,7 @@ impl Hub {
     /// # Errors
     /// [`HubError::Refused`] for a path outside the home folder, no config file, or one that can't be written.
     pub fn set_root(&self, path: &Path, add: bool) -> Result<Vec<PathBuf>, HubError> {
-        let mut roots = lock(&self.roots);
+        let mut roots = lock(&self.areas.folders.roots);
         let mut new = roots.clone();
         if add {
             let (path, _) = in_home(Some(path))?;

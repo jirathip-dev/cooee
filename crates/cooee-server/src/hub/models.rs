@@ -1,4 +1,4 @@
-use std::{collections::BTreeMap, fs};
+use std::{collections::BTreeMap, fs, sync::Mutex};
 
 use cooee_core::{
     Body, Calls as _, Change, Launch, agents, memory,
@@ -6,21 +6,33 @@ use cooee_core::{
     shed_proto::AcpSession,
 };
 
-use super::{Hub, HubError, lock, now};
+use super::{Hub, HubError, Seed, lock, now};
 
 const DAY: u64 = 24 * 60 * 60 * 1000;
+
+pub(super) struct State {
+    models: Mutex<Vec<cooee_core::models::Offered>>,
+}
+
+impl State {
+    pub(super) fn open(seed: &Seed<'_>) -> Self {
+        Self {
+            models: Mutex::new(cooee_core::models::load(&seed.data.join("models.json"))),
+        }
+    }
+}
 
 impl Hub {
     /// Every agent and account's models, as last seen.
     #[must_use]
     pub fn models(&self) -> Vec<Offered> {
-        lock(&self.models).clone()
+        lock(&self.areas.models.models).clone()
     }
 
     /// `agent`'s models on `account`: none until a session reported them.
     #[must_use]
     pub fn offered(&self, agent: &str, account: &str) -> Option<Offered> {
-        let lists = lock(&self.models);
+        let lists = lock(&self.areas.models.models);
         let mut found = lists.iter().filter(|o| o.agent == agent);
         found.find(|o| o.account == account).cloned()
     }
@@ -38,7 +50,7 @@ impl Hub {
         if models.is_empty() {
             return;
         }
-        let mut lists = lock(&self.models);
+        let mut lists = lock(&self.areas.models.models);
         lists.retain(|o| (o.agent.as_str(), o.account.as_str()) != (agent, account));
         lists.push(Offered {
             agent: agent.to_owned(),
@@ -98,7 +110,7 @@ impl Hub {
     /// The agents and accounts whose models were last seen a day or more before `at`.
     #[must_use]
     pub fn stale(&self, at: u64) -> Vec<(String, String)> {
-        let lists = lock(&self.models);
+        let lists = lock(&self.areas.models.models);
         let old = lists.iter().filter(|o| at.saturating_sub(o.seen) >= DAY);
         old.map(|o| (o.agent.clone(), o.account.clone())).collect()
     }
@@ -115,7 +127,7 @@ impl Hub {
         let started = self
             .shed
             .run_acp(&terminal, (run.0, &run.1), &dir, &BTreeMap::new(), launch);
-        let session = started.and_then(|_| self.shed.ready(&terminal, super::READY));
+        let session = started.and_then(|_| self.shed.ready(&terminal, super::start::READY));
         let closed = self.shed.close(&terminal);
         self.seen(agent, account, &session?.models);
         Ok(closed?)

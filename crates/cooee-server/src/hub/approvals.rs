@@ -9,7 +9,7 @@ use cooee_core::{
 };
 use serde_json::Value;
 
-use super::{Hub, HubError, Live, lock, now};
+use super::{Hub, HubError, live::Live, lock, now};
 
 impl Hub {
     pub(super) fn asked(&self, live: &mut Live, seq: u64, request: EventKind) -> Vec<Change> {

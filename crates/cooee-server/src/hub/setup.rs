@@ -1,3 +1,5 @@
+use std::{collections::HashMap, sync::Mutex};
+
 use cooee_core::{
     Body, Card, Change,
     agents::{self, Agent},
@@ -15,6 +17,11 @@ pub struct Update {
     pub character: Option<String>,
     /// The new Instructions.
     pub instructions: Option<String>,
+}
+
+#[derive(Default)]
+pub(super) struct State {
+    updates: Mutex<HashMap<(String, u64), (String, Update)>>,
 }
 
 impl Update {
@@ -114,7 +121,7 @@ impl Hub {
         let mut live = lock(&live);
         let item = live.chat.push(now(), 0, body);
         live.publish(self, vec![Change::Item(item.clone())])?;
-        lock(&self.updates).insert((id.to_owned(), item.id), (old.id, u));
+        lock(&self.areas.setup.updates).insert((id.to_owned(), item.id), (old.id, u));
         Ok(
             "Asked. The owner sees a card with the diff; nothing is saved unless they approve it."
                 .to_owned(),
@@ -127,7 +134,7 @@ impl Hub {
         item: u64,
         option: &str,
     ) -> Result<Option<String>, String> {
-        let u = lock(&self.updates).remove(&(id.to_owned(), item));
+        let u = lock(&self.areas.setup.updates).remove(&(id.to_owned(), item));
         if option != "approve" {
             return Ok(Some("denied".to_owned()));
         }

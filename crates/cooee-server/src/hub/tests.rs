@@ -1,5 +1,18 @@
-use cooee_core::shed_proto::{ApprovalOption, EventKind, Reported};
+use std::{
+    collections::BTreeMap,
+    fs,
+    path::{Path, PathBuf},
+    sync::{Arc, mpsc},
+    thread,
+    time::Duration,
+};
 
+use cooee_core::shed_proto::{ApprovalOption, Event, EventKind, Reported};
+use cooee_core::{Body, Chat, Config, Shed, Thread};
+use serde_json::json;
+use tokio::sync::broadcast;
+
+use super::live::{IDLE, Live, REPLAY};
 use super::*;
 
 pub(super) fn hub(dir: &Path) -> Arc<Hub> {
@@ -10,15 +23,14 @@ fn hub_on(dir: &Path, shed_dir: &Path) -> Arc<Hub> {
     let shed = Shed::new(Some(shed_dir));
     let (looks, _) = crate::look::Looks::load(None, None);
     let theme = looks.themes[&looks.default].clone();
-    Hub::open(
-        (shed, cooee_core::Providers::default()),
-        &dir.join("data"),
-        (Vec::new(), None),
+    Hub::open(Seed {
+        shed,
+        providers: cooee_core::Providers::default(),
+        data: &dir.join("data"),
+        config: &Config::default(),
         theme,
-        Vec::new(),
-        None,
-        30 * 60_000,
-    )
+        plugins: Vec::new(),
+    })
     .unwrap()
 }
 
@@ -542,16 +554,19 @@ fn a_hundred_lists_with_nothing_changed_read_no_persona_file_after_the_first() {
     let shed = Shed::new(Some(&dir.join("no-shed-dir")));
     let (looks, _) = crate::look::Looks::load(None, None);
     let theme = looks.themes[&looks.default].clone();
-    let config = (Vec::new(), Some(dir.join("config/config.toml")));
-    let hub = Hub::open(
-        (shed, cooee_core::Providers::default()),
-        &dir.join("data"),
-        config,
+    let config = Config {
+        path: Some(dir.join("config/config.toml")),
+        approval_expiry_minutes: 0,
+        ..Config::default()
+    };
+    let hub = Hub::open(Seed {
+        shed,
+        providers: cooee_core::Providers::default(),
+        data: &dir.join("data"),
+        config: &config,
         theme,
-        Vec::new(),
-        None,
-        0,
-    )
+        plugins: Vec::new(),
+    })
     .unwrap();
     let name = |hub: &Hub| hub.list()[0].persona_name.clone();
     assert_eq!(name(&hub), "Ada");

@@ -4,7 +4,15 @@ use cooee_core::{
     Body, Calls as _, Change, Item, Kind, Queued, Via, agents, routines::Mark, shed_proto,
 };
 
-use super::{Hub, HubError, Live, Upload, lock, now, refused};
+use super::{Hub, HubError, live::Live, lock, now, refused};
+
+/// A file sent with a message: its name on the phone and its bytes.
+pub struct Upload {
+    /// The name it had (only its safe characters are kept).
+    pub name: String,
+    /// Its bytes.
+    pub data: Vec<u8>,
+}
 
 impl Hub {
     /// Sends the owner's message with its `files`, sent `via` voice or typed: once per `random_id` (a retry of a
