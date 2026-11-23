@@ -1668,7 +1668,7 @@ dependencies = [
 [[package]]
 name = "shed-proto"
 version = "0.0.0"
-source = "git+https://github.com/jirathip-dev/shed?rev=86d9651b6156a9a1003e8b8fe4de7ae9292a59d4#86d9651b6156a9a1003e8b8fe4de7ae9292a59d4"
+source = "git+https://github.com/jirathip-dev/shed?rev=ed9129cecbc49245a0a41f60327af8d37ec6872a#ed9129cecbc49245a0a41f60327af8d37ec6872a"
 dependencies = [
  "serde",
  "serde_json",
