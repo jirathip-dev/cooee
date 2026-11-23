@@ -66,11 +66,8 @@ impl Proposal {
 }
 
 impl Hub {
-    /// An agent's `propose_server` in thread `id`: a card with the exact command or URL; nothing runs, and the
-    /// server is added (off) only when the owner approves it with Face ID.
-    ///
-    /// # Errors
-    /// [`HubError::Refused`] for a wrong token, a closed thread, a server that breaks a rule or a name taken.
+    /// An agent's `propose_server` in thread `id`: a card with the exact command or URL; nothing runs, and the server is added (off) only when the owner approves it with Face ID.
+    #[expect(clippy::missing_errors_doc, reason = "#738: moved docs")]
     pub fn propose(&self, id: &str, token: &str, p: Proposal) -> Result<Item, HubError> {
         self.token_of(id, token)?;
         let why: String = p.why.trim().chars().take(300).collect();
@@ -118,9 +115,7 @@ impl Hub {
     }
 
     /// A card in thread `id` saying `tool` and `detail`; approving it (with Face ID) runs `then` (#261).
-    ///
-    /// # Errors
-    /// [`HubError::NoThread`] for no such thread.
+    #[expect(clippy::missing_errors_doc, reason = "#738: moved docs")]
     pub fn propose_later(
         &self,
         id: &str,
@@ -139,8 +134,7 @@ impl Hub {
         self.raise(id, (what, "tool", detail), Proposed::Later(allowed))
     }
 
-    /// Whether item `item` of thread `id` is an MCP server's, a routine's or a secret's card of cooee's (approving
-    /// it needs Face ID).
+    /// Whether item `item` of thread `id` is an MCP server's, a routine's or a secret's card of cooee's (approving it needs Face ID).
     #[must_use]
     pub fn is_proposal(&self, id: &str, item: u64) -> bool {
         let Ok(live) = self.live(id) else {

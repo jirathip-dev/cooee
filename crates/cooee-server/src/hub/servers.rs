@@ -28,9 +28,7 @@ impl Hub {
     }
 
     /// The registry, read from the config file now.
-    ///
-    /// # Errors
-    /// [`HubError::Refused`] when the config can't be read.
+    #[expect(clippy::missing_errors_doc, reason = "#738: moved docs")]
     pub fn mcp(&self) -> Result<Vec<Server>, HubError> {
         let Some(c) = &self.config else {
             return Ok(Vec::new());
@@ -41,9 +39,7 @@ impl Hub {
     }
 
     /// Changes the registry with `f` (its sentence on success), checks and saves it.
-    ///
-    /// # Errors
-    /// [`HubError::Refused`] with `f`'s or the check's reason, or no config file.
+    #[expect(clippy::missing_errors_doc, reason = "#738: moved docs")]
     pub fn edit_mcp(
         &self,
         f: impl FnOnce(&mut Vec<Server>) -> Result<String, String>,
@@ -139,9 +135,7 @@ impl Hub {
     }
 
     /// Adds `s` to the registry, off (an agent's proposal, or the phone's `+ server`, both after Face ID).
-    ///
-    /// # Errors
-    /// [`HubError::Refused`] for a name taken or a server that breaks a rule.
+    #[expect(clippy::missing_errors_doc, reason = "#738: moved docs")]
     pub fn add_mcp(&self, s: Server) -> Result<String, HubError> {
         self.edit_mcp(|list| {
             if list.iter().any(|o| o.name == s.name) {

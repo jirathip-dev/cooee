@@ -53,9 +53,7 @@ impl Hub {
     }
 
     /// Thread `id`, if `token` is its MCP token and it is open.
-    ///
-    /// # Errors
-    /// [`HubError::Refused`] for a wrong token or a closed thread.
+    #[expect(clippy::missing_errors_doc, reason = "#738: moved docs")]
     pub fn token_of(&self, id: &str, token: &str) -> Result<Thread, HubError> {
         let no = || {
             HubError::Refused(format!(
@@ -72,12 +70,8 @@ impl Hub {
         Ok(meta)
     }
 
-    /// The grant of thread `id`'s proxy for `server` (`token`: the thread's): its pick from its profile, the server
-    /// on, resolved now.
-    ///
-    /// # Errors
-    /// [`HubError::Refused`] for a wrong token, a closed thread, a server it doesn't pick, one off, or a reference
-    /// that doesn't resolve.
+    /// The grant of thread `id`'s proxy for `server` (`token`: the thread's): its pick from its profile, the server on, resolved now.
+    #[expect(clippy::missing_errors_doc, reason = "#738: moved docs")]
     pub fn grant(&self, id: &str, token: &str, server: &str) -> Result<Grant, HubError> {
         let (persona, pick, s) = self.granted(id, token, server)?;
         let mut g = self.grant_of(s, pick.tools).map_err(HubError::Refused)?;
@@ -113,12 +107,8 @@ impl Hub {
         Ok((persona, pick, s))
     }
 
-    /// Thread `id`'s proxy's `tools/call` of `tool` on `server` with `args`, checked again: the grant still holds, the
-    /// tool is allowed and, on the browser, a `url` is on the persona's site allowlist; each browser call waits while
-    /// the owner holds control and is logged (password typing masked).
-    ///
-    /// # Errors
-    /// [`HubError::Refused`] as [`Hub::grant`], for a tool not allowed, or a site not on the allowlist.
+    /// Thread `id`'s proxy's `tools/call` of `tool` on `server` with `args`, checked again: the grant still holds, the tool is allowed and, on the browser, a `url` is on the persona's site allowlist; each browser call waits while the owner holds control and is logged (password typing masked).
+    #[expect(clippy::missing_errors_doc, reason = "#738: moved docs")]
     pub fn call(
         &self,
         (id, token): (&str, &str),

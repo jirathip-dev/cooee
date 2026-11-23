@@ -4,12 +4,8 @@ use super::proposals::Proposed;
 use super::{Hub, HubError, lock, now};
 
 impl Hub {
-    /// An agent's `remember` in thread `id` (#126, #216): an edit of its persona's notes, for its next sessions; the
-    /// answer names the note's id and the characters used. In a routine's run (#219) it only raises a card, and the
-    /// edit is made when the owner approves it.
-    ///
-    /// # Errors
-    /// [`HubError::Refused`] for a wrong token, a closed thread, one with no persona, or an edit refused.
+    /// An agent's `remember` in thread `id` (#126, #216): an edit of its persona's notes, for its next sessions; the answer names the note's id and the characters used. In a routine's run (#219) it only raises a card, and the edit is made when the owner approves it.
+    #[expect(clippy::missing_errors_doc, reason = "#738: moved docs")]
     pub fn remember(&self, id: &str, token: &str, e: &memory::Edit) -> Result<String, HubError> {
         let home = self.home_of(id, token)?;
         let meta = self.token_of(id, token)?;
@@ -66,12 +62,8 @@ impl Hub {
         )))
     }
 
-    /// What persona `persona`'s threads said after line `mark` (#219), routine runs left out: none when the owner
-    /// said nothing since. For its `heartbeat` (#498) routines' results count and only its own runs are left out:
-    /// none when nothing was said since.
-    ///
-    /// # Errors
-    /// [`HubError::Refused`] when a thread can't be read.
+    /// What persona `persona`'s threads said after line `mark` (#219), routine runs left out: none when the owner said nothing since. For its `heartbeat` (#498) routines' results count and only its own runs are left out: none when nothing was said since.
+    #[expect(clippy::missing_errors_doc, reason = "#738: moved docs")]
     pub fn news(
         &self,
         persona: &str,
@@ -93,12 +85,8 @@ impl Hub {
             .map_err(|e| HubError::Refused(e.to_string()))
     }
 
-    /// An agent's `history` in thread `id` (#217): a search of its persona's threads (`query`, at most `limit`
-    /// hits), or a page of one of them (`thread`, before item `before`). In Chief's own chat (#664) `whose` names
-    /// another persona to search, and any thread may be read.
-    ///
-    /// # Errors
-    /// [`HubError::Refused`] for a wrong token, a closed thread, one with no persona, or a thread of another persona.
+    /// An agent's `history` in thread `id` (#217): a search of its persona's threads (`query`, at most `limit` hits), or a page of one of them (`thread`, before item `before`). In Chief's own chat (#664) `whose` names another persona to search, and any thread may be read.
+    #[expect(clippy::missing_errors_doc, reason = "#738: moved docs")]
     pub fn history(
         &self,
         (id, token, whose): (&str, &str, &str),

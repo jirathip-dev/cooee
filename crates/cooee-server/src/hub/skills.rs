@@ -23,12 +23,8 @@ pub struct SkillProposal {
 }
 
 impl Hub {
-    /// An agent's `skill` proposal in thread `id` (#218): a card with the skill's file, or an edit's diff; nothing
-    /// is saved until the owner approves it.
-    ///
-    /// # Errors
-    /// [`HubError::Refused`] for a wrong token, a closed thread, one with no persona, or a skill [`skills::check`]
-    /// refuses.
+    /// An agent's `skill` proposal in thread `id` (#218): a card with the skill's file, or an edit's diff; nothing is saved until the owner approves it.
+    #[expect(clippy::missing_errors_doc, reason = "#738: moved docs")]
     pub fn propose_skill(
         &self,
         (id, token): (&str, &str),
@@ -52,11 +48,8 @@ impl Hub {
         self.raise(id, (tool, "skill", detail), pending)
     }
 
-    /// Brings thread `id`'s persona's library skills up to `sources` (#496), fetching in `work`: an unedited one is
-    /// replaced, an edited one kept and its update raised as a `skill` diff card in the thread. Says what it did.
-    ///
-    /// # Errors
-    /// [`HubError::NoThread`]; [`HubError::Refused`] for a thread with no persona or an update that fails.
+    /// Brings thread `id`'s persona's library skills up to `sources` (#496), fetching in `work`: an unedited one is replaced, an edited one kept and its update raised as a `skill` diff card in the thread. Says what it did.
+    #[expect(clippy::missing_errors_doc, reason = "#738: moved docs")]
     pub fn update_skills(
         &self,
         id: &str,
@@ -96,9 +89,7 @@ impl Hub {
     }
 
     /// An agent's `skill` read in thread `id` (#218): its persona's skill `name`'s body, at most 8,000 characters.
-    ///
-    /// # Errors
-    /// [`HubError::Refused`] for a wrong token, a closed thread, one with no persona, or no such skill of its.
+    #[expect(clippy::missing_errors_doc, reason = "#738: moved docs")]
     pub fn read_skill(&self, (id, token): (&str, &str), name: &str) -> Result<String, HubError> {
         let home = self.home_of(id, token)?;
         let s = skills::read(&home, name).map_err(|e| {
