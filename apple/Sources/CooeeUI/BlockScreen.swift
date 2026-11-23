@@ -8,10 +8,8 @@ public struct BlockScreen: View {
     /// The padding a host puts around the blocks; a full-bleed block cancels it.
     public static let inset = BlocksUI.BlocksView.inset
 
-    // SAFETY: `scene` is the one core kind AppBlocks lets an app draw, so this table never clashes
-    private static let kinds = try! AppBlocks(["scene": { AnyView(LaneStage(block: $0)) }], unknown: .nothing)
-
     @Environment(\.look) private var look: Look
+    @Environment(\.members) private var members
     @Environment(\.act) private var acts
     @Environment(\.openThread) private var opensThread
     private let block: JSONValue
@@ -23,25 +21,51 @@ public struct BlockScreen: View {
     private var open: @MainActor (String) -> Void = { _ in }
     private var openThread: (@MainActor (String) -> Void)?
     private var refresh: (@MainActor () -> Void)?
+    private var openBeside: (@MainActor (String) -> Void)?
+    private var pending: [BlockAction] = []
 
     public init(
         _ block: JSONValue, source: CooeeCore.LayoutSource?, focus: String? = nil, picked: String? = nil,
-        beside: JSONValue? = nil, refresh: (@MainActor () -> Void)? = nil,
+        beside: JSONValue? = nil, refresh: (@MainActor () -> Void)? = nil, pending: [BlockAction] = [],
         act: (@MainActor (BlockAction) -> Void)? = nil, open: (@MainActor (String) -> Void)? = nil,
-        openThread: (@MainActor (String) -> Void)? = nil
+        openThread: (@MainActor (String) -> Void)? = nil, openBeside: (@MainActor (String) -> Void)? = nil
     ) {
         (self.block, self.source, self.focus, self.picked, self.beside) = (block, source, focus, picked, beside)
-        (self.refresh, self.act, self.openThread) = (refresh, act, openThread)
+        (self.refresh, self.act, self.openThread, self.openBeside) = (refresh, act, openThread, openBeside)
+        self.pending = pending
         if let open { self.open = open }
     }
 
     public var body: some View {
         BlocksUI.BlocksView(
             block.typed, source: source.map(\.blocks), focus: focus, picked: picked, beside: beside?.typed,
-            act: act ?? acts, open: open, openThread: openThread ?? opensThread, refresh: refresh
+            act: act ?? acts, open: open, openBeside: openBeside, pending: Set(pending.map(\.action)),
+            openThread: openThread ?? opensThread, refresh: refresh
         )
         .blocksLook(BlocksUI.Look(look))
-        .appBlocks(Self.kinds)
+        .appBlocks(kinds)
+    }
+
+    private var kinds: AppBlocks {
+        let member = members.first { source == CooeeCore.LayoutSource.plugin($0.id) }
+        var poster: AppBlocks.Draw?
+        if let member { poster = { card in AnyView(MemberPoster(member: member, card: card)) } }
+        // SAFETY: `scene` is the one core kind AppBlocks lets an app draw, so this table never clashes
+        return try! AppBlocks(
+            ["scene": { AnyView(LaneStage(block: $0)) }],
+            figure: { AnyView(Figure(figure: $0, title: $0.string("title") ?? "")) }, poster: poster, unknown: .nothing)
+    }
+}
+
+private struct MemberPoster: View {
+    @Environment(\.look) private var look
+    fileprivate let member: Persona
+    fileprivate let card: JSONValue
+
+    fileprivate var body: some View {
+        if card.string("kind") != nil { Text(look.label(.kind, "·")).ui(11, .bold, look) }
+        FigureView(persona: member, size: 22)
+        Text(member.name).ui(15, .semibold, look).foregroundStyle(look.palette.tint(member.look.tint))
     }
 }
 
@@ -70,7 +94,8 @@ extension BlocksUI.Look {
 extension Source {
     /// What a JSON act sends: its action, tap and values.
     internal init(_ json: JSONValue) {
-        self.init(action: json.string("action"), tap: try? json["tap"]?.decode(Tap.self), values: json["values"]?.fields)
+        self.init(
+            action: json.string("action"), tap: try? json["tap"]?.decode(Tap.self), values: json["values"]?.fields)
     }
 }
 

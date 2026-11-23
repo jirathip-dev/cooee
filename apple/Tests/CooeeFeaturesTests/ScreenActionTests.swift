@@ -79,7 +79,7 @@ extension ScreenFeatureTests {
                 return Self.screen
             }
             $0.plugins.act = { _, _, screen, action in
-                calls.record("act \(screen) \(action.action) \(action.block)")
+                calls.record("act \(screen) \(action.action) \(action.block ?? "")")
                 return answer
             }
             $0.plugins.events = { _, _, path in

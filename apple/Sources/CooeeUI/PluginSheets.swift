@@ -68,7 +68,11 @@ internal struct PluginScreenSheet: View {
             .overlay(alignment: .top) { if store.slow { LoadingBar() } }
             if let said = store.said { Text(said).ui(13, .regular, look).foregroundStyle(palette.mute).padding(8) }
             if let pending = store.screen?.root["pending"] {
-                PendingBar(pending: pending) { store.send(.act($0)) } open: { store.send(.navigate($0)) }
+                PendingBar(pending: pending) {
+                    store.send(.act($0))
+                } open: {
+                    store.send(.navigate($0))
+                }
             }
         }
         .background(palette.background).foregroundStyle(palette.foreground)
@@ -86,14 +90,11 @@ internal struct PluginScreenSheet: View {
             if let screen = store.screen {
                 BlockScreen(
                     screen.root, source: store.source, focus: store.focus, picked: wide ? store.beside : nil,
-                    beside: wide ? store.besideScreen : nil, refresh: wide ? refresh : nil
-                ) {
-                    store.send(.act($0))
-                } open: {
-                    store.send(wide ? .beside($0) : .navigate($0))
-                } openThread: { thread in
-                    if size == .compact { store.send(.push(thread)) } else { store.send(.open(thread)) }
-                }
+                    beside: wide ? store.besideScreen : nil, refresh: wide ? refresh : nil, pending: store.pending,
+                    act: { store.send(.act($0)) }, open: { store.send(.navigate($0)) },
+                    openThread: { size == .compact ? store.send(.push($0)) : store.send(.open($0)) },
+                    openBeside: wide ? { store.send(.beside($0)) } : nil
+                )
                 .disabled(store.offline).opacity(store.offline ? 0.6 : 1)
             } else if store.offline {
                 Text("Nothing kept from \(store.label) yet.").foregroundStyle(palette.mute)
@@ -170,11 +171,15 @@ internal struct PendingBar: View {
             }
             .ui(13, .regular, look).foregroundStyle(palette.mute).lineLimit(1)
             Spacer(minLength: 4)
-            Button { run(pending["discard"]) } label: {
+            Button {
+                run(pending["discard"])
+            } label: {
                 Text("Discard").ui(13, .regular, look).foregroundStyle(palette.mute)
             }
             .buttonStyle(.plain)
-            Button { run(pending["review"]) } label: {
+            Button {
+                run(pending["review"])
+            } label: {
                 CardButton(title: "Review changes", primary: true, tint: palette.lead)
             }
             .buttonStyle(.plain)

@@ -216,7 +216,8 @@ private struct ColumnScreen: View {
         Group {
             if let screen = store.screen {
                 BlockScreen(
-                    screen.root, source: store.source, refresh: screen.root["refresh"]?.bool == true ? refresh : nil
+                    screen.root, source: store.source, refresh: screen.root["refresh"]?.bool == true ? refresh : nil,
+                    pending: store.pending
                 ) {
                     store.send(.act($0))
                 } open: {
