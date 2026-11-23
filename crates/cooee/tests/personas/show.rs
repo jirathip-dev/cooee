@@ -108,7 +108,7 @@ fn a_value_the_block_does_not_offer_or_a_chat_action_from_a_persona_block_is_ref
     );
     assert_eq!(status, 400, "{body}");
     assert_eq!(act(&s, &id, &block, "archive", &json!({})).0, 400);
-    assert!(told(&s, &id).is_empty());
+    assert_eq!(told(&s, &id), Vec::<String>::new());
     assert_eq!(s.row(&id)["archived"], false);
     assert!(blocks(&s, &id)[0]["sent"].is_null());
 }
