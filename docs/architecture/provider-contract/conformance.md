@@ -34,8 +34,8 @@ answer by request id, a tool call it can leave running, and a limit line. The pr
 ## Nightly: the real harnesses
 
 `.github/workflows/conformance.yml`, its own file: `schedule` and `workflow_dispatch` (with a `ref`, so a slice's
-branch can be proven before it merges), never `pull_request`, so no fork's code runs on it. It runs on the Mac runner
-(`self-hosted, cooee-mac`) as one job per provider:
+branch can be proven before it merges), never `pull_request`, so no fork's code runs on it. It runs on GitHub-hosted
+`xcode-27` (#786) as one job per provider; no harness is signed in there, so each shows `skipped` until one is:
 
 1. builds `cooee` and the pinned `shed` into `RUNNER_TEMP`, and starts `shed serve --dir` and `cooee serve` there on
    their own port: no login item, no launchd job, nothing outside `RUNNER_TEMP`;
