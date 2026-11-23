@@ -37,7 +37,9 @@ pub(super) fn source(path: &str, who: &Who) -> Option<Source> {
         "?archived=1" => true,
         _ => return None,
     };
-    let Who::Device(_) = who;
+    if !matches!(who, Who::Device(_)) {
+        return None;
+    }
     Some(Source {
         wake: Wake::Home,
         build: Box::new(move |hub, _| Ok(screen(hub, archived))),

@@ -42,7 +42,9 @@ pub(super) fn source(path: &str, who: &Who) -> Option<Source> {
     if id.is_empty() || id.contains(['/', '?']) {
         return None;
     }
-    let Who::Device(_) = who;
+    let Who::Device(_) = who else {
+        return None;
+    };
     let (built, seen) = (id.to_owned(), id.to_owned());
     Some(Source {
         wake: Wake::Thread(id.to_owned()),

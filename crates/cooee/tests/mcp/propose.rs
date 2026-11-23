@@ -56,9 +56,10 @@ fn propose_server_shows_the_exact_command_runs_nothing_and_needs_face_id_to_add_
     );
 
     let approve = |passkey: Value| {
+        let values = &card["block"]["blocks"][2]["props"]["values"];
         s.cooee.post(
             &format!("/threads/{id}/approve"),
-            &json!({ "item": card["id"], "option": "approve", "passkey": passkey }),
+            &json!({ "item": values["item"], "option": values["choice"], "passkey": passkey }),
         )
     };
     let (status, body) = approve(Value::Null);
@@ -80,6 +81,11 @@ fn propose_server_shows_the_exact_command_runs_nothing_and_needs_face_id_to_add_
 }
 
 fn assert_the_card_shows_the_exact_command(card: &Value, exact: &str) {
+    let island = &card["block"]["blocks"][2];
+    assert_eq!(
+        (&island["name"], &island["props"]["mode"], &island["events"]),
+        (&json!("device-key"), &json!("approve"), &json!(["answer"]))
+    );
     assert_eq!(card["detail"], exact);
     assert_eq!(card["block"]["kind"], "proposal");
     assert_eq!(
