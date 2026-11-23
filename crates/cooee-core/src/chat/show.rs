@@ -1,7 +1,7 @@
 use blocks::{Action, catalog::Catalog, model::Refusal};
 
 use super::{Body, Change, Chat, Item};
-use crate::show::{self, Checked, Reply, Shown, Told, Unsent};
+use crate::agents::show::{self, Checked, Reply, Shown, Told, Unsent};
 
 #[derive(Debug, Clone, Default)]
 pub(super) enum Tries {

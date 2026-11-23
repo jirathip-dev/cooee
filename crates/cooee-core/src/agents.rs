@@ -15,8 +15,11 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     browser, disk, mcp, memory, plugins, profiles::Profile, provider::Builtin, routines::Schedule,
-    show, skills,
+    skills,
 };
+
+/// A persona's replies as blocks (#776): its catalog, its brief, the one reader and the check of an answer.
+pub mod show;
 
 const DROVER: &str = "drover";
 
@@ -229,7 +232,7 @@ pub struct Agent {
     /// it out keeps it.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub spoken: Option<String>,
-    /// The catalog its replies may use blocks from (#776), one of [`crate::show::NAMES`]; none: text only.
+    /// The catalog its replies may use blocks from (#776), one of [`show::NAMES`]; none: text only.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub blocks: Option<String>,
     /// Its files' [`disk::version`] when read; a save naming an older one is refused (#360), one naming none isn't.

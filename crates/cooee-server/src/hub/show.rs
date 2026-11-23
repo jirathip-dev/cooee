@@ -1,7 +1,7 @@
 use blocks::{Action, catalog::Catalog};
 use cooee_core::{
     Change, Kind, Queued, Thread,
-    show::{self, Shown, Unsent},
+    agents::show::{self, Shown, Unsent},
 };
 use serde_json::{Value, json};
 

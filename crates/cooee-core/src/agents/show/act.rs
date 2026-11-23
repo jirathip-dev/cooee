@@ -201,7 +201,7 @@ pub fn told(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::show::{catalog, read};
+    use crate::agents::show::{catalog, read};
 
     const FORM: &str = r#"{"blocks": [{"type": "form", "submit": {"label": "Book", "action": "submit"}, "fields": [
         {"name": "city", "type": "text", "label": "City"},

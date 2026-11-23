@@ -9,7 +9,7 @@ use blocks::{
     Action, Attachment, Block, Card, Composer, Image, Images, Message, Prose, Queued, Role, Row,
     Screen, Section, Stage, Steps, Tap, Text, Toast, Tone, Toned, Tool, ToolState, Working,
 };
-use cooee_core::{Body, Item, routines::local, show};
+use cooee_core::{Body, Item, agents::show, routines::local};
 use serde::Serialize;
 use serde_json::Value;
 use sha2::{Digest, Sha256};

@@ -63,7 +63,7 @@ fn told(s: &Setup, id: &str) -> Vec<String> {
 fn a_choice_is_drawn_and_its_pick_is_the_personas_next_turn_once() {
     let s = setup("personas-show-pick");
     let (id, brief) = persona(&s, "Travel", Some("ask"));
-    let catalog = cooee_core::show::catalog("ask").unwrap();
+    let catalog = cooee_core::agents::show::catalog("ask").unwrap();
     assert!(brief.contains(&blocks::model::prompt(catalog)), "{brief}");
     assert!(tools(&s, &id).contains(&"show".to_owned()));
 
