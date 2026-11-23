@@ -1,6 +1,7 @@
 use std::{collections::HashMap, sync::Arc, time::Duration};
 
 use blocks::{Block, Label, List, Row, Screen, Tone, Toned};
+use cooee_core::shed_proto::AccountState;
 use cooee_machines::Machines;
 use serde::Deserialize;
 use topcoat::{
@@ -48,19 +49,24 @@ pub(super) async fn device_rows(cx: &Cx) -> Result<Vec<Row>, HubError> {
 
 pub(super) async fn signin_rows(cx: &Cx) -> Result<Vec<Row>, HubError> {
     on_logins(cx, |l| {
-        let sheets = l.statuses();
+        let sheets = l.sheets();
         let rows = sheets.iter().flat_map(|s| {
-            s.accounts.iter().map(move |(a, st)| {
-                let (text, tone) = match (st.signed_in, st.unknown) {
-                    (true, _) => ("signed in", Tone::Ok),
-                    (false, true) => ("can't tell", Tone::Mute),
-                    (false, false) => ("signed out", Tone::Bad),
+            s.accounts.iter().map(move |a| {
+                let (text, tone) = match a.state {
+                    AccountState::Ready => ("signed in", Tone::Ok),
+                    AccountState::Limited => ("at its limit", Tone::Warn),
+                    AccountState::SignedOut => ("signed out", Tone::Bad),
                 };
                 let subtitle = Label {
-                    text: text.to_owned(),
+                    text: text.into(),
                     tone: Some(tone),
                 };
-                Row::new(format!("{} · {}", s.provider.name, a.shown(st)))
+                let who = match (&a.who, a.name.as_str()) {
+                    (Some(who), _) => who.as_str(),
+                    (None, "default") => "main login",
+                    (None, name) => name,
+                };
+                Row::new(format!("{} · {who}", s.provider.name))
                     .id(format!("{}/{}", s.provider.name, a.name))
                     .subtitle(Toned::Label(subtitle))
             })

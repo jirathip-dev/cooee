@@ -106,7 +106,7 @@ dependencies = [
 [[package]]
 name = "blocks"
 version = "0.1.0"
-source = "git+https://github.com/jirathip-dev/blocks?rev=d0882093e32c6d752910c459efa04a2a6beb5c3a#d0882093e32c6d752910c459efa04a2a6beb5c3a"
+source = "git+https://github.com/jirathip-dev/blocks?rev=cf626c63789e8bb46b164ee37b3ca4d589527f11#cf626c63789e8bb46b164ee37b3ca4d589527f11"
 dependencies = [
  "schemars",
  "serde",
@@ -170,6 +170,7 @@ dependencies = [
  "base64 0.22.1",
  "blocks",
  "cooee-core",
+ "cooee-desk",
  "cooee-machines",
  "cooee-server",
  "cooee-terminal",
@@ -203,10 +204,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "cooee-desk"
+version = "0.1.0"
+dependencies = [
+ "cooee-core",
+ "serde_json",
+ "thiserror",
+]
+
+[[package]]
 name = "cooee-machines"
 version = "0.1.0"
 dependencies = [
  "cooee-core",
+ "cooee-desk",
+ "serde",
  "serde_json",
 ]
 
@@ -218,6 +230,7 @@ dependencies = [
  "base64 0.22.1",
  "blocks",
  "cooee-core",
+ "cooee-desk",
  "cooee-machines",
  "flate2",
  "futures-util",
@@ -1655,7 +1668,7 @@ dependencies = [
 [[package]]
 name = "shed-proto"
 version = "0.0.0"
-source = "git+https://github.com/jirathip-dev/shed?rev=3672ee2fa3f77f71798d56446f7f90403b068dd1#3672ee2fa3f77f71798d56446f7f90403b068dd1"
+source = "git+https://github.com/jirathip-dev/shed?rev=86d9651b6156a9a1003e8b8fe4de7ae9292a59d4#86d9651b6156a9a1003e8b8fe4de7ae9292a59d4"
 dependencies = [
  "serde",
  "serde_json",

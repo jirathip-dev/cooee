@@ -1,4 +1,4 @@
-//! Installed plugins (docs/plugins.md): a plugin is a git repo with a `cooee-plugin.toml` at its root. cooee keeps
+//! Installed plugins (docs/plugins/): a plugin is a git repo with a `cooee-plugin.toml` at its root. cooee keeps
 //! it in `<data>/plugins/<name>/`, pins it in `<data>/plugins.lock` and writes its tabs as `[[plugins]]` entries in
 //! `<data>/plugins/plugins.toml`, read beside the config's own. The curated index, `plugins/index.toml`, is built in.
 
@@ -260,8 +260,28 @@ impl Manifest {
         if m.tabs.is_empty() && m.places.is_empty() {
             return Err(bad("cooee-plugin.toml: a plugin needs a tab or a place"));
         }
-        let perms = &m.permissions;
-        for p in &m.places {
+        m.check_permissions()?;
+        if !m.attach.is_empty() && m.attach_port().is_none() {
+            return Err(bad(
+                "cooee-plugin.toml: `attach` must be http://127.0.0.1:<port>",
+            ));
+        }
+        let token_ok = m.attach_token.starts_with('/') || m.attach_token.starts_with("~/");
+        if !m.attach_token.is_empty() && (m.attach.is_empty() || !token_ok) {
+            return Err(bad(
+                "cooee-plugin.toml: `attach_token` needs `attach` and a path, ~/ or absolute",
+            ));
+        }
+        for p in &m.profiles {
+            p.check()
+                .map_err(|e| bad(format!("cooee-plugin.toml: {e}")))?;
+        }
+        Ok(m)
+    }
+
+    fn check_permissions(&self) -> io::Result<()> {
+        let perms = &self.permissions;
+        for p in &self.places {
             if !perms.places.contains(&p.kind) {
                 return Err(bad(format!(
                     "cooee-plugin.toml: {:?} is not in [permissions] places",
@@ -284,22 +304,7 @@ impl Manifest {
                 "cooee-plugin.toml: destructive action {a} is not in [permissions] actions"
             )));
         }
-        if !m.attach.is_empty() && m.attach_port().is_none() {
-            return Err(bad(
-                "cooee-plugin.toml: `attach` must be http://127.0.0.1:<port>",
-            ));
-        }
-        let token_ok = m.attach_token.starts_with('/') || m.attach_token.starts_with("~/");
-        if !m.attach_token.is_empty() && (m.attach.is_empty() || !token_ok) {
-            return Err(bad(
-                "cooee-plugin.toml: `attach_token` needs `attach` and a path, ~/ or absolute",
-            ));
-        }
-        for p in &m.profiles {
-            p.check()
-                .map_err(|e| bad(format!("cooee-plugin.toml: {e}")))?;
-        }
-        Ok(m)
+        Ok(())
     }
 
     /// The cooee versions it accepts, as the owner reads them.

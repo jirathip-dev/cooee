@@ -116,11 +116,7 @@ impl Shed {
     pub fn screen(&self, name: &str) -> Result<String, ShedError> {
         let read = ReadParams {
             name: name.into(),
-            lines: None,
-            history: false,
-            events: false,
-            before: None,
-            n: None,
+            ..ReadParams::default()
         };
         Ok(self.call::<ReadResult>(Method::Read, &json!(read))?.text)
     }

@@ -58,6 +58,8 @@ pub(crate) fn header<'a>(cx: &'a Cx, name: &str) -> Option<&'a str> {
 
 pub(crate) struct Paired(pub(crate) Device);
 
+pub(crate) struct Asking(pub(crate) String);
+
 pub(crate) struct Caller(pub(crate) Plugin);
 
 path_param!(pub(crate) id: String);
@@ -126,16 +128,6 @@ pub(crate) struct Created {
     pub(crate) id: String,
 }
 
-pub(crate) fn provider_name(agent: &str, providers: &[cooee_core::Sheet]) -> String {
-    providers
-        .iter()
-        .find(|s| s.provider.agent == agent)
-        .map_or_else(
-            || agent.strip_suffix("-acp").unwrap_or(agent).to_owned(),
-            |s| s.provider.name.clone(),
-        )
-}
-
 pub(crate) fn recipe(
     logins: &Logins,
     (data, config, list, registry): (
@@ -149,7 +141,7 @@ pub(crate) fn recipe(
     (mut picked, setup): ((String, String), bool),
 ) -> Result<(String, PathBuf, Recipe), HubError> {
     let (agent, folder, mut recipe) = if id.is_empty() {
-        let (account, launch) = logins.home(agent, account)?;
+        let (account, launch) = logins.home(agent, account);
         let recipe = Recipe {
             account,
             launch,
@@ -170,7 +162,7 @@ pub(crate) fn recipe(
         let recipe = Recipe {
             mcp: a.mcp.iter().map(|k| k.server.clone()).collect(),
             machine: a.machine.clone(),
-            ..crate::hub::session::persona(logins, a, account, (data, config, registry))?
+            ..crate::hub::persona(logins, a, account, (data, config, registry))?
         };
         (a.agent.clone(), a.work_folder().unwrap_or(folder), recipe)
     };
@@ -322,5 +314,21 @@ pub(crate) fn fields(value: impl serde::Serialize) -> blocks::Fields {
     match serde_json::to_value(value) {
         Ok(serde_json::Value::Object(fields)) => fields,
         _ => blocks::Fields::new(),
+    }
+}
+
+pub(crate) fn image(name: &std::path::Path) -> Option<&'static str> {
+    let ext = name
+        .extension()
+        .and_then(|e| e.to_str())
+        .unwrap_or_default();
+    match ext.to_ascii_lowercase().as_str() {
+        "png" => Some("image/png"),
+        "jpg" | "jpeg" => Some("image/jpeg"),
+        "gif" => Some("image/gif"),
+        "webp" => Some("image/webp"),
+        "heic" => Some("image/heic"),
+        "avif" => Some("image/avif"),
+        _ => None,
     }
 }

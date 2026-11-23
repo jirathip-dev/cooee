@@ -323,48 +323,42 @@ fn ask(c: &Cooee) -> (String, Value) {
     )
 }
 
-#[test]
-fn a_new_device_asks_and_a_paired_one_approves_it_with_its_passkey() {
+fn cooee_pushing_through_a_fake_curl(
+    dir: &std::path::Path,
+) -> (FakeShed, Cooee, std::path::PathBuf) {
     use std::os::unix::fs::PermissionsExt;
-    let dir = scratch("approve");
     let shed = FakeShed::start(&dir.join("shed"), version());
     let bin = dir.join("bin");
     fs::create_dir_all(&bin).unwrap();
     let log = dir.join("pushed.log");
     let fakes = [(
         "curl",
-        format!("#!/bin/sh\nsed -n 's/^url = \"\\(.*\\)\"$/\\1/p' >>{log:?}\nprintf 201\n"),
+        format!(
+            "#!/bin/sh\nsed -n 's/^url = \"\\(.*\\)\"$/\\1/p' >>\"{}\"\nprintf 201\n",
+            log.display()
+        ),
     )];
     for (name, script) in fakes {
         fs::write(bin.join(name), script).unwrap();
         fs::set_permissions(bin.join(name), fs::Permissions::from_mode(0o755)).unwrap();
     }
     let path = format!("{}:{}", bin.display(), std::env::var("PATH").unwrap());
-    let c = Cooee::start_env(&dir, &shed.dir, "", &[("PATH", path.as_str())]);
-    let endpoint = "https://push.example.com/paired-phone";
-    let sub = json!({ "endpoint": endpoint, "p256dh": "BCVxsr7N_eNgVRqvHtD0zTZsEc6-VV-JvLexhqUzORcxaOzi6-AYWXvTBHm4bjyPjs7Vd8pZGH6SRpkNtoIAiw4", "auth": "BTBZMqHH6r4Tts7J_aSIgg" });
-    assert_eq!(c.post("/push/subscribe", &sub).0, 200);
-    let phone = Authenticator::new(&c, 7);
-    save_passkey(&c, &phone);
+    let c = Cooee::start_env(dir, &shed.dir, "", &[("PATH", path.as_str())]);
+    (shed, c, log)
+}
 
-    let (word, claim) = ask(&c);
-    assert_eq!(word.split(' ').count(), 2, "{word}");
-    assert_eq!(status(&open_post(&c, "/pair/claim", &claim).0), 202);
+fn wait_for_push(log: &std::path::Path, endpoint: &str) {
     let at = std::time::Instant::now();
-    while !fs::read_to_string(&log)
+    while !fs::read_to_string(log)
         .unwrap_or_default()
         .contains(endpoint)
     {
         assert!(at.elapsed().as_secs() < 10, "no push");
         std::thread::sleep(std::time::Duration::from_millis(50));
     }
-    let asks = c.json("/pair/asks");
-    assert_eq!(
-        (asks[0]["word"].as_str(), asks[0]["label"].as_str()),
-        (Some(word.as_str()), Some("iPad"))
-    );
-    let id = asks[0]["id"].clone();
+}
 
+fn only_the_paired_passkey_approves(c: &Cooee, phone: &Authenticator, id: &Value, claim: &Value) {
     let answer = |passkey: Value| {
         c.post(
             "/pair/answer",
@@ -372,22 +366,24 @@ fn a_new_device_asks_and_a_paired_one_approves_it_with_its_passkey() {
         )
     };
     assert_eq!(answer(Value::Null).0, 400);
-    let mut forged = phone.get(&challenge(&c));
+    let mut forged = phone.get(&challenge(c));
     forged["sig"] = json!(phone.sig(b"other", b"data"));
     assert_eq!(answer(forged).0, 403);
     assert_eq!(answer(phone.get("not-a-challenge-this-server-gave")).0, 403);
-    let stranger = Authenticator::new(&c, 9);
-    let (code, body) = answer(stranger.get(&challenge(&c)));
+    let stranger = Authenticator::new(c, 9);
+    let (code, body) = answer(stranger.get(&challenge(c)));
     assert_eq!(code, 403, "{body}");
     assert!(body.contains("No passkey for this cooee"), "{body}");
     assert_eq!(
-        status(&open_post(&c, "/pair/claim", &claim).0),
+        status(&open_post(c, "/pair/claim", claim).0),
         202,
         "still waiting"
     );
-    let (code, body) = answer(phone.get(&challenge(&c)));
+    let (code, body) = answer(phone.get(&challenge(c)));
     assert_eq!(code, 200, "{body}");
+}
 
+fn assert_the_ipad_is_paired(c: &Cooee, claim: &Value) {
     let (head, _) = c.raw("POST", "/pair/claim", &IPAD, &claim.to_string());
     let token = head
         .lines()
@@ -416,6 +412,31 @@ fn a_new_device_asks_and_a_paired_one_approves_it_with_its_passkey() {
     );
     assert_eq!(ipad("/passkeys")[0]["mine"], false);
     assert_eq!(c.json("/passkeys")[0]["mine"], true);
+}
+
+#[test]
+fn a_new_device_asks_and_a_paired_one_approves_it_with_its_passkey() {
+    let dir = scratch("approve");
+    let (_shed, c, log) = cooee_pushing_through_a_fake_curl(&dir);
+    let endpoint = "https://push.example.com/paired-phone";
+    let sub = json!({ "endpoint": endpoint, "p256dh": "BCVxsr7N_eNgVRqvHtD0zTZsEc6-VV-JvLexhqUzORcxaOzi6-AYWXvTBHm4bjyPjs7Vd8pZGH6SRpkNtoIAiw4", "auth": "BTBZMqHH6r4Tts7J_aSIgg" });
+    assert_eq!(c.post("/push/subscribe", &sub).0, 200);
+    let phone = Authenticator::new(&c, 7);
+    save_passkey(&c, &phone);
+
+    let (word, claim) = ask(&c);
+    assert_eq!(word.split(' ').count(), 2, "{word}");
+    assert_eq!(status(&open_post(&c, "/pair/claim", &claim).0), 202);
+    wait_for_push(&log, endpoint);
+    let asks = c.json("/pair/asks");
+    assert_eq!(
+        (asks[0]["word"].as_str(), asks[0]["label"].as_str()),
+        (Some(word.as_str()), Some("iPad"))
+    );
+    let id = asks[0]["id"].clone();
+
+    only_the_paired_passkey_approves(&c, &phone, &id, &claim);
+    assert_the_ipad_is_paired(&c, &claim);
 }
 
 #[test]
@@ -626,5 +647,254 @@ fn the_new_calls_need_a_paired_device_but_pairing_requests_do_not() {
     assert_eq!(
         status(&c.raw("POST", "/pair/request", &foreign, "{}").0),
         403
+    );
+}
+
+fn act(c: &Cooee, cookie: &str, addr: &str, action: &str, values: &Value) -> (String, Value) {
+    let body = json!({ "screen": "/screens/pair", "action": action, "values": values });
+    let headers = [
+        ("Content-Type", "application/json"),
+        ("Cookie", cookie),
+        ("X-Forwarded-For", addr),
+    ];
+    let (head, body) = c.raw("POST", "/screens/pair/action", &headers, &body.to_string());
+    assert_eq!(status(&head), 200, "{head}");
+    (head, serde_json::from_str(&body).unwrap())
+}
+
+fn set(head: &str, name: &str) -> Option<String> {
+    head.lines().find_map(|l| {
+        let value = l.strip_prefix("set-cookie: ")?.strip_prefix(name)?;
+        Some(value.strip_prefix('=')?.split(';').next()?.to_owned())
+    })
+}
+
+fn pair_screen(c: &Cooee, cookie: &str, path: &str) -> Value {
+    let (head, body) = c.raw("GET", path, &[("Cookie", cookie)], "");
+    assert_eq!(status(&head), 200, "{head}");
+    serde_json::from_str(&body).unwrap()
+}
+
+fn works(c: &Cooee, token: &str) -> bool {
+    let cookie = format!("cooee={token}");
+    status(&c.raw("GET", "/threads", &[("Cookie", &cookie)], "").0) == 200
+}
+
+fn assert_the_unpaired_screen_offers_a_code_an_ask_and_a_key(c: &Cooee) -> String {
+    let screen = pair_screen(c, "", "/screens/pair?code=123456");
+    let host = c.addr.split(':').next().unwrap();
+    assert_eq!(
+        (&screen["id"], &screen["title"]),
+        (&json!("pair"), &json!(format!("Pair with {host}")))
+    );
+    let blocks = &screen["blocks"];
+    assert_eq!(blocks[0]["fields"][0]["value"], "123456");
+    assert_eq!(blocks[1]["action"], "ask");
+    assert_eq!(
+        (&blocks[2]["name"], &blocks[2]["props"]["mode"]),
+        (&json!("device-key"), &json!("signin"))
+    );
+    assert!(blocks[2]["fallback"]["title"].is_string(), "{screen}");
+    host.to_owned()
+}
+
+#[test]
+fn a_typed_code_pairs_and_five_wrong_codes_lock_the_form_and_post_pair_together() {
+    let (_dir, _shed, c) = setup("pair-screen-code", "");
+    let host = assert_the_unpaired_screen_offers_a_code_an_ask_and_a_key(&c);
+
+    let pin = new_code(&c);
+    let wrong = json!({ "code": if pin == "000000" { "111111" } else { "000000" } });
+    for left in (2..5).rev() {
+        let (head, a) = act(&c, "", "203.0.113.9", "code", &wrong);
+        assert_eq!(
+            a["toast"]["title"],
+            format!("That code is wrong: {left} tries left.")
+        );
+        assert_eq!(set(&head, "cooee"), None);
+    }
+    let (to, _) = enter(
+        &c,
+        "203.0.113.9",
+        &format!("code={}", wrong["code"].as_str().unwrap()),
+    );
+    assert_eq!(
+        to, "/pair?bad=wrong&left=1",
+        "POST /pair counts the same misses"
+    );
+    let (_, a) = act(&c, "", "203.0.113.9", "code", &wrong);
+    assert_eq!(a["toast"]["title"], "Too many tries: wait 60 s.");
+    let (head, a) = act(&c, "", "203.0.113.9", "code", &json!({ "code": pin }));
+    assert!(
+        a["toast"]["title"]
+            .as_str()
+            .unwrap()
+            .starts_with("Too many tries"),
+        "{a}"
+    );
+    assert_eq!(
+        set(&head, "cooee"),
+        None,
+        "a locked address can't pair even with the right code"
+    );
+    assert_eq!(
+        enter(&c, "203.0.113.9", &format!("code={pin}"))
+            .0
+            .split('&')
+            .next(),
+        Some("/pair?bad=limit")
+    );
+
+    let pin = new_code(&c);
+    let (head, a) = act(&c, "", "203.0.113.10", "code", &json!({ "code": pin }));
+    assert_eq!(a, json!({ "open": "/screens/sessions" }));
+    let token = set(&head, "cooee").unwrap();
+    assert!(works(&c, &token));
+    let paired = pair_screen(&c, &format!("cooee={token}"), "/screens/pair");
+    assert_eq!(paired["blocks"][0]["text"], format!("Paired with {host}"));
+    assert_eq!(paired["blocks"][1]["props"]["mode"], "enroll");
+    let (head, a) = act(&c, "", "203.0.113.10", "code", &json!({ "code": pin }));
+    assert_eq!(set(&head, "cooee"), None, "a code pairs once: {a}");
+}
+
+#[test]
+fn an_asking_device_sees_its_word_then_approved_and_gets_its_cookie_only_when_it_collects() {
+    let (_dir, _shed, c) = setup("pair-screen-word", "");
+    let (head, a) = act(&c, "", "local", "ask", &json!({}));
+    assert_eq!(a, json!({ "open": "/screens/pair" }));
+    assert_eq!(set(&head, "cooee"), None);
+    let claim = format!("cooee_claim={}", set(&head, "cooee_claim").unwrap());
+    assert!(
+        head.contains("Max-Age=300; HttpOnly; SameSite=Strict"),
+        "{head}"
+    );
+    let screen = pair_screen(&c, &claim, "/screens/pair");
+    let word = c.json("/pair/asks")[0]["word"].as_str().unwrap().to_owned();
+    assert_eq!(screen["blocks"][0]["text"], format!("Check word: {word}"));
+    let left = screen["blocks"][1]["text"].as_str().unwrap();
+    assert!(
+        left == "Runs out in 5:00" || left.starts_with("Runs out in 4:"),
+        "{left}"
+    );
+    for path in ["/threads", "/screens/sessions", "/pair/asks"] {
+        assert_eq!(
+            status(&c.raw("GET", path, &[("Cookie", &claim)], "").0),
+            401,
+            "{path}"
+        );
+    }
+    let (head, a) = act(&c, &claim, "local", "collect", &json!({}));
+    assert_eq!(
+        (a["toast"]["title"].as_str(), set(&head, "cooee")),
+        (Some("Not approved yet."), None)
+    );
+
+    c.cli(&[
+        "pair",
+        "approve",
+        c.json("/pair/asks")[0]["id"].as_str().unwrap(),
+    ]);
+    let screen = pair_screen(&c, &claim, "/screens/pair");
+    assert_eq!(
+        screen["blocks"][0]["text"],
+        "this Mac approved this device."
+    );
+    assert_eq!(screen["blocks"][1]["action"], "collect");
+    let (head, a) = act(&c, &claim, "local", "collect", &json!({}));
+    assert_eq!(a, json!({ "open": "/screens/sessions" }));
+    assert!(works(&c, &set(&head, "cooee").unwrap()));
+    assert_eq!(
+        set(&head, "cooee_claim").as_deref(),
+        Some(""),
+        "the claim cookie is cleared"
+    );
+    let (head, a) = act(&c, &claim, "local", "collect", &json!({}));
+    assert_eq!(
+        (a["toast"]["title"].as_str(), set(&head, "cooee")),
+        (Some("The request ran out: ask again."), None)
+    );
+}
+
+#[test]
+fn a_declined_or_expired_request_never_gets_a_cookie() {
+    let (dir, _shed, c) = setup("pair-screen-no", "");
+    let (head, _) = act(&c, "", "local", "ask", &json!({}));
+    let claim = format!("cooee_claim={}", set(&head, "cooee_claim").unwrap());
+    c.cli(&[
+        "pair",
+        "decline",
+        c.json("/pair/asks")[0]["id"].as_str().unwrap(),
+    ]);
+    let screen = pair_screen(&c, &claim, "/screens/pair");
+    assert_eq!(screen["blocks"][0]["text"], "this Mac said no.");
+    assert_eq!(screen["blocks"][1]["action"], "ask");
+    let (head, a) = act(&c, &claim, "local", "collect", &json!({}));
+    assert_eq!(
+        (a["toast"]["title"].as_str(), set(&head, "cooee")),
+        (Some("this Mac said no."), None)
+    );
+
+    let (head, _) = act(&c, "", "local", "ask", &json!({}));
+    let claim = format!("cooee_claim={}", set(&head, "cooee_claim").unwrap());
+    c.cli(&[
+        "pair",
+        "approve",
+        c.json("/pair/asks")[0]["id"].as_str().unwrap(),
+    ]);
+    let file = dir.join("data/devices.json");
+    let mut devices: Value = serde_json::from_str(&fs::read_to_string(&file).unwrap()).unwrap();
+    devices["asks"][0]["at"] = json!(0);
+    fs::write(&file, devices.to_string()).unwrap();
+    let screen = pair_screen(&c, &claim, "/screens/pair");
+    assert_eq!(screen["blocks"][0]["text"], "The request ran out.");
+    let (head, a) = act(&c, &claim, "local", "collect", &json!({}));
+    assert_eq!(
+        (a["toast"]["title"].as_str(), set(&head, "cooee")),
+        (Some("The request ran out: ask again."), None)
+    );
+    let (head, _) = c.raw("GET", "/stream?v=2", &[("Cookie", &claim)], "");
+    assert_eq!(status(&head), 401, "a run-out claim opens no stream");
+}
+
+#[test]
+fn a_device_key_signs_in_and_a_wrong_signature_does_not() {
+    let (_dir, _shed, c) = setup("pair-screen-key", "");
+    let laptop = Authenticator::new(&c, 11);
+    save_passkey(&c, &laptop);
+    let mut forged = laptop.get(&challenge(&c));
+    forged["sig"] = json!(laptop.sig(b"other", b"data"));
+    let (head, a) = act(&c, "", "local", "signin", &forged);
+    assert_eq!(
+        (a["toast"]["title"].as_str(), set(&head, "cooee")),
+        (Some("That passkey's signature doesn't check out."), None)
+    );
+    let (head, a) = act(
+        &c,
+        "",
+        "local",
+        "signin",
+        &Authenticator::new(&c, 12).get(&challenge(&c)),
+    );
+    assert_eq!(set(&head, "cooee"), None, "an unknown key: {a}");
+    let (head, a) = act(&c, "", "local", "signin", &json!({ "id": 1 }));
+    assert_eq!(
+        (a["toast"]["title"].as_str(), set(&head, "cooee")),
+        (Some("That sign-in isn't readable."), None)
+    );
+
+    let (head, a) = act(&c, "", "local", "signin", &laptop.get(&challenge(&c)));
+    assert_eq!(a, json!({ "open": "/screens/sessions" }));
+    let token = set(&head, "cooee").unwrap();
+    assert!(works(&c, &token));
+    let (_, mine) = c.raw(
+        "GET",
+        "/passkeys",
+        &[("Cookie", &format!("cooee={token}"))],
+        "",
+    );
+    assert_eq!(
+        serde_json::from_str::<Value>(&mine).unwrap()[0]["mine"],
+        true,
+        "the key is the new device's"
     );
 }

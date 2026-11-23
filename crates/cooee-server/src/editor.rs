@@ -152,6 +152,39 @@ const STARTER: [(&str, &[u8]); 2] = [
 /// # Errors
 /// When the pack it starts from isn't installed.
 pub fn files(name: &str, draft: &Draft, looks: &Looks) -> io::Result<Vec<(String, Vec<u8>)>> {
+    let from = copied(draft, looks)?;
+    let (dark, light) = (format!("{name}-dark"), format!("{name}-light"));
+    let theme = Theme {
+        label: draft.label.clone(),
+        scheme: Pair {
+            dark: dark.clone(),
+            light: light.clone(),
+        },
+        style: Some(draft.style),
+        ..from.clone()
+    };
+    let mut out = vec![
+        ("theme.json".to_owned(), pretty(&theme)),
+        (
+            format!("schemes/{dark}.json"),
+            pretty(&scheme(&draft.label, "dark", &draft.dark)),
+        ),
+        (
+            format!("schemes/{light}.json"),
+            pretty(&scheme(&draft.label, "light", &draft.light)),
+        ),
+    ];
+    for (file, bytes) in [
+        ("sprites.svg", from.sprite_sheet),
+        ("scene.svg", from.scene_art),
+        ("icon.png", from.icon),
+    ] {
+        out.extend(bytes.map(|b| (file.to_owned(), b)));
+    }
+    Ok(out)
+}
+
+fn copied(draft: &Draft, looks: &Looks) -> io::Result<Theme> {
     let starter = Theme {
         label: String::new(),
         scheme: Pair {
@@ -187,35 +220,7 @@ pub fn files(name: &str, draft: &Draft, looks: &Looks) -> io::Result<Vec<(String
         from.scene_art = Some(scene.clone().into_bytes());
         from.scene = ["sky", "sea", "rocks", "sand"].map(str::to_owned).to_vec();
     }
-    let (dark, light) = (format!("{name}-dark"), format!("{name}-light"));
-    let theme = Theme {
-        label: draft.label.clone(),
-        scheme: Pair {
-            dark: dark.clone(),
-            light: light.clone(),
-        },
-        style: Some(draft.style),
-        ..from.clone()
-    };
-    let mut out = vec![
-        ("theme.json".to_owned(), pretty(&theme)),
-        (
-            format!("schemes/{dark}.json"),
-            pretty(&scheme(&draft.label, "dark", &draft.dark)),
-        ),
-        (
-            format!("schemes/{light}.json"),
-            pretty(&scheme(&draft.label, "light", &draft.light)),
-        ),
-    ];
-    for (file, bytes) in [
-        ("sprites.svg", from.sprite_sheet),
-        ("scene.svg", from.scene_art),
-        ("icon.png", from.icon),
-    ] {
-        out.extend(bytes.map(|b| (file.to_owned(), b)));
-    }
-    Ok(out)
+    Ok(from)
 }
 
 fn splice(sheet: &[u8], drawn: &BTreeMap<String, String>) -> io::Result<Vec<u8>> {

@@ -70,16 +70,10 @@ fn cooee(home: &Path, args: &[&str]) -> std::process::Output {
         .unwrap()
 }
 
-#[test]
-fn install_writes_and_loads_the_job() {
-    let home = scratch("install");
-    let out = cooee(&home, &["install", "--instance", "cooee", "--port", "4799"]);
-    let stdout = String::from_utf8_lossy(&out.stdout);
-    assert!(out.status.success(), "{out:?}");
-
+fn expected_job(home: &Path) -> (std::path::PathBuf, Vec<String>, String) {
     let log = home.join(".local/share/cooee/cooee/cooee.log");
     let uid = String::from_utf8(Command::new("id").arg("-u").output().unwrap().stdout).unwrap();
-    let (file, wants, load) = if cfg!(target_os = "macos") {
+    if cfg!(target_os = "macos") {
         let plist = home.join("Library/LaunchAgents/dev.cooee.cooee.plist");
         let load = format!("launchctl bootstrap gui/{} {}", uid.trim(), plist.display());
         let wants = vec![
@@ -103,7 +97,17 @@ fn install_writes_and_loads_the_job() {
         ];
         let load = "systemctl --user enable --now dev.cooee.cooee.service".to_owned();
         (unit, wants, load)
-    };
+    }
+}
+
+#[test]
+fn install_writes_and_loads_the_job() {
+    let home = scratch("install");
+    let out = cooee(&home, &["install", "--instance", "cooee", "--port", "4799"]);
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(out.status.success(), "{out:?}");
+
+    let (file, wants, load) = expected_job(&home);
     let text = fs::read_to_string(&file).unwrap();
     for want in wants {
         assert!(text.contains(&want), "{want} not in {text}");
@@ -124,7 +128,10 @@ fn install_writes_and_loads_the_job() {
     assert_eq!(fs::read_to_string(config).unwrap(), "port = 4799\n");
     for want in [
         "tailscale serve --bg --https=4799 http://127.0.0.1:4799".to_owned(),
-        "shed isn't running: install or update shed to protocol 1 or newer from https://github.com/jirathip-dev/shed/releases".to_owned(),
+        format!(
+            "shed isn't running: install or update shed to protocol {} or newer from https://github.com/jirathip-dev/shed/releases",
+            cooee_core::SHED_MIN_PROTOCOL
+        ),
     ] {
         assert!(stdout.contains(&want), "{want} not in {stdout}");
     }
@@ -155,7 +162,7 @@ fn doctor_reports_a_missing_shed() {
         stdout.contains("FAIL shed: ")
             && stdout.contains(&no_shed.join("shed.sock").display().to_string())
             && stdout.contains(
-                "fix: install or update shed to protocol 1 or newer from https://github.com/jirathip-dev/shed/releases"
+                &format!("fix: install or update shed to protocol {} or newer from https://github.com/jirathip-dev/shed/releases", cooee_core::SHED_MIN_PROTOCOL)
             ),
         "{stdout}"
     );

@@ -1,3 +1,4 @@
+mod accounts;
 mod acp;
 mod client;
 mod error;

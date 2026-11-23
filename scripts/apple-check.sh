@@ -11,7 +11,7 @@ set -eu
 cd "$(dirname "$0")/.."
 root=$(pwd)
 tools="$root/.tools"
-swift_dirs="Sources Tests Cooee UITests"
+swift_dirs="Sources Tests Cooee CooeeWidgets UITests"
 skipped=""
 nightly=no
 [ "${1:-}" != --nightly ] || nightly=yes

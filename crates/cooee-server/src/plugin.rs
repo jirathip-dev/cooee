@@ -221,10 +221,14 @@ pub fn call(
         r.read_line(&mut line)?;
         Ok((r, line))
     };
-    let (mut r, mut line) = match kept(&p.url).map(send) {
+    let (r, line) = match kept(&p.url).map(send) {
         Some(Ok((r, line))) if !line.is_empty() => (r, line),
         _ => send(connect()?)?,
     };
+    read_reply(r, line, permit)
+}
+
+fn read_reply(mut r: BufReader<Conn>, mut line: String, permit: Permit) -> io::Result<Reply> {
     let status = line
         .split(' ')
         .nth(1)

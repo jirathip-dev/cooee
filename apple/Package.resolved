@@ -1,13 +1,12 @@
 {
-  "originHash" : "51a83112b5c0dffe57e309d8eb528c7b0b1c20b2e6c37305fc7a703021f225a3",
+  "originHash" : "f1cc1281ffe35b2f4a5c217cd998d11af18e1218092c35f5b5709bc33dc91ba1",
   "pins" : [
     {
       "identity" : "blocks",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/jirathip-dev/blocks",
       "state" : {
-        "revision" : "b1a9c9916efc5144a791aaca50d401c077a27501",
-        "version" : "2.0.0"
+        "revision" : "ec4563f81c095b85edbedb9a459f0ba322cd29c4"
       }
     },
     {

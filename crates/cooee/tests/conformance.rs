@@ -191,7 +191,7 @@ const OFF: [(&str, &[&str]); 4] = [
     ("fake", &["Agent", "Workflow", "Skill"]),
     ("claude", &["Agent", "Workflow", "Skill"]),
     ("codex", &["spawn_agent"]),
-    ("gemini", &["save_memory"]),
+    ("antigravity", &["invoke_subagent", "run_workflow"]),
 ];
 
 const FAKE: &str = "[[providers]]\nname = \"fake\"\nbase = \"claude\"\nagent = \"fake-acp\"\nhome = \"FAKE_HOME\"\n\

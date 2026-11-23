@@ -1,0 +1,4 @@
+frozen crates/cooee-server/src/mcp/own.rs
+frozen crates/cooee-server/src/routes/mcp.rs
+generated crates/cooee-server/src/mcp/tools/mod.rs
+generated crates/cooee-server/src/routes/mcp/mod.rs

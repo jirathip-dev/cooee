@@ -20,8 +20,51 @@ fn mcp_agent(agent: &str, args: &[&str], usage: &str) -> Result<(), String> {
     }
 }
 
+fn typed_server(name: &str, rest: &[&str], usage: &str) -> Result<cooee_core::mcp::Server, String> {
+    let mut s = cooee_core::mcp::Server {
+        name: name.to_owned(),
+        kind: "stdio".to_owned(),
+        enabled: true,
+        ..cooee_core::mcp::Server::default()
+    };
+    let mut words = rest.iter();
+    let pair = |v: Option<&&str>| {
+        v.and_then(|v| v.split_once('='))
+            .map(|(k, v)| (k.to_owned(), v.to_owned()))
+    };
+    while let Some(w) = words.next() {
+        match *w {
+            "--url" | "--type" if s.command.is_empty() => {
+                let v = words.next().ok_or(usage)?;
+                if *w == "--url" {
+                    (*v).clone_into(&mut s.url);
+                    if s.kind == "stdio" {
+                        "http".clone_into(&mut s.kind);
+                    }
+                } else {
+                    (*v).clone_into(&mut s.kind);
+                }
+            }
+            "--env" | "--header" => {
+                let (k, v) = pair(words.next()).ok_or(usage)?;
+                let to = if *w == "--env" {
+                    &mut s.env
+                } else {
+                    &mut s.headers
+                };
+                to.insert(k, v);
+            }
+            _ if s.command.is_empty() && s.url.is_empty() => {
+                (*w).clone_into(&mut s.command);
+            }
+            _ => s.args.push((*w).to_owned()),
+        }
+    }
+    Ok(s)
+}
+
 fn mcp(config: &Config, args: &[&str], usage: &str) -> Result<(), String> {
-    use cooee_core::mcp::{Server, save};
+    use cooee_core::mcp::save;
     let path = config
         .path
         .as_deref()
@@ -36,45 +79,7 @@ fn mcp(config: &Config, args: &[&str], usage: &str) -> Result<(), String> {
             return Ok(());
         }
         ["add", name, rest @ ..] => {
-            let mut s = Server {
-                name: (*name).to_owned(),
-                kind: "stdio".to_owned(),
-                enabled: true,
-                ..Server::default()
-            };
-            let mut words = rest.iter();
-            let pair = |v: Option<&&str>| {
-                v.and_then(|v| v.split_once('='))
-                    .map(|(k, v)| (k.to_owned(), v.to_owned()))
-            };
-            while let Some(w) = words.next() {
-                match *w {
-                    "--url" | "--type" if s.command.is_empty() => {
-                        let v = words.next().ok_or(usage)?;
-                        if *w == "--url" {
-                            (*v).clone_into(&mut s.url);
-                            if s.kind == "stdio" {
-                                "http".clone_into(&mut s.kind);
-                            }
-                        } else {
-                            (*v).clone_into(&mut s.kind);
-                        }
-                    }
-                    "--env" | "--header" => {
-                        let (k, v) = pair(words.next()).ok_or(usage)?;
-                        let to = if *w == "--env" {
-                            &mut s.env
-                        } else {
-                            &mut s.headers
-                        };
-                        to.insert(k, v);
-                    }
-                    _ if s.command.is_empty() && s.url.is_empty() => {
-                        (*w).clone_into(&mut s.command);
-                    }
-                    _ => s.args.push((*w).to_owned()),
-                }
-            }
+            let s = typed_server(name, rest, usage)?;
             if list.iter().any(|o| o.name == s.name) {
                 return Err(format!(
                     "there is an MCP server {name} already: `cooee mcp rm {name}` first"

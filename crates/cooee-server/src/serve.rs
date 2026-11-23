@@ -13,8 +13,8 @@ use topcoat::router::{BodyLimit, Router};
 use crate::{
     Hub, Layouts, Logins, Manager, connectors, editor,
     gate::{Gate, Gzip, Timing, names},
-    http::{Data, profiles, provider_name, recipe},
-    hub, layout, look, pairing,
+    http::{Data, profiles, recipe},
+    hub, layout, live, look, pairing,
     passkey::Unlocks,
     plugin, routes, routines, screens, themes,
 };
@@ -64,7 +64,7 @@ fn runner(
         if recipe.machine.is_empty() {
             recipe.machine.clone_from(&who.machine);
         }
-        let name = provider_name(&agent, &logins.statuses());
+        let name = logins.provider_name(&agent);
         Ok((agent, name, folder, recipe))
     });
     Arc::new(routines::Runner::new(
@@ -108,6 +108,7 @@ pub fn router(
     .route(layout::events)
     .route(layout::reset)
     .app_context(layouts)
+    .app_context(Arc::new(live::Live::new(Arc::clone(&hub))))
     .app_context(hub)
     .app_context(runner)
     .app_context(Arc::new(Unlocks::default()))
@@ -170,16 +171,7 @@ fn housekeep(config: &Config, data: &std::path::Path) -> io::Result<()> {
 /// Returns `Err` if `bind` isn't loopback and `allowed_hosts` is empty, a plugin is misconfigured (no token, …),
 /// the store can't be opened, the runtime can't start, the port can't be bound or accepting a connection fails.
 pub fn serve(config: &Config, ready: impl FnOnce(SocketAddr)) -> io::Result<()> {
-    if !config.bind.is_loopback() && config.allowed_hosts.is_empty() {
-        return Err(io::Error::other(format!(
-            "listening on {} needs `allowed_hosts` (the names the phone uses, e.g. the Tailscale name)",
-            config.bind
-        )));
-    }
-    let own = config.path.is_some() && config.path == Config::default_path(&config.instance);
-    if let Some(dir) = config.dir.as_deref().filter(|d| own && d.is_dir()) {
-        cooee_core::gitignore::write(dir)?;
-    }
+    reachable(config)?;
     let manager = Manager::new(config)?;
     plugin::check(&manager.tabs())?;
     let data = config
@@ -188,42 +180,21 @@ pub fn serve(config: &Config, ready: impl FnOnce(SocketAddr)) -> io::Result<()> 
     housekeep(config, &data)?;
     cooee_core::perf::init(&data, config.perf.slow_ms)?;
     let shed = cooee_core::Shed::new(config.shed.clone(), config.shed_dir.clone());
-    let (looks, refused) = look::Looks::load(config.dir.as_deref(), config.theme.as_deref());
-    for why in refused {
-        cooee_core::note!("cooee: refused {why}");
-    }
-    let theme = looks
-        .themes
-        .get(&looks.default)
-        .cloned()
-        .ok_or_else(|| io::Error::other(format!("no theme {}", looks.default)))?;
+    let theme = default_theme(config)?;
     let providers = cooee_core::Providers::load(config.providers.as_deref(), &shed);
     let logins = Logins::new(shed.clone(), providers.clone(), &data);
     let listener = std::net::TcpListener::bind((config.bind, config.port))?;
     listener.set_nonblocking(true)?;
-    let hub = Hub::open(
-        (shed, providers),
-        &data,
-        (config.roots.clone(), config.path.clone()),
+    let hub = Hub::open(hub::Seed {
+        shed,
+        providers,
+        data: &data,
+        config,
         theme,
-        manager.tabs(),
-        config.apns.clone(),
-        config.approval_expiry_minutes.saturating_mul(60_000),
-    )?;
+        plugins: manager.tabs(),
+    })?;
     retain(config, data.clone());
-    let (daily, signins) = (Arc::clone(&hub), Arc::clone(&logins));
-    std::thread::spawn(move || {
-        loop {
-            for (agent, account) in daily.stale(hub::now()) {
-                let launch = signins.home(&agent, Some(&account));
-                let probed = launch.and_then(|(_, l)| daily.probe(&agent, &account, &l));
-                if let Err(e) = probed {
-                    cooee_core::note!("cooee: models of {agent}: {e}");
-                }
-            }
-            cooee_core::clock::sleep(Duration::from_hours(1));
-        }
-    });
+    probe_daily(Arc::clone(&hub), Arc::clone(&logins));
     let runner = runner(
         &hub,
         Arc::clone(&logins),
@@ -239,6 +210,7 @@ pub fn serve(config: &Config, ready: impl FnOnce(SocketAddr)) -> io::Result<()> 
                 config.shed.clone(),
                 config.shed_dir.clone(),
                 cooee_machines::local_name(),
+                config.container.clone(),
             )),
             Arc::new(config.clone()),
         ),
@@ -247,7 +219,59 @@ pub fn serve(config: &Config, ready: impl FnOnce(SocketAddr)) -> io::Result<()> 
         &config.allowed_hosts,
         Layouts::watch(config.dir.clone()).map_err(|b| io::Error::other(b.why))?,
     );
-    let served = tokio::runtime::Builder::new_multi_thread()
+    let served = run(listener, (hub, &manager, runner), router, ready);
+    manager.stop_all();
+    served
+}
+
+fn reachable(config: &Config) -> io::Result<()> {
+    if !config.bind.is_loopback() && config.allowed_hosts.is_empty() {
+        return Err(io::Error::other(format!(
+            "listening on {} needs `allowed_hosts` (the names the phone uses, e.g. the Tailscale name)",
+            config.bind
+        )));
+    }
+    let own = config.path.is_some() && config.path == Config::default_path(&config.instance);
+    if let Some(dir) = config.dir.as_deref().filter(|d| own && d.is_dir()) {
+        cooee_core::gitignore::write(dir)?;
+    }
+    Ok(())
+}
+
+fn default_theme(config: &Config) -> io::Result<look::Theme> {
+    let (looks, refused) = look::Looks::load(config.dir.as_deref(), config.theme.as_deref());
+    for why in refused {
+        cooee_core::note!("cooee: refused {why}");
+    }
+    looks
+        .themes
+        .get(&looks.default)
+        .cloned()
+        .ok_or_else(|| io::Error::other(format!("no theme {}", looks.default)))
+}
+
+fn probe_daily(daily: Arc<Hub>, signins: Arc<Logins>) {
+    std::thread::spawn(move || {
+        loop {
+            for (agent, account) in daily.stale(hub::now()) {
+                let (_, launch) = signins.home(&agent, Some(&account));
+                let probed = daily.probe(&agent, &account, &launch);
+                if let Err(e) = probed {
+                    cooee_core::note!("cooee: models of {agent}: {e}");
+                }
+            }
+            cooee_core::clock::sleep(Duration::from_hours(1));
+        }
+    });
+}
+
+fn run(
+    listener: std::net::TcpListener,
+    (hub, manager, runner): (Arc<Hub>, &Arc<Manager>, Arc<routines::Runner>),
+    router: Router,
+    ready: impl FnOnce(SocketAddr),
+) -> io::Result<()> {
+    tokio::runtime::Builder::new_multi_thread()
         .enable_all()
         .build()?
         .block_on(async {
@@ -258,7 +282,5 @@ pub fn serve(config: &Config, ready: impl FnOnce(SocketAddr)) -> io::Result<()> 
             routines::Runner::every(runner, Duration::from_secs(30))?;
             ready(addr);
             topcoat::serve(listener, router).await
-        });
-    manager.stop_all();
-    served
+        })
 }

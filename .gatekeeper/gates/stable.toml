@@ -1,0 +1,8 @@
+about = "the workspace tests pass on stable Rust as well as on the MSRV"
+fix = "fix the failing test the log names; code builds on both toolchains"
+budget_secs = 900
+leg = "stable"
+setup = ["rust"]
+run = "RUSTUP_TOOLCHAIN=stable ci/test.sh"
+versions = ["rustup run stable rustc -V"]
+paths = ["crates/**", "Cargo.toml", "Cargo.lock", "rust-toolchain.toml", "connectors/**", "packs/**", "plugins/**", "examples/**", "docs/**", "scripts/install.sh", "apple/Package.swift", "apple/Sources/CooeeUI/Default/**", "apple/Tests/schemes.json", "ci/test.sh"]

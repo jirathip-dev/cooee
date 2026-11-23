@@ -3,6 +3,8 @@ included:
   - Tests
   - Cooee
   - UITests
+excluded:
+  - Sources/**/*+Areas.swift
 disabled_rules:
   - colon
   - comma

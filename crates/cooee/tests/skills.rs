@@ -123,6 +123,49 @@ impl Setup {
     }
 }
 
+fn assert_only_ada_reads_release(s: &Setup) {
+    let (bo, _) = s.start("bo");
+    let (refused, failed) = s.skill(&bo, &json!({ "read": "release" }));
+    assert!(failed, "{refused}");
+    assert_eq!(refused, "no skill release for bo");
+    let (refused, failed) = s.skill(&bo, &json!({ "read": "../../ada/skills/release" }));
+    assert!(
+        failed && refused.contains("isn't a skill name"),
+        "{refused}"
+    );
+}
+
+fn edit_release_through_its_card(s: &Setup, next: &str) {
+    let edit = json!({ "name": "release", "description": "How I cut a release.",
+                       "body": "1. Tag it.\n2. Write the notes.\n3. Post them.", "replaces": "release" });
+    assert!(!s.skill(next, &json!({ "propose": edit })).1);
+    let card = s.card(next);
+    assert!(
+        card["detail"]
+            .as_str()
+            .unwrap()
+            .ends_with("  2. Write the notes.\n+ 3. Post them.\n"),
+        "{card}"
+    );
+    assert!(
+        card["tool"]
+            .as_str()
+            .unwrap()
+            .starts_with("edit ada's skill release")
+    );
+    assert!(
+        !fs::read_to_string(s.file("ada", "release"))
+            .unwrap()
+            .contains("Post")
+    );
+    s.answer(next, &card, "approve");
+    assert!(
+        fs::read_to_string(s.file("ada", "release"))
+            .unwrap()
+            .contains("3. Post them.")
+    );
+}
+
 #[test]
 fn an_approved_skill_is_saved_and_briefed_by_description_and_a_refused_one_is_not() {
     let s = setup("skills-propose");
@@ -166,44 +209,9 @@ fn an_approved_skill_is_saved_and_briefed_by_description_and_a_refused_one_is_no
         s.skill(&next, &json!({ "read": "release" })),
         ("1. Tag it.\n2. Write the notes.".to_owned(), false)
     );
-    let (bo, _) = s.start("bo");
-    let (refused, failed) = s.skill(&bo, &json!({ "read": "release" }));
-    assert!(failed, "{refused}");
-    assert_eq!(refused, "no skill release for bo");
-    let (refused, failed) = s.skill(&bo, &json!({ "read": "../../ada/skills/release" }));
-    assert!(
-        failed && refused.contains("isn't a skill name"),
-        "{refused}"
-    );
+    assert_only_ada_reads_release(&s);
 
-    let edit = json!({ "name": "release", "description": "How I cut a release.",
-                       "body": "1. Tag it.\n2. Write the notes.\n3. Post them.", "replaces": "release" });
-    assert!(!s.skill(&next, &json!({ "propose": edit })).1);
-    let card = s.card(&next);
-    assert!(
-        card["detail"]
-            .as_str()
-            .unwrap()
-            .ends_with("  2. Write the notes.\n+ 3. Post them.\n"),
-        "{card}"
-    );
-    assert!(
-        card["tool"]
-            .as_str()
-            .unwrap()
-            .starts_with("edit ada's skill release")
-    );
-    assert!(
-        !fs::read_to_string(s.file("ada", "release"))
-            .unwrap()
-            .contains("Post")
-    );
-    s.answer(&next, &card, "approve");
-    assert!(
-        fs::read_to_string(s.file("ada", "release"))
-            .unwrap()
-            .contains("3. Post them.")
-    );
+    edit_release_through_its_card(&s, &next);
 
     assert_eq!(s.call("DELETE", "/personas/ada/memory", None).0, 200);
     assert!(s.file("ada", "release").exists());

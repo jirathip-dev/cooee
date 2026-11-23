@@ -1,0 +1,13 @@
+[[size]]
+paths = ["Cargo.toml"]
+max_file_lines = 100
+
+[[size]]
+paths = [".github/workflows/*.yml"]
+max_file_lines = 200
+
+[[collect]]
+dir = ".drover/arch"
+
+[[collect]]
+dir = "scripts/gen.d"

@@ -1,0 +1,16 @@
+frozen crates/cooee/tests/chat.rs
+frozen crates/cooee/tests/first_run.rs
+frozen crates/cooee/tests/mcp.rs
+frozen crates/cooee/tests/personas.rs
+frozen crates/cooee/tests/plugins.rs
+frozen crates/cooee/tests/profiles.rs
+frozen crates/cooee/tests/reliability.rs
+frozen crates/cooee/tests/setup.rs
+generated crates/cooee/tests/chat/main.rs
+generated crates/cooee/tests/first_run/main.rs
+generated crates/cooee/tests/mcp/main.rs
+generated crates/cooee/tests/personas/main.rs
+generated crates/cooee/tests/plugins/main.rs
+generated crates/cooee/tests/profiles/main.rs
+generated crates/cooee/tests/reliability/main.rs
+generated crates/cooee/tests/setup/main.rs

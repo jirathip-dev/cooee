@@ -1,6 +1,6 @@
 #!/bin/sh
 # scripts/line-cap.sh on a fixture tree: Swift test targets, #Preview blocks, apple/design/,
-# *Preview*.swift and Fixtures/ don't count toward apple_cap; a plain view file does.
+# *Preview*.swift and Fixtures/ don't count toward apple_cap; a plain view file does; a raise in ci/cap.d/ counts.
 set -eu
 here=$(cd "$(dirname "$0")/.." && pwd)
 t=$(mktemp -d)
@@ -36,7 +36,13 @@ apple lines: 5 / 5"
 # One more plain line goes over apple_cap and fails.
 echo 'let more = 2' >> "$t/apple/App/Views/Home.swift"
 if "$t/scripts/line-cap.sh"; then echo "expected over apple_cap to fail"; exit 1; fi
+# A raise in ci/cap.d/ counts: the highest value of each key wins, a lower one changes nothing.
+mkdir "$t/ci/cap.d"
+printf 'apple_cap = 6\nwhy = "#1: raise"\n' > "$t/ci/cap.d/2026-11-21-1.toml"
+printf 'line_cap = 50\napple_cap = 4\nwhy = "#2: lower"\n' > "$t/ci/cap.d/2026-11-21-2.toml"
+test "$("$t/scripts/line-cap.sh")" = "non-test lines: 1 / 100
+apple lines: 6 / 6"
 # No apple/ counts 0.
 rm -rf "${t:?}/apple"
-test "$("$t/scripts/line-cap.sh" | tail -1)" = "apple lines: 0 / 5"
+test "$("$t/scripts/line-cap.sh" | tail -1)" = "apple lines: 0 / 6"
 echo "line-cap test ok"

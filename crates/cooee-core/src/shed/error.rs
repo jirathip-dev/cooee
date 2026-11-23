@@ -54,8 +54,8 @@ impl ShedError {
     }
 }
 
-/// The oldest shed protocol cooee accepts; any newer one is accepted too (shed serves the previous one for a release).
-pub const SHED_MIN_PROTOCOL: u32 = 1;
+/// The oldest shed protocol cooee accepts (5: a run on a named account); any newer one is accepted too.
+pub const SHED_MIN_PROTOCOL: u32 = 5;
 
 /// What to do when shed is missing or too old: cooee never installs, updates or restarts shed itself.
 #[must_use]

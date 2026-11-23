@@ -61,3 +61,59 @@ extension ChatFeature {
         return .cancel(id: Frame.tick)
     }
 }
+
+extension ChatFeature {
+    internal func listen(_ state: inout State, _ action: Action) -> Effect<Action> {
+        switch action {
+        case .task:
+            restore(&state)
+            return open(state)
+        case .loaded(let slice):
+            load(&state, slice)
+            return keepSlice(state)
+        case .older(let older):
+            return self.older(&state, older)
+        case .event(let event):
+            return heard(&state, event)
+        case .failed(let error):
+            state.status.stopping = false
+            return toast(&state, error)
+        case .link(let action):
+            return link(&state, action)
+        default:
+            break
+        }
+        return .none
+    }
+
+    internal func apply(_ state: inout State, _ event: StreamEvent) {
+        switch event {
+        case .item(let item):
+            upsert(&state, item)
+        case .state(let turn):
+            if turn.state != state.turn.state { state.since = now }
+            state.turn = Turn(text: nil, state: turn.state, note: turn.note)
+            if !state.working { (state.live, state.status.stopping) = (LiveReply(), false) }
+        case .queue(let queue):
+            state.queue = queue
+        case .sync(let sync):
+            state.status.sync = sync
+        case .text, .reset, .roomTurn, .roomStop, .roomAsk:
+            break
+        }
+    }
+}
+
+extension ChatFeature.State {
+    public var current: String {
+        switch target {
+        case .thread(let id): id
+        case .new(let persona), .setup(let persona): "new:\(persona.id)"
+        }
+    }
+
+    public var filmstrip: [APIItem] { items.filter { $0.kind == "frame" && $0.name != nil } }
+    public var handoff: APIItem? { items.last { $0.kind == "handoff" && $0.outcome == "waiting" } }
+
+    public var step: String? { persona.api.style == .chat ? ChatItems.step(items) : nil }
+}

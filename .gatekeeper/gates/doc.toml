@@ -1,0 +1,6 @@
+about = "the docs build with warnings denied"
+fix = "fix the doc warning the log names"
+budget_secs = 300
+setup = ["rust"]
+run = 'RUSTDOCFLAGS="-D warnings" cargo doc --workspace --no-deps --locked'
+paths = ["crates/**", "Cargo.toml", "Cargo.lock", "rust-toolchain.toml", "connectors/**", "packs/**", "plugins/**", "examples/**", "docs/**", "scripts/install.sh", "apple/Package.swift", "apple/Sources/CooeeUI/Default/**", "apple/Tests/schemes.json", "ci/test.sh"]

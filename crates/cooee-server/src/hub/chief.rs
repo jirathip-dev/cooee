@@ -7,7 +7,7 @@ use cooee_core::{
 
 use super::{Hub, HubError, mcp::Proposed};
 
-pub(crate) struct Me(String);
+pub struct Me(String);
 
 impl Me {
     pub(crate) fn thread(&self) -> &str {

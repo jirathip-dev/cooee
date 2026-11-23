@@ -23,6 +23,17 @@ party's hash, user verification and the signature. A device that lost its cookie
 (`/passkey/signin`) as a new device. `cooee devices` lists the devices and `cooee devices rm <id>` unpairs one (its
 pushes stop too); Settings → devices does both from the phone and lists and removes passkeys.
 
+The pair screen (#721, for a client with no camera): `GET /screens/pair` and `POST /screens/pair/action` answer
+anyone, as a core-kinds screen drawn for the caller. With no cookie it shows the server's name, the six-digit code
+(`?code=` fills it; a wrong one counts against the same 5 a minute as `POST /pair`), `Ask to pair` and the
+`device-key` island (mode `signin`: the client signs with a P-256 key in its OS key store, as the app's passkey does;
+a client without it draws its fallback). `ask` sets `cooee_claim` (`HttpOnly`, 5 minutes); with it the screen shows
+the check word and a countdown, and the caller may hold one `GET /stream` whose only key is `/screens/pair`, rebuilt
+every second, so a yes shows at once. `collect` sets the device cookie, clears the claim and ends that stream with
+`bye handover`. The device cookie is set only after a right code, a collected claim or a good signature (the
+`cookie(cx` ban in `.drover/arch/pair.toml`). A paired caller sees `Paired with <host>` and the island in mode
+`enroll`.
+
 Before that, every request's `Host` (and its `Origin`, when sent) must be localhost, the `bind` address or one of
 `allowed_hosts`, or it gets 403, paired cookie or not. That blocks DNS rebinding. To reach cooee from the phone,
 keep `bind` on 127.0.0.1, run `tailscale serve --bg 4747`, and put the machine's Tailscale name in `allowed_hosts`.
@@ -48,6 +59,11 @@ Profiles › Keys, a new key with Apple Push Notifications service (APNs), downl
 lives only in `<data>/apns.p8` (mode 0600, a looser one tightened before use; never the keychain), and `[apns]`
 holds what isn't secret. Without either, nothing goes to APNs and `cooee doctor` warns; it never prints the key.
 
+Live Activity (#662): the hub ranks one activity, asks › failed › running with the rest as `+N`, and sends
+`apns-push-type: liveactivity` (topic `<topic>.push-type.liveactivity`) on a start, a state change, an ask or an end,
+and a new last line at most once per 15 s. A start goes to the push-to-start token, the rest to the update token;
+an end drops the update token and the island shows `replied` for 15 minutes.
+
 ## API
 
 ### Alerts, devices, reports
@@ -61,6 +77,8 @@ holds what isn't secret. Without either, nothing goes to APNs and `cooee doctor`
 | `POST /push/test` | `{}` | text |
 | `POST /push/apns` | `{token, env?}`: a native device's APNs token (hex); `env` `sandbox` or `production`, default `[apns] env` | text; 400 for a token that isn't hex |
 | `DELETE /push/apns` | `{token}` | text |
+| `POST /push/activity` | `{token, activity?, env?}`: the Live Activity push-to-start token (no `activity`) or the running activity's update token | text; 400 for a token that isn't hex |
+| `GET /glance` | | `{at, asks, blocked, running}`, each row `{thread, title, persona, name, machine, line, since, lane}`: what the widgets show, as of `at` |
 | `GET /devices` | | `{id, label, created, used, me, by}[]`: `by`, the device that approved its request (empty if none) |
 | `POST /devices/remove` | `{id}` | text |
 | `POST /devices/pair` | `{}` | `{code, link, svg, host}`: a new code (dropping the open one), its link and the link as a QR code |

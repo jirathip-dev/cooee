@@ -1,7 +1,7 @@
 use std::{
     fs,
     path::PathBuf,
-    sync::{Arc, Mutex},
+    sync::{Arc, Mutex, OnceLock},
 };
 
 use cooee_core::{
@@ -11,7 +11,7 @@ use cooee_core::{
 use serde::Serialize;
 use serde_json::json;
 
-use super::{Hub, HubError, Live, Recipe, Upload, lock, now};
+use super::{Hub, HubError, Recipe, Upload, live::Live, lock, now};
 use crate::push::Note;
 
 /// A member's ask as its room shows it (#178): the member, its session (where the answer goes) and the card.
@@ -85,6 +85,19 @@ fn addresses_owner(text: &str) -> bool {
     mentions(text).any(|w| w == "you" || w == OWNER)
 }
 
+fn unheard(items: &[Item], heard: u64, persona: &str, names: &[Agent]) -> Vec<String> {
+    items
+        .iter()
+        .filter(|i| i.id > heard && i.speaker != persona)
+        .filter_map(|i| match &i.body {
+            Body::You { text, .. } | Body::Agent { text, .. } => {
+                Some(format!("[{}]: {text}", display(names, &i.speaker)))
+            }
+            _ => None,
+        })
+        .collect()
+}
+
 fn display(names: &[Agent], id: &str) -> String {
     match names.iter().find(|p| p.id == id) {
         _ if id == OWNER => "Owner".to_owned(),
@@ -107,6 +120,11 @@ pub(super) fn said(names: &[Agent], speaker: &str, last: String) -> String {
 
 fn refused(why: impl Into<String>) -> HubError {
     HubError::Refused(why.into())
+}
+
+#[derive(Default)]
+pub(super) struct State {
+    starter: OnceLock<Starter>,
 }
 
 impl Hub {
@@ -162,7 +180,7 @@ impl Hub {
 
     /// Sets how a member's session starts (once).
     pub fn set_starter(&self, starter: Starter) {
-        self.starter.set(starter).ok();
+        self.areas.rooms.starter.set(starter).ok();
     }
 
     /// A new room of `members` (persona ids, in room order), titled `title` (empty: their ids); once per
@@ -347,18 +365,7 @@ impl Hub {
             let others: Vec<String> = others.map(|m| name(&m.persona)).collect();
             let m = meta.members.iter_mut().find(|m| m.persona == persona);
             let m = m.ok_or_else(|| refused(format!("{persona} left")))?;
-            let new = chat
-                .items
-                .iter()
-                .filter(|i| i.id > m.heard && i.speaker != persona);
-            let lines: Vec<String> = new
-                .filter_map(|i| match &i.body {
-                    Body::You { text, .. } | Body::Agent { text, .. } => {
-                        Some(format!("[{}]: {text}", name(&i.speaker)))
-                    }
-                    _ => None,
-                })
-                .collect();
+            let lines = unheard(&chat.items, m.heard, &persona, &names);
             m.heard = last;
             let mut prompt = lines.join("\n\n");
             if m.session.is_empty() {
@@ -426,7 +433,12 @@ impl Hub {
         (prompt, random_id): (&str, &str),
         seat: impl FnOnce(&mut Recipe),
     ) -> Result<String, HubError> {
-        let starter = self.starter.get().ok_or_else(|| refused("no starter"))?;
+        let starter = self
+            .areas
+            .rooms
+            .starter
+            .get()
+            .ok_or_else(|| refused("no starter"))?;
         let (agent, folder, mut recipe) = starter(self, persona)?;
         seat(&mut recipe);
         let seated = self

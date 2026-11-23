@@ -1,0 +1,2 @@
+tools crates/cooee-server/src/mcp/tools crate::mcp::Own
+routes crates/cooee-server/src/routes/mcp

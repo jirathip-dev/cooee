@@ -124,6 +124,20 @@ fn check(root: &Value, s: &Value, v: &Value, at: &str, out: &mut Vec<String>) {
     for sub in list(s, "allOf") {
         check(root, sub, v, at, out);
     }
+    one_of_forms(root, s, v, at, out);
+    if s.get("not")
+        .is_some_and(|n| errors(root, n, v, at).is_empty())
+    {
+        out.push(format!("{at}: {} is not allowed", short(v)));
+    }
+    if let (Some(cond), Some(then)) = (s.get("if"), s.get("then"))
+        && errors(root, cond, v, at).is_empty()
+    {
+        check(root, then, v, at, out);
+    }
+}
+
+fn one_of_forms(root: &Value, s: &Value, v: &Value, at: &str, out: &mut Vec<String>) {
     let forms: Vec<&Value> = list(s, "anyOf").chain(list(s, "oneOf")).collect();
     let mut fit: Vec<&Value> = forms.iter().copied().filter(|f| fits(f, v)).collect();
     if fit.iter().any(|f| named(f)) {
@@ -143,16 +157,6 @@ fn check(root: &Value, s: &Value, v: &Value, at: &str, out: &mut Vec<String>) {
             ));
         }
         _ => {}
-    }
-    if s.get("not")
-        .is_some_and(|n| errors(root, n, v, at).is_empty())
-    {
-        out.push(format!("{at}: {} is not allowed", short(v)));
-    }
-    if let (Some(cond), Some(then)) = (s.get("if"), s.get("then"))
-        && errors(root, cond, v, at).is_empty()
-    {
-        check(root, then, v, at, out);
     }
 }
 

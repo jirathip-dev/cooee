@@ -161,16 +161,17 @@ public final class LayerImportsRule: SlopRule {
         "CooeeAPI": ["CooeeCore", "CryptoKit", "Foundation", "Network", "Security", "Synchronization"],
         "CooeeFeatures": ["ComposableArchitecture", "CooeeAPI", "CooeeCore", "Foundation"],
         "CooeeUI": [
-            "AppKit", "AVFoundation", "Blocks", "BlocksUI", "ComposableArchitecture", "CooeeCore", "CooeeFeatures",
-            "CoreImage", "ImageIO", "PhotosUI", "SwiftUI", "UIKit", "UniformTypeIdentifiers", "VisionKit", "WebKit",
+            "ActivityKit", "AppIntents", "AppKit", "AVFoundation", "Blocks", "BlocksUI", "ComposableArchitecture",
+            "CooeeCore", "CooeeFeatures", "CoreImage", "ImageIO", "PhotosUI", "SwiftUI", "UIKit", "UniformTypeIdentifiers",
+            "VisionKit", "WebKit",
         ],
         "CooeeApp": [
-            "AppKit", "AuthenticationServices", "AVFoundation", "ComposableArchitecture", "CooeeAPI", "CooeeCore",
-            "CooeeFeatures", "CooeeUI", "Foundation", "LocalAuthentication", "os", "Security", "ServiceManagement",
-            "Speech", "SwiftUI", "UIKit",
-            "UserNotifications",
+            "ActivityKit", "AppIntents", "AppKit", "AuthenticationServices", "AVFoundation", "ComposableArchitecture",
+            "CooeeAPI", "CooeeCore", "CooeeFeatures", "CooeeUI", "Foundation", "LocalAuthentication", "os", "Security",
+            "ServiceManagement", "Speech", "SwiftUI", "UIKit", "UserNotifications", "WidgetKit",
         ],
         "Cooee": ["AppIntents", "CooeeApp", "CooeeUI", "SwiftUI"],
+        "CooeeWidgets": ["ActivityKit", "CooeeCore", "CooeeUI", "SwiftUI", "WidgetKit"],
         "UITests": ["XCTest"],
     ]
 
@@ -186,7 +187,8 @@ public final class LayerImportsRule: SlopRule {
 
     public override func visitPost(_ node: SourceFileSyntax) {
         guard Self.module(of: fileName) == nil else { return }
-        report(node, message: "This file is in no cooee layer (Sources/<module>, Tests/<module>Tests, Cooee, UITests).")
+        report(
+            node, message: "This file is in no cooee layer (Sources/<module>, Tests/<module>Tests, Cooee, CooeeWidgets, UITests).")
     }
 
     public override func visitPost(_ node: ImportDeclSyntax) {
@@ -212,7 +214,7 @@ public final class LayerImportsRule: SlopRule {
             if part == "Sources" || part == "Tests" {
                 return index + 2 < parts.count ? parts[index + 1] : nil
             }
-            if part == "Cooee" || part == "UITests" { return part }
+            if part == "Cooee" || part == "CooeeWidgets" || part == "UITests" { return part }
         }
         return nil
     }

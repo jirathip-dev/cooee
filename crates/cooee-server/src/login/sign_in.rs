@@ -1,41 +1,32 @@
-use std::{
-    collections::BTreeMap,
-    path::{Path, PathBuf},
-    sync::Arc,
-    thread,
-};
+use std::{sync::Arc, thread};
 
 use cooee_core::{
-    Provider, Status, links, redact,
-    shed_proto::{RunParams, WaitOutcome},
+    links,
+    shed_proto::{Account, AccountAdd, AccountState, WaitOutcome},
 };
 use serde::Serialize;
 
-use super::{
-    Logins,
-    checks::Check,
-    logins::{LABEL, Login},
-};
-use crate::hub::{HubError, lock, now};
+use super::{Logins, logins::Login};
+use crate::hub::{HubError, lock};
 
-/// How long a login terminal may run, in seconds.
+/// How long a login terminal may run, in seconds (shed ends it then).
 pub const LOGIN_TIMEOUT: f64 = 600.0;
+
+const DEFAULT: &str = "default";
 
 /// A provider's login as the page sees it.
 #[derive(Debug, Serialize)]
 pub struct View {
     /// `running`, `ended` (`why` says how) or `none`.
     pub state: &'static str,
-    /// The terminal's screen, redacted, while it runs.
+    /// The terminal's screen, as shed redacts it, while it runs.
     pub screen: String,
     /// The links on the screen.
     pub links: Vec<String>,
     /// How the last login ended.
     pub why: Option<String>,
-    /// The status of the account it was for (else the system default), as last checked, once no login runs.
-    pub status: Option<Status>,
-    /// How long ago that status was checked, in seconds; none before its first check.
-    pub age: Option<u64>,
+    /// The account it was for, as `account.status` read it once the login ended.
+    pub account: Option<Account>,
 }
 
 impl Logins {
@@ -46,69 +37,28 @@ impl Logins {
         }
     }
 
-    /// Starts provider `name`'s login command in a new shed terminal (a running one is kept): for account
-    /// `account` (none: the system default), or with `new` in a new account's folder; on `machine` (#150; none:
-    /// this host), where its tokens stay.
-    ///
-    /// # Errors
-    /// [`HubError::Refused`] for an unknown provider or account, or `new` for a provider without a config
-    /// variable or on another machine; [`HubError::Shed`] when the terminal can't start.
+    /// # Errors [`HubError::Refused`] for an unknown provider; [`HubError::Shed`] when shed refuses the account or login.
     pub fn start(
         self: &Arc<Self>,
         name: &str,
-        (account, new): (Option<&str>, bool),
-        machine: Option<String>,
+        account: Option<&str>,
+        new: bool,
     ) -> Result<(), HubError> {
-        let provider = self.provider(name)?;
+        self.provider(name)?;
         let mut live = lock(&self.live);
-        if matches!(live.get(name), Some(Login::Running(_))) {
+        if matches!(live.get(name), Some(Login::Running(..))) {
             return Ok(());
         }
-        if new && machine.is_some() {
-            return Err(HubError::Refused(
-                "a new account signs in on this host".to_owned(),
-            ));
-        }
-        let (account, home) = if new {
-            if provider.spec().home.is_empty() {
-                return Err(HubError::Refused(format!(
-                    "{name} has only its system default account"
-                )));
-            }
-            let (account, dir) = self
-                .accounts
-                .pending(name)
-                .map_err(|e| HubError::Refused(e.to_string()))?;
-            (account, Some(dir))
-        } else {
-            let a = self.account(name, account.unwrap_or_default())?;
-            (a.name, a.dir)
+        let account = match account.filter(|a| !a.is_empty()) {
+            _ if new => self.add(name)?,
+            Some(a) => a.to_owned(),
+            None => DEFAULT.to_owned(),
         };
-        let run = RunParams {
-            name: Some(format!("{LABEL}-{name}-{:x}", now())),
-            labels: BTreeMap::from([(LABEL.to_owned(), "1".to_owned())]),
-            cwd: cooee_core::env_var("HOME")
-                .filter(|_| machine.is_none())
-                .map_or_else(|| PathBuf::from("/"), PathBuf::from),
-            keep: false,
-            idle_after: None,
-            cmd: provider.with_home(&provider.spec().login, home.as_deref()),
-            acp: None,
-            policy: None,
-            resume: None,
-            mcp_servers: Vec::new(),
-            meta: None,
-            no_hibernate: false,
-            machine: machine.clone(),
-            parent: None,
-            rows: None,
-            cols: None,
-        };
-        let terminal = match self.shed.run(&run) {
-            Ok(t) => t.name,
+        let terminal = match self.shed.account_login(name, &account) {
+            Ok(t) => t,
             Err(e) => {
                 if new {
-                    self.accounts.drop_pending(name, &account);
+                    self.shed.account_rm(name, &account).ok();
                 }
                 return Err(e.into());
             }
@@ -117,111 +67,78 @@ impl Logins {
         live.insert(name.to_owned(), Login::Running(terminal.clone()));
         let logins = Arc::clone(self);
         let name = name.to_owned();
-        thread::spawn(move || match machine {
-            Some(m) => logins.reap_on(&m, &name, &terminal, &account),
-            None => logins.reap(&name, &terminal, &account, new, home.as_deref()),
-        });
+        thread::spawn(move || logins.reap(&name, &terminal, &account, new));
         Ok(())
     }
 
-    fn ended(&self, terminal: &str) -> (bool, String) {
-        let ended = match self.shed.exited(terminal, LOGIN_TIMEOUT) {
-            Ok(r) if r.outcome == WaitOutcome::Timeout => {
-                (false, "timed out after 10 minutes".to_owned())
-            }
+    fn add(&self, name: &str) -> Result<String, HubError> {
+        let taken: Vec<String> = (self.shed.accounts(Some(name))?.into_iter())
+            .map(|a| a.name)
+            .collect();
+        let account = (2..=u16::MAX)
+            .map(|i| format!("account-{i}"))
+            .find(|n| !taken.contains(n))
+            .ok_or_else(|| HubError::Refused("no free account name".to_owned()))?;
+        self.shed.account_add(&AccountAdd {
+            provider: name.to_owned(),
+            name: account.clone(),
+            ..AccountAdd::default()
+        })?;
+        Ok(account)
+    }
+
+    fn reap(&self, name: &str, terminal: &str, account: &str, new: bool) {
+        let ended = match self.shed.exited(terminal, LOGIN_TIMEOUT + 30.0) {
+            Ok(r) if r.outcome == WaitOutcome::Timeout => "timed out after 10 minutes".to_owned(),
             Ok(r) => match r.terminal.exit {
-                Some(0) => (true, "the login command finished".to_owned()),
-                Some(code) => (false, format!("the login command exited {code}")),
-                None => (false, "the login command ended".to_owned()),
+                Some(0) => "the login command finished".to_owned(),
+                Some(code) => format!("the login command exited {code}"),
+                None => "the login command ended".to_owned(),
             },
-            Err(e) => (false, e.to_string()),
+            Err(e) => e.to_string(),
         };
-        if let Err(e) = self.shed.close(terminal) {
-            cooee_core::note!("cooee: {terminal}: {e}");
-        }
-        ended
-    }
-
-    fn reap_on(&self, machine: &str, name: &str, terminal: &str, account: &str) {
-        let (_, why) = self.ended(terminal);
-        let mut live = lock(&self.live);
-        if matches!(live.get(name), Some(Login::Running(t)) if t == terminal) {
-            let why = format!("{why} on {machine}");
-            live.insert(name.to_owned(), Login::Ended(why, account.to_owned()));
-        }
-    }
-
-    fn reap(&self, name: &str, terminal: &str, account: &str, new: bool, home: Option<&Path>) {
-        let (ok, mut why) = self.ended(terminal);
-        let status = self.provider(name).ok().map(|p| p.check(home));
-        let signed_in = ok && status.as_ref().is_some_and(|s| s.signed_in);
-        let noted = match (signed_in, new) {
-            (true, true) => self.accounts.adopt(name, account, now()),
-            (true, false) => self.accounts.signed_in(name, account, now()),
-            (false, true) => {
-                self.accounts.drop_pending(name, account);
-                Ok(())
+        self.shed.close(terminal).ok();
+        let status = self.shed.account_status(name, account);
+        let ready = matches!(&status, Ok(a) if a.state != AccountState::SignedOut);
+        let why = match &status {
+            Err(e) => format!("{account}: {e}"),
+            Ok(a) if !ready && ended == "the login command finished" => {
+                format!("{ended}, but the account isn't signed in: {}", a.line)
             }
-            (false, false) => Ok(()),
+            Ok(_) => ended,
         };
-        if let Err(e) = noted {
-            why = format!("{account}: {e}");
-        } else if ok && !signed_in {
-            "the login command finished, but the account isn't signed in".clone_into(&mut why);
-        }
-        let moved =
-            |p: &Arc<dyn Provider>| Some(p.check(self.accounts.get(name, account)?.dir.as_deref()));
-        let status = if new && signed_in {
-            self.provider(name).ok().and_then(moved)
-        } else {
-            status.filter(|_| !new)
-        };
-        if let Some(status) = status {
-            let key = (name.to_owned(), account.to_owned());
-            lock(&self.checks)
-                .entry(key)
-                .or_default()
-                .settle(status, now());
+        if new && !ready {
+            self.shed.account_rm(name, account).ok();
         }
         let mut live = lock(&self.live);
         if matches!(live.get(name), Some(Login::Running(t)) if t == terminal) {
-            let account = if new && !signed_in { "" } else { account };
-            live.insert(name.to_owned(), Login::Ended(why, account.to_owned()));
+            let account = status.ok().filter(|_| ready || !new).map(Box::new);
+            live.insert(name.to_owned(), Login::Ended(why, account));
         }
     }
 
-    /// Provider `name`'s login: its screen while it runs, else how it ended and its account's status.
-    ///
-    /// # Errors
-    /// [`HubError::Refused`] for an unknown provider.
+    /// # Errors [`HubError::Refused`] for an unknown provider.
     pub fn view(&self, name: &str) -> Result<View, HubError> {
-        let provider = self.provider(name)?;
+        self.provider(name)?;
         if let Some(screen) = self.running(name).and_then(|t| self.shed.screen(&t).ok()) {
-            let screen = redact(&screen);
             return Ok(View {
                 state: "running",
                 links: links(&screen),
                 screen,
                 why: None,
-                status: None,
-                age: None,
+                account: None,
             });
         }
         let (why, account) = match lock(&self.live).get(name) {
-            Some(Login::Ended(why, account)) => (Some(why.clone()), account.clone()),
-            _ => (None, String::new()),
+            Some(Login::Ended(why, account)) => (Some(why.clone()), account.as_deref().cloned()),
+            _ => (None, None),
         };
-        let key = (provider.spec().name.clone(), account);
-        let (status, age) = lock(&self.checks)
-            .get(&key)
-            .map_or_else(|| Check::default().known(now()), |c| c.known(now()));
         Ok(View {
             state: if why.is_some() { "ended" } else { "none" },
             screen: String::new(),
             links: Vec::new(),
             why,
-            status: Some(status),
-            age,
+            account,
         })
     }
 
@@ -245,8 +162,28 @@ impl Logins {
             return Ok(());
         };
         self.shed.close(&terminal)?;
-        let why = Login::Ended("cancelled".to_owned(), String::new());
+        let why = Login::Ended("cancelled".to_owned(), None);
         lock(&self.live).insert(name.to_owned(), why);
         Ok(())
+    }
+
+    /// # Errors [`HubError::Refused`] for an unknown provider; [`HubError::Shed`] when shed refuses `account.rm`.
+    pub fn sign_out(&self, name: &str, account: &str) -> Result<(), HubError> {
+        self.provider(name)?;
+        Ok(self.shed.account_rm(name, account)?)
+    }
+
+    /// Reads every account's status again (the sign-ins card opened), in the background.
+    pub fn ask(self: &Arc<Self>) {
+        let logins = Arc::clone(self);
+        thread::spawn(move || {
+            for s in logins.sheets() {
+                for a in s.accounts {
+                    if let Err(e) = logins.shed.account_status(&a.provider, &a.name) {
+                        cooee_core::note!("cooee: account.status {}/{}: {e}", a.provider, a.name);
+                    }
+                }
+            }
+        });
     }
 }

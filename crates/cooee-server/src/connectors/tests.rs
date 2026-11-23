@@ -227,19 +227,20 @@ fn signs_in_with_pkce_refreshes_before_expiry_and_signs_out_with_a_revoke() {
             .unwrap()
             .contains("acc-1")
     );
+    refreshes_only_near_expiry(&c, &s, &fake);
+    signs_out_with_a_revoke(&data, &c, &s, &fake);
+}
 
+fn refreshes_only_near_expiry(c: &Connectors, s: &Server, fake: &Mutex<Fake>) {
     let bearer = |n: &str| ("Authorization".to_owned(), format!("Bearer acc-{n}"));
-    assert_eq!(
-        c.credential(&s, "main", T0 + HOUR / 2).unwrap(),
-        bearer("1")
-    );
+    assert_eq!(c.credential(s, "main", T0 + HOUR / 2).unwrap(), bearer("1"));
     assert_eq!(
         fake.lock().unwrap().tokens.len(),
         1,
         "no refresh while fresh"
     );
     assert_eq!(
-        c.credential(&s, "main", T0 + HOUR - 30_000).unwrap(),
+        c.credential(s, "main", T0 + HOUR - 30_000).unwrap(),
         bearer("2")
     );
     let last = fake.lock().unwrap().tokens.last().cloned().unwrap();
@@ -248,22 +249,24 @@ fn signs_in_with_pkce_refreshes_before_expiry_and_signs_out_with_a_revoke() {
         ("refresh_token", "ref-1")
     );
     assert_eq!(
-        c.credential(&s, "main", T0 + HOUR).unwrap(),
+        c.credential(s, "main", T0 + HOUR).unwrap(),
         bearer("2"),
         "the new token holds"
     );
+}
 
+fn signs_out_with_a_revoke(data: &Path, c: &Connectors, s: &Server, fake: &Mutex<Fake>) {
     let said = c.signout("acme", "main").unwrap();
     assert!(said.contains("revoked"), "{said}");
     assert_eq!(fake.lock().unwrap().revoked, ["ref-2"]);
-    assert!(!at(&data, "connector.acme.main").exists());
+    assert!(!at(data, "connector.acme.main").exists());
     assert!(
         !fs::read_to_string(data.join("connectors.json"))
             .unwrap()
             .contains("acme")
     );
     assert!(
-        c.credential(&s, "main", T0)
+        c.credential(s, "main", T0)
             .unwrap_err()
             .contains("needs sign-in")
     );
@@ -442,11 +445,36 @@ fn call_builtin(
     )
 }
 
+fn refuses_every_write(name: &str, b: cooee_core::connectors::Builtin, url: &str) {
+    use super::calls;
+    let s = Server {
+        name: name.to_owned(),
+        kind: "stdio".to_owned(),
+        catalogue: true,
+        enabled: true,
+        ..Server::default()
+    };
+    for write in [
+        "send_mail",
+        "create_event",
+        "delete_event",
+        "trash_mail",
+        "modify",
+    ] {
+        assert!(
+            matches!(calls::decide(&s, write), calls::Decision::Deny),
+            "{write}"
+        );
+        let (said, failed) = call_builtin(b, url, write, &json!({}));
+        assert!(failed && said.contains("reads only"), "{said}");
+    }
+}
+
 #[test]
 fn a_builtin_offers_only_its_reviewed_read_tools_and_no_write_is_sent() {
     use cooee_core::connectors::{Auth, Builtin, HttpsUrl, Target, entry};
 
-    use super::{builtin::answer, calls};
+    use super::builtin::answer;
     let (base, seen) = fake_google();
     for (name, b, api) in [
         ("gmail", Builtin::Gmail, "gmail"),
@@ -469,27 +497,7 @@ fn a_builtin_offers_only_its_reviewed_read_tools_and_no_write_is_sent() {
             listed, e.tools.read,
             "{name}: the code offers what the entry reviewed"
         );
-        let s = Server {
-            name: name.to_owned(),
-            kind: "stdio".to_owned(),
-            catalogue: true,
-            enabled: true,
-            ..Server::default()
-        };
-        for write in [
-            "send_mail",
-            "create_event",
-            "delete_event",
-            "trash_mail",
-            "modify",
-        ] {
-            assert!(
-                matches!(calls::decide(&s, write), calls::Decision::Deny),
-                "{write}"
-            );
-            let (said, failed) = call_builtin(b, url.as_str(), write, &json!({}));
-            assert!(failed && said.contains("reads only"), "{said}");
-        }
+        refuses_every_write(name, b, url.as_str());
     }
     assert!(
         seen.lock().unwrap().is_empty(),
@@ -510,14 +518,11 @@ fn a_builtin_offers_only_its_reviewed_read_tools_and_no_write_is_sent() {
     );
 }
 
-#[test]
-fn a_builtin_result_keeps_its_size_caps() {
+fn gmail_results_keep_their_caps(gmail: &str) {
     use cooee_core::connectors::Builtin;
-    let (base, seen) = fake_google();
-    let (gmail, calendar) = (format!("{base}/gmail/"), format!("{base}/cal/"));
     let (found, _) = call_builtin(
         Builtin::Gmail,
-        &gmail,
+        gmail,
         "search_mail",
         &json!({ "query": "from:a", "limit": 1000 }),
     );
@@ -525,13 +530,21 @@ fn a_builtin_result_keeps_its_size_caps() {
         found.starts_with("m1 · ") && found.contains("Hello") && !found.contains(&"y".repeat(301)),
         "{found}"
     );
-    let (mail, failed) = call_builtin(Builtin::Gmail, &gmail, "read_mail", &json!({ "id": "m1" }));
+    let (mail, failed) = call_builtin(Builtin::Gmail, gmail, "read_mail", &json!({ "id": "m1" }));
     assert!(!failed && mail.contains("Subject: Big"));
     assert!(
         mail.contains(&"x".repeat(8_000))
             && !mail.contains(&"x".repeat(8_001))
             && mail.ends_with("(cut at 8000 characters)")
     );
+}
+
+#[test]
+fn a_builtin_result_keeps_its_size_caps() {
+    use cooee_core::connectors::Builtin;
+    let (base, seen) = fake_google();
+    gmail_results_keep_their_caps(&format!("{base}/gmail/"));
+    let calendar = format!("{base}/cal/");
     let (calendars, _) = call_builtin(
         Builtin::GoogleCalendar,
         &calendar,

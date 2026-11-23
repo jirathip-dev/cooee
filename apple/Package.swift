@@ -15,7 +15,7 @@ let package = Package(
     ],
     dependencies: [
         .package(url: "https://github.com/pointfreeco/swift-composable-architecture", exact: "1.26.2"),
-        .package(url: "https://github.com/jirathip-dev/blocks", exact: "2.0.0"),
+        .package(url: "https://github.com/jirathip-dev/blocks", revision: "ec4563f81c095b85edbedb9a459f0ba322cd29c4"),
     ],
     targets: [
         .target(

@@ -16,22 +16,12 @@ use topcoat::{
 };
 
 use crate::{
-    Note,
-    http::{Paired, header, hub, now, plain},
+    http::{Paired, header, now, plain},
     pairing::{
-        Assertion, CHALLENGE_TTL, assert, b64, ceremony, cookie, host, pairing, rp_id, spki_point,
-        store,
+        Assertion, CHALLENGE_TTL, Tried, ask, assert, b64, ceremony, collect, cookie, host,
+        pairing, rp_id, sign_in, spki_point, store, try_code,
     },
 };
-
-const TRIES: usize = 5;
-
-fn client(cx: &Cx) -> String {
-    header(cx, "x-forwarded-for")
-        .and_then(|f| f.rsplit(',').next())
-        .map_or("local", str::trim)
-        .to_owned()
-}
 
 fn see_other(to: &str, cookie: Option<String>) -> Result<Response> {
     let mut r = Response::builder().status(303).header("Location", to);
@@ -62,68 +52,17 @@ async fn pair(cx: &Cx, Form(f): Form<PairForm>) -> Result<Response> {
         .iter()
         .flat_map(|d| d.chars().filter(char::is_ascii_digit))
         .collect();
-    let (who, t) = (client(cx), now());
-    let limited = {
-        let mut misses = pairing(cx)
-            .misses
-            .lock()
-            .unwrap_or_else(PoisonError::into_inner);
-        misses.retain(|_, m| {
-            m.retain(|at| at + 60_000 > t);
-            !m.is_empty()
-        });
-        let mine = misses.get(&who).map_or(&[][..], Vec::as_slice);
-        (mine.len() >= TRIES)
-            .then(|| {
-                mine.first()
-                    .map(|first| (first + 60_000 - t).div_ceil(1000))
-            })
-            .flatten()
-    };
-    if let Some(wait) = limited {
-        return see_other(&format!("/pair?bad=limit&wait={wait}"), None);
+    match try_code(cx, &code).await? {
+        Tried::Paired(token) => see_other("/?paired", Some(cookie(cx, &token))),
+        Tried::Expired => see_other(&format!("/pair?bad=expired&code={code}"), None),
+        Tried::Wrong { left } => see_other(&format!("/pair?bad=wrong&left={left}"), None),
+        Tried::Limited { wait } => see_other(&format!("/pair?bad=limit&wait={wait}"), None),
     }
-    let agent = header(cx, "user-agent").unwrap_or_default().to_owned();
-    let tried = code.clone();
-    let (claimed, open) = store(cx, move |d| {
-        let open = d.code_open(t)?;
-        Ok((d.claim(&tried, &agent, t)?, open))
-    })
-    .await?;
-    if let Some(token) = claimed {
-        return see_other("/?paired", Some(cookie(cx, &token)));
-    }
-    if !open {
-        return see_other(&format!("/pair?bad=expired&code={code}"), None);
-    }
-    let left = {
-        let mut misses = pairing(cx)
-            .misses
-            .lock()
-            .unwrap_or_else(PoisonError::into_inner);
-        let mine = misses.entry(who).or_default();
-        mine.push(t);
-        TRIES.saturating_sub(mine.len())
-    };
-    if left == 0 {
-        return see_other("/pair?bad=limit&wait=60", None);
-    }
-    see_other(&format!("/pair?bad=wrong&left={left}"), None)
 }
 
 #[route(POST "/pair/request")]
 async fn pair_request(cx: &Cx) -> Result<Response> {
-    let agent = header(cx, "user-agent").unwrap_or_default().to_owned();
-    let label = cooee_core::label(&agent);
-    let (word, claim) = store(cx, move |d| d.ask(&agent, now())).await?;
-    hub(cx).push().send(&Note {
-        title: "Pair a new device?".to_owned(),
-        body: format!("{label} · check word {word}"),
-        tag: "pair".to_owned(),
-        url: "/".to_owned(),
-        item: 0,
-        say: false,
-    });
+    let (word, claim) = ask(cx).await?;
     Json(serde_json::json!({ "word": word, "claim": claim })).into_response(cx)
 }
 
@@ -134,7 +73,7 @@ struct ClaimBody {
 
 #[route(POST "/pair/claim")]
 async fn pair_claim(cx: &Cx, Json(c): Json<ClaimBody>) -> Result<Response> {
-    match store(cx, move |d| d.collect(&c.claim, now())).await? {
+    match collect(cx, c.claim).await? {
         Claim::Paired(token) => Ok(Response::builder()
             .header("Set-Cookie", cookie(cx, &token))
             .body(Body::from(()))?),
@@ -278,12 +217,10 @@ async fn passkey_remove(cx: &Cx, Json(p): Json<PasskeyId>) -> Result<Response> {
 
 #[route(POST "/passkey/signin")]
 async fn passkey_signin(cx: &Cx, Json(a): Json<Assertion>) -> Result<Response> {
-    let id = a.id.clone();
-    if let Err(why) = assert(cx, a).await? {
-        return plain(403, why);
-    }
-    let agent = header(cx, "user-agent").unwrap_or_default().to_owned();
-    let token = store(cx, move |d| d.restore(&agent, &id, now())).await?;
+    let token = match sign_in(cx, a).await? {
+        Ok(token) => token,
+        Err(why) => return plain(403, why),
+    };
     Ok(Response::builder()
         .header("Set-Cookie", cookie(cx, &token))
         .body(Body::from(()))?)

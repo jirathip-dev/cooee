@@ -1,6 +1,7 @@
 # Native parity audit: herdsman#553 against the iOS app (#366)
 
-Audited at `cdc9794b` (staging), with the drover plugin at the herdsman commit `plugins/index.toml` pins (`3ebaf6c`).
+Audited at `cdc9794b` (staging), with the drover plugin at the herdsman commit `plugins/index.toml` pins (`3ebaf6c`);
+rows 59, 75, 77, 81, 83 and 84 re-checked at drover `8210cea` (#380).
 The web client does not count (it goes away under #189); the owner's phone pass runs on the TestFlight build (q1628).
 
 **done**: the app does it; **partial**: some of it; **missing**: none of it; **n/a-web**: only a web client needs it,
@@ -91,7 +92,7 @@ Served by herdsman as the conductor's Queue header-strip screen (`screens.rs` `q
 | 56 | Summary view, full-conversation toggle | | missing | — | no toggle | #242 | Switch the persona to Chat style: final replies only, a tap shows every turn |
 | 57 | Reply box to a lane | | done | composer → `/threads/{id}`; hub routes to the Workflow terminal | — | — | Send a reply: it shows in the lane's transcript |
 | 58 | "/" command menu | | missing | `Composer.swift` | no menu | #254 | Type "/": the menu lists commands |
-| 59 | Stop, Kill with dry-run confirm, Clean with reasons | ● | partial | `WorkingPill` Stop; Queue live row long-press Stop | no Kill, no Clean | #380 | Long-press a lane, Kill: the confirm shows the unpushed/dirty line |
+| 59 | Stop, Kill with dry-run confirm, Clean with reasons | ● | done | `WorkingPill` Stop; lane sheet Kill/Clean run the dry run, its confirm shows the unpushed/dirty line or the clean reasons (drover#1378) | — | #380 | Long-press a lane, Kill: the confirm shows the unpushed/dirty line |
 | 60 | Lane figures animated by state | | partial | figure: scene sprite / ascii glyph / tone dot | not animated; herdsman sends no `coat` | #246 | A working lane's figure animates |
 | 61 | Herd scene: ranch, state bands, gate | | partial | `PinnedRow` `scene-strip` | no per-repo ranch, bands or gate | #181 | Scene: one figure per lane in its band |
 | 62 | Weather, day/night, repo switching | | done | `LaneStage` `Sky`: the scene block's `load` → clear/cloudy/storm, night 19–07 or [☾] (`Settings.night`), › taps its `next` | — (the plugin sends `load` and `next`; no swipe) | #382 | Tap [☾]: night; tap ›: next repo |
@@ -121,16 +122,16 @@ Built by herdsman at `GET /screens/cards` (`screens.rs` `chat_cards`), never del
 | 72 | Host cards: gauges, dots, top memory | ● | missing | `crates/cooee-machines` web tab only; Menu `.machines` empty | no native Machines screen | #239 | Settings › Machines: the main host's card is first |
 | 73 | 24 h sparklines, 1h/6h/24h chart | | missing | cooee-machines `html.rs` only | no native charts | #239 | Tap the memory sparkline: the chart opens |
 | 74 | Host health and services | | missing | — | no services, logins, version, drift | #239 | Log gh out on a host: its row turns red |
-| 75 | Turn a host on or off | ● | missing | — | nowhere in the app | #380 | Drover › Hosts, [off], confirm: it reads off |
+| 75 | Turn a host on or off | ● | done | drover Hosts sheet [on]/[off], confirmed (drover menu › Hosts) | — | #380 | Drover › Hosts, [off], confirm: it reads off |
 | 76 | Host tags; cloud spend and budget | | missing | — | none | #239, #383 | A cloud host's card shows this month's spend |
-| 77 | Fleet disk, orphans, leftovers, [reap] | | missing | — | none | #380 | Tap [reap]: "reaped N leftover process(es)" |
+| 77 | Fleet disk, orphans, leftovers, [reap] | | done | Hosts sheet `fleet disk`: worktrees against the budget, [Remove N] orphans, [reap] (drover#1378) | — | #380 | Tap [reap]: "reaped N leftover process(es)" |
 | 78 | Provider accounts: 5h/7d meters, caps, balance | | missing | Menu `.signIns` empty | no native Sign-ins screen | #239 | Settings › Sign-ins: each account's 5h % |
 | 79 | Provider sign-in, add key, [use] | | missing | Menu `.signIns` empty | none | #239 | Tap sign in: the login streams to the phone |
 | 80 | Fleets: per-repo config, pipeline graph | | partial | `/screens/fleets` form (Queue › More › Fleets…) | no pipeline graph; the "drover" menu row isn't drawn | #213 | Open a fleet: grouped settings and its stage graph |
-| 81 | Role model/effort pickers | | partial | Fleets impl/rev pickers from herdsman's models | no effort, two roles only | #380 | Pick review effort high: the next review lane uses it |
+| 81 | Role model/effort pickers | | done | Fleets: every configured role gets a model picker from the live list and an effort picker (drover#1378) | — | #380 | Pick review effort high: the next review lane uses it |
 | 82 | Conductor role and new-thread chat defaults | | partial | `PersonaSheet` Agent/Model/Effort as text fields | no live lists; no chat defaults | #230 | Conductor persona: pick a model from the list: it saves |
-| 83 | Activity: time groups, glyphs, [important], older | | partial | `/screens/events`: kind chips, figures, 24 h, stream | `tap.open` ignored; no [important], one group | #378, #380 | Events, tap [important]: noise rows hide |
-| 84 | Notifiers and Telegram status | | missing | Notifications page shows cooee push only | none | #380 | Drover › Notifications: "telegram on · polled 1m ago" |
+| 83 | Activity: time groups, glyphs, [important], older | | partial | `/screens/events`: kind chips, figures, hour/today/yesterday/earlier groups, [important], paging, stream (drover#1378) | `tap.open` ignored | #378 | Events, tap [important]: noise rows hide |
+| 84 | Notifiers and Telegram status | | done | drover › Notifications (`/screens/notify`): each notifier, kind, events; Telegram reads off (no bridge since drover#557) (drover#1378) | — | #380 | Drover › Notifications: each notifier listed, "telegram off" |
 | 85 | Real config load errors shown plainly | ● | done | Queue `text` block `id: error` | — | — | Break fleet.toml: Queue shows the real error |
 
 ## drop? (rows 86–90)
@@ -145,7 +146,7 @@ Built by herdsman at `GET /screens/cards` (`screens.rs` `chat_cards`), never del
 
 ## Reliability (R1–R27, cooee's part)
 
-Server tests are in `crates/cooee/tests/reliability.rs` unless named otherwise. Phone checks are the native app on TestFlight.
+Server tests are in `crates/cooee/tests/reliability/` unless named otherwise. Phone checks are the native app on TestFlight.
 
 | R | state | where | gap | issue | phone check |
 |---|---|---|---|---|---|
@@ -179,6 +180,6 @@ Server tests are in `crates/cooee/tests/reliability.rs` unless named otherwise. 
 
 ## Totals and filed issues
 
-Rows 1–85 and run cards: 17 done, 37 partial, 29 missing, 3 n/a-web; 86–90 dropped. Reliability: 14 done, 8 partial,
-5 n/a-shed. Of the 28 gate rows, 10 are done (15, 18, 19, 30, 32, 33, 35, 42, 43, 85); the biggest blocker is #377.
+Rows 1–85 and run cards: 23 done, 35 partial, 25 missing, 3 n/a-web; 86–90 dropped. Reliability: 14 done, 8 partial,
+5 n/a-shed. Of the 28 gate rows, 12 are done (15, 18, 19, 30, 32, 33, 35, 42, 43, 59, 75, 85); the biggest blocker is #377.
 Filed by this audit: #369–#386.

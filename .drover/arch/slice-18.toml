@@ -1,0 +1,7 @@
+[[size]]
+paths = ["apple/Sources/**/*.swift"]
+max_file_lines = 300
+
+[[collect]]
+dir = "apple/Sources/CooeeUI"
+glob = "*/*.swift"

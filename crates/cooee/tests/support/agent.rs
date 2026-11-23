@@ -76,12 +76,6 @@ impl FakeShed {
         prompt: &str,
         rx: &Receiver<Input>,
     ) -> Option<(Vec<EventKind>, &'static str)> {
-        let delay = Duration::from_millis(
-            env::var("FAKE_SHED_DELAY_MS")
-                .ok()
-                .and_then(|v| v.parse().ok())
-                .unwrap_or(0),
-        );
         let topic = prompt.strip_prefix("This topic: ");
         let prompt = topic
             .and_then(|t| t.split_once(").\n\n"))
@@ -101,58 +95,19 @@ impl FakeShed {
             let said = "Questions for you:\n1. **HTML or SwiftUI?**\n\n**Call voice:** the iOS target building.";
             (vec![reply(said, "end_turn")], "end_turn")
         } else if prompt.contains("commands") {
-            let mut events = vec![plan("Run the checks", "in_progress")];
-            for (id, title) in [
-                ("k1", "$ cargo fmt"),
-                ("k2", "$ cargo clippy"),
-                ("k3", "$ cargo test"),
-            ] {
-                events.extend([tool(id, title, "in_progress"), tool(id, title, "completed")]);
-            }
-            events.push(reply("Ran 3 commands.", "end_turn"));
-            (events, "end_turn")
+            three_commands()
         } else if prompt.contains("tool") {
-            let events = [
-                read_file("pending", &["src/lib.rs"]),
-                read_file("in_progress", &[]),
-                read_file("completed", &[]),
-                text("Read "),
-                text("it."),
-                reply("Read it.", "end_turn"),
-            ];
-            (events.to_vec(), "end_turn")
+            a_file_read()
         } else if prompt.contains("plan") {
-            let entry = |c: &str, s: &str| json!({ "content": c, "priority": "high", "status": s });
-            let entries = vec![
-                entry("Read the code", "completed"),
-                entry("Fix the bug", "in_progress"),
-            ];
-            let events = vec![EventKind::Plan { entries }, reply("Planned.", "end_turn")];
-            (events, "end_turn")
+            a_plan()
         } else if prompt.contains("hang") {
-            self.emit(name, tool("c3", "cargo test", "in_progress"));
-            self.emit(name, text("w0 "));
-            while rx.recv().is_ok_and(|i| i != Input::Cancel) {}
-            (vec![reply("w0 ", "cancelled")], "cancelled")
+            self.hang(name, rx)
         } else if let Some(n) = prompt
             .rsplit("\n\n")
             .next()
             .and_then(|m| m.strip_prefix("slow "))
         {
-            let n: usize = n.trim().parse().unwrap();
-            let mut stop = "end_turn";
-            for i in 0..n {
-                thread::sleep(delay);
-                if rx.try_recv() == Ok(Input::Cancel) {
-                    stop = "cancelled";
-                    break;
-                }
-                self.emit(name, text(&format!("w{i} ")));
-            }
-            if stop == "end_turn" {
-                while rx.recv().is_ok_and(|i| i != Input::Cancel) {}
-            }
-            (vec![reply(&format!("streamed {n} words"), stop)], stop)
+            self.slow(name, n, rx)
         } else if prompt.contains("wait for a note") {
             let note = loop {
                 match rx.recv() {
@@ -175,6 +130,36 @@ impl FakeShed {
             let events = vec![text("Hel"), text("lo"), reply("Hello", "end_turn")];
             (events, "end_turn")
         })
+    }
+
+    fn hang(&self, name: &str, rx: &Receiver<Input>) -> (Vec<EventKind>, &'static str) {
+        self.emit(name, tool("c3", "cargo test", "in_progress"));
+        self.emit(name, text("w0 "));
+        while rx.recv().is_ok_and(|i| i != Input::Cancel) {}
+        (vec![reply("w0 ", "cancelled")], "cancelled")
+    }
+
+    fn slow(&self, name: &str, n: &str, rx: &Receiver<Input>) -> (Vec<EventKind>, &'static str) {
+        let delay = Duration::from_millis(
+            env::var("FAKE_SHED_DELAY_MS")
+                .ok()
+                .and_then(|v| v.parse().ok())
+                .unwrap_or(0),
+        );
+        let n: usize = n.trim().parse().unwrap();
+        let mut stop = "end_turn";
+        for i in 0..n {
+            thread::sleep(delay);
+            if rx.try_recv() == Ok(Input::Cancel) {
+                stop = "cancelled";
+                break;
+            }
+            self.emit(name, text(&format!("w{i} ")));
+        }
+        if stop == "end_turn" {
+            while rx.recv().is_ok_and(|i| i != Input::Cancel) {}
+        }
+        (vec![reply(&format!("streamed {n} words"), stop)], stop)
     }
 
     fn conformance(
@@ -225,6 +210,17 @@ impl FakeShed {
             vec![EventKind::Usage(usage), reply(&said, "end_turn")],
             "end_turn",
         ))
+    }
+
+    /// Terminal `name`'s agent writes `t`: a turn's text still coming.
+    pub fn says(&self, name: &str, t: &str) {
+        self.emit(name, text(t));
+    }
+
+    /// Terminal `name`'s agent stores its reply `t` and is done.
+    pub fn replies(&self, name: &str, t: &str) {
+        self.emit(name, reply(t, "end_turn"));
+        self.report(name, "done", Some("end_turn"));
     }
 
     /// Terminal `name`'s agent hits its account limit as shed reports it: the limit line, then `rate-limited`.
@@ -474,4 +470,39 @@ fn reply(t: &str, stop: &str) -> EventKind {
         text: t.to_owned(),
         stop_reason: stop.to_owned(),
     }
+}
+
+fn three_commands() -> (Vec<EventKind>, &'static str) {
+    let mut events = vec![plan("Run the checks", "in_progress")];
+    for (id, title) in [
+        ("k1", "$ cargo fmt"),
+        ("k2", "$ cargo clippy"),
+        ("k3", "$ cargo test"),
+    ] {
+        events.extend([tool(id, title, "in_progress"), tool(id, title, "completed")]);
+    }
+    events.push(reply("Ran 3 commands.", "end_turn"));
+    (events, "end_turn")
+}
+
+fn a_file_read() -> (Vec<EventKind>, &'static str) {
+    let events = [
+        read_file("pending", &["src/lib.rs"]),
+        read_file("in_progress", &[]),
+        read_file("completed", &[]),
+        text("Read "),
+        text("it."),
+        reply("Read it.", "end_turn"),
+    ];
+    (events.to_vec(), "end_turn")
+}
+
+fn a_plan() -> (Vec<EventKind>, &'static str) {
+    let entry = |c: &str, s: &str| json!({ "content": c, "priority": "high", "status": s });
+    let entries = vec![
+        entry("Read the code", "completed"),
+        entry("Fix the bug", "in_progress"),
+    ];
+    let events = vec![EventKind::Plan { entries }, reply("Planned.", "end_turn")];
+    (events, "end_turn")
 }

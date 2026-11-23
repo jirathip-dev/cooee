@@ -9,6 +9,7 @@ mod grant;
 mod own;
 mod proxy;
 mod rpc;
+mod tools;
 mod upstream;
 
 pub use grant::*;

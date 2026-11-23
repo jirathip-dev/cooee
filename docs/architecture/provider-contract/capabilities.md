@@ -5,38 +5,41 @@ What each harness supplies, what cooee replaces, and the exact switch. Evidence 
 - **S** read in the source installed on this Mac: claude-agent-acp 0.101.0 (`dist/acp-agent.js`,
   `dist/session-mode.js`) and Agent SDK 0.3.318 (`sdk.d.ts`, `sdk-tools.d.ts`). Read, not run.
 - **D** the vendor's docs, read 2026-11-17: codex-acp's README and `docs/permission-profiles.md`, Codex's config
-  reference; Gemini CLI's configuration, policy engine and ACP mode pages.
+  reference.
+- **A** read in the source of `antigravity-acp` 1.5.2 as shed installed it here (`acp_server/request_meta.py`,
+  `tool_filter.py`, `system_prompt.py`, `paths.py`, `server.py`, the SDK's `BuiltinTools` and `policy.py`), and
+  Antigravity's docs (antigravity.google/docs/getting-started, /docs/install), read 2026-11-23. Read, not run.
 - **P** not confirmed. Slice 1's nightly run proves or corrects it before the slice that relies on it merges.
 
-Versions: `claude-acp` 0.101.0 and `codex-acp` 2.5.0 are installed in shed here; no Gemini agent is.
+Versions: `claude-acp` 0.101.0, `codex-acp` 2.5.0 and `antigravity-acp` 1.5.2 are installed in shed here.
 
 ## The table
 
-| Capability | The contract | Claude Code | Codex | Gemini CLI |
+| Capability | The contract | Claude Code | Codex | Antigravity |
 |---|---|---|---|---|
 | Loop, sign-in | harness's | kept | kept | kept |
 | File and shell tools | harness's | kept | kept; every command runs in its OS sandbox | kept |
 | Todo list | harness's, drawn from ACP `plan` | kept | kept | kept |
 | System prompt | harness's; cooee adds, never replaces | preset kept S | kept | kept |
-| The brief | once per session, frozen | system prompt, appended S | developer instructions D, P | first prompt: no channel that keeps the vendor's prompt D |
-| Global instruction file | not read | off S (#416) | `$CODEX_HOME/AGENTS.md`: no switch D | `.gemini/GEMINI.md` under `GEMINI_CLI_HOME`: no switch D |
-| Personal settings, plugins, MCP | not loaded | off S (#416) | `$CODEX_HOME/config.toml`: no switch D | user settings load; cooee's system settings file wins D |
-| Project instruction file | harness's own, from the folder | `CLAUDE.md` | `AGENTS.md` | `GEMINI.md` |
-| Web search and fetch | harness's until a web connector, then off | off by the tool list S | off D | off by the tool list D, names P |
-| Browser | off; a connector | off by the tool list S | none | off by the tool list D |
-| Memory | off; `remember`, `history` | off S | off (its default) D | off by the tool list D, P |
-| Skills | off; cooee's `skill` | off by the tool list; personal ones gone with #416 S | bundled off D; folder ones P | off D |
-| Sub-agents | off; `ask_persona` | off by the tool list S | off D | off D |
-| Hooks | personal ones not loaded; a lent profile's guard only | the `settings` variable (today) | none: such a profile can't start (today) | possible through the system settings file D; not used |
-| Permissions | ask for everything; cooee answers | reachable S | not reachable D | unproven P |
-| Asks before an MCP tool | yes | yes P | P | yes D |
+| The brief | once per session, frozen | system prompt, appended S | developer instructions D, P | system prompt, appended (`systemPrompt.append`) A |
+| Global instruction file | not read | off S (#416) | `$CODEX_HOME/AGENTS.md`: no switch D | global config, skills, hooks and MCP under `GEMINI_HOME`: no switch A |
+| Personal settings, plugins, MCP | not loaded | off S (#416) | `$CODEX_HOME/config.toml`: no switch D | load: no switch A |
+| Project instruction file | harness's own, from the folder | `CLAUDE.md` | `AGENTS.md` | its own, from the folder |
+| Web search and fetch | harness's until a web connector, then off | off by the tool list S | off D | off by `disabledTools` A |
+| Browser | off; a connector | off by the tool list S | none | off with sub-agents, else admin-only A |
+| Memory | off; `remember`, `history` | off S | off (its default) D | no switch: past conversations stay on A |
+| Skills | off; cooee's `skill` | off by the tool list; personal ones gone with #416 S | bundled off D; folder ones P | no switch A |
+| Sub-agents | off; `ask_persona` | off by the tool list S | off D | off by `disabledTools` A |
+| Hooks | personal ones not loaded; a lent profile's guard only | the `settings` variable (today) | none: such a profile can't start (today) | global `hooks.json`: not used A |
+| Permissions | ask for everything; cooee answers | reachable S | not reachable D | its default mode asks for all but read-only tools A |
+| Asks before an MCP tool | yes | yes P | P | yes A |
 | Compaction | harness's | own | own | own |
 | Models | from the ACP session | yes | yes | P |
 | Efforts | the provider's words (data) | none set | low, medium, high (today) | none |
 | Context use | ACP `usage_update` | yes S | yes D | P |
 | Plan usage windows | the provider's command | `/usage` (today) | none | none |
 | Limit hit | shed's `rate-limited` and reset | shed has its line | shed has its line | no line yet: a data entry in shed |
-| Hibernate and resume | shed, where the harness loads a session | yes | P | yes D |
+| Hibernate and resume | shed, where the harness loads a session | yes | P | yes (`session/load`) A |
 
 ## Claude Code
 
@@ -92,38 +95,32 @@ CODEX_CONFIG={"developer_instructions":"<the brief>","approval_policy":"on-reque
 - The effort words stay `-c model_reasoning_effort={}` as today. Adapter 2.5.0 runs Codex's app server, so whether
   that argument still reaches it is P.
 
-## Gemini CLI
+## Antigravity
 
-A settings file cooee writes under the session's run folder, named by `GEMINI_CLI_SYSTEM_SETTINGS_PATH` (the system
-settings file "takes precedence over all other settings files", D), and a policy file it names:
+`_meta.antigravity` on `session/new` (A, `request_meta.py`: "Clients send Antigravity-specific session options (e.g.
+`enabledTools`, `disabledTools`, `eagerMcpServers`, `systemPrompt`) under `_meta.antigravity`"):
 
 ```json
-{ "tools": { "core": ["read_file", "write_file", "replace", "glob", "search_file_content", "list_directory",
-                      "run_shell_command", "write_todos"] },
-  "skills": { "enabled": false },
-  "experimental": { "enableAgents": false },
-  "security": { "disableYoloMode": true, "disableAlwaysAllow": true },
-  "adminPolicyPaths": ["<run>/ask-all.toml"] }
+{ "antigravity": { "systemPrompt": { "append": "<the brief>" },
+                   "disabledTools": ["search_web", "read_url_content", "invoke_subagent", "run_workflow"] } }
 ```
 
-```toml
-[[rule]]
-toolName = "*"
-decision = "ask_user"
-priority = 999
-```
-
-- `tools.core` is the allow-list of built-ins (D); the tool names are P. Web search and fetch, `save_memory` and the
-  browser agent are off by not being in it; with no web connector the two web tools join the list.
-- **The brief: first prompt.** `GEMINI_SYSTEM_MD` replaces the vendor's system prompt, which the contract forbids, and
-  a context file would have to be written into the owner's folder. So the brief is sent ahead of the first message,
-  as today, and may be summarised by a later compression.
-- **Global files: no switch.** `GEMINI.md` and `settings.json` are read from `.gemini` under `GEMINI_CLI_HOME`. As
-  Codex: clean in an account cooee added, the owner's own on the default login. Gap: `PersonalFiles` there.
-- **Ask for everything: unproven.** A policy rule can ask for any tool (D), but the docs don't say the policy engine
-  runs in ACP mode, and say `ask_user` is a deny in non-interactive mode. If the probe shows either, cooee drops the
-  policy file and Gemini's `default` mode stays: edits, shell, web fetch and MCP tools ask; reads and web search
-  don't. The gaps are then `AsksNot(Read)` and `AsksNot(Search)`.
+- `disabledTools` is a deny-list of built-in names (A, `tool_filter.py`). Web: `search_web`, `read_url_content`; with
+  no web connector the two stay on. Sub-agents: `invoke_subagent` and `run_workflow` ("Execute a multi-agent workflow
+  script"); the browser sub-agent goes with them ("Browser subagent skipped because subagents are disabled by tool
+  filter").
+- **The brief: system channel.** `systemPrompt` takes only `{"append": ...}` (A, `system_prompt.py`): the vendor's
+  prompt stays.
+- **Memory: no switch.** No built-in tool is a memory, but the harness keeps past conversations on
+  (`cascade-conversation-history-config`, a flag no client sets). Gap: `StillOn(Memory)`.
+- **Skills: no switch.** Skills load from `<home>/config/skills`, `<home>/antigravity-cli/skills` and the folder's
+  `.agents/skills` on every session (A, `paths.py`, `server.py`); the filter can't name them. Gap: `StillOn(Skills)`.
+- **Global files: no switch.** Everything is under `GEMINI_HOME` (A, `paths.py`): clean in an account cooee added, the
+  owner's own on the default login. Gap: `PersonalFiles` there.
+- **Ask for everything: its default.** The default mode wires `policy.safe_defaults`: "Allows all read-only tools and
+  asks the user for any other tool calls" (A). `view_file` and `read_url_content` are read-only, so they never ask.
+  Gaps: `AsksNot(Read)`, `AsksNot(Search)` (its directory tools' policy is not read), and `AsksNot(Fetch)` while web
+  stays on.
 
 ## Any other agent
 

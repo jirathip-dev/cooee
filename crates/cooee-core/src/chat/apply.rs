@@ -56,7 +56,9 @@ impl Chat {
             | EventKind::Resources(_)
             | EventKind::Mode { .. }
             | EventKind::Turn { .. }
-            | EventKind::Session(_) => Vec::new(),
+            | EventKind::Session(_)
+            | EventKind::MemLimit { .. }
+            | EventKind::Account { .. } => Vec::new(),
             EventKind::Usage(u) => {
                 self.turn.context = Some(u);
                 vec![Change::State(self.turn.clone())]
@@ -83,14 +85,7 @@ impl Chat {
                 let facts = !locations.is_empty() || raw_input.is_some();
                 self.tool(at, seq, id, status, read(&call), facts)
             }
-            EventKind::Plan { entries } => {
-                let plan = |b: &Body| matches!(b, Body::Plan { .. });
-                let item = match self.find(plan) {
-                    Some(item) => self.update(item, seq, |b| *b = Body::Plan { entries }),
-                    None => Some(self.push(at, seq, Body::Plan { entries })),
-                };
-                item.map(Change::Item).into_iter().collect()
-            }
+            EventKind::Plan { entries } => self.plan(at, seq, entries),
             EventKind::ApprovalRequest { tool, options, .. } => {
                 let body = Body::Approval {
                     tool,
@@ -102,27 +97,7 @@ impl Chat {
                 };
                 vec![Change::Item(self.push(at, seq, body))]
             }
-            EventKind::Approved { option } => {
-                let open = self.items.iter().find(|i| {
-                    matches!(
-                        i.body,
-                        Body::Approval {
-                            chosen: None,
-                            plugin: None,
-                            card: Card { request: None, .. },
-                            ..
-                        }
-                    )
-                });
-                let item = open.map(|i| i.id).and_then(|id| {
-                    self.update(id, seq, |b| {
-                        if let Body::Approval { chosen, .. } = b {
-                            *chosen = Some(option);
-                        }
-                    })
-                });
-                item.map(Change::Item).into_iter().collect()
-            }
+            EventKind::Approved { option } => self.approved(seq, option),
             EventKind::Reply { text, stop_reason } => self.replied(at, seq, text, stop_reason),
             EventKind::Exited { .. } | EventKind::Killed if self.turn.state == "ended" => {
                 Vec::new()
@@ -135,6 +110,37 @@ impl Chat {
             }
             EventKind::Killed => self.ended(at, seq, "The thread was closed.".to_owned()),
         }
+    }
+
+    fn plan(&mut self, at: u64, seq: u64, entries: Vec<serde_json::Value>) -> Vec<Change> {
+        let plan = |b: &Body| matches!(b, Body::Plan { .. });
+        let item = match self.find(plan) {
+            Some(item) => self.update(item, seq, |b| *b = Body::Plan { entries }),
+            None => Some(self.push(at, seq, Body::Plan { entries })),
+        };
+        item.map(Change::Item).into_iter().collect()
+    }
+
+    fn approved(&mut self, seq: u64, option: String) -> Vec<Change> {
+        let open = self.items.iter().find(|i| {
+            matches!(
+                i.body,
+                Body::Approval {
+                    chosen: None,
+                    plugin: None,
+                    card: Card { request: None, .. },
+                    ..
+                }
+            )
+        });
+        let item = open.map(|i| i.id).and_then(|id| {
+            self.update(id, seq, |b| {
+                if let Body::Approval { chosen, .. } = b {
+                    *chosen = Some(option);
+                }
+            })
+        });
+        item.map(Change::Item).into_iter().collect()
     }
 
     fn replied(&mut self, at: u64, seq: u64, text: String, stop_reason: String) -> Vec<Change> {

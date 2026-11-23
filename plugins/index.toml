@@ -1,4 +1,4 @@
-# cooee's curated plugin index (docs/plugins.md): Settings › Plugins and `cooee plugin add <name>` list these.
+# cooee's curated plugin index (docs/plugins/): Settings › Plugins and `cooee plugin add <name>` list these.
 # Each is a git repo with a `cooee-plugin.toml`, pinned to a reviewed commit; adding or moving one is a normal
 # reviewed PR. `first_party = true`: the plugin lives with cooee and is improved through an issue, not [improve].
 # Anything else is added by its git URL, marked "not reviewed".
@@ -6,6 +6,6 @@
 [[plugin]]
 name = "drover"
 url = "https://github.com/jirathip-dev/drover"
-commit = "8e7536e925cd54b929ed698e37476863b93db6ec"
+commit = "8210cea0ae9ae58a08c404d3535f6019c4255387"
 description = "drover's queue, events, ask cards and fleets, served by drover itself"
 

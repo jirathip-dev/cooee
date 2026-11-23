@@ -2,7 +2,15 @@ use std::{fs, sync::Mutex, time::Instant};
 
 use cooee_core::{Body, Change, Item, Kind, Queued, Via, agents, routines::Mark, shed_proto};
 
-use super::{Hub, HubError, Live, Upload, lock, now, refused};
+use super::{Hub, HubError, live::Live, lock, now, refused};
+
+/// A file sent with a message: its name on the phone and its bytes.
+pub struct Upload {
+    /// The name it had (only its safe characters are kept).
+    pub name: String,
+    /// Its bytes.
+    pub data: Vec<u8>,
+}
 
 impl Hub {
     /// Sends the owner's message with its `files`, sent `via` voice or typed: once per `random_id` (a retry of a
@@ -102,6 +110,33 @@ impl Hub {
         })
     }
 
+    fn compose(&self, l: &Live, q: &Queued, before: &str) -> String {
+        let spoken = (q.via == Some(Via::Voice)).then(|| {
+            agents::find(self.config_dir(), &self.data, &l.meta.profile)
+                .ok()
+                .and_then(|a| a.spoken)
+                .unwrap_or_else(|| agents::SPOKEN.to_owned())
+        });
+        let text = match spoken.filter(|s| !s.trim().is_empty()) {
+            Some(s) => format!("{}\n\n{}", s.trim_end(), q.text),
+            None => q.text.clone(),
+        };
+        let mut prompt = if before.trim().is_empty() {
+            text
+        } else {
+            format!("{}\n\n{text}", before.trim_end())
+        };
+        if !q.files.is_empty() {
+            prompt.push_str("\n\nAttached files:");
+            for name in &q.files {
+                let path = self.files.join(&l.meta.id).join(name);
+                prompt.push_str("\n- ");
+                prompt.push_str(&path.to_string_lossy());
+            }
+        }
+        prompt
+    }
+
     pub(super) fn deliver(
         &self,
         live: &Mutex<Live>,
@@ -120,29 +155,7 @@ impl Hub {
             } else {
                 super::ask::OWNER_NOTE
             };
-            let spoken = (q.via == Some(Via::Voice)).then(|| {
-                agents::find(self.config_dir(), &self.data, &l.meta.profile)
-                    .ok()
-                    .and_then(|a| a.spoken)
-                    .unwrap_or_else(|| agents::SPOKEN.to_owned())
-            });
-            let text = match spoken.filter(|s| !s.trim().is_empty()) {
-                Some(s) => format!("{}\n\n{}", s.trim_end(), q.text),
-                None => q.text.clone(),
-            };
-            let mut prompt = if before.trim().is_empty() {
-                text
-            } else {
-                format!("{}\n\n{text}", before.trim_end())
-            };
-            if !q.files.is_empty() {
-                prompt.push_str("\n\nAttached files:");
-                for name in &q.files {
-                    let path = self.files.join(&l.meta.id).join(name);
-                    prompt.push_str("\n- ");
-                    prompt.push_str(&path.to_string_lossy());
-                }
-            }
+            let prompt = self.compose(&l, &q, before);
             let ended = l.chat.turn.state == "ended";
             (
                 l.meta.terminal.clone(),

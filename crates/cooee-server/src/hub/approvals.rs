@@ -9,7 +9,7 @@ use cooee_core::{
 };
 use serde_json::Value;
 
-use super::{Hub, HubError, Live, lock, now};
+use super::{Hub, HubError, live::Live, lock, now};
 
 impl Hub {
     pub(super) fn asked(&self, live: &mut Live, seq: u64, request: EventKind) -> Vec<Change> {
@@ -44,16 +44,10 @@ impl Hub {
             _ => Effect::Ask,
         };
         let verdict = self.rules_of(&persona).decide(&action, &folder, unmatched);
-        let once = |kind: &str, prefix: &str| {
-            let o = options.iter().find(|o| o.kind == kind);
-            let o = o.or_else(|| options.iter().find(|o| o.kind.starts_with(prefix)));
-            let o = o.or_else(|| options.iter().find(|o| o.id.starts_with(prefix)));
-            o.map(|o| o.id.clone()).unwrap_or_default()
-        };
         let asked = Asked {
             id,
-            allow: once("allow_once", "allow"),
-            deny: once("reject_once", "reject"),
+            allow: once(&options, "allow_once", "allow"),
+            deny: once(&options, "reject_once", "reject"),
             rule: Rule::proposed(&action, &folder),
         };
         if verdict.effect != Effect::Ask {
@@ -73,33 +67,7 @@ impl Hub {
                 Err(e) => cooee_core::note!("cooee: {}: a rule's answer: {e}", live.meta.id),
             }
         }
-        let option = |id: &str, name: String, kind: &str| ApprovalOption {
-            id: id.to_owned(),
-            name,
-            kind: kind.to_owned(),
-        };
-        let options = vec![
-            option("allow", "Allow".to_owned(), "allow_once"),
-            option(
-                "always",
-                format!("Always allow {}", asked.rule.what()),
-                "allow_always",
-            ),
-            option("deny", "Deny".to_owned(), "reject_once"),
-        ];
-        let card = Card {
-            action: Some(action.kind),
-            request: Some(Box::new(asked)),
-            ..Card::default()
-        };
-        let body = Body::Approval {
-            tool: action.subject,
-            options,
-            tapped: None,
-            chosen: None,
-            plugin: None,
-            card,
-        };
+        let body = approval(action, asked);
         vec![Change::Item(live.chat.push(now(), seq, body))]
     }
 
@@ -209,5 +177,42 @@ impl Hub {
             Some(r) => Err(HubError::Refused(format!("{server}/{tool}: {}", r.words()))),
             None => Ok(()),
         }
+    }
+}
+
+fn once(options: &[ApprovalOption], kind: &str, prefix: &str) -> String {
+    let o = options.iter().find(|o| o.kind == kind);
+    let o = o.or_else(|| options.iter().find(|o| o.kind.starts_with(prefix)));
+    let o = o.or_else(|| options.iter().find(|o| o.id.starts_with(prefix)));
+    o.map(|o| o.id.clone()).unwrap_or_default()
+}
+
+fn approval(action: Action, asked: Asked) -> Body {
+    let option = |id: &str, name: String, kind: &str| ApprovalOption {
+        id: id.to_owned(),
+        name,
+        kind: kind.to_owned(),
+    };
+    let options = vec![
+        option("allow", "Allow".to_owned(), "allow_once"),
+        option(
+            "always",
+            format!("Always allow {}", asked.rule.what()),
+            "allow_always",
+        ),
+        option("deny", "Deny".to_owned(), "reject_once"),
+    ];
+    let card = Card {
+        action: Some(action.kind),
+        request: Some(Box::new(asked)),
+        ..Card::default()
+    };
+    Body::Approval {
+        tool: action.subject,
+        options,
+        tapped: None,
+        chosen: None,
+        plugin: None,
+        card,
     }
 }
