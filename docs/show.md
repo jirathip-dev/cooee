@@ -2,9 +2,9 @@
 
 ## Today
 
-- **Blocks in chat:** a persona with a catalog may answer with blocks (a form, a choice, a chart) by calling cooee's
-  `show` tool; the owner's answer is its next turn. The ADR is
-  [architecture/persona-blocks](architecture/persona-blocks/adr.md).
+- **Blocks in chat:** a persona with a catalog answers with a form, a choice or a chart through its `show` tool, and the owner's answer is its next turn (#776).
+
+The ADR is [architecture/persona-blocks](architecture/persona-blocks/adr.md).
 
 ## How it works
 

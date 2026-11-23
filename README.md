@@ -49,7 +49,7 @@ On `staging`, each line with the PR or file that proves it:
 - **Run cards:** herdsman's commands shown with their sha, approved or denied from the phone (#114).
 - **Secrets:** kept in the macOS keychain, readable only by the signed cooee (#212).
 - **Samples:** twelve ready agents in [examples/agents/](examples/agents/), built in: `cooee agent add --list` lists them, `cooee agent add --from <sample> [--id <id>]` copies one in (never over a taken id). One whose MCP server isn't in the config says in its first reply what to connect (#362).
-- **Blocks in chat:** a persona with a catalog may answer with blocks (a form, a choice, a chart) by calling cooee's
+- **Blocks in chat:** a persona with a catalog answers with a form, a choice or a chart through its `show` tool, and the owner's answer is its next turn (#776).
 - **Sign-ins and accounts:** the provider's own login runs from the phone; several accounts per provider, each with usage (#18, #46, #191).
 - **Looks:** Modern built in, Terminal and Scene as style packs ([docs/styles.md](docs/styles.md), #488); farm, kitchen and garden theme packs (#65, #66, #67).
 - **Workflow:** sessions other tools start in shed list beside your chats and open as chats (#61).
