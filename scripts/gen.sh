@@ -43,7 +43,18 @@ module() {
   mv "$dir.rs.gen" "$dir.rs"
 }
 
-# routes DIR: DIR/mod.rs, a `mod` line per area and one `routes` that chains every area's `routes`.
+# tests DIR: DIR/main.rs (#427), its leading `//!` lines kept, the shared support by path and a `mod` line per file of DIR.
+tests() {
+  dir=$1
+  {
+    awk '!/^\/\/!/ { exit } { print }' "$dir/main.rs"
+    printf '\n#[path = "../support/mod.rs"]\nmod support;\n\n'
+    for m in $(modules "$dir"); do printf 'mod %s;\n' "$m"; done
+  } | rustfmt --edition 2024 >"$dir/main.rs.gen"
+  mv "$dir/main.rs.gen" "$dir/main.rs"
+}
+
+# routes DIR:DIR/mod.rs, a `mod` line per area and one `routes` that chains every area's `routes`.
 routes() {
   dir=$1
   set -- $(modules "$dir")
@@ -108,12 +119,12 @@ cmds() {
   mv "$dir/mod.rs.gen" "$dir/mod.rs"
 }
 
-# tools DIR: DIR/mod.rs, a `mod` line per Chief tool file (#664) and the table `ALL` of each file's `TOOL`, in name order.
+# tools DIR TYPE: DIR/mod.rs, a `mod` line per tool file (#664, #778) and the table `ALL` of each file's `TOOL`, a TYPE, in name order.
 tools() {
-  dir=$1
+  dir=$1 ty=$2
   {
     for m in $(modules "$dir"); do printf 'mod %s;\n' "$m"; done
-    printf '\nuse crate::chief::Tool;\n\npub(crate) const ALL: &[Tool] = &[\n'
+    printf '\nuse %s;\n\npub(crate) const ALL: &[%s] = &[\n' "$ty" "${ty##*::}"
     for m in $(modules "$dir"); do printf '    %s::TOOL,\n' "$m"; done
     printf '];\n'
   } >"$dir/mod.rs.gen"

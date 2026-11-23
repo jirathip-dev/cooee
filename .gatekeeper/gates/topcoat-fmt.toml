@@ -1,0 +1,11 @@
+about = "the Rust sources are topcoat-formatted (topcoat fmt, pinned 0.11.0 like the topcoat crate)"
+fix = "run topcoat fmt on the files the log names and commit the result"
+budget_secs = 300
+leg = "topcoat"
+setup = ["rust"]
+paths = ["crates/**/*.rs"]
+run = '''
+if [ -n "${CI:-}" ]; then root=${CARGO_HOME:-$HOME/.cargo}; else root=${CARGO_TARGET_DIR:-target}/tools; fi
+"$root/bin/topcoat" --version 2>/dev/null | grep -qx "topcoat 0.11.0" || cargo install --quiet --locked topcoat-cli --version 0.11.0 --root "$root"
+"$root/bin/topcoat" fmt --check $(git ls-files 'crates/*.rs')
+'''

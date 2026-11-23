@@ -168,51 +168,9 @@ fn read_style(dir: &Path, theme: Option<&Own>) -> Result<Option<Style>, Vec<Stri
     if !(0.0..=1.0).contains(&s.radius) {
         why(format!("radius {}: not 0 to 1", s.radius));
     }
-    let affix = |a: &str| {
-        a.chars().count() <= 4
-            && a.chars()
-                .all(|c| c.is_ascii_punctuation() || " ‹›·•".contains(c))
-    };
-    for (role, l) in &s.labels {
-        for (k, a) in [("prefix", &l.prefix), ("suffix", &l.suffix)] {
-            if !affix(a) {
-                let role = format!("{role:?}").to_lowercase();
-                why(format!(
-                    "labels.{role}.{k} {a:?}: punctuation and spaces only, at most 4"
-                ));
-            }
-        }
-    }
+    label_affixes(&s.labels, &mut why);
     if let Some(st) = &s.stage {
-        let rgb = |v: &str| hex(v).filter(|_| v.len() == 7);
-        let named = [("ink", &st.ink), ("paper", &st.paper), ("edge", &st.edge)];
-        let named = named
-            .into_iter()
-            .chain([("alert", &st.alert), ("alert-paper", &st.alert_paper)]);
-        for (k, v) in named.filter(|(_, v)| rgb(v).is_none()) {
-            why(format!("stage.{k} {v:?}: not #rrggbb"));
-        }
-        if let (Some(ink), Some(paper), Some(alert), Some(pink)) = (
-            rgb(&st.ink),
-            rgb(&st.paper),
-            rgb(&st.alert),
-            rgb(&st.alert_paper),
-        ) {
-            let pairs = [
-                ("ink on paper", ink, paper, 4.5),
-                ("alert on paper", alert, paper, 3.0),
-            ];
-            for (what, a, b, min) in
-                pairs
-                    .into_iter()
-                    .chain([("ink on alert-paper", ink, pink, 3.0)])
-            {
-                let r = ratio(a, b);
-                if r < min {
-                    why(format!("stage: {what} {r:.2} (min {min})"));
-                }
-            }
-        }
+        stage_contrast(st, &mut why);
     }
     if dir.file_name().is_some_and(|n| n == "modern") {
         why("a pack named modern can't hold a style: Modern is built in".to_owned());
@@ -229,6 +187,55 @@ fn read_style(dir: &Path, theme: Option<&Own>) -> Result<Option<Style>, Vec<Stri
         Ok(Some(s))
     } else {
         Err(fails)
+    }
+}
+
+fn label_affixes(labels: &BTreeMap<LabelRole, Label>, why: &mut impl FnMut(String)) {
+    let affix = |a: &str| {
+        a.chars().count() <= 4
+            && a.chars()
+                .all(|c| c.is_ascii_punctuation() || " ‹›·•".contains(c))
+    };
+    for (role, l) in labels {
+        for (k, a) in [("prefix", &l.prefix), ("suffix", &l.suffix)] {
+            if !affix(a) {
+                let role = format!("{role:?}").to_lowercase();
+                why(format!(
+                    "labels.{role}.{k} {a:?}: punctuation and spaces only, at most 4"
+                ));
+            }
+        }
+    }
+}
+
+fn stage_contrast(st: &Stage, why: &mut impl FnMut(String)) {
+    let rgb = |v: &str| hex(v).filter(|_| v.len() == 7);
+    let named = [("ink", &st.ink), ("paper", &st.paper), ("edge", &st.edge)];
+    let named = named
+        .into_iter()
+        .chain([("alert", &st.alert), ("alert-paper", &st.alert_paper)]);
+    for (k, v) in named.filter(|(_, v)| rgb(v).is_none()) {
+        why(format!("stage.{k} {v:?}: not #rrggbb"));
+    }
+    if let (Some(ink), Some(paper), Some(alert), Some(pink)) = (
+        rgb(&st.ink),
+        rgb(&st.paper),
+        rgb(&st.alert),
+        rgb(&st.alert_paper),
+    ) {
+        let pairs = [
+            ("ink on paper", ink, paper, 4.5),
+            ("alert on paper", alert, paper, 3.0),
+        ];
+        for (what, a, b, min) in pairs
+            .into_iter()
+            .chain([("ink on alert-paper", ink, pink, 3.0)])
+        {
+            let r = ratio(a, b);
+            if r < min {
+                why(format!("stage: {what} {r:.2} (min {min})"));
+            }
+        }
     }
 }
 

@@ -172,20 +172,71 @@ fn files_are_stored_served_as_images_only_and_named_to_the_agent() {
     );
 }
 
+fn queue(cooee: &Cooee, id: &str, text: &str, rid: &str) -> Value {
+    let (status, body) = cooee.post(
+        &format!("/threads/{id}/queue"),
+        &json!({ "text": text, "random_id": rid }),
+    );
+    assert_eq!(status, 200, "{body}");
+    serde_json::from_str::<Value>(&body).unwrap()
+}
+
+fn steer_q2_in_at_once(cooee: &Cooee, shed: &FakeShed, id: &str, terminal: &str) {
+    let (status, left) = cooee.post(
+        &format!("/threads/{id}/steer"),
+        &json!({ "random_id": "q2" }),
+    );
+    assert_eq!(status, 200, "{left}");
+    assert_eq!(
+        serde_json::from_str::<Value>(&left)
+            .unwrap()
+            .as_array()
+            .unwrap()
+            .len(),
+        1
+    );
+    assert!(shed.sent(terminal).iter().any(|t| t.contains("\"steer\"")));
+    assert_eq!(
+        cooee
+            .post(
+                &format!("/threads/{id}/unqueue"),
+                &json!({ "random_id": "q2" })
+            )
+            .0,
+        400
+    );
+    assert_eq!(
+        cooee.json(&format!("/threads/{id}/messages"))["queue"][0]["text"],
+        "then this"
+    );
+}
+
+fn a_message_taken_back_is_never_sent(cooee: &Cooee, shed: &FakeShed, id: &str, terminal: &str) {
+    eventually(|| row(cooee, id).0["state"] == "done");
+    queue(cooee, id, "hang on", "q3");
+    eventually(|| row(cooee, id).0["state"] == "working");
+    queue(cooee, id, "not this", "q4");
+    assert_eq!(
+        cooee
+            .post(
+                &format!("/threads/{id}/unqueue"),
+                &json!({ "random_id": "q4" })
+            )
+            .1,
+        "[]"
+    );
+    cooee.post(&format!("/threads/{id}/cancel"), &json!({}));
+    eventually(|| row(cooee, id).0["state"] == "done");
+    assert!(!shed.sent(terminal).iter().any(|t| t.contains("not this")));
+}
+
 #[test]
 fn a_message_queued_during_a_turn_goes_as_it_ends_and_one_steered_goes_at_once() {
     let (dir, shed, cooee) = setup("t-queue");
     let id = create(&cooee, &dir, "Say hello");
     let terminal = format!("cooee-{id}");
     eventually(|| row(&cooee, &id).0["state"] == "done");
-    let q = |text: &str, rid: &str| {
-        let (status, body) = cooee.post(
-            &format!("/threads/{id}/queue"),
-            &json!({ "text": text, "random_id": rid }),
-        );
-        assert_eq!(status, 200, "{body}");
-        serde_json::from_str::<Value>(&body).unwrap()
-    };
+    let q = |text: &str, rid: &str| queue(&cooee, &id, text, rid);
     assert_eq!(q("hang on", "q0"), json!([]));
     eventually(|| row(&cooee, &id).0["state"] == "working");
     let cursor = cooee.json(&format!("/threads/{id}/messages"))["cursor"]
@@ -201,33 +252,7 @@ fn a_message_queued_during_a_turn_goes_as_it_ends_and_one_steered_goes_at_once()
     assert_eq!(queued.last().unwrap().data[0]["random_id"], "q1");
     assert!(!shed.sent(&terminal).iter().any(|t| t.contains("then this")));
 
-    let (status, left) = cooee.post(
-        &format!("/threads/{id}/steer"),
-        &json!({ "random_id": "q2" }),
-    );
-    assert_eq!(status, 200, "{left}");
-    assert_eq!(
-        serde_json::from_str::<Value>(&left)
-            .unwrap()
-            .as_array()
-            .unwrap()
-            .len(),
-        1
-    );
-    assert!(shed.sent(&terminal).iter().any(|t| t.contains("\"steer\"")));
-    assert_eq!(
-        cooee
-            .post(
-                &format!("/threads/{id}/unqueue"),
-                &json!({ "random_id": "q2" })
-            )
-            .0,
-        400
-    );
-    assert_eq!(
-        cooee.json(&format!("/threads/{id}/messages"))["queue"][0]["text"],
-        "then this"
-    );
+    steer_q2_in_at_once(&cooee, &shed, &id, &terminal);
 
     assert_eq!(
         cooee.post(&format!("/threads/{id}/cancel"), &json!({})).0,
@@ -241,20 +266,5 @@ fn a_message_queued_during_a_turn_goes_as_it_ends_and_one_steered_goes_at_once()
         json!([])
     );
 
-    eventually(|| row(&cooee, &id).0["state"] == "done");
-    q("hang on", "q3");
-    eventually(|| row(&cooee, &id).0["state"] == "working");
-    q("not this", "q4");
-    assert_eq!(
-        cooee
-            .post(
-                &format!("/threads/{id}/unqueue"),
-                &json!({ "random_id": "q4" })
-            )
-            .1,
-        "[]"
-    );
-    cooee.post(&format!("/threads/{id}/cancel"), &json!({}));
-    eventually(|| row(&cooee, &id).0["state"] == "done");
-    assert!(!shed.sent(&terminal).iter().any(|t| t.contains("not this")));
+    a_message_taken_back_is_never_sent(&cooee, &shed, &id, &terminal);
 }

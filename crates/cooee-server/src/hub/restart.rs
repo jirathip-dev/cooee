@@ -1,8 +1,8 @@
-use std::{collections::BTreeMap, fs};
+use std::{collections::BTreeMap, fs, sync::Mutex};
 
 use cooee_core::{Body, Change, Kind, Launch, shed_proto};
 
-use super::{Hub, HubError, LABEL, Recipe, lock, now, on_machine};
+use super::{Hub, HubError, LABEL, Live, Recipe, lock, now, on_machine};
 
 const FRESH: &str = "The agent started again fresh: it couldn't pick up where it left off.";
 
@@ -40,14 +40,7 @@ impl Hub {
         }
         self.shed.hello()?;
         self.reachable(&machine)?;
-        let mut launch = self.mcp_launch(id, recipe)?;
-        for (_, v) in &mut launch.env {
-            *v = v.replace("{thread}", id);
-        }
-        let labels = BTreeMap::from([
-            (LABEL.to_owned(), "1".to_owned()),
-            (format!("{LABEL}.thread"), id.to_owned()),
-        ]);
+        let (launch, labels) = self.restart_launch(id, recipe)?;
         let cmd = self.adapter(&agent);
         let stamp = now();
         let start = |resume: Option<String>, tail: &str| {
@@ -70,12 +63,48 @@ impl Hub {
             fs::remove_file(file).ok();
         }
         let (terminal, ready) = started?;
-        let mut l = lock(&live);
+        self.restarted(
+            &live,
+            (&old, &terminal),
+            resumed.is_none().then_some(recipe),
+        )?;
+        if let Some(s) = ready
+            && let Err(e) = self.settle(id, &terminal, &s)
+        {
+            cooee_core::note!("cooee: {id}: model: {e}");
+        }
+        self.shed.close(&old).ok();
+        Ok(())
+    }
+
+    fn restart_launch(
+        &self,
+        id: &str,
+        recipe: &Recipe,
+    ) -> Result<(Launch, BTreeMap<String, String>), HubError> {
+        let mut launch = self.mcp_launch(id, recipe)?;
+        for (_, v) in &mut launch.env {
+            *v = v.replace("{thread}", id);
+        }
+        let labels = BTreeMap::from([
+            (LABEL.to_owned(), "1".to_owned()),
+            (format!("{LABEL}.thread"), id.to_owned()),
+        ]);
+        Ok((launch, labels))
+    }
+
+    fn restarted(
+        &self,
+        live: &Mutex<Live>,
+        (old, terminal): (&str, &str),
+        fresh: Option<&Recipe>,
+    ) -> Result<(), HubError> {
+        let mut l = lock(live);
         l.applied = 0;
-        l.meta.terminal.clone_from(&terminal);
-        self.retarget(&old, &terminal);
+        terminal.clone_into(&mut l.meta.terminal);
+        self.retarget(old, terminal);
         let mut changes = Vec::new();
-        if resumed.is_none() {
+        if let Some(recipe) = fresh {
             l.meta.session.clear();
             recipe.instructions.trim().clone_into(&mut l.meta.handover);
             let note = Body::Note {
@@ -87,13 +116,6 @@ impl Hub {
         l.chat.turn.report("done", None);
         changes.push(Change::State(l.chat.turn.clone()));
         l.publish(self, changes)?;
-        drop(l);
-        if let Some(s) = ready
-            && let Err(e) = self.settle(id, &terminal, &s)
-        {
-            cooee_core::note!("cooee: {id}: model: {e}");
-        }
-        self.shed.close(&old).ok();
         Ok(())
     }
 }

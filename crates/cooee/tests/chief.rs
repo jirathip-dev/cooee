@@ -25,18 +25,18 @@ struct Setup {
 }
 
 const OWN: [&str; 12] = [
-    "propose_server",
-    "remember",
     "ask_persona",
+    "create_routine",
+    "desk",
     "handoff",
     "history",
-    "update_persona",
-    "create_routine",
-    "stop_routine",
-    "skill",
-    "secret",
     "mail",
-    "desk",
+    "propose_server",
+    "remember",
+    "secret",
+    "skill",
+    "stop_routine",
+    "update_persona",
 ];
 
 const CHIEFS: [&str; 9] = [
@@ -297,9 +297,26 @@ fn a_persona_and_its_routine_are_made_at_once_with_no_card_and_show_in_the_app()
             &json!("Check flight prices.")
         )
     );
+    assert_a_routine_is_made_for_travel_and_pauses(&s, &chief);
 
+    let items = s.items(&chief);
+    assert!(s.cards(&chief).is_empty(), "no card: {items:?}");
+    let notes: Vec<&Value> = items
+        .iter()
+        .map(|i| &i["text"])
+        .filter(|t| t.is_string())
+        .collect();
+    assert!(
+        notes.contains(&&json!("Created persona Travel")),
+        "{notes:?}"
+    );
+    assert!(items.iter().any(|i| i["kind"] == "routine"), "{items:?}");
+    assert_bad_persona_edits_are_refused_and_travel_archives_and_restores(&s, &chief);
+}
+
+fn assert_a_routine_is_made_for_travel_and_pauses(s: &Setup, chief: &str) {
     let routine = s.call(
-        &chief,
+        chief,
         "routine",
         &json!({ "do": "create", "persona": "travel",
         "name": "Flight prices", "when": "0 8 * * *", "prompt": "Check today's fares" }),
@@ -316,43 +333,32 @@ fn a_persona_and_its_routine_are_made_at_once_with_no_card_and_show_in_the_app()
         (&json!("Flight prices"), &json!("travel"), &json!(chief))
     );
     let id = r["id"].as_str().unwrap();
-    let paused = s.call(&chief, "routine", &json!({ "do": "pause", "id": id }));
+    let paused = s.call(chief, "routine", &json!({ "do": "pause", "id": id }));
     assert!(paused.unwrap().starts_with("Paused routine Flight prices"));
     assert!(s.cooee.json("/routines.json")[0]["paused"].is_object());
+}
 
-    let items = s.items(&chief);
-    assert!(s.cards(&chief).is_empty(), "no card: {items:?}");
-    let notes: Vec<&Value> = items
-        .iter()
-        .map(|i| &i["text"])
-        .filter(|t| t.is_string())
-        .collect();
-    assert!(
-        notes.contains(&&json!("Created persona Travel")),
-        "{notes:?}"
-    );
-    assert!(items.iter().any(|i| i["kind"] == "routine"), "{items:?}");
-
+fn assert_bad_persona_edits_are_refused_and_travel_archives_and_restores(s: &Setup, chief: &str) {
     let edit = json!({ "do": "edit", "id": "travel", "plugins": ["nope"] });
     assert!(
-        s.call(&chief, "persona", &edit)
+        s.call(chief, "persona", &edit)
             .unwrap_err()
             .contains("no installed plugin nope")
     );
     let sneaky = json!({ "do": "edit", "id": "travel", "machine": "studio" });
     assert!(
-        s.call(&chief, "persona", &sneaky)
+        s.call(chief, "persona", &sneaky)
             .unwrap_err()
             .starts_with("BAD_ARGS")
     );
     let me = json!({ "do": "archive", "id": "chief" });
     assert!(
-        s.call(&chief, "persona", &me)
+        s.call(chief, "persona", &me)
             .unwrap_err()
             .starts_with("IS_CHIEF")
     );
     s.call(
-        &chief,
+        chief,
         "persona",
         &json!({ "do": "archive", "id": "travel" }),
     )
@@ -367,7 +373,7 @@ fn a_persona_and_its_routine_are_made_at_once_with_no_card_and_show_in_the_app()
     assert!(!ids(s.cooee.json("/personas")).contains(&json!("travel")));
     assert!(s.dir.join("agents/.archive/travel/agent.toml").is_file());
     s.call(
-        &chief,
+        chief,
         "persona",
         &json!({ "do": "restore", "id": "travel" }),
     )
@@ -472,14 +478,13 @@ fn access_and_config_cards_show_the_files_diff_and_write_exactly_it_after_face_i
             .unwrap_err()
             .starts_with("NO_MACHINE")
     );
+    assert_config_cards_write_exactly_their_diff(&s, &chief, &face);
+}
 
+fn assert_config_cards_write_exactly_their_diff(s: &Setup, chief: &str, face: &dyn Fn() -> Value) {
     let set = json!({ "set": { "approval_expiry_minutes": 60 } });
-    assert!(
-        s.call(&chief, "config", &set)
-            .unwrap()
-            .starts_with("Asked.")
-    );
-    let card = s.card(&chief);
+    assert!(s.call(chief, "config", &set).unwrap().starts_with("Asked."));
+    let card = s.card(chief);
     assert!(
         card["detail"]
             .as_str()
@@ -487,36 +492,36 @@ fn access_and_config_cards_show_the_files_diff_and_write_exactly_it_after_face_i
             .contains("+ approval_expiry_minutes = 60")
     );
     let was = s.config();
-    assert_eq!(s.approve(&chief, &card, "decline", &json!({})).0, 200);
+    assert_eq!(s.approve(chief, &card, "decline", &json!({})).0, 200);
     assert_eq!(s.config(), was);
-    s.call(&chief, "config", &set).unwrap();
-    let card = s.card(&chief);
+    s.call(chief, "config", &set).unwrap();
+    let card = s.card(chief);
     fs::write(s.dir.join("config.toml"), format!("{was}# mine\n")).unwrap();
-    let (_, stale) = s.approve(&chief, &card, "approve", &face());
+    let (_, stale) = s.approve(chief, &card, "approve", &face());
     assert!(
         stale["line"].as_str().unwrap().contains("changed on disk"),
         "{stale}"
     );
     assert_eq!(s.config(), format!("{was}# mine\n"));
-    s.call(&chief, "config", &set).unwrap();
-    let card = s.card(&chief);
-    assert_eq!(s.approve(&chief, &card, "approve", &face()).0, 200);
+    s.call(chief, "config", &set).unwrap();
+    let card = s.card(chief);
+    assert_eq!(s.approve(chief, &card, "approve", &face()).0, 200);
     let set = was.replacen("[[mcp]]", "approval_expiry_minutes = 60\n[[mcp]]", 1);
     assert_eq!(s.config(), format!("{set}# mine\n"));
 
     let tokens = json!({ "set": { "plugins": [] } });
     assert!(
-        s.call(&chief, "config", &tokens)
+        s.call(chief, "config", &tokens)
             .unwrap_err()
             .starts_with("BAD_KEY")
     );
     let unknown = json!({ "set": { "colour": "red" } });
     assert!(
-        s.call(&chief, "config", &unknown)
+        s.call(chief, "config", &unknown)
             .unwrap_err()
             .starts_with("BAD_CONFIG")
     );
-    assert_eq!(s.cards(&chief).len(), 4);
+    assert_eq!(s.cards(chief).len(), 4);
 }
 
 #[test]

@@ -213,17 +213,7 @@ fn a_heartbeat_runs_only_on_news_and_pushes_only_when_its_rule_matches() {
         Vec::<(String, String)>::new(),
         "an empty rule pushes nothing"
     );
-    let row = panel_row(&cooee);
-    assert_eq!(row["name"], "Heartbeat", "{row}");
-    let next = row["next"].as_str().unwrap();
-    assert!(
-        next.starts_with("last run ") && next.ends_with("· silent: no notify rule"),
-        "{next}"
-    );
-    assert!(
-        next.contains("read ") && next.contains(" characters"),
-        "{next}"
-    );
+    assert_the_panel_shows_a_silent_run_with_no_rule(&cooee);
 
     fs::write(s.home.join("notify.md"), "Tell me when the build is red.\n").unwrap();
     say(&cooee, "fake says: The build is red again. / NOTIFY", "b");
@@ -241,7 +231,25 @@ fn a_heartbeat_runs_only_on_news_and_pushes_only_when_its_rule_matches() {
     assert_eq!(s.beats(), vec![one], "one push");
     let next = panel_row(&cooee)["next"].as_str().unwrap().to_owned();
     assert!(next.ends_with("· pushed"), "{next}");
-    let run = runs(&cooee).into_iter().find(|r| {
+    assert_the_second_run_reads_the_rule_and_only_new_news(&s, &cooee);
+}
+
+fn assert_the_panel_shows_a_silent_run_with_no_rule(cooee: &Cooee) {
+    let row = panel_row(cooee);
+    assert_eq!(row["name"], "Heartbeat", "{row}");
+    let next = row["next"].as_str().unwrap();
+    assert!(
+        next.starts_with("last run ") && next.ends_with("· silent: no notify rule"),
+        "{next}"
+    );
+    assert!(
+        next.contains("read ") && next.contains(" characters"),
+        "{next}"
+    );
+}
+
+fn assert_the_second_run_reads_the_rule_and_only_new_news(s: &Setup, cooee: &Cooee) {
+    let run = runs(cooee).into_iter().find(|r| {
         let sent = s.shed.sent(&format!("cooee-{r}")).join("\n");
         sent.contains("again")
     });
@@ -305,47 +313,7 @@ fn a_heartbeat_action_is_a_card_with_nothing_done_and_its_daily_limit_holds() {
         started.contains("--policy ask"),
         "every tool call asks: {started}"
     );
-
-    let (said, failed) = tool(
-        &s.shed,
-        &run,
-        "remember",
-        &json!({ "text": "The invoice is due." }),
-    );
-    assert!(!failed && said.starts_with("Proposed."), "{said}");
-    assert!(
-        !s.home.join("memory.md").exists(),
-        "nothing written before approval"
-    );
-    s.shed.ask(&terminal);
-    eventually("the card", || {
-        let items = cooee.json(&format!("/threads/{run}/messages"));
-        let items = items["items"].as_array().unwrap().clone();
-        items
-            .iter()
-            .any(|i| i["kind"] == "approval" && i["form"].is_null())
-    });
-    thread::sleep(Duration::from_millis(500));
-    let answered = s
-        .shed
-        .sent(&terminal)
-        .iter()
-        .any(|t| t.contains("\"approve\""));
-    assert!(!answered, "nothing approved");
-    let about_run = s
-        .pushes()
-        .iter()
-        .filter(|p| p.to_string().contains(&run))
-        .count();
-    assert_eq!(
-        about_run, 0,
-        "a heartbeat's card is a background card: no push"
-    );
-    assert_eq!(
-        s.beats(),
-        Vec::<(String, String)>::new(),
-        "a silent run pushes nothing"
-    );
+    assert_an_action_is_a_background_card_with_nothing_done(&s, &cooee, &run, &terminal);
 
     say(&cooee, "fake says: Another invoice. / NOTIFY", "b");
     let line = mark(&s.dir)["line"].clone();
@@ -364,5 +332,53 @@ fn a_heartbeat_action_is_a_card_with_nothing_done_and_its_daily_limit_holds() {
             &mark(&s.dir)["today"]["capped"]
         ),
         (&json!(1), &json!(1))
+    );
+}
+
+fn assert_an_action_is_a_background_card_with_nothing_done(
+    s: &Setup,
+    cooee: &Cooee,
+    run: &str,
+    terminal: &str,
+) {
+    let (said, failed) = tool(
+        &s.shed,
+        run,
+        "remember",
+        &json!({ "text": "The invoice is due." }),
+    );
+    assert!(!failed && said.starts_with("Proposed."), "{said}");
+    assert!(
+        !s.home.join("memory.md").exists(),
+        "nothing written before approval"
+    );
+    s.shed.ask(terminal);
+    eventually("the card", || {
+        let items = cooee.json(&format!("/threads/{run}/messages"));
+        let items = items["items"].as_array().unwrap().clone();
+        items
+            .iter()
+            .any(|i| i["kind"] == "approval" && i["form"].is_null())
+    });
+    thread::sleep(Duration::from_millis(500));
+    let answered = s
+        .shed
+        .sent(terminal)
+        .iter()
+        .any(|t| t.contains("\"approve\""));
+    assert!(!answered, "nothing approved");
+    let about_run = s
+        .pushes()
+        .iter()
+        .filter(|p| p.to_string().contains(run))
+        .count();
+    assert_eq!(
+        about_run, 0,
+        "a heartbeat's card is a background card: no push"
+    );
+    assert_eq!(
+        s.beats(),
+        Vec::<(String, String)>::new(),
+        "a silent run pushes nothing"
     );
 }

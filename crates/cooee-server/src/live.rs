@@ -124,6 +124,63 @@ struct State {
 }
 
 impl State {
+    fn shelf(&mut self, sid: &str, k: &str) -> Result<Arc<Turn<Shelf<()>>>, u16> {
+        let Some(open) = self.streams.iter_mut().find(|o| o.tap.sid == sid) else {
+            return Err(404);
+        };
+        if !open.keys.iter().any(|o| o == k) {
+            if open.keys.len() >= KEYS {
+                return Err(429);
+            }
+            open.keys.push(k.to_owned());
+        }
+        let held = self.keys.entry(k.to_owned()).or_insert_with(|| Held {
+            shelf: Arc::default(),
+            holders: vec![],
+            task: None,
+            idle: None,
+            pages: 1,
+            poke: Arc::default(),
+        });
+        held.idle = None;
+        Ok(Arc::clone(&held.shelf))
+    }
+
+    fn place(&mut self, sid: &str, k: &str, task: Option<JoinHandle<()>>) -> bool {
+        let placed = match (task, self.keys.get_mut(k)) {
+            (Some(task), Some(held)) => {
+                held.task.replace(task).inspect(JoinHandle::abort);
+                true
+            }
+            (task, _) => {
+                task.inspect(JoinHandle::abort);
+                false
+            }
+        };
+        if !placed {
+            if let Some(open) = self.streams.iter_mut().find(|o| o.tap.sid == sid) {
+                open.keys.retain(|o| o != k);
+            }
+            self.release(k, sid);
+        }
+        placed
+    }
+
+    fn hold(&mut self, tap: &Arc<Tap>, k: &str) -> bool {
+        let open = self.streams.iter().any(|o| o.tap.sid == tap.sid);
+        match self.keys.get_mut(k) {
+            Some(held) if open => {
+                held.holders.retain(|t| t.sid != tap.sid);
+                held.holders.push(Arc::clone(tap));
+                true
+            }
+            _ => {
+                self.release(k, &tap.sid);
+                false
+            }
+        }
+    }
+
     fn end(&mut self, sid: &str) {
         let Some(at) = self.streams.iter().position(|o| o.tap.sid == sid) else {
             return;
@@ -245,27 +302,9 @@ impl Live {
         let Some(source) = crate::screens::source(&have.k, who) else {
             return gone(404);
         };
-        let kept = {
-            let mut st = lock(&self.state);
-            let Some(open) = st.streams.iter_mut().find(|o| o.tap.sid == tap.sid) else {
-                return gone(404);
-            };
-            if !open.keys.contains(&have.k) {
-                if open.keys.len() >= KEYS {
-                    return gone(429);
-                }
-                open.keys.push(have.k.clone());
-            }
-            let held = st.keys.entry(have.k.clone()).or_insert_with(|| Held {
-                shelf: Arc::default(),
-                holders: vec![],
-                task: None,
-                idle: None,
-                pages: 1,
-                poke: Arc::default(),
-            });
-            held.idle = None;
-            Arc::clone(&held.shelf)
+        let kept = match lock(&self.state).shelf(&tap.sid, &have.k) {
+            Ok(kept) => kept,
+            Err(code) => return gone(code),
         };
         let mut kept = kept.lock().await;
         let started = lock(&self.state)
@@ -282,38 +321,12 @@ impl Live {
                     Err(_) => None,
                 },
             };
-            let mut st = lock(&self.state);
-            let placed = match (task, st.keys.get_mut(&have.k)) {
-                (Some(task), Some(held)) => {
-                    held.task.replace(task).inspect(JoinHandle::abort);
-                    true
-                }
-                (task, _) => {
-                    task.inspect(JoinHandle::abort);
-                    false
-                }
-            };
-            if !placed {
-                if let Some(open) = st.streams.iter_mut().find(|o| o.tap.sid == tap.sid) {
-                    open.keys.retain(|k| *k != have.k);
-                }
-                st.release(&have.k, &tap.sid);
+            if !lock(&self.state).place(&tap.sid, &have.k, task) {
                 return gone(404);
             }
         }
-        {
-            let mut st = lock(&self.state);
-            let open = st.streams.iter().any(|o| o.tap.sid == tap.sid);
-            match st.keys.get_mut(&have.k) {
-                Some(held) if open => {
-                    held.holders.retain(|t| t.sid != tap.sid);
-                    held.holders.push(Arc::clone(tap));
-                }
-                _ => {
-                    st.release(&have.k, &tap.sid);
-                    return gone(404);
-                }
-            }
+        if !lock(&self.state).hold(tap, &have.k) {
+            return gone(404);
         }
         let state = kept.state(&(), &have.k, have.rev).unwrap_or_else(|e| {
             cooee_core::note!("cooee: stream {}: {e}", have.k);

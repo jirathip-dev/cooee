@@ -323,48 +323,42 @@ fn ask(c: &Cooee) -> (String, Value) {
     )
 }
 
-#[test]
-fn a_new_device_asks_and_a_paired_one_approves_it_with_its_passkey() {
+fn cooee_pushing_through_a_fake_curl(
+    dir: &std::path::Path,
+) -> (FakeShed, Cooee, std::path::PathBuf) {
     use std::os::unix::fs::PermissionsExt;
-    let dir = scratch("approve");
     let shed = FakeShed::start(&dir.join("shed"), version());
     let bin = dir.join("bin");
     fs::create_dir_all(&bin).unwrap();
     let log = dir.join("pushed.log");
     let fakes = [(
         "curl",
-        format!("#!/bin/sh\nsed -n 's/^url = \"\\(.*\\)\"$/\\1/p' >>{log:?}\nprintf 201\n"),
+        format!(
+            "#!/bin/sh\nsed -n 's/^url = \"\\(.*\\)\"$/\\1/p' >>\"{}\"\nprintf 201\n",
+            log.display()
+        ),
     )];
     for (name, script) in fakes {
         fs::write(bin.join(name), script).unwrap();
         fs::set_permissions(bin.join(name), fs::Permissions::from_mode(0o755)).unwrap();
     }
     let path = format!("{}:{}", bin.display(), std::env::var("PATH").unwrap());
-    let c = Cooee::start_env(&dir, &shed.dir, "", &[("PATH", path.as_str())]);
-    let endpoint = "https://push.example.com/paired-phone";
-    let sub = json!({ "endpoint": endpoint, "p256dh": "BCVxsr7N_eNgVRqvHtD0zTZsEc6-VV-JvLexhqUzORcxaOzi6-AYWXvTBHm4bjyPjs7Vd8pZGH6SRpkNtoIAiw4", "auth": "BTBZMqHH6r4Tts7J_aSIgg" });
-    assert_eq!(c.post("/push/subscribe", &sub).0, 200);
-    let phone = Authenticator::new(&c, 7);
-    save_passkey(&c, &phone);
+    let c = Cooee::start_env(dir, &shed.dir, "", &[("PATH", path.as_str())]);
+    (shed, c, log)
+}
 
-    let (word, claim) = ask(&c);
-    assert_eq!(word.split(' ').count(), 2, "{word}");
-    assert_eq!(status(&open_post(&c, "/pair/claim", &claim).0), 202);
+fn wait_for_push(log: &std::path::Path, endpoint: &str) {
     let at = std::time::Instant::now();
-    while !fs::read_to_string(&log)
+    while !fs::read_to_string(log)
         .unwrap_or_default()
         .contains(endpoint)
     {
         assert!(at.elapsed().as_secs() < 10, "no push");
         std::thread::sleep(std::time::Duration::from_millis(50));
     }
-    let asks = c.json("/pair/asks");
-    assert_eq!(
-        (asks[0]["word"].as_str(), asks[0]["label"].as_str()),
-        (Some(word.as_str()), Some("iPad"))
-    );
-    let id = asks[0]["id"].clone();
+}
 
+fn only_the_paired_passkey_approves(c: &Cooee, phone: &Authenticator, id: &Value, claim: &Value) {
     let answer = |passkey: Value| {
         c.post(
             "/pair/answer",
@@ -372,22 +366,24 @@ fn a_new_device_asks_and_a_paired_one_approves_it_with_its_passkey() {
         )
     };
     assert_eq!(answer(Value::Null).0, 400);
-    let mut forged = phone.get(&challenge(&c));
+    let mut forged = phone.get(&challenge(c));
     forged["sig"] = json!(phone.sig(b"other", b"data"));
     assert_eq!(answer(forged).0, 403);
     assert_eq!(answer(phone.get("not-a-challenge-this-server-gave")).0, 403);
-    let stranger = Authenticator::new(&c, 9);
-    let (code, body) = answer(stranger.get(&challenge(&c)));
+    let stranger = Authenticator::new(c, 9);
+    let (code, body) = answer(stranger.get(&challenge(c)));
     assert_eq!(code, 403, "{body}");
     assert!(body.contains("No passkey for this cooee"), "{body}");
     assert_eq!(
-        status(&open_post(&c, "/pair/claim", &claim).0),
+        status(&open_post(c, "/pair/claim", claim).0),
         202,
         "still waiting"
     );
-    let (code, body) = answer(phone.get(&challenge(&c)));
+    let (code, body) = answer(phone.get(&challenge(c)));
     assert_eq!(code, 200, "{body}");
+}
 
+fn assert_the_ipad_is_paired(c: &Cooee, claim: &Value) {
     let (head, _) = c.raw("POST", "/pair/claim", &IPAD, &claim.to_string());
     let token = head
         .lines()
@@ -416,6 +412,31 @@ fn a_new_device_asks_and_a_paired_one_approves_it_with_its_passkey() {
     );
     assert_eq!(ipad("/passkeys")[0]["mine"], false);
     assert_eq!(c.json("/passkeys")[0]["mine"], true);
+}
+
+#[test]
+fn a_new_device_asks_and_a_paired_one_approves_it_with_its_passkey() {
+    let dir = scratch("approve");
+    let (_shed, c, log) = cooee_pushing_through_a_fake_curl(&dir);
+    let endpoint = "https://push.example.com/paired-phone";
+    let sub = json!({ "endpoint": endpoint, "p256dh": "BCVxsr7N_eNgVRqvHtD0zTZsEc6-VV-JvLexhqUzORcxaOzi6-AYWXvTBHm4bjyPjs7Vd8pZGH6SRpkNtoIAiw4", "auth": "BTBZMqHH6r4Tts7J_aSIgg" });
+    assert_eq!(c.post("/push/subscribe", &sub).0, 200);
+    let phone = Authenticator::new(&c, 7);
+    save_passkey(&c, &phone);
+
+    let (word, claim) = ask(&c);
+    assert_eq!(word.split(' ').count(), 2, "{word}");
+    assert_eq!(status(&open_post(&c, "/pair/claim", &claim).0), 202);
+    wait_for_push(&log, endpoint);
+    let asks = c.json("/pair/asks");
+    assert_eq!(
+        (asks[0]["word"].as_str(), asks[0]["label"].as_str()),
+        (Some(word.as_str()), Some("iPad"))
+    );
+    let id = asks[0]["id"].clone();
+
+    only_the_paired_passkey_approves(&c, &phone, &id, &claim);
+    assert_the_ipad_is_paired(&c, &claim);
 }
 
 #[test]

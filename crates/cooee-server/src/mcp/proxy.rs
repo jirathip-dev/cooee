@@ -122,6 +122,70 @@ fn pipe(server: &str, thread: &str) {
     }
 }
 
+type Notes = Mutex<HashMap<String, String>>;
+
+fn relay(
+    mut msg: Value,
+    (o, upstream): (&Mutex<io::Stdout>, &Mutex<Upstream>),
+    (l, pending, n): (&Mutex<HashSet<String>>, &Mutex<Frames>, &Notes),
+    tools: Option<&[String]>,
+    me: &str,
+) {
+    let id = msg.get("id").map(Value::to_string).unwrap_or_default();
+    let answer = msg.get("method").is_none();
+    let note = held(n).remove(&id);
+    if let (true, Some(note), Some(content)) = (
+        answer,
+        note,
+        msg.pointer_mut("/result/content")
+            .and_then(Value::as_array_mut),
+    ) {
+        let text = format!("The owner had the browser and handed it back: {note}");
+        content.push(json!({ "type": "text", "text": text }));
+    }
+    if let Some((caption, reply)) = answer.then(|| held(pending).shots.remove(&id)).flatten() {
+        keep(me, &caption, &msg, false);
+        put(o, &reply);
+        return;
+    }
+    if answer && held(pending).asked.remove(&id) {
+        keep(me, "", &msg, true);
+    }
+    if let Some(caption) = answer.then(|| held(pending).acts.remove(&id)).flatten() {
+        shoot(pending, upstream, o, caption, msg);
+        return;
+    }
+    let listed = answer && held(l).remove(&id);
+    put(o, &if listed { only(msg, tools) } else { msg });
+}
+
+fn check_call(
+    (thread, server): (&str, &str),
+    msg: &Value,
+    id: &Value,
+    (frames, notes): (&Mutex<Frames>, &Notes),
+) -> Result<(), String> {
+    let name = msg
+        .pointer("/params/name")
+        .and_then(Value::as_str)
+        .unwrap_or_default();
+    let args = msg.pointer("/params/arguments").cloned();
+    let checked = json!({ "server": server, "tool": name, "arguments": args });
+    let called = ask(
+        "/mcp/agent/call",
+        &json!({ "thread": thread, "server": checked }),
+    )?;
+    let field = |k: &str| called.get(k).and_then(Value::as_str).map(str::to_owned);
+    held(frames).asked_for(name, id.to_string());
+    if let Some(caption) = field("caption") {
+        held(frames).acts.insert(id.to_string(), caption);
+    }
+    if let Some(note) = field("note") {
+        held(notes).insert(id.to_string(), note);
+    }
+    Ok(())
+}
+
 fn run(g: &Child, server: &str, thread: &str) -> Result<(), String> {
     let (tx, rx): (Sender<Value>, Receiver<Value>) = mpsc::channel();
     let up = Arc::new(Mutex::new(open(g, tx)?));
@@ -138,41 +202,13 @@ fn run(g: &Child, server: &str, thread: &str) -> Result<(), String> {
     );
     let (tools, me) = (g.tools.clone(), thread.to_owned());
     std::thread::spawn(move || {
-        for mut msg in rx {
-            let id = msg.get("id").map(Value::to_string).unwrap_or_default();
-            let answer = msg.get("method").is_none();
-            let note = held(&n).remove(&id);
-            if let (true, Some(note), Some(content)) = (
-                answer,
-                note,
-                msg.pointer_mut("/result/content")
-                    .and_then(Value::as_array_mut),
-            ) {
-                let text = format!("The owner had the browser and handed it back: {note}");
-                content.push(json!({ "type": "text", "text": text }));
-            }
-            if let Some((caption, reply)) =
-                answer.then(|| held(&pending).shots.remove(&id)).flatten()
-            {
-                keep(&me, &caption, &msg, false);
-                put(&o, &reply);
-                continue;
-            }
-            if answer && held(&pending).asked.remove(&id) {
-                keep(&me, "", &msg, true);
-            }
-            if let Some(caption) = answer.then(|| held(&pending).acts.remove(&id)).flatten() {
-                shoot(&pending, &upstream, &o, caption, msg);
-                continue;
-            }
-            let listed = answer && held(&l).remove(&id);
-            put(
-                &o,
-                &if listed {
-                    only(msg, tools.as_deref())
-                } else {
-                    msg
-                },
+        for msg in rx {
+            relay(
+                msg,
+                (&o, &upstream),
+                (&l, &pending, &n),
+                tools.as_deref(),
+                &me,
             );
         }
     });
@@ -186,31 +222,9 @@ fn run(g: &Child, server: &str, thread: &str) -> Result<(), String> {
                 held(&lists).insert(id.to_string());
             }
             Some("tools/call") => {
-                let name = msg
-                    .pointer("/params/name")
-                    .and_then(Value::as_str)
-                    .unwrap_or_default();
-                let args = msg.pointer("/params/arguments").cloned();
-                let checked = json!({ "server": server, "tool": name, "arguments": args });
-                match ask(
-                    "/mcp/agent/call",
-                    &json!({ "thread": thread, "server": checked }),
-                ) {
-                    Err(why) => {
-                        put(&out, &error(&id, -32602, &why));
-                        continue;
-                    }
-                    Ok(called) => {
-                        let field =
-                            |k: &str| called.get(k).and_then(Value::as_str).map(str::to_owned);
-                        held(&frames).asked_for(name, id.to_string());
-                        if let Some(caption) = field("caption") {
-                            held(&frames).acts.insert(id.to_string(), caption);
-                        }
-                        if let Some(note) = field("note") {
-                            held(&notes).insert(id.to_string(), note);
-                        }
-                    }
+                if let Err(why) = check_call((thread, server), &msg, &id, (&frames, &notes)) {
+                    put(&out, &error(&id, -32602, &why));
+                    continue;
                 }
             }
             _ => {}

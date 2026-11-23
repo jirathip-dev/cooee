@@ -173,6 +173,23 @@ fn first_ok(urls: &[String]) -> Option<Reply> {
         .find_map(|u| fetch("GET", u, &[], None).ok().filter(Reply::ok))
 }
 
+fn bearer(a: &Secret) -> (String, String) {
+    ("Authorization".to_owned(), format!("Bearer {}", a.expose()))
+}
+
+fn authorize_link(
+    (authorize, way): (&HttpsUrl, Way),
+    client: (&str, &str),
+    pkce: (&str, &str),
+    (scopes, resource): (&[String], &str),
+) -> String {
+    let open = core::authorize_url(authorize, client, pkce, scopes, resource);
+    match way {
+        Way::Builtin(b) => format!("{open}&{}", core::form(b.authorize_extra())),
+        Way::Mcp(_) => open,
+    }
+}
+
 fn endpoints(issuer: &HttpsUrl) -> Result<Endpoints, String> {
     let doc = first_ok(&core::issuer_metadata(issuer))
         .ok_or_else(|| format!("{} has no sign-in metadata", issuer.as_str()))?;
@@ -347,6 +364,23 @@ impl Connectors {
         flows.push(flow);
     }
 
+    fn sign_in_client(
+        &self,
+        s: &Server,
+        issuer: &HttpsUrl,
+        (redirect, kind, register): (&str, Kind, Option<&HttpsUrl>),
+    ) -> Result<Registration, String> {
+        match (self.registered(issuer.as_str(), redirect)?, kind, register) {
+            (Some(r), ..) => Ok(r),
+            (None, Kind::Registered, Some(at)) => self.register(at, issuer.as_str(), redirect),
+            _ => Err(format!(
+                "{} needs a sign-in client made once on the service: add it under connectors › {}",
+                issuer.as_str(),
+                s.name
+            )),
+        }
+    }
+
     pub(crate) fn signin(
         &self,
         s: &Server,
@@ -379,34 +413,16 @@ impl Connectors {
         };
         let redirect = redirect(origin, host)?;
         let (issuer, ends) = discover((&url, way), issuer.as_ref())?;
-        let client = match (
-            self.registered(issuer.as_str(), &redirect)?,
-            kind,
-            &ends.register,
-        ) {
-            (Some(r), ..) => r,
-            (None, Kind::Registered, Some(at)) => self.register(at, issuer.as_str(), &redirect)?,
-            _ => {
-                return Err(format!(
-                    "{} needs a sign-in client made once on the service: add it under connectors › {}",
-                    issuer.as_str(),
-                    s.name
-                ));
-            }
-        };
+        let client = self.sign_in_client(s, &issuer, (&redirect, kind, ends.register.as_ref()))?;
         let (verifier, challenge) = core::pkce(&cooee_core::random(32).map_err(text)?);
         let state = random(24)?;
         let resource = way.resource(&url).to_owned();
-        let mut open = core::authorize_url(
-            &ends.authorize,
+        let open = authorize_link(
+            (&ends.authorize, way),
             (&client.client_id, &redirect),
             (&state, &challenge),
-            &scopes,
-            &resource,
+            (&scopes, &resource),
         );
-        if let Way::Builtin(b) = way {
-            open = format!("{open}&{}", core::form(b.authorize_extra()));
-        }
         self.start(
             flow(Pending::OAuth(Box::new(Started {
                 state: Secret::new(state),
@@ -587,7 +603,6 @@ impl Connectors {
                 .map_err(text)?
                 .ok_or_else(needs)
         };
-        let bearer = |a: &Secret| ("Authorization".to_owned(), format!("Bearer {}", a.expose()));
         match (read()?, auth) {
             (Credential::Token { value }, Auth::Token { header, prefix, .. }) => {
                 return Ok((header, format!("{prefix}{}", value.expose())));
@@ -621,9 +636,19 @@ impl Connectors {
             (old, way.resource(&url)),
             now,
         );
+        self.refreshed(fresh, (&s.name, account), &item)
+    }
+
+    fn refreshed(
+        &self,
+        fresh: Result<Credential, Refused>,
+        (connector, account): (&str, &str),
+        item: &str,
+    ) -> Result<(String, String), String> {
+        let needs = || format!("{connector} ({account}) needs sign-in");
         match fresh {
             Ok(c) => {
-                tokens::keep(self.vault, &self.data, &item, &c).map_err(text)?;
+                tokens::keep(self.vault, &self.data, item, &c).map_err(text)?;
                 match c {
                     Credential::OAuth { access, .. } => Ok(bearer(&access)),
                     Credential::Token { .. } => Err(needs()),
@@ -634,7 +659,7 @@ impl Connectors {
                     for a in f
                         .accounts
                         .iter_mut()
-                        .filter(|a| a.connector == s.name && a.name == account)
+                        .filter(|a| a.connector == connector && a.name == account)
                     {
                         a.state = State::NeedsSignIn { why: why.clone() };
                     }

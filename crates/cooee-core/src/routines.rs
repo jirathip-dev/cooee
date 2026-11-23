@@ -234,6 +234,28 @@ pub struct Edit {
     pub per_day: Option<String>,
 }
 
+impl Place {
+    fn asked(place: &str, from: &Thread) -> Result<Self, String> {
+        Ok(match place {
+            "" | "chat" => Self::Chat {
+                thread: from.id.clone(),
+            },
+            "new_thread" => Self::NewThread {
+                who: Who {
+                    agent: from.agent.clone(),
+                    account: from.account.clone(),
+                    profile: from.profile.clone(),
+                    folder: from.folder.clone().unwrap_or_default(),
+                    model: from.model.clone(),
+                    effort: from.effort.clone(),
+                    machine: from.machine.clone(),
+                },
+            },
+            p => return Err(format!("BAD_PLACE: {p:?} is neither chat nor new_thread")),
+        })
+    }
+}
+
 impl Routine {
     /// The routine `ask` says, made by thread `from`'s agent at `now` (in UTC offset `offset_min`), among `list`.
     ///
@@ -250,23 +272,7 @@ impl Routine {
             return Err(format!("TOO_MANY: there are {MAX} routines already"));
         }
         let ends_at = end::ends_at(ask.until.as_deref(), (now, offset_min))?;
-        let place = match ask.place.as_str() {
-            "" | "chat" => Place::Chat {
-                thread: from.id.clone(),
-            },
-            "new_thread" => Place::NewThread {
-                who: Who {
-                    agent: from.agent.clone(),
-                    account: from.account.clone(),
-                    profile: from.profile.clone(),
-                    folder: from.folder.clone().unwrap_or_default(),
-                    model: from.model.clone(),
-                    effort: from.effort.clone(),
-                    machine: from.machine.clone(),
-                },
-            },
-            p => return Err(format!("BAD_PLACE: {p:?} is neither chat nor new_thread")),
-        };
+        let place = Place::asked(&ask.place, from)?;
         let trigger = match (ask.when, ask.github, ask.webhook, ask.mail) {
             (Some(w), None, None, false) => Trigger::Schedule(Schedule::parse(&w)?),
             (None, Some(g), None, false) => Trigger::Github(g.checked()?),

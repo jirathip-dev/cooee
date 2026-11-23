@@ -1,0 +1,6 @@
+about = "scripts/line-cap.sh: the Rust non-test lines under line_cap (as core/cap) and the apple/ Swift lines under apple_cap; the fleet's premerge runs the same script"
+fix = "delete code; a raise of the cap is its own issue"
+budget_secs = 10
+versions = ["uname -s"]
+paths = ["crates/**/*.rs", "apple/**", "ci/cap.toml", "ci/cap.d/**", "scripts/line-cap.sh", "ci/line-cap-test.sh"]
+run = "scripts/line-cap.sh && ci/line-cap-test.sh"
