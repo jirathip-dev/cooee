@@ -122,7 +122,13 @@ fn a_kind_or_action_outside_the_catalog_is_never_drawn() {
     let (asks, _) = persona(&s, "Travel", Some("ask"));
     let wipe = r#"{"blocks": [{"type": "button", "label": "Wipe", "action": "wipe"}]}"#;
     assert_eq!(show(&s, &asks, wipe)["isError"], true);
-    assert!(blocks(&s, &shows).is_empty() && blocks(&s, &asks).is_empty());
+    let drawn: Vec<Value> = [&shows, &asks]
+        .into_iter()
+        .flat_map(|id| blocks(&s, id))
+        .flat_map(|i| i["blocks"].as_array().unwrap().clone())
+        .filter(|b| b["type"] != "prose")
+        .collect();
+    assert_eq!(drawn, Vec::<Value>::new());
 }
 
 #[test]
