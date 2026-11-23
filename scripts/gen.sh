@@ -119,16 +119,41 @@ cmds() {
   mv "$dir/mod.rs.gen" "$dir/mod.rs"
 }
 
-# tools DIR: DIR/mod.rs, a `mod` line per Chief tool file (#664) and the table `ALL` of each file's `TOOL`, in name order.
+# tools DIR TYPE: DIR/mod.rs, a `mod` line per tool file (#664, #778) and the table `ALL` of each file's `TOOL`, a TYPE, in name order.
 tools() {
-  dir=$1
+  dir=$1 ty=$2
   {
     for m in $(modules "$dir"); do printf 'mod %s;\n' "$m"; done
-    printf '\nuse crate::chief::Tool;\n\npub(crate) const ALL: &[Tool] = &[\n'
+    printf '\nuse %s;\n\npub(crate) const ALL: &[%s] = &[\n' "$ty" "${ty##*::}"
     for m in $(modules "$dir"); do printf '    %s::TOOL,\n' "$m"; done
     printf '];\n'
   } >"$dir/mod.rs.gen"
   mv "$dir/mod.rs.gen" "$dir/mod.rs"
+}
+
+# feature DIR NAME (#743): DIR/../NAME+Areas.swift; each `<Prefix><Area>.swift` of DIR adds its State, Action, reducer or scope.
+feature() {
+  dir=$1 name=$2 states='' cases='' reducers=''
+  for f in "$dir"/*.swift; do
+    [ -e "$f" ] || continue
+    a=${f##*/} && a=${a%.swift} && a=${a#"${name%Feature}"}
+    l=$(printf %s "$a" | cut -c1 | tr '[:upper:]' '[:lower:]')$(printf %s "$a" | cut -c2-)
+    if grep -q "struct ${a}State\b" "$f"; then states="$states        public var $l = ${a}State()\n"; fi
+    if grep -q "enum ${a}Action\b" "$f"; then cases="$cases        case $l(${a}Action)\n"; fi
+    if grep -q "var ${l}Scope\b" "$f"; then reducers="$reducers        ${l}Scope\n"; fi
+    if grep -qF "func $l(_ state: inout State, _ action: Action)" "$f"; then
+      reducers="$reducers        Reduce { state, action in $l(&state, action) }\n"
+    fi
+  done
+  [ -n "$reducers" ] || reducers='        EmptyReducer()\n'
+  {
+    printf 'import ComposableArchitecture\n\nextension %s {\n    @ObservableState\n    public struct Areas: Equatable' "$name"
+    if [ -n "$states" ]; then printf ' {\n%b    }\n' "$states"; else printf ' {}\n'; fi
+    printf '\n    @CasePathable\n    public enum AreaAction: Sendable'
+    if [ -n "$cases" ]; then printf ' {\n%b    }\n' "$cases"; else printf ' {}\n'; fi
+    printf '\n    @ReducerBuilder<State, Action>\n    internal var areas: some ReducerOf<Self> {\n%b    }\n}\n' "$reducers"
+  } >"${dir%/*}/$name+Areas.swift.gen"
+  mv "${dir%/*}/$name+Areas.swift.gen" "${dir%/*}/$name+Areas.swift"
 }
 
 # arch: .drover/arch.toml (#729): every `frozen`, `generated` and `shared` line of .drover/arch/*.list, sorted, then each *.toml in name order.
