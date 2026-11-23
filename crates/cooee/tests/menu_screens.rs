@@ -263,40 +263,114 @@ fn an_accounts_detail_lists_its_windows_and_its_two_buttons() {
     assert_eq!(cooee.get("/screens/settings/signins/boat-1/fake/x").0, 400);
 }
 
-#[test]
-fn an_account_signs_in_again_or_out_through_its_machines_shed() {
-    let (shed, cooee, host) = signins("signins-act");
-    let act = |m: &str, action: &str, name: &str| {
-        let values = json!({ "machine": m, "provider": "fake", "account": name });
-        let screen = format!("/screens/settings/signins/{m}/fake/{name}");
-        cooee.post(
-            "/screens/action",
-            &json!({ "screen": screen, "action": action, "values": values }),
-        )
-    };
-    let (status, body) = act(&host, "signin.out", "jk");
-    assert_eq!(
-        (
-            status,
-            serde_json::from_str::<Value>(&body).unwrap()["close"].clone()
-        ),
-        (200, json!(true))
+fn link_and_code(screen: &Value) -> (Value, Value) {
+    let blocks = screen["blocks"].as_array().unwrap();
+    let link = blocks.iter().find(|b| b["id"] == "link/0");
+    let form = blocks.iter().find(|b| b["type"] == "form").unwrap();
+    (
+        link.unwrap()["tap"]["url"].clone(),
+        form["submit"]["action"].clone(),
+    )
+}
+
+fn act(cooee: &Cooee, m: &str, action: &str, name: &str, more: Value) -> (u16, Value) {
+    let mut values = json!({ "machine": m, "provider": "fake", "account": name });
+    if let (Some(all), Value::Object(more)) = (values.as_object_mut(), more) {
+        all.extend(more);
+    }
+    let screen = format!("/screens/settings/signins/{m}/fake/{name}");
+    let (status, body) = cooee.post(
+        "/screens/action",
+        &json!({ "screen": screen, "action": action, "values": values }),
     );
+    (
+        status,
+        serde_json::from_str::<Value>(&body).unwrap_or(Value::Null),
+    )
+}
+
+fn shown(cooee: &Cooee, path: &str, text: &str) -> Value {
+    let start = std::time::Instant::now();
+    loop {
+        let screen = cooee.json(path);
+        let md = screen["blocks"][0]["markdown"].as_str().unwrap_or_default();
+        if md.contains(text) {
+            return screen;
+        }
+        assert!(start.elapsed().as_secs() < 15, "{screen}");
+        std::thread::sleep(std::time::Duration::from_millis(20));
+    }
+}
+
+#[test]
+fn an_account_signs_out_through_its_machines_shed() {
+    let (shed, cooee, host) = signins("signins-out");
+    let (status, body) = act(&cooee, &host, "signin.out", "jk", json!({}));
+    assert_eq!((status, body["close"].clone()), (200, json!(true)));
     assert!(shed.account_of("fake", "jk").is_none());
-    assert_eq!(act(&host, "signin.again", "work").0, 200);
-    assert_eq!(shed.calls("account.login", "work").len(), 1);
-    assert_eq!(act("air", "signin.out", "air").0, 200);
-    assert_eq!(act("air", "signin.again", "air").0, 200);
+    assert_eq!(act(&cooee, "air", "signin.out", "air", json!({})).0, 200);
     let log = shed.cli_log();
-    for verb in ["rm", "login"] {
+    assert!(
+        log.contains("--on air exec --timeout 10 -- shed --json account rm fake air"),
+        "{log}"
+    );
+    assert_eq!(act(&cooee, "boat-1", "signin.out", "x", json!({})).0, 400);
+}
+
+#[test]
+fn sign_in_again_opens_the_login_sheet_with_its_link_and_code_field() {
+    let (shed, cooee, host) = signins("signins-again");
+    let login = shed.dir.join("login-fake");
+    fs::write(
+        &login,
+        "#!/bin/sh\necho 'Open https://login.example.com/here'\necho 'Paste code >'\nread code\nexit 0\n",
+    )
+    .unwrap();
+    let (status, body) = act(&cooee, &host, "signin.again", "work", json!({}));
+    let sheet = format!("/screens/settings/signins/{host}/fake/work/login");
+    assert_eq!((status, &body["open"]), (200, &json!(sheet)));
+    let screen = shown(&cooee, &sheet, "Paste code");
+    assert_eq!(
+        link_and_code(&screen),
+        (
+            json!("https://login.example.com/here"),
+            json!("signin.code")
+        )
+    );
+    let terminal = shed.runs().last().unwrap().clone();
+    let code = json!({ "code": "123456" });
+    assert_eq!(act(&cooee, &host, "signin.code", "work", code).0, 200);
+    assert_eq!(shed.sent(&terminal), ["123456"]);
+
+    let (status, body) = act(&cooee, "air", "signin.again", "air", json!({}));
+    let sheet = "/screens/settings/signins/air/fake/air/login?terminal=login";
+    assert_eq!((status, &body["open"]), (200, &json!(sheet)));
+    assert_eq!(
+        link_and_code(&cooee.json(sheet)),
+        (
+            json!("https://login.example.com/remote"),
+            json!("signin.code")
+        )
+    );
+    let on_air = json!({ "terminal": "login", "code": "654321" });
+    assert_eq!(
+        act(&cooee, "air", "signin.code", "air", on_air.clone()).0,
+        200
+    );
+    let (status, body) = act(&cooee, "air", "signin.cancel", "air", on_air);
+    assert_eq!((status, body["close"].clone()), (200, json!(true)));
+    let log = shed.cli_log();
+    for call in [
+        "account login fake air",
+        "read --screen -- login",
+        "send --no-paste -- login 654321",
+        "rm -- login",
+    ] {
         assert!(
-            log.contains(&format!(
-                "--on air exec --timeout 10 -- shed --json account {verb} fake air"
-            )),
+            log.contains(&format!("--on air exec --timeout 10 -- shed --json {call}")),
             "{log}"
         );
     }
-    assert_eq!(act("boat-1", "signin.out", "x").0, 400);
 }
 
 #[test]

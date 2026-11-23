@@ -1,8 +1,8 @@
 use std::{collections::HashMap, sync::Arc, thread, time::Duration};
 
 use blocks::{
-    Accessory, Action, Block, Button, ButtonStyle, Confirm, Label, List, Row, Screen, Section,
-    Shown, Tap, Time, Toast, Tone, Toned,
+    Accessory, Action, Block, Button, ButtonStyle, Confirm, Form, Label, List, Row, Screen,
+    Section, Shown, Submit, Tap, Text, TextField, Time, Toast, Tone, Toned,
 };
 use cooee_core::shed_proto::{Account, AccountState, Window};
 use cooee_machines::Machines;
@@ -11,11 +11,11 @@ use serde_json::Value;
 use topcoat::{
     Result,
     context::{Cx, app_context, request_context},
-    router::{path_param, response::Response, route},
+    router::{parse_query_params, path_param, response::Response, route},
 };
 
 use crate::{
-    Hub, HubError, Logins,
+    Hub, HubError, LoginView, Logins,
     http::{Answer, Name, Paired, blocking, manager, on_logins, refused},
     pairing, plugin,
 };
@@ -410,6 +410,108 @@ pub async fn signin(cx: &Cx) -> Result<Answer<Block>> {
     Ok(Answer(found.map(|a| detail(&machine, &a))))
 }
 
+#[derive(Deserialize, Default)]
+struct OnTerminal {
+    terminal: Option<String>,
+}
+
+#[route(GET "/screens/settings/signins/{machine}/{provider}/{name}/login")]
+pub async fn signin_login(cx: &Cx) -> Result<Answer<Block>> {
+    let machine = path_param::<Machine>(cx).to_owned();
+    let provider = path_param::<Provider>(cx).to_owned();
+    let name = path_param::<Name>(cx).to_owned();
+    let q: Option<OnTerminal> = parse_query_params(cx).ok();
+    let terminal = q.and_then(|q| q.terminal).unwrap_or_default();
+    let hosts = Arc::clone(app_context::<Arc<Machines>>(cx));
+    let shown = on_logins(cx, move |l| {
+        let view = if machine == hosts.local() {
+            l.view(&provider)?
+        } else {
+            remote_view(&hosts, &machine, &terminal)
+        };
+        let values = crate::http::fields(serde_json::json!({
+            "machine": machine, "provider": provider, "account": name, "terminal": terminal,
+        }));
+        Ok(login(&format!("{provider} · {name}"), &view, values))
+    })
+    .await;
+    Ok(Answer(shown))
+}
+
+fn remote_view(hosts: &Machines, machine: &str, terminal: &str) -> LoginView {
+    let (state, screen, why) = match hosts.on(machine, &["read", "--screen", "--", terminal]) {
+        Ok(read) => {
+            let screen = read
+                .get("text")
+                .and_then(Value::as_str)
+                .unwrap_or_default()
+                .to_owned();
+            ("running", screen, None)
+        }
+        Err(e) => ("ended", String::new(), Some(e)),
+    };
+    LoginView {
+        state,
+        links: cooee_core::links(&screen),
+        screen,
+        why,
+        account: None,
+    }
+}
+
+fn login(back: &str, v: &LoginView, values: blocks::Fields) -> Block {
+    let text = |id: &str, md: String| Block::Text(Box::new(Text::default().id(id).markdown(md)));
+    let blocks = if v.state == "running" {
+        let mut blocks = vec![text("screen", format!("```\n{}\n```", v.screen))];
+        blocks.extend(v.links.iter().enumerate().map(|(i, link)| {
+            let open = Tap {
+                url: Some(link.clone()),
+                ..Tap::default()
+            };
+            Block::Button(Box::new(
+                Button::new(link.clone()).id(format!("link/{i}")).tap(open),
+            ))
+        }));
+        let code = TextField::new("code").label("Code from the sign-in page");
+        let form = Form::new(vec![code.into()]).id("code").submit(Submit {
+            label: "Send".into(),
+            action: "signin.code".into(),
+            values: Some(values.clone()),
+            ..Submit::default()
+        });
+        blocks.push(Block::Form(Box::new(form)));
+        let cancel = Button::new("Cancel")
+            .id("cancel")
+            .action("signin.cancel")
+            .values(values);
+        blocks.push(Block::Button(Box::new(cancel)));
+        blocks
+    } else {
+        let why = v
+            .why
+            .clone()
+            .unwrap_or_else(|| "No sign-in is running.".to_owned());
+        vec![text("why", why)]
+    };
+    crate::http::core(
+        Screen::default()
+            .id("login")
+            .title("Sign in")
+            .back(back)
+            .refresh(true)
+            .blocks(blocks),
+    )
+}
+
+fn answer(toast: Option<String>, open: Option<String>, close: bool) -> blocks::Answer {
+    blocks::Answer {
+        toast: toast.map(Toast::new),
+        open,
+        close,
+        ..blocks::Answer::default()
+    }
+}
+
 pub(super) async fn act(cx: &Cx, a: &Action) -> Option<Result<Response>> {
     a.screen.strip_prefix(SIGNINS)?;
     let value = |k: &str| {
@@ -420,35 +522,41 @@ pub(super) async fn act(cx: &Cx, a: &Action) -> Option<Result<Response>> {
             .to_owned()
     };
     let (machine, provider, name) = (value("machine"), value("provider"), value("account"));
+    let (terminal, code) = (value("terminal"), value("code"));
     let (action, hosts) = (
         a.action.clone(),
         Arc::clone(app_context::<Arc<Machines>>(cx)),
     );
     let done = on_logins(cx, move |l| {
         let here = machine == hosts.local();
-        let on = |verb: &str| {
-            let args = ["account", verb, provider.as_str(), name.as_str()];
-            hosts.on(&machine, &args).map(drop).map_err(refused)
-        };
-        let answer = match (action.as_str(), here) {
-            ("signin.again", true) => l.start(&provider, Some(&name), false),
-            ("signin.again", false) => on("login"),
-            ("signin.out", true) => l.sign_out(&provider, &name),
-            ("signin.out", false) => on("rm"),
+        let on = |args: &[&str]| hosts.on(&machine, args).map_err(refused);
+        let login = format!("{SIGNINS}/{machine}/{provider}/{name}/login");
+        let (sent, closed) = (
+            || answer(Some("Code sent".to_owned()), None, false),
+            || answer(None, None, true),
+        );
+        match (action.as_str(), here) {
+            ("signin.again", true) => l
+                .start(&provider, Some(&name), false)
+                .map(|()| answer(None, Some(login), false)),
+            ("signin.again", false) => {
+                let started = on(&["account", "login", &provider, &name])?;
+                let t = started
+                    .get("terminal")
+                    .and_then(Value::as_str)
+                    .unwrap_or_default();
+                Ok(answer(None, Some(format!("{login}?terminal={t}")), false))
+            }
+            ("signin.code", true) => l.send(&provider, &code).map(|()| sent()),
+            ("signin.code", false) => {
+                on(&["send", "--no-paste", "--", &terminal, code.trim()]).map(|_| sent())
+            }
+            ("signin.cancel", true) => l.cancel(&provider).map(|()| closed()),
+            ("signin.cancel", false) => on(&["rm", "--", &terminal]).map(|_| closed()),
+            ("signin.out", true) => l.sign_out(&provider, &name).map(|()| closed()),
+            ("signin.out", false) => on(&["account", "rm", &provider, &name]).map(|_| closed()),
             (other, _) => Err(refused(format!("no action {other}"))),
-        };
-        answer.map(|()| match action.as_str() {
-            "signin.out" => blocks::Answer {
-                close: true,
-                ..blocks::Answer::default()
-            },
-            _ => blocks::Answer {
-                toast: Some(Toast::new(format!(
-                    "Signing in to {provider} again on {machine}"
-                ))),
-                ..blocks::Answer::default()
-            },
-        })
+        }
     })
     .await;
     Some(super::chat::answer(done))
@@ -470,6 +578,7 @@ pub(super) fn routes(b: topcoat::router::RouterBuilder) -> topcoat::router::Rout
     b.route(devices)
         .route(signins)
         .route(signin)
+        .route(signin_login)
         .route(machines)
         .route(plugins)
 }
