@@ -44,32 +44,8 @@ impl Store {
             .transaction_with_behavior(TransactionBehavior::Immediate)
             .map_err(db_err(&self.path))?;
         let mut months: BTreeMap<String, Vec<Line>> = BTreeMap::new();
-        let (mut moved, mut trims, mut n) = (Vec::new(), Vec::new(), 0);
-        let stale = strings(
-            &tx,
-            "SELECT thread FROM items GROUP BY thread HAVING MAX(at) < ?1",
-            params![int(quiet)],
-        )
-        .map_err(db_err(&self.path))?;
-        for id in stale {
-            let items = self.bodies(&tx, "thread = ?1 ORDER BY id", params![id])?;
-            let ended = items
-                .last()
-                .is_some_and(|i| matches!(i.body, Body::Ended { .. }));
-            let Some(last) = items.iter().map(|i| i.at).max() else {
-                continue;
-            };
-            if ended || self.load(&id).is_ok_and(|t| t.closed) {
-                n += items.len();
-                let lines = months.entry(month(last)).or_default();
-                moved.push((id.clone(), month(last)));
-                lines.extend(items.into_iter().map(|item| Line {
-                    thread: id.clone(),
-                    whole: false,
-                    item,
-                }));
-            }
-        }
+        let mut trims = Vec::new();
+        let (moved, mut n) = self.ended_threads(&tx, quiet, &mut months)?;
         let long = self.lines(
             &tx,
             "SELECT thread, body FROM items WHERE kind = 'tool' AND at < ?1 AND length(body) > ?2",
@@ -90,7 +66,59 @@ impl Store {
         for (month, lines) in &months {
             self.write_month(month, lines)?;
         }
-        for (id, month) in &moved {
+        self.forget_moved(&tx, &moved)?;
+        for (id, short) in &trims {
+            super::items::put(&tx, &self.path, id, short)?;
+        }
+        tx.commit().map_err(db_err(&self.path))?;
+        n += trims.len();
+        if n > 0 {
+            db.execute_batch("VACUUM").map_err(db_err(&self.path))?;
+        }
+        Ok(n)
+    }
+
+    fn ended_threads(
+        &self,
+        tx: &rusqlite::Connection,
+        quiet: u64,
+        months: &mut BTreeMap<String, Vec<Line>>,
+    ) -> Result<(Vec<(String, String)>, usize), StoreError> {
+        let (mut moved, mut n) = (Vec::new(), 0);
+        let stale = strings(
+            tx,
+            "SELECT thread FROM items GROUP BY thread HAVING MAX(at) < ?1",
+            params![int(quiet)],
+        )
+        .map_err(db_err(&self.path))?;
+        for id in stale {
+            let items = self.bodies(tx, "thread = ?1 ORDER BY id", params![id])?;
+            let ended = items
+                .last()
+                .is_some_and(|i| matches!(i.body, Body::Ended { .. }));
+            let Some(last) = items.iter().map(|i| i.at).max() else {
+                continue;
+            };
+            if ended || self.load(&id).is_ok_and(|t| t.closed) {
+                n += items.len();
+                let lines = months.entry(month(last)).or_default();
+                moved.push((id.clone(), month(last)));
+                lines.extend(items.into_iter().map(|item| Line {
+                    thread: id.clone(),
+                    whole: false,
+                    item,
+                }));
+            }
+        }
+        Ok((moved, n))
+    }
+
+    fn forget_moved(
+        &self,
+        tx: &rusqlite::Connection,
+        moved: &[(String, String)],
+    ) -> Result<(), StoreError> {
+        for (id, month) in moved {
             tx.execute(
                 "DELETE FROM said WHERE rowid IN (SELECT rowid FROM items WHERE thread = ?1)",
                 [id],
@@ -104,15 +132,7 @@ impl Store {
             })
             .map_err(db_err(&self.path))?;
         }
-        for (id, short) in &trims {
-            super::items::put(&tx, &self.path, id, short)?;
-        }
-        tx.commit().map_err(db_err(&self.path))?;
-        n += trims.len();
-        if n > 0 {
-            db.execute_batch("VACUUM").map_err(db_err(&self.path))?;
-        }
-        Ok(n)
+        Ok(())
     }
 
     /// Thread `id`'s items with their whole text: the hot store's, a trimmed tool item's from the archive.

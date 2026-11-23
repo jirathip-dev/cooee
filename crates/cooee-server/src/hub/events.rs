@@ -112,25 +112,7 @@ impl Hub {
             live.chat.turn.note = None;
             changes.push(Change::State(live.chat.turn.clone()));
         }
-        if let (Some(_), shed_proto::EventKind::Turn { prompt, .. }) =
-            (&live.meta.workflow, &event.kind)
-        {
-            let own = live
-                .chat
-                .items
-                .last()
-                .is_some_and(|i| matches!(&i.body, Body::You { text, .. } if text == prompt));
-            if !own {
-                let body = Body::You {
-                    text: prompt.clone(),
-                    random_id: String::new(),
-                    files: Vec::new(),
-                    routine: None,
-                    via: None,
-                };
-                changes.push(Change::Item(live.chat.push(now(), event.seq, body)));
-            }
-        }
+        changes.extend(workflow_prompt(live, &event));
         let was = live.chat.turn.state.clone();
         let read = |c: &cooee_core::action::Call| self.providers.action(&live.meta.agent, c);
         changes.extend(match event.kind {
@@ -144,11 +126,7 @@ impl Hub {
         if was != "limited" && live.chat.turn.state == "limited" {
             changes.extend(self.capped(live).map(Change::Item));
         }
-        let chunk = changes.iter().any(|c| match c {
-            Change::Text(_) => true,
-            Change::Item(i) => matches!(i.body, Body::Agent { .. }),
-            Change::State(_) => false,
-        });
+        let chunk = changes.iter().any(is_chunk);
         if let Some(sent) = live.sent.take_if(|_| chunk) {
             cooee_core::perf::first_token(&live.meta.id, &live.meta.agent, sent);
         }
@@ -258,5 +236,36 @@ impl Hub {
                 cooee_core::note!("cooee: {e}");
             }
         }
+    }
+}
+
+fn workflow_prompt(live: &mut Live, event: &Event) -> Option<Change> {
+    if let (Some(_), shed_proto::EventKind::Turn { prompt, .. }) =
+        (&live.meta.workflow, &event.kind)
+    {
+        let own = live
+            .chat
+            .items
+            .last()
+            .is_some_and(|i| matches!(&i.body, Body::You { text, .. } if text == prompt));
+        if !own {
+            let body = Body::You {
+                text: prompt.clone(),
+                random_id: String::new(),
+                files: Vec::new(),
+                routine: None,
+                via: None,
+            };
+            return Some(Change::Item(live.chat.push(now(), event.seq, body)));
+        }
+    }
+    None
+}
+
+fn is_chunk(c: &Change) -> bool {
+    match c {
+        Change::Text(_) => true,
+        Change::Item(i) => matches!(i.body, Body::Agent { .. }),
+        Change::State(_) => false,
     }
 }

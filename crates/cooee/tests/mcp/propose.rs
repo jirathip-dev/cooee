@@ -3,6 +3,21 @@ use serde_json::{Value, json};
 use crate::setup::{Agent, Mcp, named, setup};
 use crate::support::Authenticator;
 
+const COOEE_TOOLS: [&str; 12] = [
+    "ask_persona",
+    "create_routine",
+    "desk",
+    "handoff",
+    "history",
+    "mail",
+    "propose_server",
+    "remember",
+    "secret",
+    "skill",
+    "stop_routine",
+    "update_persona",
+];
+
 #[test]
 fn propose_server_shows_the_exact_command_runs_nothing_and_needs_face_id_to_add_it_off() {
     let s = setup("mcp-propose");
@@ -10,23 +25,7 @@ fn propose_server_shows_the_exact_command_runs_nothing_and_needs_face_id_to_add_
     let ran = s.dir.join("bin/ran");
     let web = s.dir.join("bin/fake-mcp");
     let mut cooee = Mcp::start(named(&servers, "cooee"), Agent::Codex);
-    assert_eq!(
-        cooee.tools(),
-        [
-            "propose_server",
-            "remember",
-            "ask_persona",
-            "handoff",
-            "history",
-            "update_persona",
-            "create_routine",
-            "stop_routine",
-            "skill",
-            "secret",
-            "mail",
-            "desk"
-        ]
-    );
+    assert_eq!(cooee.tools(), COOEE_TOOLS);
     let proposal = json!({ "name": "web", "type": "stdio", "command": web, "args": ["--port", "9 9"], "why": "browse the docs" });
     let said = cooee.run("propose_server", &proposal).unwrap();
     assert!(
@@ -50,19 +49,7 @@ fn propose_server_shows_the_exact_command_runs_nothing_and_needs_face_id_to_add_
         .expect("the card")
         .clone();
     let exact = format!("{} --port '9 9'", web.display());
-    assert_eq!(card["detail"], exact.as_str());
-    assert_eq!(card["block"]["kind"], "proposal");
-    assert_eq!(
-        card["block"]["blocks"][0]["markdown"],
-        format!("```\n{exact}\n```")
-    );
-    assert!(
-        card["tool"]
-            .as_str()
-            .unwrap()
-            .contains("add MCP server web (stdio): browse the docs"),
-        "{card}"
-    );
+    assert_the_card_shows_the_exact_command(&card, &exact);
     assert!(
         !ran.exists() && !s.ls().contains("web"),
         "nothing runs before approval"
@@ -90,4 +77,20 @@ fn propose_server_shows_the_exact_command_runs_nothing_and_needs_face_id_to_add_
     let ls = s.ls();
     assert!(ls.contains(&format!("[stdio] web · off · {exact}")), "{ls}");
     assert!(!ran.exists(), "approving adds it off; nothing ran");
+}
+
+fn assert_the_card_shows_the_exact_command(card: &Value, exact: &str) {
+    assert_eq!(card["detail"], exact);
+    assert_eq!(card["block"]["kind"], "proposal");
+    assert_eq!(
+        card["block"]["blocks"][0]["markdown"],
+        format!("```\n{exact}\n```")
+    );
+    assert!(
+        card["tool"]
+            .as_str()
+            .unwrap()
+            .contains("add MCP server web (stdio): browse the docs"),
+        "{card}"
+    );
 }

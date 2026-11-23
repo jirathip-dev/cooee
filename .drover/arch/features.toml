@@ -1,0 +1,7 @@
+[[collect]]
+dir = "apple/Sources/CooeeFeatures/Chat"
+glob = "*.swift"
+
+[[collect]]
+dir = "apple/Sources/CooeeFeatures/App"
+glob = "*.swift"

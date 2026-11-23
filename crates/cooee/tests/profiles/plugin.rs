@@ -6,7 +6,7 @@ use std::{
 
 use serde_json::{Value, json};
 
-use crate::setup::{git, serving, setup};
+use crate::setup::{Setup, git, serving, setup};
 
 #[test]
 fn a_plugins_profile_starts_while_it_is_installed_and_its_add_confirm_names_it() {
@@ -108,6 +108,45 @@ fn a_backend_serves_its_plugins_agents_a_hidden_one_is_refused_and_thread_is_the
     s.cooee.cli(&["plugin", "remove", "plug"]);
 }
 
+fn hung_twice(s: &Setup, asked: &Path, shown: Option<&str>, not: &str) {
+    let count = || fs::read_to_string(asked).map_or(0, |t| t.len());
+    let (from, until) = (count(), Instant::now() + Duration::from_secs(30));
+    let mut took = Vec::new();
+    let mut timed = |profile: &str| {
+        let at = Instant::now();
+        let (status, body) = s.start(profile, "go");
+        took.push(at.elapsed());
+        assert!(took[took.len() - 1] < Duration::from_secs(2), "{took:?}");
+        (status, body)
+    };
+    while count() < from + 2 {
+        assert!(Instant::now() < until, "never asked twice");
+        assert_eq!(timed(not).0, 400, "{not} before its answer");
+        std::thread::sleep(Duration::from_millis(50));
+    }
+    if let Some(shown) = shown {
+        let (status, body) = timed(shown);
+        assert_eq!(status, 200, "{shown}, the last answer: {body}");
+    }
+    took.sort();
+    assert!(
+        took[took.len() / 2] < Duration::from_millis(200),
+        "{took:?}"
+    );
+}
+
+fn starts(s: &Setup, profile: &str) -> Duration {
+    let at = Instant::now();
+    while s.start(profile, "go").0 != 200 {
+        assert!(
+            at.elapsed() < Duration::from_secs(20),
+            "{profile} never starts"
+        );
+        std::thread::sleep(Duration::from_millis(50));
+    }
+    at.elapsed()
+}
+
 #[test]
 fn a_hanging_backend_never_slows_a_start_which_takes_its_last_answered_profiles() {
     let s = setup("profiles-hang");
@@ -132,57 +171,20 @@ fn a_hanging_backend_never_slows_a_start_which_takes_its_last_answered_profiles(
     .unwrap();
     git(&repo, &["add", "-A"]);
     git(&repo, &["commit", "--quiet", "-m", "1"]);
-    let hung_twice = |shown: Option<&str>, not: &str| {
-        let count = || fs::read_to_string(&asked).map_or(0, |t| t.len());
-        let (from, until) = (count(), Instant::now() + Duration::from_secs(30));
-        let mut took = Vec::new();
-        let mut timed = |profile: &str| {
-            let at = Instant::now();
-            let (status, body) = s.start(profile, "go");
-            took.push(at.elapsed());
-            assert!(took[took.len() - 1] < Duration::from_secs(2), "{took:?}");
-            (status, body)
-        };
-        while count() < from + 2 {
-            assert!(Instant::now() < until, "never asked twice");
-            assert_eq!(timed(not).0, 400, "{not} before its answer");
-            std::thread::sleep(Duration::from_millis(50));
-        }
-        if let Some(shown) = shown {
-            let (status, body) = timed(shown);
-            assert_eq!(status, 200, "{shown}, the last answer: {body}");
-        }
-        took.sort();
-        assert!(
-            took[took.len() / 2] < Duration::from_millis(200),
-            "{took:?}"
-        );
-    };
-    let starts = |profile: &str| {
-        let at = Instant::now();
-        while s.start(profile, "go").0 != 200 {
-            assert!(
-                at.elapsed() < Duration::from_secs(20),
-                "{profile} never starts"
-            );
-            std::thread::sleep(Duration::from_millis(50));
-        }
-        at.elapsed()
-    };
 
     fs::write(&hang, "").unwrap();
     serve("fleet-a");
     s.cooee
         .cli(&["plugin", "add", &repo.to_string_lossy(), "--yes"]);
-    hung_twice(None, "plug/fleet-a");
+    hung_twice(&s, &asked, None, "plug/fleet-a");
     fs::remove_file(&hang).unwrap();
-    starts("plug/fleet-a");
+    starts(&s, "plug/fleet-a");
 
     fs::write(&hang, "").unwrap();
     serve("fleet-z");
-    hung_twice(Some("plug/fleet-a"), "plug/fleet-z");
+    hung_twice(&s, &asked, Some("plug/fleet-a"), "plug/fleet-z");
     fs::remove_file(&hang).unwrap();
-    let took = starts("plug/fleet-z");
+    let took = starts(&s, "plug/fleet-z");
     assert!(took < Duration::from_secs(11), "{took:?}");
 
     s.cooee.cli(&["plugin", "remove", "plug"]);

@@ -1,0 +1,9 @@
+about = "every // TODO(#N) in Rust names an open issue"
+fix = "do the TODO or point it at an open issue"
+budget_secs = 30
+cache = false
+run = '''
+for n in $(git grep -hoE '// TODO\(#[0-9]+\)' -- '*.rs' | grep -oE '[0-9]+' | sort -u); do
+  curl -sSf "https://api.github.com/repos/jirathip-dev/cooee/issues/$n" | grep -q '"state": "open"' || { echo "TODO(#$n): issue #$n is not open"; exit 1; }
+done
+'''

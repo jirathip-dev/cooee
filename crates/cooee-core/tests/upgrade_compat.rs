@@ -206,6 +206,53 @@ fn nothing_lost(name: &str, before: &BTreeMap<PathBuf, Vec<u8>>, new: &BTreeMap<
     }
 }
 
+type Tree = BTreeMap<PathBuf, Vec<u8>>;
+
+fn backups_keep_every_byte(name: &str, scratch: &Path, before: &Tree, after: &Tree) {
+    let (config, data) = folders(scratch);
+    let rel = |p: &Path| p.strip_prefix(scratch).unwrap().to_owned();
+    let olds = [
+        config.join("personas"),
+        config.join("profiles"),
+        data.join("personas"),
+        data.join("routines.json"),
+    ];
+    for (file, bytes) in before {
+        let backup = olds.iter().map(|o| rel(o)).find(|o| file.starts_with(o));
+        let now = backup.map_or_else(
+            || file.clone(),
+            |o| {
+                PathBuf::from(format!("{}.bak-{DAY}", o.display()))
+                    .join(file.strip_prefix(&o).unwrap())
+            },
+        );
+        assert_eq!(
+            after.get(&now),
+            Some(bytes),
+            "{name}: {} as {}",
+            file.display(),
+            now.display()
+        );
+    }
+}
+
+fn matches_expected(name: &str, expected: &Path, before: &Tree, new: &Tree) {
+    let want = tree(expected);
+    assert_eq!(
+        new.keys().collect::<Vec<_>>(),
+        want.keys().collect::<Vec<_>>(),
+        "{name}: the files"
+    );
+    for (file, bytes) in &want {
+        let (got, want) = (
+            String::from_utf8_lossy(&new[file]),
+            String::from_utf8_lossy(bytes),
+        );
+        assert_eq!(got, want, "{name}: {}", file.display());
+    }
+    nothing_lost(name, before, new);
+}
+
 #[test]
 fn every_earlier_release_migrates_once_losing_nothing() {
     let mut moved = 0;
@@ -224,48 +271,12 @@ fn every_earlier_release_migrates_once_losing_nothing() {
         plan.apply(|_| {}).unwrap();
         let after = tree(&scratch);
 
-        let rel = |p: &Path| p.strip_prefix(&scratch).unwrap().to_owned();
-        let olds = [
-            config.join("personas"),
-            config.join("profiles"),
-            data.join("personas"),
-            data.join("routines.json"),
-        ];
-        for (file, bytes) in &before {
-            let backup = olds.iter().map(|o| rel(o)).find(|o| file.starts_with(o));
-            let now = backup.map_or_else(
-                || file.clone(),
-                |o| {
-                    PathBuf::from(format!("{}.bak-{DAY}", o.display()))
-                        .join(file.strip_prefix(&o).unwrap())
-                },
-            );
-            assert_eq!(
-                after.get(&now),
-                Some(bytes),
-                "{name}: {} as {}",
-                file.display(),
-                now.display()
-            );
-        }
+        backups_keep_every_byte(&name, &scratch, &before, &after);
 
         let expected = release.join("expected");
         if expected.exists() {
             moved += 1;
-            let (new, want) = (migrated(&config, &data), tree(&expected));
-            assert_eq!(
-                new.keys().collect::<Vec<_>>(),
-                want.keys().collect::<Vec<_>>(),
-                "{name}: the files"
-            );
-            for (file, bytes) in &want {
-                let (got, want) = (
-                    String::from_utf8_lossy(&new[file]),
-                    String::from_utf8_lossy(bytes),
-                );
-                assert_eq!(got, want, "{name}: {}", file.display());
-            }
-            nothing_lost(&name, &before, &new);
+            matches_expected(&name, &expected, &before, &migrated(&config, &data));
         }
 
         let again = migrate::plan(&config, &data, DAY);

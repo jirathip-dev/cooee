@@ -4,6 +4,49 @@ use cooee_core::SHED_MIN_PROTOCOL;
 
 use crate::setup::{LAUNCHD, Mac, files, job_file, load_line, terminal};
 
+fn assert_jobs_keep_alive_and_repeat(mac: &Mac) {
+    let (keep, every) = if LAUNCHD {
+        (
+            "<key>KeepAlive</key>\n  <true/>",
+            "<key>StartInterval</key>\n  <integer>900</integer>",
+        )
+    } else {
+        ("Restart=always", "OnUnitActiveSec=900")
+    };
+    let serve = fs::read_to_string(job_file(&mac.home, "dev.cooee.cooee", "service")).unwrap();
+    assert!(serve.contains(keep), "{serve}");
+    let timer = job_file(&mac.home, "dev.cooee.cooee.update", "timer");
+    let timer = fs::read_to_string(timer).unwrap();
+    assert!(timer.contains(every), "{timer}");
+}
+
+fn assert_second_run_skips_every_step(mac: &Mac, chief: &str) {
+    let port = mac.port;
+    let out = mac.setup(&["--yes"]);
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(out.status.success(), "{out:?}");
+    assert_eq!(mac.changes(), Vec::<String>::new());
+    for step in [
+        &format!("shed protocol {SHED_MIN_PROTOCOL}+"),
+        &format!("config {}", mac.config().display()),
+        "agents",
+        "chief",
+        "cooee service dev.cooee.cooee",
+        "cooee service dev.cooee.cooee.update",
+        &format!("tailscale serve {port}"),
+    ] {
+        assert!(
+            stdout.contains(&format!("{step}: done, skipped\n")),
+            "{step} not skipped in {stdout}"
+        );
+    }
+    assert!(
+        stdout.contains("pair your phone:\nType the link") && stdout.contains("\ncode  "),
+        "{stdout}"
+    );
+    assert_eq!(fs::read_to_string(mac.chief()).unwrap(), chief);
+}
+
 #[test]
 fn a_fresh_machine_runs_every_step_once_in_order_and_a_second_run_skips_them() {
     let mac = Mac::new("su-fresh", true);
@@ -30,19 +73,7 @@ fn a_fresh_machine_runs_every_step_once_in_order_and_a_second_run_skips_them() {
             terminal(port, &config)
         )
     );
-    let (keep, every) = if LAUNCHD {
-        (
-            "<key>KeepAlive</key>\n  <true/>",
-            "<key>StartInterval</key>\n  <integer>900</integer>",
-        )
-    } else {
-        ("Restart=always", "OnUnitActiveSec=900")
-    };
-    let serve = fs::read_to_string(job_file(&mac.home, "dev.cooee.cooee", "service")).unwrap();
-    assert!(serve.contains(keep), "{serve}");
-    let timer = job_file(&mac.home, "dev.cooee.cooee.update", "timer");
-    let timer = fs::read_to_string(timer).unwrap();
-    assert!(timer.contains(every), "{timer}");
+    assert_jobs_keep_alive_and_repeat(&mac);
     let chief = fs::read_to_string(mac.chief()).unwrap();
     assert!(
         chief.contains("role = \"chief\"") && chief.contains("agent = \"claude-acp\""),
@@ -56,29 +87,7 @@ fn a_fresh_machine_runs_every_step_once_in_order_and_a_second_run_skips_them() {
         "{stdout}"
     );
 
-    let out = mac.setup(&["--yes"]);
-    let stdout = String::from_utf8_lossy(&out.stdout);
-    assert!(out.status.success(), "{out:?}");
-    assert_eq!(mac.changes(), Vec::<String>::new());
-    for step in [
-        &format!("shed protocol {SHED_MIN_PROTOCOL}+"),
-        &format!("config {}", mac.config().display()),
-        "agents",
-        "chief",
-        "cooee service dev.cooee.cooee",
-        "cooee service dev.cooee.cooee.update",
-        &format!("tailscale serve {port}"),
-    ] {
-        assert!(
-            stdout.contains(&format!("{step}: done, skipped\n")),
-            "{step} not skipped in {stdout}"
-        );
-    }
-    assert!(
-        stdout.contains("pair your phone:\nType the link") && stdout.contains("\ncode  "),
-        "{stdout}"
-    );
-    assert_eq!(fs::read_to_string(mac.chief()).unwrap(), chief);
+    assert_second_run_skips_every_step(&mac, &chief);
 }
 
 #[test]

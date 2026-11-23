@@ -274,53 +274,72 @@ async fn fill(cx: &Cx, id: String) -> Result<Block, HubError> {
         let mut routines: Vec<Value> = all.iter().filter(mine).map(routine).collect();
         routines.extend(beat);
         let places = agents::places(config.as_deref(), &data, &p.id).map_err(refused)?;
-        let places: Vec<PlaceRow> = places
-            .iter()
-            .filter(|pl| pl.kind == PlaceKind::HeaderStrip)
-            .map(|pl| PlaceRow {
-                id: &pl.id,
-                plugin: &pl.plugin,
-                title: &pl.label,
-                open: &pl.screen,
-            })
-            .collect();
+        let places = header_places(&places);
         let home = config.as_deref().and_then(|c| agents::home(c, &p.id).ok());
         let notes = home.as_ref().map(memory::notes).unwrap_or_default();
         let skills = home.as_ref().map(skills_block).unwrap_or_default();
         let library = library_rows(index.as_deref(), &skills);
         let mut screen = crate::http::bundled(BUNDLED)?.title(p.name);
         let blocks = screen.blocks.get_or_insert_default();
-        for block in blocks.iter_mut() {
-            let Block::App(block) = block else { continue };
-            let more = &mut block.more;
-            let mut put = |key: &str, value: Value| more.insert(key.to_owned(), value);
-            match block.kind.as_str() {
-                "routines" => put("rows", Value::from(routines.clone())),
-                "places" => put("rows", to_value(&places)?),
-                "skills" => {
-                    put("rows", to_value(&skills)?);
-                    put("library", to_value(&library)?)
-                }
-                "memory" => {
-                    put("count", Value::from(notes.len()));
-                    put("notes", to_value(&notes)?)
-                }
-                _ => None,
-            };
-        }
-        let rows = TEACH
-            .iter()
-            .map(|&(act, label, _)| Teach { label, action: act });
-        let actions = AppBlock {
-            kind: "actions".to_owned(),
-            id: Some("actions".to_owned()),
-            fallback: None,
-            more: Map::from_iter([("rows".to_owned(), to_value(&rows.collect::<Vec<_>>())?)]),
-        };
-        blocks.push(Block::App(Box::new(actions)));
+        fill_apps(blocks, &routines, &places, (&skills, &library), &notes)?;
+        blocks.push(teach_actions()?);
         Ok(crate::http::core(screen))
     })
     .await
+}
+
+fn header_places(places: &[agents::Place]) -> Vec<PlaceRow<'_>> {
+    places
+        .iter()
+        .filter(|pl| pl.kind == PlaceKind::HeaderStrip)
+        .map(|pl| PlaceRow {
+            id: &pl.id,
+            plugin: &pl.plugin,
+            title: &pl.label,
+            open: &pl.screen,
+        })
+        .collect()
+}
+
+fn fill_apps(
+    blocks: &mut [Block],
+    routines: &[Value],
+    places: &[PlaceRow<'_>],
+    (skills, library): (&[Skill], &[Skill]),
+    notes: &[memory::Note],
+) -> Result<(), HubError> {
+    for block in blocks.iter_mut() {
+        let Block::App(block) = block else { continue };
+        let more = &mut block.more;
+        let mut put = |key: &str, value: Value| more.insert(key.to_owned(), value);
+        match block.kind.as_str() {
+            "routines" => put("rows", Value::from(routines.to_vec())),
+            "places" => put("rows", to_value(&places)?),
+            "skills" => {
+                put("rows", to_value(&skills)?);
+                put("library", to_value(&library)?)
+            }
+            "memory" => {
+                put("count", Value::from(notes.len()));
+                put("notes", to_value(&notes)?)
+            }
+            _ => None,
+        };
+    }
+    Ok(())
+}
+
+fn teach_actions() -> Result<Block, HubError> {
+    let rows = TEACH
+        .iter()
+        .map(|&(act, label, _)| Teach { label, action: act });
+    let actions = AppBlock {
+        kind: "actions".to_owned(),
+        id: Some("actions".to_owned()),
+        fallback: None,
+        more: Map::from_iter([("rows".to_owned(), to_value(&rows.collect::<Vec<_>>())?)]),
+    };
+    Ok(Block::App(Box::new(actions)))
 }
 
 fn to_value(v: &impl Serialize) -> Result<Value, HubError> {

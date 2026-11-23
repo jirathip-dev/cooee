@@ -38,6 +38,34 @@ pub struct View {
     pub age: Option<u64>,
 }
 
+fn login_run(
+    name: &str,
+    provider: &Arc<dyn Provider>,
+    home: Option<&Path>,
+    machine: Option<&str>,
+) -> RunParams {
+    RunParams {
+        name: Some(format!("{LABEL}-{name}-{:x}", now())),
+        labels: BTreeMap::from([(LABEL.to_owned(), "1".to_owned())]),
+        cwd: cooee_core::env_var("HOME")
+            .filter(|_| machine.is_none())
+            .map_or_else(|| PathBuf::from("/"), PathBuf::from),
+        keep: false,
+        idle_after: None,
+        cmd: provider.with_home(&provider.spec().login, home),
+        acp: None,
+        policy: None,
+        resume: None,
+        mcp_servers: Vec::new(),
+        meta: None,
+        no_hibernate: false,
+        machine: machine.map(str::to_owned),
+        parent: None,
+        rows: None,
+        cols: None,
+    }
+}
+
 impl Logins {
     fn running(&self, name: &str) -> Option<String> {
         match lock(&self.live).get(name) {
@@ -84,26 +112,7 @@ impl Logins {
             let a = self.account(name, account.unwrap_or_default())?;
             (a.name, a.dir)
         };
-        let run = RunParams {
-            name: Some(format!("{LABEL}-{name}-{:x}", now())),
-            labels: BTreeMap::from([(LABEL.to_owned(), "1".to_owned())]),
-            cwd: cooee_core::env_var("HOME")
-                .filter(|_| machine.is_none())
-                .map_or_else(|| PathBuf::from("/"), PathBuf::from),
-            keep: false,
-            idle_after: None,
-            cmd: provider.with_home(&provider.spec().login, home.as_deref()),
-            acp: None,
-            policy: None,
-            resume: None,
-            mcp_servers: Vec::new(),
-            meta: None,
-            no_hibernate: false,
-            machine: machine.clone(),
-            parent: None,
-            rows: None,
-            cols: None,
-        };
+        let run = login_run(name, provider, home.as_deref(), machine.as_deref());
         let terminal = match self.shed.run(&run) {
             Ok(t) => t.name,
             Err(e) => {

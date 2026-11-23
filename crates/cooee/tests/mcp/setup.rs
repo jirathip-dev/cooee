@@ -589,63 +589,71 @@ pub fn fake_web(token: String) -> (u16, Arc<Mutex<Vec<String>>>) {
     let open: Arc<Mutex<Option<std::sync::mpsc::Sender<Value>>>> = Arc::default();
     let log = Arc::clone(&seen);
     thread::spawn(move || {
-        for mut s in l.incoming().map(Result::unwrap) {
+        for s in l.incoming().map(Result::unwrap) {
             let (log, open, token) = (Arc::clone(&log), Arc::clone(&open), token.clone());
-            thread::spawn(move || {
-                let (head, msg) = heard(&s);
-                log.lock().unwrap().push(format!("{head}{msg}"));
-                let path = head.split([' ', '?']).nth(1).unwrap().to_owned();
-                let reply = |status: &str, more: &str, body: &str| {
-                    format!(
-                        "HTTP/1.1 {status}\r\n{more}Content-Length: {}\r\nConnection: close\r\n\r\n{body}",
-                        body.len()
-                    )
-                };
-                let answer = answered(&msg, &head, &token);
-                let out = match (path.as_str(), msg["method"].as_str()) {
-                    ("/sse", _) => {
-                        let (tx, rx) = std::sync::mpsc::channel();
-                        *open.lock().unwrap() = Some(tx);
-                        write!(s, "HTTP/1.1 200 OK\r\nContent-Type: text/event-stream\r\nConnection: close\r\n\r\nevent: endpoint\ndata: /messages?s=1\n\n").unwrap();
-                        for m in rx {
-                            write!(s, "event: message\ndata: {m}\n\n").unwrap();
-                        }
-                        return;
-                    }
-                    ("/messages", _) => {
-                        if msg.get("id").is_some() {
-                            let tx = open.lock().unwrap().clone().unwrap();
-                            tx.send(answer).unwrap();
-                        }
-                        reply("202 Accepted", "", "")
-                    }
-                    ("/moved", _) => reply(
-                        "307 Temporary Redirect",
-                        &format!("Location: http://127.0.0.1:{port}/mcp?redirected\r\n"),
-                        "",
-                    ),
-                    (_, Some("tools/list")) => {
-                        let note = json!({ "jsonrpc": "2.0", "method": "notifications/message", "params": {} });
-                        let body = format!(
-                            "event: message\ndata: {note}\n\nevent: message\ndata: {answer}\n\n"
-                        );
-                        reply("200 OK", "Content-Type: text/event-stream\r\n", &body)
-                    }
-                    (_, Some("initialize")) => reply(
-                        "200 OK",
-                        "Content-Type: application/json\r\nMcp-Session-Id: s-1\r\n",
-                        &answer.to_string(),
-                    ),
-                    _ if msg.get("id").is_none() => reply("202 Accepted", "", ""),
-                    _ => reply(
-                        "200 OK",
-                        "Content-Type: application/json\r\n",
-                        &answer.to_string(),
-                    ),
-                };
-                s.write_all(out.as_bytes()).unwrap();
-            });
+            thread::spawn(move || fake_web_answer(s, &log, &open, &token, port));
         }
     });
     (port, seen)
+}
+
+fn http_reply(status: &str, more: &str, body: &str) -> String {
+    format!(
+        "HTTP/1.1 {status}\r\n{more}Content-Length: {}\r\nConnection: close\r\n\r\n{body}",
+        body.len()
+    )
+}
+
+fn fake_web_answer(
+    mut s: TcpStream,
+    log: &Mutex<Vec<String>>,
+    open: &Mutex<Option<std::sync::mpsc::Sender<Value>>>,
+    token: &str,
+    port: u16,
+) {
+    let (head, msg) = heard(&s);
+    log.lock().unwrap().push(format!("{head}{msg}"));
+    let path = head.split([' ', '?']).nth(1).unwrap().to_owned();
+    let answer = answered(&msg, &head, token);
+    let out = match (path.as_str(), msg["method"].as_str()) {
+        ("/sse", _) => {
+            let (tx, rx) = std::sync::mpsc::channel();
+            *open.lock().unwrap() = Some(tx);
+            write!(s, "HTTP/1.1 200 OK\r\nContent-Type: text/event-stream\r\nConnection: close\r\n\r\nevent: endpoint\ndata: /messages?s=1\n\n").unwrap();
+            for m in rx {
+                write!(s, "event: message\ndata: {m}\n\n").unwrap();
+            }
+            return;
+        }
+        ("/messages", _) => {
+            if msg.get("id").is_some() {
+                let tx = open.lock().unwrap().clone().unwrap();
+                tx.send(answer).unwrap();
+            }
+            http_reply("202 Accepted", "", "")
+        }
+        ("/moved", _) => http_reply(
+            "307 Temporary Redirect",
+            &format!("Location: http://127.0.0.1:{port}/mcp?redirected\r\n"),
+            "",
+        ),
+        (_, Some("tools/list")) => {
+            let note = json!({ "jsonrpc": "2.0", "method": "notifications/message", "params": {} });
+            let body =
+                format!("event: message\ndata: {note}\n\nevent: message\ndata: {answer}\n\n");
+            http_reply("200 OK", "Content-Type: text/event-stream\r\n", &body)
+        }
+        (_, Some("initialize")) => http_reply(
+            "200 OK",
+            "Content-Type: application/json\r\nMcp-Session-Id: s-1\r\n",
+            &answer.to_string(),
+        ),
+        _ if msg.get("id").is_none() => http_reply("202 Accepted", "", ""),
+        _ => http_reply(
+            "200 OK",
+            "Content-Type: application/json\r\n",
+            &answer.to_string(),
+        ),
+    };
+    s.write_all(out.as_bytes()).unwrap();
 }
