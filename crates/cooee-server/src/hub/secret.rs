@@ -1,7 +1,7 @@
 use cooee_core::{mcp, secrets};
 use serde::Deserialize;
 
-use super::{Hub, HubError, LABEL, mcp::Proposed};
+use super::{Hub, HubError, LABEL, proposals::Proposed};
 
 /// An agent's `secret` (#163): secret `name` typed into shed terminal `terminal`, why, and whether to keep it.
 #[derive(Debug, Deserialize)]

@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use futures_util::{Stream, StreamExt, stream};
 use serde::Deserialize;
 use tokio::sync::broadcast::error::RecvError;
@@ -68,6 +70,12 @@ async fn events(cx: &Cx) -> Result<Sse<impl Stream<Item = Result<Event>> + use<>
         .unwrap_or_default();
     let hub = hub(cx);
     let (resume, rx) = hub.subscribe(&id, &cursor).map_err(|_| not_found())?;
+    let warm = Arc::clone(&hub);
+    drop(tokio::task::spawn_blocking(move || {
+        if let Err(e) = warm.pre_warm(&id) {
+            cooee_core::note!("cooee: {id}: {e}");
+        }
+    }));
     let (first, live): (Vec<Event>, bool) = match resume {
         Resume::Replay(outs) => (outs.iter().map(|o| sse(&hub, o)).collect(), true),
         Resume::Reset => (vec![Event::new().event("reset").data("{}")], false),
@@ -339,6 +347,12 @@ struct Read {
     item: u64,
 }
 
+#[route(POST "/threads/{id}/typing")]
+async fn typing(cx: &Cx) -> Result<Answer<()>> {
+    let id = thread_id(cx);
+    Ok(Answer(blocking(cx, move |hub| hub.pre_warm(&id)).await))
+}
+
 #[route(POST "/threads/{id}/read")]
 async fn read(cx: &Cx, Json(r): Json<Read>) -> Result<Answer<()>> {
     let id = thread_id(cx);
@@ -350,6 +364,7 @@ pub(super) fn routes(b: RouterBuilder) -> RouterBuilder {
         .route(messages)
         .route(events)
         .route(home_events)
+        .route(typing)
         .route(create)
         .route(retry)
         .route(restart)
