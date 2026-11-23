@@ -1,6 +1,9 @@
 use std::{fs, path::PathBuf, thread};
 
-use cooee_core::shed_proto::Hello;
+use cooee_core::{
+    SHED_MIN_PROTOCOL as MIN,
+    shed_proto::{Hello, PROTOCOL, RpcError},
+};
 use serde_json::json;
 
 use crate::{
@@ -10,27 +13,30 @@ use crate::{
 
 #[test]
 fn a_shed_of_another_protocol_is_refused_naming_both_sides() {
-    for protocol in [0, 3] {
+    for protocol in [0, PROTOCOL + 2] {
         let dir = scratch(&format!("version-{protocol}"));
-        let theirs = Hello {
+        let hello = Hello {
             build: "fffffff".to_owned(),
             protocol,
             ..version()
         };
-        let shed = FakeShed::start(&dir.join("shed"), theirs);
+        let shed = FakeShed::start(&dir.join("shed"), hello.clone());
         let cooee = Cooee::start(&dir, &shed.dir);
         let new = json!({ "agent": "fake-acp", "folder": dir.join("root/project"), "text": "hi", "random_id": "x" });
         let (status, body) = cooee.post("/threads", &new);
         assert_eq!(status, 502, "{body}");
         let (v, b) = (&version().version, &version().build);
         let theirs = if protocol == 0 {
-            format!("the server runs {v} (fffffff) protocol 0, older than protocol 1")
+            format!("the server runs {v} (fffffff) protocol 0, older than protocol {MIN}")
         } else {
+            let refused = RpcError::version(&version(), &hello);
             format!(
-                "the server refused it: client {b} / server fffffff: protocol 1 vs 3; restart shed serve"
+                "the server refused it: {}",
+                refused.message.split_once(": ").unwrap().1
             )
         };
-        let said = format!("SHED_VERSION: cooee speaks shed {v} ({b}) protocol 1; {theirs}");
+        let said =
+            format!("SHED_VERSION: cooee speaks shed {v} ({b}) protocol {PROTOCOL}; {theirs}");
         assert!(body.contains(&said), "{body}\nwanted: {said}");
         assert!(
             !shed.cli_log().contains(" run "),
@@ -56,8 +62,8 @@ fn a_send_to_a_shed_on_another_protocol_says_why_in_the_chat_then_goes_through_o
     }
     let (v, b) = (&version().version, &version().build);
     let needs = format!(
-        "SHED_VERSION: cooee speaks shed {v} ({b}) protocol 1; the server runs {v} (fffffff) protocol 0, older than protocol 1; \
-         fix: install or update shed to protocol 1 or newer from https://github.com/jirathip-dev/shed/releases, and start its serve"
+        "SHED_VERSION: cooee speaks shed {v} ({b}) protocol {PROTOCOL}; the server runs {v} (fffffff) protocol 0, older than protocol {MIN}; \
+         fix: install or update shed to protocol {MIN} or newer from https://github.com/jirathip-dev/shed/releases, and start its serve"
     );
     let notes: Vec<String> = s
         .items(&id)

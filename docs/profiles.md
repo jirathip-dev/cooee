@@ -49,11 +49,11 @@ its own as `[[profiles]]` in its `cooee-plugin.toml` ([plugins/](plugins/README.
 Paths are relative to the agent's folder (a plugin's: its checkout); `~/` is the home folder. A secret is never in an
 agent: an env value that looks like a token is refused, and `secret:<NAME>` reads `<data>/secrets/<NAME>` at start.
 Its MCP servers are in [mcp.md](mcp.md).
-At spawn the agent's adapter runs as `env <account folder> <settings variable>=<file> K=V… <adapter>`; secrets go
-through a 0600 file that the adapter's shell reads and removes (`sh -c '. file; rm file; exec adapter'`), so no
-secret is on a command line, in shed's state or in cooee's files or log. **Guarded profiles:** `settings` reaches the
-agent only through its provider's `settings` variable, the one its ACP adapter reads an extra settings file from
-and enforces, hooks included; an agent with none (Codex's and Gemini's) can't start the profile: "this profile's guard
-can't run with <agent>". Claude Code's is `CLAUDE_CONFIG_DIR` (herdsman#565: claude-acp enforces the user settings
-there), so a Claude profile's `settings` is a config folder (its `settings.json` holds the hooks), in place of the
-account's. The form preselects each folder's last-used profile.
+At spawn the agent runs on its account (`shed run --account <name>`; shed sets the account's folder) and its adapter
+as `env K=V… <adapter>`; secrets go through a 0600 file that the adapter's shell reads and removes (`sh -c '. file;
+rm file; exec adapter'`), so no secret is on a command line, in shed's state or in cooee's files or log. **Guarded
+profiles:** `settings` (a JSON settings file, or a folder holding `settings.json`) reaches the agent only in the
+session's `_meta`, at its provider's `settings` key, merged over the persona's own settings; an agent whose provider
+has none (Codex's and Antigravity's) can't start the profile: "this profile's guard can't run with <agent>". Claude Code's
+is `claudeCode.options.settings`, which claude-acp passes to Claude Code as enforced settings, hooks included; it
+never replaces the account's folder. The form preselects each folder's last-used profile.

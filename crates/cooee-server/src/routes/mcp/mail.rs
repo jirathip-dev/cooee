@@ -4,14 +4,17 @@ use topcoat::{
     router::{RouterBuilder, content::Json, route},
 };
 
-use crate::http::{AgentAsk, Answer, bearer, blocking, refused};
+use crate::{
+    http::{AgentAsk, Answer, bearer, blocking, refused},
+    hub::MailAsk,
+};
 
 #[route(POST "/mcp/agent/mail")]
 async fn mcp_mail(cx: &Cx, Json(a): Json<AgentAsk>) -> Result<Answer<String>> {
     let token = bearer(cx);
     Ok(Answer(
         blocking(cx, move |hub| {
-            let m = serde_json::from_value(a.server).map_err(refused)?;
+            let m: MailAsk = serde_json::from_value(a.server).map_err(refused)?;
             hub.mail(&a.thread, &token, m)
         })
         .await,

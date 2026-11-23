@@ -11,10 +11,10 @@ flowchart LR
     shed[shed.rs]
   end
   subgraph named[cooee-core/src/providers/, may name providers]
-    reg[mod.rs: registry! line] --> claude[claude.rs] & codex[codex.rs] & gemini[gemini.rs] & fake["fake.rs (test)"]
+    reg[mod.rs: registry! line] --> claude[claude.rs] & codex[codex.rs] & antigravity[antigravity.rs] & fake["fake.rs (test)"]
   end
   provider -- REGISTRY only --> reg
-  claude & codex & gemini & fake -- impl Provider, Spec, Usage --> provider
+  claude & codex & antigravity & fake -- impl Provider, Spec, Usage --> provider
   server[cooee-server login.rs: Logins] --> provider & accounts
   cli[cooee accounts.rs, setup.rs, main.rs] --> provider & accounts
   web[web compose.rs] -- Sheet, Spec, Status, Usage --> login

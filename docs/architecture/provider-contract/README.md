@@ -6,7 +6,7 @@ Decision: One contract sets up every persona session. cooee owns the instruction
 approval rules and how a tool row reads; each provider's module only says how its harness is told, or that it can't be.
 Slices: the conformance suite; one session setup per provider; tool rows by kind of action; cooee's approval rules with
 Always allow; rules in Settings; limits; switching provider mid-thread; web and browser connectors. A shed change first.
-Open questions: four, each with a default: personal files on the default Codex and Gemini login; starter rules; the
+Open questions: four, each with a default: personal files on the default Codex and Antigravity login; starter rules; the
 nightly run on your plans; web search until you pick a connector.
 
 ## Files
@@ -32,12 +32,12 @@ nightly run on your plans; web search until you pick a connector.
 
 ## Where each harness falls short
 
-| | Claude Code | Codex | Gemini CLI |
+| | Claude Code | Codex | Antigravity |
 |---|---|---|---|
-| The brief in the system channel | yes | yes, to prove | no: first prompt |
+| The brief in the system channel | yes | yes, to prove | yes, appended |
 | Personal global files kept out | yes | only on an account cooee added | only on an account cooee added |
-| Built-ins off | yes, by allow-list | yes, switch by switch | yes, by allow-list, to prove |
-| Asks before everything | yes | no: what stays in its sandbox never asks | to prove |
+| Built-ins off | yes, by allow-list | yes, switch by switch | web and sub-agents; memory and skills stay on |
+| Asks before everything | yes | no: what stays in its sandbox never asks | all but its read-only tools |
 
 Nothing here was run against a real harness: Claude's column was read in the installed adapter's source, the other
 two in the vendors' docs. Slice 1's nightly run proves or corrects each cell.

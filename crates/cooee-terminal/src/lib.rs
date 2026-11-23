@@ -133,19 +133,8 @@ impl Terminal {
             name: Some(name.clone()),
             labels: BTreeMap::from([(OWNER.to_owned(), "1".to_owned())]),
             cwd: self.home.clone(),
-            keep: false,
-            idle_after: None,
             cmd: vec![self.shell.clone(), "-l".to_owned()],
-            acp: None,
-            policy: None,
-            resume: None,
-            mcp_servers: Vec::new(),
-            meta: None,
-            no_hibernate: false,
-            machine: None,
-            parent: None,
-            rows: None,
-            cols: None,
+            ..RunParams::default()
         };
         self.shed.run(&run).map_err(|e| shed_error(&e))?;
         let line = json!({ "at": millis(), "device": device, "event": "shell", "terminal": name });

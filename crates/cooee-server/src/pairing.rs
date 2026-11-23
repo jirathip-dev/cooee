@@ -4,7 +4,7 @@ use std::{
 };
 
 use base64::{Engine, engine::general_purpose::URL_SAFE_NO_PAD as B64};
-use cooee_core::Devices;
+use cooee_core::{Claim, Devices};
 use p256::ecdsa::{Signature, VerifyingKey, signature::Verifier};
 use serde::Deserialize;
 use sha2::{Digest, Sha256};
@@ -13,9 +13,16 @@ use topcoat::{
     context::{Cx, app_context},
 };
 
-use crate::http::{COOKIE, Data, header, now};
+use crate::{
+    Note,
+    http::{COOKIE, Data, header, hub, now},
+};
 
 pub(crate) const CHALLENGE_TTL: u64 = 5 * 60 * 1000;
+
+const TRIES: usize = 5;
+
+const CLAIM: &str = "cooee_claim";
 
 #[derive(Default)]
 pub(crate) struct Pairing {
@@ -47,12 +54,124 @@ pub(crate) fn rp_id(host: &str) -> &str {
     host.split(':').next().unwrap_or(host)
 }
 
-pub(crate) fn cookie(cx: &Cx, token: &str) -> String {
+fn set(cx: &Cx, name: &str, value: &str, age: u32) -> String {
     let secure = header(cx, "origin").is_some_and(|o| o.starts_with("https://"));
     format!(
-        "{COOKIE}={token}; Path=/; Max-Age=31536000; HttpOnly; SameSite=Strict{}",
+        "{name}={value}; Path=/; Max-Age={age}; HttpOnly; SameSite=Strict{}",
         if secure { "; Secure" } else { "" }
     )
+}
+
+pub(crate) fn cookie(cx: &Cx, token: &str) -> String {
+    set(cx, COOKIE, token, 31_536_000)
+}
+
+pub(crate) fn claim_cookie(cx: &Cx, claim: Option<&str>) -> String {
+    let (claim, age) = claim.map_or(("", 0), |c| (c, 300));
+    set(cx, CLAIM, claim, age)
+}
+
+pub(crate) fn jar<'a>(cx: &'a Cx, name: &str) -> Option<&'a str> {
+    header(cx, "cookie")?
+        .split(';')
+        .find_map(|c| c.trim().strip_prefix(name)?.strip_prefix('='))
+}
+
+pub(crate) fn claim(cx: &Cx) -> Option<String> {
+    jar(cx, CLAIM).filter(|c| !c.is_empty()).map(str::to_owned)
+}
+
+fn client(cx: &Cx) -> String {
+    header(cx, "x-forwarded-for")
+        .and_then(|f| f.rsplit(',').next())
+        .map_or("local", str::trim)
+        .to_owned()
+}
+
+pub(crate) enum Tried {
+    Paired(String),
+    Wrong { left: usize },
+    Expired,
+    Limited { wait: u64 },
+}
+
+pub(crate) async fn try_code(cx: &Cx, code: &str) -> Result<Tried> {
+    let (who, t) = (client(cx), now());
+    let limited = {
+        let mut misses = pairing(cx)
+            .misses
+            .lock()
+            .unwrap_or_else(PoisonError::into_inner);
+        misses.retain(|_, m| {
+            m.retain(|at| at + 60_000 > t);
+            !m.is_empty()
+        });
+        let mine = misses.get(&who).map_or(&[][..], Vec::as_slice);
+        (mine.len() >= TRIES)
+            .then(|| {
+                mine.first()
+                    .map(|first| (first + 60_000 - t).div_ceil(1000))
+            })
+            .flatten()
+    };
+    if let Some(wait) = limited {
+        return Ok(Tried::Limited { wait });
+    }
+    let agent = header(cx, "user-agent").unwrap_or_default().to_owned();
+    let tried = code.to_owned();
+    let (claimed, open) = store(cx, move |d| {
+        let open = d.code_open(t)?;
+        Ok((d.claim(&tried, &agent, t)?, open))
+    })
+    .await?;
+    if let Some(token) = claimed {
+        return Ok(Tried::Paired(token));
+    }
+    if !open {
+        return Ok(Tried::Expired);
+    }
+    let left = {
+        let mut misses = pairing(cx)
+            .misses
+            .lock()
+            .unwrap_or_else(PoisonError::into_inner);
+        let mine = misses.entry(who).or_default();
+        mine.push(t);
+        TRIES.saturating_sub(mine.len())
+    };
+    Ok(if left == 0 {
+        Tried::Limited { wait: 60 }
+    } else {
+        Tried::Wrong { left }
+    })
+}
+
+pub(crate) async fn ask(cx: &Cx) -> Result<(String, String)> {
+    let agent = header(cx, "user-agent").unwrap_or_default().to_owned();
+    let label = cooee_core::label(&agent);
+    let (word, claim) = store(cx, move |d| d.ask(&agent, now())).await?;
+    hub(cx).push().send(&Note {
+        title: "Pair a new device?".to_owned(),
+        body: format!("{label} · check word {word}"),
+        tag: "pair".to_owned(),
+        url: "/".to_owned(),
+        item: 0,
+        say: false,
+    });
+    Ok((word, claim))
+}
+
+pub(crate) async fn collect(cx: &Cx, claim: String) -> Result<Claim> {
+    store(cx, move |d| d.collect(&claim, now())).await
+}
+
+pub(crate) async fn sign_in(cx: &Cx, a: Assertion) -> Result<Result<String, &'static str>> {
+    let id = a.id.clone();
+    if let Err(why) = assert(cx, a).await? {
+        return Ok(Err(why));
+    }
+    let agent = header(cx, "user-agent").unwrap_or_default().to_owned();
+    Ok(Ok(store(cx, move |d| d.restore(&agent, &id, now())).await?))
 }
 
 #[derive(Deserialize)]

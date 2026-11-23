@@ -1,8 +1,20 @@
 use cooee_core::{Body, Item};
 
-use super::{Hub, Live, lock};
+use super::{Hub, Seed, live::Live, lock};
 
 const EXPIRED: &str = "expired";
+
+pub(super) struct State {
+    expiry: u64,
+}
+
+impl State {
+    pub(super) fn open(seed: &Seed<'_>) -> Self {
+        Self {
+            expiry: seed.config.approval_expiry_minutes.saturating_mul(60_000),
+        }
+    }
+}
 
 impl Hub {
     pub(super) fn expire(&self, now: u64) {
@@ -16,11 +28,9 @@ impl Hub {
                     cooee_core::note!("cooee: {e}");
                     continue;
                 }
-                let mut due = l
-                    .chat
-                    .items
-                    .iter()
-                    .filter(|i| now >= i.at.saturating_add(self.expiry) && unattended(&l, i));
+                let mut due = l.chat.items.iter().filter(|i| {
+                    now >= i.at.saturating_add(self.areas.expire.expiry) && unattended(&l, i)
+                });
                 due.find_map(|i| i.deny().map(|o| (l.meta.id.clone(), i.id, o.id.clone())))
             };
             let Some((id, item, option)) = due else {

@@ -38,19 +38,9 @@ impl Shed {
             name: Some(format!("cooee-check-{:x}", at.map_or(0, |d| d.as_nanos()))),
             labels: BTreeMap::from([("cooee-check".to_owned(), "1".to_owned())]),
             cwd: PathBuf::from("/"),
-            keep: false,
-            idle_after: None,
             cmd,
-            acp: None,
-            policy: None,
-            resume: None,
-            mcp_servers: Vec::new(),
-            meta: None,
-            no_hibernate: false,
             machine: Some(machine.to_owned()),
-            parent: None,
-            rows: None,
-            cols: None,
+            ..RunParams::default()
         };
         let name = self.run(&run)?.name;
         let waited = self.exited(&name, timeout);

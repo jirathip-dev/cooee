@@ -6,7 +6,7 @@ use cooee_core::{
     shed_proto::ApprovalOption,
 };
 
-use super::{Hub, HubError, Live, Recipe, lock, now};
+use super::{Hub, HubError, Recipe, live::Live, lock, now};
 
 pub(super) const FALLBACK: &str = "fallback";
 

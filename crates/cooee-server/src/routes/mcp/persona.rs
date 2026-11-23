@@ -7,6 +7,7 @@ use topcoat::{
 use crate::{
     HubError,
     http::{AgentAsk, Answer, bearer, blocking, refused},
+    hub::Update,
 };
 
 #[route(POST "/mcp/agent/persona")]
@@ -14,7 +15,7 @@ async fn mcp_persona(cx: &Cx, Json(a): Json<AgentAsk>) -> Result<Answer<String>>
     let token = bearer(cx);
     Ok(Answer(
         blocking(cx, move |hub| {
-            let u = serde_json::from_value(a.server).map_err(refused)?;
+            let u: Update = serde_json::from_value(a.server).map_err(refused)?;
             hub.update_persona(&a.thread, &token, u)
         })
         .await,

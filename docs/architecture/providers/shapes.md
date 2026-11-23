@@ -105,5 +105,5 @@ impl Provider for Claude {
     fn token_var(&self) -> Option<&'static str> { Some("CLAUDE_CODE_OAUTH_TOKEN") }
     fn read_usage(&self, out: &str, now: u64) -> Option<Usage> { /* `Current session` / `Current week (all models)` */ }
 }
-// codex.rs, gemini.rs: `defaults()` and `spec()` only. fake.rs (#[cfg(test)]): overrides read_status/read_usage.
+// codex.rs, antigravity.rs: `defaults()` and `session()`. fake.rs (#[cfg(test)]): overrides read_status/read_usage.
 ```
