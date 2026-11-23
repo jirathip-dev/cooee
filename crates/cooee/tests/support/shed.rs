@@ -71,7 +71,8 @@ const CLI: &str = r#"#!/bin/sh
 # The fake `shed` CLI: `agents` lists one agent, or agents.json's (it fails while the gate `agents-fails` is shut); `run` records its
 # arguments and prints the terminal (it waits while the gate `hold-run` is shut, and fails, as a slow start's CLI
 # would, while `run-fails` is, saying the gate's text and leaving no terminal; in a folder named <f>, it waits while `hold-in-<f>` is shut, and its session never
-# comes up while `fails-in-<f>` is); `machine ls` prints
+# comes up while `fails-in-<f>` is); `--on <m> exec -- shed --json account …` answers from accounts-<m>.json (ls prints it),
+# exit 1 without it, as a machine that doesn't answer; `machine ls` prints
 # machines.json; `[--on <m>] machine stats` prints stats-<m>.json (stats-local.json), exit 1 when offline; its
 # `history` only the first time, as `--since` the last sample leaves nothing new. A `run` with an adapter command
 # after `--` runs it, as the terminal would: the fake adapter `fake-acp` notes its variables in adapter.env and adapter-<name>.env. A `--mcp`
@@ -79,6 +80,10 @@ const CLI: &str = r#"#!/bin/sh
 gates=$(dirname "$0")
 printf '%s\n' "$*" >>"$gates/cli.log"
 case "$*" in
+*" exec "*" -- shed --json account "*)
+  m=$(printf '%s' "$*" | sed -n 's/.*--on \([^ ]*\).*/\1/p')
+  [ -e "$gates/accounts-$m.json" ] || { echo "fake shed: $m doesn't answer" >&2; exit 1; }
+  case "$*" in *" account ls") cat "$gates/accounts-$m.json" ;; *" account login "*) echo '{"terminal":"login"}' ;; *) echo '{}' ;; esac ;;
 *" machine ls") cat "$(dirname "$0")/machines.json" 2>/dev/null || echo '[]' ;;
 *" machine stats"*)
   m=$(printf '%s' "$*" | sed -n 's/.*--on \([^ ]*\).*/\1/p')

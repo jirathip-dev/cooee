@@ -4,9 +4,16 @@
   "title": "Sign-ins",
   "blocks": [
     {
-      "type": "list",
-      "id": "signins",
-      "rows": []
+      "type": "section",
+      "id": "m/<host>",
+      "header": "<host> · this machine",
+      "blocks": [
+        {
+          "type": "list",
+          "id": "m/<host>/accounts",
+          "rows": []
+        }
+      ]
     }
   ],
   "source": "core"

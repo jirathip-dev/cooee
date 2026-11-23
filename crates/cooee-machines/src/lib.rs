@@ -204,18 +204,46 @@ impl Machines {
         }
     }
 
-    fn shed(&self, args: &[&str]) -> Result<Value, String> {
+    fn shed(&self, args: &[&str]) -> Result<std::process::Output, String> {
         let mut cmd = cooee_core::runner::command(&self.shed);
         if let Some(dir) = &self.dir {
             cmd.arg("--dir").arg(dir);
         }
-        let out = cmd
-            .arg("--json")
-            .args(args)
+        cmd.args(args)
             .output()
-            .map_err(|e| format!("{}: {e}", self.shed.display()))?;
+            .map_err(|e| format!("{}: {e}", self.shed.display()))
+    }
+
+    fn json(&self, args: &[&str]) -> Result<Value, String> {
+        let out = self.shed(&[&["--json"], args].concat())?;
         serde_json::from_slice(&out.stdout)
             .map_err(|_| String::from_utf8_lossy(&out.stderr).trim().to_owned())
+    }
+
+    /// This machine's name, as its card has it.
+    #[must_use]
+    pub fn local(&self) -> &str {
+        &self.local
+    }
+
+    /// # Errors [`String`]: what shed said when machine `machine`'s shed doesn't run `shed --json <args>` (`--on <m> exec`).
+    pub fn on(&self, machine: &str, args: &[&str]) -> Result<Value, String> {
+        let head = [
+            "--on",
+            machine,
+            "exec",
+            "--timeout",
+            "10",
+            "--",
+            "shed",
+            "--json",
+        ];
+        let out = self.shed(&[&head[..], args].concat())?;
+        let said = || String::from_utf8_lossy(&out.stderr).trim().to_owned();
+        if !out.status.success() {
+            return Err(said());
+        }
+        serde_json::from_slice(&out.stdout).map_err(|_| said())
     }
 
     /// The cards as last polled.
@@ -227,7 +255,7 @@ impl Machines {
     /// The machines added to shed (`shed machine ls`), by name: the ones `--on` reaches; none when shed can't say.
     #[must_use]
     pub fn added(&self) -> Vec<String> {
-        let added = self.shed(&["machine", "ls"]).unwrap_or_default();
+        let added = self.json(&["machine", "ls"]).unwrap_or_default();
         let added = added.as_array().into_iter().flatten();
         added
             .filter_map(|m| Some(m["name"].as_str()?.to_owned()))
@@ -257,7 +285,7 @@ impl Machines {
                 if let Some(on) = &on {
                     args.splice(0..0, ["--on", on.as_str()]);
                 }
-                let answer = self.shed(&args);
+                let answer = self.json(&args);
                 let stats = answer
                     .as_ref()
                     .ok()

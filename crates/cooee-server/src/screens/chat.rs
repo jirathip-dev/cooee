@@ -202,7 +202,7 @@ fn said(thread: &str, item: &Item) -> Option<Block> {
     })))
 }
 
-fn iso(at: u64) -> String {
+pub(super) fn iso(at: u64) -> String {
     let minute = local(at, 0).replacen(' ', "T", 1);
     format!("{minute}:{:02}Z", at / 1000 % 60)
 }

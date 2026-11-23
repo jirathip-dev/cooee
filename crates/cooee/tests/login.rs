@@ -71,7 +71,7 @@ impl Setup {
 
     fn sheet(&self) -> Vec<(String, String)> {
         let v = self.cooee.json("/screens/settings/signins");
-        let rows = v["blocks"][0]["rows"]
+        let rows = v["blocks"][0]["blocks"][0]["rows"]
             .as_array()
             .cloned()
             .unwrap_or_default();
