@@ -164,7 +164,10 @@ pub enum Body {
         #[serde(default, skip_serializing_if = "std::ops::Not::not")]
         asked: bool,
     },
-    /// A persona's reply as blocks (#776), read under its catalog before it was stored.
+    #[expect(
+        missing_docs,
+        reason = "#776: show::Reply is the persona's reply as read"
+    )]
     Blocks(crate::show::Reply),
     /// A line from cooee itself (`model sonnet · effort low from the next start`).
     Note {

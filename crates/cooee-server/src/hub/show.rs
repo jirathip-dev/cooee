@@ -37,18 +37,14 @@ impl Hub {
         catalog.ok_or_else(|| no(&"NO_CATALOG: this persona answers in text only"))
     }
 
-    /// The `show` tool, listed for thread `id` (`token`: its MCP token) when its persona has a catalog here.
     pub(crate) fn show_tools(&self, (id, token): (&str, &str)) -> Vec<Value> {
         let meta = self.token_of(id, token).ok();
         let listed = meta.is_some_and(|m| self.catalog_of(&m).is_ok());
         listed.then(tool).into_iter().collect()
     }
 
-    /// Thread `id`'s persona answers with `reply`, read under its catalog: drawn, refused once with what to fix, then
-    /// stored as plain text; a third call in the turn is not read.
-    ///
-    /// # Errors
-    /// [`HubError::Refused`] for a wrong token, no catalog, a room, a refused reply (what to fix) or a spent retry.
+    /// Thread `id`'s persona answers with `reply`: drawn, refused once with what to fix, then plain; then not read.
+    #[expect(clippy::missing_errors_doc, reason = "a refusal is the tool's answer")]
     pub fn show(&self, (id, token): (&str, &str), reply: &Value) -> Result<String, HubError> {
         let meta = self.token_of(id, token)?;
         let catalog = self.catalog_of(&meta)?;
@@ -73,12 +69,8 @@ impl Hub {
         q.acted.map_or(Ok(()), |item| self.unanswer(live, item))
     }
 
-    /// The owner's answer `a` by device `by` to thread `id`'s reply `item`, checked, then the persona's next turn:
-    /// at once between turns, else after the one running. The same answer again does nothing.
-    ///
-    /// # Errors
-    /// [`HubError::Refused`] for an answer the check refuses, a reply that took another, or a thread that can't take
-    /// it; [`HubError::Shed`] when shed fails.
+    /// The owner's answer `a` by device `by` to reply `item`, checked, then the persona's next turn through the queue.
+    #[expect(clippy::missing_errors_doc, reason = "a refusal is the toast")]
     pub fn act(&self, id: &str, item: u64, a: &Action, by: &str) -> Result<(), HubError> {
         let live = self.live(id)?;
         let told = {

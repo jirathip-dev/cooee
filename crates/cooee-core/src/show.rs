@@ -1,5 +1,4 @@
-//! A persona's replies as blocks (#776): cooee's two catalogs, the brief's part about them, the one reader of a
-//! reply and the check of the owner's answer to it.
+//! A persona's replies as blocks (#776): its catalog, its brief, the one reader and the check of an answer.
 mod act;
 mod catalogs;
 mod read;

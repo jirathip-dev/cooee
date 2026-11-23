@@ -45,16 +45,13 @@ pub struct Told {
     pub random_id: String,
 }
 
-/// Why an answer is not delivered.
+/// Why an answer is not delivered; `Value` names the value.
 #[derive(Debug, Clone, PartialEq, Eq)]
+#[expect(missing_docs, reason = "each variant names a refusal")]
 pub enum Unsent {
-    /// No such reply of blocks.
     Gone,
-    /// The reply took another answer.
     Answered,
-    /// The persona's catalog doesn't send it.
     NotListed,
-    /// A value the block doesn't take, by its name.
     Value(String),
 }
 
@@ -158,12 +155,8 @@ fn fit(b: &Value, a: &Action, values: &Fields, head: &str) -> Result<String, Uns
     })
 }
 
-/// The answer `a` to reply `item` (its blocks and its answer so far) under `catalog`, checked; `None` when the reply
-/// took this same answer already.
-///
-/// # Errors
-/// [`Unsent`] for an action no block of the reply sends under `catalog`, values that don't fit the block, or a reply
-/// that took another answer.
+/// The answer `a` to reply `item` under `catalog`, checked; `None` when the reply took this same answer already.
+#[expect(clippy::missing_errors_doc, reason = "the error is Unsent")]
 pub fn told(
     catalog: &Catalog,
     (item, blocks, sent): (u64, &Checked, Option<&Sent>),

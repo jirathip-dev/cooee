@@ -18,16 +18,13 @@ impl Checked {
     }
 }
 
-/// What a `show` call came to.
+/// What a `show` call came to: drawn, refused once with what to fix, stored as plain text, or not read.
 #[derive(Debug, Clone, PartialEq, Eq)]
+#[expect(missing_docs, reason = "the enum's line names each variant in order")]
 pub enum Shown {
-    /// Read and stored.
     Drawn,
-    /// Refused: the persona is told this once and may send it again.
     Again(String),
-    /// Refused again: what it said is stored as plain text.
     Plain,
-    /// Not read: the turn had its retry.
     Spent,
 }
 
@@ -38,9 +35,7 @@ pub fn prefix(item: u64) -> String {
 }
 
 /// `text` as item `item`'s blocks under `catalog`, or blocks' refusal.
-///
-/// # Errors
-/// What blocks' reader refused.
+#[expect(clippy::missing_errors_doc, reason = "the error is blocks' Refusal")]
 pub fn read(catalog: &Catalog, item: u64, text: &str) -> Result<Checked, Refusal> {
     model::read(catalog, &prefix(item), text).map(|fit| Checked(fit.blocks))
 }

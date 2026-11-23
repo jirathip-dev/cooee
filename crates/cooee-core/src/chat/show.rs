@@ -3,7 +3,6 @@ use blocks::{Action, catalog::Catalog, model::Refusal};
 use super::{Body, Change, Chat, Item};
 use crate::show::{self, Checked, Reply, Shown, Told, Unsent};
 
-/// How far a turn's `show` calls got: the state of its one retry.
 #[derive(Debug, Clone, Default)]
 pub(super) enum Tries {
     #[default]
@@ -54,11 +53,8 @@ impl Chat {
         }
     }
 
-    /// The owner's answer `a` by `by` to reply `item` under `catalog`: its line set and the persona's next turn, or
-    /// nothing for the same answer again.
-    ///
-    /// # Errors
-    /// What [`show::told`] refuses; [`Unsent::Gone`] when `item` is no reply of blocks.
+    /// The owner's answer `a` to reply `item`, checked: the persona's next turn, or none for the same answer again.
+    #[expect(clippy::missing_errors_doc, reason = "the error is show::Unsent")]
     pub fn act(
         &mut self,
         catalog: &Catalog,
