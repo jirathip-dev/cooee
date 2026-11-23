@@ -162,7 +162,7 @@ pub(crate) fn recipe(
         let recipe = Recipe {
             mcp: a.mcp.iter().map(|k| k.server.clone()).collect(),
             machine: a.machine.clone(),
-            ..crate::hub::session::persona(logins, a, account, (data, config, registry))?
+            ..crate::hub::persona(logins, a, account, (data, config, registry))?
         };
         (a.agent.clone(), a.work_folder().unwrap_or(folder), recipe)
     };

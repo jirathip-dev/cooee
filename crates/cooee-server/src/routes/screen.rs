@@ -19,7 +19,7 @@ use topcoat::{
 use crate::{
     Hub, HubError,
     http::{Answer, blocking, hub, thread_id},
-    hub::{Input, Screen},
+    hub::{DeskFrame, Input, Screen},
 };
 
 const EVERY: Duration = Duration::from_millis(500);
@@ -119,7 +119,7 @@ async fn desk_input(cx: &Cx, Json(i): Json<Input>) -> Result<Answer<()>> {
 
 #[route(GET "/desks/{id}/screen/live")]
 async fn desk_live(cx: &Cx) -> Result<Sse<impl Stream<Item = Result<Event>> + use<>>> {
-    Ok(stream(cx, |h, i| shot(h.desk_frame(i))))
+    Ok(stream(cx, |h, i| shot::<DeskFrame>(h.desk_frame(i))))
 }
 
 pub(super) fn routes(b: RouterBuilder) -> RouterBuilder {
