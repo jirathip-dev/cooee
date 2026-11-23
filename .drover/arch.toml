@@ -13,7 +13,7 @@ reason = "#503: a harness's permission request is answered only where cooee's ru
 [[ban]]
 pattern = "logout"
 paths = ["crates/*/src/**"]
-except = ["crates/cooee-core/src/login.rs", "crates/cooee-core/src/provider.rs", "crates/cooee-core/src/providers/claude.rs", "crates/cooee-core/src/providers/codex.rs", "crates/cooee-core/src/providers/gemini.rs", "crates/cooee-core/src/shed/launch.rs", "crates/cooee-server/src/login/sign_out.rs"]
+except = ["crates/cooee-core/src/login.rs", "crates/cooee-core/src/provider.rs", "crates/cooee-core/src/providers/claude.rs", "crates/cooee-core/src/providers/codex.rs", "crates/cooee-core/src/providers/antigravity.rs", "crates/cooee-core/src/shed/launch.rs", "crates/cooee-server/src/login/sign_out.rs"]
 reason = "#762: provider facts (login, status, logout and usage commands, limits, resets, token var, config dir, adapter) are shed-catalog data; #760 empties this list"
 
 [[ban]]

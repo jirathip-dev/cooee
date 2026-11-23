@@ -8,8 +8,7 @@ use crate::{
     provider::{Builtin, Channel, Gap, Setup, Want},
 };
 
-/// Google Antigravity's ACP server: the brief appended to its system prompt and its web and sub-agent tools off
-/// through `_meta.antigravity`; its memory, skills and global files have no switch, and its read-only tools never ask.
+/// Google Antigravity's ACP server: the brief and its built-ins off through `_meta.antigravity`.
 #[derive(Debug)]
 pub struct Antigravity(Spec);
 
