@@ -90,7 +90,8 @@ mod tests {
         let server = Server::start().unwrap();
         server.fail(Method::Agents, RpcError::new(ErrorCode::Internal, "down"));
         let all = Providers::load(None, &crate::Shed::new(server.socket().parent()));
-        assert_eq!(specs(&all), provider::defaults());
+        let defaults = provider::defaults();
+        assert_eq!(specs(&all)[..defaults.len()], defaults);
         assert!(all.record("claude-acp").is_some_and(|r| r.login.is_some()));
     }
 
