@@ -110,6 +110,33 @@ impl Hub {
         })
     }
 
+    fn compose(&self, l: &Live, q: &Queued, before: &str) -> String {
+        let spoken = (q.via == Some(Via::Voice)).then(|| {
+            agents::find(self.config_dir(), &self.data, &l.meta.profile)
+                .ok()
+                .and_then(|a| a.spoken)
+                .unwrap_or_else(|| agents::SPOKEN.to_owned())
+        });
+        let text = match spoken.filter(|s| !s.trim().is_empty()) {
+            Some(s) => format!("{}\n\n{}", s.trim_end(), q.text),
+            None => q.text.clone(),
+        };
+        let mut prompt = if before.trim().is_empty() {
+            text
+        } else {
+            format!("{}\n\n{text}", before.trim_end())
+        };
+        if !q.files.is_empty() {
+            prompt.push_str("\n\nAttached files:");
+            for name in &q.files {
+                let path = self.files.join(&l.meta.id).join(name);
+                prompt.push_str("\n- ");
+                prompt.push_str(&path.to_string_lossy());
+            }
+        }
+        prompt
+    }
+
     pub(super) fn deliver(
         &self,
         live: &Mutex<Live>,
@@ -128,29 +155,7 @@ impl Hub {
             } else {
                 super::ask::OWNER_NOTE
             };
-            let spoken = (q.via == Some(Via::Voice)).then(|| {
-                agents::find(self.config_dir(), &self.data, &l.meta.profile)
-                    .ok()
-                    .and_then(|a| a.spoken)
-                    .unwrap_or_else(|| agents::SPOKEN.to_owned())
-            });
-            let text = match spoken.filter(|s| !s.trim().is_empty()) {
-                Some(s) => format!("{}\n\n{}", s.trim_end(), q.text),
-                None => q.text.clone(),
-            };
-            let mut prompt = if before.trim().is_empty() {
-                text
-            } else {
-                format!("{}\n\n{text}", before.trim_end())
-            };
-            if !q.files.is_empty() {
-                prompt.push_str("\n\nAttached files:");
-                for name in &q.files {
-                    let path = self.files.join(&l.meta.id).join(name);
-                    prompt.push_str("\n- ");
-                    prompt.push_str(&path.to_string_lossy());
-                }
-            }
+            let prompt = self.compose(&l, &q, before);
             let ended = l.chat.turn.state == "ended";
             (
                 l.meta.terminal.clone(),

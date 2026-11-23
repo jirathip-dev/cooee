@@ -3,7 +3,6 @@ use std::{
     io,
     path::{Path, PathBuf},
     sync::{Arc, Mutex, MutexGuard, OnceLock, PoisonError, mpsc},
-    thread,
     time::{Duration, UNIX_EPOCH},
 };
 
@@ -22,8 +21,8 @@ pub(super) const STUCK: u64 = 30 * 60 * 1000;
 
 pub(super) const CHANGE: u64 = 30 * 60 * 1000;
 
-const TICK: Duration = Duration::from_secs(30);
-const SERVED_EVERY: Duration = Duration::from_secs(5);
+pub(super) const TICK: Duration = Duration::from_secs(30);
+pub(super) const SERVED_EVERY: Duration = Duration::from_secs(5);
 
 /// Why a thread action failed.
 #[derive(Debug, thiserror::Error)]
@@ -178,45 +177,7 @@ impl Hub {
             texts,
             areas,
         });
-        let worker = Arc::clone(&hub);
-        thread::spawn(move || {
-            for room in next {
-                if let Err(e) = worker.take_turn(&room) {
-                    cooee_core::note!("cooee: room {room}: {e}");
-                }
-            }
-        });
-        let flusher = Arc::clone(&hub);
-        thread::spawn(move || {
-            for id in unsent {
-                flusher.flush_text(id);
-            }
-        });
-        let follower = Arc::clone(&hub);
-        thread::spawn(move || follower.follow());
-        let asker = Arc::clone(&hub);
-        thread::spawn(move || {
-            loop {
-                let began = cooee_core::clock::instant();
-                asker.refresh_served();
-                cooee_core::clock::sleep(SERVED_EVERY.saturating_sub(began.elapsed()));
-            }
-        });
-        let ticker = Arc::clone(&hub);
-        thread::spawn(move || {
-            ticker.refresh(now(), false);
-            loop {
-                cooee_core::clock::sleep(TICK);
-                ticker.refresh(now(), false);
-                ticker.personas();
-                ticker.watch(now());
-                ticker.unload(now());
-                let at = now();
-                if let Ok(terminals) = ticker.shed.ls(BTreeMap::new()) {
-                    ticker.prune(&terminals, at);
-                }
-            }
-        });
+        hub.start_workers(next, unsent);
         Ok(hub)
     }
 
@@ -249,7 +210,7 @@ impl Hub {
         }
     }
 
-    fn flush_text(&self, id: String) {
+    pub(super) fn flush_text(&self, id: String) {
         let Some(live) = lock(&self.threads).get(&id).cloned() else {
             return;
         };

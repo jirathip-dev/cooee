@@ -55,10 +55,6 @@ dir = "crates/cooee/tests/support"
 glob = "*.rs"
 
 [[collect]]
-dir = "ci/gates"
-glob = "*.sh"
-
-[[collect]]
 dir = "scripts"
 glob = "*.sh"
 

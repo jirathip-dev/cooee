@@ -251,30 +251,7 @@ fn files(dir: &Path) -> Vec<(PathBuf, Vec<u8>)> {
 fn a_switch_starts_the_other_agent_with_the_brief_and_a_handoff_in_the_same_thread_and_keeps_the_persona()
  {
     let dir = scratch("switch-agent");
-    let home = support::agent(
-        &dir,
-        "ada",
-        "name = \"Ada\"\nagent = \"fake-acp\"\n",
-        "The code word is PLOVER-7.",
-    );
-    fs::create_dir_all(home.join("skills/greet")).unwrap();
-    fs::write(home.join("skills/greet/SKILL.md"), "Say hi.").unwrap();
-    fs::write(home.join("memory.md"), "- likes tea\n").unwrap();
-    fs::write(dir.join("routines.toml"), "").unwrap();
-    let shed = FakeShed::start(&dir.join("shed"), version());
-    let agents = json!([
-        { "id": "fake-acp", "version": "1.0.0", "distribution": "npx", "cmd": ["fake-acp"] },
-        { "id": "other-acp", "version": "1.0.0", "distribution": "npx", "cmd": ["fake-acp"] },
-    ]);
-    fs::write(shed.dir.join("agents.json"), agents.to_string()).unwrap();
-    let cooee = support::Cooee::start(&dir, &shed.dir);
-    let new = json!({ "agent": "fake-acp", "profile": "ada", "text": "echo hello", "random_id": "start" });
-    let (status, body) = cooee.post("/threads", &new);
-    assert_eq!(status, 200, "{body}");
-    let id = serde_json::from_str::<Value>(&body).unwrap()["id"]
-        .as_str()
-        .unwrap()
-        .to_owned();
+    let (shed, cooee, id) = ada_with_a_skill_memory_and_two_agents(&dir);
     let messages = replies(&cooee, &id, 1);
     let reply = messages[1]["text"].as_str().unwrap().to_owned();
     let persona = || {
@@ -314,11 +291,50 @@ fn a_switch_starts_the_other_agent_with_the_brief_and_a_handoff_in_the_same_thre
         1,
         "old session closed"
     );
+    assert_the_next_turn_carries_the_handoff_in_the_same_thread(&cooee, &shed, &id, &lane, &reply);
+    assert_eq!(kinds(&cooee, &id), ["you", "agent", "note", "you", "agent"]);
+    assert_eq!(kept, persona());
+}
 
+fn ada_with_a_skill_memory_and_two_agents(dir: &Path) -> (FakeShed, Cooee, String) {
+    let home = support::agent(
+        dir,
+        "ada",
+        "name = \"Ada\"\nagent = \"fake-acp\"\n",
+        "The code word is PLOVER-7.",
+    );
+    fs::create_dir_all(home.join("skills/greet")).unwrap();
+    fs::write(home.join("skills/greet/SKILL.md"), "Say hi.").unwrap();
+    fs::write(home.join("memory.md"), "- likes tea\n").unwrap();
+    fs::write(dir.join("routines.toml"), "").unwrap();
+    let shed = FakeShed::start(&dir.join("shed"), version());
+    let agents = json!([
+        { "id": "fake-acp", "version": "1.0.0", "distribution": "npx", "cmd": ["fake-acp"] },
+        { "id": "other-acp", "version": "1.0.0", "distribution": "npx", "cmd": ["fake-acp"] },
+    ]);
+    fs::write(shed.dir.join("agents.json"), agents.to_string()).unwrap();
+    let cooee = support::Cooee::start(dir, &shed.dir);
+    let new = json!({ "agent": "fake-acp", "profile": "ada", "text": "echo hello", "random_id": "start" });
+    let (status, body) = cooee.post("/threads", &new);
+    assert_eq!(status, 200, "{body}");
+    let id = serde_json::from_str::<Value>(&body).unwrap()["id"]
+        .as_str()
+        .unwrap()
+        .to_owned();
+    (shed, cooee, id)
+}
+
+fn assert_the_next_turn_carries_the_handoff_in_the_same_thread(
+    cooee: &Cooee,
+    shed: &FakeShed,
+    id: &str,
+    lane: &str,
+    reply: &str,
+) {
     let body = json!({ "text": "echo there", "random_id": "there" });
     assert_eq!(cooee.post(&format!("/threads/{id}/send"), &body).0, 200);
-    replies(&cooee, &id, 2);
-    let prompts = shed.sent(&lane);
+    replies(cooee, id, 2);
+    let prompts = shed.sent(lane);
     assert_eq!(prompts.len(), 1, "{prompts:?}");
     let first = &prompts[0];
     assert!(
@@ -341,8 +357,6 @@ fn a_switch_starts_the_other_agent_with_the_brief_and_a_handoff_in_the_same_thre
         (&rows[0]["id"], &rows[0]["agent"]),
         (&json!(id), &json!("other-acp"))
     );
-    assert_eq!(kinds(&cooee, &id), ["you", "agent", "note", "you", "agent"]);
-    assert_eq!(kept, persona());
 }
 
 fn card(cooee: &Cooee, id: &str, n: usize) -> Value {
@@ -413,14 +427,7 @@ fn a_limit_asks_for_the_next_agent_of_the_chain_and_its_pick_takes_the_turn_with
  {
     let (shed, cooee, id) = chained();
     let first = format!("cooee-{id}");
-    shed.report(&first, "error", Some("boom"));
-    let deadline = Instant::now() + Duration::from_secs(10);
-    while row(&cooee, &id)["state"] != "error" {
-        assert!(Instant::now() < deadline, "{}", row(&cooee, &id));
-        thread::sleep(Duration::from_millis(20));
-    }
-    assert_eq!(kinds(&cooee, &id), ["you", "agent"], "an error is no limit");
-
+    assert_an_error_is_no_limit(&shed, &cooee, &id, &first);
     shed.limit(&first);
     let asked = card(&cooee, &id, 1);
     assert_eq!(asked["tool"], "fake-acp capped until 3pm, continue on");
@@ -435,20 +442,8 @@ fn a_limit_asks_for_the_next_agent_of_the_chain_and_its_pick_takes_the_turn_with
     assert_eq!(status, 200, "{body}");
     let items = replies(&cooee, &id, 3);
     let lane = lane(&shed, "other-acp");
-    let prompts = shed.sent(&lane);
-    assert_eq!(prompts.len(), 1, "{prompts:?}");
     let go_on = "Go on with my last message: the agent before you hit its usage limit.";
-    let said = [
-        "Be brief.",
-        "Its first message: echo hello",
-        "reply: You've hit your limit · resets 3pm",
-        go_on,
-    ];
-    assert!(
-        said.iter().all(|s| prompts[0].contains(s)),
-        "{}",
-        prompts[0]
-    );
+    assert_the_pick_gets_a_handoff_to_go_on(&shed, &lane, go_on);
     let shown: Vec<&Value> = items
         .iter()
         .map(|i| i.get("text").unwrap_or(&i["chosen"]))
@@ -482,4 +477,30 @@ fn a_limit_asks_for_the_next_agent_of_the_chain_and_its_pick_takes_the_turn_with
         (&json!("wait"), &json!("waiting for its reset"))
     );
     assert_eq!(row(&cooee, &id)["agent"], "other-acp");
+}
+
+fn assert_an_error_is_no_limit(shed: &FakeShed, cooee: &Cooee, id: &str, first: &str) {
+    shed.report(first, "error", Some("boom"));
+    let deadline = Instant::now() + Duration::from_secs(10);
+    while row(cooee, id)["state"] != "error" {
+        assert!(Instant::now() < deadline, "{}", row(cooee, id));
+        thread::sleep(Duration::from_millis(20));
+    }
+    assert_eq!(kinds(cooee, id), ["you", "agent"], "an error is no limit");
+}
+
+fn assert_the_pick_gets_a_handoff_to_go_on(shed: &FakeShed, lane: &str, go_on: &str) {
+    let prompts = shed.sent(lane);
+    assert_eq!(prompts.len(), 1, "{prompts:?}");
+    let said = [
+        "Be brief.",
+        "Its first message: echo hello",
+        "reply: You've hit your limit · resets 3pm",
+        go_on,
+    ];
+    assert!(
+        said.iter().all(|s| prompts[0].contains(s)),
+        "{}",
+        prompts[0]
+    );
 }

@@ -233,7 +233,18 @@ impl Server {
             k => return Err(format!("mcp {n}: type {k:?} isn't stdio, http or sse")),
         };
         let url = HttpsUrl::try_from(self.url.clone()).map_err(|e| format!("mcp {n}: url {e}"))?;
-        let auth = match self.auth {
+        Ok(Source::Typed {
+            url,
+            transport,
+            auth: self.typed_auth()?,
+            headers: &self.headers,
+            read: &self.read,
+        })
+    }
+
+    fn typed_auth(&self) -> Result<Auth, String> {
+        let n = &self.name;
+        Ok(match self.auth {
             Some(AuthKind::OAuth) => Auth::OAuth {
                 issuer: Some(
                     HttpsUrl::try_from(self.issuer.clone())
@@ -251,13 +262,6 @@ impl Server {
                 help: String::new(),
             },
             Some(AuthKind::None) | None => Auth::None,
-        };
-        Ok(Source::Typed {
-            url,
-            transport,
-            auth,
-            headers: &self.headers,
-            read: &self.read,
         })
     }
 
@@ -596,6 +600,10 @@ read = ["look"]
         assert_eq!(read, ["look"]);
         let saved = with_tables("", &list.iter().map(Server::toml).collect::<Vec<_>>());
         assert_eq!(toml::from_str::<Back>(&saved).unwrap().mcp, list);
+    }
+
+    #[test]
+    fn a_server_with_the_wrong_fields_for_its_source_is_refused() {
         for (bad, says) in [
             ("command = \"x\"\nread = [\"a\"]", "a stdio server"),
             ("command = \"x\"\nauth = \"token\"", "a stdio server"),

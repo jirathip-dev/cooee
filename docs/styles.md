@@ -43,7 +43,7 @@ A pack may hold `theme.json`, `style.json` or both. `cooee theme list` shows a f
 
 ## The gate
 
-`cooee theme check <path>`, CI (`ci/gates/themes.sh`), `cooee theme add` and every load run the same rules:
+`cooee theme check <path>`, CI (`.gatekeeper/gates/themes.toml`), `cooee theme add` and every load run the same rules:
 
 - the pack holds `theme.json`, `style.json` or both, and no symlinks; `style.json` is at most 16 KiB;
 - a pack holding a style isn't named `modern`;

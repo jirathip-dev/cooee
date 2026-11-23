@@ -1,0 +1,18 @@
+about = "every Rust gate on the MSRV toolchain (rust-toolchain.toml), on a push to staging only"
+fix = "a red msrv on staging is fixed in its own issue: build, lint and test on the MSRV"
+budget_secs = 1200
+leg = "msrv"
+setup = ["rust"]
+paths = [".gatekeeper/gates/msrv.toml"]
+run = '''
+if [ "${GITHUB_EVENT_NAME:-}" != push ] || [ "${GITHUB_REF:-}" != refs/heads/staging ]; then
+  echo "msrv: skipped, it runs on a push to staging only"
+  exit 0
+fi
+export RUSTUP_TOOLCHAIN="$(sed -n 's/^channel = "\(.*\)"/\1/p' rust-toolchain.toml)"
+rustup toolchain install "$RUSTUP_TOOLCHAIN" --profile minimal -c clippy -c rustfmt --no-self-update
+cargo fmt --all --check
+cargo clippy --workspace --all-targets --locked -- -D warnings -A clippy::unwrap_used -A clippy::expect_used -A clippy::panic -A clippy::indexing_slicing
+RUSTDOCFLAGS="-D warnings" cargo doc --workspace --no-deps --locked
+ci/test.sh
+'''

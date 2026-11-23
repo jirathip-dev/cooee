@@ -85,6 +85,19 @@ fn addresses_owner(text: &str) -> bool {
     mentions(text).any(|w| w == "you" || w == OWNER)
 }
 
+fn unheard(items: &[Item], heard: u64, persona: &str, names: &[Agent]) -> Vec<String> {
+    items
+        .iter()
+        .filter(|i| i.id > heard && i.speaker != persona)
+        .filter_map(|i| match &i.body {
+            Body::You { text, .. } | Body::Agent { text, .. } => {
+                Some(format!("[{}]: {text}", display(names, &i.speaker)))
+            }
+            _ => None,
+        })
+        .collect()
+}
+
 fn display(names: &[Agent], id: &str) -> String {
     match names.iter().find(|p| p.id == id) {
         _ if id == OWNER => "Owner".to_owned(),
@@ -352,18 +365,7 @@ impl Hub {
             let others: Vec<String> = others.map(|m| name(&m.persona)).collect();
             let m = meta.members.iter_mut().find(|m| m.persona == persona);
             let m = m.ok_or_else(|| refused(format!("{persona} left")))?;
-            let new = chat
-                .items
-                .iter()
-                .filter(|i| i.id > m.heard && i.speaker != persona);
-            let lines: Vec<String> = new
-                .filter_map(|i| match &i.body {
-                    Body::You { text, .. } | Body::Agent { text, .. } => {
-                        Some(format!("[{}]: {text}", name(&i.speaker)))
-                    }
-                    _ => None,
-                })
-                .collect();
+            let lines = unheard(&chat.items, m.heard, &persona, &names);
             m.heard = last;
             let mut prompt = lines.join("\n\n");
             if m.session.is_empty() {

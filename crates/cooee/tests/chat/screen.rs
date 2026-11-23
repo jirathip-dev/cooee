@@ -120,7 +120,16 @@ fn a_reply_streams_into_one_message_by_appends_beside_its_tool_row_and_keeps_its
     );
     let shown = serde_json::to_value(m.screen(&key).unwrap()).unwrap();
     assert_eq!(shown, s.cooee.json(&key));
+    assert_an_attachment_shows_as_the_owners_and_opens(&s, &id, &mut events, &mut m, &key);
+}
 
+fn assert_an_attachment_shows_as_the_owners_and_opens(
+    s: &Setup,
+    id: &str,
+    events: &mut Events,
+    m: &mut Mirror,
+    key: &str,
+) {
     let png = base64::engine::general_purpose::STANDARD.encode(b"not really a png");
     let files = json!([{ "name": "shot.png", "data": png }]);
     let body = json!({ "text": "echo seen", "random_id": "f1", "files": files });
@@ -128,8 +137,8 @@ fn a_reply_streams_into_one_message_by_appends_beside_its_tool_row_and_keeps_its
     assert_eq!(status, 200, "{sent}");
     let you: Value = serde_json::from_str(&sent).unwrap();
     let mine = format!("m{}", you["id"]);
-    follow(&mut events, &mut m, &key, |v| block(v, &mine).is_some());
-    let shown = serde_json::to_value(m.screen(&key).unwrap()).unwrap();
+    follow(events, m, key, |v| block(v, &mine).is_some());
+    let shown = serde_json::to_value(m.screen(key).unwrap()).unwrap();
     let message = block(&shown, &mine).unwrap();
     assert_eq!(
         (&message["role"], &message["name"]),

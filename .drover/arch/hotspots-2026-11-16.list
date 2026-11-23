@@ -1,6 +1,5 @@
 generated .drover/arch.toml
 shared .github/workflows/apple.yml
-shared .github/workflows/ci.yml
 shared Cargo.toml
 shared crates/cooee-server/src/serve.rs
 shared crates/cooee/src/main.rs

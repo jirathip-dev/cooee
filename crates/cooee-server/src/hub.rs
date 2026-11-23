@@ -33,6 +33,7 @@ mod surface;
 #[cfg(test)]
 mod tests;
 mod threads;
+mod workers;
 
 pub use cards::*;
 pub use chief::*;

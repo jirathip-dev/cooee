@@ -1,0 +1,6 @@
+about = "the CI's own scripts: the nightly's issue, the e2e scope, the test gate's temp-folder check"
+fix = "fix the script or the case the log names"
+budget_secs = 30
+versions = ["jq --version", "git --version"]
+paths = ["scripts/ci-nightly.sh", "scripts/e2e-scope.sh", "apple/e2e/map.toml", "apple/UITests/**", "ci/ci-scripts-test.sh", "ci/test.sh", "ci/test-gate-test.sh"]
+run = "ci/ci-scripts-test.sh && ci/test-gate-test.sh"

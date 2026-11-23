@@ -133,14 +133,7 @@ fn a_run_reads_new_history_once_and_its_writes_wait_for_approval() {
     }
     assert_eq!(ran.len(), 1, "{ran:?}");
     let run = ran[0].clone();
-    let mut sent = String::new();
-    for _ in 0..100 {
-        sent = shed.sent(&format!("cooee-{run}")).join("\n");
-        if !sent.is_empty() {
-            break;
-        }
-        thread::sleep(Duration::from_millis(100));
-    }
+    let sent = first_prompts(&shed, &run);
     assert!(sent.contains("consolidation run"), "{sent}");
 
     let (read, failed) = tool(&shed, &run, "history", &json!({}));
@@ -154,29 +147,7 @@ fn a_run_reads_new_history_once_and_its_writes_wait_for_approval() {
     assert!(line > 0, "{}", mark(&dir));
     let again = tool(&shed, &run, "history", &json!({}));
     assert_eq!(again, ("nothing new since the last run".to_owned(), false));
-
-    let note = json!({ "text": "Kiwi orders ship on Fridays." });
-    let (said, failed) = tool(&shed, &run, "remember", &note);
-    assert!(!failed && said.starts_with("Proposed."), "{said}");
-    let memory = home.join("memory.md");
-    assert!(!memory.exists(), "nothing written before approval");
-    let notes = card(&cooee, &run, "memory");
-    assert_eq!(notes["detail"], "Kiwi orders ship on Fridays.", "{notes}");
-    let skill = json!({ "propose": { "name": "ship-kiwi", "description": "How I ship a kiwi order.",
-                                     "body": "1. Pack it.\n2. Ship it Friday." } });
-    let (said, failed) = tool(&shed, &run, "skill", &skill);
-    assert!(!failed && said.starts_with("Proposed."), "{said}");
-    let skill_file = home.join("skills/ship-kiwi/SKILL.md");
-    assert!(!skill_file.exists(), "nothing written before approval");
-    approve(&cooee, &run, &notes);
-    let kept = fs::read_to_string(&memory).unwrap();
-    assert!(kept.contains("Kiwi orders ship on Fridays."), "{kept}");
-    approve(&cooee, &run, &card(&cooee, &run, "skill"));
-    assert!(
-        skill_file.exists(),
-        "{}",
-        cooee.json(&format!("/threads/{run}/messages"))
-    );
+    assert_memory_and_skill_wait_for_approval(&cooee, &shed, &run, &home);
 
     drop(cooee);
     let m = due_again(&dir);
@@ -186,4 +157,46 @@ fn a_run_reads_new_history_once_and_its_writes_wait_for_approval() {
     thread::sleep(Duration::from_millis(500));
     assert_eq!(runs(&cooee), vec![run], "nothing new since: no second run");
     assert_eq!(mark(&dir)["line"], line, "never reread");
+}
+
+fn assert_memory_and_skill_wait_for_approval(
+    cooee: &Cooee,
+    shed: &FakeShed,
+    run: &str,
+    home: &Path,
+) {
+    let note = json!({ "text": "Kiwi orders ship on Fridays." });
+    let (said, failed) = tool(shed, run, "remember", &note);
+    assert!(!failed && said.starts_with("Proposed."), "{said}");
+    let memory = home.join("memory.md");
+    assert!(!memory.exists(), "nothing written before approval");
+    let notes = card(cooee, run, "memory");
+    assert_eq!(notes["detail"], "Kiwi orders ship on Fridays.", "{notes}");
+    let skill = json!({ "propose": { "name": "ship-kiwi", "description": "How I ship a kiwi order.",
+                                     "body": "1. Pack it.\n2. Ship it Friday." } });
+    let (said, failed) = tool(shed, run, "skill", &skill);
+    assert!(!failed && said.starts_with("Proposed."), "{said}");
+    let skill_file = home.join("skills/ship-kiwi/SKILL.md");
+    assert!(!skill_file.exists(), "nothing written before approval");
+    approve(cooee, run, &notes);
+    let kept = fs::read_to_string(&memory).unwrap();
+    assert!(kept.contains("Kiwi orders ship on Fridays."), "{kept}");
+    approve(cooee, run, &card(cooee, run, "skill"));
+    assert!(
+        skill_file.exists(),
+        "{}",
+        cooee.json(&format!("/threads/{run}/messages"))
+    );
+}
+
+fn first_prompts(shed: &FakeShed, run: &str) -> String {
+    let mut sent = String::new();
+    for _ in 0..100 {
+        sent = shed.sent(&format!("cooee-{run}")).join("\n");
+        if !sent.is_empty() {
+            break;
+        }
+        thread::sleep(Duration::from_millis(100));
+    }
+    sent
 }

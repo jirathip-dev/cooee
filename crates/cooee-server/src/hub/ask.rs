@@ -21,6 +21,18 @@ pub(super) struct State {
     pub(super) asks: Mutex<HashMap<String, mpsc::Sender<String>>>,
 }
 
+fn ask_card((target, name, message): (&str, &str, &str), thread: &str, outcome: &str) -> Body {
+    Body::Ask {
+        persona: target.to_owned(),
+        name: name.to_owned(),
+        text: message.to_owned(),
+        thread: thread.to_owned(),
+        outcome: outcome.to_owned(),
+        secs: 0,
+        note: String::new(),
+    }
+}
+
 impl Hub {
     /// Thread `id`'s persona asks persona `target` `message` and waits up to `wait` for its reply, in the exchange
     /// thread linked to `id` (started on the first ask, reused after). The reply carries the owner's notes.
@@ -39,15 +51,8 @@ impl Hub {
         let meta = self.token_of(id, token)?;
         let found = |p: &str| agents::find(self.config_dir(), &self.data, p).ok();
         let name = found(target).map_or_else(|| target.to_owned(), |p| p.name);
-        let card = |thread: &str, outcome: &str| Body::Ask {
-            persona: target.to_owned(),
-            name: name.clone(),
-            text: message.to_owned(),
-            thread: thread.to_owned(),
-            outcome: outcome.to_owned(),
-            secs: 0,
-            note: String::new(),
-        };
+        let card =
+            |thread: &str, outcome: &str| ask_card((target, &name, message), thread, outcome);
         let chief = self.chief_of(id, token).is_ok();
         let asker =
             found(&meta.profile).filter(|p| chief || p.can_message.iter().any(|t| t == target));
@@ -55,35 +60,16 @@ impl Hub {
             self.say(id, card("", "not_allowed"))?;
             return no("NOT_ALLOWED", &format!("can_message doesn't name {target}"));
         };
-        let (mut depth, mut up) = (0, meta.asked_by);
-        while !up.is_empty() {
-            depth += 1;
-            up = self.thread(&up).map(|t| t.0.asked_by).unwrap_or_default();
-        }
-        if depth >= DEPTH {
+        if self.ask_depth(&meta.asked_by) >= DEPTH {
             self.say(id, card("", "depth"))?;
             return no("DEPTH", "an asked persona may ask one more, no further");
         }
         let key = format!("{id}>{target}");
         let (tx, rx) = mpsc::channel();
         lock(&self.areas.ask.asks).insert(key.clone(), tx);
-        let open = self.all().into_iter().find_map(|l| {
-            let m = &lock(&l).meta;
-            (m.asked_by == id && m.profile == target && !m.closed).then(|| m.id.clone())
-        });
         let (rid, by) = (format!("ask-{key}-{}", now()), format!("[{}]:", asker.name));
         let start = cooee_core::clock::instant();
-        let sent = match open {
-            Some(x) => self
-                .send_after(&x, message, &rid, &[], &by, None)
-                .map(|_| x),
-            None => self.seat(target, (message, &rid), |r| {
-                id.clone_into(&mut r.asked_by);
-                format!("{}\n\n{by}", r.instructions.trim_end())
-                    .trim_start()
-                    .clone_into(&mut r.instructions);
-            }),
-        };
+        let sent = self.send_ask((id, target), message, &rid, &by);
         let x = match sent {
             Ok(x) => x,
             Err(e) => {
@@ -119,6 +105,37 @@ impl Hub {
         } else {
             format!("{reply}\n\n[The owner's note to {name}: {notes}]")
         })
+    }
+
+    fn ask_depth(&self, asked_by: &str) -> usize {
+        let (mut depth, mut up) = (0, asked_by.to_owned());
+        while !up.is_empty() {
+            depth += 1;
+            up = self.thread(&up).map(|t| t.0.asked_by).unwrap_or_default();
+        }
+        depth
+    }
+
+    fn send_ask(
+        &self,
+        (id, target): (&str, &str),
+        message: &str,
+        rid: &str,
+        by: &str,
+    ) -> Result<String, HubError> {
+        let open = self.all().into_iter().find_map(|l| {
+            let m = &lock(&l).meta;
+            (m.asked_by == id && m.profile == target && !m.closed).then(|| m.id.clone())
+        });
+        match open {
+            Some(x) => self.send_after(&x, message, rid, &[], by, None).map(|_| x),
+            None => self.seat(target, (message, rid), |r| {
+                id.clone_into(&mut r.asked_by);
+                format!("{}\n\n{by}", r.instructions.trim_end())
+                    .trim_start()
+                    .clone_into(&mut r.instructions);
+            }),
+        }
     }
 
     fn answered(

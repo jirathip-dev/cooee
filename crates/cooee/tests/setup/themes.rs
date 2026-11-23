@@ -1,39 +1,11 @@
-use std::fs;
+use std::{fs, path::Path};
 
 use crate::setup::{Mac, files};
 
-#[test]
-fn setup_installs_the_first_party_themes_chosen_with_no_network() {
-    let mac = Mac::new("su-themes", true);
+fn assert_kitchen_and_farm_installed_and_locked(mac: &Mac, themes: &Path) {
     let swag = cooee_core::swag::Swag::pinned();
-    fs::create_dir_all(mac.config().parent().unwrap()).unwrap();
-    fs::write(
-        mac.config(),
-        format!("port = {}\nroots = [\"/srv\"]\n", mac.port),
-    )
-    .unwrap();
-    let args = ["setup", "--port", &mac.port.to_string()];
-    let out = mac.cooee_typing(&args, Some("kitchen\n\n\n1\n1\n"));
-    let stdout = String::from_utf8_lossy(&out.stdout);
-    assert!(out.status.success(), "{out:?}");
-    assert!(
-        stdout.contains(
-            "themes:\n  themes to install, or none [bush garden kitchen]:\n  installed theme farm\n  installed theme scene\n  installed theme terminal\n  installed theme kitchen\n"
-        ),
-        "{stdout}"
-    );
-    assert!(
-        stdout.contains("chief:\n  Chief is cooee's own persona: it sets up personas and routines for you.\n  its agent:  1 claude-acp\n  its machine:  1 here\n"),
-        "{stdout}"
-    );
-    let chief = fs::read_to_string(mac.chief()).unwrap();
-    assert!(
-        chief.contains("agent = \"claude-acp\"") && !chief.contains("machine"),
-        "{chief}"
-    );
-    let themes = mac.config().parent().unwrap().join("themes");
     assert_eq!(
-        files(&themes),
+        files(themes),
         [
             "farm/icon.png",
             "farm/scene.svg",
@@ -65,6 +37,38 @@ fn setup_installs_the_first_party_themes_chosen_with_no_network() {
             .join(".local/share/cooee/cooee/themes/kitchen.git")
             .exists()
     );
+}
+
+#[test]
+fn setup_installs_the_first_party_themes_chosen_with_no_network() {
+    let mac = Mac::new("su-themes", true);
+    fs::create_dir_all(mac.config().parent().unwrap()).unwrap();
+    fs::write(
+        mac.config(),
+        format!("port = {}\nroots = [\"/srv\"]\n", mac.port),
+    )
+    .unwrap();
+    let args = ["setup", "--port", &mac.port.to_string()];
+    let out = mac.cooee_typing(&args, Some("kitchen\n\n\n1\n1\n"));
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(out.status.success(), "{out:?}");
+    assert!(
+        stdout.contains(
+            "themes:\n  themes to install, or none [bush garden kitchen]:\n  installed theme farm\n  installed theme scene\n  installed theme terminal\n  installed theme kitchen\n"
+        ),
+        "{stdout}"
+    );
+    assert!(
+        stdout.contains("chief:\n  Chief is cooee's own persona: it sets up personas and routines for you.\n  its agent:  1 claude-acp\n  its machine:  1 here\n"),
+        "{stdout}"
+    );
+    let chief = fs::read_to_string(mac.chief()).unwrap();
+    assert!(
+        chief.contains("agent = \"claude-acp\"") && !chief.contains("machine"),
+        "{chief}"
+    );
+    let themes = mac.config().parent().unwrap().join("themes");
+    assert_kitchen_and_farm_installed_and_locked(&mac, &themes);
     let out = mac.setup(&["--yes"]);
     assert!(out.status.success(), "{out:?}");
     let stdout = String::from_utf8_lossy(&out.stdout);

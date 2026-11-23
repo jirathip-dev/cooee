@@ -6,33 +6,25 @@ use super::{Setup, step};
 use crate::{cli::load, service::tailnet_name};
 
 impl Setup {
-    pub(super) fn config(&self, path: &Path) -> Result<(Config, bool), String> {
-        let text = fs::read_to_string(path).unwrap_or_default();
-        let keys: toml::Table = text
-            .parse()
-            .map_err(|e| format!("{}: {e}", path.display()))?;
-        let bundled = keys
-            .get("shed")
-            .and_then(toml::Value::as_str)
-            .is_some_and(|s| s.contains(".app/Contents/Helpers/"));
-        let text = if bundled {
-            without_top_key(&text, "shed")
-        } else {
-            text
-        };
-        let port = match (
-            keys.get("port").and_then(toml::Value::as_integer),
-            self.port,
-        ) {
-            (Some(had), Some(want)) if had != i64::from(want) => {
-                return Err(format!(
-                    "{} says port = {had}: change it to {want} first",
-                    path.display()
-                ));
-            }
-            (Some(had), _) => u16::try_from(had).map_err(|e| e.to_string())?,
-            (None, want) => want.unwrap_or(Config::default().port),
-        };
+    fn chosen_port(&self, keys: &toml::Table, path: &Path) -> Result<u16, String> {
+        Ok(
+            match (
+                keys.get("port").and_then(toml::Value::as_integer),
+                self.port,
+            ) {
+                (Some(had), Some(want)) if had != i64::from(want) => {
+                    return Err(format!(
+                        "{} says port = {had}: change it to {want} first",
+                        path.display()
+                    ));
+                }
+                (Some(had), _) => u16::try_from(had).map_err(|e| e.to_string())?,
+                (None, want) => want.unwrap_or(Config::default().port),
+            },
+        )
+    }
+
+    fn missing_keys(&self, keys: &toml::Table, port: u16) -> Vec<String> {
         let mut add = Vec::new();
         if !keys.contains_key("port") {
             add.push(format!("port = {port}"));
@@ -51,23 +43,26 @@ impl Setup {
             let root = self.ask("folders for threads [~/Projects]:", "~/Projects");
             add.push(format!("roots = [{root:?}]"));
         }
-        let plugins = keys.get("plugins").and_then(toml::Value::as_array);
-        let has = plugins.is_some_and(|a| {
-            a.iter()
-                .any(|p| p.get("name").and_then(toml::Value::as_str) == Some(cooee_terminal::NAME))
-        });
-        let plugin = if has {
-            String::new()
+        add
+    }
+
+    pub(super) fn config(&self, path: &Path) -> Result<(Config, bool), String> {
+        let text = fs::read_to_string(path).unwrap_or_default();
+        let keys: toml::Table = text
+            .parse()
+            .map_err(|e| format!("{}: {e}", path.display()))?;
+        let bundled = keys
+            .get("shed")
+            .and_then(toml::Value::as_str)
+            .is_some_and(|s| s.contains(".app/Contents/Helpers/"));
+        let text = if bundled {
+            without_top_key(&text, "shed")
         } else {
-            let at = port
-                .checked_add(1000)
-                .ok_or("no port + 1000 for the terminal plugin")?;
-            let token = cooee_core::sha256(&cooee_core::random(32).map_err(|e| e.to_string())?);
-            format!(
-                "\n[[plugins]]\nname = \"terminal\"\nlabel = \"Terminal\"\nurl = \"http://127.0.0.1:{at}\"\n\
-                 module = \"/tab.js\"\ntoken = \"{token}\"\n"
-            )
+            text
         };
+        let port = self.chosen_port(&keys, path)?;
+        let add = self.missing_keys(&keys, port);
+        let (has, plugin) = terminal_plugin(&keys, port)?;
         let changed = bundled || !add.is_empty() || !plugin.is_empty();
         if !step(&format!("config {}", path.display()), !changed) {
             if !text.is_empty() {
@@ -100,6 +95,27 @@ impl Setup {
         };
         Ok((config, changed))
     }
+}
+
+fn terminal_plugin(keys: &toml::Table, port: u16) -> Result<(bool, String), String> {
+    let plugins = keys.get("plugins").and_then(toml::Value::as_array);
+    let has = plugins.is_some_and(|a| {
+        a.iter()
+            .any(|p| p.get("name").and_then(toml::Value::as_str) == Some(cooee_terminal::NAME))
+    });
+    let plugin = if has {
+        String::new()
+    } else {
+        let at = port
+            .checked_add(1000)
+            .ok_or("no port + 1000 for the terminal plugin")?;
+        let token = cooee_core::sha256(&cooee_core::random(32).map_err(|e| e.to_string())?);
+        format!(
+            "\n[[plugins]]\nname = \"terminal\"\nlabel = \"Terminal\"\nurl = \"http://127.0.0.1:{at}\"\n\
+             module = \"/tab.js\"\ntoken = \"{token}\"\n"
+        )
+    };
+    Ok((has, plugin))
 }
 
 fn without_top_key(text: &str, key: &str) -> String {

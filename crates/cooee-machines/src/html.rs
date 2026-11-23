@@ -83,6 +83,67 @@ fn metric(
     ).ok();
 }
 
+fn sample(out: &mut String, (card, s): (&Card, &Sample), id: &str, problems: &[Problem], now: u64) {
+    let samples: Vec<&Sample> = card.history.iter().chain([s]).collect();
+    let series = |f: fn(&Sample) -> f64| -> Vec<(u64, f64)> {
+        samples.iter().map(|s| (s.at, f(s))).collect()
+    };
+    let (mem, swap, disk) = (
+        series(|s| float(s.mem_pressure_pct)),
+        series(|s| float(s.swap_used_mb)),
+        series(|s| float(s.disk_free_mb)),
+    );
+    let mb = size;
+    out.push_str("<div class=\"ms\">");
+    let load = (
+        "load/cpu",
+        format!("{:.2}", s.load_per_cpu),
+        s.load_per_cpu >= 1.0,
+    );
+    let pts = series(|s| s.load_per_cpu);
+    metric(
+        out,
+        &format!("{id}-load"),
+        load,
+        &pts,
+        |v| format!("{v:.2}"),
+        now,
+    );
+    let critical = problems.contains(&Problem::MemoryCritical);
+    let word = if critical { " critical" } else { "" };
+    let memory = ("memory", format!("{}%{word}", s.mem_pressure_pct), critical);
+    metric(
+        out,
+        &format!("{id}-mem"),
+        memory,
+        &mem,
+        |v| format!("{v:.0}%"),
+        now,
+    );
+    let swapped = ("swap", size(float(s.swap_used_mb)), false);
+    metric(out, &format!("{id}-swap"), swapped, &swap, mb, now);
+    let low = problems.contains(&Problem::DiskLow);
+    let word = if low { " low" } else { "" };
+    let free = (
+        "disk free",
+        format!("{}{word}", size(float(s.disk_free_mb))),
+        low,
+    );
+    metric(out, &format!("{id}-disk"), free, &disk, mb, now);
+    out.push_str("</div>");
+    let terminals: Vec<String> = s
+        .terminals
+        .iter()
+        .map(|(state, n)| format!("{n} {}", esc(state)))
+        .collect();
+    let terminals = if terminals.is_empty() {
+        "none".to_owned()
+    } else {
+        terminals.join(" · ")
+    };
+    write!(out, "<p class=\"tm\">terminals: {terminals}</p>").ok();
+}
+
 /// The cards, or a line while shed hasn't been asked yet.
 #[must_use]
 pub fn render(cards: &[Card], now: u64) -> String {
@@ -113,64 +174,7 @@ pub fn render(cards: &[Card], now: u64) -> String {
             write!(out, "<p class=\"er\">{}</p>", esc(e)).ok();
         }
         if let Some(s) = &c.now {
-            let samples: Vec<&Sample> = c.history.iter().chain([s]).collect();
-            let series = |f: fn(&Sample) -> f64| -> Vec<(u64, f64)> {
-                samples.iter().map(|s| (s.at, f(s))).collect()
-            };
-            let (mem, swap, disk) = (
-                series(|s| float(s.mem_pressure_pct)),
-                series(|s| float(s.swap_used_mb)),
-                series(|s| float(s.disk_free_mb)),
-            );
-            let mb = size;
-            out.push_str("<div class=\"ms\">");
-            let load = (
-                "load/cpu",
-                format!("{:.2}", s.load_per_cpu),
-                s.load_per_cpu >= 1.0,
-            );
-            let pts = series(|s| s.load_per_cpu);
-            metric(
-                &mut out,
-                &format!("{id}-load"),
-                load,
-                &pts,
-                |v| format!("{v:.2}"),
-                now,
-            );
-            let critical = problems.contains(&Problem::MemoryCritical);
-            let word = if critical { " critical" } else { "" };
-            let m = ("memory", format!("{}%{word}", s.mem_pressure_pct), critical);
-            metric(
-                &mut out,
-                &format!("{id}-mem"),
-                m,
-                &mem,
-                |v| format!("{v:.0}%"),
-                now,
-            );
-            let w = ("swap", size(float(s.swap_used_mb)), false);
-            metric(&mut out, &format!("{id}-swap"), w, &swap, mb, now);
-            let low = problems.contains(&Problem::DiskLow);
-            let word = if low { " low" } else { "" };
-            let d = (
-                "disk free",
-                format!("{}{word}", size(float(s.disk_free_mb))),
-                low,
-            );
-            metric(&mut out, &format!("{id}-disk"), d, &disk, mb, now);
-            out.push_str("</div>");
-            let terminals: Vec<String> = s
-                .terminals
-                .iter()
-                .map(|(state, n)| format!("{n} {}", esc(state)))
-                .collect();
-            let terminals = if terminals.is_empty() {
-                "none".to_owned()
-            } else {
-                terminals.join(" · ")
-            };
-            write!(out, "<p class=\"tm\">terminals: {terminals}</p>").ok();
+            sample(&mut out, (c, s), &id, &problems, now);
         }
         out.push_str("</article>");
     }
