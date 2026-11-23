@@ -135,3 +135,29 @@ fn an_ended_session_or_unknown_thread_exits_1_and_bad_words_exit_2() {
         assert_eq!(s.send(args).status.code(), Some(2), "{args:?}");
     }
 }
+
+#[test]
+fn new_starts_a_chat_with_the_persona_and_waits_for_its_reply() {
+    let s = setup("send-new");
+    let persona =
+        json!({ "name": "Eval", "agent": "fake-acp", "folder": "scratch", "style": "detailed" });
+    let (status, body) = s.cooee.post("/personas", &persona);
+    assert_eq!(status, 200, "{body}");
+    let done = s.json(&["--new", "eval", "echo scripted", "--wait", "--json"], 0);
+    assert_eq!(
+        (&done["state"], &done["reply"]),
+        (&json!("done"), &json!("scripted")),
+        "{done}"
+    );
+    let id = done["thread"].as_str().unwrap();
+    let rows = s.cooee.json("/threads?persona=eval");
+    let ids: Vec<&str> = rows
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|r| r["id"].as_str().unwrap())
+        .collect();
+    assert_eq!(ids, [id]);
+    let missing = s.send(&["--new", "nobody", "hi", "--wait"]);
+    assert_eq!(missing.status.code(), Some(1), "{missing:?}");
+}
