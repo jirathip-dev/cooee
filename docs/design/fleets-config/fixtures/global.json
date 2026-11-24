@@ -85,12 +85,12 @@
       },
       {
        "type": "row",
-       "id": "air",
+       "id": "box",
        "figure": {
         "state": "idle",
         "coat": "gry"
        },
-       "title": "air",
+       "title": "box",
        "subtitle": "small · shed-acp",
        "value": "off",
        "tap": {}

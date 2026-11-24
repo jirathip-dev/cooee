@@ -5,7 +5,7 @@
     { "type": "section", "header": "herdsman", "footer": "Drive runs every 5 minutes on mini. Pause stops new lanes; live ones finish.", "blocks": [
       { "type": "form", "id": "f-herdsman", "fields": [
         { "type": "toggle", "name": "herdsman.drive", "label": "Drive", "value": true },
-        { "type": "picker", "name": "herdsman.host", "label": "Host", "value": "mini", "options": ["mini", "air", "least busy"] },
+        { "type": "picker", "name": "herdsman.host", "label": "Host", "value": "mini", "options": ["mini", "box", "least busy"] },
         { "type": "picker", "name": "herdsman.impl", "label": "Impl", "value": "Claude Code · opus 5.5 · high",
           "options": ["Claude Code · opus 5.5 · high", "Claude Code · sonnet 5.5", "Codex · gpt-5.6-luna"] },
         { "type": "picker", "name": "herdsman.rev", "label": "Review", "value": "Codex · gpt-5.6-luna",
@@ -14,7 +14,7 @@
     { "type": "section", "header": "cooee-drover", "blocks": [
       { "type": "form", "id": "f-drover", "fields": [
         { "type": "toggle", "name": "cooee-drover.drive", "label": "Drive", "value": false },
-        { "type": "picker", "name": "cooee-drover.host", "label": "Host", "value": "mini", "options": ["mini", "air"] },
+        { "type": "picker", "name": "cooee-drover.host", "label": "Host", "value": "mini", "options": ["mini", "box"] },
         { "type": "text", "name": "cooee-drover.integration", "label": "Branch", "value": "staging", "placeholder": "integration branch" },
         { "type": "secret", "name": "cooee-drover.GH_TOKEN", "label": "GH_TOKEN", "set": true, "placeholder": "paste to replace" } ] } ] },
     { "type": "list", "rows": [

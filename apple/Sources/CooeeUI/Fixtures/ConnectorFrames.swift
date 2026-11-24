@@ -96,7 +96,7 @@ internal struct SettingsMenuFrame: View {
                         symbol: "terminal.fill", title: "Terminal", tint: palette.mute, value: "mini", divider: false)
                 }
                 Group2 {
-                    SettingRow(symbol: "desktopcomputer", title: "Machines", tint: palette.cyan, value: "mini, air")
+                    SettingRow(symbol: "desktopcomputer", title: "Machines", tint: palette.cyan, value: "mini, box")
                     SettingRow(symbol: "puzzlepiece.extension.fill", title: "Plugins", tint: palette.green, value: "4")
                     SettingRow(
                         symbol: "point.3.connected.trianglepath.dotted", title: "Connectors", tint: palette.purple,

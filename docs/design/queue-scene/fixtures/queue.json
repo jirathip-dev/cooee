@@ -106,7 +106,7 @@
       {
        "type": "row", "id": "q-609", "figure": { "state": "working", "tool": "read" }, "title": "#609 api/v1 + CLI: every lane says where it runs",
        "badge": { "text": "fix 4", "tone": "working" }, "value": { "since": "2026-11-09T08:50:00Z" },
-       "subtitle": "impl ✓ · review 1–3 ✗ · fix 4 ▸ herdsman-impl-609 · air",
+       "subtitle": "impl ✓ · review 1–3 ✗ · fix 4 ▸ herdsman-impl-609 · box",
        "rounds": []
       },
       {

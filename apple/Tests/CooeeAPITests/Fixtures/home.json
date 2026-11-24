@@ -69,7 +69,7 @@
       "agent": "fake-acp",
       "model": "gpt-5.5",
       "effort": "high",
-      "machine": "air",
+      "machine": "box",
       "plugins": [
         "hello"
       ],

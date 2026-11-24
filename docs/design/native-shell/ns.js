@@ -136,7 +136,7 @@ const X = {
     const g = (h, rows, ic = true) => `${h ? `<h2 class=ch>${h}</h2>` : '<div style="height:12px"></div>'}<div class="gs${ic ? ' ic' : ''}">${rows.map(([k, c, label, v]) =>
       `<a class=gr href="#"><i class=ms style="--k:var(${k})">${c}</i><span class=sk>${label}</span><span class=sv>${v}</span><span class=cv></span></a>`).join('')}</div>`;
     return g('', [['--p', '◐', 'Look', 'Modern · Farm · auto'], ['--r', '!', 'Notifications', 'on']]) +
-      g('machines', [['--c', '▣', 'mini', '<i class=dt data-sync=on></i>online'], ['--c', '▣', 'air', '<i class=dt data-sync=on></i>online'], ['--link', '+', 'Pair a device', '']]) +
+      g('machines', [['--c', '▣', 'mini', '<i class=dt data-sync=on></i>online'], ['--c', '▣', 'box', '<i class=dt data-sync=on></i>online'], ['--link', '+', 'Pair a device', '']]) +
       g('terminal', [['--fg', '›_', 'Terminal', 'mini']]) +
       g('fleets', [['--g', '⟳', 'cooee', '<i class=dt data-sync=on></i>driving'], ['--g', '⟳', 'herdsman', '<i class=dt data-sync=on></i>driving'], ['--a', 'Ⅱ', 'cooee-drover', '<i class=dt></i>paused']]) +
       g('settings', [['--link', '⚿', 'Sign-ins', '2 accounts'], ['--l', '⇄', 'MCP servers', '3'], ['--a', '⟲', 'Routines', '1']]);

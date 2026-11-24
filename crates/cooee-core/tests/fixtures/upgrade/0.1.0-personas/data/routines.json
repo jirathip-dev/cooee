@@ -18,7 +18,7 @@
       "name": "Daily digest",
       "trigger": { "schedule": "30 18 * * *" },
       "place": { "in": "new_thread", "who": { "agent": "fake-acp", "account": "work", "profile": "kai",
-                 "folder": "/srv/kai", "model": "sonnet", "effort": "high", "machine": "air" } },
+                 "folder": "/srv/kai", "model": "sonnet", "effort": "high", "machine": "box" } },
       "prompt": "Digest for {{due}}",
       "paused": { "why": "chat_gone", "thread": "t-gone" },
       "made_in": "t-gone",

@@ -28,7 +28,7 @@ public enum Fixtures {
             api: APIPersona(
                 id: "res", name: "Researcher", agent: "Claude Code", model: "sonnet 5.5", effort: "medium",
                 folder: "~/research", character: "Careful; cites every source.",
-                instructions: "Put findings in notes/, one file a company.", machine: "air", canMessage: ["am"]
+                instructions: "Put findings in notes/, one file a company.", machine: "box", canMessage: ["am"]
             ),
             look: PersonaLook(initials: "RE", symbol: "magnifyingglass", tint: .purple, coat: "blk"),
             state: .needs

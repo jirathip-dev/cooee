@@ -34,7 +34,7 @@
     "block": { "type": "form", "id": "f", "submit": { "label": "Save", "action": "save" }, "fields": [
       { "type": "text", "name": "branch", "label": "Branch", "value": "staging" },
       { "type": "toggle", "name": "drive", "label": "Drive", "value": true },
-      { "type": "picker", "name": "host", "label": "Host", "value": "mini", "options": ["mini", "air"] },
+      { "type": "picker", "name": "host", "label": "Host", "value": "mini", "options": ["mini", "box"] },
       { "type": "secret", "name": "GH_TOKEN", "label": "GH_TOKEN", "set": true } ] } },
   { "name": "card.kind", "note": "q985: cooee's own cards: ask, run, secret, config; the app draws the kind and the poster",
     "block": { "type": "card", "id": "q960", "kind": "ask", "tone": "warn", "title": "cooee #125 · design", "blocks": [

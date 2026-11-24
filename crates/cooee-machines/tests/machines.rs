@@ -52,7 +52,7 @@ fn scratch(name: &str) -> PathBuf {
     std::os::unix::fs::symlink(shed(), dir.join("shed")).unwrap();
     fs::write(
         dir.join("ls.json"),
-        r#"[{"name":"air","target":"air.local"}]"#,
+        r#"[{"name":"box","target":"box.local"}]"#,
     )
     .unwrap();
     dir
@@ -82,11 +82,11 @@ fn offline(dir: &Path, machine: &str, last_seen: u64) {
 fn online_and_offline_with_last_seen() {
     let dir = scratch("online");
     answer(&dir, "local", &sample(NOW, 0.4, 50, 50_000));
-    offline(&dir, "air", NOW - 12 * 60);
+    offline(&dir, "box", NOW - 12 * 60);
     let m = machines(&dir);
     let cards = m.poll(NOW);
     let names: Vec<_> = cards.iter().map(|c| (c.name.as_str(), c.online)).collect();
-    assert_eq!(names, [("mini", true), ("air", false)]);
+    assert_eq!(names, [("mini", true), ("box", false)]);
     assert_eq!(cards[1].last_seen, Some(NOW - 12 * 60));
     let html = render(&cards, NOW);
     assert!(
@@ -96,12 +96,12 @@ fn online_and_offline_with_last_seen() {
         "{html}"
     );
     assert!(
-        html.contains("<article class=\"m off\" aria-labelledby=\"m-air\">"),
+        html.contains("<article class=\"m off\" aria-labelledby=\"m-box\">"),
         "{html}"
     );
     assert!(html.contains("offline · last seen 12 min ago"), "{html}");
 
-    answer(&dir, "air", &sample(NOW + 60, 0.1, 20, 90_000));
+    answer(&dir, "box", &sample(NOW + 60, 0.1, 20, 90_000));
     fs::remove_file(dir.join("local.json")).unwrap();
     let cards = m.poll(NOW + 3 * 3600);
     assert!(cards[1].online);
@@ -123,10 +123,10 @@ fn online_and_offline_with_last_seen() {
 fn a_card_shows_load_memory_swap_disk_and_terminals() {
     let dir = scratch("stats");
     answer(&dir, "local", &sample(NOW, 0.42, 62, 48 * 1024));
-    answer(&dir, "air", &sample(NOW, 1.25, 93, 8 * 1024));
+    answer(&dir, "box", &sample(NOW, 1.25, 93, 8 * 1024));
     let m = machines(&dir);
     let html = render(&m.poll(NOW), NOW);
-    let (mini, air) = html.split_once("aria-labelledby=\"m-air\"").unwrap();
+    let (mini, box) = html.split_once("aria-labelledby=\"m-box\"").unwrap();
     for (card, want) in [
         (mini, "<span class=\"k\">load/cpu</span><b>0.42</b>"),
         (mini, "<span class=\"k\">memory</span><b>62%</b>"),
@@ -137,15 +137,15 @@ fn a_card_shows_load_memory_swap_disk_and_terminals() {
             "<p class=\"tm\">terminals: 1 blocked · 3 exited · 2 working</p>",
         ),
         (
-            air,
+            box,
             "<span class=\"k\">load/cpu</span><b class=\"bad\">1.25</b>",
         ),
         (
-            air,
+            box,
             "<span class=\"k\">memory</span><b class=\"bad\">93% critical</b>",
         ),
         (
-            air,
+            box,
             "<span class=\"k\">disk free</span><b class=\"bad\">8.0 GB low</b>",
         ),
     ] {
@@ -170,7 +170,7 @@ fn the_24_h_history_is_asked_for_once_then_only_what_is_new() {
     let mut first = sample(NOW, 0.5, 40, 60_000);
     first["history"] = json!(day);
     answer(&dir, "local", &first);
-    offline(&dir, "air", NOW - 60);
+    offline(&dir, "box", NOW - 60);
     let m = machines(&dir);
     let card = m.poll(NOW).remove(0);
     assert_eq!(card.history.len(), 1439);
@@ -181,7 +181,7 @@ fn the_24_h_history_is_asked_for_once_then_only_what_is_new() {
     );
     assert!(
         log.contains(&format!(
-            "--json --on air machine stats --since {}",
+            "--json --on box machine stats --since {}",
             NOW - DAY
         )),
         "{log}"
@@ -285,24 +285,24 @@ impl FakeCooee {
 fn an_alert_is_pushed_once_per_state_and_the_tab_dot_follows() {
     let dir = scratch("alerts");
     answer(&dir, "local", &sample(NOW, 0.4, 50, 50_000));
-    offline(&dir, "air", NOW - 12 * 60);
+    offline(&dir, "box", NOW - 12 * 60);
     let (m, cooee) = (machines(&dir), FakeCooee::start());
     m.tick(NOW, &cooee.cooee);
     let push =
-        json!({ "text": "air: offline, last seen 12 min ago", "path": "air", "tag": "machine" });
+        json!({ "text": "box: offline, last seen 12 min ago", "path": "box", "tag": "machine" });
     let dot = |on| ("/plugin/dot".to_owned(), json!({ "on": on }));
     assert_eq!(cooee.take(), [("/plugin/push".to_owned(), push), dot(true)]);
     m.tick(NOW + 60, &cooee.cooee);
     m.tick(NOW + 120, &cooee.cooee);
     assert_eq!(cooee.take(), []);
 
-    answer(&dir, "air", &sample(NOW + 180, 0.1, 95, 8 * 1024));
+    answer(&dir, "box", &sample(NOW + 180, 0.1, 95, 8 * 1024));
     m.tick(NOW + 180, &cooee.cooee);
     m.tick(NOW + 240, &cooee.cooee);
-    let push = json!({ "text": "air: disk 8.0 GB free; memory pressure critical (95%)", "path": "air", "tag": "machine" });
+    let push = json!({ "text": "box: disk 8.0 GB free; memory pressure critical (95%)", "path": "box", "tag": "machine" });
     assert_eq!(cooee.take(), [("/plugin/push".to_owned(), push)]);
 
-    answer(&dir, "air", &sample(NOW + 300, 0.1, 20, 90_000));
+    answer(&dir, "box", &sample(NOW + 300, 0.1, 20, 90_000));
     m.tick(NOW + 300, &cooee.cooee);
     assert_eq!(cooee.take(), [dot(false)]);
 
@@ -335,7 +335,7 @@ fn get(port: u16, path: &str, auth: &str) -> String {
 fn the_backend_answers_only_with_the_plugin_token() {
     let dir = scratch("serve");
     answer(&dir, "local", &sample(NOW, 0.4, 50, 50_000));
-    offline(&dir, "air", NOW - 60);
+    offline(&dir, "box", NOW - 60);
     let m = Arc::new(machines(&dir));
     m.poll(NOW);
     let listener = TcpListener::bind("127.0.0.1:0").unwrap();
@@ -352,7 +352,7 @@ fn the_backend_answers_only_with_the_plugin_token() {
         "{cards}"
     );
     assert!(
-        cards.contains("aria-labelledby=\"m-mini\"") && cards.contains("aria-labelledby=\"m-air\""),
+        cards.contains("aria-labelledby=\"m-mini\"") && cards.contains("aria-labelledby=\"m-box\""),
         "{cards}"
     );
     let tab = get(port, "/tab.js", ok);
@@ -375,7 +375,7 @@ fn an_asleep_desk_is_no_problem_but_a_host_that_does_not_answer_is_offline() {
     };
     assert_eq!(desk.problems(), []);
     let host = Card {
-        name: "air".to_owned(),
+        name: "box".to_owned(),
         ..Card::default()
     };
     assert_eq!(host.problems(), [Problem::Offline]);

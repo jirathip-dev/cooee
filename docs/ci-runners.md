@@ -2,7 +2,7 @@
 
 ## Which jobs run where
 
-Our one self-hosted runner is `mini-cooee` (labels `self-hosted, macOS, ARM64, cooee-mac`). The Air (`air-cooee`) is
+Our one self-hosted runner is `mini-cooee` (labels `self-hosted, macOS, ARM64, cooee-mac`). The other Mac (`box-cooee`) is
 no longer a cooee runner (#565, q1940). The macOS jobs:
 
 | Job | Variable | Pull request | Push (staging, main), schedule, manual |
