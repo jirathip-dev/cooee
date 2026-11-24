@@ -7,7 +7,9 @@ use std::{
     fmt::Write as _,
     fs,
     path::Path,
-    time::{SystemTime, UNIX_EPOCH},
+    process::Command,
+    thread,
+    time::{Duration, SystemTime, UNIX_EPOCH},
 };
 
 use serde_json::{Value, json};
@@ -283,6 +285,11 @@ fn with_500_threads_of_1000_items_the_list_answers_within_300_ms_of_start() {
     drop(cooee_core::Store::open(&dir.join("data")).unwrap());
     let shed = FakeShed::start(&dir.join("shed"), version());
     let cooee = Cooee::start(&dir, &shed.dir);
+    let pid = cooee.child.id().to_string();
+    let signal = |sig: &str| Command::new("kill").args([sig, &pid]).status().unwrap();
+    signal("-STOP");
+    thread::sleep(Duration::from_millis(400));
+    signal("-CONT");
     let (status, body) = cooee.get("/threads");
     assert_eq!(status, 200, "{body}");
     let rows: Vec<Value> = serde_json::from_str(&body).unwrap();
