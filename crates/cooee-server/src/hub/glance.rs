@@ -45,6 +45,7 @@ pub(super) fn summary(meta: &Thread, items: &[Item], unseen: usize) -> Glance {
         Body::Tool { subject, .. } => subject,
         Body::Approval { tool, .. } => tool,
         Body::Plan { .. } => "plan",
+        Body::Blocks(_) => "blocks",
         Body::Routine { name, .. } => name,
     });
     let waiting = items.iter().find_map(|i| match &i.body {

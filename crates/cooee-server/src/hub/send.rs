@@ -215,6 +215,7 @@ impl Hub {
         live.sent = Some(start);
         if let Some(card) = q
             .denied
+            .or(q.acted)
             .and_then(|c| live.chat.items.iter().find(|i| i.id == c))
         {
             return Ok(card.clone());
@@ -341,6 +342,9 @@ impl Hub {
             ));
         };
         let q = l.meta.queue.remove(at);
+        if !now {
+            self.unacted(&mut l, &q)?;
+        }
         self.queued(&mut l)?;
         drop(l);
         self.send_next(&live, now.then_some(q))?;

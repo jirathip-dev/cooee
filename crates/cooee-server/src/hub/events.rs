@@ -49,7 +49,10 @@ impl Hub {
                             }
                             Streamed::Reset(seq) | Streamed::Lagged(seq) => {
                                 last = Some(seq);
-                                break;
+                                if let Err(e) = self.reattach() {
+                                    cooee_core::note!("cooee: {e}");
+                                    break;
+                                }
                             }
                             Streamed::Quiet => {}
                             Streamed::Skipped(line) => {
