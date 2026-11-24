@@ -71,7 +71,7 @@ pub struct FakeShed {
 const CLI: &str = r#"#!/bin/sh
 # The fake `shed` CLI: `agents` lists one agent, or agents.json's (it fails while the gate `agents-fails` is shut); `run` records its
 # arguments and prints the terminal (it waits while the gate `hold-run` is shut, and fails, as a slow start's CLI
-# would, while `run-fails` is; in a folder named <f>, it waits while `hold-in-<f>` is shut, and its session never
+# would, while `run-fails` is, saying the gate's text and leaving no terminal; in a folder named <f>, it waits while `hold-in-<f>` is shut, and its session never
 # comes up while `fails-in-<f>` is); `machine ls` prints
 # machines.json; `[--on <m>] machine stats` prints stats-<m>.json (stats-local.json), exit 1 when offline; its
 # `history` only the first time, as `--since` the last sample leaves nothing new. A `run` with an adapter command
@@ -102,7 +102,7 @@ case "$*" in
   [ -n "$cwd" ] && printf '%s' "$cwd" >"$gates/cwd-$name"
   f=${cwd:+${cwd##*/}}
   while [ -e "$gates/hold-run" ] || [ -e "$gates/hold-in-${f:-/}" ]; do sleep 0.02; done
-  [ -e "$gates/run-fails" ] && { echo 'fake shed: timed out' >&2; exit 1; }
+  [ -e "$gates/run-fails" ] && { cat "$gates/run-fails" >&2; : >"$gates/failed-$name"; exit 1; }
   [ -e "$gates/fails-in-${f:-/}" ] && touch "$gates/ready-timeout-$name"
   [ $# -gt 0 ] && PATH="$gates:$PATH" SHED_NAME="$on$name" "$@" >/dev/null 2>&1
   printf '{"name":"%s%s","labels":{},"cwd":"/","cmd":[],"keep":false,"state":"running","exit":null,"pid":1,"acp":"fake-acp"}\n' "$on" "$name" ;;
@@ -527,7 +527,7 @@ impl FakeShed {
 
     fn terminal(&self, name: &str) -> Result<Value, RpcError> {
         let s = self.shared.lock().unwrap();
-        if s.gone.contains(name) {
+        if s.gone.contains(name) || self.dir.join(format!("failed-{name}")).exists() {
             return Err(RpcError::new(ErrorCode::NoSuchTerminal, name));
         }
         let running = !s.stopped.contains(name);
