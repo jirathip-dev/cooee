@@ -2,7 +2,7 @@ use cooee_core::{chief, redact, secrets};
 
 use crate::chief::prelude::*;
 
-fn shape() -> Value {
+fn shape(_: &Hub) -> Value {
     json!({ "name": "look", "description": "See cooee as it is: the personas (archived ones too), the routines, the MCP servers, the machines, the secrets' names, or config.toml with anything token-like redacted.",
         "inputSchema": { "type": "object", "required": ["what"], "properties": {
             "what": { "type": "string", "enum": ["personas", "routines", "mcp", "machines", "secrets", "config"] }

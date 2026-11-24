@@ -11,7 +11,7 @@ struct Ask {
     why: String,
 }
 
-fn shape() -> Value {
+fn shape(_: &Hub) -> Value {
     json!({ "name": "room", "description": "Open a room of you and 1 to 4 personas, with a first line saying why; the owner speaks first, as in any room. A refusal starts with NO_PERSONA or BAD_ARGS.",
         "inputSchema": { "type": "object", "required": ["members", "why"], "properties": {
             "members": { "type": "array", "items": { "type": "string" }, "description": "1 to 4 personas' ids, besides you" },

@@ -9,7 +9,7 @@ struct Ask {
     rest: Value,
 }
 
-fn shape() -> Value {
+fn shape(_: &Hub) -> Value {
     json!({ "name": "access", "description": "Change a persona's variables, MCP servers or machine (each given is replaced whole). The owner approves a card with agent.toml's diff with Face ID; nothing changes before. A refusal starts with IS_CHIEF, NO_PERSONA, NO_SERVER, NO_MACHINE or BAD_ARGS.",
         "inputSchema": { "type": "object", "required": ["persona"], "properties": {
             "persona": { "type": "string" },

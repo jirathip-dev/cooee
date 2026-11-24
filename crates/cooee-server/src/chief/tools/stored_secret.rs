@@ -12,7 +12,7 @@ struct Ask {
     why: String,
 }
 
-fn shape() -> Value {
+fn shape(_: &Hub) -> Value {
     json!({ "name": "stored_secret", "description": "Save a secret in cooee's keychain (the owner types its value into a Face ID card; you never see it), or remove one. A persona uses it as secret:<NAME> in its variables (the access tool). A refusal starts with BAD_NAME, NO_SECRET or BAD_ARGS.",
         "inputSchema": { "type": "object", "required": ["do", "name"], "properties": {
             "do": { "type": "string", "enum": ["set", "remove"] },

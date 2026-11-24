@@ -19,7 +19,7 @@ struct Ask {
     prompt: Option<String>,
 }
 
-fn shape() -> Value {
+fn shape(_: &Hub) -> Value {
     json!({ "name": "routine", "description": "Create a scheduled routine for another persona, or edit, pause or resume any routine. It saves at once; for a routine of your own use create_routine. A refusal starts with IS_CHIEF, NO_PERSONA, BAD_SCHEDULE, BAD_NAME, BAD_PROMPT, TOO_MANY or BAD_ARGS.",
         "inputSchema": { "type": "object", "required": ["do"], "properties": {
             "do": { "type": "string", "enum": ["create", "edit", "pause", "resume"] },

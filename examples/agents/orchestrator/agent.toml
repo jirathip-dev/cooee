@@ -1,4 +1,3 @@
 name = "Orchestrator"
-agent = "claude-acp"
 role = "orchestrator"
-plugins = ["drover"]
+profile = "drover/default"

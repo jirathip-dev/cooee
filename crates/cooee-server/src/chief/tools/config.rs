@@ -11,7 +11,7 @@ struct Ask {
     unset: Vec<String>,
 }
 
-fn shape() -> Value {
+fn shape(_: &Hub) -> Value {
     json!({ "name": "config", "description": "Set or unset keys of cooee's config.toml (not mcp or plugins). The owner approves a card with the file's diff with Face ID; it applies at cooee's next start. A refusal starts with BAD_KEY, BAD_CONFIG or BAD_ARGS.",
         "inputSchema": { "type": "object", "required": [], "properties": {
             "set": { "type": "object", "description": "top-level keys and their values" },

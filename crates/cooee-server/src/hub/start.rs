@@ -37,6 +37,8 @@ pub struct Recipe {
     pub room: String,
     /// The thread whose persona asked this one's (#156).
     pub asked_by: String,
+    /// Chief's chat that handed the owner to this one (#802).
+    pub handed_by: String,
     /// The machine it runs on (#148; empty: this host), one of [`cooee_machines::Machines::added`].
     pub machine: String,
     /// A setup chat (#270).
@@ -262,10 +264,14 @@ impl Hub {
             random_id: random_id.to_owned(),
             room: recipe.room.clone(),
             asked_by: recipe.asked_by.clone(),
+            handed_by: recipe.handed_by.clone(),
             setup: recipe.setup,
             routine: recipe.routine.clone(),
             ..Thread::default()
         })?;
+        if fresh {
+            self.report_start(&id, &recipe.profile);
+        }
         let machine = Some(&recipe.machine).filter(|m| !m.is_empty());
         let personal = recipe.gaps.contains(&Gap::PersonalFiles);
         let notes = machine.map(|m| format!("runs on {m}")).into_iter();

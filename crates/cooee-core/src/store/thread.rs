@@ -81,6 +81,9 @@ pub struct Thread {
     /// A linked exchange (#156): the thread whose persona asked this one's (`ask_persona`).
     #[serde(default, skip_serializing_if = "String::is_empty")]
     pub asked_by: String,
+    /// A handed chat (#802): Chief's chat that handed the owner to this one's agent.
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    pub handed_by: String,
     /// The agent's open handoff (#164): its card's item id, 0 for none; until the owner hands back, nothing they
     /// send reaches the agent.
     #[serde(default, skip_serializing_if = "is_zero")]

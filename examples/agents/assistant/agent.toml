@@ -1,2 +1,6 @@
 name = "Assistant"
 agent = "claude-acp"
+
+[purpose]
+role = "General helper"
+use = "everyday questions and small jobs"
