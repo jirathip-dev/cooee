@@ -16,6 +16,9 @@ use std::{
     time::{Duration, Instant},
 };
 
+use blocks::Action;
+use blocks_desktop::Event;
+use cooee_desktop::Shell;
 use serde_json::{Value, json};
 use support::{Cooee, FakeShed, scratch, version};
 
@@ -189,6 +192,7 @@ fn a_plugin_screen_streams_its_ops_and_an_action_outside_its_permissions_is_refu
     assert_actions_outside_permissions_are_refused(cooee, &wave);
 
     pals_places(cooee);
+    the_desktop_app_offers_the_place_and_its_wave_changes_the_screen(cooee, &dir);
     let row = &cooee.json("/plugins")["installed"][0];
     assert_eq!(
         (
@@ -198,6 +202,53 @@ fn a_plugin_screen_streams_its_ops_and_an_action_outside_its_permissions_is_refu
         ),
         (&json!(["wave"]), &json!("menu-row"), &json!(["lab"]))
     );
+}
+
+fn the_desktop_app_offers_the_place_and_its_wave_changes_the_screen(cooee: &Cooee, dir: &Path) {
+    let host = cooee.addr.split(':').next().unwrap();
+    let token = cooee.cookie.strip_prefix("cooee=").unwrap();
+    let jar = dir.join("desktop-jar.txt");
+    fs::write(
+        &jar,
+        format!("{host}\tFALSE\t/\tFALSE\t0\tcooee\t{token}\n"),
+    )
+    .unwrap();
+    let mut shell = Shell::new(&format!("http://{}", cooee.addr), jar);
+    let hello = "/p/hello/screens/hello";
+    while shell.places().is_empty() {
+        assert!(
+            shell.take(Duration::from_secs(20)),
+            "no places: {} {} {} {}",
+            shell.toast(),
+            shell.key(),
+            shell.connected(),
+            serde_json::to_string(&shell.screen()).unwrap()
+        );
+    }
+    assert_eq!(shell.places(), [("hello".to_owned(), hello.to_owned())]);
+    shell.event(Event::Open(hello.to_owned()));
+    let value = |s: &Shell| serde_json::to_value(s.screen()).unwrap()["blocks"][1]["value"].clone();
+    while value(&shell) != json!("1") {
+        assert!(
+            shell.take(Duration::from_secs(20)),
+            "no screen: {}",
+            shell.toast()
+        );
+    }
+    let wave = Action {
+        screen: "hello".to_owned(),
+        block: Some("wave".to_owned()),
+        action: "wave".to_owned(),
+        values: blocks::Fields::new(),
+    };
+    shell.event(Event::Act(wave));
+    while value(&shell) != json!("2") {
+        assert!(
+            shell.take(Duration::from_secs(20)),
+            "no wave: {}",
+            shell.toast()
+        );
+    }
 }
 
 fn pals_places(cooee: &Cooee) {

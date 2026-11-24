@@ -1,0 +1,28 @@
+[package]
+name = "cooee-desktop"
+description = "cooee's desktop app for Linux and Windows: draws the server's blocks screens with blocks-desktop."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+publish.workspace = true
+
+[features]
+window = ["dep:eframe"]
+
+[[bin]]
+name = "cooee-desktop"
+required-features = ["window"]
+
+[dependencies]
+blocks.workspace = true
+blocks-desktop.workspace = true
+egui.workspace = true
+serde_json.workspace = true
+
+[target.'cfg(not(target_os = "macos"))'.dependencies]
+eframe = { workspace = true, optional = true }
+
+[lints]
+workspace = true
