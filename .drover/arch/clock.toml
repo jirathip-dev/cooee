@@ -7,8 +7,8 @@ reason = "#203: only the clock sleeps: use cooee_core::clock::sleep"
 [[ban]]
 pattern = "SystemTime::now"
 paths = ["crates/*/src/**"]
-except = ["crates/cooee-core/src/clock.rs"]
-reason = "#203: only the clock reads the time: use cooee_core::clock::now"
+except = ["crates/cooee-core/src/clock.rs", "crates/cooee-desktop/src/main.rs"]
+reason = "#203: only the clock reads the time: use cooee_core::clock::now; #715 (q3523): the desktop window, without cooee-core, reads it for blocks-desktop"
 
 [[ban]]
 pattern = "Instant::now"

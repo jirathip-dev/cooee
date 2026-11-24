@@ -21,7 +21,10 @@ toml.workspace = true
 
 [dev-dependencies]
 base64.workspace = true
+blocks-desktop.workspace = true
 cooee-desk.workspace = true
+cooee-desktop.workspace = true
+egui.workspace = true
 flate2.workspace = true
 p256.workspace = true
 sha2.workspace = true

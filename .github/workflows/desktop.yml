@@ -1,0 +1,33 @@
+name: desktop
+# #715: the desktop app's window for Linux and Windows (never macOS: the Mac has the SwiftUI app), built on every PR
+# and push that can change it, each binary kept as the run's artifact.
+on:
+  push:
+    branches: [main, staging]
+  pull_request:
+    branches: [main, staging]
+    paths: ["crates/cooee-desktop/**", "Cargo.toml", "Cargo.lock", "rust-toolchain.toml", ".github/workflows/desktop.yml"]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-22.04
+            bin: cooee-desktop
+          - os: windows-latest
+            bin: cooee-desktop.exe
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@1.99.1
+      - run: cargo build --release --locked -p cooee-desktop --features window
+      - uses: actions/upload-artifact@v4
+        with:
+          name: cooee-desktop-${{ runner.os }}
+          path: target/release/${{ matrix.bin }}

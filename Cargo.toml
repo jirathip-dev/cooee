@@ -13,6 +13,7 @@ publish = false
 [workspace.dependencies]
 cooee-core = { path = "crates/cooee-core" }
 cooee-desk = { path = "crates/cooee-desk" }
+cooee-desktop = { path = "crates/cooee-desktop" }
 cooee-machines = { path = "crates/cooee-machines" }
 cooee-terminal = { path = "crates/cooee-terminal" }
 cooee-server = { path = "crates/cooee-server" }
@@ -30,6 +31,11 @@ serde_json = { version = "=1.0.154", features = ["preserve_order"] }
 shed-proto = { git = "https://github.com/jirathip-dev/shed", rev = "ed9129cecbc49245a0a41f60327af8d37ec6872a" }
 # The typed UI blocks and their JSON Schema (#621, q2236), pinned to a blocks staging commit.
 blocks = { git = "https://github.com/jirathip-dev/blocks", rev = "cf626c63789e8bb46b164ee37b3ca4d589527f11" }
+# The desktop app's renderer (#715): blocks drawn into egui, from the same blocks commit.
+blocks-desktop = { git = "https://github.com/jirathip-dev/blocks", rev = "cf626c63789e8bb46b164ee37b3ca4d589527f11" }
+# The desktop app's UI (#715): blocks-desktop draws into egui; eframe is egui's native window.
+egui = { version = "=0.37.0", default-features = false }
+eframe = { version = "=0.37.0", default-features = false, features = ["default_fonts", "glow", "wayland", "x11"] }
 # The colour schemes and theme packs (#622, q2122), pinned to a swag staging commit beside blocks.
 swag = { git = "https://github.com/jirathip-dev/swag", rev = "bf9a2c6b5cb837db1e844e4746fe166cbaa06b91" }
 # launchd and systemd jobs (#711): written, loaded and restarted by farrier, pinned to a farrier staging commit.
