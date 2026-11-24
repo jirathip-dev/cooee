@@ -1,0 +1,25 @@
+name: promote
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened, edited]
+
+permissions:
+  actions: read
+
+jobs:
+  staging-green:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - env:
+          GH_TOKEN: ${{ github.token }}
+          HEAD: ${{ github.event.pull_request.head.sha }}
+        run: |
+          runs=$(gh run list -R "$GITHUB_REPOSITORY" --workflow ci.yml --branch staging --event push \
+            --commit "$HEAD" --status success --json databaseId --jq length)
+          if [ "$runs" -eq 0 ]; then
+            echo "::error::no green push run of ci on staging at $HEAD: a PR into main must be a staging commit whose ci passed"
+            exit 1
+          fi
+          echo "staging ci green at $HEAD ($runs run)"
