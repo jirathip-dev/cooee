@@ -153,11 +153,7 @@ impl Shed {
         self.keys(name, &["enter"])
     }
 
-    /// Runs `cmd` to its end in a plain terminal on `machine` (#150), then removes it: its exit code, `None` when
-    /// it ran past `timeout` seconds or ended without one.
-    ///
-    /// # Errors
-    /// [`ShedError`] when it can't start or be waited for.
+    /// # Errors [`ShedError`] when `cmd` can't start in a plain terminal on `machine` (#150) or be waited for; else its exit, `None` past `timeout`.
     pub fn run_on(
         &self,
         machine: &str,
