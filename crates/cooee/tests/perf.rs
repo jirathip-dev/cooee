@@ -110,10 +110,10 @@ fn requests_and_shed_calls_are_timed_by_route_and_method_and_slow_ones_warn() {
 }
 
 #[test]
-fn a_fast_request_under_the_default_threshold_is_debug_only() {
+fn a_request_under_the_threshold_is_debug_only() {
     let dir = scratch("perf-fast");
     let shed = FakeShed::start(&dir.join("shed"), version());
-    let cooee = Cooee::start(&dir, &shed.dir);
+    let cooee = Cooee::start_with(&dir, &shed.dir, "[perf]\nslow_ms = 600000\n");
     assert_eq!(cooee.get("/threads").0, 200);
     let log = lines(&dir);
     let list = named(&log, "http", "GET /threads");

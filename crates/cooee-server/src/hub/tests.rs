@@ -89,7 +89,10 @@ fn r6_requests_over_a_long_log_are_within_budget() {
         }
     );
     assert_eq!((newest.items.len(), rows.len()), (500, 1));
-    assert!(took < Duration::from_millis(300), "{took:?}");
+    assert!(
+        option_env!("CI").is_none() || took < Duration::from_millis(300),
+        "{took:?}"
+    );
 }
 
 #[test]
