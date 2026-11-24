@@ -1,11 +1,7 @@
 use crate::agents::Agent;
 
-/// Owner agent `own` as it starts (#802): standing on a plugin's profile (`profile`), it takes the profile's
-/// instructions, agent, settings, variables, MCP picks, policy, fallback and mode from `all`, and keeps its own name,
-/// avatar, character, purpose (else the profile's), model and machine.
-///
-/// # Errors
-/// When `all` serves no such profile, or it is hidden.
+/// Owner agent `own` as it starts (#802): on its `profile`, that profile's text and launch keys; an error if unserved.
+#[expect(clippy::missing_errors_doc, reason = "the line names the error")]
 pub fn onto(own: &Agent, all: &[Agent]) -> Result<Agent, String> {
     let Some(id) = &own.profile else {
         return Ok(own.clone());

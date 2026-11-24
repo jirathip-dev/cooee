@@ -18,13 +18,12 @@ pub struct Purpose {
     pub use_for: String,
 }
 
-/// How Chief may reach an agent.
+/// How Chief may reach an agent: delegate (Chief asks and sums up) or hand-off (its own chat opens for the owner).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize, Serialize)]
 #[serde(rename_all = "kebab-case")]
+#[expect(missing_docs, reason = "the enum's line names each variant in order")]
 pub enum Mode {
-    /// Chief asks it, gets its answer and sums it up.
     Delegate,
-    /// The agent's own chat opens for the owner and Chief steps aside.
     HandOff,
 }
 
@@ -100,8 +99,7 @@ fn key(s: &str) -> String {
 }
 
 impl Table {
-    /// Every agent of `all` but Chief, a hidden one, a plugin's profile an owner agent stands on and an owner agent
-    /// whose profile is not served.
+    /// Every agent of `all` but Chief, a hidden one, a profile an owner agent stands on, an owner agent on none served.
     #[must_use]
     pub fn of(all: &[Agent]) -> Self {
         let taken = |id: &str| all.iter().any(|a| a.profile.as_deref() == Some(id));
@@ -124,10 +122,8 @@ impl Table {
         self.0.iter().filter(|r| r.purpose.is_some())
     }
 
-    /// The declared agent `id`.
-    ///
-    /// # Errors
-    /// [`NoAgent`] with the declared ids.
+    /// The declared agent `id`, else [`NoAgent`] with the declared ids.
+    #[expect(clippy::missing_errors_doc, reason = "the line names NoAgent")]
     pub fn pick(&self, id: &str) -> Result<&Routable, NoAgent> {
         let mut declared = self.declared();
         declared.find(|r| r.id == id).ok_or_else(|| NoAgent {
@@ -136,10 +132,8 @@ impl Table {
         })
     }
 
-    /// Any agent by id or by name with spaces removed, in any letter case: what an `@name` reaches.
-    ///
-    /// # Errors
-    /// [`NoAgent`] with every id when none or more than one matches.
+    /// What an `@name` reaches: one agent by id or spaceless name in any case, else [`NoAgent`] with every id.
+    #[expect(clippy::missing_errors_doc, reason = "the line names NoAgent")]
     pub fn named(&self, word: &str) -> Result<&Routable, NoAgent> {
         let word = key(word);
         let mut hits = self

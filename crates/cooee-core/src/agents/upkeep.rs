@@ -11,8 +11,7 @@ was said since the last run. Then propose changes to your notes with remember, p
 over adding one, and a skill with skill propose only for something done at least twice. Each is a card the owner \
 approves; nothing is saved before. Stop after this one pass.";
 
-/// A persona's consolidation routine (#219): off unless `on`; at `when` (default nightly, 03:00) a run reads its new
-/// history and proposes notes and skills, on `model` and `effort` (empty: its provider's cheapest).
+/// A persona's consolidation routine (#219): at `when` (nightly 03:00) a run proposes notes and skills from its history.
 #[derive(Debug, Clone, Default, PartialEq, Eq, Deserialize, Serialize)]
 #[serde(default, deny_unknown_fields)]
 pub struct Consolidate {
@@ -48,9 +47,7 @@ since the last run; look at your attached connectors too where they bear on it. 
 nothing: anything you would do waits on a card the owner answers. End your reply with one last line: NOTIFY when \
 what you found matches the owner's notify rule, else SILENT: and why.";
 
-/// A persona's heartbeat (#498): off unless `on`; at `when` (default hourly) a run looks at what is new and stays
-/// silent unless its notify rule matches, on `model` and `effort` (empty: its provider's cheapest), at most `per_day`
-/// runs a local day (none: [`Heartbeat::PER_DAY`]).
+/// A persona's heartbeat (#498): at `when` (hourly), at most `per_day` a day, a run looks at what is new.
 #[derive(Debug, Clone, Default, PartialEq, Eq, Deserialize, Serialize)]
 #[serde(default, deny_unknown_fields)]
 pub struct Heartbeat {

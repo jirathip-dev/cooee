@@ -28,20 +28,10 @@ pub(super) struct State {
     me: OnceLock<Weak<Hub>>,
 }
 
-/// Where a route went: an agent's answer for Chief to sum up, or the owner handed to an agent's own chat.
+/// Where a route went: a delegate's answer by name for Chief, or a hand-off agent's name and nothing of its words.
 pub enum Routed {
-    /// A delegate agent answered.
-    Answered {
-        /// Its name.
-        by: String,
-        /// Its answer.
-        text: String,
-    },
-    /// A hand-off agent's chat is open for the owner; nothing of the agent's comes back.
-    HandedOff {
-        /// Its name.
-        to: String,
-    },
+    Answered { by: String, text: String },
+    HandedOff { to: String },
 }
 
 impl Hub {
