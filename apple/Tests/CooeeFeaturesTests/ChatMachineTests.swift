@@ -8,11 +8,11 @@ import Testing
 internal struct ChatMachineTests {
     private let calls = Calls()
     private let machines = [
-        MachineRow(name: "", host: "mini"), MachineRow(name: "box", host: "box", error: "agent not signed in"),
+        MachineRow(name: "", host: "mini"), MachineRow(name: "lab", host: "lab", error: "agent not signed in"),
         MachineRow(name: "d1", host: "d1", desk: true, provider: "cloud"),
     ]
 
-    private func store(_ target: ChatFeature.Target, on machine: String = "box") -> TestStoreOf<ChatFeature> {
+    private func store(_ target: ChatFeature.Target, on machine: String = "lab") -> TestStoreOf<ChatFeature> {
         var state = ChatFeature.State(server: mini, target: target, persona: Persona(coder))
         state.machine.current = machine
         let (calls, machines, refusals) = (calls, machines, Queue([APIError(status: 400, text: "mini isn't ready")]))
@@ -40,7 +40,7 @@ internal struct ChatMachineTests {
         #expect(store.state.machine.shown?.dot == .warning)
         #expect(store.state.machine.shown?.problems == ["agent not signed in"])
         await store.send(.machine(.show(true))) { $0.machine.open = true }
-        await store.send(.machine(.pick("box")))
+        await store.send(.machine(.pick("lab")))
         await store.send(.machine(.pick(""))) { $0.machine.moving = true }
         await store.receive(\.machine.refused) {
             ($0.machine.moving, $0.machine.refusal) = (false, "mini isn't ready")
@@ -87,7 +87,7 @@ internal struct ChatMachineTests {
 
     @Test internal func aChatRunsOnItsThreadsMachineAndANewOneKeepsItsPickOnceStarted() async {
         var state = AppFeature.State(layout: testLayout, server: mini)
-        let onAir = APIPersona(id: "coder", name: "Coder", agent: "codex", machine: "box")
+        let onAir = APIPersona(id: "coder", name: "Coder", agent: "codex", machine: "lab")
         state.home?.personas = [onAir]
         state.home?.rows = [
             ThreadRow(
@@ -106,7 +106,7 @@ internal struct ChatMachineTests {
         await store.send(.open("t2"))
         #expect(store.state.chat?.machine.current == "mini")
         await store.send(.start("coder"))
-        #expect(store.state.chat?.machine.current == "box")
+        #expect(store.state.chat?.machine.current == "lab")
         await store.send(.chat(.machine(.pick(""))))
         await store.send(.chat(.delegate(.started("n1"))))
         #expect(store.state.chat?.target == .thread("n1") && store.state.chat?.machine.current == "")

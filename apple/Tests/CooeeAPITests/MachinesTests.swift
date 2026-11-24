@@ -7,7 +7,7 @@ internal struct MachinesTests {
         let listed = #"""
             [{"name":"","host":"mini","online":true,"health":{"at":1,"load_per_cpu":0.42,"mem_pressure_pct":61,
             "swap_used_mb":0,"disk_free_mb":49357,"cpus":8,"uptime_s":9,"terminals":{}}},
-            {"name":"box","host":"box","online":false,"last_seen":5,"error":"link down"},
+            {"name":"lab","host":"lab","online":false,"last_seen":5,"error":"link down"},
             {"name":"d1","host":"d1","online":true,"kind":"desk","provider":"cloud"}]
             """#
         let server = CannedServer([
@@ -17,9 +17,9 @@ internal struct MachinesTests {
         let machines = try await server.client().machines()
         let mini = MachineRow(
             name: "", host: "mini", health: MachineHealth(loadPerCPU: 0.42, memory: 61, diskFree: 49357))
-        #expect(machines.computers == [mini, MachineRow(name: "box", host: "box", online: false, error: "link down")])
+        #expect(machines.computers == [mini, MachineRow(name: "lab", host: "lab", online: false, error: "link down")])
         #expect(machines.desks == [MachineRow(name: "d1", host: "d1", desk: true, provider: "cloud")])
-        try await server.client().move("a1b2", to: "box")
-        #expect(try server.decoded("/threads/a1b2/move", as: [String: String].self) == ["machine": "box"])
+        try await server.client().move("a1b2", to: "lab")
+        #expect(try server.decoded("/threads/a1b2/move", as: [String: String].self) == ["machine": "lab"])
     }
 }

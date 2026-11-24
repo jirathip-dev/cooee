@@ -32,7 +32,7 @@ internal enum Story {
             id: "c4", title: "Lesson digest", folder: "cooee", last: "3 rev FAILs on Swift line caps", ago: "1d",
             unread: 1
         ),
-        Topic(id: "c5", title: "Fleet hosts", folder: "herdsman", last: "box is back online", ago: "3d"),
+        Topic(id: "c5", title: "Fleet hosts", folder: "herdsman", last: "lab is back online", ago: "3d"),
     ]
 
     internal static let archived: [Topic] = [

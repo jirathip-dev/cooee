@@ -47,7 +47,7 @@ extension Machine {
                 Metric(id: "disk free", value: "9.1 GB low", bad: true, points: wave(10, 0.6, 1)),
             ],
             terminals: "5 working · 1 waiting", open: "memory"),
-        Machine(id: "box", seen: "offline · last seen 3 h ago", online: false),
+        Machine(id: "lab", seen: "offline · last seen 3 h ago", online: false),
     ]
 }
 

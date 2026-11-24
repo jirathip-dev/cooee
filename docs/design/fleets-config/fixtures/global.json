@@ -85,12 +85,12 @@
       },
       {
        "type": "row",
-       "id": "box",
+       "id": "lab",
        "figure": {
         "state": "idle",
         "coat": "gry"
        },
-       "title": "box",
+       "title": "lab",
        "subtitle": "small · shed-acp",
        "value": "off",
        "tap": {}

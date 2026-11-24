@@ -6,13 +6,13 @@ use crate::setup::{TOKEN_A, setup};
 fn a_plugin_names_its_push_tag_and_sets_its_dot_only_with_its_token() {
     let s = setup("plugin-dot");
     let a = format!("Bearer {TOKEN_A}");
-    let push = json!({ "text": "box offline", "path": "box", "tag": "machine" });
+    let push = json!({ "text": "lab offline", "path": "lab", "tag": "machine" });
     let (code, note) = s.as_backend("/plugin/push", &a, &push);
     assert_eq!(code, 200, "{note}");
     let note: Value = serde_json::from_str(&note).unwrap();
     assert_eq!(
         (&note["tag"], &note["url"]),
-        (&json!("machine"), &json!("/p/a#box"))
+        (&json!("machine"), &json!("/p/a#lab"))
     );
 
     assert_eq!(

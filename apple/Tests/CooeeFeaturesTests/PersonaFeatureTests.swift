@@ -13,7 +13,7 @@ internal struct PersonaFeatureTests {
         ModelList(agent: "fake-acp", models: [["fake-opus-3", "Opus"]], short: ["opus": "fake-opus-3"]),
         ModelList(agent: "codex", models: [["gpt-5.5", "GPT"]]),
     ]
-    private let machines = [MachineRow(name: "", host: "mini"), MachineRow(name: "box", host: "box", online: false)]
+    private let machines = [MachineRow(name: "", host: "mini"), MachineRow(name: "lab", host: "lab", online: false)]
 
     private func store(_ persona: APIPersona) -> TestStoreOf<PersonaFeature> {
         let (calls, screen, cleared) = (calls, screen, cleared)
@@ -65,10 +65,10 @@ internal struct PersonaFeatureTests {
         await store.receive(\.listed) { $0.lists = lists }
         await store.receive(\.machines) { $0.machines = machines }
         await store.send(.binding(.set(\.draft.character, "Terse."))) { $0.draft.character = "Terse." }
-        await store.send(.binding(.set(\.draft.machine, "box"))) { $0.draft.machine = "box" }
+        await store.send(.binding(.set(\.draft.machine, "lab"))) { $0.draft.machine = "lab" }
         await store.send(.save) { $0.busy = true }
         var saved = coder
-        (saved.character, saved.machine) = ("Terse.", "box")
+        (saved.character, saved.machine) = ("Terse.", "lab")
         await store.receive(\.delegate.saved, saved)
         await store.send(.clearMemory)
         await store.receive(\.loaded) { $0.screen = cleared }
@@ -76,7 +76,7 @@ internal struct PersonaFeatureTests {
         await store.receive(\.loaded) { $0.screen = .object(["name": .string("inbox")]) }
         #expect(
             calls.all == [
-                "screen core /screens/persona/coder", "models", "save /screens/persona/coder Terse. box",
+                "screen core /screens/persona/coder", "models", "save /screens/persona/coder Terse. lab",
                 "clear /screens/persona/coder", "add_skill /screens/persona/coder",
             ])
     }

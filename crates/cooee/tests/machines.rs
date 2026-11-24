@@ -29,7 +29,7 @@ fn the_machines_plugin_serves_each_machine_card_and_marks_one_offline() {
     };
     write(
         "machines.json",
-        json!([{ "name": "box", "target": "box.local" }]),
+        json!([{ "name": "lab", "target": "lab.local" }]),
     );
     write(
         "stats-local.json",
@@ -37,8 +37,8 @@ fn the_machines_plugin_serves_each_machine_card_and_marks_one_offline() {
                 "disk_free_mb": 50_000, "cpus": 10, "uptime_s": 60, "terminals": { "working": 1 } }),
     );
     write(
-        "stats-box.json",
-        json!({ "machine": "box", "online": false, "last_seen": 1_700_000_000u64 }),
+        "stats-lab.json",
+        json!({ "machine": "lab", "online": false, "last_seen": 1_700_000_000u64 }),
     );
     let port = TcpListener::bind("127.0.0.1:0")
         .unwrap()
@@ -52,7 +52,7 @@ fn the_machines_plugin_serves_each_machine_card_and_marks_one_offline() {
     let mut cards = String::new();
     for _ in 0..100 {
         cards = cooee.get("/p/machines/api/cards").1;
-        if cards.contains("m-box") {
+        if cards.contains("m-lab") {
             break;
         }
         thread::sleep(Duration::from_millis(100));
@@ -66,13 +66,13 @@ fn the_machines_plugin_serves_each_machine_card_and_marks_one_offline() {
         "{cards}"
     );
     assert!(
-        cards.contains("<article class=\"m off\" aria-labelledby=\"m-box\">"),
+        cards.contains("<article class=\"m off\" aria-labelledby=\"m-lab\">"),
         "{cards}"
     );
     assert!(cards.contains("offline · last seen"), "{cards}");
     let log = shed.cli_log();
     assert!(
-        log.contains("--json --on box machine stats --since"),
+        log.contains("--json --on lab machine stats --since"),
         "{log}"
     );
 }
@@ -106,16 +106,16 @@ fn each_machine_shows_its_drover_host_tags_on_its_settings_row() {
     let shed = FakeShed::start(&dir.join("shed"), version());
     fs::write(
         shed.dir.join("machines.json"),
-        json!([{ "name": "d1", "target": "d1.cloud" }, { "name": "box", "target": "box.local" }])
+        json!([{ "name": "d1", "target": "d1.cloud" }, { "name": "lab", "target": "lab.local" }])
             .to_string(),
     )
     .unwrap();
     let stats = json!({ "at": 1_800_000_000u64, "load_per_cpu": 0.2, "mem_pressure_pct": 30, "swap_used_mb": 0,
                         "disk_free_mb": 50_000, "cpus": 4, "uptime_s": 60, "terminals": {} });
     fs::write(shed.dir.join("stats-d1.json"), stats.to_string()).unwrap();
-    fs::write(shed.dir.join("stats-box.json"), stats.to_string()).unwrap();
+    fs::write(shed.dir.join("stats-lab.json"), stats.to_string()).unwrap();
     let card = |name: &str, tags: &str| json!({ "name": name, "rows": [{ "k": "lanes", "notes": ["none"] }, { "k": "tags", "t": "m", "notes": [tags] }] });
-    let port = fake_drover(json!({ "hosts": [card("d1", "gpu linux"), card("box", "arm")] }));
+    let port = fake_drover(json!({ "hosts": [card("d1", "gpu linux"), card("lab", "arm")] }));
     let config = format!(
         "[[plugins]]\nname = \"drover\"\nlabel = \"Drover\"\nurl = \"http://127.0.0.1:{port}\"\n\
          module = \"/tab.js\"\ntoken = \"drover-0123456789abcdef\"\n"
@@ -162,7 +162,7 @@ esac
 fn a_created_desk_lists_as_a_desk_of_its_provider_on_this_host_and_nothing_else_does() {
     let dir = scratch("machines-desk");
     let shed = FakeShed::start(&dir.join("shed"), version());
-    let claimed = json!({ "name": "box", "target": "box.local", "kind": "desk", "provider": "container", "parent": "mini" });
+    let claimed = json!({ "name": "lab", "target": "lab.local", "kind": "desk", "provider": "container", "parent": "mini" });
     fs::write(shed.dir.join("machines.json"), json!([claimed]).to_string()).unwrap();
     let container = dir.join("container");
     script(&container, CONTAINER);
@@ -195,7 +195,7 @@ fn a_created_desk_lists_as_a_desk_of_its_provider_on_this_host_and_nothing_else_
         rows,
         [
             json!([local, "host", null, null, false]),
-            json!(["box", "host", null, null, false]),
+            json!(["lab", "host", null, null, false]),
             json!(["research-1", "desk", "container", local, false]),
         ],
         "{machines}"

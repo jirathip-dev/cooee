@@ -15,7 +15,7 @@ extension PairedDevice {
             id: "d1", name: "Guy's iPhone", symbol: "iphone.gen3", paired: "3 Nov", seen: "now", isThisDevice: true),
         PairedDevice(id: "d2", name: "mini", symbol: "macmini", paired: "1 Nov", seen: "2 min ago"),
         PairedDevice(id: "d3", name: "iPad Pro", symbol: "ipad", paired: "4 Nov", seen: "2 d ago"),
-        PairedDevice(id: "d4", name: "Safari on box", symbol: "safari", paired: "28 Oct", seen: "9 d ago"),
+        PairedDevice(id: "d4", name: "Safari on lab", symbol: "safari", paired: "28 Oct", seen: "9 d ago"),
     ]
 }
 

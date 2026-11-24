@@ -109,7 +109,7 @@ On the base it fails in 31.5 s (`cooee: its backend didn't serve /screens/hello:
 
 ### 43404790513: the self-hosted runner can't fetch the shed git dependency
 
-This job ran on the self-hosted runner `box-cooee`, not on a GitHub-hosted Mac. Cargo fetched
+This job ran on the self-hosted runner `lab-cooee`, not on a GitHub-hosted Mac. Cargo fetched
 `https://github.com/jirathip-dev/shed` (Cargo.toml) as `git@github.com:jirathip-dev/shed`, through the runner's git
 config, and that runner has no key for it. This is not a test failure, and no repo change fixes it. The same thing
 failed both macOS legs of run 43454782107 (issue-277 @ e9a4ada6). The owner needs to fix the runner's git credentials,

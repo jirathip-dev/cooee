@@ -22,7 +22,7 @@ const G = {
 export const PER = {
   chief: { name: 'Chief', t: '--l', g: 'star', coat: 'ch', agent: 'Claude Code', model: 'opus 5.5', machine: 'mini' },
   coder: { name: 'Coder', t: '--c', g: 'code', coat: 'gry', agent: 'Codex', model: 'gpt-5.5', machine: 'studio' },
-  res: { name: 'Researcher', t: '--p', g: 'find', coat: 'blk', agent: 'Claude Code', model: 'sonnet 5.5', machine: 'box' },
+  res: { name: 'Researcher', t: '--p', g: 'find', coat: 'blk', agent: 'Claude Code', model: 'sonnet 5.5', machine: 'lab' },
   am: { name: 'Account Manager', t: '--link', g: 'case', coat: 'bay', agent: 'Claude Code', model: 'sonnet 5.5', machine: 'mini' },
   cond: { name: 'Conductor', t: '--g', g: 'node', coat: 'wht', agent: 'Claude Code', model: 'opus 5.5', machine: 'mini' },
 };
