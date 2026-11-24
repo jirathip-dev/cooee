@@ -1,5 +1,5 @@
 [[ban]]
 pattern = "Command::new"
 paths = ["crates/*/src/**"]
-except = ["crates/cooee-core/src/runner.rs"]
-reason = "#202: only the runner starts a process: use cooee_core::runner::command"
+except = ["crates/cooee-core/src/runner.rs", "crates/cooee-desktop/src/net.rs"]
+reason = "#202: only the runner starts a process: use cooee_core::runner::command; #715 (q3523): the desktop app builds on Windows without cooee-core, its one process is curl"

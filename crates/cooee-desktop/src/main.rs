@@ -1,4 +1,4 @@
-//! `cooee-desktop [address]`: the window, for Linux and Windows; the Mac has its own app, so macOS builds an empty one.
+#![doc = "`cooee-desktop [address]`: the window, for Linux and Windows; macOS builds an empty one, as the Mac has its own app."]
 #![cfg_attr(windows, windows_subsystem = "windows")]
 
 #[cfg(target_os = "macos")]

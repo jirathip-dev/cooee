@@ -1,6 +1,3 @@
-//! The desktop app (#715) against a real server: unpaired it lands on the pair screen, a typed code pairs it, the
-//! sessions list follows the device stream, a chat opens and a reply streams in, each drawn by blocks-desktop.
-
 mod support;
 
 use std::{fs, time::Duration};

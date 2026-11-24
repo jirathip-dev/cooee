@@ -75,8 +75,8 @@ reason = "#203: only the clock sleeps: use cooee_core::clock::sleep"
 [[ban]]
 pattern = "SystemTime::now"
 paths = ["crates/*/src/**"]
-except = ["crates/cooee-core/src/clock.rs"]
-reason = "#203: only the clock reads the time: use cooee_core::clock::now"
+except = ["crates/cooee-core/src/clock.rs", "crates/cooee-desktop/src/main.rs"]
+reason = "#203: only the clock reads the time: use cooee_core::clock::now; #715 (q3523): the desktop window, without cooee-core, reads it for blocks-desktop"
 
 [[ban]]
 pattern = "Instant::now"
@@ -320,8 +320,8 @@ reason = "#690: a routine's line, cap and tally change only through the guard: u
 [[ban]]
 pattern = "Command::new"
 paths = ["crates/*/src/**"]
-except = ["crates/cooee-core/src/runner.rs"]
-reason = "#202: only the runner starts a process: use cooee_core::runner::command"
+except = ["crates/cooee-core/src/runner.rs", "crates/cooee-desktop/src/net.rs"]
+reason = "#202: only the runner starts a process: use cooee_core::runner::command; #715 (q3523): the desktop app builds on Windows without cooee-core, its one process is curl"
 
 [[collect]]
 dir = "apple/Sources/CooeeUI/ChatScreen"

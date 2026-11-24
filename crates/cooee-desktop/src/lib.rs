@@ -1,4 +1,4 @@
-//! cooee's desktop app (#715): one server's blocks screens, followed on its device stream and drawn by blocks-desktop.
+#![doc = "cooee's desktop app (#715): one server's blocks screens, followed on its device stream and drawn by blocks-desktop."]
 
 mod net;
 
