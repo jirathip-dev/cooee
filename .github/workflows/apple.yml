@@ -12,7 +12,7 @@
 # change that reaches no Apple surface gets an `apple` that passes on ubuntu-latest, "no screens touched".
 # #440: the e2e runs nightly on staging's head (and on a manual run) whatever `vars.E2E` says; PRs and staging pushes
 # follow `vars.E2E` (#436: `off` skips the e2e steps). #487: the schedule and manual runs add apple-check's tidy-code
-# gates (`--nightly`: Features coverage, swiftlint analyze, Periphery); a red nightly opens or updates the one
+# gates (`--nightly`: Features coverage, swiftlint analyze, Periphery; a manual run's `nightly` input can drop them); a red nightly opens or updates the one
 # `nightly red:` issue (scripts/ci-nightly.sh), naming the failed gate. #475: a pull request push takes a Mac only on the merge-ready
 # run (or while the PR carries merge-ready); any other push runs `apple` on ubuntu-latest, "waits for merge-ready".
 # #486: the builds use APPLE_DERIVED and APPLE_PACKAGES from .github/actions/mac-runner.
@@ -32,6 +32,10 @@ on:
   pull_request:
     types: [opened, synchronize, reopened, labeled]
   workflow_dispatch:
+    inputs:
+      nightly:
+        type: boolean
+        default: true
   schedule:
     - cron: "41 18 * * *"
 concurrency:
@@ -117,7 +121,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           COOEE_RENDERED: ${{ runner.temp }}/rendered
-          NIGHTLY: ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
+          NIGHTLY: ${{ github.event_name == 'schedule' || inputs.nightly == true }}
         run: |
           mkdir -p "$COOEE_RENDERED"
           if [ "$NIGHTLY" = true ]; then just apple-check --nightly; else just apple-check; fi
