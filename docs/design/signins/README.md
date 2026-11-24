@@ -3,6 +3,7 @@
 Decision: Sign-ins lists every account under its shed machine. A machine that doesn't answer shows one "offline" row. Each row has the account's state and one short figure per usage window shed reports. The fullest window, if 80% or more, sits beside the name in amber. API-key accounts show this month's tokens and cost instead. Tapping a row opens the account: each window's % and reset time, the reading's age, this month's figures when shed has them, Sign in again, and Sign out with a confirm.
 Screens: Sign-ins (grouped list), an account's detail (subscription and API-key versions), the Sign out confirm; each at 390 dark and light, and at 1440 as a split view.
 Open questions: none.
+Amended 2026-11-24 (owner): agents run on the main host only, so Sign-ins lists that host's shed accounts in one list, with no machine headers or offline rows. Routes and row ids are `<provider>/<account>`, and the detail has no Machine row.
 
 # Settings › Sign-ins: usage, every machine, an account's detail (#793)
 

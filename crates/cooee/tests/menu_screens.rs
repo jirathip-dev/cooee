@@ -79,6 +79,7 @@ fn each_settings_screen_is_one_list_from_its_route() {
     let (_shed, cooee) = start("settings-screens");
     for (id, title) in [
         ("devices", "Devices"),
+        ("signins", "Sign-ins"),
         ("machines", "Machines"),
         ("plugins", "Plugins"),
     ] {
@@ -118,7 +119,7 @@ const PROVIDERS: &str = "[[providers]]\nname = \"fake\"\nagent = \"fake-acp\"\nl
                          status = [\"fake\"]\n\n[[providers]]\nname = \"fake-api\"\nagent = \"fake-api-acp\"\n\
                          login = [\"fake\"]\nstatus = [\"fake\"]\n";
 
-fn signins(name: &str) -> (FakeShed, Cooee, String) {
+fn signins(name: &str) -> (FakeShed, Cooee) {
     let dir = scratch(name);
     let shed = FakeShed::start(&dir.join("shed"), version());
     let window =
@@ -145,28 +146,19 @@ fn signins(name: &str) -> (FakeShed, Cooee, String) {
     let mut api = account("fake-api", "ci", Value::Null);
     api["token"] = json!({ "saved_at": 1 });
     shed.put_account(api);
-    let write = |file: &str, v: Value| fs::write(shed.dir.join(file), v.to_string()).unwrap();
-    write(
-        "machines.json",
-        json!([{ "name": "air", "target": "air.local" }, { "name": "boat-1", "target": "boat-1.local" }]),
-    );
     let mut limited = account(
         "fake",
-        "air",
+        "max",
         usage(json!([window("7d", 100, 1_800_300_000)])),
     );
     limited["state"] = json!("limited");
     limited["limited_until"] = json!(1_800_008_040u64);
-    write("accounts-air.json", json!([limited]));
+    shed.put_account(limited);
     let login = shed.dir.join("login-fake");
     fs::write(&login, "#!/bin/sh\nexit 0\n").unwrap();
     fs::set_permissions(&login, fs::Permissions::from_mode(0o755)).unwrap();
     let cooee = Cooee::start_with(&dir, &shed.dir, PROVIDERS);
-    let host = cooee.json("/machines")[0]["host"]
-        .as_str()
-        .unwrap()
-        .to_owned();
-    (shed, cooee, host)
+    (shed, cooee)
 }
 
 fn row(id: &str, title: &str, subtitle: &Value) -> Value {
@@ -175,67 +167,44 @@ fn row(id: &str, title: &str, subtitle: &Value) -> Value {
 }
 
 #[test]
-fn sign_ins_group_accounts_by_machine_with_a_figure_per_usage_window() {
-    let (_shed, cooee, host) = signins("signins-grouped");
+fn sign_ins_list_this_hosts_accounts_with_a_figure_per_usage_window() {
+    let (_shed, cooee) = signins("signins-list");
     let screen = cooee.json("/screens/settings/signins");
     assert_eq!(
         (&screen["id"], &screen["title"]),
         (&json!("signins"), &json!("Sign-ins"))
     );
-    let sections = screen["blocks"].as_array().unwrap();
-    let headers: Vec<_> = sections.iter().map(|s| s["header"].clone()).collect();
-    assert_eq!(
-        headers,
-        [
-            json!(format!("{host} · this machine")),
-            json!("air"),
-            json!("boat-1")
-        ]
-    );
     let ok = json!({ "text": "signed in", "tone": "ok" });
-    let rows = |i: usize| sections[i]["blocks"][0]["rows"].clone();
-    let mut two = row(&format!("{host}/fake/work"), "fake · work@example.com", &ok);
+    let mut two = row("fake/work", "fake · work@example.com", &ok);
     two["badge"] = json!({ "text": "5h 84%", "tone": "warn" });
     two["value"] = json!("7d 41%");
-    let mut one = row(&format!("{host}/fake/jk"), "fake · jk@example.com", &ok);
+    let mut one = row("fake/jk", "fake · jk@example.com", &ok);
     one["value"] = json!("7d 36%");
-    let none = row(
-        &format!("{host}/fake/plain"),
-        "fake · plain@example.com",
-        &ok,
-    );
-    let api = row(
-        &format!("{host}/fake-api/ci"),
-        "fake-api · ci@example.com",
-        &ok,
-    );
-    let mut local = rows(0).as_array().unwrap().clone();
-    local.sort_by_key(|r| r["id"].as_str().unwrap().to_owned());
-    assert_eq!(local, [api, one, none, two]);
+    let none = row("fake/plain", "fake · plain@example.com", &ok);
+    let api = row("fake-api/ci", "fake-api · ci@example.com", &ok);
     let mut limited = row(
-        "air/fake/air",
-        "fake · air@example.com",
+        "fake/max",
+        "fake · max@example.com",
         &json!({ "text": { "until": "2027-01-15T10:14:00Z", "label": "at its limit · resets in {rel}" },
                 "tone": "warn" }),
     );
     limited["badge"] = json!({ "text": "7d 100%", "tone": "warn" });
-    assert_eq!(rows(1), json!([limited]));
-    assert_eq!(
-        rows(2),
-        json!([{ "type": "row", "id": "boat-1/offline", "title": "offline" }])
-    );
+    let blocks = screen["blocks"].as_array().unwrap();
+    assert_eq!(blocks.len(), 1);
+    let mut rows = blocks[0]["rows"].as_array().unwrap().clone();
+    rows.sort_by_key(|r| r["id"].as_str().unwrap().to_owned());
+    assert_eq!(rows, [api, one, limited, none, two]);
 }
 
 #[test]
 fn an_accounts_detail_lists_its_windows_and_its_two_buttons() {
-    let (_shed, cooee, host) = signins("signins-detail");
-    let screen = cooee.json(&format!("/screens/settings/signins/{host}/fake/work"));
+    let (_shed, cooee) = signins("signins-detail");
+    let screen = cooee.json("/screens/settings/signins/fake/work");
     assert_eq!(
         (&screen["title"], &screen["back"]),
         (&json!("fake · work@example.com"), &json!("Sign-ins"))
     );
     let blocks = screen["blocks"].as_array().unwrap();
-    assert_eq!(blocks[0]["rows"][1]["value"], json!(host));
     assert_eq!(
         blocks[1]["blocks"][0]["rows"],
         json!([
@@ -252,7 +221,7 @@ fn an_accounts_detail_lists_its_windows_and_its_two_buttons() {
         (&out["action"], &out["confirm"]["destructive"]),
         (&json!("signin.out"), &json!(true))
     );
-    let api = cooee.json(&format!("/screens/settings/signins/{host}/fake-api/ci"));
+    let api = cooee.json("/screens/settings/signins/fake-api/ci");
     let ids: Vec<_> = api["blocks"]
         .as_array()
         .unwrap()
@@ -260,7 +229,7 @@ fn an_accounts_detail_lists_its_windows_and_its_two_buttons() {
         .map(|b| b["id"].clone())
         .collect();
     assert_eq!(ids, [json!("who"), json!("acts")]);
-    assert_eq!(cooee.get("/screens/settings/signins/boat-1/fake/x").0, 400);
+    assert_eq!(cooee.get("/screens/settings/signins/fake/nobody").0, 400);
 }
 
 fn link_and_code(screen: &Value) -> (Value, Value) {
@@ -273,12 +242,12 @@ fn link_and_code(screen: &Value) -> (Value, Value) {
     )
 }
 
-fn act(cooee: &Cooee, m: &str, action: &str, name: &str, more: Value) -> (u16, Value) {
-    let mut values = json!({ "machine": m, "provider": "fake", "account": name });
+fn act(cooee: &Cooee, action: &str, name: &str, more: Value) -> (u16, Value) {
+    let mut values = json!({ "provider": "fake", "account": name });
     if let (Some(all), Value::Object(more)) = (values.as_object_mut(), more) {
         all.extend(more);
     }
-    let screen = format!("/screens/settings/signins/{m}/fake/{name}");
+    let screen = format!("/screens/settings/signins/fake/{name}");
     let (status, body) = cooee.post(
         "/screens/action",
         &json!({ "screen": screen, "action": action, "values": values }),
@@ -303,33 +272,27 @@ fn shown(cooee: &Cooee, path: &str, text: &str) -> Value {
 }
 
 #[test]
-fn an_account_signs_out_through_its_machines_shed() {
-    let (shed, cooee, host) = signins("signins-out");
-    let (status, body) = act(&cooee, &host, "signin.out", "jk", json!({}));
+fn an_account_signs_out_through_shed() {
+    let (shed, cooee) = signins("signins-out");
+    let (status, body) = act(&cooee, "signin.out", "jk", json!({}));
     assert_eq!((status, body["close"].clone()), (200, json!(true)));
     assert!(shed.account_of("fake", "jk").is_none());
-    assert_eq!(act(&cooee, "air", "signin.out", "air", json!({})).0, 200);
-    let log = shed.cli_log();
-    assert!(
-        log.contains("--on air exec --timeout 10 -- shed --json account rm fake air"),
-        "{log}"
-    );
-    assert_eq!(act(&cooee, "boat-1", "signin.out", "x", json!({})).0, 400);
+    assert_eq!(act(&cooee, "signin.nope", "jk", json!({})).0, 400);
 }
 
 #[test]
 fn sign_in_again_opens_the_login_sheet_with_its_link_and_code_field() {
-    let (shed, cooee, host) = signins("signins-again");
+    let (shed, cooee) = signins("signins-again");
     let login = shed.dir.join("login-fake");
     fs::write(
         &login,
         "#!/bin/sh\necho 'Open https://login.example.com/here'\necho 'Paste code >'\nread code\nexit 0\n",
     )
     .unwrap();
-    let (status, body) = act(&cooee, &host, "signin.again", "work", json!({}));
-    let sheet = format!("/screens/settings/signins/{host}/fake/work/login");
+    let (status, body) = act(&cooee, "signin.again", "work", json!({}));
+    let sheet = "/screens/settings/signins/fake/work/login";
     assert_eq!((status, &body["open"]), (200, &json!(sheet)));
-    let screen = shown(&cooee, &sheet, "Paste code");
+    let screen = shown(&cooee, sheet, "Paste code");
     assert_eq!(
         link_and_code(&screen),
         (
@@ -339,38 +302,10 @@ fn sign_in_again_opens_the_login_sheet_with_its_link_and_code_field() {
     );
     let terminal = shed.runs().last().unwrap().clone();
     let code = json!({ "code": "123456" });
-    assert_eq!(act(&cooee, &host, "signin.code", "work", code).0, 200);
+    assert_eq!(act(&cooee, "signin.code", "work", code).0, 200);
     assert_eq!(shed.sent(&terminal), ["123456"]);
-
-    let (status, body) = act(&cooee, "air", "signin.again", "air", json!({}));
-    let sheet = "/screens/settings/signins/air/fake/air/login?terminal=login";
-    assert_eq!((status, &body["open"]), (200, &json!(sheet)));
-    assert_eq!(
-        link_and_code(&cooee.json(sheet)),
-        (
-            json!("https://login.example.com/remote"),
-            json!("signin.code")
-        )
-    );
-    let on_air = json!({ "terminal": "login", "code": "654321" });
-    assert_eq!(
-        act(&cooee, "air", "signin.code", "air", on_air.clone()).0,
-        200
-    );
-    let (status, body) = act(&cooee, "air", "signin.cancel", "air", on_air);
+    let (status, body) = act(&cooee, "signin.cancel", "work", json!({}));
     assert_eq!((status, body["close"].clone()), (200, json!(true)));
-    let log = shed.cli_log();
-    for call in [
-        "account login fake air",
-        "read --screen -- login",
-        "send --no-paste -- login 654321",
-        "rm -- login",
-    ] {
-        assert!(
-            log.contains(&format!("--on air exec --timeout 10 -- shed --json {call}")),
-            "{log}"
-        );
-    }
 }
 
 #[test]

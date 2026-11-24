@@ -29,6 +29,7 @@ use super::Input;
 pub(super) struct Shared {
     pub(super) seq: u64,
     floor: u64,
+    churn: bool,
     ring: Vec<Event>,
     subs: Vec<Sender<Event>>,
     reported: BTreeMap<String, Reported>,
@@ -71,8 +72,7 @@ const CLI: &str = r#"#!/bin/sh
 # The fake `shed` CLI: `agents` lists one agent, or agents.json's (it fails while the gate `agents-fails` is shut); `run` records its
 # arguments and prints the terminal (it waits while the gate `hold-run` is shut, and fails, as a slow start's CLI
 # would, while `run-fails` is, saying the gate's text and leaving no terminal; in a folder named <f>, it waits while `hold-in-<f>` is shut, and its session never
-# comes up while `fails-in-<f>` is); `--on <m> exec -- shed --json …` answers from accounts-<m>.json (`account ls` prints it, `read` terminal `login` shows a link),
-# exit 1 without it, as a machine that doesn't answer; `machine ls` prints
+# comes up while `fails-in-<f>` is); `machine ls` prints
 # machines.json; `[--on <m>] machine stats` prints stats-<m>.json (stats-local.json), exit 1 when offline; its
 # `history` only the first time, as `--since` the last sample leaves nothing new. A `run` with an adapter command
 # after `--` runs it, as the terminal would: the fake adapter `fake-acp` notes its variables in adapter.env and adapter-<name>.env. A `--mcp`
@@ -80,11 +80,6 @@ const CLI: &str = r#"#!/bin/sh
 gates=$(dirname "$0")
 printf '%s\n' "$*" >>"$gates/cli.log"
 case "$*" in
-*" exec "*" -- shed --json "*)
-  m=$(printf '%s' "$*" | sed -n 's/.*--on \([^ ]*\).*/\1/p')
-  [ -e "$gates/accounts-$m.json" ] || { echo "fake shed: $m doesn't answer" >&2; exit 1; }
-  case "$*" in *" account ls") cat "$gates/accounts-$m.json" ;; *" account login "*) echo '{"terminal":"login"}' ;;
-  *" read --screen -- login") printf '%s\n' '{"text":"Open https://login.example.com/remote\nPaste code >","cursor":{"seq":0,"screen":0}}' ;; *) echo '{}' ;; esac ;;
 *" machine ls") cat "$(dirname "$0")/machines.json" 2>/dev/null || echo '[]' ;;
 *" machine stats"*)
   m=$(printf '%s' "$*" | sed -n 's/.*--on \([^ ]*\).*/\1/p')
@@ -182,6 +177,11 @@ impl FakeShed {
         s.floor = s.seq;
         s.ring.clear();
         s.floor
+    }
+
+    /// Makes its ring full and busy: each `reset` it sends loses one more seq, as a busy shed's ring does.
+    pub fn churn(&self) {
+        self.shared.lock().unwrap().churn = true;
     }
 
     /// How many connections it accepted.
@@ -657,6 +657,11 @@ impl FakeShed {
             let reset =
                 format!(r#"{{"jsonrpc":"2.0","method":"reset","params":{{"seq":{floor}}}}}"#);
             writeln!(writer, "{reset}").unwrap();
+            let mut s = self.shared.lock().unwrap();
+            if s.churn {
+                s.seq += 1;
+                s.floor = s.seq;
+            }
         }
         for event in replay.into_iter().chain(rx) {
             if writeln!(writer, "{}", json!(event)).is_err() {

@@ -1,4 +1,4 @@
-use std::{collections::HashMap, sync::Arc, thread, time::Duration};
+use std::{collections::HashMap, sync::Arc, time::Duration};
 
 use blocks::{
     Accessory, Action, Block, Button, ButtonStyle, Confirm, Form, Label, List, Row, Screen,
@@ -11,7 +11,7 @@ use serde_json::Value;
 use topcoat::{
     Result,
     context::{Cx, app_context, request_context},
-    router::{parse_query_params, path_param, response::Response, route},
+    router::{path_param, response::Response, route},
 };
 
 use crate::{
@@ -55,50 +55,7 @@ const SIGNINS: &str = "/screens/settings/signins";
 
 const WARN_PCT: u32 = 80;
 
-path_param!(machine);
 path_param!(provider);
-
-struct OnMachine {
-    machine: String,
-    local: bool,
-    accounts: Option<Vec<Account>>,
-}
-
-async fn on_machines(cx: &Cx, only: Option<String>) -> Result<Vec<OnMachine>, HubError> {
-    let hosts = Arc::clone(app_context::<Arc<Machines>>(cx));
-    on_logins(cx, move |l| {
-        let wanted = |m: &String| only.as_ref().is_none_or(|o| o == m);
-        let here = hosts.local().to_owned();
-        let mut all: Vec<OnMachine> = (wanted(&here).then(|| OnMachine {
-            accounts: Some(local_accounts(l)),
-            machine: here,
-            local: true,
-        }))
-        .into_iter()
-        .collect();
-        let remote: Vec<String> = hosts.added().into_iter().filter(wanted).collect();
-        let hosts = &hosts;
-        thread::scope(|s| {
-            let reads: Vec<_> = remote
-                .into_iter()
-                .map(|machine| {
-                    s.spawn(move || {
-                        let ls = hosts.on(&machine, &["account", "ls"]);
-                        let accounts = ls.ok().and_then(|v| serde_json::from_value(v).ok());
-                        OnMachine {
-                            machine,
-                            local: false,
-                            accounts,
-                        }
-                    })
-                })
-                .collect();
-            all.extend(reads.into_iter().filter_map(|r| r.join().ok()));
-        });
-        Ok(all)
-    })
-    .await
-}
 
 fn local_accounts(l: &Logins) -> Vec<Account> {
     l.sheets().into_iter().flat_map(|s| s.accounts).collect()
@@ -153,8 +110,8 @@ fn state(a: &Account) -> Label {
     }
 }
 
-fn account_row(machine: &str, a: &Account) -> Row {
-    let id = format!("{machine}/{}/{}", a.provider, a.name);
+fn account_row(a: &Account) -> Row {
+    let id = format!("{}/{}", a.provider, a.name);
     let hot = fullest(a).filter(|w| w.used_pct >= WARN_PCT);
     let figure = |w: &Window| format!("{} {}%", w.id, w.used_pct);
     let rest: Vec<String> = windows(a)
@@ -183,12 +140,8 @@ fn account_row(machine: &str, a: &Account) -> Row {
 }
 
 pub(super) async fn signin_rows(cx: &Cx) -> Result<Vec<Row>, HubError> {
-    let here = Arc::clone(app_context::<Arc<Machines>>(cx))
-        .local()
-        .to_owned();
-    on_logins(cx, move |l| {
-        let all = local_accounts(l);
-        Ok(all.iter().map(|a| account_row(&here, a)).collect())
+    on_logins(cx, |l| {
+        Ok(local_accounts(l).iter().map(account_row).collect())
     })
     .await
 }
@@ -196,23 +149,6 @@ pub(super) async fn signin_rows(cx: &Cx) -> Result<Vec<Row>, HubError> {
 fn rows(id: impl Into<String>, rows: Vec<Row>) -> Block {
     let rows: Vec<Block> = rows.into_iter().map(|r| Block::Row(Box::new(r))).collect();
     Block::List(Box::new(List::new(rows).id(id)))
-}
-
-fn machine_section(s: &OnMachine) -> Block {
-    let accounts = match &s.accounts {
-        Some(all) => all.iter().map(|a| account_row(&s.machine, a)).collect(),
-        None => vec![Row::new("offline").id(format!("{}/offline", s.machine))],
-    };
-    let header = if s.local {
-        format!("{} · this machine", s.machine)
-    } else {
-        s.machine.clone()
-    };
-    let list = rows(format!("m/{}/accounts", s.machine), accounts);
-    let section = Section::new(vec![list])
-        .id(format!("m/{}", s.machine))
-        .header(header);
-    Block::Section(Box::new(section))
 }
 
 fn usage(a: &Account) -> Vec<Block> {
@@ -249,19 +185,11 @@ fn usage(a: &Account) -> Vec<Block> {
     vec![Block::Section(Box::new(section))]
 }
 
-fn detail(machine: &str, a: &Account) -> Block {
+fn detail(a: &Account) -> Block {
     let name = title(a);
-    let who = rows(
-        "who",
-        vec![
-            Row::new("State").id("state").badge(state(a)),
-            Row::new("Machine")
-                .id("machine")
-                .value(Shown::Text(machine.to_owned())),
-        ],
-    );
+    let who = rows("who", vec![Row::new("State").id("state").badge(state(a))]);
     let values = crate::http::fields(serde_json::json!({
-        "machine": machine, "provider": a.provider, "account": a.name,
+        "provider": a.provider, "account": a.name,
     }));
     let again = Button::new("Sign in again")
         .id("again")
@@ -274,10 +202,8 @@ fn detail(machine: &str, a: &Account) -> Block {
         .action("signin.out")
         .values(values)
         .confirm(Confirm {
-            title: format!("Sign out {name} on {machine}?"),
-            message: Some(format!(
-                "shed removes this sign-in from {machine}. To use it there again, sign in again."
-            )),
+            title: format!("Sign out {name}?"),
+            message: Some("shed removes this sign-in. To use it again, sign in again.".to_owned()),
             ok: Some("Sign out".to_owned()),
             destructive: Some(true),
         });
@@ -386,77 +312,37 @@ pub async fn devices(cx: &Cx) -> Result<Answer<Block>> {
 
 #[route(GET "/screens/settings/signins")]
 pub async fn signins(cx: &Cx) -> Result<Answer<Block>> {
-    let all = on_machines(cx, None).await;
-    Ok(Answer(all.map(|all| {
-        let screen = Screen::default().id("signins").title("Sign-ins");
-        crate::http::core(screen.blocks(all.iter().map(machine_section).collect::<Vec<_>>()))
-    })))
+    let rows = signin_rows(cx).await;
+    Ok(Answer(rows.map(|r| list("signins", "Sign-ins", r))))
 }
 
-#[route(GET "/screens/settings/signins/{machine}/{provider}/{name}")]
+#[route(GET "/screens/settings/signins/{provider}/{name}")]
 pub async fn signin(cx: &Cx) -> Result<Answer<Block>> {
-    let machine = path_param::<Machine>(cx).to_owned();
-    let (provider, name) = (path_param::<Provider>(cx), path_param::<Name>(cx));
-    let found = on_machines(cx, Some(machine.clone()))
-        .await
-        .and_then(|all| {
-            let accounts = all.into_iter().find_map(|s| s.accounts);
-            let accounts = accounts.ok_or_else(|| refused(format!("{machine} doesn't answer")))?;
-            let account = accounts
-                .into_iter()
-                .find(|a| a.provider == provider && a.name == name);
-            account.ok_or_else(|| refused(format!("no account {provider}/{name} on {machine}")))
-        });
-    Ok(Answer(found.map(|a| detail(&machine, &a))))
-}
-
-#[derive(Deserialize, Default)]
-struct OnTerminal {
-    terminal: Option<String>,
-}
-
-#[route(GET "/screens/settings/signins/{machine}/{provider}/{name}/login")]
-pub async fn signin_login(cx: &Cx) -> Result<Answer<Block>> {
-    let machine = path_param::<Machine>(cx).to_owned();
     let provider = path_param::<Provider>(cx).to_owned();
     let name = path_param::<Name>(cx).to_owned();
-    let q: Option<OnTerminal> = parse_query_params(cx).ok();
-    let terminal = q.and_then(|q| q.terminal).unwrap_or_default();
-    let hosts = Arc::clone(app_context::<Arc<Machines>>(cx));
+    let found = on_logins(cx, move |l| {
+        let account = local_accounts(l)
+            .into_iter()
+            .find(|a| a.provider == provider && a.name == name);
+        account.ok_or_else(|| refused(format!("no account {provider}/{name}")))
+    })
+    .await;
+    Ok(Answer(found.map(|a| detail(&a))))
+}
+
+#[route(GET "/screens/settings/signins/{provider}/{name}/login")]
+pub async fn signin_login(cx: &Cx) -> Result<Answer<Block>> {
+    let provider = path_param::<Provider>(cx).to_owned();
+    let name = path_param::<Name>(cx).to_owned();
     let shown = on_logins(cx, move |l| {
-        let view = if machine == hosts.local() {
-            l.view(&provider)?
-        } else {
-            remote_view(&hosts, &machine, &terminal)
-        };
+        let view = l.view(&provider)?;
         let values = crate::http::fields(serde_json::json!({
-            "machine": machine, "provider": provider, "account": name, "terminal": terminal,
+            "provider": provider, "account": name,
         }));
         Ok(login(&format!("{provider} · {name}"), &view, values))
     })
     .await;
     Ok(Answer(shown))
-}
-
-fn remote_view(hosts: &Machines, machine: &str, terminal: &str) -> LoginView {
-    let (state, screen, why) = match hosts.on(machine, &["read", "--screen", "--", terminal]) {
-        Ok(read) => {
-            let screen = read
-                .get("text")
-                .and_then(Value::as_str)
-                .unwrap_or_default()
-                .to_owned();
-            ("running", screen, None)
-        }
-        Err(e) => ("ended", String::new(), Some(e)),
-    };
-    LoginView {
-        state,
-        links: cooee_core::links(&screen),
-        screen,
-        why,
-        account: None,
-    }
 }
 
 fn login(back: &str, v: &LoginView, values: blocks::Fields) -> Block {
@@ -521,42 +407,21 @@ pub(super) async fn act(cx: &Cx, a: &Action) -> Option<Result<Response>> {
             .unwrap_or_default()
             .to_owned()
     };
-    let (machine, provider, name) = (value("machine"), value("provider"), value("account"));
-    let (terminal, code) = (value("terminal"), value("code"));
-    let (action, hosts) = (
-        a.action.clone(),
-        Arc::clone(app_context::<Arc<Machines>>(cx)),
-    );
-    let done = on_logins(cx, move |l| {
-        let here = machine == hosts.local();
-        let on = |args: &[&str]| hosts.on(&machine, args).map_err(refused);
-        let login = format!("{SIGNINS}/{machine}/{provider}/{name}/login");
-        let (sent, closed) = (
-            || answer(Some("Code sent".to_owned()), None, false),
-            || answer(None, None, true),
-        );
-        match (action.as_str(), here) {
-            ("signin.again", true) => l
-                .start(&provider, Some(&name), false)
-                .map(|()| answer(None, Some(login), false)),
-            ("signin.again", false) => {
-                let started = on(&["account", "login", &provider, &name])?;
-                let t = started
-                    .get("terminal")
-                    .and_then(Value::as_str)
-                    .unwrap_or_default();
-                Ok(answer(None, Some(format!("{login}?terminal={t}")), false))
-            }
-            ("signin.code", true) => l.send(&provider, &code).map(|()| sent()),
-            ("signin.code", false) => {
-                on(&["send", "--no-paste", "--", &terminal, code.trim()]).map(|_| sent())
-            }
-            ("signin.cancel", true) => l.cancel(&provider).map(|()| closed()),
-            ("signin.cancel", false) => on(&["rm", "--", &terminal]).map(|_| closed()),
-            ("signin.out", true) => l.sign_out(&provider, &name).map(|()| closed()),
-            ("signin.out", false) => on(&["account", "rm", &provider, &name]).map(|_| closed()),
-            (other, _) => Err(refused(format!("no action {other}"))),
-        }
+    let (provider, name, code) = (value("provider"), value("account"), value("code"));
+    let action = a.action.clone();
+    let done = on_logins(cx, move |l| match action.as_str() {
+        "signin.again" => l.start(&provider, Some(&name), false).map(|()| {
+            let login = format!("{SIGNINS}/{provider}/{name}/login");
+            answer(None, Some(login), false)
+        }),
+        "signin.code" => l
+            .send(&provider, &code)
+            .map(|()| answer(Some("Code sent".to_owned()), None, false)),
+        "signin.cancel" => l.cancel(&provider).map(|()| answer(None, None, true)),
+        "signin.out" => l
+            .sign_out(&provider, &name)
+            .map(|()| answer(None, None, true)),
+        other => Err(refused(format!("no action {other}"))),
     })
     .await;
     Some(super::chat::answer(done))
