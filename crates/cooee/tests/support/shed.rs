@@ -8,7 +8,7 @@ use std::{
         net::{UnixListener, UnixStream},
     },
     path::{Path, PathBuf},
-    process::{ChildStdin, Command, Output, Stdio},
+    process::{ChildStdin, Command, Stdio},
     sync::{
         Arc, Condvar, Mutex,
         mpsc::{self, Sender},
@@ -18,8 +18,8 @@ use std::{
 };
 
 use cooee_core::shed_proto::{
-    ApprovalOption, ErrorCode, Event, EventKind, ExecParams, ExecResult, FileParams, Hello,
-    Reported, Request, Response, RpcError, RunParams, State, TerminalInfo,
+    ApprovalOption, ErrorCode, Event, EventKind, Hello, Reported, Request, Response, RpcError,
+    RunParams, State, TerminalInfo,
 };
 use serde_json::{Value, json};
 
@@ -464,60 +464,6 @@ impl FakeShed {
         Ok(t)
     }
 
-    fn on(&self, machine: Option<&str>, cmd: &[String], stdin: &[u8]) -> Result<Output, RpcError> {
-        let mut path = env::var("PATH").unwrap_or_default();
-        if let Some(m) = machine {
-            if self.links()[m]["state"] != "up" {
-                return Err(RpcError::new(ErrorCode::NoLink, m));
-            }
-            path = format!("{}:{path}", self.dir.join(format!("on-{m}")).display());
-        }
-        let mut child = Command::new(&cmd[0])
-            .args(&cmd[1..])
-            .env("PATH", path)
-            .current_dir("/")
-            .stdin(Stdio::piped())
-            .stdout(Stdio::piped())
-            .stderr(Stdio::piped())
-            .spawn()
-            .map_err(|e| RpcError::new(ErrorCode::SpawnFailed, e))?;
-        child.stdin.take().unwrap().write_all(stdin).unwrap();
-        Ok(child.wait_with_output().unwrap())
-    }
-
-    fn exec(&self, params: &Value) -> Result<Value, RpcError> {
-        let exec: ExecParams = serde_json::from_value(params.clone()).unwrap();
-        let out = self.on(exec.machine.as_deref(), &exec.cmd, &exec.stdin)?;
-        let code = out.status.code().unwrap_or(143);
-        Ok(json!(ExecResult {
-            code,
-            stdout: out.stdout,
-            stderr: out.stderr
-        }))
-    }
-
-    fn file(&self, params: &Value) -> Result<Value, RpcError> {
-        let file: FileParams = serde_json::from_value(params.clone()).unwrap();
-        let path = file.path.to_string_lossy().into_owned();
-        let (script, data) = match &file.data {
-            Some(data) => (r#"mkdir -p "$(dirname "$1")" && cat > "$1""#, data.clone()),
-            None => (r#"cat "$1""#, Vec::new()),
-        };
-        let cmd = ["sh", "-c", script, "sh", &path].map(str::to_owned);
-        let out = self.on(file.machine.as_deref(), &cmd, &data)?;
-        if !out.status.success() {
-            return Err(RpcError::new(
-                ErrorCode::Internal,
-                String::from_utf8_lossy(&out.stderr),
-            ));
-        }
-        Ok(if file.data.is_some() {
-            json!({})
-        } else {
-            json!(out.stdout)
-        })
-    }
-
     fn screen(&self, name: &str) -> Value {
         let procs = self.procs.by_name.lock().unwrap();
         json!({ "text": procs[name].screen, "cursor": { "seq": 0, "screen": 0 } })
@@ -862,8 +808,6 @@ impl FakeShed {
                 "get" => self.terminal(&name),
                 "run" => self.run(&req.params),
                 "agents" => self.agents(),
-                "exec" => self.exec(&req.params),
-                "file.read" | "file.write" => self.file(&req.params),
                 "ls" => Ok(self.ls(&req.params["labels"])),
                 "resize" | "terminal.resize" | "acp.model" => Ok(json!({})),
                 "screen.watch" => return self.watch(id, &req.params, &mut writer),

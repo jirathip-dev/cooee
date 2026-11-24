@@ -135,11 +135,7 @@ impl Setup {
 
     fn all_on_box(&self) {
         let requests = self.shed.requests.lock().unwrap().clone();
-        let on = ["exec", "file.read", "file.write"];
-        let runs: Vec<_> = requests
-            .iter()
-            .filter(|(m, _)| on.contains(&m.as_str()))
-            .collect();
+        let runs: Vec<_> = requests.iter().filter(|(m, _)| m == "run").collect();
         assert_ne!(runs.len(), 0);
         assert!(runs.iter().all(|(_, p)| p["machine"] == "box"), "{runs:?}");
     }

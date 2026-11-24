@@ -10,7 +10,7 @@ use shed_client::{
     Calls, Stream,
     proto::{
         ErrorCode, Event, EventsParams, Hello, Input, Method, Reported, RunParams, ScreenUpdate,
-        SendParams, TerminalInfo, frame,
+        SendParams, TerminalInfo, WaitOutcome, WaitParams, frame,
     },
 };
 pub use shed_client::{Error as ShedError, Streamed};
@@ -151,6 +151,40 @@ impl Shed {
             ..SendParams::default()
         })?;
         self.keys(name, &["enter"])
+    }
+
+    /// Runs `cmd` to its end in a plain terminal on `machine` (#150), then removes it: its exit code, `None` when
+    /// it ran past `timeout` seconds or ended without one.
+    ///
+    /// # Errors
+    /// [`ShedError`] when it can't start or be waited for.
+    pub fn run_on(
+        &self,
+        machine: &str,
+        cmd: Vec<String>,
+        timeout: f64,
+    ) -> Result<Option<i32>, ShedError> {
+        let at = crate::clock::now().duration_since(UNIX_EPOCH);
+        let run = RunParams {
+            name: Some(format!("cooee-check-{:x}", at.map_or(0, |d| d.as_nanos()))),
+            labels: BTreeMap::from([("cooee-check".to_owned(), "1".to_owned())]),
+            cwd: PathBuf::from("/"),
+            cmd,
+            machine: Some(machine.to_owned()),
+            ..RunParams::default()
+        };
+        let name = self.run(&run)?.name;
+        let waited = self.wait(&WaitParams {
+            name: name.clone(),
+            timeout: Some(timeout),
+            ..WaitParams::default()
+        });
+        self.close(&name)?;
+        let waited = waited?;
+        Ok(waited
+            .terminal
+            .exit
+            .filter(|_| waited.outcome != WaitOutcome::Timeout))
     }
 
     /// # Errors [`ShedError`] when shed's `agents` (of which these are the installed ones) fails.

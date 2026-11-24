@@ -9,7 +9,7 @@ use std::{collections::BTreeSet, fs, path::Path};
 use cooee_core::{
     Calls as _, Config, Providers, Shed,
     agents::{self, Agent},
-    shed_proto::{ExecParams, FileParams, LinkState, Provider},
+    shed_proto::{LinkState, Provider},
 };
 
 const PROBE: f64 = 30.0;
@@ -36,14 +36,9 @@ impl Ctx {
     }
 
     fn ran(&self, machine: &str, cmd: &[&str], timeout: f64) -> Result<bool, String> {
-        let exec = ExecParams {
-            cmd: cmd.iter().map(|w| (*w).to_owned()).collect(),
-            timeout: Some(timeout),
-            machine: Some(machine.to_owned()),
-            ..ExecParams::default()
-        };
-        let done = self.shed.exec(&exec);
-        done.map(|d| d.code == 0).map_err(|e| e.to_string())
+        let cmd = cmd.iter().map(|w| (*w).to_owned()).collect();
+        let exit = self.shed.run_on(machine, cmd, timeout);
+        exit.map(|e| e == Some(0)).map_err(|e| e.to_string())
     }
 
     fn check(&self, machine: &str, yes: bool) -> Vec<Line> {
@@ -152,24 +147,23 @@ impl Ctx {
     fn rules(&self, machine: &str, settings: &Path, yes: bool) -> Line {
         let path = settings.to_string_lossy();
         let what = format!("rules and hooks {path}");
-        let Ok(text) = fs::read(settings) else {
+        let Ok(text) = fs::read_to_string(settings) else {
             return (false, format!("{what}: can't be read here"));
         };
-        let mut file = FileParams {
-            path: settings.to_owned(),
-            machine: Some(machine.to_owned()),
-            ..FileParams::default()
-        };
-        if self.shed.file_read(&file).is_ok_and(|there| there == text) {
-            return (true, format!("{what} synced"));
+        let same = r#"printf %s "$2" | cmp -s - "$1""#;
+        match self.ran(machine, &["sh", "-c", same, "sh", &path, &text], PROBE) {
+            Ok(true) => return (true, format!("{what} synced")),
+            Err(e) => return (false, format!("{what}: {e}")),
+            Ok(false) if !yes => {
+                let fix = format!("cooee machine check {machine} --yes (copies it there)");
+                return (false, format!("{what} not synced\n     fix: {fix}"));
+            }
+            Ok(false) => {}
         }
-        if !yes {
-            let fix = format!("cooee machine check {machine} --yes (copies it there)");
-            return (false, format!("{what} not synced\n     fix: {fix}"));
-        }
-        file.data = Some(text);
-        match self.shed.file_write(&file) {
-            Ok(()) => (true, format!("{what} synced: copied")),
+        let copy = r#"mkdir -p "$(dirname "$1")" && printf %s "$2" > "$1""#;
+        match self.ran(machine, &["sh", "-c", copy, "sh", &path, &text], PROBE) {
+            Ok(true) => (true, format!("{what} synced: copied")),
+            Ok(false) => (false, format!("{what}: copying it failed")),
             Err(e) => (false, format!("{what}: {e}")),
         }
     }

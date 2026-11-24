@@ -93,7 +93,7 @@ fn checks_on_box(shed: &FakeShed) -> usize {
     let requests = shed.requests.lock().unwrap();
     let runs = requests
         .iter()
-        .filter(|(m, p)| ["exec", "file.read"].contains(&m.as_str()) && p["machine"] == "box");
+        .filter(|(m, p)| m == "run" && p["machine"] == "box");
     runs.count()
 }
 
