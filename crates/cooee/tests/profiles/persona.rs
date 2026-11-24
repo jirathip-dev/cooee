@@ -1,4 +1,4 @@
-use std::fs;
+use std::{fs, process::Command};
 
 use serde_json::{Value, json};
 
@@ -27,6 +27,7 @@ fn a_persona_with_no_profile_and_a_room_member_start_without_personal_setup_plai
         .as_str()
         .unwrap()
         .to_owned();
+    s.shed.gate("hang-send", true);
     let said = json!({ "text": "hi all", "random_id": "said" });
     let (status, body) = s.cooee.post(&format!("/threads/{id}/send"), &said);
     assert_eq!(status, 200, "{body}");
@@ -44,7 +45,20 @@ fn a_persona_with_no_profile_and_a_room_member_start_without_personal_setup_plai
             })
         });
         personal(&line.unwrap_or_else(|| panic!("{member}'s room session never started")));
+        if member == "ada" {
+            s.shed.gate("hold-run", true);
+            s.shed.gate("hang-send", false);
+        }
     }
+    let dir = s.dir.to_string_lossy().into_owned();
+    drop(s);
+    let ps = Command::new("ps")
+        .args(["-A", "-o", "command="])
+        .output()
+        .unwrap();
+    let ps = String::from_utf8(ps.stdout).unwrap();
+    let left: Vec<&str> = ps.lines().filter(|l| l.contains(&dir)).collect();
+    assert!(left.is_empty(), "#817: running after the test: {left:?}");
 }
 
 #[test]
