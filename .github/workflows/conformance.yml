@@ -1,5 +1,5 @@
 # #503, #531: the provider contract's conformance scenario (crates/cooee/tests/conformance.rs) against each real harness,
-# nightly on the Mac runner on the owner's own login; docs/architecture/provider-contract/conformance.md. Never on
+# nightly on GitHub-hosted xcode-27 (#786), where no harness is signed in yet; docs/architecture/provider-contract/conformance.md. Never on
 # pull_request, so no fork's code runs here. Everything lives in RUNNER_TEMP: the pinned shed, its `serve --dir`, and
 # cooee serve, which the test starts. The ceiling per provider and night: 10 prompts (the test's), 10 minutes (the
 # step's timeout), the smallest model. The report goes to the job summary; a step that is not `pass` opens or updates
@@ -24,7 +24,7 @@ permissions:
 jobs:
   provider:
     name: ${{ matrix.provider }}
-    runs-on: [self-hosted, macOS, ARM64, cooee-mac]
+    runs-on: xcode-27
     timeout-minutes: 45
     strategy:
       fail-fast: false
