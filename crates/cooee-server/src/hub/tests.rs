@@ -364,6 +364,42 @@ fn an_idle_threads_chat_unloads_and_reloads_intact() {
 }
 
 #[test]
+fn a_thread_on_its_providers_default_login_opens_on_auto_and_a_chosen_default_stays() {
+    let dir = scratch("auto");
+    let threads = dir.join("data/threads");
+    for (id, agent, account) in [
+        ("old", "fake-acp", ""),
+        ("label", "fake-acp", "System default"),
+        ("chosen", "fake-acp", "default"),
+        ("named", "fake-acp", "work"),
+        ("plain", "plain-acp", "System default"),
+    ] {
+        let thread =
+            json!({ "id": id, "title": id, "messages": [], "agent": agent, "account": account });
+        let meta = json!({ "format": 1, "thread": thread });
+        fs::write(threads.join(format!("{id}.json")), meta.to_string()).unwrap();
+    }
+    let (looks, _) = crate::look::Looks::load(None, None);
+    let spec = cooee_core::Spec {
+        name: "fake".to_owned(),
+        agent: "fake-acp".to_owned(),
+        ..cooee_core::Spec::default()
+    };
+    let hub = Hub::open(Seed {
+        shed: Shed::new(Some(&dir.join("no-shed-dir"))),
+        providers: cooee_core::Providers::new(&[spec]),
+        data: &dir.join("data"),
+        config: &Config::default(),
+        theme: looks.themes[&looks.default].clone(),
+        plugins: Vec::new(),
+    })
+    .unwrap();
+    let on = |id: &str| hub.thread(id).unwrap().0.account;
+    let all = ["old", "label", "chosen", "named", "plain"].map(on);
+    assert_eq!(all, ["auto", "auto", "default", "work", ""]);
+}
+
+#[test]
 fn a_reply_ends_the_rows_turn() {
     let dir = scratch("reply-ends");
     seed(&dir, "t", "");

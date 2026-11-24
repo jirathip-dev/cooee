@@ -98,7 +98,7 @@ fn row_34_a_thread_starts_on_its_pick_and_a_new_model_shows() {
     let fake = &lists[0];
     assert_eq!(
         (&fake["agent"], &fake["account"]),
-        (&json!("fake-acp"), &json!(""))
+        (&json!("fake-acp"), &json!("auto"))
     );
     assert_eq!(fake["models"][2], json!(["fake-opus-3", "fake-opus-3"]));
     assert_eq!(

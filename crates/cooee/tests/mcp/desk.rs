@@ -128,3 +128,55 @@ fn assert_frames_are_sealed_and_each_action_is_logged(
         ]
     );
 }
+
+const ASLEEP: &str = r#"#!/bin/sh
+d=$(dirname "$0")
+case "$1" in
+ls) printf '[{"configuration":{"id":"ann-desk","labels":{"cooee.provider":"container"}},"status":"%s"}]' "$(cat "$d/status")" ;;
+start) printf '%s\n' "$*" >>"$d/started"; echo running >"$d/status" ;;
+*) exit 1 ;;
+esac
+"#;
+
+#[test]
+fn typing_in_or_opening_a_desk_personas_thread_wakes_its_desk_and_no_other_thread_does() {
+    use std::os::unix::fs::PermissionsExt;
+    let dir = scratch("mcp-desk-warm");
+    let s = desk_setup(&dir);
+    let bin = dir.join("bin");
+    fs::write(bin.join("container"), ASLEEP).unwrap();
+    fs::set_permissions(bin.join("container"), fs::Permissions::from_mode(0o755)).unwrap();
+    fs::write(bin.join("status"), "stopped").unwrap();
+    let started = || fs::read_to_string(bin.join("started")).unwrap_or_default();
+    let (cy, _) = s.thread("cy");
+    assert_eq!(
+        s.cooee.post(&format!("/threads/{cy}/typing"), &json!({})).0,
+        200
+    );
+    assert_eq!(started(), "", "a persona with no desk wakes nothing");
+
+    let (ann, _) = s.thread("ann");
+    assert_eq!(
+        s.cooee
+            .post(&format!("/threads/{ann}/typing"), &json!({}))
+            .0,
+        200
+    );
+    assert_eq!(
+        s.cooee
+            .post(&format!("/threads/{ann}/typing"), &json!({}))
+            .0,
+        200
+    );
+    assert_eq!(started(), "start ann-desk\n", "woken once");
+
+    fs::write(bin.join("status"), "stopped").unwrap();
+    let _events = s.cooee.events(&ann, "", false);
+    for _ in 0..200 {
+        if started().lines().count() == 2 {
+            return;
+        }
+        std::thread::sleep(std::time::Duration::from_millis(50));
+    }
+    panic!("opening the thread never woke its desk: {}", started());
+}

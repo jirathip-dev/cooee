@@ -2,15 +2,15 @@ use std::{
     collections::BTreeMap,
     fmt,
     path::{Path, PathBuf},
-    time::Duration,
+    time::{Duration, UNIX_EPOCH},
 };
 
 use serde_json::Value;
 use shed_client::{
     Calls, Stream,
     proto::{
-        Event, EventsParams, Hello, Input, Method, Reported, RunParams, ScreenUpdate, SendParams,
-        TerminalInfo, frame,
+        ErrorCode, Event, EventsParams, Hello, Input, Method, Reported, RunParams, ScreenUpdate,
+        SendParams, TerminalInfo, frame,
     },
 };
 pub use shed_client::{Error as ShedError, Streamed};
@@ -71,6 +71,25 @@ impl Shed {
             client: self.client.timeout(Some(call)),
             ..self
         }
+    }
+
+    /// What a thread says when shed refused a run because every account is limited, with the first reset (#765).
+    #[must_use]
+    pub fn all_limited(e: &ShedError) -> Option<String> {
+        let ShedError::Rpc(rpc) = e else { return None };
+        if e.code() != Some(ErrorCode::AccountLimited) {
+            return None;
+        }
+        let at = rpc.message.split("resets at ").nth(1);
+        let at = at.and_then(|r| r.split(' ').next()?.parse::<u64>().ok());
+        let now = crate::clock::now()
+            .duration_since(UNIX_EPOCH)
+            .map_or(0, |d| d.as_secs());
+        let first = at.map_or_else(String::new, |at| {
+            let m = at.saturating_sub(now).div_ceil(60);
+            format!("; the first resets in {}h {:02}m", m / 60, m % 60)
+        });
+        Some(format!("All accounts are limited{first}."))
     }
 
     /// The Unix socket.

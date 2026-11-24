@@ -145,6 +145,31 @@ fn a_backend_failing_with_address_in_use_while_its_attach_port_is_up_ends_attach
 }
 
 #[test]
+fn an_attach_only_plugin_shows_down_until_its_address_answers_and_starts_nothing() {
+    let attach = free_port().unwrap();
+    let (data, build, m) = installed("attach-only", "", attach);
+    let manifest = fs::read_to_string(build.join("cooee-plugin.toml")).unwrap();
+    let manifest = manifest.replace(
+        "build = \"true\"\nrun = \"\"\n",
+        &format!("build = \"echo ran >> runs\"\nattach = \"http://127.0.0.1:{attach}\"\n"),
+    );
+    fs::write(build.join("cooee-plugin.toml"), manifest).unwrap();
+    let state = |m: &Manager| m.list().unwrap()[0].state.clone();
+    for at in 0..5 {
+        assert_eq!(m.tick(at * 1000), Vec::<String>::new());
+        assert_eq!(state(&m), "down");
+    }
+    let _serve = TcpListener::bind((Ipv4Addr::LOCALHOST, attach)).unwrap();
+    m.tick(5000);
+    assert_eq!(state(&m), "attached");
+    assert!(lock(&m.runs)["x"].child.is_none());
+    assert_eq!(runs(&build), 0);
+    assert!(m.installed().unwrap()[0].enabled);
+    m.stop_all();
+    fs::remove_dir_all(&data).unwrap();
+}
+
+#[test]
 fn the_supervisor_restarts_a_crashing_backend_then_turns_it_off_with_an_alert() {
     let (data, build, m) = installed("supervise", "echo ran >> runs; exit 3", 1);
     let runs = || runs(&build);

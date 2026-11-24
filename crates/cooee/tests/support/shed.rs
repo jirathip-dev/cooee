@@ -439,8 +439,15 @@ impl FakeShed {
             .map_or("/".into(), |f| f.to_string_lossy());
         self.hold("hold-run");
         self.hold(&format!("hold-in-{folder}"));
-        if self.dir.join("run-fails").exists() {
-            return Err(RpcError::new(ErrorCode::Internal, "fake shed: timed out"));
+        if let Ok(said) = fs::read_to_string(self.dir.join("run-fails")) {
+            fs::write(file("failed"), "").unwrap();
+            let named = said.split_once(": ").and_then(|(code, message)| {
+                let code = ErrorCode::ALL.into_iter().find(|c| c.name() == code)?;
+                Some(RpcError::new(code, message))
+            });
+            return Err(
+                named.unwrap_or_else(|| RpcError::new(ErrorCode::Internal, "fake shed: timed out"))
+            );
         }
         if self.dir.join(format!("fails-in-{folder}")).exists() {
             fs::write(file("ready-timeout"), "").unwrap();
@@ -667,7 +674,7 @@ impl FakeShed {
 
     fn terminal(&self, name: &str) -> Result<Value, RpcError> {
         let s = self.shared.lock().unwrap();
-        if s.gone.contains(name) {
+        if s.gone.contains(name) || self.dir.join(format!("failed-{name}")).exists() {
             return Err(RpcError::new(ErrorCode::NoSuchTerminal, name));
         }
         let running = !s.stopped.contains(name);

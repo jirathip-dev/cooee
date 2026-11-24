@@ -6,7 +6,7 @@ use std::{
     time::{Duration, UNIX_EPOCH},
 };
 
-use cooee_core::{Body, Chat, Config, Plugin, Shed, ShedError, Store, StoreError};
+use cooee_core::{Body, Chat, Config, Plugin, Shed, ShedError, Store, StoreError, agents::AUTO};
 
 use super::glance::summary;
 use super::live::Live;
@@ -135,8 +135,10 @@ impl Hub {
         let (mut threads, mut terminals) = (BTreeMap::new(), HashMap::new());
         for id in store.ids()? {
             let mut meta = store.load(&id)?;
-            if meta.account == "System default" {
-                meta.account.clear();
+            let default = ["", "System default"].contains(&meta.account.as_str());
+            if default {
+                let signs_in = providers.for_agent(&meta.agent).is_some();
+                if signs_in { AUTO } else { "" }.clone_into(&mut meta.account);
             }
             let terminal = meta.terminal.clone();
             let (items, unseen) = store.glance(&id, meta.read.unwrap_or(0))?;

@@ -72,7 +72,7 @@ fn a_persona_on_codex_or_antigravitys_default_login_starts_with_one_line_an_adde
         agent(
             &dir,
             "ada",
-            "name = \"Ada\"\nagent = \"fake-acp\"\n",
+            "name = \"Ada\"\nagent = \"fake-acp\"\naccount = \"default\"\n",
             "Be brief.",
         );
         let work = "name = \"Wes\"\nagent = \"fake-acp\"\naccount = \"work\"\n";

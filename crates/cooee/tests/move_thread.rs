@@ -390,7 +390,8 @@ fn chained() -> (FakeShed, Cooee, String) {
     support::agent(
         &dir,
         "ada",
-        "name = \"Ada\"\nagent = \"fake-acp\"\n\n[[fallback]]\nagent = \"other-acp\"\n",
+        "name = \"Ada\"\nagent = \"fake-acp\"\n\n[[fallback]]\nagent = \"fake-acp\"\naccount = \"work\"\n\n\
+         [[fallback]]\nagent = \"other-acp\"\n\n[[fallback]]\nagent = \"other-acp\"\naccount = \"work\"\n",
         "Be brief.",
     );
     let shed = FakeShed::start(&dir.join("shed"), version());

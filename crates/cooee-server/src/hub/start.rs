@@ -213,10 +213,13 @@ impl Hub {
                 Ok(()) => return,
                 Err(e) => {
                     "unconnected".clone_into(&mut l.chat.turn.state);
-                    l.chat.turn.note = Some(format!(
-                        "{name} stopped: {}",
-                        e.to_string().replace(&agent, &name)
-                    ));
+                    let limited = match &e {
+                        HubError::Shed(s) => cooee_core::Shed::all_limited(s),
+                        _ => None,
+                    };
+                    l.chat.turn.note = Some(limited.unwrap_or_else(|| {
+                        format!("{name} stopped: {}", e.to_string().replace(&agent, &name))
+                    }));
                 }
             }
             let turn = l.chat.turn.clone();
