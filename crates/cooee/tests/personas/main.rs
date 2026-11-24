@@ -13,5 +13,6 @@ mod notes;
 mod orchestrators;
 mod plugins;
 mod setup;
+mod show;
 mod update;
 mod voice;

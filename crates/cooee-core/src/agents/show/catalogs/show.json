@@ -1,0 +1,13 @@
+{
+  "name": "show",
+  "kinds": {
+    "prose": {},
+    "list": { "fields": ["rows"] },
+    "row": { "fields": ["title", "subtitle", "value", "badge"] },
+    "stat": { "fields": ["items", "label", "value", "unit", "tone"] },
+    "table": { "fields": ["title", "columns", "rows", "empty"] },
+    "steps": { "fields": ["title", "steps", "current", "done", "bars"] },
+    "chart": { "fields": ["title", "chart", "series", "x", "empty", "format"] }
+  },
+  "links": ["https://"]
+}
