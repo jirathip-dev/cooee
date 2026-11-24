@@ -2,6 +2,7 @@ mod apply;
 mod card;
 mod item;
 mod log;
+mod show;
 mod summary;
 
 pub use card::*;

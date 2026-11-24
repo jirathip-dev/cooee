@@ -4,9 +4,8 @@
 # Uploads run only on a merge to `main` (#180). The ASC_* secrets live in the `testflight` environment, which only
 # `main` and `staging` may deploy from: pull_request and fork runs can't read them.
 # docs/testflight.md has the owner's one-time steps.
-# #365, #565: runs on our own runner (mini-cooee), or on GitHub-hosted xcode-27 with `vars.MAC_RUNNER_TESTFLIGHT=hosted`
-# (docs/ci-runners.md). #568: the archive is unsigned (ad-hoc, for its entitlements) and only the export signs, with
-# Apple's managed distribution certificate, so no run mints a Development certificate. The job's keychain is its own,
+# #786: runs on GitHub-hosted xcode-27 (docs/ci-runners.md). #568: the archive is unsigned (ad-hoc, for its
+# entitlements) and only the export signs, with Apple's managed distribution certificate, so no run mints a Development certificate. The job's keychain is its own,
 # deleted when the job ends. A `workflow_dispatch` without `upload` archives and signs (exports) but uploads nothing.
 # #592: a staging push runs that dry run, and the Mac archive must carry every App Store icon size in its ICNS.
 name: apple-testflight
@@ -38,7 +37,7 @@ jobs:
           - { platform: iOS, asc: IOS, link: ios, device: phone, entitlements: Cooee.entitlements }
           - { platform: macOS, asc: MAC_OS, link: macos, device: Mac, entitlements: Cooee-mac.entitlements }
     name: testflight (${{ matrix.platform }})
-    runs-on: ${{ vars.MAC_RUNNER_TESTFLIGHT == 'hosted' && 'xcode-27' || fromJSON('["self-hosted","macOS","ARM64","cooee-mac"]') }}
+    runs-on: xcode-27
     environment: testflight
     timeout-minutes: 60
     env:
