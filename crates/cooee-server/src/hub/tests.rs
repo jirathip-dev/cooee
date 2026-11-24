@@ -436,25 +436,29 @@ fn a_busy_thread_does_not_hold_up_another_threads_event() {
         locations: Vec::new(),
         raw_input: None,
     };
-    let round = |r: u64| {
-        let dir = scratch(&format!("head-of-line-{r}"));
-        seed(&dir, "busy", "");
-        seed(&dir, "quiet", "");
-        let hub = hub(&dir);
-        hub.agents().ok();
-        let at = cooee_core::clock::instant();
-        for n in 0..1000 {
-            let status = ["pending", "in_progress", "completed"][usize::try_from(n % 3).unwrap()];
-            hub.apply(event("busy", n + 1, call(n, status)));
-        }
-        hub.apply(event("quiet", 1, call(0, "pending")));
-        let took = at.elapsed();
-        assert_eq!(hub.slice("quiet", None, 10, 0).unwrap().items.len(), 1);
-        assert_eq!(hub.slice("busy", None, 500, 0).unwrap().items.len(), 334);
-        took
-    };
-    let took = (0..3).map(round).min().unwrap();
-    assert!(took < Duration::from_millis(50), "{took:?}");
+    let dir = scratch("head-of-line");
+    seed(&dir, "busy", "");
+    seed(&dir, "quiet", "");
+    let hub = hub(&dir);
+    hub.agents().ok();
+    for n in 0..1000 {
+        let status = ["pending", "in_progress", "completed"][usize::try_from(n % 3).unwrap()];
+        hub.apply(event("busy", n + 1, call(n, status)));
+    }
+    let busy = lock(&hub.terminals).get("cooee-busy").cloned().unwrap();
+    let held = lock(&busy);
+    let (landed, heard) = mpsc::channel();
+    let quiet = Arc::clone(&hub);
+    let applying = thread::spawn(move || {
+        quiet.apply(event("quiet", 1, call(0, "pending")));
+        landed.send(()).unwrap();
+    });
+    let waited = heard.recv_timeout(Duration::from_secs(10));
+    drop(held);
+    applying.join().unwrap();
+    assert!(waited.is_ok(), "quiet's event waited for busy's thread");
+    assert_eq!(hub.slice("quiet", None, 10, 0).unwrap().items.len(), 1);
+    assert_eq!(hub.slice("busy", None, 500, 0).unwrap().items.len(), 334);
 }
 
 fn texts(rx: &mut broadcast::Receiver<Out>) -> Vec<Out> {
