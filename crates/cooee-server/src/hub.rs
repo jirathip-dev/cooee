@@ -31,6 +31,7 @@ mod send;
 mod servers;
 mod session;
 mod setup;
+mod show;
 mod skills;
 mod start;
 mod surface;

@@ -1,0 +1,17 @@
+{
+  "name": "ask",
+  "kinds": {
+    "prose": {},
+    "list": { "fields": ["rows"] },
+    "row": { "fields": ["title", "subtitle", "value", "badge"] },
+    "stat": { "fields": ["items", "label", "value", "unit", "tone"] },
+    "table": { "fields": ["title", "columns", "rows", "empty"] },
+    "steps": { "fields": ["title", "steps", "current", "done", "bars"] },
+    "chart": { "fields": ["title", "chart", "series", "x", "empty", "format"] },
+    "card": { "fields": ["title", "subtitle", "badge", "tone", "blocks", "buttons"] },
+    "button": { "fields": ["label", "style", "action", "values"], "actions": ["pick"] },
+    "choice": { "fields": ["question", "options", "action", "recommended", "other"], "actions": ["answer"] },
+    "form": { "fields": ["fields", "submit"], "actions": ["submit"], "inputs": ["text", "toggle", "picker"] }
+  },
+  "links": ["https://"]
+}
