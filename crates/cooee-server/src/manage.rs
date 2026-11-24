@@ -475,10 +475,12 @@ impl Manager {
         )?;
         let built =
             Manifest::parse(&fs::read_to_string(dir.join("cooee-plugin.toml"))?).and_then(|m| {
-                note(&log, &format!("build {commit}: {}", m.build));
-                let status = sh(&m.build, &dir, &log)?.status()?;
-                if !status.success() {
-                    return Err(other(format!("the build failed ({status}): see its log")));
+                if !m.attach_only() {
+                    note(&log, &format!("build {commit}: {}", m.build));
+                    let status = sh(&m.build, &dir, &log)?.status()?;
+                    if !status.success() {
+                        return Err(other(format!("the build failed ({status}): see its log")));
+                    }
                 }
                 self.health(&dir, &m, token, &log)?;
                 Ok(m)
@@ -508,6 +510,16 @@ impl Manager {
 
     fn health(&self, dir: &Path, m: &Manifest, token: &str, log: &Path) -> io::Result<()> {
         let attached = m.attach_port().filter(|&p| up(p));
+        if attached.is_none() && m.attach_only() {
+            note(
+                log,
+                &format!(
+                    "{} is down: attach-only, it shows down until it answers",
+                    m.attach
+                ),
+            );
+            return Ok(());
+        }
         let port = attached.map_or_else(free_port, Ok)?;
         let mut child = match attached {
             Some(_) => None,
@@ -947,8 +959,14 @@ impl Manager {
             }
         }
         if crashed.is_none() && run.child.is_none() && now >= run.next {
-            if let Some(why) = self.manifest(l).ok().and_then(|m| m.fits().err()) {
+            let m = self.manifest(l).ok();
+            if let Some(why) = m.as_ref().and_then(|m| m.fits().err()) {
                 return Some(self.turn_off(l, &why, ""));
+            }
+            if let Some(m) = m.filter(Manifest::attach_only) {
+                let on = m.attach_port().is_some_and(up);
+                (if on { "attached" } else { "down" }).clone_into(&mut run.state);
+                return None;
             }
             match self.spawn(l) {
                 Ok(Some((c, module))) => {
@@ -1046,12 +1064,21 @@ fn plan_text(
     listed: bool,
 ) -> String {
     let tabs: Vec<&str> = m.tabs.iter().map(|t| t.label.as_str()).collect();
+    let how = if m.attach_only() {
+        format!(
+            "attach: {} (attach-only: cooee builds and runs nothing)",
+            m.attach
+        )
+    } else {
+        format!(
+            "build: {}\nrun: {}\n  (its backend runs as you on this Mac)",
+            m.build, m.run
+        )
+    };
     let mut text = format!(
-        "{} {} from {url}\ncommit {commit}\nbuild: {}\nrun: {}\n  (its backend runs as you on this Mac)\ntabs: {}",
+        "{} {} from {url}\ncommit {commit}\n{how}\ntabs: {}",
         m.name,
         m.version,
-        m.build,
-        m.run,
         tabs.join(", ")
     );
     if !m.places.is_empty() {
