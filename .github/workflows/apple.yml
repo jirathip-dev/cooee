@@ -1,9 +1,8 @@
 # #124: build the native app (apple/) for iOS and macOS; no signing. #147: `just apple-check`, every Swift gate (format,
 # anti-slop, SwiftLint, tests, coverage, Periphery). #143: the app in the iOS simulator against a real `cooee serve`
 # (apple/e2e/run.sh), its screens kept as the `simulator-shots` artifact. #277: all three in one `apple` job, so a PR
-# takes one macOS runner here; a newer push to a PR cancels its older run. #365, #565: `vars.MAC_RUNNER_APPLE` picks
-# the Mac (docs/ci-runners.md): unset, a pull request runs on GitHub-hosted xcode-27 and a push on our own Mac
-# (mini-cooee); on our Mac never for a fork's pull request (it shows skipped). #484: the Mac app is a client only; the
+# takes one macOS runner here; a newer push to a PR cancels its older run. #786: the Mac is GitHub-hosted xcode-27
+# (docs/ci-runners.md). #484: the Mac app is a client only; the
 # e2e's phone asks the CLI server and `cooee pair approve` answers it. #328: on a pull request push `apple` runs only the
 # builds; `just apple-check` and the e2e steps run on a staging push and when herdsman labels the PR `merge-ready`
 # (fleet `merge_label`: on exactly while a review PASS stands at the head), and merge waits on that run.
@@ -13,10 +12,10 @@
 # change that reaches no Apple surface gets an `apple` that passes on ubuntu-latest, "no screens touched".
 # #440: the e2e runs nightly on staging's head (and on a manual run) whatever `vars.E2E` says; PRs and staging pushes
 # follow `vars.E2E` (#436: `off` skips the e2e steps). #487: the schedule and manual runs add apple-check's tidy-code
-# gates (`--nightly`: Features coverage, swiftlint analyze, Periphery); a red nightly opens or updates the one
+# gates (`--nightly`: Features coverage, swiftlint analyze, Periphery; a manual run with `nightly` off runs as a staging push does); a red nightly opens or updates the one
 # `nightly red:` issue (scripts/ci-nightly.sh), naming the failed gate. #475: a pull request push takes a Mac only on the merge-ready
 # run (or while the PR carries merge-ready); any other push runs `apple` on ubuntu-latest, "waits for merge-ready".
-# #486: the builds use the runner's warm folders (APPLE_DERIVED, APPLE_PACKAGES from .github/actions/mac-runner).
+# #486: the builds use APPLE_DERIVED and APPLE_PACKAGES from .github/actions/mac-runner.
 name: apple
 on:
   push:
@@ -33,6 +32,10 @@ on:
   pull_request:
     types: [opened, synchronize, reopened, labeled]
   workflow_dispatch:
+    inputs:
+      nightly:
+        type: boolean
+        default: true
   schedule:
     - cron: "41 18 * * *"
 concurrency:
@@ -40,9 +43,7 @@ concurrency:
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 jobs:
   scope:
-    if: >-
-      github.event_name != 'pull_request' || ((github.event.pull_request.head.repo.full_name == github.repository
-      || vars.MAC_RUNNER_APPLE != 'self-hosted') && (github.event.action != 'labeled' || github.event.label.name == 'merge-ready'))
+    if: github.event.action != 'labeled' || github.event.label.name == 'merge-ready'
     runs-on: ubuntu-latest
     timeout-minutes: 5
     outputs:
@@ -68,9 +69,7 @@ jobs:
 
   apple:
     needs: scope
-    runs-on: >-
-      ${{ needs.scope.outputs.mac == 'true' && ((vars.MAC_RUNNER_APPLE == 'self-hosted' || (vars.MAC_RUNNER_APPLE != 'hosted' && github.event_name != 'pull_request'))
-      && fromJSON('["self-hosted","macOS","ARM64","cooee-mac"]') || 'xcode-27') || 'ubuntu-latest' }}
+    runs-on: ${{ needs.scope.outputs.mac == 'true' && 'xcode-27' || 'ubuntu-latest' }}
     timeout-minutes: 120
     outputs:
       gate: ${{ steps.check.outputs.gate }}
@@ -79,7 +78,7 @@ jobs:
       FULL: ${{ needs.scope.outputs.full }}
       E2E: >-
         ${{ needs.scope.outputs.e2e == 'true' && (github.event_name == 'schedule'
-        || github.event_name == 'workflow_dispatch' || vars.E2E != 'off') }}
+        || inputs.nightly == true || vars.E2E != 'off') }}
       ONLY: ${{ needs.scope.outputs.only }}
     steps:
       - uses: actions/checkout@v4
@@ -122,7 +121,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           COOEE_RENDERED: ${{ runner.temp }}/rendered
-          NIGHTLY: ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
+          NIGHTLY: ${{ github.event_name == 'schedule' || inputs.nightly == true }}
         run: |
           mkdir -p "$COOEE_RENDERED"
           if [ "$NIGHTLY" = true ]; then just apple-check --nightly; else just apple-check; fi
