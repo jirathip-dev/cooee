@@ -1,3 +1,5 @@
+#![doc = "The desktop app (#715) against a real server: unpaired it shows the pair screen, a typed code pairs it, the sessions follow the device stream, and a chat opens and streams a reply, each drawn by blocks-desktop."]
+
 mod support;
 
 use std::{fs, time::Duration};
