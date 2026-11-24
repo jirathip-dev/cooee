@@ -116,3 +116,5 @@ extension EnvironmentValues {
         set { self[OpenThreadKey.self] = newValue }
     }
 }
+
+internal typealias Refreshing = BlocksUI.Refreshing
