@@ -5,6 +5,10 @@ import CooeeCore
 public struct PushClient: Sendable {
     public var token: @Sendable () async throws -> String
     public var register: @Sendable (_ server: Server, _ token: String, _ enabled: Bool) async throws -> Void
+    /// The tokens the server holds for this device (#373).
+    public var registered: @Sendable (_ server: Server) async throws -> [String]
+    /// Sends this device a test alert (#373).
+    public var test: @Sendable (_ server: Server) async throws -> Void
     /// The thread of each notification the owner taps (#516).
     public var opened: @Sendable () async -> AsyncStream<String> = { .finished }
     /// Each approval denied from its notification with the owner's text (#351).
