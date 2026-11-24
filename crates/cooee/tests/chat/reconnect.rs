@@ -61,34 +61,33 @@ fn a_restarted_cooee_reattaches_to_its_terminals_and_catches_up() {
 }
 
 #[test]
-fn a_reset_from_shed_resyncs_the_stream_and_drops_no_event() {
+fn a_reset_from_a_busy_shed_reads_on_and_drops_no_later_event() {
     let s = setup("shed-reset");
     let id = s.create("hi");
     let mut events = s.events(&id);
     events.until(|e| is_item(e, "agent"));
     let floor = s.shed.forget(1_304_000);
+    s.shed.churn();
     let _shed = s.shed.restart(version());
-    let sinces = || -> Vec<u64> {
+    let stale = || -> usize {
         let requests = s.shed.requests.lock().unwrap();
         let events = requests.iter().filter(|(m, _)| m == "events");
-        events.filter_map(|(_, p)| p["since"].as_u64()).collect()
+        events
+            .filter(|(_, p)| p["since"].as_u64().is_some_and(|n| n < floor))
+            .count()
     };
     for _ in 0..500 {
-        if sinces().contains(&floor) {
+        if stale() > 0 {
             break;
         }
         thread::sleep(std::time::Duration::from_millis(20));
     }
-    let sinces = sinces();
-    assert!(sinces.iter().any(|&n| n < floor), "{sinces:?}");
-    assert!(
-        sinces.contains(&floor),
-        "resumes after the reset: {sinces:?}"
-    );
+    assert_eq!(stale(), 1, "one stale subscribe, then a reset");
     assert_eq!(s.send(&id, "again", "reset-1").0, 200);
     events.until(|e| is_item(e, "agent") && e.data["text"] == "Hello");
     let log = fs::read_to_string(s.dir.join("cooee.err")).unwrap();
     assert!(!log.contains("dropped a shed event"), "{log}");
+    assert_eq!(stale(), 1, "read on after the reset");
 }
 
 #[test]
