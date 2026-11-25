@@ -188,7 +188,7 @@ fn a_plugin_screen_streams_its_ops_and_an_action_outside_its_permissions_is_refu
 
     assert_actions_outside_permissions_are_refused(cooee, &wave);
 
-    pals_places(cooee);
+    pals_places(cooee, &dir);
     let row = &cooee.json("/plugins")["installed"][0];
     assert_eq!(
         (
@@ -200,8 +200,15 @@ fn a_plugin_screen_streams_its_ops_and_an_action_outside_its_permissions_is_refu
     );
 }
 
-fn pals_places(cooee: &Cooee) {
-    let pal = json!({ "name": "pal", "agent": "claude", "plugins": ["hello"] });
+fn pals_places(cooee: &Cooee, dir: &Path) {
+    support::agent(
+        dir,
+        "chief",
+        "name = \"Chief\"\nrole = \"chief\"\nagent = \"claude\"\n",
+        "",
+    );
+    assert_eq!(cooee.json("/personas/chief/places"), json!([]));
+    let pal = json!({ "name": "pal", "agent": "claude", "plugins": ["hello"], "mode": "hand-off" });
     let (status, body) = cooee.post("/personas", &pal);
     assert_eq!(status, 200, "{body}");
     assert_eq!(
@@ -211,5 +218,12 @@ fn pals_places(cooee: &Cooee) {
             { "type": "chat-cards", "plugin": "hello", "id": "", "label": "", "screen": "/screens/cards" }
         ])
     );
-    assert_eq!(cooee.json("/p/hello/screens/cards")["title"], "Hello");
+    assert_eq!(
+        cooee.json("/personas/chief/places"),
+        json!([{ "type": "chat-cards", "plugin": "hello", "id": "", "label": "", "screen": "/screens/cards" }])
+    );
+    let (status, cards) = cooee.get("/p/hello/screens/cards");
+    assert_eq!(status, 200, "{cards}");
+    let served: Value = serde_json::from_str(&cards).unwrap();
+    assert_eq!(served["title"], "Hello");
 }

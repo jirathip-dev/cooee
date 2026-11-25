@@ -1,2 +1,6 @@
 name = "Writer"
 agent = "claude-acp"
+
+[purpose]
+role = "Writer"
+use = "drafting and editing emails, posts, letters and documents"

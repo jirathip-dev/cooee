@@ -32,6 +32,9 @@ impl Hub {
         if lock(&live).meta.kind == Kind::Room {
             return self.room_send(&live, text, random_id, files);
         }
+        if let Some(item) = self.mentioned(&live, text, random_id, files)? {
+            return Ok(item);
+        }
         self.send_after(id, text, random_id, files, "", via)
     }
 
@@ -277,6 +280,10 @@ impl Hub {
         files: &[Upload],
         via: Option<Via>,
     ) -> Result<Vec<Queued>, HubError> {
+        let live = self.live(id)?;
+        if self.mentioned(&live, text, random_id, files)?.is_some() {
+            return Ok(lock(&live).meta.queue.clone());
+        }
         self.queue_as(id, (text, random_id), files, (None, via))
     }
 

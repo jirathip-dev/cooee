@@ -120,7 +120,7 @@ pub fn archived(config: &Path) -> Vec<String> {
 
 /// The keys Chief sets on a persona with no card: none starts a program, names a secret or picks a machine.
 pub const PERSONA_KEYS: &str =
-    "name character instructions avatar agent model effort plugins can_message";
+    "name character instructions avatar agent model effort plugins can_message purpose mode";
 
 /// What Chief asks to change in a persona's access, each given replaced whole: carded.
 #[derive(Debug, Default, Deserialize)]

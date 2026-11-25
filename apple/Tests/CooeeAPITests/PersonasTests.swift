@@ -10,7 +10,7 @@ extension APIPersona {
             character: "Terse.", instructions: "Test first.", plugins: ["hello"]
         )
         coder.avatar = "data:image/png;base64,AA=="
-        coder.machine = "air"
+        coder.machine = "lab"
         coder.role = "orchestrator"
         coder.style = .detailed
         coder.fleets = ["cooee"]
@@ -37,7 +37,7 @@ internal struct PersonasTests {
         #expect(try JSONDecoder().decode(APIPersona.self, from: values) == edited)
         let body = try #require(server.body("/screens/action"))
         #expect(
-            body.contains(#""can_message":["chief"]"#) && body.contains(#""machine":"air""#)
+            body.contains(#""can_message":["chief"]"#) && body.contains(#""machine":"lab""#)
                 && body.contains(#""pinned":true"#)
                 && body.contains(#""role":"orchestrator""#) && body.contains(#""fleets":["cooee"]"#)
                 && body.contains(#""style":"detailed""#) && body.contains(#""version":"v1""#))

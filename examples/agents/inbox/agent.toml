@@ -1,5 +1,9 @@
 name = "Inbox"
 agent = "claude-acp"
 
+[purpose]
+role = "Email triage"
+use = "triaging email and the morning digest"
+
 [[mcp]]
 server = "email"

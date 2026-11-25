@@ -85,7 +85,7 @@ internal struct ClientTests {
 
     @Test internal func aNewThreadStartsForAPersonaOnTheMachinePicked() async throws {
         let server = CannedServer(["/threads": [Answer(headers: json, chunks: [#"{"id":"n1"}"#])]])
-        let persona = APIPersona(id: "coder", name: "Coder", agent: "fake-acp", machine: "air")
+        let persona = APIPersona(id: "coder", name: "Coder", agent: "fake-acp", machine: "lab")
         let client = server.client()
         #expect(try await client.newThread(persona: persona, machine: "mini", text: "hi", randomID: "r9") == "n1")
         let body = try server.decoded("/threads", as: Started.self)

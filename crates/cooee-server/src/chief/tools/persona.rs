@@ -16,18 +16,21 @@ struct Ask {
     set: serde_json::Map<String, Value>,
 }
 
-fn shape() -> Value {
+fn shape(_: &Hub) -> Value {
     let (text, list) = (
         json!({ "type": "string" }),
         json!({ "type": "array", "items": { "type": "string" } }),
     );
-    json!({ "name": "persona", "description": "Create, edit, archive or restore one of the owner's personas: its name, Character, Instructions, avatar, agent, model, effort, plugins and can_message. It saves at once; a new one runs on this machine and is on Home. Its variables, MCP servers and machine are the access tool's. A refusal starts with IS_CHIEF, NO_PERSONA or BAD_ARGS.",
+    json!({ "name": "persona", "description": "Create, edit, archive or restore one of the owner's personas: its name, Character, Instructions, avatar, agent, model, effort, plugins, can_message, purpose and mode. It saves at once; a new one runs on this machine and is on Home. Its variables, MCP servers and machine are the access tool's. A refusal starts with IS_CHIEF, NO_PERSONA or BAD_ARGS.",
         "inputSchema": { "type": "object", "required": ["do"], "properties": {
             "do": { "type": "string", "enum": ["create", "edit", "archive", "restore"] },
             "id": { "type": "string", "description": "the persona, but for create" },
             "name": text, "character": text, "instructions": text, "avatar": text,
             "agent": { "type": "string", "description": "an installed agent (default: yours)" },
-            "model": text, "effort": text, "plugins": list, "can_message": list
+            "model": text, "effort": text, "plugins": list, "can_message": list,
+            "purpose": { "type": "object", "description": "what route lists it for: role (a few words) and use (one line)",
+                "properties": { "role": text, "use": text } },
+            "mode": { "type": "string", "enum": ["delegate", "hand-off"] }
         } }
     })
 }

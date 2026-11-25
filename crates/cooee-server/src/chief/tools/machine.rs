@@ -2,7 +2,7 @@ use cooee_core::chief::Carded;
 
 use crate::chief::prelude::*;
 
-fn shape() -> Value {
+fn shape(_: &Hub) -> Value {
     json!({ "name": "machine", "description": "Set up a machine for the personas that run on it: clone their missing folders there and copy their rules. The owner approves a card listing each fix with Face ID. A new machine is added on the Mac (shed machine add). A refusal starts with NO_MACHINE or BAD_ARGS.",
         "inputSchema": { "type": "object", "required": ["do", "name"], "properties": {
             "do": { "type": "string", "enum": ["setup"] },

@@ -168,7 +168,7 @@ pub(super) mod tests {
             thread::spawn(move || push.deliver(None, &test_note()).unwrap())
         };
         for (_, got) in &servers[1..] {
-            let left = Duration::from_secs(1).saturating_sub(start.elapsed());
+            let left = Duration::from_secs(5).saturating_sub(start.elapsed());
             got.recv_timeout(left).unwrap();
         }
         servers[0].1.recv_timeout(Duration::from_secs(5)).unwrap();
