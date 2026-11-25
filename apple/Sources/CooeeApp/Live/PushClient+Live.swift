@@ -9,6 +9,7 @@ extension PushClient: DependencyKey {
         registered: { server in try await client(server).pushed() },
         test: { server in try await client(server).pushTest() },
         opened: { await PushDelegate.taps() },
+        showing: { thread in await PushDelegate.show(thread) },
         said: { await PushDelegate.said() }
     )
 }
