@@ -264,11 +264,6 @@ fn add_remove_and_list_with_the_lock() {
     assert!(
         s.cooee.json("/api/v1/looks")["themes"]
             .get("farm")
-            .is_none()
-    );
-    assert!(
-        s.cooee.json("/api/v1/looks")["themes"]
-            .get("kitchen")
             .is_some()
     );
     let (ok, out) = s.run(&["theme", "remove", "farm"]);

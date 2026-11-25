@@ -534,7 +534,7 @@ fn a_room_pushes_only_when_a_member_addresses_the_owner_asks_or_fails() {
     replies(&cooee, &id, 2);
     let at_you = (
         "hi all · Ada".to_owned(),
-        "needs you · Ada: @you can you sign the order form?".to_owned(),
+        "at the gate · needs you · Ada: @you can you sign the order form?".to_owned(),
     );
     let quiet = "a reply to each other, a pass and a turn's end push nothing";
     assert_eq!(pushed(&log, 1), std::slice::from_ref(&at_you), "{quiet}");
@@ -543,7 +543,7 @@ fn a_room_pushes_only_when_a_member_addresses_the_owner_asks_or_fails() {
     shed.ask(&ada);
     let asks = (
         "hi all · Ada".to_owned(),
-        "needs you · fake-acp: Edit early.rs".to_owned(),
+        "at the gate · needs you · fake-acp: Edit early.rs".to_owned(),
     );
     assert_eq!(pushed(&log, 2), [at_you.clone(), asks.clone()]);
     let session = ada.trim_start_matches("cooee-");
@@ -560,7 +560,7 @@ fn a_room_pushes_only_when_a_member_addresses_the_owner_asks_or_fails() {
     shed.report(&terminal(&dir, "bo"), "error", Some("rate limited"));
     let fails = (
         "hi all · Bo".to_owned(),
-        "failed · fake-acp: rate limited".to_owned(),
+        "refused · failed · fake-acp: rate limited".to_owned(),
     );
     assert_eq!(pushed(&log, 3), [at_you, asks, fails]);
 }
