@@ -204,11 +204,11 @@ fn an_agents_launch_keys_are_read_only_and_an_edit_keeps_them() {
     assert_eq!(s.cooee.json("/personas"), json!([]));
 }
 
-fn air_offline_and_local_busy(s: &Setup) {
+fn lab_offline_and_local_busy(s: &Setup) {
     let write = |name: &str, v: &Value| fs::write(s.shed.dir.join(name), v.to_string()).unwrap();
     write(
         "machines.json",
-        &json!([{ "name": "air", "target": "air.local" }]),
+        &json!([{ "name": "lab", "target": "lab.local" }]),
     );
     write(
         "stats-local.json",
@@ -216,10 +216,10 @@ fn air_offline_and_local_busy(s: &Setup) {
                  "disk_free_mb": 50_000, "cpus": 10, "uptime_s": 60, "terminals": { "working": 1 } }),
     );
     write(
-        "stats-air.json",
-        &json!({ "machine": "air", "online": false, "last_seen": 1_700_000_000u64 }),
+        "stats-lab.json",
+        &json!({ "machine": "lab", "online": false, "last_seen": 1_700_000_000u64 }),
     );
-    s.shed.link("air", "up", 1_700_000_000, None);
+    s.shed.link("lab", "up", 1_700_000_000, None);
 }
 
 fn old_persona_with_its_character_kept(s: &Setup) -> (std::path::PathBuf, Value) {
@@ -247,7 +247,7 @@ fn an_unknown_machine_is_refused(s: &Setup, read: &Value) {
     let (status, why) = s.call("PUT", "/personas/old", Some(&nowhere));
     assert_eq!(status, 400, "{why}");
     assert!(why.to_string().contains("no machine nowhere"), "{why}");
-    assert_eq!(s.cooee.json("/personas/old")["machine"], "air");
+    assert_eq!(s.cooee.json("/personas/old")["machine"], "lab");
     let rows = s.cooee.json("/threads").as_array().unwrap().len();
     let new =
         json!({ "agent": "fake-acp", "text": "hi", "random_id": "far", "machine": "nowhere" });
@@ -256,7 +256,7 @@ fn an_unknown_machine_is_refused(s: &Setup, read: &Value) {
     assert_eq!(s.cooee.json("/threads").as_array().unwrap().len(), rows);
 }
 
-fn assert_machines_list_local_and_air(s: &Setup) {
+fn assert_machines_list_local_and_lab(s: &Setup) {
     let machines = s.cooee.json("/machines");
     let machines = machines.as_array().unwrap();
     assert_eq!(machines.len(), 2, "{machines:?}");
@@ -274,35 +274,35 @@ fn assert_machines_list_local_and_air(s: &Setup) {
             &machines[1]["online"],
             &machines[1]["last_seen"]
         ),
-        (&json!("air"), &json!(false), &json!(1_700_000_000u64))
+        (&json!("lab"), &json!(false), &json!(1_700_000_000u64))
     );
 }
 
 #[test]
 fn a_persona_and_its_threads_name_their_machine() {
     let s = setup("persona-machine");
-    air_offline_and_local_busy(&s);
+    lab_offline_and_local_busy(&s);
     let (home, read) = old_persona_with_its_character_kept(&s);
 
-    let mut on_air = read.clone();
-    on_air["machine"] = json!("air");
-    let (status, saved) = s.call("PUT", "/personas/old", Some(&on_air));
-    assert_eq!((status, &saved["machine"]), (200, &json!("air")), "{saved}");
+    let mut on_lab = read.clone();
+    on_lab["machine"] = json!("lab");
+    let (status, saved) = s.call("PUT", "/personas/old", Some(&on_lab));
+    assert_eq!((status, &saved["machine"]), (200, &json!("lab")), "{saved}");
     let file = fs::read_to_string(home.join("agent.toml")).unwrap();
     let character = fs::read_to_string(home.join("CHARACTER.md")).unwrap();
     assert!(
-        file.contains("machine = \"air\"") && character == "Kept.",
+        file.contains("machine = \"lab\"") && character == "Kept.",
         "{file}"
     );
-    assert_eq!(s.cooee.json("/personas/old")["machine"], "air");
+    assert_eq!(s.cooee.json("/personas/old")["machine"], "lab");
     let (id, _, _) = s.start("old");
-    assert_eq!(s.row(&id)["machine"], "air");
+    assert_eq!(s.row(&id)["machine"], "lab");
 
     let new = json!({ "agent": "fake-acp", "profile": "old", "text": "hi", "random_id": "here", "machine": "" });
     let (status, body) = s.call("POST", "/threads", Some(&new));
     assert_eq!(status, 200, "{body}");
     assert_eq!(s.row(body["id"].as_str().unwrap())["machine"], "");
-    assert_eq!(s.cooee.json("/personas/old")["machine"], "air");
+    assert_eq!(s.cooee.json("/personas/old")["machine"], "lab");
 
     an_unknown_machine_is_refused(&s, &read);
 
@@ -315,5 +315,5 @@ fn a_persona_and_its_threads_name_their_machine() {
     let (id, _, _) = s.start("old");
     assert_eq!(s.row(&id)["machine"], "");
 
-    assert_machines_list_local_and_air(&s);
+    assert_machines_list_local_and_lab(&s);
 }
