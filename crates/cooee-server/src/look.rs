@@ -190,11 +190,7 @@ impl Looks {
         }
     }
 
-    /// The built-in themes (plain and swag's packs) and schemes, then the owner's own from `config_dir`: schemes, the
-    /// packs in `themes/` (an own one of the same name replaces a built-in; a pack's own schemes join the rest).
-    /// `default` is the server's default theme (else farm, else plain). Returns why each own
-    /// file was refused (unreadable, invalid, failing the gate); a built-in that doesn't parse (a build bug the tests
-    /// catch) is left out.
+    /// The built-in looks (plain, swag's packs, the schemes) under the owner's own from `config_dir`, and why each own one was refused.
     #[must_use]
     pub fn load(config_dir: Option<&Path>, default: Option<&str>) -> (Self, Vec<String>) {
         let mut refused = Vec::new();
