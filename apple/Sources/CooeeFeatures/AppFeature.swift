@@ -71,7 +71,11 @@ public struct AppFeature: Sendable {
 
     public init() {}
 
-    @ReducerBuilder<State, Action> internal var app: some ReducerOf<Self> {
+    public var body: some ReducerOf<Self> {
+        app.onChange(of: Self.showing) { _, thread in show(thread) }
+    }
+
+    @ReducerBuilder<State, Action> private var app: some ReducerOf<Self> {
         Scope(state: \.menu, action: \.menu) { MenuFeature() }
         Scope(state: \.layout, action: \.layout) { LayoutFeature() }
         Scope(state: \.terminal, action: \.terminal) { TerminalFeature() }
