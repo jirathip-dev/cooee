@@ -1,7 +1,6 @@
 import CooeeCore
-import Foundation
+import SwiftUI
 
-/// Where a bird's moving groups are at one instant of its state's loop (ab.css's keyframes).
 internal struct Stance {
     internal var lean = 0.0
     internal var shift = 0.0
@@ -14,7 +13,6 @@ internal struct Stance {
     internal var pop = 1.0
     internal var spark = (shown: 0.0, size: 0.3, turn: 0.0)
 
-    /// `state`'s key pose with no time, else where it is `time` seconds into its loop.
     internal init(_ state: LaneState, at time: Double?) {
         switch state {
         case .idle: idle(time)
@@ -73,12 +71,11 @@ internal struct Stance {
         tall = Self.track(sigh, [(0, 0.93), (0.5, 0.91), (1, 0.93)])
     }
 
-    /// The value at `time` (in loops) between keys, eased in and out; it holds the last key to the loop's end.
     internal static func track(_ time: Double, _ keys: [(at: Double, value: Double)]) -> Double {
         let unit = time - time.rounded(.down)
         guard let next = keys.firstIndex(where: { $0.at > unit }), next > 0 else { return keys.last?.value ?? 0 }
-        let (from, to) = (keys[next - 1], keys[next])
-        let eased = 0.5 - cos(.pi * (unit - from.at) / (to.at - from.at)) / 2
-        return from.value + (to.value - from.value) * eased
+        let (from, until) = (keys[next - 1], keys[next])
+        let eased = 0.5 - cos(.pi * (unit - from.at) / (until.at - from.at)) / 2
+        return from.value + (until.value - from.value) * eased
     }
 }

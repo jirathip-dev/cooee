@@ -1,6 +1,6 @@
 /// A colour from the scheme: one of its tokens, or a share of one mixed into another.
 public indirect enum Paint: Sendable, Equatable, Hashable {
-    case lead, link, green, amber, red, purple, cyan, fg, mute, ink, paper
+    case lead, link, green, amber, red, purple, cyan, mute, ink, paper
     case mix(Paint, Paint, Double)
 
     /// `self` darkened toward the scheme's ink, keeping `share` of it.
@@ -40,7 +40,7 @@ public enum Mascot: String, CaseIterable, Sendable, Equatable {
         Face(name: "kook", paint: .amber, left: "(", right: ")", eye: "°", mouth: "v"),
         Face(name: "owo", paint: .purple, left: "|", right: "|", eye: "o", mouth: "w"),
         Face(name: "zap", paint: .cyan, left: "<", right: ">", eye: "0", mouth: "_"),
-        Face(name: "tin", paint: .fg, left: "/", right: "\\", eye: "o", mouth: "-"),
+        Face(name: "tin", paint: .paper, left: "/", right: "\\", eye: "o", mouth: "-"),
         Face(name: "bit", paint: .link, left: "[", right: "]", eye: "o", mouth: "_"),
         Face(name: "dj", paint: .lead, left: "d", right: "b", eye: "·", mouth: "_"),
         Face(name: "moss", paint: .green, left: "{", right: "}", eye: "•", mouth: "."),

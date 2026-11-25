@@ -1,7 +1,6 @@
 import CooeeCore
 import SwiftUI
 
-/// A persona's character as Modern draws it: its bird, moving in its state unless motion is off.
 internal struct BirdView: View {
     @Environment(\.look) private var look
     internal let persona: Persona
@@ -22,7 +21,6 @@ internal struct BirdView: View {
     }
 }
 
-/// A persona's character as Terminal draws it: its face in its colour, boxed unless `bare`.
 internal struct FaceView: View {
     @Environment(\.look) private var look
     internal let persona: Persona
@@ -54,7 +52,6 @@ internal struct FaceView: View {
     }
 }
 
-/// Seconds into its loop, out of step with other seeds, while motion is on; nil holds the key pose.
 private struct Clocked<Content: View>: View {
     @Environment(\.look) private var look
     internal let seed: String
@@ -103,31 +100,32 @@ private struct Sketch {
     }
 
     private func eyes(_ context: GraphicsContext, _ stance: Stance, _ state: LaneState) {
-        let (left, right, y, high, wide) = bird.eyes
+        let eyes = bird.eyes
         let ink = GraphicsContext.Shading.color(fills.color(bird.eye))
-        for x in [left, right] {
+        for spot in [eyes.left, eyes.right].map({ CGPoint(x: $0, y: eyes.level) }) {
             switch state {
-            case .done, .merged: context.stroke(Self.happy(x, y), with: ink, style: Self.round(3))
-            case .fail: context.stroke(Self.cross(x, y), with: ink, style: Self.round(3))
+            case .done, .merged: context.stroke(Self.happy(spot), with: ink, style: Self.round(3))
+            case .fail: context.stroke(Self.cross(spot), with: ink, style: Self.round(3))
             default:
-                let tall = high * stance.lid
-                let pill = CGRect(x: x - wide / 2 + stance.glance, y: y - tall / 2, width: wide, height: tall)
-                context.fill(Path(roundedRect: pill, cornerRadius: min(wide, tall) / 2), with: ink)
+                let tall = eyes.high * stance.lid
+                let pill = CGRect(
+                    x: spot.x - eyes.wide / 2 + stance.glance, y: spot.y - tall / 2, width: eyes.wide, height: tall)
+                context.fill(Path(roundedRect: pill, cornerRadius: min(eyes.wide, tall) / 2), with: ink)
             }
         }
     }
 
-    private static func happy(_ x: CGFloat, _ y: CGFloat) -> Path {
+    private static func happy(_ spot: CGPoint) -> Path {
         var path = Path()
-        path.move(to: CGPoint(x: x - 4, y: y + 2))
-        path.addQuadCurve(to: CGPoint(x: x + 4, y: y + 2), control: CGPoint(x: x, y: y - 5))
+        path.move(to: CGPoint(x: spot.x - 4, y: spot.y + 2))
+        path.addQuadCurve(to: CGPoint(x: spot.x + 4, y: spot.y + 2), control: CGPoint(x: spot.x, y: spot.y - 5))
         return path
     }
 
-    private static func cross(_ x: CGFloat, _ y: CGFloat, _ arm: CGFloat = 3.5) -> Path {
+    private static func cross(_ spot: CGPoint, _ arm: CGFloat = 3.5) -> Path {
         var path = Path()
-        path.addLines([CGPoint(x: x - arm, y: y - arm), CGPoint(x: x + arm, y: y + arm)])
-        path.addLines([CGPoint(x: x + arm, y: y - arm), CGPoint(x: x - arm, y: y + arm)])
+        path.addLines([CGPoint(x: spot.x - arm, y: spot.y - arm), CGPoint(x: spot.x + arm, y: spot.y + arm)])
+        path.addLines([CGPoint(x: spot.x + arm, y: spot.y - arm), CGPoint(x: spot.x - arm, y: spot.y + arm)])
         return path
     }
 
@@ -158,7 +156,7 @@ private struct Sketch {
         mark.rotate(by: .degrees(stance.spark.turn))
         mark.scaleBy(x: stance.spark.size, y: stance.spark.size)
         mark.stroke(
-            Self.cross(0, 0, 6 / 2.squareRoot()).applying(CGAffineTransform(rotationAngle: .pi / 4)),
+            Self.cross(.zero, 6 / 2.squareRoot()).applying(CGAffineTransform(rotationAngle: .pi / 4)),
             with: .color(fills.green), style: Self.round(3))
     }
 
@@ -168,7 +166,6 @@ private struct Sketch {
 }
 
 extension Palette {
-    /// A character's paint in this scheme: `fg` and `paper` are its text colour, `ink` its background.
     internal func color(_ paint: Paint) -> Color {
         if case .mix(let first, let second, let share) = paint {
             return color(first).mix(with: color(second), by: 1 - share, in: .device)
@@ -178,6 +175,6 @@ extension Palette {
 
     private static let tokens: [Paint: @Sendable (Palette) -> Color] = [
         .lead: \.lead, .link: \.link, .green: \.green, .amber: \.amber, .red: \.red, .purple: \.purple,
-        .cyan: \.cyan, .fg: \.foreground, .paper: \.foreground, .mute: \.mute, .ink: \.background,
+        .cyan: \.cyan, .paper: \.foreground, .mute: \.mute, .ink: \.background,
     ]
 }
