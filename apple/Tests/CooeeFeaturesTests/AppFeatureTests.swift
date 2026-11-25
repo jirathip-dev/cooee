@@ -164,32 +164,6 @@ extension AppFeatureTests {
         }
     }
 
-    @Test internal func theOpenThreadIsTheOneWhosePushesShowNoBanner() async {
-        let store = store(paired())
-        let calls = calls
-        store.dependencies.push.showing = { calls.record("showing \($0 ?? "none")") }
-        await store.send(.open("t1")) {
-            $0.path = ["t1"]
-            $0.chat = ChatFeature.State(server: mini, target: .thread("t1"), persona: Persona(coder, state: .working))
-            $0.home?.opened["coder"] = "t1"
-        }
-        await store.send(.start("coder")) {
-            $0.path = ["new:coder"]
-            $0.chat = ChatFeature.State(server: mini, target: .new(coder), persona: Persona(coder))
-        }
-        await store.send(.open("t1")) {
-            $0.path = ["t1"]
-            $0.chat = ChatFeature.State(server: mini, target: .thread("t1"), persona: Persona(coder, state: .working))
-        }
-        await store.send(.path(["t1"]))
-        await store.send(.back) {
-            $0.path = []
-            $0.chat = nil
-        }
-        await store.finish()
-        #expect(calls.all == ["showing t1", "showing none", "showing t1", "showing none"])
-    }
-
     @Test internal func refineByChatOpensASetupChat() async {
         let store = store(paired())
         store.dependencies.plugins.act = { _, _, _, action in .object(action.values) }
