@@ -255,6 +255,14 @@ extension MenuFeatureTests {
         #expect(store.state.offered.map(\.name) == ["modern", "terminal"])
     }
 
+    @Test internal func aPackWithSpritesButNoNamedLayersKeepsTheSceneAndItsSprites() async {
+        let store = store(style: scene)
+        await store.send(.looks(kitchen)) { $0.looks = kitchen }
+        await store.send(.theme("kitchen")) { $0.settings.theme = "kitchen" }
+        #expect(store.state.offered.map(\.name) == ["modern", "scene", "terminal"])
+        #expect(store.state.style(for: "kitchen")?.figures == .sprite)
+    }
+
     @Test internal func aPickedRowTakesThePacksTokensOrModern() async {
         let store = store()
         await store.send(.looks(kitchen)) { $0.looks = kitchen }

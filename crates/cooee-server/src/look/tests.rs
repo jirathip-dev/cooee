@@ -42,6 +42,22 @@ fn murky_fg(s: &mut Scheme) {
 }
 
 #[test]
+fn a_server_with_no_installed_pack_offers_swags_four_with_their_art() {
+    let (looks, refused) = Looks::load(Some(&tmp("built-in-swag")), None);
+    assert_eq!(refused, Vec::<String>::new());
+    assert_eq!(looks.default, "farm");
+    assert_eq!(
+        looks.themes.keys().collect::<Vec<_>>(),
+        ["bush", "farm", "garden", "kitchen", "plain"]
+    );
+    for name in ["bush", "farm", "garden", "kitchen"] {
+        let t = &looks.themes[name];
+        assert!(t.sprites && t.sprite_sheet.is_some() && t.scene_art.is_some(), "{name}");
+    }
+    assert_eq!(looks.themes["bush"].scene, ["night", "clearing"]);
+}
+
+#[test]
 fn only_plain_is_built_in_and_the_first_party_packs_load_installed() {
     let (looks, refused) = Looks::load(None, None);
     assert_eq!(refused, Vec::<String>::new());
