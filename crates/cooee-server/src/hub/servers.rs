@@ -7,7 +7,7 @@ use cooee_core::{
 use serde::Serialize;
 use serde_json::json;
 
-use super::{Hub, HubError, Recipe, lock, now, refused};
+use super::{Hub, HubError, Recipe, lock, refused};
 
 #[derive(Default)]
 pub(super) struct State {
@@ -106,11 +106,7 @@ impl Hub {
                 .iter()
                 .map(|s| entry(&s.name, &["mcp", "proxy", &s.name, "--thread", id])),
         );
-        let file = self
-            .data
-            .join("secrets")
-            .join(format!(".mcp-{id}-{:x}.json", now()));
-        launch.mcp = Some((file, all));
+        launch.mcp = all;
         Ok(launch)
     }
 

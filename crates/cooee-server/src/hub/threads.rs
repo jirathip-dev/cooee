@@ -1,6 +1,6 @@
 use std::{path::PathBuf, sync::atomic::Ordering};
 
-use cooee_core::{Item, Kind, Queued, Thread, Turn};
+use cooee_core::{Calls as _, Item, Kind, Queued, Thread, Turn};
 use serde::Serialize;
 use tokio::sync::broadcast;
 

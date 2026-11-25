@@ -1,6 +1,6 @@
+use crate::shed_proto::ApprovalOption;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
-use shed_proto::ApprovalOption;
 
 use super::Card;
 use crate::action::Kind;

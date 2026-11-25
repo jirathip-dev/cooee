@@ -22,8 +22,8 @@ fn serve(config: &Config) -> Result<(), String> {
         cooee_core::note!("cooee: {e}");
     }
     let mut config = config.clone();
-    let (data, shed) = (config.data_dir(), config.shed.clone());
-    let shed = Shed::new(shed, config.shed_dir.clone());
+    let data = config.data_dir();
+    let shed = Shed::new(config.shed_dir.as_deref());
     let terminal = (config.plugins.iter_mut()).find(|p| p.name == cooee_terminal::NAME);
     if let (Some(p), Some(data)) = (terminal, &data) {
         match cooee_terminal::start(p, shed, data) {
