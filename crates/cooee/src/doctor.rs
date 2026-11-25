@@ -66,11 +66,11 @@ pub(crate) fn doctor(config: &Config) -> Result<(), String> {
 }
 
 fn shed_rows(config: &Config, check: &mut impl FnMut(bool, String)) {
-    let shed = Shed::new(config.shed.clone(), config.shed_dir.clone());
+    let shed = Shed::new(config.shed_dir.as_deref());
     match shed.hello() {
         Ok(()) => {
-            check(true, format!("shed at {}", shed.socket.display()));
-            if shed.agents().is_ok_and(|a| a.is_empty()) {
+            check(true, format!("shed at {}", shed.socket().display()));
+            if shed.installed().is_ok_and(|a| a.is_empty()) {
                 cooee_core::say!(
                     "warn no agents installed in shed\n     fix: {}",
                     agents_fix()

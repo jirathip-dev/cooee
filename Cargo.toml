@@ -26,8 +26,9 @@ sha2 = "=0.11.1"
 qrcode = { version = "=0.14.1", default-features = false }
 serde = { version = "=1.0.229", features = ["derive"] }
 serde_json = { version = "=1.0.154", features = ["preserve_order"] }
-# shed's API types, pinned to a shed merge commit; the hello needs the same shed protocol.
-shed-proto = { git = "https://github.com/jirathip-dev/shed", rev = "ed9129cecbc49245a0a41f60327af8d37ec6872a" }
+# shed's client and agent records (#760), pinned at one shed release (client-v5.0, protocol 5).
+shed-client = { git = "https://github.com/jirathip-dev/shed", rev = "fbd81d95c27ae98cffb9e836224945e0b2e5b02d" }
+shed-catalog = { git = "https://github.com/jirathip-dev/shed", rev = "fbd81d95c27ae98cffb9e836224945e0b2e5b02d" }
 # The typed UI blocks and their JSON Schema (#621, q2236), pinned to a blocks staging commit.
 blocks = { git = "https://github.com/jirathip-dev/blocks", rev = "a42e7570e1bed499cd927b26913ec23d3e7cb2ae" }
 # The colour schemes and theme packs (#622, q2122), pinned to a swag staging commit beside blocks.
@@ -46,7 +47,7 @@ security-framework = { version = "=3.7.0", default-features = false, features = 
 # The thread items and their search index (#221): SQLite built in, so no system library is needed.
 rusqlite = { version = "=0.41.1", features = ["bundled"] }
 ruzstd = "=0.9.1"
-toml = { version = "=1.2.0", default-features = false, features = ["parse", "serde"] }
+toml = { version = "=1.2.1", default-features = false, features = ["parse", "serde"] }
 # Surgical config saves (#360): only the touched keys change, comments and layout stay.
 toml_edit = { version = "=0.25.18", default-features = false, features = ["parse", "display"] }
 

@@ -35,12 +35,10 @@ fn setup(name: &str) -> (PathBuf, FakeShed, Cooee) {
         &dir.join("status.sh"),
         &format!("test -f {:?}\n", flag.to_string_lossy()),
     );
-    let provider = format!(
-        "[[providers]]\nname = \"fake\"\nagent = \"fake-acp\"\nlogin = [{:?}]\nstatus = [{:?}]\ninstall = \"get fake-cli\"\n",
-        dir.join("bin/fake-cli").to_string_lossy(),
-        dir.join("status.sh").to_string_lossy(),
-    );
-    let cooee = Cooee::start_with(&dir, &shed.dir, &provider);
+    let (login, status) = (dir.join("bin/fake-cli"), dir.join("status.sh"));
+    shed.record(&json!({ "login": login, "status": status, "install": "get fake-cli" }));
+    let provider = "[[providers]]\nname = \"fake\"\nagent = \"fake-acp\"\n";
+    let cooee = Cooee::start_with(&dir, &shed.dir, provider);
     (dir, shed, cooee)
 }
 

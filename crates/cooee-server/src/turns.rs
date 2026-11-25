@@ -134,7 +134,11 @@ impl Again {
     ) -> Result<Item, HubError> {
         let send = || self.hub.send(&self.id, text, random_id, files, via);
         match send() {
-            Err(HubError::Shed(e)) if e.no_such_terminal() => self.restart().and_then(|()| send()),
+            Err(HubError::Shed(e))
+                if e.code() == Some(cooee_core::shed_proto::ErrorCode::NoSuchTerminal) =>
+            {
+                self.restart().and_then(|()| send())
+            }
             done => done,
         }
     }
@@ -142,7 +146,11 @@ impl Again {
     pub(crate) fn act(&self, item: u64, a: &blocks::Action, by: &str) -> Result<(), HubError> {
         let act = || self.hub.act(&self.id, item, a, by);
         match act() {
-            Err(HubError::Shed(e)) if e.no_such_terminal() => self.restart().and_then(|()| act()),
+            Err(HubError::Shed(e))
+                if e.code() == Some(cooee_core::shed_proto::ErrorCode::NoSuchTerminal) =>
+            {
+                self.restart().and_then(|()| act())
+            }
             done => done,
         }
     }

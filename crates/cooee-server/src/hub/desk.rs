@@ -266,7 +266,7 @@ esac
         fs::write(&config, format!("container = {container:?}\n")).unwrap();
         let (looks, _) = crate::look::Looks::load(None, None);
         Hub::open(Seed {
-            shed: Shed::new(dir.join("no-shed"), Some(dir.join("no-shed-dir"))),
+            shed: Shed::new(Some(&dir.join("no-shed-dir"))),
             providers: cooee_core::Providers::default(),
             data: &dir.join("data"),
             config: &Config::load(&config).unwrap(),

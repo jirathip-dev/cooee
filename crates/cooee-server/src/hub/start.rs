@@ -8,13 +8,15 @@ use std::{
 };
 
 use cooee_core::{
-    Agent, Body, Change, Chat, Launch, Thread, provider::Gap, routines::Mark, shed_proto,
+    Agent, Body, Calls as _, Change, Chat, Launch, Thread, provider::Gap, routines::Mark,
+    shed_proto,
 };
 
 use super::{Hub, HubError, LABEL, live::Live, lock, now, on_machine, refused};
 
 pub(super) const AGENTS_FOR: u64 = 60_000;
 const AGENTS_WAIT: Duration = Duration::from_secs(2);
+pub(super) const READY: f64 = 60.0;
 type Listed = Result<Vec<Agent>, String>;
 /// How a thread starts besides its agent, folder and first message.
 #[derive(Debug, Default)]
@@ -80,7 +82,7 @@ impl Hub {
         if !now && at.saturating_sub(lock(&self.areas.start.agents).1) < AGENTS_FOR {
             return;
         }
-        let fresh = self.shed.agents().map_err(|e| e.to_string());
+        let fresh = self.shed.installed().map_err(|e| e.to_string());
         let mut agents = lock(&self.areas.start.agents);
         agents.1 = at;
         match fresh {
@@ -136,11 +138,7 @@ impl Hub {
         random_id: &str,
         recipe: &Recipe,
     ) -> Result<String, HubError> {
-        let started = self.start_in(agent, folder, (text, random_id), recipe);
-        if let Some((file, _)) = &recipe.launch.secrets {
-            fs::remove_file(file).ok();
-        }
-        started
+        self.start_in(agent, folder, (text, random_id), recipe)
     }
 
     fn start_in(
@@ -209,9 +207,6 @@ impl Hub {
             let done = done.and_then(|()| hub.reachable(&recipe.machine));
             let done =
                 done.and_then(|()| hub.connect(&id, (fresh, true), &text, &random_id, &recipe));
-            if let Some((file, _)) = &recipe.launch.secrets {
-                fs::remove_file(file).ok();
-            }
             let mut l = lock(&live);
             match done {
                 Ok(()) if l.chat.turn.state == "connecting" => {
@@ -221,7 +216,7 @@ impl Hub {
                 Err(e) => {
                     "unconnected".clone_into(&mut l.chat.turn.state);
                     let limited = match &e {
-                        HubError::Shed(s) => s.all_limited(),
+                        HubError::Shed(s) => cooee_core::Shed::all_limited(s),
                         _ => None,
                     };
                     l.chat.turn.note = Some(limited.unwrap_or_else(|| {
@@ -289,7 +284,7 @@ impl Hub {
         if machine.is_empty() {
             return Ok(());
         }
-        match self.shed.link(machine) {
+        match self.shed.links().map(|mut l| l.remove(machine)) {
             Ok(Some(l)) if l.state != shed_proto::LinkState::Up => {
                 let why = l.error.map(|e| format!(": {e}")).unwrap_or_default();
                 let seen = cooee_machines::ago(cooee_machines::unix_now(), l.since);
@@ -380,9 +375,8 @@ impl Hub {
                 return Err(e.into());
             }
         }
-        if let Some(s) = self.shed.ready(&terminal)?
-            && let Err(e) = self.settle(id, &terminal, &s)
-        {
+        let session = self.shed.ready(&terminal, READY)?;
+        if let Err(e) = self.settle(id, &terminal, &session) {
             cooee_core::note!("cooee: {id}: model: {e}");
         }
         let note = self.unconnected(recipe)?;

@@ -29,6 +29,7 @@ topcoat.workspace = true
 tokio = { workspace = true, features = ["io-util", "time"] }
 
 [dev-dependencies]
+shed-client = { workspace = true, features = ["fake"] }
 tokio = { workspace = true, features = ["macros", "rt", "test-util"] }
 
 [lints]

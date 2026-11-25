@@ -14,8 +14,7 @@ pub const FAKES: &[(&str, &str)] = &[
     (
         "shed",
         r#"case "$*" in
-"--json agents") cat "$HOME/agents.json" 2>/dev/null || echo '[]' ;;
-"agents add claude-acp") echo '[{"id":"claude-acp","version":"1"}]' >"$HOME/agents.json" ;;
+"agents add claude-acp") echo '[{"id":"claude-acp","version":"1","distribution":"npx","cmd":[]}]' >"$HOME/Library/Caches/shed/agents.json" ;;
 *) exit 2 ;;
 esac"#,
     ),
@@ -118,6 +117,9 @@ impl Mac {
             fs::set_permissions(&file, fs::Permissions::from_mode(0o755)).unwrap();
         }
         let shed = shed.then(|| FakeShed::start(&home.join("Library/Caches/shed"), version()));
+        if let Some(shed) = &shed {
+            fs::write(shed.dir.join("agents.json"), "[]").unwrap();
+        }
         let listener = std::iter::repeat_with(|| TcpListener::bind("127.0.0.1:0").unwrap())
             .find(|l| l.local_addr().unwrap().port() <= u16::MAX - 1000)
             .unwrap();
