@@ -5,12 +5,13 @@ cooee's look follows herdsman's data-only theme contract (herdsman `docs/themes.
 
 ## Today
 
-- **Looks:** Modern built in, Terminal and Scene as style packs ([docs/styles.md](docs/styles.md), #488); farm, kitchen and garden theme packs (#65, #66, #67).
+- **Looks:** Modern built in, Terminal and Scene as style packs ([docs/styles.md](docs/styles.md), #488); farm, kitchen, garden and bush theme packs (#65, #66, #67, #462), built in (#828).
 
 ## A theme pack: `themes/<name>/`
 
-A theme is one coherent pack: a folder, or a folder of a git repo. Only `plain` is built in;
-`farm`, `kitchen` and `garden` are the first-party packs, from the shared swag repo (below).
+A theme is one coherent pack: a folder, or a folder of a git repo. `plain` and the first-party
+packs `farm`, `kitchen`, `garden` and `bush`, from the shared swag repo (below), are built in (#828): every server offers
+them, and a swag bump brings its new packs with it.
 
 | File | Required | What it is |
 |---|---|---|
@@ -60,7 +61,8 @@ pack, so a bad pack can't ship.
   with only its folder checked out (#363). On start, an old full clone `<data>/themes/<name>.git` is deleted once its
   new form is in place, and the space freed is logged. `cooee theme remove <name>` and `cooee theme list` do the rest.
   `cooee serve` reads them at its next start.
-- `cooee setup` installs farm, then offers the other first-party themes as a pick list; the default is all of them.
+- `cooee setup` installs the style packs; the first-party themes need no install. `cooee theme add <first-party name>
+  --rev R` pins one at another swag commit, and that copy replaces the built-in one.
 - **To share a pack**, push its folder to any git repo; anyone adds it by that URL (`cooee theme add <git-url>`).
 
 An own folder in `themes/` (not added by `cooee theme add`) loads too; one with a built-in's name replaces it. `plain` was `terminal` before #35: a
@@ -95,8 +97,7 @@ group tints, and the state colours at least ΔE2000 20 apart. A scheme that fail
 
 ## The pick
 
-The server holds only the default theme (`theme` in `config.toml`; default `farm` when it is installed, else
-`plain`). Each device keeps its own pick
+The server holds only the default theme (`theme` in `config.toml`; default `farm`). Each device keeps its own pick
 in the native app, four choices (#35): Style (Modern, or an installed style pack: `docs/styles.md`), Theme, Figures
 (`sprite`, `ascii` or `none`) and Colours (Appearance `system`, `light` or `dark`, System following the phone live,
 and a scheme per mode). Both styles read the same tokens: a style sets only shape, radius, type and buttons.

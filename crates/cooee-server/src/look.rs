@@ -145,36 +145,16 @@ pub fn last_good(config_dir: &Path, name: &str) -> std::path::PathBuf {
     config_dir.join(".themes-stage").join(".good").join(name)
 }
 
-macro_rules! builtin_theme {
-    ($name:literal, $sprites:expr, $scene:expr) => {
-        (
-            $name,
-            include_str!(concat!(
-                "../../../design-system/themes/",
-                $name,
-                "/theme.json"
-            )),
-            $sprites,
-            include_bytes!(concat!(
-                "../../../design-system/themes/",
-                $name,
-                "/icon.png"
-            ))
-            .as_slice(),
-            $scene,
-        )
-    };
-}
-
-type Builtin = (
-    &'static str,
-    &'static str,
-    Option<&'static [u8]>,
-    &'static [u8],
-    Option<&'static [u8]>,
-);
-
-const THEMES: [Builtin; 1] = [builtin_theme!("plain", None, None)];
+const PLAIN: &[(&str, &[u8])] = &[
+    (
+        "theme.json",
+        include_bytes!("../../../design-system/themes/plain/theme.json"),
+    ),
+    (
+        "icon.png",
+        include_bytes!("../../../design-system/themes/plain/icon.png"),
+    ),
+];
 
 /// The ASCII figures (herdsman#335), the same in every theme: per state (`edit read run` while working), and the
 /// 132 × 100 `loading` and `empty`, two frames each that CSS swaps.
@@ -210,9 +190,9 @@ impl Looks {
         }
     }
 
-    /// The built-in theme and schemes, then the owner's own from `config_dir`: schemes, the packs in `themes/` (an own
-    /// one of the same name replaces a built-in; a pack's own schemes join the rest).
-    /// `default` is the server's default theme (else farm, when it is installed, else plain). Returns why each own
+    /// The built-in themes (plain and swag's packs) and schemes, then the owner's own from `config_dir`: schemes, the
+    /// packs in `themes/` (an own one of the same name replaces a built-in; a pack's own schemes join the rest).
+    /// `default` is the server's default theme (else farm, else plain). Returns why each own
     /// file was refused (unreadable, invalid, failing the gate); a built-in that doesn't parse (a build bug the tests
     /// catch) is left out.
     #[must_use]
@@ -298,14 +278,17 @@ impl Looks {
 }
 
 fn builtin_themes() -> BTreeMap<String, Theme> {
-    THEMES
+    swag::packs()
         .iter()
-        .filter_map(|(n, json, sprites, icon, scene)| {
-            let mut t: Theme = serde_json::from_str(json).ok()?;
-            t.sprite_sheet = sprites.map(<[u8]>::to_vec);
-            t.icon = Some(icon.to_vec());
-            t.scene_art = scene.map(<[u8]>::to_vec);
-            Some(((*n).to_owned(), t))
+        .map(|p| (p.name, p.files))
+        .chain([("plain", PLAIN)])
+        .filter_map(|(name, files)| {
+            let get = |f: &str| files.iter().find(|(n, _)| *n == f).map(|(_, b)| b.to_vec());
+            let mut t: Theme = serde_json::from_slice(&get("theme.json")?).ok()?;
+            t.sprite_sheet = get("sprites.svg").filter(|_| t.sprites);
+            t.scene_art = get("scene.svg");
+            t.icon = get("icon.png");
+            Some((name.to_owned(), t))
         })
         .collect()
 }
