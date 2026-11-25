@@ -40,7 +40,7 @@ fn a_migrated_persona_without_instructions_takes_its_profiles() {
 
     let (_, line, brief) = s.start("lead");
     assert!(
-        line.contains(" MODE=review "),
+        s.shed.adapter_env().lines().any(|l| l == "MODE=review"),
         "runs as the profile: {line}"
     );
     assert_eq!(

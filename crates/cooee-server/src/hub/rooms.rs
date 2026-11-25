@@ -1,5 +1,4 @@
 use std::{
-    fs,
     path::PathBuf,
     sync::{Arc, Mutex, OnceLock},
 };
@@ -441,13 +440,8 @@ impl Hub {
             .ok_or_else(|| refused("no starter"))?;
         let (agent, folder, mut recipe) = starter(self, persona)?;
         seat(&mut recipe);
-        let seated = self
-            .place(&folder)
-            .and_then(|folder| self.start(&agent, &folder, prompt, random_id, &recipe));
-        if let Some((file, _)) = &recipe.launch.secrets {
-            fs::remove_file(file).ok();
-        }
-        seated
+        self.place(&folder)
+            .and_then(|folder| self.start(&agent, &folder, prompt, random_id, &recipe))
     }
 
     pub(super) fn replied(

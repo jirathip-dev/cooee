@@ -18,10 +18,14 @@ serde.workspace = true
 sha2.workspace = true
 serde_json.workspace = true
 swag.workspace = true
-shed-proto.workspace = true
+shed-catalog.workspace = true
+shed-client.workspace = true
 thiserror.workspace = true
 toml.workspace = true
 toml_edit.workspace = true
+
+[dev-dependencies]
+shed-client = { workspace = true, features = ["fake"] }
 
 [target.'cfg(target_os = "macos")'.dependencies]
 security-framework.workspace = true

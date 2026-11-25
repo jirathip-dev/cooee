@@ -1,4 +1,4 @@
-use shed_proto::EventKind;
+use crate::shed_proto::EventKind;
 
 use super::{Body, Card, Change, Chat, Item};
 use crate::action::{Action, Call};

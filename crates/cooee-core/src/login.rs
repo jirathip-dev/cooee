@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-/// A provider as data: what `[[providers]]` sets and each provider module's defaults return.
+/// A provider as cooee's policy (`[[providers]]`, a module's defaults); its program's facts are shed's record.
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct Spec {
@@ -8,23 +8,9 @@ pub struct Spec {
     pub name: String,
     /// The ACP agent id it signs in, for the new-thread picker.
     pub agent: String,
-    /// The login command: its first word is the CLI `cooee machine check` looks for.
-    pub login: Vec<String>,
-    /// The status command `cooee machine check` runs on another machine: exit 0 when signed in.
-    pub status: Vec<String>,
-    /// The line that installs its CLI, shown when the login command isn't found.
-    #[serde(default)]
-    pub install: String,
     /// The dotted `_meta` key its ACP adapter takes an enforced settings object at; none: no profile `settings`.
     #[serde(default)]
     pub settings: String,
-    /// The efforts a thread may pick (#553 row 34; its models are the agent's own, #193).
-    #[serde(default)]
-    pub efforts: Vec<String>,
-    /// The words that start its agent on an effort: `{}` is the pick; a `NAME=value` word goes to its environment,
-    /// any other after its command.
-    #[serde(default)]
-    pub effort: Vec<String>,
     /// The model a background run (#219) picks when it names none: its cheapest.
     #[serde(default, skip_serializing_if = "String::is_empty")]
     pub cheapest: String,

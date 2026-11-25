@@ -1,8 +1,8 @@
-use std::{sync::Arc, thread};
+use std::{sync::Arc, thread, time::Duration};
 
 use cooee_core::{
-    links,
-    shed_proto::{Account, AccountAdd, AccountState, WaitOutcome},
+    Calls as _, Shed, links,
+    shed_proto::{Account, AccountAdd, AccountState, WaitOutcome, WaitParams},
 };
 use serde::Serialize;
 
@@ -13,6 +13,8 @@ use crate::hub::{HubError, lock};
 pub const LOGIN_TIMEOUT: f64 = 600.0;
 
 const DEFAULT: &str = "default";
+
+const PROBE: Duration = Duration::from_secs(30);
 
 /// A provider's login as the page sees it.
 #[derive(Debug, Serialize)]
@@ -55,10 +57,10 @@ impl Logins {
             None => DEFAULT.to_owned(),
         };
         let terminal = match self.shed.account_login(name, &account) {
-            Ok(t) => t,
+            Ok(l) => l.terminal,
             Err(e) => {
                 if new {
-                    self.shed.account_rm(name, &account).ok();
+                    self.probe().account_rm(name, &account).ok();
                 }
                 return Err(e.into());
             }
@@ -69,6 +71,10 @@ impl Logins {
         let name = name.to_owned();
         thread::spawn(move || logins.reap(&name, &terminal, &account, new));
         Ok(())
+    }
+
+    fn probe(&self) -> Shed {
+        self.shed.clone().timeout(PROBE)
     }
 
     fn add(&self, name: &str) -> Result<String, HubError> {
@@ -88,7 +94,12 @@ impl Logins {
     }
 
     fn reap(&self, name: &str, terminal: &str, account: &str, new: bool) {
-        let ended = match self.shed.exited(terminal, LOGIN_TIMEOUT + 30.0) {
+        let wait = WaitParams {
+            name: terminal.to_owned(),
+            timeout: Some(LOGIN_TIMEOUT + 30.0),
+            ..WaitParams::default()
+        };
+        let ended = match self.shed.wait(&wait) {
             Ok(r) if r.outcome == WaitOutcome::Timeout => "timed out after 10 minutes".to_owned(),
             Ok(r) => match r.terminal.exit {
                 Some(0) => "the login command finished".to_owned(),
@@ -98,7 +109,7 @@ impl Logins {
             Err(e) => e.to_string(),
         };
         self.shed.close(terminal).ok();
-        let status = self.shed.account_status(name, account);
+        let status = self.probe().account_status(name, account);
         let ready = matches!(&status, Ok(a) if a.state != AccountState::SignedOut);
         let why = match &status {
             Err(e) => format!("{account}: {e}"),
@@ -108,7 +119,7 @@ impl Logins {
             Ok(_) => ended,
         };
         if new && !ready {
-            self.shed.account_rm(name, account).ok();
+            self.probe().account_rm(name, account).ok();
         }
         let mut live = lock(&self.live);
         if matches!(live.get(name), Some(Login::Running(t)) if t == terminal) {
@@ -170,7 +181,7 @@ impl Logins {
     /// # Errors [`HubError::Refused`] for an unknown provider; [`HubError::Shed`] when shed refuses `account.rm`.
     pub fn sign_out(&self, name: &str, account: &str) -> Result<(), HubError> {
         self.provider(name)?;
-        Ok(self.shed.account_rm(name, account)?)
+        Ok(self.probe().account_rm(name, account)?)
     }
 
     /// Reads every account's status again (the sign-ins card opened), in the background.
@@ -179,7 +190,7 @@ impl Logins {
         thread::spawn(move || {
             for s in logins.sheets() {
                 for a in s.accounts {
-                    if let Err(e) = logins.shed.account_status(&a.provider, &a.name) {
+                    if let Err(e) = logins.probe().account_status(&a.provider, &a.name) {
                         cooee_core::note!("cooee: account.status {}/{}: {e}", a.provider, a.name);
                     }
                 }

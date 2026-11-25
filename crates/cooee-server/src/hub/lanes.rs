@@ -1,5 +1,5 @@
 use cooee_core::{
-    Change, plugins,
+    Calls as _, Change, plugins,
     shed_proto::{LinkState, TerminalInfo},
 };
 
