@@ -161,7 +161,10 @@ mod tests {
         let chat = Chat::from_versions(versions);
         let took = at.elapsed();
         assert_eq!((chat.items.len(), chat.seq()), (1000, 30_000));
-        assert!(took < std::time::Duration::from_millis(300), "{took:?}");
+        assert!(
+            option_env!("CI").is_none() || took < std::time::Duration::from_millis(300),
+            "{took:?}"
+        );
     }
 
     #[test]
