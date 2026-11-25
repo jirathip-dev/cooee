@@ -15,7 +15,6 @@ pub struct Antigravity(Spec);
 pub const ENTRY: Entry = Entry {
     name: "antigravity",
     defaults,
-    keep: &[],
     build: |s| Arc::new(Antigravity(s)),
 };
 
@@ -55,14 +54,9 @@ impl Provider for Antigravity {
 }
 
 fn defaults() -> Spec {
-    let tokens = "\"${GEMINI_HOME:-$HOME/.gemini}/antigravity-acp/acp_token.json\"";
-    let sh = |line: String| vec!["sh".into(), "-c".into(), line];
     Spec {
         name: "antigravity".into(),
         agent: "antigravity-acp".into(),
-        login: vec!["agy".into()],
-        status: sh(format!("test -s {tokens} && echo signed in with Google")),
-        install: "curl -fsSL https://antigravity.google/cli/install.sh | bash".into(),
         cheapest: "flash".into(),
         ..Spec::default()
     }

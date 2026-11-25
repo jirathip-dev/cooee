@@ -25,5 +25,5 @@ reason = "#762: shed owns installs and updates, cooee never updates itself; #760
 [[ban]]
 pattern = "UnixStream"
 paths = ["crates/*/src/**"]
-except = ["crates/cooee-core/src/shed/client.rs"]
-reason = "#762: cooee talks to shed through shed-client, never its own shed protocol client; #760 empties this list"
+except = []
+reason = "#762: cooee talks to shed through shed-client, never its own shed protocol client; #760 emptied this list"

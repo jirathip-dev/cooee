@@ -1,12 +1,11 @@
 use std::{
     collections::BTreeMap,
-    fs,
     path::{Path, PathBuf},
     sync::{Arc, Mutex},
 };
 
 use cooee_core::{
-    Body, Change, Chat, Item, Kind, ShedError, Thread, Workflow, history,
+    Body, Calls as _, Change, Chat, Item, Kind, ShedError, Thread, Workflow, history,
     shed_proto::{self, AcpSession, TerminalInfo},
 };
 
@@ -76,23 +75,18 @@ impl Hub {
         (terminal, folder): (&str, &Path),
         agent: &str,
         recipe: &Recipe,
-    ) -> Result<Option<AcpSession>, HubError> {
+    ) -> Result<AcpSession, HubError> {
         let labels = BTreeMap::from([
             (LABEL.to_owned(), "1".to_owned()),
             (format!("{LABEL}.thread"), id.to_owned()),
         ]);
-        let started = self
-            .mcp_launch(id, recipe)
+        self.mcp_launch(id, recipe)
             .and_then(|launch| {
                 let cmd = self.adapter(agent);
                 let run = (agent, cmd.as_slice());
                 Ok(self.shed.run_acp(terminal, run, folder, &labels, &launch)?)
             })
-            .and_then(|_| Ok(self.shed.ready(terminal)?));
-        if let Some((file, _)) = &recipe.launch.secrets {
-            fs::remove_file(file).ok();
-        }
-        started
+            .and_then(|_| Ok(self.shed.ready(terminal, super::start::READY)?))
     }
 
     fn relaunch(
@@ -139,9 +133,7 @@ impl Hub {
         let item = live.chat.push(now(), 0, Body::Note { text });
         live.publish(self, vec![Change::Item(item.clone())])?;
         drop(live);
-        if let Some(s) = session
-            && let Err(e) = self.settle(id, &terminal, &s)
-        {
+        if let Err(e) = self.settle(id, &terminal, &session) {
             cooee_core::note!("cooee: {id}: model: {e}");
         }
         if let Err(e) = self.shed.close(&old) {
@@ -152,7 +144,7 @@ impl Hub {
 
     pub(super) fn reattach(&self) -> Result<Option<u64>, ShedError> {
         self.shed.hello()?;
-        let (at, terminals) = (now(), self.shed.ls(BTreeMap::new())?);
+        let (at, terminals) = (now(), self.shed.ls(&shed_proto::LsParams::default())?);
         self.prune(&terminals, at);
         for t in &terminals {
             if !lock(&self.terminals).contains_key(&t.name) {
@@ -185,11 +177,10 @@ impl Hub {
                     Vec::new()
                 }
                 Ok(_) => live.chat.ended(now(), 0, "The agent stopped.".to_owned()),
-                Err(e) if e.no_such_terminal() => {
-                    live.chat
-                        .ended(now(), 0, "The agent is gone (shed restarted).".to_owned())
-                }
-                Err(e) if e.no_link() => Vec::new(),
+                Err(e) if e.code() == Some(shed_proto::ErrorCode::NoSuchTerminal) => live
+                    .chat
+                    .ended(now(), 0, "The agent is gone (shed restarted).".to_owned()),
+                Err(e) if e.code() == Some(shed_proto::ErrorCode::NoLink) => Vec::new(),
                 Err(e) => return Err(e),
             };
             if let Err(e) = live.publish(self, changes) {

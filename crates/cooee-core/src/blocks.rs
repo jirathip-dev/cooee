@@ -1,10 +1,10 @@
+use crate::shed_proto::ApprovalOption;
 use blocks::{
     Block, Card, CardKind, Choice, ChoiceOption, Fallback, Fields, Island, Other, Run, Secret,
     Text, TextStyle,
 };
 use serde::{Serialize, Serializer};
 use serde_json::Value;
-use shed_proto::ApprovalOption;
 
 use crate::chat::{Body, Item};
 

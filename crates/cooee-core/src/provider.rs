@@ -10,11 +10,13 @@ use serde::Deserialize;
 use serde_json::Value as Json;
 use toml::{Table, Value};
 
+use shed_catalog::Catalog;
+
 use crate::{
-    Shed, Spec,
+    Calls as _, Shed, Spec,
     action::{Action, Call, Kind},
     providers::REGISTRY,
-    shed::Record,
+    shed_proto,
 };
 
 /// What cooee wants of a persona session: the same for every provider.
@@ -143,22 +145,6 @@ pub trait Provider: Send + Sync + fmt::Debug {
     }
 }
 
-impl dyn Provider + '_ {
-    /// The words that start its agent on `effort` (empty: its own default); `None` when it offers no such pick.
-    #[must_use]
-    pub fn picks(&self, effort: &str) -> Option<Vec<String>> {
-        if effort.is_empty() {
-            return Some(Vec::new());
-        }
-        let s = self.spec();
-        let words = s.effort.iter().map(|w| w.replace("{}", effort));
-        s.efforts
-            .iter()
-            .any(|o| o == effort)
-            .then(|| words.collect())
-    }
-}
-
 /// A spec with no registered behaviour.
 #[derive(Debug)]
 pub struct Plain(pub Spec);
@@ -173,10 +159,8 @@ impl Provider for Plain {
 pub struct Entry {
     /// The name a spec's `base` (else its `name`) picks it by.
     pub name: &'static str,
-    /// Its spec where neither shed's record nor `[[providers]]` sets a field.
+    /// Its spec where `[[providers]]` sets no field.
     pub defaults: fn() -> Spec,
-    /// The fields of its defaults that are cooee's own choice, kept over shed's record.
-    pub keep: &'static [&'static str],
     /// Its behaviour over a spec.
     pub build: fn(Spec) -> Arc<dyn Provider>,
 }
@@ -189,14 +173,21 @@ macro_rules! registry {
 }
 pub(crate) use registry;
 
-/// The built providers, in config (else registry) order.
+/// The built providers, in config (else registry) order, and shed's records of their agents.
 #[derive(Debug, Clone, Default)]
-pub struct Providers(Vec<Arc<dyn Provider>>);
+pub struct Providers {
+    built: Vec<Arc<dyn Provider>>,
+    catalog: Catalog,
+}
 
 impl Providers {
-    /// Each spec built by the entry its `base`, else its `name`, names; else [`Plain`].
+    /// Each spec built by the entry its `base`, else its `name`, names; else [`Plain`]; over the built-in records.
     #[must_use]
     pub fn new(specs: &[Spec]) -> Self {
+        Self::with(specs, Catalog::built_in())
+    }
+
+    fn with(specs: &[Spec], catalog: Catalog) -> Self {
         let build = |s: &Spec| -> Arc<dyn Provider> {
             let name = s.base.as_deref().unwrap_or(&s.name);
             match REGISTRY.iter().find(|e| e.name == name) {
@@ -204,22 +195,26 @@ impl Providers {
                 None => Arc::new(Plain(s.clone())),
             }
         };
-        Self(specs.iter().map(build).collect())
+        Self {
+            built: specs.iter().map(build).collect(),
+            catalog,
+        }
     }
 
     /// Every provider, in order.
     pub fn iter(&self) -> impl Iterator<Item = &Arc<dyn Provider>> {
-        self.0.iter()
+        self.built.iter()
     }
 
-    /// Every provider: the registered defaults under shed's records, under `rows` by name (see [`specs`]).
+    /// Every provider over shed's records (built-in ones when shed can't be asked or rows are empty), by [`specs`].
     #[must_use]
     pub fn load(rows: Option<&[Table]>, shed: &Shed) -> Self {
-        let records = match rows {
-            Some([]) => Vec::new(),
-            _ => shed.records().unwrap_or_default(),
+        let served = match rows {
+            Some([]) => None,
+            _ => shed.agents().ok(),
         };
-        Self::new(&specs(rows, &records).unwrap_or_default())
+        let catalog = served.map_or_else(Catalog::built_in, |a| Catalog::served(&a));
+        Self::with(&specs(rows, &catalog).unwrap_or_default(), catalog)
     }
 
     /// The provider named `name`.
@@ -240,40 +235,33 @@ impl Providers {
     pub fn for_agent(&self, agent: &str) -> Option<&Arc<dyn Provider>> {
         self.iter().find(|p| p.spec().agent == agent)
     }
+
+    /// shed's record of ACP agent `agent`: its login, status, install and efforts.
+    #[must_use]
+    pub fn record(&self, agent: &str) -> Option<&shed_proto::Provider> {
+        self.catalog.by_id(agent)
+    }
 }
 
-/// The providers: each registered one's defaults with shed's record of its agent over them field by field (a record
-/// with no provider adds one named for its program), and with `[[providers]]` set, its rows instead, each over the
-/// provider of its name.
-///
-/// # Errors
-/// A row that names no registered `base`, or that leaves a spec incomplete or with a field it doesn't know.
-pub fn specs(rows: Option<&[Table]>, records: &[Record]) -> Result<Vec<Spec>, String> {
-    let mut known: Vec<(&[&str], Table)> = REGISTRY
+/// # Errors `String` for a row naming no registered `base`, or leaving a spec incomplete or with an unknown field.
+pub fn specs(rows: Option<&[Table]>, catalog: &Catalog) -> Result<Vec<Spec>, String> {
+    let mut known: Vec<Table> = REGISTRY
         .iter()
-        .filter_map(|e| Some((e.keep, Table::try_from((e.defaults)()).ok()?)))
+        .filter_map(|e| Table::try_from((e.defaults)()).ok())
         .collect();
     let field = |t: &Table, k: &str| t.get(k).and_then(Value::as_str).map(str::to_owned);
-    for r in records {
-        let mut facts = facts(r);
-        match known
-            .iter_mut()
-            .find(|(_, t)| field(t, "agent").as_ref() == Some(&r.id))
-        {
-            Some((keep, t)) => {
-                facts.retain(|k, _| !keep.contains(&k));
-                t.extend(facts);
-            }
-            None if facts.contains_key("login") && facts.contains_key("status") => {
-                let name = if r.agent.is_empty() { &r.id } else { &r.agent };
-                facts.insert("name".into(), name.as_str().into());
-                facts.insert("agent".into(), r.id.as_str().into());
-                known.push((&[], facts));
-            }
-            None => {}
+    for r in catalog.iter().map(|e| &e.provider) {
+        let known_agent = known
+            .iter()
+            .any(|t| field(t, "agent").as_ref() == Some(&r.id));
+        if !known_agent && r.login.is_some() && r.status.is_some() {
+            let name = if r.agent.is_empty() { &r.id } else { &r.agent };
+            let mut t = Table::new();
+            t.insert("name".into(), name.as_str().into());
+            t.insert("agent".into(), r.id.as_str().into());
+            known.push(t);
         }
     }
-    let known: Vec<Table> = known.into_iter().map(|(_, t)| t).collect();
     let Some(rows) = rows else {
         return finish(known);
     };
@@ -289,7 +277,9 @@ pub fn specs(rows: Option<&[Table]>, records: &[Record]) -> Result<Vec<Spec>, St
     finish(rows.iter().map(over).collect())
 }
 
-const RETIRED: [&str; 3] = ["home", "logout", "usage"];
+const RETIRED: [&str; 8] = [
+    "home", "logout", "usage", "login", "status", "install", "efforts", "effort",
+];
 
 fn finish(picked: Vec<Table>) -> Result<Vec<Spec>, String> {
     let specs = picked
@@ -310,27 +300,6 @@ fn finish(picked: Vec<Table>) -> Result<Vec<Spec>, String> {
         )),
         None => Ok(specs),
     }
-}
-
-fn facts(r: &Record) -> Table {
-    let mut t = Table::new();
-    for (k, line) in [("login", &r.login), ("status", &r.status)] {
-        if let Some(line) = line {
-            t.insert(k.into(), line.split_whitespace().collect::<Vec<_>>().into());
-        }
-    }
-    if !r.efforts.is_empty() {
-        t.insert("efforts".into(), r.efforts.clone().into());
-    }
-    if !r.effort_args.is_empty() {
-        let words: Vec<String> = r
-            .effort_args
-            .iter()
-            .map(|w| w.replace("{effort}", "{}"))
-            .collect();
-        t.insert("effort".into(), words.into());
-    }
-    t
 }
 
 /// Every registered provider's defaults, in registry order.

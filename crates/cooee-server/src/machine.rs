@@ -7,9 +7,9 @@
 use std::{collections::BTreeSet, fs, path::Path};
 
 use cooee_core::{
-    Config, Provider, Providers, Shed,
+    Calls as _, Config, Providers, Shed,
     agents::{self, Agent},
-    shed_proto::LinkState,
+    shed_proto::{LinkState, Provider},
 };
 
 const PROBE: f64 = 30.0;
@@ -27,7 +27,7 @@ struct Ctx {
 impl Ctx {
     fn new(config: &Config) -> Self {
         let data = config.data_dir().unwrap_or_default();
-        let shed = Shed::new(config.shed.clone(), config.shed_dir.clone());
+        let shed = Shed::new(config.shed_dir.as_deref());
         Self {
             providers: Providers::load(config.providers.as_deref(), &shed),
             shed,
@@ -42,7 +42,7 @@ impl Ctx {
     }
 
     fn check(&self, machine: &str, yes: bool) -> Vec<Line> {
-        let link = match self.shed.link(machine) {
+        let link = match self.shed.links().map(|mut l| l.remove(machine)) {
             Ok(Some(l)) if l.state == LinkState::Up => Ok(()),
             Ok(Some(l)) => Err(format!(
                 "{} since {}{}",
@@ -64,12 +64,13 @@ impl Ctx {
 
     fn persona(&self, machine: &str, p: &Agent, yes: bool) -> Vec<Line> {
         let mut out = Vec::new();
-        match self.providers.for_agent(&p.agent) {
-            Some(provider) => {
-                out.push(self.cli(machine, provider.as_ref()));
-                out.push(self.signed_in(machine, provider.as_ref()));
+        let provider = self.providers.for_agent(&p.agent);
+        match (provider, self.providers.record(&p.agent)) {
+            (Some(provider), Some(record)) => {
+                out.push(self.cli(machine, record));
+                out.push(self.signed_in(machine, &provider.spec().name, record));
             }
-            None => out.push((false, format!("no provider signs in agent {:?}", p.agent))),
+            _ => out.push((false, format!("no provider signs in agent {:?}", p.agent))),
         }
         if !matches!(p.folder.as_str(), "" | "scratch") {
             out.push(self.folder(machine, &p.folder, yes));
@@ -82,8 +83,9 @@ impl Ctx {
             .collect()
     }
 
-    fn cli(&self, machine: &str, provider: &dyn Provider) -> Line {
-        let bin = provider.spec().login.first().map_or("", String::as_str);
+    fn cli(&self, machine: &str, record: &Provider) -> Line {
+        let login = record.login.as_deref().unwrap_or_default();
+        let bin = login.split_whitespace().next().unwrap_or_default();
         match self.ran(
             machine,
             &["sh", "-c", r#"command -v "$1""#, "sh", bin],
@@ -92,24 +94,23 @@ impl Ctx {
             Ok(true) => (true, format!("{bin} installed")),
             Ok(false) => (
                 false,
-                format!("{bin} not installed\n     fix: {}", provider.spec().install),
+                format!(
+                    "{bin} not installed\n     fix: {}",
+                    record.install.as_deref().unwrap_or_default()
+                ),
             ),
             Err(e) => (false, format!("{bin}: {e}")),
         }
     }
 
-    fn signed_in(&self, machine: &str, provider: &dyn Provider) -> Line {
-        let spec = provider.spec();
-        let cmd: Vec<&str> = spec.status.iter().map(String::as_str).collect();
-        let what = format!("{} account default signed in", spec.name);
-        match self.ran(machine, &cmd, PROBE) {
+    fn signed_in(&self, machine: &str, name: &str, record: &Provider) -> Line {
+        let status = record.status.as_deref().unwrap_or("false");
+        let what = format!("{name} account default signed in");
+        match self.ran(machine, &["sh", "-c", status], PROBE) {
             Ok(true) => (true, what),
             Ok(false) => (
                 false,
-                format!(
-                    "{what}: no\n     fix: sign in to {} on {machine}",
-                    spec.name
-                ),
+                format!("{what}: no\n     fix: sign in to {name} on {machine}"),
             ),
             Err(e) => (false, format!("{what}: {e}")),
         }

@@ -1,5 +1,4 @@
 use std::{
-    collections::BTreeMap,
     sync::{
         Mutex,
         atomic::{AtomicBool, Ordering},
@@ -8,7 +7,7 @@ use std::{
 };
 
 use cooee_core::{
-    Body, Change, Queued, ShedError, Streamed, Workflow,
+    Body, Calls as _, Change, Queued, ShedError, Streamed, Workflow,
     shed_proto::{self, Event},
 };
 use serde_json::json;
@@ -37,23 +36,27 @@ impl Hub {
         loop {
             let stream = self
                 .reattach()
-                .and_then(|since| self.shed.events(BTreeMap::new(), last.or(since)));
+                .and_then(|since| self.shed.events(last.or(since)));
             match stream {
                 Ok(events) => {
                     self.shed_seen(None);
                     said.clear();
                     for item in events {
                         match item {
-                            Streamed::Event(event) => {
+                            Streamed::Item(event) => {
                                 last = Some(event.seq);
-                                self.apply(*event);
+                                self.apply(event);
                             }
-                            Streamed::Reset(seq) => {
+                            Streamed::Reset(seq) | Streamed::Lagged(seq) => {
                                 last = Some(seq);
                                 if let Err(e) = self.reattach() {
                                     cooee_core::note!("cooee: {e}");
                                     break;
                                 }
+                            }
+                            Streamed::Quiet => {}
+                            Streamed::Skipped(line) => {
+                                cooee_core::note!("cooee: dropped a shed event: {line}");
                             }
                         }
                     }

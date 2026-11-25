@@ -7,7 +7,7 @@ use std::{
 };
 
 use cooee_core::{
-    Provider, Providers, Shed, Spec,
+    Calls as _, Provider, Providers, Shed, Spec,
     shed_proto::{Account, AccountAdd},
 };
 

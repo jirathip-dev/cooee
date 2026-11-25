@@ -14,7 +14,7 @@ pub use crate::store::{
     FORMAT, Kind, Member, Message, Queued, Reason, Role, RoomTurn, Store, StoreError, Thread,
     Workflow,
 };
-pub use shed_proto;
+pub use shed_client::{Calls, proto as shed_proto};
 
 pub(crate) fn toml_text(v: &serde_json::Value) -> String {
     let mut out = String::new();

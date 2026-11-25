@@ -1,8 +1,9 @@
 use std::{
-    collections::BTreeMap,
     sync::{Arc, mpsc::Receiver},
     thread,
 };
+
+use cooee_core::Calls as _;
 
 use super::{Hub, SERVED_EVERY, TICK, now};
 
@@ -46,7 +47,8 @@ impl Hub {
                 ticker.watch(now());
                 ticker.unload(now());
                 let at = now();
-                if let Ok(terminals) = ticker.shed.ls(BTreeMap::new()) {
+                if let Ok(terminals) = ticker.shed.ls(&cooee_core::shed_proto::LsParams::default())
+                {
                     ticker.prune(&terminals, at);
                 }
             }

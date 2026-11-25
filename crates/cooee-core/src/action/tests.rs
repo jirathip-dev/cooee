@@ -53,7 +53,7 @@ fn row(agent: &str, updates: &[Update]) -> crate::Body {
     let read = |c: &Call| providers.action(agent, c);
     let mut chat = crate::Chat::default();
     for (seq, (title, kind, at, raw)) in (1..).zip(updates) {
-        let event = shed_proto::EventKind::ToolCall {
+        let event = crate::shed_proto::EventKind::ToolCall {
             id: "t1".into(),
             title: (*title).into(),
             status: if seq == updates.len() {
