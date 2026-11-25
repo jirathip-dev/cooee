@@ -1,0 +1,149 @@
+/* #716 design: today's native views beside what blocks' SwiftUI kinds (BlocksView after #620) draw from #714's
+   screens. 1 CSS px = 1 pt. Colours are cooee's Modern light palette (apple/Sources/CooeeUI/Theme.swift), the one
+   the app hands BlocksUI; sizes are blocks' own (BlocksUI Scale, Token and each Kind/*.swift). */
+:root{
+  --bg:#f5efda;--card:#ebe2c4;--edge:#cbbd90;--line:#e0d6b4;--fg:#29251a;--mute:#5c573f;--lead:#6b3410;--link:#1f639b;
+  --g:#2a6d1c;--a:#7a5f00;--r:#b81d3c;--c:#1c6e70;--glass:rgba(255,255,255,.62);
+  --sky:linear-gradient(160deg,#e2d6ba 0%,#f2ebd5 45%,#f4eedb 70%,#e1e2cf 100%);
+  font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,sans-serif;color:var(--fg);
+}
+*{box-sizing:border-box}
+body{margin:0;background:#fbf8ee;-webkit-font-smoothing:antialiased}
+.mono{font-family:ui-monospace,"SF Mono",Menlo,monospace}
+
+/* The page around the frames */
+.pg{max-width:1360px;margin:0 auto;padding:32px 0 48px}
+.pg>header h1{margin:0 0 6px;font-size:28px}
+.pg>header p{margin:0 0 4px;color:var(--mute);font-size:15px;max-width:900px;line-height:1.4}
+.pg>header nav{margin-top:10px;font-size:13px}.pg>header nav a{color:var(--link);margin-right:14px}
+.cap{margin:28px 0 10px;font-size:13px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--mute)}
+.cap b{color:var(--fg)}
+.duo{display:flex;gap:40px;align-items:flex-start;justify-content:center}
+.phone-only{display:none}
+@media (max-width:999px){
+  .pg{padding:20px 16px 32px}.pg>header h1{font-size:22px}
+  .mac-only{display:none}.phone-only{display:block}
+  .duo{flex-direction:column;gap:0}
+}
+.shot{display:block;border-radius:22px;box-shadow:0 1px 0 var(--edge),0 10px 30px rgba(60,45,10,.12)}
+.mac-only .shot{width:1280px;margin:0 auto;border-radius:12px}
+.phone-only .shot{width:100%;border-radius:36px}
+
+/* The differences */
+ol.diffs{list-style:none;margin:24px 0 0;padding:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 40px}
+@media (max-width:999px){ol.diffs{grid-template-columns:1fr}}
+ol.diffs li{display:grid;grid-template-columns:24px 1fr;gap:10px;font-size:15px;line-height:1.4;padding:10px 0;border-top:1px solid var(--line)}
+ol.diffs li b{font-weight:600}
+ol.diffs li small{display:block;color:var(--mute);font-size:13px;margin-top:2px}
+ol.diffs li.gap{color:var(--r)}ol.diffs li.gap small{color:var(--r)}
+.n{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;
+  background:#d2246c;color:#fff;font:700 13px/1 -apple-system,system-ui,sans-serif;font-style:normal;flex:none}
+.mk{position:relative}.bar.mk>.n.at{top:4px;right:4px}.mk.code>.n.at{right:34px}.mk>.n.at{position:absolute;top:-9px;right:-9px;z-index:3;box-shadow:0 0 0 2px #fff}
+
+/* The iPhone: the app's sky, its status bar, its own bar; blocks draw under it with BlocksView.inset (16) */
+.ph{width:402px;border-radius:44px;overflow:hidden;background:var(--sky);box-shadow:0 1px 0 var(--edge),0 10px 30px rgba(60,45,10,.12);position:relative}
+@media (max-width:999px){.ph{width:100%;border-radius:36px;margin-top:0}}
+.sb{height:54px;display:flex;align-items:center;justify-content:space-between;padding:0 30px 0 34px;font:600 17px/1 -apple-system,system-ui,sans-serif}
+.sb i{width:124px;height:36px;border-radius:20px;background:#000}
+.sb span:last-child{font-size:13px;letter-spacing:1px}
+.home{height:34px;display:flex;align-items:center;justify-content:center}.home::after{content:"";width:140px;height:5px;border-radius:3px;background:var(--fg)}
+.bar{display:flex;align-items:center;gap:10px;padding:6px 16px 10px;border-bottom:1px solid rgba(203,189,144,.5)}
+.bar .t{flex:1;min-width:0;text-align:center}.bar .t b{display:block;font-size:17px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bar .t span{font-size:13px;color:var(--mute)}
+.rb{width:44px;height:44px;border-radius:50%;background:var(--glass);box-shadow:inset 0 0 0 1px rgba(255,255,255,.8),0 2px 8px rgba(60,45,10,.1);
+  display:flex;align-items:center;justify-content:center;font-size:22px;color:var(--fg);flex:none}
+.av{width:44px;height:44px;border-radius:50%;background:#8a6d10;color:#fff;font:600 20px/44px -apple-system,system-ui,sans-serif;text-align:center;box-shadow:0 0 0 3px rgba(255,255,255,.7);flex:none}
+.body{padding:16px}
+.ph .body.chat{padding-bottom:6px}
+
+/* The Mac window */
+.mw{width:1280px;height:820px;border-radius:12px;overflow:hidden;background:var(--sky);display:flex;box-shadow:0 1px 0 var(--edge),0 14px 40px rgba(60,45,10,.16);margin:0 auto}
+.mw.small{width:640px;height:640px;flex-direction:column;margin:0}
+.side{width:360px;flex:none;border-right:1px solid rgba(203,189,144,.6);background:rgba(235,226,196,.35);display:flex;flex-direction:column;overflow:hidden}
+.lights{display:flex;gap:8px;padding:14px 16px 0}.lights i{width:12px;height:12px;border-radius:50%;background:#ee5e57}
+.lights i:nth-child(2){background:#f5bd4f}.lights i:nth-child(3){background:#61c454}
+.side .top{display:flex;align-items:center;gap:10px;padding:10px 16px 6px}.side .top b{flex:1;text-align:center;font-size:17px}
+.side .top .sp{width:44px}
+.side .body{overflow:hidden}
+.main{flex:1;display:flex;flex-direction:column;min-width:0}
+.main .bar{padding:12px 16px}
+.main .body{flex:1;display:flex;flex-direction:column;justify-content:flex-end;overflow:hidden}
+.mw.small .body{flex:1;display:flex;flex-direction:column;align-items:center}
+.mw.small .body>*{width:440px}
+
+/* ---- blocks' kinds, as BlocksUI draws them ---- */
+.stack{display:flex;flex-direction:column;gap:14px}
+.sec{display:flex;flex-direction:column;gap:6px}
+.sec>h4{margin:0;font-size:12px;font-weight:600;color:var(--mute);text-transform:uppercase;letter-spacing:.02em}
+.sec>.foot{font-size:12px;color:var(--mute)}
+.sec>.stack{gap:8px}
+.sec.log>.stack{gap:14px}
+
+/* row: 15 medium title, 12 subtitle toned, badge pill, value, chevron; 44 tall, 12 inset */
+.row{display:flex;align-items:center;gap:10px;min-height:44px;padding:0 12px}
+.row .tx{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.row .tx b{font-size:15px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.row .tx span{font-size:12px;color:var(--mute);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.row.link .tx b{color:var(--link)}
+.row .val{font-size:13px;color:var(--mute)}
+.row .chev{font-size:11px;font-weight:700;color:var(--mute)}
+.row.sel{background:rgba(31,99,155,.12);border-radius:10px}
+.sec:not(.log)>.stack:has(>.row){gap:0}
+.pill{font-size:11px;font-weight:700;padding:3px 8px;border-radius:99px}
+
+/* message: 28 avatar (4 radius), head name 15 bold + role word 12 + time 12; owner text behind a 3 pt bar */
+.msg{display:flex;gap:8px;align-items:flex-start}
+.msg .ava{width:28px;height:28px;border-radius:4px;background:var(--line);color:var(--fg);font:700 14px/28px -apple-system,system-ui,sans-serif;text-align:center;flex:none}
+.msg.owner .ava{background:var(--fg);color:var(--bg)}
+.msg.cont .ava{visibility:hidden;height:1px}
+.msg .col{flex:1;min-width:0;display:flex;flex-direction:column;gap:6px}
+.msg .hd{display:flex;align-items:baseline;gap:6px}
+.msg .hd b{font-size:15px}.msg .hd span{font-size:12px;color:var(--mute)}
+.msg .own{border-left:3px solid var(--fg);padding-left:12px}
+.msg .col>.stack{gap:8px}
+.file{display:flex;align-items:center;gap:8px;min-height:44px;padding:0 8px;border:1px solid var(--edge)}
+.file b{font-size:12px;color:var(--mute)}.file span{font-size:14px}
+
+/* prose: 15 regular, 12 between parts, max 720; code 13 mono on the background, lang 11 top right */
+.prose{display:flex;flex-direction:column;gap:12px;max-width:720px;font-size:15px;line-height:1.35}
+.prose p{margin:0}
+.prose code.in{font-family:ui-monospace,Menlo,monospace;font-size:14px}
+.prose pre{position:relative;margin:0;padding:12px;background:var(--bg);font:13px/1.4 ui-monospace,"SF Mono",Menlo,monospace;white-space:pre-wrap}
+.prose pre i.lang{position:absolute;top:6px;right:6px;font:11px -apple-system;color:var(--mute);font-style:normal}
+.caret{font-weight:400}
+
+/* tool: card fill, 1 pt edge, square; glyph, mono bold name, 12 summary; 44 tall, 12 inset; chevron when a body */
+.tool{display:flex;align-items:center;gap:8px;min-height:44px;padding:0 12px;background:var(--card);border:1px solid var(--edge)}
+.tool .gl{font-size:14px;font-weight:700}
+.tool b{font:700 14px ui-monospace,"SF Mono",Menlo,monospace;flex:none}
+.tool span{flex:1;min-width:0;font-size:12px;color:var(--mute);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tool .chev{font-size:14px;font-weight:700;color:var(--mute)}
+.tool.running .gl{color:var(--g)}.tool.failed{box-shadow:inset 3px 0 0 var(--r)}.tool.failed .gl,.tool.failed span{color:var(--r)}
+
+/* composer: one glass surface (22), 12 inset; working strip, queued lines, field + labelled button, chips */
+.comp{display:flex;flex-direction:column;gap:8px;padding:12px;border-radius:22px;background:var(--glass);box-shadow:inset 0 0 0 1px rgba(255,255,255,.8),0 2px 10px rgba(60,45,10,.08)}
+.comp .work{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--mute)}
+.comp .work i{width:6px;height:6px;border-radius:50%;background:var(--fg)}
+.comp .work .sp{flex:1}.comp .work a{color:var(--r)}
+.comp .qd{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--mute)}
+.comp .qd span:first-child{flex:1;font-size:14px;color:var(--fg)}.comp .qd .now{color:var(--fg)}.comp .qd .rm{color:var(--r)}
+.comp .in{display:flex;gap:8px;align-items:flex-end}
+.comp .fld{flex:1;padding:9px 12px;background:var(--bg);font-size:15px;color:var(--mute)}
+.btn{display:flex;align-items:center;justify-content:center;height:36px;padding:0 14px;border-radius:99px;font-size:15px;color:var(--link);background:rgba(31,99,155,.12)}
+.btn.pri{background:var(--link);color:#fff;font-weight:600}
+.btn.bad{color:var(--r);background:rgba(184,29,60,.12)}
+.comp .btn{flex:none}
+.chips{display:flex;gap:8px}
+.chips span{height:28px;padding:0 10px;display:flex;align-items:center;font-size:13px;border:1px solid var(--edge)}
+
+/* form: a field is a row (14 label, value right) on the half-clear background, radius 10; typing opens an alert */
+.form{display:flex;flex-direction:column;gap:8px}
+.fr{display:flex;align-items:center;min-height:38px;padding:0 12px;border-radius:10px;background:rgba(245,239,218,.5);font-size:14px}
+.fr span{flex:1;color:var(--mute)}.fr b{font-weight:400;color:var(--mute)}
+
+/* stat: a glass tile, 12 label, 22 semibold value */
+.stat{padding:12px;border-radius:16px;background:var(--glass);box-shadow:inset 0 0 0 1px rgba(255,255,255,.8)}
+.stat span{display:block;font-size:12px;color:var(--mute)}.stat b{display:block;font-size:22px;font-weight:600;margin-top:4px}
+
+/* the device-key island: cooee draws it natively (its passkey button today) */
+.isl{display:flex;align-items:center;justify-content:center;gap:8px;height:36px;border-radius:99px;font-size:15px;color:var(--link);background:rgba(31,99,155,.12)}

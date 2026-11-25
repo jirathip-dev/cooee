@@ -1,0 +1,15 @@
+{
+  "type": "screen", "id": "pair", "title": "Pair with mini",
+  "blocks": [
+    { "type": "section", "id": "by-code", "header": "With a code", "footer": "cooee pair on mini prints it, as does Settings on a paired device.", "_n": 2, "blocks": [
+      { "type": "form", "id": "code", "action": "code", "submit": "Pair", "fields": [{ "type": "text", "name": "code", "label": "Six-digit code", "placeholder": "482 913", "keyboard": "number" }] }
+    ] },
+    { "type": "section", "id": "by-word", "header": "Without a code", "footer": "A paired device approves you after checking a word.", "_n": 3, "blocks": [
+      { "type": "button", "id": "ask", "label": "Ask to pair", "action": "ask" }
+    ] },
+    { "type": "section", "id": "by-key", "header": "Paired here before", "_n": 4, "blocks": [
+      { "type": "island", "name": "device-key", "id": "key", "props": { "mode": "signin", "send": "signin", "values": {} }, "events": ["signin"],
+        "fallback": { "title": "This app keeps no device key", "subtitle": "Pair with the code instead" } }
+    ] }
+  ]
+}

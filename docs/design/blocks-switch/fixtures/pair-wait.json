@@ -1,0 +1,8 @@
+{
+  "type": "screen", "id": "pair", "title": "Pair with mini",
+  "blocks": [
+    { "type": "stat", "id": "word", "label": "Check that mini shows the same word", "value": "maple", "_n": 5 },
+    { "type": "row", "id": "left", "title": "Waiting for approval", "subtitle": { "text": "a paired device, or cooee pair approve on mini", "tone": "working" }, "value": "4:51 left", "_n": 6 },
+    { "type": "button", "id": "cancel", "label": "Cancel", "action": "cancel", "style": "destructive", "_n": 7 }
+  ]
+}

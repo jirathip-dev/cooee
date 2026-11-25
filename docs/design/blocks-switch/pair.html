@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>#716 pairing: BlocksView against today</title><link rel="stylesheet" href="bs.css"><script src="bv.js"></script></head>
+<body><main class="pg">
+<header><h1>Pairing, drawn from <span class="mono">/screens/pair</span></h1>
+<p>Finding the server stays native: Scan QR, Nearby and Enter address are today's screens, unchanged, and a scanned QR still pairs at once. Once the app knows the server, it draws that server's pair screen, as the caller's state: no cookie (<span class="mono">fixtures/pair-start.json</span>) and waiting for a yes (<span class="mono">fixtures/pair-wait.json</span>).</p>
+<nav><a href="chat.html">Chat</a><a href="sessions.html">Sessions</a><a href="pair.html">Pairing</a></nav></header>
+<section class="phone-only"><div class="cap"><b>Today</b> · native “Approve on your Mac”, iPhone</div><img class="shot" src="today/pair-waiting-light.png" alt="today's waiting screen">
+<div class="cap"><b>After</b> · BlocksView, iPhone: no cookie</div><div id="p1"></div>
+<div class="cap"><b>After</b> · BlocksView, iPhone: waiting</div><div id="p2"></div></section>
+<section class="mac-only"><div class="cap"><b>Today</b> · native Connect, Mac (stays: it finds the server)</div><img class="shot" src="today/mac-connect.png" alt="today's Mac connect" style="width:960px">
+<div class="cap"><b>After</b> · BlocksView, Mac: after Pair on “mini”, then waiting</div><div class="duo"><div id="m1"></div><div id="m2"></div></div></section>
+<div id="d"></div>
+</main>
+<script>
+(async () => {
+  const f = await load(['pair-start', 'pair-wait']);
+  document.getElementById('p1').innerHTML = phone(chatBar(f['pair-start'].title, 'mini · 192.0.2.20', 1), draw(f['pair-start']));
+  document.getElementById('p2').innerHTML = phone(chatBar(f['pair-wait'].title, 'mini · 192.0.2.20'), draw(f['pair-wait']));
+  document.getElementById('m1').innerHTML = macSmall(f['pair-start'].title, draw(f['pair-start']));
+  document.getElementById('m2').innerHTML = macSmall(f['pair-wait'].title, draw(f['pair-wait'], false));
+  document.getElementById('d').innerHTML = diffs([
+    [1, "The server's own screen comes after the server is found", "Nearby's Pair and Enter address's Connect open /screens/pair from that server, under cooee's bar with the server's name. The welcome, the scanner and the Mac's Connect window stay native."],
+    [2, "Pair with a six-digit code: new on iPhone and Mac", "A form row; tapping it opens a system alert to type the code (blocks' text field), then Pair. Today only the QR carries the code."],
+    [3, "Ask to pair is a plain button", "Today Nearby's Pair asks at once; now Ask to pair on the server's screen does, and its words say what happens."],
+    [4, "Sign in with this device's key", "The device-key island, drawn by cooee: the passkey sign-in it does today, now offered here. An app without it would show “This app keeps no device key”."],
+    [5, "The check word is a glass tile, not a hero", "“maple” at 22 pt semibold mono with its line above it; today a 64 pt word in a glass card under a big Mac icon and “Approve on your Mac”."],
+    [6, "Waiting is one row with its countdown", "“Waiting for approval · 4:51 left”, the ways to approve under it in teal; the server rebuilds it each second, so a yes shows at once."],
+    [7, "Cancel sits under the row, not at the screen's foot", "A red tinted capsule, blocks' destructive button; today a full-width red bar at the bottom."],
+  ]);
+  document.body.dataset.ready = 1;
+})();
+</script></body></html>

@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>#716 chat: BlocksView against today</title><link rel="stylesheet" href="bs.css"><script src="bv.js"></script></head>
+<body><main class="pg">
+<header><h1>Chat, drawn from <span class="mono">/screens/chat/k3</span></h1>
+<p>The same turn as today's <span class="mono">chat-streaming</span> frame, built as #714's chat screen (<span class="mono">fixtures/chat.json</span>) and drawn by blocks' own kinds in cooee's Modern palette. cooee keeps its bar; everything under it is BlocksView.</p>
+<nav><a href="chat.html">Chat</a><a href="sessions.html">Sessions</a><a href="pair.html">Pairing</a></nav></header>
+<section class="phone-only"><div class="cap"><b>Today</b> · native ChatScreen, iPhone</div><img class="shot" src="today/chat-streaming-light.png" alt="today's chat">
+<div class="cap"><b>After</b> · BlocksView, iPhone</div><div id="p"></div></section>
+<section class="mac-only"><div class="cap"><b>Today</b> · native ChatScreen, Mac</div><img class="shot" src="today/mac-window-light.png" alt="today's Mac chat">
+<div class="cap"><b>After</b> · BlocksView, Mac (the sidebar is the sessions screen, see Sessions)</div><div id="m"></div></section>
+<div id="d"></div>
+</main>
+<script>
+(async () => {
+  const f = await load(['chat', 'sessions']);
+  document.getElementById('p').innerHTML = phone(chatBar(f.chat.title, 'Coder', 1), draw(f.chat), 'chat');
+  document.getElementById('m').innerHTML = mac(draw(f.sessions, false), macBar(f.chat.title, 'Coder', 1), draw(f.chat));
+  document.getElementById('d').innerHTML = diffs([
+    [1, "The bar shows the chat's title, not the persona", "The persona's round glyph and the “Codex · gpt-5.5” picker leave the bar; the model and effort move to the composer's chips (8). ⋯ holds the screen's actions: Archive, Close."],
+    [2, "Every message has a head: avatar, name, role word, time", "A 28 pt square tile with the name's initial (a persona's glyph is no image the server can send), then “Coder agent 9:40”. Today the agent's text has no head at all. A run from the same speaker shows the head once."],
+    [3, "Your message sits on the left behind a dark bar", "No right-aligned tinted bubble: “You owner 9:40”, the text indented behind a 3 pt bar in the text colour."],
+    [4, "A file is a bordered line under the message", "“txt  e2e-log”, 44 pt tall, full width; today a small chip above the bubble. Images are 176 × 88 thumbnails in a row."],
+    [5, "One square row per tool call, no grouping", "✓ / ↻ / ✕, the action word in bold mono, the subject in grey; tap opens the whole subject. Today's rounded row with its icon and “3 tools ›” fold is gone, so a long turn is taller."],
+    [6, "Code has no Copy button and no rounded frame", "A flat panel on the background colour, the language small in its top right; the text is selectable instead."],
+    [7, "Text still coming sits below the turn's tool rows", "#714 stores a turn's text once, last in its message, so “Run … ↻” now shows above the streaming line. The caret is ▍ and blinks (still with Reduce Motion)."],
+    [8, "Working, queued and the picks live in one glass composer", "“● working 42s … stop” replaces the walking-horse pill and its red Stop; a queued line has “send now · edit · remove” (edit is new); the send button reads “queue” while a turn runs; “model gpt-5.5” and “effort high” are square chips under the field."],
+    ['!', "Not drawn by blocks' SwiftUI composer: attach (+), the mic, a picked file", "blocks' web and React composers attach files; its SwiftUI one does not yet. The AC “attachments behave as today” needs that in blocks first (open question 1). Dictation stays on the keyboard.", true],
+    ['M', "Mac: text wraps at 720 pt and lowercase words", "blocks caps prose at 720 pt, so a wide window keeps a reading column; the composer's words are blocks' own lowercase (“send now”, “stop”)."],
+  ]);
+  document.body.dataset.ready = 1;
+})();
+</script></body></html>

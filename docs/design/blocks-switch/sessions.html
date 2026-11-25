@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>#716 sessions: BlocksView against today</title><link rel="stylesheet" href="bs.css"><script src="bv.js"></script></head>
+<body><main class="pg">
+<header><h1>Sessions, drawn from <span class="mono">/screens/sessions</span></h1>
+<p>Today's home chats, built as #714's sessions screen (<span class="mono">fixtures/sessions.json</span>): one section per persona in its order, a row per open chat, a New chat row last. cooee keeps its bar (the owner's avatar opens the menu); everything under it is BlocksView.</p>
+<nav><a href="chat.html">Chat</a><a href="sessions.html">Sessions</a><a href="pair.html">Pairing</a></nav></header>
+<section class="phone-only"><div class="cap"><b>Today</b> · native home, iPhone</div><img class="shot" src="today/home-light.png" alt="today's home">
+<div class="cap"><b>After</b> · BlocksView, iPhone</div><div id="p"></div></section>
+<section class="mac-only"><div class="cap"><b>Today</b> · native sidebar, Mac</div><img class="shot" src="today/mac-window-light.png" alt="today's Mac sidebar">
+<div class="cap"><b>After</b> · BlocksView, Mac (the detail is the chat screen, see Chat)</div><div id="m"></div></section>
+<div id="d"></div>
+</main>
+<script>
+(async () => {
+  const f = await load(['chat', 'sessions']);
+  const plain = JSON.parse(JSON.stringify(f.sessions)); plain.blocks.forEach(s => s.blocks.forEach(r => delete r._sel));
+  document.getElementById('p').innerHTML = phone(homeBar(7), draw(plain));
+  document.getElementById('m').innerHTML = mac(draw(f.sessions), macBar(f.chat.title, 'Coder'), draw(f.chat, false));
+  document.getElementById('d').innerHTML = diffs([
+    [1, "Chats are grouped by persona, not one list by time", "A section per persona, in the personas' order; inside it the chats as the server lists them. A busy chat no longer jumps to the top of the screen."],
+    [2, "A row is the chat's title and its last line: no avatar, no persona name", "The section header names the persona once; rows are 44 pt with a › on the right, so twice as many fit as today's 68 pt rows."],
+    [3, "No time on a row", "“now”, “12m”, “2d” are gone: #714's row carries title, last line and badge only (open question 3)."],
+    [4, "A chat's state tones its last line", "Working: the line in teal, where today it has a ••• mark. The text is the same."],
+    [5, "Needs you is a red line, the unseen count a tinted pill", "Today a red ! before the line and a solid blue circle; now the whole line is red and the count is blue on a pale blue capsule."],
+    [6, "New chat is a row at the end of each section", "It opens /screens/chat?persona=…, a chat with only a composer. The + in the bar goes."],
+    [7, "The personas row is gone", "Tapping a persona today opens its chats or its page; with sections, its chats are already grouped, and its page stays in the menu (open question 2)."],
+  ]);
+  document.body.dataset.ready = 1;
+})();
+</script></body></html>

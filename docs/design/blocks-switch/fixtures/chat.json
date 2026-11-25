@@ -1,0 +1,30 @@
+{
+  "type": "screen", "id": "chat", "title": "Flaky e2e on the look sheet",
+  "actions": [{ "label": "Archive", "action": "archive" }, { "label": "Close", "action": "close" }],
+  "blocks": [
+    { "type": "section", "id": "log", "blocks": [
+      { "type": "message", "id": "m41", "role": "owner", "name": "You", "time": "9:40", "_n": 3,
+        "blocks": [{ "type": "prose", "id": "i41", "parts": [{ "type": "para", "spans": [{ "text": "The look sheet e2e fails one run in five. Find out why and fix it." }] }] }],
+        "files": [{ "name": "e2e-log.txt", "tap": { "url": "/threads/k3/files/e2e-log.txt" }, "_n": 4 }] },
+      { "type": "message", "id": "m42", "role": "agent", "name": "Coder", "time": "9:40", "_n": 2, "blocks": [
+        { "type": "tool", "id": "i42", "name": "Read", "summary": "web/ts/look.ts", "state": "done", "body": "web/ts/look.ts", "_n": 5 },
+        { "type": "tool", "id": "i43", "name": "Read", "summary": "web/ts/sheet.ts", "state": "done", "body": "web/ts/sheet.ts" },
+        { "type": "tool", "id": "i44", "name": "Search", "summary": "toHaveCSS in web/e2e", "state": "done", "body": "toHaveCSS in web/e2e" },
+        { "type": "prose", "id": "m42-text", "parts": [
+          { "type": "para", "spans": [{ "text": "It's a race: the sheet animates in for " }, { "text": "240 ms", "bold": true }, { "text": ", and the test taps " }, { "text": "Scene", "italic": true }, { "text": " before the button is hit-testable." }] },
+          { "type": "code", "lang": "ts", "_n": 6, "text": "await page.getByRole('dialog').waitFor();\nawait expect(sheet).toHaveCSS('opacity', '1');\nawait page.getByText('Scene').click();" }
+        ] }
+      ] },
+      { "type": "message", "id": "m46", "role": "agent", "name": "Coder", "time": "9:41", "blocks": [
+        { "type": "tool", "id": "i46", "name": "Edit", "summary": "web/e2e/look.spec.ts", "state": "done", "body": "web/e2e/look.spec.ts" },
+        { "type": "tool", "id": "i47", "name": "Run", "summary": "npx playwright test look --repeat-each 50", "state": "running", "body": "npx playwright test look --repeat-each 50" },
+        { "type": "prose", "id": "m46-text", "streaming": true, "_n": 7, "parts": [{ "type": "para", "spans": [{ "text": "I'm adding the wait and running it 50 times" }] }] }
+      ] }
+    ] },
+    { "type": "composer", "id": "say", "action": "send", "placeholder": "Message Coder", "_n": 8,
+      "acts": { "queue": "queue", "steer": "steer", "unqueue": "unqueue", "stop": "stop", "model": "send" },
+      "chips": [{ "name": "model", "cur": "gpt-5.5", "all": ["gpt-5.5", "gpt-5.5-mini"] }, { "name": "effort", "cur": "high", "all": ["low", "medium", "high"] }],
+      "queued": [{ "q": 1, "text": "Then open the PR against staging" }],
+      "working": { "since": "-42s" } }
+  ]
+}

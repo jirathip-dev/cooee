@@ -1,0 +1,27 @@
+{
+  "type": "screen", "id": "sessions", "title": "Chats",
+  "blocks": [
+    { "type": "section", "id": "p-chief", "header": "Chief", "_n": 1, "blocks": [
+      { "type": "row", "id": "t-renewals", "title": "Renewals", "_n": 3, "subtitle": "Every Monday at 09:00 I'll check the renewals", "tap": { "open": "/screens/chat/renewals" }, "swipe": [{ "label": "Archive", "action": "archive" }] },
+      { "type": "row", "id": "t-q3", "title": "Q3 board deck", "subtitle": "Slides 4–9 are in deck/q3.key.", "tap": { "open": "/screens/chat/q3" } },
+      { "type": "row", "id": "new-chief", "title": "New chat", "style": "link", "tap": { "open": "/screens/chat?persona=chief" }, "_n": 6 }
+    ] },
+    { "type": "section", "id": "p-coder", "header": "Coder", "blocks": [
+      { "type": "row", "id": "t-k3", "title": "Flaky e2e on the look sheet", "subtitle": { "text": "$ cargo test -p cooee-core", "tone": "working" }, "badge": { "text": "2", "tone": "info" }, "tap": { "open": "/screens/chat/k3" }, "_n": 4, "_sel": true },
+      { "type": "row", "id": "t-bonjour", "title": "Bonjour discovery spike", "subtitle": "_cooee._tcp answers on the LAN.", "tap": { "open": "/screens/chat/bonjour" }, "_n": 2 },
+      { "type": "row", "id": "new-coder", "title": "New chat", "style": "link", "tap": { "open": "/screens/chat?persona=coder" } }
+    ] },
+    { "type": "section", "id": "p-researcher", "header": "Researcher", "blocks": [
+      { "type": "row", "id": "t-kestrel", "title": "Kestrel filings", "subtitle": { "text": "Allow fetch sec.gov/cgi-bin/browse-edgar?", "tone": "bad" }, "badge": { "text": "1", "tone": "info" }, "tap": { "open": "/screens/chat/kestrel" }, "_n": 5 },
+      { "type": "row", "id": "new-researcher", "title": "New chat", "style": "link", "tap": { "open": "/screens/chat?persona=researcher" } }
+    ] },
+    { "type": "section", "id": "p-account", "header": "Account Manager", "blocks": [
+      { "type": "row", "id": "t-birch", "title": "Birch & Co pricing", "subtitle": "Due this month: Acme 14 Nov, Birch 21 Nov", "tap": { "open": "/screens/chat/birch" } },
+      { "type": "row", "id": "new-account", "title": "New chat", "style": "link", "tap": { "open": "/screens/chat?persona=account" } }
+    ] },
+    { "type": "section", "id": "p-conductor", "header": "Conductor", "blocks": [
+      { "type": "row", "id": "t-queue", "title": "cooee queue", "subtitle": { "text": "#124 design is up for your review", "tone": "working" }, "badge": { "text": "3", "tone": "info" }, "tap": { "open": "/screens/chat/queue" } },
+      { "type": "row", "id": "new-conductor", "title": "New chat", "style": "link", "tap": { "open": "/screens/chat?persona=conductor" } }
+    ] }
+  ]
+}
