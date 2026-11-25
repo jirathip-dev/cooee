@@ -59,3 +59,7 @@ Each agent's loop starts at its own phase, taken from its id, so a row of agents
 - An agent's character is `cast[hash(id) % cast.count]` until the persona sheet picks one. Its loop phase comes from the same hash.
 - Every place a persona figure shows today (`FigureView` `.avatar` / `.ascii` / `.sprite`) draws the character instead. Terminal's `LaneState.figure(frame:)` two-frame strings become per-character timed frame lists.
 - Snapshot tests cover each state in each look at its key pose, the same frames as the "each state" rows here.
+
+## Snapshots (impl)
+
+`frames/characters-<look>.png` are CooeeUITests' `CharacterFrames`: the eight characters (columns: kookaburra, galah, rosella, magpie, fairy-wren, cockatoo, lorikeet, frogmouth) in each state's key pose (rows: idle, working, done, needs you, failed), in Modern dark, Modern light and Terminal. `COOEE_RECORD=1` rewrites them.
