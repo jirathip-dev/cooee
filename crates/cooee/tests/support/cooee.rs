@@ -2,6 +2,7 @@ use std::{
     env, fs,
     io::{BufRead, BufReader, Read, Write},
     net::TcpStream,
+    os::unix::process::CommandExt,
     path::{Path, PathBuf},
     process::{Child, Command, Stdio},
     thread,
@@ -119,6 +120,7 @@ shed_dir = {}
             .envs(env.iter().copied())
             .stdout(Stdio::piped())
             .stderr(fs::File::create(dir.join("cooee.err")).unwrap())
+            .process_group(0)
             .spawn()
             .unwrap();
         let mut line = String::new();
@@ -286,21 +288,24 @@ shed_dir = {}
 
 impl Drop for Cooee {
     fn drop(&mut self) {
-        if !matches!(self.child.try_wait(), Ok(None)) {
-            return;
-        }
-        Command::new("kill")
-            .args(["-TERM", &self.child.id().to_string()])
-            .status()
-            .ok();
-        for _ in 0..100 {
-            if !matches!(self.child.try_wait(), Ok(None)) {
+        let group = format!("-{}", self.child.id());
+        let signal = |sig: &str| {
+            Command::new("kill")
+                .args([sig, "--", &group])
+                .stderr(Stdio::null())
+                .status()
+                .is_ok_and(|s| s.success())
+        };
+        signal("-TERM");
+        for i in 0..200 {
+            if i == 100 {
+                signal("-KILL");
+            }
+            if !matches!(self.child.try_wait(), Ok(None)) && !signal("-0") {
                 return;
             }
             thread::sleep(Duration::from_millis(50));
         }
-        self.child.kill().ok();
-        self.child.wait().ok();
     }
 }
 

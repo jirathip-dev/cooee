@@ -273,7 +273,7 @@ async fn fill(cx: &Cx, id: String) -> Result<Block, HubError> {
         };
         let mut routines: Vec<Value> = all.iter().filter(mine).map(routine).collect();
         routines.extend(beat);
-        let places = agents::places(config.as_deref(), &data, &p.id).map_err(refused)?;
+        let places = agents::places(config.as_deref(), &data, &p.id, &[]).map_err(refused)?;
         let places = header_places(&places);
         let home = config.as_deref().and_then(|c| agents::home(c, &p.id).ok());
         let notes = home.as_ref().map(memory::notes).unwrap_or_default();

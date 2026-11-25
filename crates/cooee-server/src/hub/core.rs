@@ -171,6 +171,7 @@ impl Hub {
             areas,
         });
         hub.start_workers(next, unsent);
+        hub.keep_me();
         Ok(hub)
     }
 

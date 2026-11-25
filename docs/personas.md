@@ -42,6 +42,12 @@ each session's brief lists them `name: description` by name, never a body, which
 tool. Clearing the notes leaves the skills; deleting the persona removes both. An unknown id or a broken rule is a
 400 with the reason. `blocks` (#776) names the catalog its replies may use blocks from, `show` or `ask`
 ([show.md](show.md)); none: text only. A save that leaves it out keeps it; an empty one clears it.
+`[purpose]` (#802: `role`, at most 40 characters, and `use`, one line of at most 120) is what Chief's `route` lists it
+for, and `mode` how: `delegate` (the default; Chief asks and sums up) or `hand-off` (its own chat opens for the owner).
+A plugin's profile may carry both; its mode is `hand-off` unless set. A save that leaves either out keeps it.
+`profile = "<plugin>/<name>"` stands the persona on a plugin's profile: each start takes the profile's instructions,
+agent, settings, variables, MCP picks, policy, fallback and mode, the folder keeping its name, avatar, character,
+notes, skills, pin, model and machine, and the plugin is attached. A profile not served stops the start with why.
 
 | Call | Body | Answer |
 |---|---|---|

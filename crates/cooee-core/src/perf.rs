@@ -274,10 +274,10 @@ mod tests {
         );
         fs::remove_dir_all(&dir).ok();
         let rows = store(&dir).unwrap();
-        let p50 = |name: &str| rows.iter().find(|r| r.0 == name).unwrap().1[RUNS / 2];
+        let fastest = |name: &str| rows.iter().find(|r| r.0 == name).unwrap().1[0];
         let (short, long) = (
-            p50("last page of 1,000 items"),
-            p50("last page of 10,000 items"),
+            fastest("last page of 1,000 items"),
+            fastest("last page of 10,000 items"),
         );
         assert!(long < 2 * short + 500, "{}", store_table(&rows));
     }

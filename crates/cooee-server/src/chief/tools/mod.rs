@@ -5,6 +5,7 @@ mod machine;
 mod mcp_server;
 mod persona;
 mod room;
+mod route;
 mod routine;
 mod stored_secret;
 
@@ -18,6 +19,7 @@ pub(crate) const ALL: &[Tool] = &[
     mcp_server::TOOL,
     persona::TOOL,
     room::TOOL,
+    route::TOOL,
     routine::TOOL,
     stored_secret::TOOL,
 ];
