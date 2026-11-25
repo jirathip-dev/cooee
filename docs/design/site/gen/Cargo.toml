@@ -1,0 +1,17 @@
+[package]
+name = "cooee-site-design"
+description = "Design preview for #826: the cooee site page, written by blocks' static site renderer"
+version = "0.0.0"
+edition = "2024"
+publish = false
+
+[workspace]
+
+[[bin]]
+name = "cooee-site-design"
+path = "src/main.rs"
+
+[dependencies]
+blocks = { git = "https://github.com/jirathip-dev/blocks", rev = "cf626c63789e8bb46b164ee37b3ca4d589527f11" }
+swag = { git = "https://github.com/jirathip-dev/swag", rev = "bf9a2c6b5cb837db1e844e4746fe166cbaa06b91" }
+serde_json = { version = "=1.0.154", features = ["preserve_order"] }

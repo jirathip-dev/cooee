@@ -1,0 +1,35 @@
+main>.scr{border:0;box-shadow:none;padding:0;background:none;overflow:visible}
+main>.scr>.tabh{display:none}
+main{max-width:1200px;margin:0 auto;padding:0 20px 48px}
+[data-id=top]{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px 24px;padding:12px 0}
+[data-id=switcher]{display:flex;flex-direction:column;gap:6px}
+[data-id=switcher] .sec{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:0}
+[data-id=switcher] .sh{margin:0 6px 0 0;min-width:64px}
+[data-id^=sch-] button,[data-id=styles] button{font-size:.8rem;padding:4px 10px;min-height:0}
+[data-id=hero]{display:grid;grid-template-columns:1fr;gap:24px;align-items:center;padding:32px 20px;margin:0 -20px;border-radius:var(--radius);background:var(--bg) bottom/cover no-repeat}
+[data-id=hero-copy] .b-hero__title{font-size:clamp(2.6rem,7vw,4.5rem);margin:0}
+[data-id=hero-copy] .b-hero__subtitle{font-size:1.25rem;max-width:28ch}
+.scr{border:1px solid var(--edge);border-radius:var(--radius);background:var(--bg) bottom/cover no-repeat;padding:12px;box-shadow:0 8px 28px var(--scrim);overflow:hidden}
+.scr .scr{box-shadow:none}
+[data-id=features]>div,[data-id=features]{display:grid;grid-template-columns:1fr;gap:24px}
+[data-id=features]>.sh,[data-id=themes]>.sh,[data-id=install]>.sh{grid-column:1/-1;font-size:1.6rem;margin:40px 0 0}
+[data-id^=f-]>.sh{font-size:1.1rem;margin:0}
+[data-id^=f-] [data-block=text]{color:var(--mute);margin:4px 0 12px}
+[data-id=tiles]{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+[data-id^=s-]>.sh{margin:0 0 6px}
+[data-id^=s-] .scr{min-height:180px;color:var(--fg)}
+[data-id=install]{display:grid;grid-template-columns:1fr;gap:16px}
+[data-id=foot]{margin-top:48px;color:var(--mute);text-align:center}
+cooee-terminal{display:block}
+.term{margin:0;padding:12px;border-radius:calc(var(--radius) / 2);background:#0d1117;color:#e6edf3;font:13px/1.45 ui-monospace,SFMono-Regular,Menlo,monospace;overflow-x:auto}
+.term .cur{display:inline-block;width:.6em;height:1.1em;vertical-align:text-bottom;background:#e6edf3}
+@media (min-width:760px){
+  [data-id=features]{grid-template-columns:1fr 1fr}
+  [data-id=tiles]{grid-template-columns:repeat(3,1fr)}
+  [data-id=install]{grid-template-columns:1fr 1fr}
+}
+@media (min-width:1100px){
+  [data-id=hero]{grid-template-columns:1fr 1.1fr;padding:56px 40px;margin:0;min-height:520px}
+  [data-id=features]{grid-template-columns:repeat(3,1fr)}
+}
+.scr .cmp{position:static}
