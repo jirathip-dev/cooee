@@ -9,7 +9,8 @@ the Mac.
    `main`) starts `.github/workflows/apple-testflight.yml`: one job for iOS and one for macOS, in the same run.
 2. The job reads the App Store Connect API key from the `testflight` environment. Only `main` may deploy from that
    environment, so pull request and fork runs can't read the key, and the job itself refuses any other branch.
-3. It registers the bundle id `com.jirathip.cooee` if it is missing, finds the app and the latest TestFlight build of the job's
+3. It registers the bundle id `com.jirathip.cooee` if it is missing; the iOS job also registers every id the iOS app signs
+   (`com.jirathip.cooee.widgets`, the widgets) and turns on App Groups for each. It finds the app and the latest TestFlight build of the job's
    platform, and sets the build number to that build + 1. Nobody bumps it by hand.
 4. `xcodebuild archive` builds unsigned (no Development certificate is ever made); `-exportArchive` signs with
    `-allowProvisioningUpdates` and the API key. Apple manages the distribution certificate and profiles (cloud
@@ -30,6 +31,10 @@ the Mac.
 - The same record holds the Mac app: on the app's page in App Store Connect, **Add Platform** (in the sidebar) →
   **macOS** → Add. It keeps the bundle id **com.jirathip.cooee**; there is no second record. Until then the macOS job's
   upload fails, and the iOS one still uploads. Adding a platform can't be undone once both platforms pass App Review.
+- The App Group the app shares with its widgets (#821): in Certificates, Identifiers & Profiles → Identifiers, add
+  an App Group `group.com.jirathip.cooee` once, then on `com.jirathip.cooee` and `com.jirathip.cooee.widgets` tick
+  **App Groups** → Configure → `group.com.jirathip.cooee` → Save. The API can't create or assign an App Group; until
+  this is done the iOS export fails with "No profiles" and says so.
 - In the app's TestFlight tab, add yourself to an internal testing group, then install the TestFlight app on the phone.
 
 ## Installing on the Mac
