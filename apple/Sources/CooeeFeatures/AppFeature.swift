@@ -72,10 +72,6 @@ public struct AppFeature: Sendable {
     public init() {}
 
     public var body: some ReducerOf<Self> {
-        app.onChange(of: Self.showing) { _, thread in show(thread) }
-    }
-
-    @ReducerBuilder<State, Action> private var app: some ReducerOf<Self> {
         Scope(state: \.menu, action: \.menu) { MenuFeature() }
         Scope(state: \.layout, action: \.layout) { LayoutFeature() }
         Scope(state: \.terminal, action: \.terminal) { TerminalFeature() }
@@ -146,6 +142,7 @@ public struct AppFeature: Sendable {
         .ifLet(\.newRoom, action: \.newRoom) { NewRoomFeature() }
         .ifLet(\.$persona, action: \.persona) { PersonaFeature() }
         .ifLet(\.report, action: \.report) { ReportFeature() }
+        .onChange(of: Self.showing) { _, thread in show(thread) }
         remembered
         areas
     }
