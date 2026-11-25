@@ -58,13 +58,19 @@ reason = "#664: Chief never answers a card, its own or another persona's"
 pattern = ".send"
 paths = ["crates/cooee-server/src/chief.rs", "crates/cooee-server/src/chief/**"]
 except = []
-reason = "#664: Chief never sends as another persona: ask_persona is the only way to one, and it sends as Chief"
+reason = "#664, #802: Chief never sends as another persona: route is the only way to an agent, and the hub sends"
 
 [[ban]]
 pattern = ".queue("
 paths = ["crates/cooee-server/src/chief.rs", "crates/cooee-server/src/chief/**"]
 except = []
 reason = "#664: a Chief tool never queues a message into a thread; the hub tells Chief its own card's outcome"
+
+[[ban]]
+pattern = "plugin::"
+paths = ["crates/cooee-server/src/chief.rs", "crates/cooee-server/src/chief/**", "crates/cooee-server/src/hub/route.rs", "crates/cooee-server/src/hub/ask.rs"]
+except = []
+reason = "#802: routing never fetches or forwards a plugin's blocks: they go from the plugin's screen through cooee's pass-through to the client"
 
 [[ban]]
 pattern = "thread::sleep"

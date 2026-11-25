@@ -13,13 +13,16 @@ use std::{
 
 use serde::{Deserialize, Serialize};
 
-use crate::{
-    browser, disk, mcp, memory, plugins, profiles::Profile, provider::Builtin, routines::Schedule,
-    skills,
-};
+use crate::{browser, disk, mcp, memory, plugins, profiles::Profile, provider::Builtin, skills};
 
+/// What an agent is for and how Chief may use it (#802), and the table Chief routes by.
+pub mod route;
 /// A persona's replies as blocks (#776): its catalog, its brief, the one reader and the check of an answer.
 pub mod show;
+/// A persona's consolidation and heartbeat runs.
+pub mod upkeep;
+
+pub use upkeep::{BEAT, CONSOLIDATE, CONSOLIDATION, Consolidate, HEARTBEAT, Heartbeat};
 
 const DROVER: &str = "drover";
 
@@ -67,87 +70,6 @@ pub const PLAIN: &str =
 /// What a call's utterance (#663) is told before it, unless its persona's `spoken` says otherwise.
 pub const SPOKEN: &str = "Spoken reply: answer in one to three short plain sentences, no markdown, lists or code; \
 it is read aloud.";
-
-/// The consolidation routine's mark on its runs (#219), and its watermark's key with the persona's id after a `-`.
-pub const CONSOLIDATE: &str = "consolidate";
-
-/// What a consolidation run is told (#219).
-pub const CONSOLIDATION: &str = "This is your consolidation run. Call history once with no arguments: it gives what \
-was said since the last run. Then propose changes to your notes with remember, preferring to replace or merge a note \
-over adding one, and a skill with skill propose only for something done at least twice. Each is a card the owner \
-approves; nothing is saved before. Stop after this one pass.";
-
-/// A persona's consolidation routine (#219): off unless `on`; at `when` (default nightly, 03:00) a run reads its new
-/// history and proposes notes and skills, on `model` and `effort` (empty: its provider's cheapest).
-#[derive(Debug, Clone, Default, PartialEq, Eq, Deserialize, Serialize)]
-#[serde(default, deny_unknown_fields)]
-pub struct Consolidate {
-    /// Switched on.
-    pub on: bool,
-    /// A 5-field cron in the Mac's local time (none: nightly).
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub when: Option<Schedule>,
-    /// Its model (empty: the provider's cheapest).
-    #[serde(skip_serializing_if = "String::is_empty")]
-    pub model: String,
-    /// Its effort (empty: the provider's lowest).
-    #[serde(skip_serializing_if = "String::is_empty")]
-    pub effort: String,
-}
-
-impl Consolidate {
-    /// When it runs: `when`, else nightly at 03:00.
-    #[must_use]
-    pub fn schedule(&self) -> Option<Schedule> {
-        self.when
-            .clone()
-            .or_else(|| Schedule::parse("0 3 * * *").ok())
-    }
-}
-
-/// The heartbeat's mark on its runs (#498), and its watermark's key with the persona's id after a `-`.
-pub const HEARTBEAT: &str = "heartbeat";
-
-/// What a heartbeat run is told (#498), its notify rule and what is new after it.
-pub const BEAT: &str = "This is your heartbeat run. Below is what is new in your threads and your routines' results \
-since the last run; look at your attached connectors too where they bear on it. Decide in this one pass and act on \
-nothing: anything you would do waits on a card the owner answers. End your reply with one last line: NOTIFY when \
-what you found matches the owner's notify rule, else SILENT: and why.";
-
-/// A persona's heartbeat (#498): off unless `on`; at `when` (default hourly) a run looks at what is new and stays
-/// silent unless its notify rule matches, on `model` and `effort` (empty: its provider's cheapest), at most `per_day`
-/// runs a local day (none: [`Heartbeat::PER_DAY`]).
-#[derive(Debug, Clone, Default, PartialEq, Eq, Deserialize, Serialize)]
-#[serde(default, deny_unknown_fields)]
-pub struct Heartbeat {
-    /// Switched on.
-    pub on: bool,
-    /// A 5-field cron in the Mac's local time (none: hourly).
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub when: Option<Schedule>,
-    /// Its model (empty: the provider's cheapest).
-    #[serde(skip_serializing_if = "String::is_empty")]
-    pub model: String,
-    /// Its effort (empty: the provider's lowest).
-    #[serde(skip_serializing_if = "String::is_empty")]
-    pub effort: String,
-    /// At most this many runs a local day.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub per_day: Option<crate::routines::Cap>,
-}
-
-impl Heartbeat {
-    /// The runs a local day when `per_day` is unset.
-    pub const PER_DAY: crate::routines::Cap = crate::routines::Cap(4);
-
-    /// When it runs: `when`, else hourly on the hour.
-    #[must_use]
-    pub fn schedule(&self) -> Option<Schedule> {
-        self.when
-            .clone()
-            .or_else(|| Schedule::parse("0 * * * *").ok())
-    }
-}
 
 /// The owner's notify rule for persona `home` (#498): `notify.md`, trimmed; empty until the owner writes one.
 #[must_use]
@@ -235,6 +157,15 @@ pub struct Agent {
     /// The catalog its replies may use blocks from (#776), one of [`show::NAMES`]; none: text only.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub blocks: Option<String>,
+    /// What it is for (#802); none: Chief's routing tool doesn't list it. A save that leaves it out keeps it.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub purpose: Option<route::Purpose>,
+    /// How Chief reaches it (#802); none: delegate, or hand-off for a plugin's. A save that leaves it out keeps it.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub mode: Option<route::Mode>,
+    /// The plugin's profile `<plugin>/<name>` it stands on (#802): its launch keys and text are the profile's.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub profile: Option<String>,
     /// Its files' [`disk::version`] when read; a save naming an older one is refused (#360), one naming none isn't.
     #[serde(skip_serializing_if = "String::is_empty")]
     pub version: String,
@@ -450,10 +381,13 @@ pub fn list(config: Option<&Path>, data: &Path) -> Vec<Agent> {
         }
     }
     let lock = plugins::read_lock(data).unwrap_or_default();
-    if lock.iter().any(|l| l.name == DROVER) {
-        let orchestrators = out.iter_mut().filter(|a| a.role == Role::Orchestrator);
-        for a in orchestrators.filter(|a| !a.plugins.iter().any(|n| n == DROVER)) {
-            a.plugins.push(DROVER.to_owned());
+    for a in &mut out {
+        let on = a.profile.as_deref().and_then(|p| p.split_once('/'));
+        let by = on.map(|(p, _)| p);
+        let by = by.or((a.role == Role::Orchestrator).then_some(DROVER));
+        let by = by.filter(|p| lock.iter().any(|l| &l.name == p));
+        if let Some(p) = by.filter(|p| !a.plugins.iter().any(|n| n == p)) {
+            a.plugins.push(p.to_owned());
         }
     }
     out.sort_by(|a, b| a.id.cmp(&b.id));
@@ -538,6 +472,29 @@ pub(crate) fn files(a: &Agent) -> [(&'static str, Vec<u8>); 3] {
     ]
 }
 
+fn kept(a: Agent, old: Agent) -> Agent {
+    Agent {
+        account: old.account,
+        settings: old.settings,
+        env: old.env,
+        mcp: old.mcp,
+        sites: old.sites,
+        policy: old.policy,
+        fallback: old.fallback,
+        mail: old.mail,
+        desk: old.desk,
+        consolidate: a.consolidate.or(old.consolidate),
+        heartbeat: a.heartbeat.or(old.heartbeat),
+        spoken: a.spoken.or(old.spoken),
+        blocks: a.blocks.or(old.blocks).filter(|b| !b.is_empty()),
+        purpose: a.purpose.or(old.purpose).filter(|p| !p.role.is_empty()),
+        mode: a.mode.or(old.mode),
+        profile: old.profile,
+        lent: None,
+        ..a
+    }
+}
+
 /// Saves `a`'s folder: a new one (`id` empty) gets an id made from its name, not taken, and no launch keys; an edit
 /// keeps the launch keys, changes only the keys and files that differ, refused [`disk::Stale`] past `a.version`.
 ///
@@ -570,24 +527,9 @@ pub fn save(config: &Path, data: &Path, mut a: Agent) -> io::Result<Agent> {
         style: style(a.role, set.contains_key("style").then_some(old.style)),
         ..old.clone()
     };
-    a = Agent {
-        account: old.account,
-        settings: old.settings,
-        env: old.env,
-        mcp: old.mcp,
-        sites: old.sites,
-        policy: old.policy,
-        fallback: old.fallback,
-        mail: old.mail,
-        desk: old.desk,
-        consolidate: a.consolidate.or(old.consolidate),
-        heartbeat: a.heartbeat.or(old.heartbeat),
-        spoken: a.spoken.or(old.spoken),
-        blocks: a.blocks.or(old.blocks).filter(|b| !b.is_empty()),
-        lent: None,
-        ..a
-    };
-    if old.role == Role::Chief {
+    let chief = old.role == Role::Chief;
+    a = kept(a, old);
+    if chief {
         a.role = Role::Chief;
     } else if a.role == Role::Chief {
         return Err(refused("only cooee's own Chief has that role".to_owned()));
@@ -638,21 +580,33 @@ pub fn remove(config: &Path, id: &str) -> io::Result<()> {
 ///
 /// # Errors
 /// When there is no such agent.
-pub fn places(config: Option<&Path>, data: &Path, id: &str) -> io::Result<Vec<Place>> {
+pub fn places(
+    config: Option<&Path>,
+    data: &Path,
+    id: &str,
+    cards: &[String],
+) -> io::Result<Vec<Place>> {
     let attached = find(config, data, id)?.plugins;
+    let only_cards = cards.iter().filter(|c| !attached.contains(c));
+    let attached = attached.iter().map(|a| (a, false));
+    let attached: Vec<_> = attached.chain(only_cards.map(|c| (c, true))).collect();
     let lock = plugins::read_lock(data).unwrap_or_default();
     let mut out = Vec::new();
-    for l in attached
+    for (l, only_cards) in attached
         .iter()
-        .filter_map(|a| lock.iter().find(|l| &l.name == a))
+        .filter_map(|(a, c)| Some((lock.iter().find(|l| &l.name == *a)?, *c)))
     {
         let places = plugins::manifest(data, l)
             .map(|m| m.places)
             .unwrap_or_default();
+        let shown = |k: &plugins::PlaceKind| {
+            *k == plugins::PlaceKind::ChatCards
+                || (!only_cards && *k != plugins::PlaceKind::MenuRow)
+        };
         out.extend(
             places
                 .into_iter()
-                .filter(|p| p.kind != plugins::PlaceKind::MenuRow)
+                .filter(|p| shown(&p.kind))
                 .map(|p| Place {
                     kind: p.kind,
                     plugin: l.name.clone(),
@@ -672,7 +626,7 @@ impl Agent {
     /// # Errors
     /// What is wrong, for the owner.
     pub fn check(&self) -> Result<(), String> {
-        if self.name.trim().is_empty() || self.agent.is_empty() {
+        if self.name.trim().is_empty() || (self.agent.is_empty() && self.profile.is_none()) {
             return Err("`name` and `agent` are needed".to_owned());
         }
         if self.avatar.as_deref().is_some_and(|a| !avatar(a)) {
@@ -692,6 +646,7 @@ impl Agent {
         {
             return Err(format!("`blocks` isn't one of {}", show::NAMES.join(", ")));
         }
+        self.check_route()?;
         for (k, v) in &self.env {
             let inline = match v.strip_prefix("secret:") {
                 Some(name) => !mcp::var(name),

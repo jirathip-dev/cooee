@@ -152,6 +152,7 @@ pub(crate) fn recipe(
     } else {
         let a = list.iter().find(|a| a.id == id);
         let a = a.ok_or_else(|| refused(format!("no profile {id}")))?;
+        let a = &cooee_core::profiles::onto(a, list).map_err(refused)?;
         if let Some(why) = a.lent.as_ref().and_then(|l| l.hidden.as_ref()) {
             return Err(refused(format!("profile {id} is hidden: {why}")));
         }

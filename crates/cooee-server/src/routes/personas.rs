@@ -152,7 +152,7 @@ async fn persona_put(cx: &Cx, Json(p): Json<Agent>) -> Result<Answer<Agent>> {
 #[route(GET "/personas/{id}/places")]
 async fn places(cx: &Cx) -> Result<Answer<Vec<agents::Place>>> {
     let id = thread_id(cx);
-    on_personas(cx, move |d, c| agents::places(Some(c), d, &id)).await
+    Ok(Answer(blocking(cx, move |hub| hub.places(&id)).await))
 }
 
 #[route(DELETE "/personas/{id}")]

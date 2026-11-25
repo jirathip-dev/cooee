@@ -192,7 +192,11 @@ fn an_agents_launch_keys_are_read_only_and_an_edit_keeps_them() {
     check(&format!(
         "Gruff but kind.\n\nFollow the house rules.\n\n{PLAIN}\n\nhi"
     ));
-    edit["profile"] = json!("coder");
+    edit["profile"] = json!("drover/default");
+    let (status, saved) = s.call("PUT", "/personas/coder", Some(&edit));
+    assert_eq!((status, &saved["profile"]), (200, &Value::Null), "{saved}");
+    assert!(!fs::read_to_string(&file).unwrap().contains("profile"));
+    edit["hooks"] = json!("coder");
     assert_eq!(s.call("PUT", "/personas/coder", Some(&edit)).0, 400);
 
     assert_eq!(s.call("DELETE", "/personas/coder", None).0, 200);

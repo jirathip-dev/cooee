@@ -1,2 +1,6 @@
 name = "Errands"
 agent = "claude-acp"
+
+[purpose]
+role = "Lists and reminders"
+use = "keeping lists, reminders and follow-ups"
