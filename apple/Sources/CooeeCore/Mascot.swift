@@ -29,7 +29,7 @@ public enum Mascot: String, CaseIterable, Sendable, Equatable {
     /// What the persona sheet saves as the persona's `avatar`.
     public var avatar: String { Self.prefix + rawValue }
 
-    public var name: String { rawValue.split(separator: "-").map(\.capitalized).joined(separator: "-") }
+    public var name: String { rawValue.prefix(1).uppercased() + rawValue.dropFirst() }
 
     /// Where in its loop `seed`'s figure starts, 0 to 1, so a row of agents never moves in step.
     public static func phase(_ seed: String) -> Double { Double((Cast.hash(seed) >> 16) % 1000) / 1000 }
