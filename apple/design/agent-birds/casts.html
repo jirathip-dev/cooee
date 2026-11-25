@@ -1,0 +1,41 @@
+<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width">
+<title>#827 Terminal characters and theme casts</title>
+<link rel="stylesheet" href="ab.css"><script src="cast.js"></script><script src="page.js"></script>
+<style>
+.term{background:#0b0f0c;border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:14px;font-family:var(--mono)}
+.term h3{font-family:var(--mono);text-transform:none;letter-spacing:0}
+.tg{display:grid;grid-template-columns:repeat(8,1fr);gap:10px 6px}
+.tg .cell b{font:600 13px/1.2 var(--mono)}
+.tst{display:grid;grid-template-columns:120px repeat(8,1fr);gap:6px 4px;align-items:center}
+.tst .tc{--bx:46px;--fs:12px;justify-self:center}
+.tst .lb{font:600 12px/1.2 var(--mono)}
+.tfr{display:flex;flex-wrap:wrap;gap:4px;align-items:center}
+.tfr .tc{--bx:46px;--fs:12px}.tfr i{font:11px var(--mono);color:var(--mute);font-style:normal;width:34px;text-align:center}
+.tfrs{display:grid;grid-template-columns:120px 1fr;gap:8px;align-items:center}
+.themes{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+.themes .grid{grid-template-columns:repeat(4,1fr)}
+.themes .cell .ch{width:64px;height:64px}
+.ts{display:grid;grid-template-columns:repeat(4,1fr);gap:0}
+.ts .ch{width:100%;max-width:40px;height:auto;aspect-ratio:1;justify-self:center}
+.ts span{grid-column:1/-1;font:600 11px/1 var(--font);color:var(--mute);margin-top:6px}
+@media (max-width:600px){.tg{grid-template-columns:repeat(4,1fr)}.tst{grid-template-columns:repeat(8,1fr);gap:4px 3px}.tst .lb{grid-column:1/-1;margin-top:4px}.tst .tc{--bx:36px;--fs:9.5px}.tfrs{grid-template-columns:1fr}.themes{grid-template-columns:1fr}}
+</style>
+<body><div class="wrap" id="root"></div>
+<script>
+const { KEY, live, tc } = Page, S = Cast.STATES;
+const ms = fr => fr.map(f => f[1]).join(' · ');
+const frames = a => S.map(([s, n]) => { const fr = Cast.asciiFrames(a, s);
+  return `<div class="tfrs"><div class="lb">${n}</div><div class="tfr">${fr.map((f, i) => tc(a, s, '', i) + `<i>${f[1]}</i>`).join('')}</div></div>`; }).join('');
+const theme = (key, title, cast) => `<section class="card"><h2>${title}</h2>
+  <div class="grid live">${cast.map(c => `<div class="cell">${live(c, 'idle')}<b>${c.name}</b></div>`).join('')}</div>
+  <div class="paused">${S.map(([s, n]) => `<div class="ts"><span>${n}</span>${cast.map(c => Cast.svg(c, s, KEY[s])).join('')}</div>`).join('')}</div></section>`;
+root.innerHTML = `<div><h1>Terminal characters and theme casts</h1><p>Terminal keeps its look: each agent gets its own five-column face (brackets, eyes, mouth) in its own scheme colour, and every state is a timed frame loop, not a two-frame flip. Scene themes get a cast of four each, drawn the same way as Modern.</p></div>
+<section class="term"><h3># cast: eight characters, idle (live)</h3>
+<div class="tg">${Cast.ascii.map(a => `<div class="cell">${tc(a, 'idle')}<b style="color:var(--${a.c})">${a.name}</b></div>`).join('')}</div>
+<h3># every character in each state (live)</h3>
+${S.map(([s, n]) => `<div class="tst"><div class="lb">${n}</div>${Cast.ascii.map(a => tc(a, s)).join('')}</div>`).join('')}
+<h3># kook's frames, with each frame's hold in ms</h3>${frames(Cast.ascii[1])}
+<h3># bit's frames</h3>${frames(Cast.ascii[0])}</section>
+<div class="themes">${theme('farm', 'Farm', Cast.themes.farm)}${theme('kitchen', 'Kitchen', Cast.themes.kitchen)}${theme('garden', 'Garden', Cast.themes.garden)}${theme('bush', 'Bush', Cast.themes.bush)}</div>`;
+Page.ready();
+</script>
