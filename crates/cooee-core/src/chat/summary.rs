@@ -83,4 +83,7 @@ pub struct Summary {
     pub asked_by: String,
     /// The routine that started it or sent its last message (#75; empty: none).
     pub routine: String,
+    /// The repo a plugin agent's chat is attached to (#823): a repo, `all` or `none`; empty: not attached.
+    #[serde(skip_serializing_if = "String::is_empty")]
+    pub repo: String,
 }

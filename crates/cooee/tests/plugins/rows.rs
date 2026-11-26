@@ -68,6 +68,22 @@ fn drover() -> Drover {
                         }
                     }
                     "/rows?open=1" => reply(&mut s, json!({ "seq": 1, "more": false, "rows": [] })),
+                    "/cooee/profiles" => reply(
+                        &mut s,
+                        json!({ "profiles": [{ "name": "orchestrator", "label": "Orchestrator", "agent": "fake-acp" }] }),
+                    ),
+                    "/attach" => {
+                        let body: Value = serde_json::from_slice(&body).unwrap();
+                        let mut a: Value = serde_json::from_str(include_str!(
+                            "../fixtures/drover-contract/orchestrator-attach.json"
+                        ))
+                        .unwrap();
+                        a["env"]["DROVER_THREAD"] = body["thread"].clone();
+                        a["settings"] = json!("");
+                        a["brief"] = json!("You are drover's orchestrator.");
+                        log.lock().unwrap().push((path, body));
+                        reply(&mut s, a);
+                    }
                     "/health" => reply(&mut s, json!({})),
                     _ => {
                         let body = serde_json::from_slice(&body).unwrap_or(Value::Null);
@@ -99,7 +115,7 @@ fn install(dir: &Path, port: u16) {
         "name = \"drover\"\nversion = \"0.1.0\"\nattach = \"http://127.0.0.1:{port}\"\n\n\
          [[places]]\ntype = \"chat-cards\"\n\n\
          [permissions]\nplaces = [\"chat-cards\"]\npush = true\nactions = [\"answer\"]\n\n\
-         [threads]\nrows = \"/rows\"\nstream = \"/stream\"\nsaid = \"/thread/{{id}}/said\"\n"
+         [threads]\nrows = \"/rows\"\nstream = \"/stream\"\nsaid = \"/thread/{{id}}/said\"\nattach = \"/attach\"\n"
     );
     fs::write(build.join("cooee-plugin.toml"), manifest).unwrap();
     let lock = json!([{ "name": "drover", "url": "https://example.com/drover", "commit": "c0ffee12345",
@@ -222,4 +238,122 @@ fn a_desk_row_shows_in_the_cards_place_and_leaves_it_once_settled() {
     until("the settled desk row gone", || {
         (cooee.json(cards)["blocks"] == json!([])).then_some(())
     });
+}
+
+fn attached(cooee: &Cooee, repo: &str, adopt: Option<&str>) -> String {
+    let mut new = json!({ "agent": "fake-acp", "profile": "drover/orchestrator", "text": "Plan it",
+                          "random_id": format!("r-{repo}"), "repo": repo });
+    if let Some(old) = adopt {
+        new["adopt"] = json!(old);
+    }
+    let body = until("drover's orchestrator profile served", || {
+        let (code, body) = cooee.post("/threads", &new);
+        (code == 200).then_some(body)
+    });
+    serde_json::from_str::<Value>(&body).unwrap()["id"]
+        .as_str()
+        .unwrap()
+        .to_owned()
+}
+
+fn listed(cooee: &Cooee, repo: &str) -> Vec<Value> {
+    cooee
+        .json(&format!("/threads?repo={repo}"))
+        .as_array()
+        .unwrap()
+        .clone()
+}
+
+#[test]
+fn a_new_chat_with_a_repo_attaches_its_agent_carries_the_thread_and_a_tap_answers_its_ask() {
+    let (_dir, shed, cooee, d) = start("rows-attach");
+    let id = attached(&cooee, "sendmeter", None);
+    assert_eq!(
+        d.posted("/attach"),
+        [json!({ "fleet": "sendmeter", "thread": id })]
+    );
+    let terminal = format!("cooee-{id}");
+    let env = shed.adapter_env_of(&terminal);
+    assert!(
+        env.lines().any(|l| l == format!("DROVER_THREAD={id}")),
+        "{env}"
+    );
+    assert!(env.lines().any(|l| l == "DROVER_PORT=41712"), "{env}");
+    let shown = listed(&cooee, "sendmeter");
+    assert_eq!(shown.len(), 1, "{shown:?}");
+    assert_eq!(
+        (&shown[0]["id"], &shown[0]["repo"]),
+        (&json!(id), &json!("sendmeter"))
+    );
+    assert_eq!(listed(&cooee, "none"), Vec::<Value>::new());
+
+    let mut ask = the_ask();
+    ask["to"] = json!({ "k": "thread", "id": id });
+    d.rows.send(ask).unwrap();
+    let screen = format!("/screens/chat/{id}");
+    until("the ask filed from the chat shows there", || {
+        holds(&cooee.json(&screen), "q2").then_some(())
+    });
+    let tap = json!({ "screen": screen, "block": "q2", "action": "answer", "values": { "choice": "split" } });
+    let (code, body) = cooee.post("/screens/action", &tap);
+    assert_eq!(code, 200, "{body}");
+    assert_eq!(d.posted("/action")[0]["values"]["choice"], "split");
+}
+
+#[test]
+fn a_none_chat_attaches_and_a_desk_row_stays_out_of_it() {
+    let (_dir, shed, cooee, d) = start("rows-none");
+    let id = attached(&cooee, "none", None);
+    assert_eq!(
+        d.posted("/attach"),
+        [json!({ "fleet": "none", "thread": id })]
+    );
+    let env = shed.adapter_env_of(&format!("cooee-{id}"));
+    assert!(
+        env.lines().any(|l| l == format!("DROVER_THREAD={id}")),
+        "{env}"
+    );
+    d.rows.send(the_ask()).unwrap();
+    until("the desk row in the cards place", || {
+        holds(&cooee.json("/p/drover/screens/cards"), "m-6").then_some(())
+    });
+    let items = cooee.json(&format!("/threads/{id}/messages"))["items"].clone();
+    let rows = items
+        .as_array()
+        .unwrap()
+        .iter()
+        .filter(|i| i["kind"] == "row");
+    assert_eq!(rows.count(), 0, "{items}");
+}
+
+#[test]
+fn a_chat_adopting_an_old_thread_takes_its_rows_and_copies_lines_under_its_id() {
+    let (_dir, shed, cooee, d) = start("rows-adopt");
+    let id = attached(&cooee, "all", Some("chat-1"));
+    assert_eq!(
+        d.posted("/attach"),
+        [json!({ "fleet": "all", "thread": "chat-1" })]
+    );
+    let env = shed.adapter_env_of(&format!("cooee-{id}"));
+    assert!(env.lines().any(|l| l == "DROVER_THREAD=chat-1"), "{env}");
+    let mut ask = the_ask();
+    ask["to"] = json!({ "k": "thread", "id": "chat-1" });
+    d.rows.send(ask).unwrap();
+    until("the old thread's row in the adopting chat", || {
+        holds(&cooee.json(&format!("/screens/chat/{id}")), "q2").then_some(())
+    });
+    until("the first line copied under the old id", || {
+        let said = d.posted("/thread/chat-1/said");
+        (said.first().map(|s| s["text"].clone()) == Some(json!("Plan it"))).then_some(())
+    });
+}
+
+#[test]
+fn a_repo_on_a_chat_whose_plugin_attaches_none_is_refused() {
+    let (dir, _shed, cooee, d) = start("rows-no-attach");
+    let new = json!({ "agent": "fake-acp", "folder": dir.join("root/project"), "text": "Plan it",
+                      "random_id": "r1", "repo": "sendmeter" });
+    let (code, body) = cooee.post("/threads", &new);
+    assert_eq!(code, 400, "{body}");
+    assert_eq!(d.posted("/attach"), Vec::<Value>::new());
 }

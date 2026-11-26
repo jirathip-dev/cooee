@@ -1,3 +1,5 @@
+use std::collections::BTreeMap;
+
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
@@ -11,6 +13,36 @@ pub struct Threads {
     pub stream: String,
     /// Where an attached chat's owner lines are copied.
     pub said: String,
+    /// Where a new chat attaches (`POST {fleet, thread}`); empty: its chats don't.
+    pub attach: String,
+}
+
+/// A chat's attachment to its plugin (#823): a repo, `all` or `none`, and the old thread id it adopted.
+#[derive(Debug, Clone, Default, PartialEq, Eq, Deserialize, Serialize)]
+pub struct Attach {
+    /// A repo, `all` or `none`.
+    pub repo: String,
+    /// The plugin's old thread id it carries on; empty: the chat's own id.
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    pub adopt: String,
+}
+
+/// What `attach` answers: the agent's brief, settings file and env; `ok` false with a refusal's `code` and `message`.
+#[derive(Debug, Clone, Default, PartialEq, Eq, Deserialize)]
+#[serde(default)]
+pub struct Attached {
+    /// It attached.
+    pub ok: bool,
+    /// The refusal's code, `OK` when attached.
+    pub code: String,
+    /// One line on what happened.
+    pub message: String,
+    /// Told to the agent ahead of the first message.
+    pub brief: String,
+    /// The agent's settings file; empty: none.
+    pub settings: String,
+    /// Set in the agent's environment.
+    pub env: BTreeMap<String, String>,
 }
 
 /// A page of a plugin's rows: `seq` is its newest.

@@ -116,7 +116,11 @@ impl Logins {
     }
 }
 
-fn with_settings(meta: Option<Value>, key: &str, settings: &Path) -> Result<Value, String> {
+/// `meta` with the settings file (or folder) `settings` merged in at provider key `key` (dotted).
+///
+/// # Errors
+/// When the file holds no settings object.
+pub fn with_settings(meta: Option<Value>, key: &str, settings: &Path) -> Result<Value, String> {
     let file = if settings.is_dir() {
         settings.join("settings.json")
     } else {

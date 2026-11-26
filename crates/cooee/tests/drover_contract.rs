@@ -5,7 +5,7 @@
 
 use std::{fs, path::Path};
 
-use cooee_core::plugins::rows::{Row, Rows, To};
+use cooee_core::plugins::rows::{Attached, Row, Rows, To};
 use serde_json::Value;
 
 const DIR: &str = concat!(
@@ -82,4 +82,15 @@ fn a_row_missing_a_key_cooee_reads_fails_to_read() {
         serde_json::from_value::<Row>(cut).is_ok(),
         "a key cooee doesn't read may go"
     );
+}
+
+#[test]
+fn the_attach_sample_reads_as_cooees_attach_answer() {
+    let a: Attached = serde_json::from_value(sample("orchestrator-attach.json")).unwrap();
+    assert!(a.ok, "{a:?}");
+    assert_eq!(
+        a.env.get("DROVER_THREAD").map(String::as_str),
+        Some("chat-1")
+    );
+    assert!(!a.brief.is_empty() && !a.settings.is_empty(), "{a:?}");
 }

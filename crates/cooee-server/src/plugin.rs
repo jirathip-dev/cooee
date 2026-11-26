@@ -6,7 +6,7 @@ use std::{
     time::{Duration, Instant},
 };
 
-use cooee_core::{Plugin, Profile};
+use cooee_core::{Plugin, Profile, plugins::rows::Attached};
 use futures_util::{Stream, stream};
 use tokio::io::{AsyncBufReadExt, AsyncReadExt};
 
@@ -423,6 +423,26 @@ pub fn started(p: &Plugin, thread: &str, profile: &str) -> io::Result<()> {
         200..=299 => Ok(()),
         code => Err(io::Error::other(format!("the backend answered {code}"))),
     }
+}
+
+/// Attaches chat `thread` to `repo` at `path` on `p`'s backend (#823): its answer, a refusal's included.
+///
+/// # Errors
+/// When the backend can't be reached or its answer isn't one.
+pub fn attach(p: &Plugin, path: &str, repo: &str, thread: &str) -> io::Result<Attached> {
+    let body = serde_json::json!({ "fleet": repo, "thread": thread }).to_string();
+    let json = [("Content-Type", "application/json")];
+    let reply = call(
+        p,
+        "POST",
+        path,
+        &json,
+        body.as_bytes(),
+        Duration::from_secs(10),
+    )?;
+    let status = reply.status;
+    serde_json::from_slice(&reply.bytes()?)
+        .map_err(|e| io::Error::other(format!("its answer ({status}): {e}")))
 }
 
 #[cfg(test)]

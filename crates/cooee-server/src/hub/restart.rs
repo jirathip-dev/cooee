@@ -40,6 +40,7 @@ impl Hub {
         }
         self.shed.hello()?;
         self.reachable(&machine)?;
+        let recipe = &self.attached(id, &agent, recipe)?;
         let (launch, labels) = self.restart_launch(id, recipe)?;
         let cmd = self.adapter(&agent);
         let stamp = now();

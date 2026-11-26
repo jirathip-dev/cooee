@@ -236,7 +236,7 @@ impl Hub {
             live.pending = None;
         }
         live.publish(self, vec![Change::Item(item.clone())])?;
-        self.copy_said(&live.meta.profile, &live.meta.id, &item);
+        self.copy_said(&live.meta.profile, live.meta.plugin_thread(), &item);
         Ok(item)
     }
 
