@@ -142,14 +142,14 @@ internal struct AvatarEditor: View {
         } else {
             Menu {
                 Button("Choose photo…", systemImage: "photo", action: photo)
-                Picker("Initials and colour", selection: $avatar) {
-                    ForEach(Tint.allCases, id: \.self) { tint in
-                        Label(tint.rawValue.capitalized, systemImage: "circle.fill")
-                            .foregroundStyle(look.palette.tint(tint)).tag(Optional(tint.avatar))
+                Picker("Character", selection: $avatar) {
+                    ForEach(Mascot.allCases, id: \.self) { mascot in
+                        Text(look.figures == .ascii ? mascot.face.text(.idle) : mascot.name).tag(
+                            Optional(mascot.avatar))
                     }
                 }
                 .pickerStyle(.inline)
-                if avatar != nil { Button("Default avatar", role: .destructive) { avatar = nil } }
+                if avatar != nil { Button("Default character", role: .destructive) { avatar = nil } }
             } label: {
                 label
             }

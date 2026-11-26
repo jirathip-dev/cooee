@@ -1,0 +1,23 @@
+<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width">
+<title>#827 Modern: A birds vs B blobs</title>
+<link rel="stylesheet" href="ab.css"><script src="cast.js"></script><script src="page.js"></script>
+<body><div class="wrap" id="root"></div>
+<script>
+const { STRIP, KEY, live } = Page, S = Cast.STATES;
+const side = (tag, title, blurb, cast) => `<section class="card">
+  <div><h2><span class="tag">${tag}</span>${title}</h2><p>${blurb}</p></div>
+  <div class="grid live">${cast.map(c => `<div class="cell">${live(c, 'idle')}<b>${c.name}</b><small>${c.why}</small></div>`).join('')}</div>
+  <h3>${cast[0].name}: the five states, frame by frame</h3>
+  <div class="paused">${S.map(([s, n, how]) => `<div class="strip"><div class="lb">${n}<small>${how}</small></div>${STRIP[s].map(t => Cast.svg(cast[0], s, t)).join('')}</div>`).join('')}</div>
+  <h3>Every ${tag === 'A' ? 'bird' : 'blob'} in each state</h3>
+  <div class="paused">${S.map(([s, n]) => `<div class="allst"><div class="lb">${n}</div>${cast.map(c => Cast.svg(c, s, KEY[s])).join('')}</div>`).join('')}</div>
+</section>`;
+root.innerHTML = `<div><h1>Agents as characters · Modern</h1><p>Pick one: <b>A</b>, eight Australian birds that sit with the kookaburra logo, or <b>B</b>, eight abstract blobs with only a beak hint. Both: one flat scheme colour, two pill eyes, the same five animated states. An agent keeps its character by its id; the persona sheet can change it.</p></div>
+<div class="cols">${side('A', 'Birds', 'Round body, pill eyes, a small beak; each species told apart by one feature (crest, cheek, cap, tail).', Cast.birds)}
+${side('B', 'Blobs', 'Abstract soft shapes (pebble, drop, lobes, pill), one beak hint below the eyes; no species.', Cast.blobs)}</div>`;
+if (Page.q.get('f') === 'clip') {
+  document.body.insertAdjacentHTML('beforeend', `<style>.cg{display:grid;grid-template-columns:130px repeat(8,44px) 18px repeat(8,44px) 18px repeat(8,48px);gap:8px 4px;align-items:center;padding:18px 20px}.cg .ch{width:44px;height:44px}.cg .tc{--bx:46px;--fs:11px}.cg h3{grid-column:span 8}</style>`);
+  root.innerHTML = `<div class="cg live"><span></span><h3>A · birds</h3><span></span><h3>B · blobs</h3><span></span><h3>Terminal</h3>${S.map(([s, n]) => `<b class="lb">${n}</b>${Cast.birds.map(c => Page.live(c, s)).join('')}<span></span>${Cast.blobs.map(c => Page.live(c, s)).join('')}<span></span>${Cast.ascii.map(a => Page.tc(a, s)).join('')}`).join('')}</div>`;
+}
+Page.ready();
+</script>

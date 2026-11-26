@@ -527,7 +527,7 @@ fn looks(cx: &Cx) -> impl Future<Output = Result<Looks, tokio::task::JoinError>>
     tokio::task::spawn_blocking(move || Looks::load(config.as_deref(), None).0)
 }
 
-#[route(GET "/api/v1/looks")]
+#[route(GET "/looks")]
 async fn looks_json(cx: &Cx) -> Result<Response> {
     Json(looks(cx).await?).into_response(cx)
 }

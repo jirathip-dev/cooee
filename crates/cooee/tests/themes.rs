@@ -160,7 +160,7 @@ fn gzips_and_revalidates(cooee: &Cooee, head: &str, svg: &str) {
 }
 
 fn farm_is_served(cooee: &Cooee) {
-    let looks = cooee.json("/api/v1/looks");
+    let looks = cooee.json("/looks");
     assert_eq!(
         looks["themes"]["farm"]["scheme"],
         json!({"dark": "farm", "light": "farm-light"})
@@ -261,11 +261,8 @@ fn add_remove_and_list_with_the_lock() {
     assert!(ok, "{out}");
     assert!(!themes.join("farm").exists());
     assert_eq!(s.lock().as_array().unwrap().len(), 2);
-    assert!(
-        s.cooee.json("/api/v1/looks")["themes"]
-            .get("farm")
-            .is_some()
-    );
+    assert!(s.cooee.json("/looks")["themes"].get("farm").is_some());
+    assert!(s.cooee.json("/looks")["themes"].get("kitchen").is_some());
     let (ok, out) = s.run(&["theme", "remove", "farm"]);
     assert!(!ok && out.contains("farm isn't installed"), "{out}");
 }
@@ -290,7 +287,7 @@ fn a_built_in_style_pack_adds_and_a_broken_style_leaves_its_theme_served() {
         r#"{"format":1,"surface":"blur"}"#,
     )
     .unwrap();
-    let looks = s.cooee.json("/api/v1/looks");
+    let looks = s.cooee.json("/looks");
     assert_eq!(
         looks["styles"]["terminal"]["labels"]["button"]["suffix"],
         " ]"
@@ -513,14 +510,11 @@ fn an_old_full_clone_is_replaced_on_start_once_the_new_one_is_in_place() {
 }
 
 fn farm_light_fails_its_contrast_check(cooee: &Cooee) -> (Value, Value, String) {
-    let looks = cooee.json("/api/v1/looks");
+    let looks = cooee.json("/looks");
     let dark = looks["schemes"]["farm"]["tokens"].clone();
     let mut light = looks["schemes"]["farm-light"]["tokens"].clone();
     light["--a"] = json!("#a88a2a");
-    let (status, body) = cooee.post(
-        "/api/v1/themes/check",
-        &json!({"dark": dark, "light": light}),
-    );
+    let (status, body) = cooee.post("/themes/check", &json!({"dark": dark, "light": light}));
     assert_eq!(status, 200, "{body}");
     let report: Value = serde_json::from_str(&body).unwrap();
     assert_eq!(report["dark"]["fails"], json!([]));
@@ -546,7 +540,7 @@ fn a_broken_sheet_keeps_its_last_good_copy(cooee: &Cooee, pack: &Path) {
         svg.replace("id=\"s-fail\"", "id=\"x\""),
     )
     .unwrap();
-    let looks = cooee.json("/api/v1/looks");
+    let looks = cooee.json("/looks");
     assert_eq!(looks["themes"]["tidepool"]["label"], "Tidepool");
     assert_eq!(looks["broken"]["tidepool"], "sprites.svg: no s-fail");
     let (_, art) = cooee.raw("GET", "/look/tidepool/sprites.svg", &[], "");
@@ -561,7 +555,7 @@ fn a_same_save_writes_nothing_and_bad_names_are_refused(cooee: &Cooee, pack: &Pa
         .unwrap()
         .modified()
         .unwrap();
-    let (status, body) = cooee.request("PUT", "/api/v1/themes/tidepool", Some(draft));
+    let (status, body) = cooee.request("PUT", "/themes/tidepool", Some(draft));
     assert_eq!((status, body.as_str()), (200, r#"{"written":false}"#));
     assert_eq!(
         fs::metadata(pack.join("theme.json"))
@@ -572,7 +566,7 @@ fn a_same_save_writes_nothing_and_bad_names_are_refused(cooee: &Cooee, pack: &Pa
     );
 
     for name in ["farm", "plain", "Bad/name"] {
-        let path = format!("/api/v1/themes/{name}");
+        let path = format!("/themes/{name}");
         let (status, body) = cooee.request("PUT", &path, Some(draft));
         assert_eq!(
             status,
@@ -592,7 +586,7 @@ fn the_editor_checks_colours_saves_a_pack_once_and_keeps_its_last_good_copy() {
     let draft = |light: &Value| json!({"from": "farm", "label": "Tidepool", "style": "terminal", "dark": dark, "light": light});
     let (status, body) = s
         .cooee
-        .request("PUT", "/api/v1/themes/tidepool", Some(&draft(&light)));
+        .request("PUT", "/themes/tidepool", Some(&draft(&light)));
     assert_eq!(status, 400, "{body}");
     assert!(body.contains("--a on an amber group header"), "{body}");
     assert!(!s.dir.join("themes/tidepool").exists());
@@ -600,12 +594,12 @@ fn the_editor_checks_colours_saves_a_pack_once_and_keeps_its_last_good_copy() {
     light["--a"] = json!(fix);
     let (status, body) = s
         .cooee
-        .request("PUT", "/api/v1/themes/tidepool", Some(&draft(&light)));
+        .request("PUT", "/themes/tidepool", Some(&draft(&light)));
     assert_eq!((status, body.as_str()), (200, r#"{"written":true}"#));
     let pack = s.dir.join("themes/tidepool");
     let (ok, out) = s.run(&["theme", "check", &pack.display().to_string()]);
     assert!(ok, "{out}");
-    let looks = s.cooee.json("/api/v1/looks");
+    let looks = s.cooee.json("/looks");
     let theme = &looks["themes"]["tidepool"];
     assert_eq!(theme["label"], "Tidepool");
     assert_eq!(theme["style"], "terminal");
@@ -623,11 +617,7 @@ fn the_editor_checks_colours_saves_a_pack_once_and_keeps_its_last_good_copy() {
     let (ok, out) = s.run(&["theme", "remove", "tidepool"]);
     assert!(ok, "{out}");
     assert!(!s.dir.join(".themes-stage/.good/tidepool").exists());
-    assert!(
-        s.cooee.json("/api/v1/looks")["themes"]
-            .get("tidepool")
-            .is_none()
-    );
+    assert!(s.cooee.json("/looks")["themes"].get("tidepool").is_none());
 }
 
 #[test]
@@ -635,7 +625,7 @@ fn the_editor_saves_drawn_figures_and_a_drawn_backdrop_that_pass_the_gate() {
     let s = setup("th-draw");
     let (ok, out) = s.run(&["theme", "add", "farm"]);
     assert!(ok, "{out}");
-    let looks = s.cooee.json("/api/v1/looks");
+    let looks = s.cooee.json("/looks");
     let (dark, light) = (
         looks["schemes"]["farm"]["tokens"].clone(),
         looks["schemes"]["farm-light"]["tokens"].clone(),
@@ -651,7 +641,7 @@ fn the_editor_saves_drawn_figures_and_a_drawn_backdrop_that_pass_the_gate() {
     ] {
         let (status, body) = s
             .cooee
-            .request("PUT", "/api/v1/themes/rockpool", Some(&draft(bad)));
+            .request("PUT", "/themes/rockpool", Some(&draft(bad)));
         assert_eq!(status, 400, "{body}");
         assert!(body.contains("not one <symbol"), "{body}");
     }
@@ -659,7 +649,7 @@ fn the_editor_saves_drawn_figures_and_a_drawn_backdrop_that_pass_the_gate() {
 
     let (status, body) = s.cooee.request(
         "PUT",
-        "/api/v1/themes/rockpool",
+        "/themes/rockpool",
         Some(&draft(json!({ "s-needs": needs }))),
     );
     assert_eq!((status, body.as_str()), (200, r#"{"written":true}"#));
@@ -675,7 +665,7 @@ fn the_editor_saves_drawn_figures_and_a_drawn_backdrop_that_pass_the_gate() {
     let rest = after.split_once("</symbol>").unwrap().1;
     assert!(sheet.ends_with(rest));
     assert_eq!(fs::read_to_string(pack.join("scene.svg")).unwrap(), scene);
-    let looks = s.cooee.json("/api/v1/looks");
+    let looks = s.cooee.json("/looks");
     assert_eq!(
         looks["themes"]["rockpool"]["scene"],
         json!(["sky", "sea", "rocks", "sand"])
@@ -683,7 +673,7 @@ fn the_editor_saves_drawn_figures_and_a_drawn_backdrop_that_pass_the_gate() {
 
     let (status, body) = s.cooee.request(
         "PUT",
-        "/api/v1/themes/rockpool",
+        "/themes/rockpool",
         Some(&draft(json!({ "s-needs": needs }))),
     );
     assert_eq!((status, body.as_str()), (200, r#"{"written":false}"#));
@@ -694,7 +684,7 @@ fn an_imported_svg_kept_as_vector_in_a_figure_and_a_layer_passes_the_gate() {
     let s = setup("th-import");
     let (ok, out) = s.run(&["theme", "add", "farm"]);
     assert!(ok, "{out}");
-    let looks = s.cooee.json("/api/v1/looks");
+    let looks = s.cooee.json("/looks");
     let vector = r##"<svg viewBox="0 0 48 32" width="100%" height="100%" xmlns:xlink="http://www.w3.org/1999/xlink"><circle id="dot" cx="24" cy="16" r="10" fill="#f80"/><use xlink:href="#dot"/></svg>"##;
     let needs = format!(r#"<symbol id="s-needs" viewBox="0 0 24 24">{vector}</symbol>"#);
     let scene = format!(
@@ -704,7 +694,7 @@ fn an_imported_svg_kept_as_vector_in_a_figure_and_a_layer_passes_the_gate() {
         "dark": looks["schemes"]["farm"]["tokens"], "light": looks["schemes"]["farm-light"]["tokens"],
         "sprites": {"s-needs": needs}, "scene": scene});
 
-    let (status, body) = s.cooee.request("PUT", "/api/v1/themes/inked", Some(&draft));
+    let (status, body) = s.cooee.request("PUT", "/themes/inked", Some(&draft));
     assert_eq!((status, body.as_str()), (200, r#"{"written":true}"#));
     let pack = s.dir.join("themes/inked");
     let (ok, out) = s.run(&["theme", "check", &pack.display().to_string()]);

@@ -61,6 +61,6 @@ the server's gate test reads, so every reader refuses the same files.
 
 ## On the wire
 
-`GET /api/v1/looks` adds `styles` (each pack's `style.json` that passed, by folder name) and `broken` (the first
+`GET /looks` adds `styles` (each pack's `style.json` that passed, by folder name) and `broken` (the first
 failing rule of each `style.json` that didn't). A broken `style.json` is refused alone: the pack's theme is still
 served. The server keeps no last good style; the device does.

@@ -15,8 +15,12 @@ public struct Cast: Sendable, Equatable {
     /// `override` when this cast has it, else a pick from the cast that a seed always gets.
     public func pick(_ seed: String, override: String? = nil) -> String {
         if let override, coats.contains(override) { return override }
-        let hash = seed.utf8.reduce(UInt64(0xcbf2_9ce4_8422_2325)) { ($0 ^ UInt64($1)) &* 0x0100_0000_01b3 }
-        return coats[Int(hash % UInt64(coats.count))]
+        return coats[Int(Self.hash(seed) % UInt64(coats.count))]
+    }
+
+    /// A seed's FNV-1a hash: the same on every device and every run.
+    public static func hash(_ seed: String) -> UInt64 {
+        seed.utf8.reduce(UInt64(0xcbf2_9ce4_8422_2325)) { ($0 ^ UInt64($1)) &* 0x0100_0000_01b3 }
     }
 }
 

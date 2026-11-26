@@ -169,6 +169,16 @@ pub enum Body {
         reason = "#776: show::Reply is the persona's reply as read"
     )]
     Blocks(crate::agents::show::Reply),
+    #[expect(
+        missing_docs,
+        reason = "a plugin row: its plugin, key, one plain line and block"
+    )]
+    Row {
+        plugin: String,
+        key: String,
+        text: String,
+        block: Value,
+    },
     /// A line from cooee itself (`model sonnet · effort low from the next start`).
     Note {
         /// The line.

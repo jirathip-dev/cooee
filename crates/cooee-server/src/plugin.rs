@@ -11,8 +11,10 @@ use futures_util::{Stream, stream};
 use tokio::io::{AsyncBufReadExt, AsyncReadExt};
 
 mod feed;
+mod rows;
 
 pub use feed::{follow, share};
+pub use rows::follow_rows;
 
 const MAX_BODY: u64 = 16 << 20;
 

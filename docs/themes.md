@@ -74,17 +74,17 @@ Look has **Edit ‹theme›…** and **New theme…**. They open the theme edito
 screens in the draft's colours and style, Style (Modern, Terminal or Scene), the pack's figures, and Dark and Light
 colours. A new theme starts from `packs/starter`'s figures; editing a built-in or first-party pack makes a copy
 (`Farm copy`), as `themes/<built-in name>/` would replace it. The Colours screen runs the theme gate on every change
-(`POST /api/v1/themes/check`: each token's worst check, and the nearest darker or lighter shade that passes) and
+(`POST /themes/check`: each token's worst check, and the nearest darker or lighter shade that passes) and
 offers that shade as a one-tap fix. Save stays off until both modes pass.
 
-Save sends the draft to the Mac (`PUT /api/v1/themes/<name>`). The server writes `theme.json`, `schemes/<name>-dark.json`,
+Save sends the draft to the Mac (`PUT /themes/<name>`). The server writes `theme.json`, `schemes/<name>-dark.json`,
 `schemes/<name>-light.json` and the copied pack's `sprites.svg`, `scene.svg` and `icon.png` to a staging folder, runs
 the gate, then moves it into `themes/<name>/` and pins it in the lock as `made here`. Saving an unchanged pack writes
-nothing. The app reloads `GET /api/v1/looks` and applies the pack, with no restart. Its files are plain: edit them by
+nothing. The app reloads `GET /looks` and applies the pack, with no restart. Its files are plain: edit them by
 hand afterwards.
 
 Each save keeps a last good copy in `<config dir>/.themes-stage/.good/<name>/`. If a hand edit later breaks the pack,
-every load serves that copy instead, and `GET /api/v1/looks` names the pack and its first failure in `broken`, which
+every load serves that copy instead, and `GET /looks` names the pack and its first failure in `broken`, which
 Look shows as one amber line.
 
 ## A scheme: `schemes/<name>.json`
@@ -123,6 +123,6 @@ the server's default theme (`theme` in `config.toml`), because a device's own pi
 
 ## The native look sheet's API
 
-The native look sheet's themes (#252): `GET /api/v1/looks` answers the installed packs as they are now, as JSON:
+The native look sheet's themes (#252): `GET /looks` answers the installed packs as they are now, as JSON:
 `{themes: {name: theme.json}, schemes: {name: {label, color-scheme, tokens}}, …}`. Each pack's files are
 at `GET /look/{theme}/sprites.svg`, `scene.svg` and `icon.png`, with no cookie.
