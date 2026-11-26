@@ -1,7 +1,7 @@
 use std::{
     fs,
     io::{BufRead, BufReader, Read, Write},
-    net::TcpListener,
+    net::{TcpListener, TcpStream},
     path::Path,
     sync::{Arc, Mutex, mpsc},
     thread,
@@ -17,7 +17,76 @@ const TOKEN: &str = "token-drover-0123456789";
 struct Drover {
     port: u16,
     rows: mpsc::Sender<Value>,
-    posted: Arc<Mutex<Vec<(String, Value)>>>,
+    posted: Posted,
+}
+
+type Posted = Arc<Mutex<Vec<(String, Value)>>>;
+
+fn request(s: TcpStream) -> (String, Vec<u8>, TcpStream) {
+    let mut r = BufReader::new(s);
+    let (mut head, mut line) = (String::new(), String::new());
+    while r.read_line(&mut line).unwrap() > 2 {
+        head.push_str(&line.to_ascii_lowercase());
+        line.clear();
+    }
+    let len = head
+        .lines()
+        .find_map(|l| l.strip_prefix("content-length: "))
+        .map_or(0, |n| n.trim().parse().unwrap());
+    let mut body = vec![0; len];
+    r.read_exact(&mut body).unwrap();
+    let path = head.split(' ').nth(1).unwrap_or_default().to_owned();
+    (path, body, r.into_inner())
+}
+
+fn serve(s: TcpStream, next: &Mutex<mpsc::Receiver<Value>>, log: &Posted) {
+    let (path, body, mut s) = request(s);
+    let reply = |s: &mut TcpStream, v: Value| {
+        write!(
+            s,
+            "HTTP/1.0 200 OK\r\nContent-Type: application/json\r\n\r\n{v}"
+        )
+        .ok();
+    };
+    match path.as_str() {
+        "/stream" => {
+            write!(
+                s,
+                "HTTP/1.0 200 OK\r\nContent-Type: text/event-stream\r\n\r\n"
+            )
+            .unwrap();
+            let next = next.lock().unwrap();
+            while let Ok(row) = next.recv() {
+                let sent = format!("id: {}\ndata: {row}\n\n", row["seq"]);
+                if s.write_all(sent.as_bytes()).is_err() {
+                    return;
+                }
+            }
+        }
+        "/rows?open=1" => reply(&mut s, json!({ "seq": 1, "more": false, "rows": [] })),
+        "/cooee/profiles" => reply(
+            &mut s,
+            json!({ "profiles": [{ "name": "orchestrator", "label": "Orchestrator", "agent": "fake-acp" }] }),
+        ),
+        "/attach" => {
+            let body: Value = serde_json::from_slice(&body).unwrap();
+            let mut a: Value = serde_json::from_str(include_str!(
+                "../fixtures/drover-contract/orchestrator-attach.json"
+            ))
+            .unwrap();
+            a["env"]["DROVER_THREAD"] = body["thread"].clone();
+            a["settings"] = json!("");
+            a["brief"] = json!("You are drover's orchestrator.");
+            log.lock().unwrap().push((path, body));
+            reply(&mut s, a);
+        }
+        "/health" => reply(&mut s, json!({})),
+        _ => {
+            let body = serde_json::from_slice(&body).unwrap_or(Value::Null);
+            log.lock().unwrap().push((path, body));
+            reply(&mut s, json!({ "line": "q2 answered: split" }));
+        }
+    }
 }
 
 fn drover() -> Drover {
@@ -30,68 +99,7 @@ fn drover() -> Drover {
     thread::spawn(move || {
         for s in listener.incoming().flatten() {
             let (next, log) = (Arc::clone(&next), Arc::clone(&log));
-            thread::spawn(move || {
-                let mut r = BufReader::new(s);
-                let (mut head, mut line) = (String::new(), String::new());
-                while r.read_line(&mut line).unwrap() > 2 {
-                    head.push_str(&line.to_ascii_lowercase());
-                    line.clear();
-                }
-                let len = head
-                    .lines()
-                    .find_map(|l| l.strip_prefix("content-length: "))
-                    .map_or(0, |n| n.trim().parse().unwrap());
-                let mut body = vec![0; len];
-                r.read_exact(&mut body).unwrap();
-                let path = head.split(' ').nth(1).unwrap_or_default().to_owned();
-                let mut s = r.into_inner();
-                let reply = |s: &mut std::net::TcpStream, v: Value| {
-                    write!(
-                        s,
-                        "HTTP/1.0 200 OK\r\nContent-Type: application/json\r\n\r\n{v}"
-                    )
-                    .ok();
-                };
-                match path.as_str() {
-                    "/stream" => {
-                        write!(
-                            s,
-                            "HTTP/1.0 200 OK\r\nContent-Type: text/event-stream\r\n\r\n"
-                        )
-                        .unwrap();
-                        let next = next.lock().unwrap();
-                        while let Ok(row) = next.recv() {
-                            let sent = format!("id: {}\ndata: {row}\n\n", row["seq"]);
-                            if s.write_all(sent.as_bytes()).is_err() {
-                                return;
-                            }
-                        }
-                    }
-                    "/rows?open=1" => reply(&mut s, json!({ "seq": 1, "more": false, "rows": [] })),
-                    "/cooee/profiles" => reply(
-                        &mut s,
-                        json!({ "profiles": [{ "name": "orchestrator", "label": "Orchestrator", "agent": "fake-acp" }] }),
-                    ),
-                    "/attach" => {
-                        let body: Value = serde_json::from_slice(&body).unwrap();
-                        let mut a: Value = serde_json::from_str(include_str!(
-                            "../fixtures/drover-contract/orchestrator-attach.json"
-                        ))
-                        .unwrap();
-                        a["env"]["DROVER_THREAD"] = body["thread"].clone();
-                        a["settings"] = json!("");
-                        a["brief"] = json!("You are drover's orchestrator.");
-                        log.lock().unwrap().push((path, body));
-                        reply(&mut s, a);
-                    }
-                    "/health" => reply(&mut s, json!({})),
-                    _ => {
-                        let body = serde_json::from_slice(&body).unwrap_or(Value::Null);
-                        log.lock().unwrap().push((path, body));
-                        reply(&mut s, json!({ "line": "q2 answered: split" }));
-                    }
-                }
-            });
+            thread::spawn(move || serve(s, &next, &log));
         }
     });
     Drover { port, rows, posted }
