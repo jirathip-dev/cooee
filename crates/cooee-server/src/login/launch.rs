@@ -1,33 +1,37 @@
-use std::path::Path;
+use std::{fs, path::Path};
 
 use cooee_core::{
-    Launch,
-    agents::Agent,
-    provider::{Setup, Want},
+    Calls as _, Launch,
+    agents::{AUTO, Agent, DEFAULT},
+    provider::{Gap, Setup, Want},
+    shed_proto::Account,
 };
+use serde_json::{Map, Value};
 
 use super::Logins;
 use crate::hub::HubError;
 
 impl Logins {
-    /// What a thread of ACP agent `agent` runs with: its account's name (empty for the system default, or an agent
-    /// no provider signs in), and its config folder in the provider's variable (none for the system default). `account` none:
-    /// the system default.
-    ///
-    /// # Errors
-    /// [`HubError::Refused`] for an account the agent's provider doesn't have.
-    pub fn home(&self, agent: &str, account: Option<&str>) -> Result<(String, Launch), HubError> {
+    /// `agent`'s account (unset: `auto`; empty: no provider) and its [`Launch`] (no account: shed's own login).
+    #[must_use]
+    pub fn home(&self, agent: &str, account: Option<&str>) -> (String, Launch) {
         let Some(p) = self.providers.for_agent(agent) else {
-            return Ok((String::new(), Launch::default()));
+            return (String::new(), Launch::default());
         };
-        let a = self.account(&p.spec().name, account.unwrap_or_default())?;
-        let env = p.env(a.dir.as_deref()).into_iter();
-        let env = env.map(|(var, dir)| (var.to_owned(), dir.display().to_string()));
+        let account = account.filter(|a| !a.is_empty()).unwrap_or(AUTO).to_owned();
+        let named = |a: &Account| a.name != DEFAULT;
+        let on = match account.as_str() {
+            DEFAULT => None,
+            AUTO => (self.shed.accounts(Some(&p.spec().name)))
+                .is_ok_and(|all| all.iter().any(named))
+                .then(|| account.clone()),
+            _ => Some(account.clone()),
+        };
         let launch = Launch {
-            env: env.collect(),
+            account: on,
             ..Launch::default()
         };
-        Ok((a.name, launch))
+        (account, launch)
     }
 
     /// How agent `agent`'s provider sets up a persona session for `want` (#503); none: no provider signs it in.
@@ -36,53 +40,51 @@ impl Logins {
         Some(self.providers.for_agent(agent)?.session(want))
     }
 
-    /// What a thread of agent `a` runs with: its account's label (`a`'s, else `account`) and [`Launch`] (the account's
-    /// folder, the settings file in the provider's `settings` variable (in place of the account's folder when it is
-    /// the same variable), the env, its secrets read from `data` through a file there, and the policy). An agent whose ACP agent can't run it as written is refused: settings
-    /// with no `settings` variable (its guard can't run).
-    ///
-    /// # Errors
-    /// [`HubError::Refused`] as above, for an unknown account or a missing secret.
+    /// What a persona session of `agent` can't be told, on its default login (#536: the agent picker's lines).
+    #[must_use]
+    pub fn gaps(&self, agent: &str) -> Vec<Gap> {
+        let want = Want {
+            brief: "",
+            off: &[],
+            ask_all: true,
+            run: Path::new(""),
+        };
+        let setup = self.session(agent, &want);
+        setup.unwrap_or_else(|| Setup::plain(&want)).gaps
+    }
+
+    /// # Errors [`HubError::Refused`] for settings its provider can't take, an unreadable settings file or a missing secret.
     pub fn agent(
         &self,
         a: &Agent,
-        account: Option<&str>,
+        (account, meta): (Option<&str>, Option<Value>),
         data: &Path,
     ) -> Result<(String, Launch), HubError> {
         let refused = |why: String| HubError::Refused(why);
-        let (account, mut launch) = self.home(&a.agent, a.account.as_deref().or(account))?;
-        let provider = self.providers.for_agent(&a.agent);
+        let (account, mut launch) = self.home(&a.agent, a.account.as_deref().or(account));
+        launch.meta = meta;
         if let Some(settings) = &a.settings {
-            let var = provider
-                .map(|v| v.spec().settings.as_str())
-                .filter(|v| !v.is_empty());
-            let Some(var) = var else {
+            let provider = self.providers.for_agent(&a.agent);
+            let key = provider.map(|p| p.spec().settings.as_str());
+            let Some(key) = key.filter(|k| !k.is_empty()) else {
                 return Err(refused(format!(
-                    "this profile's guard can't run with {}: its ACP adapter has no settings variable",
+                    "this profile's guard can't run with {}: its ACP adapter takes no settings",
                     a.agent
                 )));
             };
-            launch.env.retain(|(k, _)| k != var);
-            launch
-                .env
-                .push((var.to_owned(), settings.display().to_string()));
+            launch.meta = Some(with_settings(launch.meta.take(), key, settings).map_err(refused)?);
         }
         let (plain, secret) = a.env(data).map_err(refused)?;
-        launch.env.extend(plain);
-        if !secret.is_empty() {
-            let name = cooee_core::random(16).map_err(|e| refused(e.to_string()))?;
-            let name = cooee_core::sha256(&name);
-            launch.secrets = Some((data.join("secrets").join(format!(".run-{name}")), secret));
-        }
+        launch.env.extend(plain.into_iter().chain(secret));
         launch.policy.clone_from(&a.policy);
         Ok((account, launch))
     }
 
-    /// The efforts `agent`'s provider offers (#553 row 34).
+    /// The efforts shed's record of `agent` offers (#553 row 34).
     #[must_use]
     pub fn efforts(&self, agent: &str) -> Vec<String> {
-        let p = self.providers.for_agent(agent);
-        p.map(|p| p.spec().efforts.clone()).unwrap_or_default()
+        let r = self.providers.record(agent);
+        r.map(|r| r.efforts.clone()).unwrap_or_default()
     }
 
     /// What a background run of `agent` picks when it names none (#219): its provider's cheapest model and lowest
@@ -91,23 +93,53 @@ impl Logins {
     pub fn cheapest(&self, agent: &str) -> (String, String) {
         let p = self.providers.for_agent(agent).map(|p| p.spec());
         p.map(|s| {
+            let efforts = self.efforts(agent);
             (
                 s.cheapest.clone(),
-                s.efforts.first().cloned().unwrap_or_default(),
+                efforts.first().cloned().unwrap_or_default(),
             )
         })
         .unwrap_or_default()
     }
 
-    /// The words that start `agent` on `effort` (empty: its default).
-    ///
-    /// # Errors
-    /// [`HubError::Refused`] for an effort its provider doesn't offer.
-    pub fn picks(&self, agent: &str, effort: &str) -> Result<Vec<String>, HubError> {
-        let words = match self.providers.for_agent(agent) {
-            Some(p) => p.picks(effort),
-            None => effort.is_empty().then(Vec::new),
-        };
-        words.ok_or_else(|| HubError::Refused(format!("{agent} offers no effort {effort:?}")))
+    /// # Errors [`HubError::Refused`] for an effort shed's record of `agent` doesn't offer; else the `run`'s effort.
+    pub fn effort(&self, agent: &str, effort: &str) -> Result<Option<String>, HubError> {
+        if effort.is_empty() {
+            return Ok(None);
+        }
+        if !self.efforts(agent).iter().any(|e| e == effort) {
+            return Err(HubError::Refused(format!(
+                "{agent} offers no effort {effort:?}"
+            )));
+        }
+        Ok(Some(effort.to_owned()))
     }
+}
+
+fn with_settings(meta: Option<Value>, key: &str, settings: &Path) -> Result<Value, String> {
+    let file = if settings.is_dir() {
+        settings.join("settings.json")
+    } else {
+        settings.to_path_buf()
+    };
+    let read = fs::read(&file).ok();
+    let Some(Value::Object(read)) = read.and_then(|b| serde_json::from_slice(&b).ok()) else {
+        return Err(format!("{}: no settings object", file.display()));
+    };
+    let mut meta = meta.unwrap_or_else(|| Value::Object(Map::new()));
+    let mut at = &mut meta;
+    for k in key.split('.') {
+        if !at.is_object() {
+            *at = Value::Object(Map::new());
+        }
+        let Value::Object(o) = at else {
+            break;
+        };
+        at = o.entry(k).or_insert_with(|| Value::Object(Map::new()));
+    }
+    match at {
+        Value::Object(o) => o.extend(read),
+        other => *other = Value::Object(read),
+    }
+    Ok(meta)
 }

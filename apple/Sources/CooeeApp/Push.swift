@@ -21,6 +21,7 @@ public final class PushDelegate: NSObject, PlatformDelegate, UNUserNotificationC
     private static var held: [String] = []
     private static var denied: AsyncStream<PushSaid>.Continuation?
     private static var heldDenied: [PushSaid] = []
+    private static var shown: String?
 
     override public init() {
         super.init()
@@ -41,6 +42,20 @@ public final class PushDelegate: NSObject, PlatformDelegate, UNUserNotificationC
             return await Self.deny(PushSaid(thread: content.threadIdentifier, item: item, text: reply.userText))
         }
         await Self.open(content.threadIdentifier)
+    }
+
+    nonisolated public func userNotificationCenter(
+        _ center: UNUserNotificationCenter, willPresent notification: UNNotification
+    ) async -> UNNotificationPresentationOptions {
+        await Self.presenting(notification.request.content.threadIdentifier)
+    }
+
+    internal static func show(_ thread: String?) {
+        shown = thread
+    }
+
+    private static func presenting(_ thread: String) -> UNNotificationPresentationOptions {
+        thread == shown ? [] : [.banner, .list, .sound]
     }
 
     internal static func said() -> AsyncStream<PushSaid> {

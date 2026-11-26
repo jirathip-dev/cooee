@@ -29,12 +29,15 @@ crate() {
   mv "$dir/lib.rs.gen" "$dir/lib.rs"
 }
 
-# module DIR: DIR.rs, its leading `//!` lines kept, a `mod` line per file of DIR and a `pub use` of each with a `pub ` item.
+# module DIR: DIR.rs, its leading `//!` lines kept, a `mod` line per file of DIR (`tests` under `#[cfg(test)]`) and a `pub use` of each with a `pub ` item.
 module() {
   dir=$1
   {
     awk '!/^\/\/!/ { exit } { print }' "$dir.rs"
-    for m in $(modules "$dir"); do printf 'mod %s;\n' "$m"; done
+    for m in $(modules "$dir"); do
+      [ "$m" != tests ] || printf '#[cfg(test)]\n'
+      printf 'mod %s;\n' "$m"
+    done
     printf '\n'
     for m in $(modules "$dir"); do
       if grep -q '^pub ' "$dir/$m.rs" 2>/dev/null || grep -q '^pub ' "$dir/$m/mod.rs" 2>/dev/null; then printf 'pub use %s::*;\n' "$m"; fi
@@ -43,7 +46,44 @@ module() {
   mv "$dir.rs.gen" "$dir.rs"
 }
 
-# routes DIR: DIR/mod.rs, a `mod` line per area and one `routes` that chains every area's `routes`.
+# areas DIR (#729): DIR/areas.rs, a field per file of DIR with a `pub(super) struct State`, built by its `open(seed)` (`?` when it returns a Result) or its default.
+areas() {
+  dir=$1 ms=
+  for m in $(modules "$dir"); do
+    if grep -q '^pub(super) struct State ' "$dir/$m.rs" 2>/dev/null; then ms="$ms $m"; fi
+  done
+  {
+    printf 'use super::{HubError, Seed%s};\n\n' "$(for m in $ms; do printf ', %s' "$m"; done)"
+    printf 'pub(super) struct Areas {\n'
+    for m in $ms; do printf '    pub(super) %s: %s::State,\n' "$m" "$m"; done
+    printf '}\n\nimpl Areas {\n'
+    printf "    pub(super) fn open(seed: &Seed<'_>) -> Result<Self, HubError> {\n        Ok(Self {\n"
+    for m in $ms; do
+      if grep -q "fn open(seed: &Seed<'_>) -> Result<Self, HubError>" "$dir/$m.rs"; then
+        printf '            %s: %s::State::open(seed)?,\n' "$m" "$m"
+      elif grep -q "fn open(seed: &Seed<'_>) -> Self" "$dir/$m.rs"; then
+        printf '            %s: %s::State::open(seed),\n' "$m" "$m"
+      else
+        printf '            %s: %s::State::default(),\n' "$m" "$m"
+      fi
+    done
+    printf '        })\n    }\n}\n'
+  } | rustfmt --edition 2024 >"$dir/areas.rs.gen"
+  mv "$dir/areas.rs.gen" "$dir/areas.rs"
+}
+
+# tests DIR: DIR/main.rs (#427), its leading `//!` lines kept, the shared support by path and a `mod` line per file of DIR.
+tests() {
+  dir=$1
+  {
+    awk '!/^\/\/!/ { exit } { print }' "$dir/main.rs"
+    printf '\n#[path = "../support/mod.rs"]\nmod support;\n\n'
+    for m in $(modules "$dir"); do printf 'mod %s;\n' "$m"; done
+  } | rustfmt --edition 2024 >"$dir/main.rs.gen"
+  mv "$dir/main.rs.gen" "$dir/main.rs"
+}
+
+# routes DIR:DIR/mod.rs, a `mod` line per area and one `routes` that chains every area's `routes`.
 routes() {
   dir=$1
   set -- $(modules "$dir")
@@ -54,6 +94,31 @@ routes() {
     while [ $# -gt 1 ]; do printf '    let b = %s::routes(b);\n' "$1"; shift; done
     printf '    %s::routes(b)\n}\n' "$1"
   } >"$dir/mod.rs.gen"
+  mv "$dir/mod.rs.gen" "$dir/mod.rs"
+}
+
+# screens DIR: DIR/mod.rs as `routes` writes it, then one `source` and one `act`, each trying every module that has one, in name order.
+screens() {
+  dir=$1
+  routes "$dir"
+  set -- $(for m in $(modules "$dir"); do if grep -q '^pub(super) fn source(' "$dir/$m.rs"; then echo "$m"; fi; done)
+  {
+    cat "$dir/mod.rs"
+    printf '\npub(crate) fn source(path: &str, who: &crate::live::Who) -> Option<crate::live::Source> {\n'
+    if [ $# -eq 0 ]; then printf '    None\n'; fi
+    for m in "$@"; do
+      if [ "$m" = "$1" ]; then printf '    %s::source(path, who)\n' "$m"; else printf '        .or_else(|| %s::source(path, who))\n' "$m"; fi
+    done
+    printf '}\n'
+  } | rustfmt --edition 2024 >"$dir/mod.rs.gen"
+  mv "$dir/mod.rs.gen" "$dir/mod.rs"
+  set -- $(for m in $(modules "$dir"); do if grep -q '^pub(super) async fn act(' "$dir/$m.rs"; then echo "$m"; fi; done)
+  {
+    cat "$dir/mod.rs"
+    printf '\npub(crate) async fn act(cx: &topcoat::context::Cx, a: &blocks::Action) -> Option<topcoat::Result<topcoat::router::response::Response>> {\n'
+    for m in "$@"; do printf '    if let Some(done) = %s::act(cx, a).await {\n        return Some(done);\n    }\n' "$m"; done
+    printf '    None\n}\n'
+  } | rustfmt --edition 2024 >"$dir/mod.rs.gen"
   mv "$dir/mod.rs.gen" "$dir/mod.rs"
 }
 
@@ -83,38 +148,92 @@ cmds() {
   mv "$dir/mod.rs.gen" "$dir/mod.rs"
 }
 
-# tools DIR: DIR/mod.rs, a `mod` line per Chief tool file (#664) and the table `ALL` of each file's `TOOL`, in name order.
+# tools DIR TYPE: DIR/mod.rs, a `mod` line per tool file (#664, #778) and the table `ALL` of each file's `TOOL`, a TYPE, in name order.
 tools() {
-  dir=$1
+  dir=$1 ty=$2
   {
     for m in $(modules "$dir"); do printf 'mod %s;\n' "$m"; done
-    printf '\nuse crate::chief::Tool;\n\npub(crate) const ALL: &[Tool] = &[\n'
+    printf '\nuse %s;\n\npub(crate) const ALL: &[%s] = &[\n' "$ty" "${ty##*::}"
     for m in $(modules "$dir"); do printf '    %s::TOOL,\n' "$m"; done
     printf '];\n'
   } >"$dir/mod.rs.gen"
   mv "$dir/mod.rs.gen" "$dir/mod.rs"
 }
 
-crate crates/cooee-core/src "cooee's core: the model and its files. No HTTP." \
-  accounts blocks chat config devices login providers root shed store
-module crates/cooee-core/src/chat
-module crates/cooee-core/src/shed
-module crates/cooee-core/src/store
-module crates/cooee-server/src/login
-module crates/cooee-server/src/mcp
-module crates/cooee-server/src/push
-routes crates/cooee-server/src/routes
-crate crates/cooee-server/src "cooee's HTTP server: the native app's JSON API (docs/README.md)." \
-  chief connectors contrast editor gate http hub layout login look manage pairing passkey net plugin push root routes routines screens serve themes
-tools crates/cooee-server/src/chief/tools
-cmds crates/cooee/src/cmd
-flat crates/cooee/tests/support
-# today: README.md's list between its markers, from the `## Today` bullets of docs/*.md in file-name order, their ../ links made the README's.
-for f in $(printf '%s\n' docs/*.md | LC_ALL=C sort); do
-  awk '/^## / { on = $0 == "## Today"; next } on && /^- / { gsub(/\]\(\.\.\//, "]("); print }' "$f"
+# feature DIR NAME (#743): DIR/../NAME+Areas.swift; each `<Prefix><Area>.swift` of DIR adds its State, Action, reducer or scope.
+feature() {
+  dir=$1 name=$2 states='' cases='' reducers=''
+  for f in "$dir"/*.swift; do
+    [ -e "$f" ] || continue
+    a=${f##*/} && a=${a%.swift} && a=${a#"${name%Feature}"}
+    l=$(printf %s "$a" | cut -c1 | tr '[:upper:]' '[:lower:]')$(printf %s "$a" | cut -c2-)
+    if grep -q "struct ${a}State\b" "$f"; then states="$states        public var $l = ${a}State()\n"; fi
+    if grep -q "enum ${a}Action\b" "$f"; then cases="$cases        case $l(${a}Action)\n"; fi
+    if grep -q "var ${l}Scope\b" "$f"; then reducers="$reducers        ${l}Scope\n"; fi
+    if grep -qF "func $l(_ state: inout State, _ action: Action)" "$f"; then
+      reducers="$reducers        Reduce { state, action in $l(&state, action) }\n"
+    fi
+  done
+  [ -n "$reducers" ] || reducers='        EmptyReducer()\n'
+  {
+    printf 'import ComposableArchitecture\n\nextension %s {\n    @ObservableState\n    public struct Areas: Equatable' "$name"
+    if [ -n "$states" ]; then printf ' {\n%b    }\n' "$states"; else printf ' {}\n'; fi
+    printf '\n    @CasePathable\n    public enum AreaAction: Sendable'
+    if [ -n "$cases" ]; then printf ' {\n%b    }\n' "$cases"; else printf ' {}\n'; fi
+    printf '\n    @ReducerBuilder<State, Action>\n    internal var areas: some ReducerOf<Self> {\n%b    }\n}\n' "$reducers"
+  } >"${dir%/*}/$name+Areas.swift.gen"
+  mv "${dir%/*}/$name+Areas.swift.gen" "${dir%/*}/$name+Areas.swift"
+}
+
+# screen DIR NAME FEATURE (#744): DIR/../NAME+Areas.swift, one `.modifier` per `<File>Presenting` view modifier of DIR.
+screen() {
+  dir=$1 name=$2 feature=$3 mods=''
+  for f in "$dir"/*.swift; do
+    [ -e "$f" ] || continue
+    a=${f##*/} && a=${a%.swift}
+    if grep -q "struct ${a}Presenting: ViewModifier" "$f"; then mods="$mods\n            .modifier(${a}Presenting(store: store))"; fi
+  done
+  {
+    printf 'import ComposableArchitecture\nimport CooeeFeatures\nimport SwiftUI\n\n'
+    printf 'internal struct %sAreas: ViewModifier {\n    internal let store: StoreOf<%s>\n\n' "$name" "$feature"
+    printf '    internal func body(content: Content) -> some View {\n        content%b\n    }\n}\n' "$mods"
+  } >"${dir%/*}/$name+Areas.swift.gen"
+  mv "${dir%/*}/$name+Areas.swift.gen" "${dir%/*}/$name+Areas.swift"
+}
+
+# arch: .drover/arch.toml (#729): every `frozen`, `generated` and `shared` line of .drover/arch/*.list, sorted, then each *.toml in name order.
+arch() {
+  {
+    printf '# Written by scripts/gen.sh from .drover/arch/ (docs/architecture/hotspots-2026-11-16). Never edit it.\n'
+    for k in frozen generated shared; do
+      printf '%s = [%s]\n' "$k" "$(awk -v k="$k" '$1 == k { print $2 }' .drover/arch/*.list | LC_ALL=C sort -u | awk '{ printf "%s\"%s\"", (NR > 1 ? ", " : ""), $0 }')"
+    done
+    printf 'generate = "scripts/gen.sh"\n'
+    for f in .drover/arch/*.toml; do
+      printf '\n'
+      cat "$f"
+    done
+  } >.drover/arch.toml.gen
+  mv .drover/arch.toml.gen .drover/arch.toml
+}
+
+# The inputs: each file of scripts/gen.d/ in name order, one `<kind> <args>` a line.
+for f in $(printf '%s\n' scripts/gen.d/* | LC_ALL=C sort); do . "./$f"; done
+arch
+
+# today: README.md's list between its markers, from the `## Today` bullets of docs/*.md and docs/*/README.md in file-name order, their ../ links made the README's.
+for f in $(printf '%s\n' docs/*.md docs/*/README.md | LC_ALL=C sort); do
+  awk '/^## / { on = $0 == "## Today"; next } on && /^- / { gsub(/\]\((\.\.\/)+/, "]("); print }' "$f"
 done >README.md.today
 awk -v f=README.md.today '/^<!-- \/today -->$/ { while ((getline l < f) > 0) print l; skip = 0 } !skip { print } /^<!-- today:/ { skip = 1 }' \
   README.md >README.md.gen
 mv README.md.gen README.md
 rm README.md.today
+
+# scope: README.md's Scope and Non-goals between their markers, from docs/scope.md's `## ` sections, its ../ links made the README's.
+awk '/^## / { on = 1 } on { gsub(/\]\((\.\.\/)+/, "]("); print }' docs/scope.md >README.md.scope
+awk -v f=README.md.scope '/^<!-- \/scope -->$/ { while ((getline l < f) > 0) print l; skip = 0 } !skip { print } /^<!-- scope:/ { skip = 1 }' \
+  README.md >README.md.gen
+mv README.md.gen README.md
+rm README.md.scope
 cargo update --workspace --quiet

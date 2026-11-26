@@ -456,8 +456,7 @@ fn watermark(dir: &Path, rid: &str) -> Value {
     serde_json::from_str::<Value>(&text).unwrap()[format!("routine-{rid}")].clone()
 }
 
-#[test]
-fn a_capped_signed_post_runs_nothing_but_still_feeds_the_silence_clock() {
+fn beacon_hook_mac() -> (Mac, u16) {
     let mut mac = Mac::new("guards-webhook", "");
     let port = TcpListener::bind("127.0.0.1:0")
         .unwrap()
@@ -476,6 +475,23 @@ fn a_capped_signed_post_runs_nothing_but_still_feeds_the_silence_clock() {
     let text = text.replace("when = \"0 1 * * *\"\n", "");
     fs::write(&settings, text.replace("[routine.place]", hook)).unwrap();
     mac.start();
+    (mac, port)
+}
+
+fn wait_for_the_first_run(mac: &Mac) {
+    let ran = (0..400).any(|_| {
+        let last = mac.cooee().json("/routines.json")[0]["last_run"].clone();
+        last["outcome"] == "ran" || {
+            thread::sleep(Duration::from_millis(25));
+            false
+        }
+    });
+    assert!(ran, "the first POST's run is recorded");
+}
+
+#[test]
+fn a_capped_signed_post_runs_nothing_but_still_feeds_the_silence_clock() {
+    let (mac, port) = beacon_hook_mac();
     for n in 0..3 {
         let alive = format!(r#"{{"kind":"alive","n":{n}}}"#);
         assert_eq!(post_in(port, "r-hook", &alive), (200, "alive".to_owned()));
@@ -494,6 +510,7 @@ fn a_capped_signed_post_runs_nothing_but_still_feeds_the_silence_clock() {
             .as_u64()
             .unwrap()
     };
+    wait_for_the_first_run(&mac);
     let first = heard(&mac);
     thread::sleep(Duration::from_millis(5));
     assert_eq!(

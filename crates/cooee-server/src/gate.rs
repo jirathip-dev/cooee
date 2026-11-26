@@ -4,7 +4,7 @@ use std::{
     sync::Arc,
 };
 
-use cooee_core::Devices;
+use cooee_core::{Devices, Peek};
 use flate2::write::GzEncoder;
 use futures_util::StreamExt;
 use topcoat::{
@@ -19,8 +19,11 @@ use topcoat::{
 
 use crate::{
     Hub,
-    http::{COOKIE, Caller, Paired, header, now, plain},
+    http::{Asking, COOKIE, Caller, Paired, header, now, plain},
+    pairing::{claim, jar},
 };
+
+const PAIR: [&str; 2] = ["/screens/pair", "/screens/pair/action"];
 
 pub(crate) const OPEN: [&str; 7] = [
     "/connectors/callback",
@@ -46,6 +49,18 @@ impl Gate {
             host.split(':').next().unwrap_or(host)
         };
         self.names.iter().any(|n| n.eq_ignore_ascii_case(name))
+    }
+
+    fn asking(&self, cx: &Cx) -> Option<Asking> {
+        let claim = claim(cx)?;
+        match self.devices.peek(&claim, now()) {
+            Ok(Peek::Gone) => None,
+            Ok(_) => Some(Asking(claim)),
+            Err(e) => {
+                cooee_core::note!("cooee: devices: {e}");
+                None
+            }
+        }
     }
 }
 
@@ -83,10 +98,7 @@ impl Layer for Gate {
                     None => plain(401, "a plugin's token is needed"),
                 };
             }
-            let token = header(cx, "cookie").and_then(|c| {
-                c.split(';')
-                    .find_map(|c| c.trim().strip_prefix(COOKIE)?.strip_prefix('='))
-            });
+            let token = jar(cx, COOKIE);
             let found = match token.map(|t| self.devices.find(t, now())).transpose() {
                 Ok(found) => found.flatten(),
                 Err(e) => {
@@ -96,6 +108,13 @@ impl Layer for Gate {
             };
             match found {
                 Some(d) => next.run(&cx.with(Paired(d)), body).await,
+                None if PAIR.contains(&path) => next.run(cx, body).await,
+                None if path == "/stream" || path.starts_with("/stream/") => {
+                    match self.asking(cx) {
+                        Some(a) => next.run(&cx.with(a), body).await,
+                        None => plain(401, "pair this device first"),
+                    }
+                }
                 None => plain(
                     401,
                     "pair this device first: run `cooee pair` on the machine",

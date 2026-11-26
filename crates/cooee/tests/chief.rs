@@ -24,20 +24,22 @@ struct Setup {
     cooee: Cooee,
 }
 
-const OWN: [&str; 10] = [
-    "propose_server",
-    "remember",
+const OWN: [&str; 12] = [
     "ask_persona",
+    "create_routine",
+    "desk",
     "handoff",
     "history",
-    "update_persona",
-    "create_routine",
-    "stop_routine",
-    "skill",
+    "mail",
+    "propose_server",
+    "remember",
     "secret",
+    "skill",
+    "stop_routine",
+    "update_persona",
 ];
 
-const CHIEFS: [&str; 9] = [
+const CHIEFS: [&str; 10] = [
     "access",
     "config",
     "look",
@@ -45,6 +47,7 @@ const CHIEFS: [&str; 9] = [
     "mcp_server",
     "persona",
     "room",
+    "route",
     "routine",
     "stored_secret",
 ];
@@ -206,12 +209,10 @@ impl Setup {
 fn only_chiefs_own_chat_lists_and_runs_its_tools_and_none_answers_or_sends_as_another() {
     let s = setup("chief-gate");
     let chief = s.start("chief");
-    let own = OWN
-        .iter()
-        .filter(|t| !["history", "ask_persona"].contains(t));
+    let own = OWN.iter().filter(|t| **t != "history");
     let mut want: Vec<String> = own
         .chain(&CHIEFS)
-        .chain(&["history", "ask_persona"])
+        .chain(&["history"])
         .map(|t| (*t).to_owned())
         .collect();
     assert_eq!(s.tools(&chief), want);
@@ -295,9 +296,26 @@ fn a_persona_and_its_routine_are_made_at_once_with_no_card_and_show_in_the_app()
             &json!("Check flight prices.")
         )
     );
+    assert_a_routine_is_made_for_travel_and_pauses(&s, &chief);
 
+    let items = s.items(&chief);
+    assert!(s.cards(&chief).is_empty(), "no card: {items:?}");
+    let notes: Vec<&Value> = items
+        .iter()
+        .map(|i| &i["text"])
+        .filter(|t| t.is_string())
+        .collect();
+    assert!(
+        notes.contains(&&json!("Created persona Travel")),
+        "{notes:?}"
+    );
+    assert!(items.iter().any(|i| i["kind"] == "routine"), "{items:?}");
+    assert_bad_persona_edits_are_refused_and_travel_archives_and_restores(&s, &chief);
+}
+
+fn assert_a_routine_is_made_for_travel_and_pauses(s: &Setup, chief: &str) {
     let routine = s.call(
-        &chief,
+        chief,
         "routine",
         &json!({ "do": "create", "persona": "travel",
         "name": "Flight prices", "when": "0 8 * * *", "prompt": "Check today's fares" }),
@@ -314,43 +332,32 @@ fn a_persona_and_its_routine_are_made_at_once_with_no_card_and_show_in_the_app()
         (&json!("Flight prices"), &json!("travel"), &json!(chief))
     );
     let id = r["id"].as_str().unwrap();
-    let paused = s.call(&chief, "routine", &json!({ "do": "pause", "id": id }));
+    let paused = s.call(chief, "routine", &json!({ "do": "pause", "id": id }));
     assert!(paused.unwrap().starts_with("Paused routine Flight prices"));
     assert!(s.cooee.json("/routines.json")[0]["paused"].is_object());
+}
 
-    let items = s.items(&chief);
-    assert!(s.cards(&chief).is_empty(), "no card: {items:?}");
-    let notes: Vec<&Value> = items
-        .iter()
-        .map(|i| &i["text"])
-        .filter(|t| t.is_string())
-        .collect();
-    assert!(
-        notes.contains(&&json!("Created persona Travel")),
-        "{notes:?}"
-    );
-    assert!(items.iter().any(|i| i["kind"] == "routine"), "{items:?}");
-
+fn assert_bad_persona_edits_are_refused_and_travel_archives_and_restores(s: &Setup, chief: &str) {
     let edit = json!({ "do": "edit", "id": "travel", "plugins": ["nope"] });
     assert!(
-        s.call(&chief, "persona", &edit)
+        s.call(chief, "persona", &edit)
             .unwrap_err()
             .contains("no installed plugin nope")
     );
     let sneaky = json!({ "do": "edit", "id": "travel", "machine": "studio" });
     assert!(
-        s.call(&chief, "persona", &sneaky)
+        s.call(chief, "persona", &sneaky)
             .unwrap_err()
             .starts_with("BAD_ARGS")
     );
     let me = json!({ "do": "archive", "id": "chief" });
     assert!(
-        s.call(&chief, "persona", &me)
+        s.call(chief, "persona", &me)
             .unwrap_err()
             .starts_with("IS_CHIEF")
     );
     s.call(
-        &chief,
+        chief,
         "persona",
         &json!({ "do": "archive", "id": "travel" }),
     )
@@ -365,7 +372,7 @@ fn a_persona_and_its_routine_are_made_at_once_with_no_card_and_show_in_the_app()
     assert!(!ids(s.cooee.json("/personas")).contains(&json!("travel")));
     assert!(s.dir.join("agents/.archive/travel/agent.toml").is_file());
     s.call(
-        &chief,
+        chief,
         "persona",
         &json!({ "do": "restore", "id": "travel" }),
     )
@@ -470,14 +477,13 @@ fn access_and_config_cards_show_the_files_diff_and_write_exactly_it_after_face_i
             .unwrap_err()
             .starts_with("NO_MACHINE")
     );
+    assert_config_cards_write_exactly_their_diff(&s, &chief, &face);
+}
 
+fn assert_config_cards_write_exactly_their_diff(s: &Setup, chief: &str, face: &dyn Fn() -> Value) {
     let set = json!({ "set": { "approval_expiry_minutes": 60 } });
-    assert!(
-        s.call(&chief, "config", &set)
-            .unwrap()
-            .starts_with("Asked.")
-    );
-    let card = s.card(&chief);
+    assert!(s.call(chief, "config", &set).unwrap().starts_with("Asked."));
+    let card = s.card(chief);
     assert!(
         card["detail"]
             .as_str()
@@ -485,36 +491,36 @@ fn access_and_config_cards_show_the_files_diff_and_write_exactly_it_after_face_i
             .contains("+ approval_expiry_minutes = 60")
     );
     let was = s.config();
-    assert_eq!(s.approve(&chief, &card, "decline", &json!({})).0, 200);
+    assert_eq!(s.approve(chief, &card, "decline", &json!({})).0, 200);
     assert_eq!(s.config(), was);
-    s.call(&chief, "config", &set).unwrap();
-    let card = s.card(&chief);
+    s.call(chief, "config", &set).unwrap();
+    let card = s.card(chief);
     fs::write(s.dir.join("config.toml"), format!("{was}# mine\n")).unwrap();
-    let (_, stale) = s.approve(&chief, &card, "approve", &face());
+    let (_, stale) = s.approve(chief, &card, "approve", &face());
     assert!(
         stale["line"].as_str().unwrap().contains("changed on disk"),
         "{stale}"
     );
     assert_eq!(s.config(), format!("{was}# mine\n"));
-    s.call(&chief, "config", &set).unwrap();
-    let card = s.card(&chief);
-    assert_eq!(s.approve(&chief, &card, "approve", &face()).0, 200);
+    s.call(chief, "config", &set).unwrap();
+    let card = s.card(chief);
+    assert_eq!(s.approve(chief, &card, "approve", &face()).0, 200);
     let set = was.replacen("[[mcp]]", "approval_expiry_minutes = 60\n[[mcp]]", 1);
     assert_eq!(s.config(), format!("{set}# mine\n"));
 
     let tokens = json!({ "set": { "plugins": [] } });
     assert!(
-        s.call(&chief, "config", &tokens)
+        s.call(chief, "config", &tokens)
             .unwrap_err()
             .starts_with("BAD_KEY")
     );
     let unknown = json!({ "set": { "colour": "red" } });
     assert!(
-        s.call(&chief, "config", &unknown)
+        s.call(chief, "config", &unknown)
             .unwrap_err()
             .starts_with("BAD_CONFIG")
     );
-    assert_eq!(s.cards(&chief).len(), 4);
+    assert_eq!(s.cards(chief).len(), 4);
 }
 
 #[test]
@@ -578,7 +584,7 @@ fn a_secret_and_a_machine_change_wait_on_face_id() {
 }
 
 #[test]
-fn chief_asks_any_persona_reads_any_history_and_opens_rooms_while_others_keep_can_message() {
+fn chief_routes_reads_any_history_and_opens_rooms_while_ask_persona_keeps_can_message() {
     let s = setup("chief-reach");
     let finance = s.start("finance");
     let chief = s.start("chief");
@@ -587,7 +593,7 @@ fn chief_asks_any_persona_reads_any_history_and_opens_rooms_while_others_keep_ca
         "ask_persona",
         &json!({ "persona": "finance", "message": "budget?" }),
     );
-    assert_eq!(asked.unwrap(), "Hello");
+    assert!(asked.unwrap_err().starts_with("NOT_ALLOWED"));
     let coder = s.start("coder");
     let refused = s.call(
         &coder,
@@ -673,4 +679,228 @@ fn chief_can_be_renamed_but_never_deleted_and_no_other_persona_takes_its_role() 
     let new = json!({ "name": "Boss", "agent": "fake-acp", "role": "chief" });
     assert_eq!(s.cooee.post("/personas", &new).0, 400);
     assert_eq!(s.cooee.request("DELETE", "/personas/coder", None).0, 200);
+}
+
+fn with_routable(name: &str) -> Setup {
+    let s = setup(name);
+    let declared = |mode: &str, role: &str| {
+        format!(
+            "name = \"{role}\"\nagent = \"fake-acp\"\n{mode}\n[purpose]\nrole = \"{role}\"\nuse = \"{role} work\"\n"
+        )
+    };
+    agent(&s.dir, "researcher", &declared("", "Researcher"), "");
+    agent(
+        &s.dir,
+        "planner",
+        &declared("mode = \"hand-off\"", "Planner"),
+        "",
+    );
+    agent(
+        &s.dir,
+        "coder",
+        "name = \"Coder\"\nagent = \"fake-acp\"\ncan_message = [\"planner\"]\n",
+        "",
+    );
+    s
+}
+
+impl Setup {
+    fn rows(&self) -> Vec<Value> {
+        self.cooee.json("/threads").as_array().unwrap().clone()
+    }
+
+    fn of(&self, profile: &str) -> Vec<Value> {
+        let rows = self.rows().into_iter();
+        rows.filter(|r| r["profile"] == profile).collect()
+    }
+
+    fn say(&self, id: &str, text: &str, random_id: &str) -> (u16, String) {
+        let body = json!({ "text": text, "random_id": random_id });
+        self.cooee.post(&format!("/threads/{id}/send"), &body)
+    }
+}
+
+#[test]
+fn route_lists_only_declared_agents_and_refuses_an_unknown_id_making_no_thread() {
+    let s = with_routable("route-unknown");
+    let chief = s.start("chief");
+    let listed = s.mcp(&chief, "tools/list", &json!({}));
+    let tools = listed["result"]["tools"].as_array().unwrap().iter();
+    let route = tools.clone().find(|t| t["name"] == "route").unwrap();
+    assert_eq!(
+        route["inputSchema"]["properties"]["agent"]["enum"],
+        json!(["planner", "researcher"])
+    );
+    let before = s.rows().len();
+    for id in ["reseacher", "finance", "chief"] {
+        let refused = s.call(&chief, "route", &json!({ "agent": id, "message": "hi" }));
+        let refused = refused.unwrap_err();
+        assert!(
+            refused.starts_with(&format!("NO_AGENT: no agent {id}."))
+                && refused.contains("planner, researcher"),
+            "{refused}"
+        );
+    }
+    assert_eq!(s.rows().len(), before);
+    assert!(
+        s.items(&chief)
+            .iter()
+            .all(|i| i["kind"] != "ask" && i["kind"] != "link")
+    );
+}
+
+#[test]
+fn a_delegate_agents_answer_comes_back_to_chief_labelled_with_the_agent() {
+    let s = with_routable("route-delegate");
+    let chief = s.start("chief");
+    let said = s.call(
+        &chief,
+        "route",
+        &json!({ "agent": "researcher", "message": "compare the flights" }),
+    );
+    assert_eq!(said.unwrap(), "[Researcher answered]: Hello");
+    let cards: Vec<Value> = s
+        .items(&chief)
+        .into_iter()
+        .filter(|i| i["kind"] == "ask")
+        .collect();
+    assert_eq!(
+        (
+            &cards[0]["persona"],
+            &cards[0]["name"],
+            &cards[0]["outcome"]
+        ),
+        (
+            &json!("researcher"),
+            &json!("Researcher"),
+            &json!("replied")
+        )
+    );
+    let x = cards[0]["thread"].as_str().unwrap();
+    let asked = s.items(x);
+    let question = asked.iter().find(|i| i["kind"] == "you").unwrap();
+    assert_eq!(
+        (&question["text"], &question["speaker"]),
+        (&json!("compare the flights"), &json!("chief"))
+    );
+}
+
+#[test]
+fn a_hand_off_agent_opens_its_own_chat_with_chief_out_of_the_loop() {
+    let s = with_routable("route-hand-off");
+    let chief = s.start("chief");
+    let said = s.call(
+        &chief,
+        "route",
+        &json!({ "agent": "planner", "message": "spec the trip" }),
+    );
+    let said = said.unwrap();
+    assert!(
+        said.starts_with("Handed off to Planner:") && !said.contains("Hello"),
+        "{said}"
+    );
+    let rows = s.of("planner");
+    assert_eq!(rows.len(), 1, "{rows:?}");
+    let planner = rows[0]["id"].as_str().unwrap().to_owned();
+    assert_eq!(rows[0]["asked_by"], Value::Null);
+    let opened = s.items(&planner);
+    let first = opened.iter().find(|i| i["kind"] == "you").unwrap();
+    assert_eq!(
+        (&first["text"], &first["speaker"]),
+        (&json!("spec the trip"), &json!("chief"))
+    );
+    let link = |id: &str| {
+        let items = s.items(id).into_iter();
+        items
+            .filter(|i| i["kind"] == "link")
+            .map(|i| (i["thread"].clone(), i["out"].clone()))
+            .collect::<Vec<_>>()
+    };
+    assert_eq!(link(&chief), [(json!(planner), json!(true))]);
+    assert_eq!(link(&planner), [(json!(chief), json!(false))]);
+    let again = s.call(
+        &chief,
+        "route",
+        &json!({ "agent": "researcher", "message": "x" }),
+    );
+    assert!(again.unwrap_err().starts_with("HANDED_OFF"));
+
+    let to_chief = s.shed.sent(&format!("cooee-{chief}")).len();
+    let (status, body) = s.say(&planner, "June, two weeks", "owner-1");
+    assert_eq!(status, 200, "{body}");
+    eventually(|| {
+        s.shed
+            .sent(&format!("cooee-{planner}"))
+            .iter()
+            .any(|t| t.contains("June, two weeks"))
+    });
+    assert_eq!(s.shed.sent(&format!("cooee-{chief}")).len(), to_chief);
+
+    let coder = s.start("coder");
+    let relayed = s.call(
+        &coder,
+        "ask_persona",
+        &json!({ "persona": "planner", "message": "spec?" }),
+    );
+    assert!(relayed.unwrap_err().starts_with("HAND_OFF: Planner"));
+}
+
+#[test]
+fn an_at_name_reaches_its_agent_with_no_call_to_chiefs_model() {
+    let s = with_routable("route-mention");
+    let chief = s.start("chief");
+    let to_chief = s.shed.sent(&format!("cooee-{chief}")).len();
+    let before = s.items(&chief).len();
+    let (status, body) = s.say(&chief, "@reseacher hi", "m-0");
+    assert_eq!(status, 400, "{body}");
+    assert!(body.contains("NO_AGENT"), "{body}");
+    assert_eq!(s.items(&chief).len(), before);
+
+    let (status, body) = s.say(&chief, "@Researcher compare the flights", "m-1");
+    assert_eq!(status, 200, "{body}");
+    eventually(|| {
+        let items = s.items(&chief);
+        items
+            .iter()
+            .any(|i| i["kind"] == "agent" && i["speaker"] == "researcher" && i["text"] == "Hello")
+    });
+    let x = s.of("researcher");
+    let x = x[0]["id"].as_str().unwrap();
+    assert!(
+        s.shed
+            .sent(&format!("cooee-{x}"))
+            .iter()
+            .any(|t| t.contains("compare the flights"))
+    );
+    let card = s
+        .items(&chief)
+        .into_iter()
+        .find(|i| i["kind"] == "ask")
+        .unwrap();
+    assert_eq!(
+        (&card["persona"], &card["outcome"]),
+        (&json!("researcher"), &json!("replied"))
+    );
+
+    let (status, body) = s.say(&chief, "@planner ship it", "m-2");
+    assert_eq!(status, 200, "{body}");
+    let planner = s.of("planner");
+    let planner = planner[0]["id"].as_str().unwrap();
+    let first = s
+        .items(planner)
+        .into_iter()
+        .find(|i| i["kind"] == "you")
+        .unwrap();
+    assert_eq!(
+        (&first["text"], &first["speaker"]),
+        (&json!("ship it"), &Value::Null)
+    );
+    assert_eq!(s.shed.sent(&format!("cooee-{chief}")).len(), to_chief);
+
+    let (status, body) = s.say(&chief, "thanks", "m-3");
+    assert_eq!(status, 200, "{body}");
+    s.told(
+        &chief,
+        "The owner asked Researcher directly: compare the flights",
+    );
 }

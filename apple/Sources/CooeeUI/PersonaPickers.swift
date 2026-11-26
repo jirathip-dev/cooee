@@ -1,22 +1,53 @@
 import CooeeCore
 import SwiftUI
 
+internal struct PersonaActions {
+    internal var close: () -> Void
+    internal var save: () -> Void
+    internal var clear: () -> Void
+    internal var chat: () -> Void
+    internal var agent: @MainActor @Sendable (String) -> Void = { _ in }
+    internal var browse: () -> Void = {}
+    internal var more: () -> Void = {}
+    internal var delete: (() -> Void)?
+    internal var photo: () -> Void = {}
+    internal var sprite: (String?) -> Void = { _ in }
+    internal var skill: (String) -> Void = { _ in }
+    internal var catalogue: () -> Void = {}
+    internal var rules: () -> Void = {}
+
+    internal init(
+        close: @escaping () -> Void = {}, save: @escaping () -> Void = {}, clear: @escaping () -> Void = {},
+        chat: @escaping () -> Void = {}
+    ) {
+        self.close = close
+        self.save = save
+        self.clear = clear
+        self.chat = chat
+    }
+}
+
 internal struct PersonaChoices {
     internal var agents: [AgentOption]
     internal var models: [String]
     internal var efforts: [String]
     internal var machines: [MachineRow]
+    internal var connectors: ConnectorList
+    internal var lists: [ModelList] = []
+    internal var rules: Int?
 
     internal init(
         agents: [AgentOption] = [],
         models: [String] = [],
         efforts: [String] = [],
-        machines: [MachineRow] = []
+        machines: [MachineRow] = [],
+        connectors: ConnectorList = ConnectorList()
     ) {
         self.agents = agents
         self.models = models
         self.efforts = efforts
         self.machines = machines
+        self.connectors = connectors
     }
 }
 
@@ -111,14 +142,14 @@ internal struct AvatarEditor: View {
         } else {
             Menu {
                 Button("Choose photo…", systemImage: "photo", action: photo)
-                Picker("Initials and colour", selection: $avatar) {
-                    ForEach(Tint.allCases, id: \.self) { tint in
-                        Label(tint.rawValue.capitalized, systemImage: "circle.fill")
-                            .foregroundStyle(look.palette.tint(tint)).tag(Optional(tint.avatar))
+                Picker("Character", selection: $avatar) {
+                    ForEach(Mascot.allCases, id: \.self) { mascot in
+                        Text(look.figures == .ascii ? mascot.face.text(.idle) : mascot.name).tag(
+                            Optional(mascot.avatar))
                     }
                 }
                 .pickerStyle(.inline)
-                if avatar != nil { Button("Default avatar", role: .destructive) { avatar = nil } }
+                if avatar != nil { Button("Default character", role: .destructive) { avatar = nil } }
             } label: {
                 label
             }

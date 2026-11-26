@@ -33,6 +33,10 @@ internal struct MenuHost: View {
                     let editor = menu.scope(state: \.editor, action: \.editor)
                 {
                     if compact { ThemeEditor(store: editor) } else { ThemeMac(store: editor).toolbar(.hidden) }
+                } else if page == .connectors, pages.contains(.string(page.rawValue)),
+                    let connectors = menu.scope(state: \.connectors, action: \.connectors)
+                {
+                    ConnectorsPage(store: connectors)
                 } else if pages.contains(.string(page.rawValue)) {
                     MenuPage(store: menu, page: page)
                 }
@@ -62,7 +66,7 @@ internal struct MenuScreen: View {
     private var values: [String: String] {
         let settings = store.settings
         let look = "\(settings.style.label) · \(settings.scheme.rawValue.capitalized)"
-        return ["look": look, "notifications": settings.push == nil ? "Off" : "On"]
+        return ["look": look, "notifications": store.alerts ? "On" : "Off"]
     }
 }
 
@@ -93,7 +97,7 @@ internal struct MenuPage: View {
                 case .look: lookPage
                 case .notifications: pushPage
                 case .appIcon: AppIconPicker(store: store)
-                case .terminal, .themeEditor: EmptyView()
+                case .terminal, .themeEditor, .connectors: EmptyView()
                 }
             }
             .padding(16)
@@ -111,6 +115,7 @@ internal struct MenuPage: View {
         case .terminal: "Terminal"
         case .appIcon: "App icon"
         case .themeEditor: "Theme"
+        case .connectors: "Connectors"
         }
     }
 
@@ -152,9 +157,12 @@ internal struct MenuPage: View {
         Group2 {
             Toggle(
                 "Push notifications",
-                isOn: Binding(get: { store.settings.push != nil }, set: { store.send(.push($0)) })
+                isOn: Binding(get: { store.alerts }, set: { store.send(.push($0)) })
             )
             .ui(16, .regular, look).disabled(store.busy).padding(.horizontal, 14).frame(height: 48)
+        }
+        if store.alerts {
+            ActionRow(symbol: "paperplane", title: "Send test push") { store.send(.test) }.disabled(store.busy)
         }
         Text("Asks and finished turns arrive on this device, even when cooee is closed.")
             .ui(13, .regular, look).foregroundStyle(look.palette.mute)

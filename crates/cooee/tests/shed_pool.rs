@@ -5,11 +5,11 @@ mod support;
 
 use std::path::Path;
 
-use cooee_core::{SHED_MIN_PROTOCOL, Shed, ShedError, shed_proto::Hello};
+use cooee_core::{Calls as _, SHED_MIN_PROTOCOL, Shed, ShedError, shed_proto::Hello};
 use support::{FakeShed, scratch, version};
 
 fn client(dir: &Path) -> Shed {
-    Shed::new(dir.join("shed"), Some(dir.to_owned()))
+    Shed::new(Some(dir))
 }
 
 fn count(shed: &FakeShed, method: &str) -> usize {

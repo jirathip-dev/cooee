@@ -1,9 +1,9 @@
 use cooee_core::{
-    Change, plugins,
+    Calls as _, Change, plugins,
     shed_proto::{LinkState, TerminalInfo},
 };
 
-use super::{Hub, Live, lock};
+use super::{Hub, live::Live, lock};
 
 impl Hub {
     /// Drops the Workflow sessions whose terminal is not among `terminals` (listed at `at`): the tool that started

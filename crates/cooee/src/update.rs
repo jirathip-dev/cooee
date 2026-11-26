@@ -9,7 +9,11 @@ use std::{
 
 use cooee_core::Config;
 
-use crate::{devices::now, service::label, setup};
+use crate::{
+    devices::now,
+    service::{label, service},
+    setup,
+};
 
 /// The commit this binary was built at: `COOEE_REV`, set by the release workflow.
 pub const REV: Option<&str> = option_env!("COOEE_REV");
@@ -49,18 +53,22 @@ fn url(sha: &str, file: &str) -> String {
 }
 
 /// The commit to install, or why there is none: main's `head`, unless it is installed already or failed to install
-/// before.
+/// before under this `installed` build.
 pub fn decide(installed: Option<&str>, failed: Option<&str>, head: &str) -> Result<String, String> {
     let at = short(head);
     if installed == Some(head) {
         Err(format!("up to date at {at}"))
-    } else if failed == Some(head) {
+    } else if failed == Some(mark(installed, head).as_str()) {
         Err(format!(
             "main {at} failed to install before: it waits for a newer one"
         ))
     } else {
         Ok(head.to_owned())
     }
+}
+
+fn mark(installed: Option<&str>, sha: &str) -> String {
+    format!("{sha} by {}", installed.unwrap_or("unknown"))
 }
 
 fn sum(sha: &str) -> Result<String, String> {
@@ -121,7 +129,7 @@ fn update(config: &Config, check: bool) -> Result<(), String> {
     match install(config, &bin()?, &sha, &sum) {
         Ok(()) => log(&data, &format!("installed {sha}")),
         Err(why) => {
-            fs::write(data.join("update.failed"), &sha).map_err(|e| e.to_string())?;
+            fs::write(data.join("update.failed"), mark(REV, &sha)).map_err(|e| e.to_string())?;
             let note = cooee_server::Note {
                 title: "cooee update".to_owned(),
                 body: why.chars().take(120).collect(),
@@ -198,11 +206,9 @@ fn install(config: &Config, bin: &Path, sha: &str, sum: &str) -> Result<(), Stri
 }
 
 fn restart(config: &Config) -> bool {
-    let uid = setup::output(&["id", "-u"]).unwrap_or_default();
-    let job = format!("gui/{}/{}", uid.trim(), label(&config.instance));
-    let url = format!("http://127.0.0.1:{}/pair", config.port);
-    setup::ok(&["launchctl", "kickstart", "-k", &job])
-        && setup::wait(|| setup::ok(&["curl", "-sf", "-o", "/dev/null", "--max-time", "2", &url]))
+    let url = format!("http://127.0.0.1:{}/", config.port);
+    service(config, None, "serve").is_ok_and(|s| s.restart().is_ok())
+        && setup::wait(|| setup::ok(&["curl", "-s", "-o", "/dev/null", "--max-time", "2", &url]))
 }
 
 fn log(data: &Path, line: &str) -> Result<(), String> {
@@ -254,9 +260,17 @@ mod tests {
             decide(Some(NEW), None, NEW),
             Err("up to date at 2222222".to_owned())
         );
+        let failed = format!("{NEW} by {OLD}");
         assert!(
-            decide(Some(OLD), Some(NEW), NEW)
+            decide(Some(OLD), Some(&failed), NEW)
                 .is_err_and(|e| e.contains("failed to install before"))
         );
+    }
+
+    #[test]
+    fn a_head_that_failed_under_another_build_is_tried_again() {
+        let by_other = format!("{NEW} by 3333333333333333333333333333333333333333");
+        assert_eq!(decide(Some(OLD), Some(&by_other), NEW), Ok(NEW.to_owned()));
+        assert_eq!(decide(Some(OLD), Some(NEW), NEW), Ok(NEW.to_owned()));
     }
 }

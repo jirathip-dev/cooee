@@ -10,7 +10,9 @@ internal struct PinnedRow: View {
     private var stage: CooeeCore.Stage? { look.stage }
 
     internal var body: some View {
-        Stage(height: 180, title: "pinned") { strip.padding(.bottom, stage == nil ? 0 : 8) }
+        if !pins.isEmpty {
+            Stage(height: 180, title: "pinned") { strip.padding(.bottom, stage == nil ? 0 : 8) }
+        }
     }
 
     private var strip: some View {

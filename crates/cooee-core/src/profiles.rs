@@ -12,6 +12,10 @@ use serde::{Deserialize, Serialize};
 
 use crate::agents::{self, Agent, Lent, Style};
 
+mod onto;
+
+pub use onto::onto;
+
 /// One agent profile.
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize)]
 #[serde(deny_unknown_fields)]
@@ -60,6 +64,12 @@ pub struct Profile {
     /// Threads its plugin lists as this agent's (its side threads, the newest the ongoing chat).
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub threads: Vec<String>,
+    /// What it is for (#802).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub purpose: Option<agents::route::Purpose>,
+    /// How Chief reaches it (#802); none: hand-off.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub mode: Option<agents::route::Mode>,
 }
 
 impl Profile {
@@ -101,6 +111,8 @@ impl Profile {
             mcp: self.mcp,
             policy: self.policy,
             fallback: self.fallback,
+            purpose: self.purpose,
+            mode: self.mode,
             ..Agent::default()
         }
     }
@@ -177,6 +189,40 @@ mod tests {
             toml::from_str::<Profile>("name = \"p\"\nlabel = \"P\"\nagent = \"a\"\nhooks = 1")
                 .is_err()
         );
+    }
+
+    #[test]
+    fn an_owner_agent_on_a_profile_takes_its_launch_keys_and_text_and_keeps_its_own() {
+        let mut served = profile("settings = \"/s.json\"\nenv = { T = \"{thread}\" }")
+            .lend("drover", Path::new("/b"))
+            .unwrap();
+        served.instructions = "the rulebook".to_owned();
+        let own = Agent {
+            id: "orchestrator".to_owned(),
+            name: "Orchestrator".to_owned(),
+            model: "m".to_owned(),
+            instructions: "a stale copy".to_owned(),
+            profile: Some("drover/p".to_owned()),
+            ..Agent::default()
+        };
+        let on = onto(&own, std::slice::from_ref(&served)).unwrap();
+        assert_eq!(
+            (
+                on.name.as_str(),
+                on.model.as_str(),
+                on.instructions.as_str(),
+                on.agent.as_str()
+            ),
+            ("Orchestrator", "m", "the rulebook", "a")
+        );
+        assert_eq!(on.settings, Some(PathBuf::from("/s.json")));
+        assert_eq!(on.mode(), agents::route::Mode::HandOff);
+        assert!(onto(&own, &[]).unwrap_err().contains("not served"));
+        served.lent = Some(Lent {
+            hidden: Some("no guard".to_owned()),
+            ..served.lent.unwrap()
+        });
+        assert!(onto(&own, &[served]).unwrap_err().contains("hidden"));
     }
 
     #[test]

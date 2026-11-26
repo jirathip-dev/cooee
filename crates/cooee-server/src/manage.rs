@@ -438,41 +438,7 @@ impl Manager {
             )));
         }
         let missing: Vec<String> = m.needs.iter().filter(|t| !on_path(t)).cloned().collect();
-        let tabs: Vec<&str> = m.tabs.iter().map(|t| t.label.as_str()).collect();
-        let mut text = format!(
-            "{} {} from {url}\ncommit {commit}\nbuild: {}\nrun: {}\n  (its backend runs as you on this Mac)\ntabs: {}",
-            m.name,
-            m.version,
-            m.build,
-            m.run,
-            tabs.join(", ")
-        );
-        if !m.places.is_empty() {
-            let actions = m.permissions.actions.join(", ");
-            write!(
-                text,
-                "\nscreens: {} places; actions: {actions}",
-                m.places.len()
-            )
-            .ok();
-        }
-        if !m.profiles.is_empty() {
-            let labels: Vec<String> = m
-                .profiles
-                .iter()
-                .map(|p| format!("{} ({})", p.label, p.agent))
-                .collect();
-            write!(text, "\nagent profiles: {}", labels.join(", ")).ok();
-        }
-        if !m.needs.is_empty() {
-            write!(text, "\nneeds: {}", m.needs.join(", ")).ok();
-        }
-        if !missing.is_empty() {
-            write!(text, "\nmissing: {} (install it first)", missing.join(", ")).ok();
-        }
-        if listed.is_none() {
-            text += "\nnot reviewed: this plugin isn't in cooee's index; read its code before you add it";
-        }
+        let text = plan_text(&m, (url, &commit), &missing, listed.is_some());
         Ok(Plan {
             url: url.to_owned(),
             commit,
@@ -509,10 +475,12 @@ impl Manager {
         )?;
         let built =
             Manifest::parse(&fs::read_to_string(dir.join("cooee-plugin.toml"))?).and_then(|m| {
-                note(&log, &format!("build {commit}: {}", m.build));
-                let status = sh(&m.build, &dir, &log)?.status()?;
-                if !status.success() {
-                    return Err(other(format!("the build failed ({status}): see its log")));
+                if !m.attach_only() {
+                    note(&log, &format!("build {commit}: {}", m.build));
+                    let status = sh(&m.build, &dir, &log)?.status()?;
+                    if !status.success() {
+                        return Err(other(format!("the build failed ({status}): see its log")));
+                    }
                 }
                 self.health(&dir, &m, token, &log)?;
                 Ok(m)
@@ -542,6 +510,16 @@ impl Manager {
 
     fn health(&self, dir: &Path, m: &Manifest, token: &str, log: &Path) -> io::Result<()> {
         let attached = m.attach_port().filter(|&p| up(p));
+        if attached.is_none() && m.attach_only() {
+            note(
+                log,
+                &format!(
+                    "{} is down: attach-only, it shows down until it answers",
+                    m.attach
+                ),
+            );
+            return Ok(());
+        }
         let port = attached.map_or_else(free_port, Ok)?;
         let mut child = match attached {
             Some(_) => None,
@@ -950,64 +928,83 @@ impl Manager {
                 next: 0,
                 state: "starting".to_owned(),
             });
-            let mut crashed = match run.child.as_mut().map(Child::try_wait) {
-                Some(Ok(None)) | None => None,
-                Some(exit) => Some(
-                    exit.ok()
-                        .flatten()
-                        .map_or("it exited".to_owned(), |s| s.to_string()),
-                ),
-            };
-            if let Some(c) = run.child.as_mut().filter(|_| crashed.is_none())
-                && let Some(&(_, ok)) = checks.iter().find(|(n, _)| n == &l.name)
-            {
-                run.check = now + CHECK_EVERY;
-                run.misses = if ok { 0 } else { run.misses + 1 };
-                if run.misses >= MISSES {
-                    stop(c);
-                    crashed = Some(format!("hung, {MISSES} health checks in a row failed"));
-                }
-            }
-            if crashed.is_none() && run.child.is_none() && now >= run.next {
-                if let Some(why) = self.manifest(l).ok().and_then(|m| m.fits().err()) {
-                    alerts.push(self.turn_off(l, &why, ""));
-                    continue;
-                }
-                match self.spawn(l) {
-                    Ok(Some((c, module))) => {
-                        run.child = Some(c);
-                        run.module = module;
-                        run.check = now + CHECK_EVERY;
-                        run.misses = 0;
-                        "running".clone_into(&mut run.state);
-                    }
-                    Ok(None) => "attached".clone_into(&mut run.state),
-                    Err(e) => crashed = Some(e.to_string()),
-                }
-            }
-            let Some(how) = crashed else { continue };
-            run.child = None;
-            if self
-                .manifest(l)
-                .is_ok_and(|m| m.attach_port().is_some_and(up))
-            {
-                note(
-                    &self.log(&l.name),
-                    &format!("the backend stopped ({how}) while its attach port is up: attached"),
-                );
-                "attached".clone_into(&mut run.state);
-                continue;
-            }
-            note(&self.log(&l.name), &format!("the backend stopped: {how}"));
-            if let Some(wait) = run.backoff.crash(now) {
-                run.next = now + wait;
-                run.state = format!("crashed ({how}), restarting");
-                continue;
-            }
-            let why = "off after 5 crashes in 10 minutes";
-            alerts.push(self.turn_off(l, why, "; its log is in Settings › Plugins"));
+            alerts.extend(self.tend(l, run, &checks, now));
         }
         alerts
+    }
+
+    fn tend(
+        &self,
+        l: &Locked,
+        run: &mut Run,
+        checks: &[(String, bool)],
+        now: u64,
+    ) -> Option<String> {
+        let mut crashed = match run.child.as_mut().map(Child::try_wait) {
+            Some(Ok(None)) | None => None,
+            Some(exit) => Some(
+                exit.ok()
+                    .flatten()
+                    .map_or("it exited".to_owned(), |s| s.to_string()),
+            ),
+        };
+        if let Some(c) = run.child.as_mut().filter(|_| crashed.is_none())
+            && let Some(&(_, ok)) = checks.iter().find(|(n, _)| n == &l.name)
+        {
+            run.check = now + CHECK_EVERY;
+            run.misses = if ok { 0 } else { run.misses + 1 };
+            if run.misses >= MISSES {
+                stop(c);
+                crashed = Some(format!("hung, {MISSES} health checks in a row failed"));
+            }
+        }
+        if crashed.is_none() && run.child.is_none() && now >= run.next {
+            let m = self.manifest(l).ok();
+            if let Some(why) = m.as_ref().and_then(|m| m.fits().err()) {
+                return Some(self.turn_off(l, &why, ""));
+            }
+            if let Some(m) = m.filter(Manifest::attach_only) {
+                let on = m.attach_port().is_some_and(up);
+                (if on { "attached" } else { "down" }).clone_into(&mut run.state);
+                return None;
+            }
+            match self.spawn(l) {
+                Ok(Some((c, module))) => {
+                    run.child = Some(c);
+                    run.module = module;
+                    run.check = now + CHECK_EVERY;
+                    run.misses = 0;
+                    "running".clone_into(&mut run.state);
+                }
+                Ok(None) => "attached".clone_into(&mut run.state),
+                Err(e) => crashed = Some(e.to_string()),
+            }
+        }
+        let how = crashed?;
+        self.restart_after(l, run, &how, now)
+    }
+
+    fn restart_after(&self, l: &Locked, run: &mut Run, how: &str, now: u64) -> Option<String> {
+        run.child = None;
+        if self
+            .manifest(l)
+            .is_ok_and(|m| m.attach_port().is_some_and(up))
+        {
+            note(
+                &self.log(&l.name),
+                &format!("the backend stopped ({how}) while its attach port is up: attached"),
+            );
+            "attached".clone_into(&mut run.state);
+            return None;
+        }
+        note(&self.log(&l.name), &format!("the backend stopped: {how}"));
+        if let Some(wait) = run.backoff.crash(now) {
+            run.next = now + wait;
+            run.state = format!("crashed ({how}), restarting");
+            return None;
+        }
+        let why = "off after 5 crashes in 10 minutes";
+        Some(self.turn_off(l, why, "; its log is in Settings › Plugins"))
     }
 
     fn turn_off(&self, l: &Locked, why: &str, more: &str) -> String {
@@ -1058,6 +1055,60 @@ impl Manager {
             }
         }
     }
+}
+
+fn plan_text(
+    m: &Manifest,
+    (url, commit): (&str, &str),
+    missing: &[String],
+    listed: bool,
+) -> String {
+    let tabs: Vec<&str> = m.tabs.iter().map(|t| t.label.as_str()).collect();
+    let how = if m.attach_only() {
+        format!(
+            "attach: {} (attach-only: cooee builds and runs nothing)",
+            m.attach
+        )
+    } else {
+        format!(
+            "build: {}\nrun: {}\n  (its backend runs as you on this Mac)",
+            m.build, m.run
+        )
+    };
+    let mut text = format!(
+        "{} {} from {url}\ncommit {commit}\n{how}\ntabs: {}",
+        m.name,
+        m.version,
+        tabs.join(", ")
+    );
+    if !m.places.is_empty() {
+        let actions = m.permissions.actions.join(", ");
+        write!(
+            text,
+            "\nscreens: {} places; actions: {actions}",
+            m.places.len()
+        )
+        .ok();
+    }
+    if !m.profiles.is_empty() {
+        let labels: Vec<String> = m
+            .profiles
+            .iter()
+            .map(|p| format!("{} ({})", p.label, p.agent))
+            .collect();
+        write!(text, "\nagent profiles: {}", labels.join(", ")).ok();
+    }
+    if !m.needs.is_empty() {
+        write!(text, "\nneeds: {}", m.needs.join(", ")).ok();
+    }
+    if !missing.is_empty() {
+        write!(text, "\nmissing: {} (install it first)", missing.join(", ")).ok();
+    }
+    if !listed {
+        text +=
+            "\nnot reviewed: this plugin isn't in cooee's index; read its code before you add it";
+    }
+    text
 }
 
 #[cfg(test)]

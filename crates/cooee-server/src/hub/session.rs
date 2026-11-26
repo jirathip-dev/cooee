@@ -2,39 +2,41 @@ use std::path::Path;
 
 use cooee_core::{
     agents::Agent,
+    mcp::Server,
     provider::{Channel, Gap, Setup, Want},
 };
 
 use super::{HubError, Recipe};
 use crate::login::Logins;
 
-pub(crate) fn persona(
+pub fn persona(
     logins: &Logins,
     a: &Agent,
     account: Option<&str>,
-    (data, config): (&Path, Option<&Path>),
+    (data, config, registry): (&Path, Option<&Path>, &[Server]),
 ) -> Result<Recipe, HubError> {
     let brief = a.brief(config);
-    let (off, run) = (a.off(), data.join("run").join(&a.id));
+    let off = a.off(registry);
+    let run = data.join("run").join(&a.id);
     let want = Want {
         brief: &brief,
         off: &off,
-        ask_all: false,
+        ask_all: true,
         run: &run,
     };
     let setup = logins.session(&a.agent, &want);
     let signed = setup.is_some();
     let setup = setup.unwrap_or_else(|| Setup::plain(&want));
-    let (account, mut launch) = logins.agent(a, account, data)?;
+    let (account, mut launch) = logins.agent(a, (account, setup.meta), data)?;
     for (file, text) in &setup.files {
         let file = run.join(file);
         cooee_core::write_private(&file, text.as_bytes())
             .map_err(|e| HubError::Refused(format!("{}: {e}", file.display())))?;
     }
-    launch.meta = setup.meta;
+    launch.policy = Some("ask".to_owned());
     launch.env.extend(setup.env);
     launch.args.extend(setup.args);
-    let own = signed && account.is_empty();
+    let own = signed && launch.account.is_none();
     let gaps = setup.gaps.into_iter();
     Ok(Recipe {
         account,

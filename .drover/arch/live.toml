@@ -1,0 +1,5 @@
+[[ban]]
+pattern = "Shelf"
+paths = ["crates/cooee-server/src/**"]
+except = ["crates/cooee-server/src/live.rs"]
+reason = "#714: only live.rs publishes a screen: a screen module builds a Block and never diffs, puts or frames"

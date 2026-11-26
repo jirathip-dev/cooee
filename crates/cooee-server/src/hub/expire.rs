@@ -1,8 +1,20 @@
 use cooee_core::{Body, Item};
 
-use super::{Hub, Live, lock};
+use super::{Hub, Seed, live::Live, lock};
 
 const EXPIRED: &str = "expired";
+
+pub(super) struct State {
+    expiry: u64,
+}
+
+impl State {
+    pub(super) fn open(seed: &Seed<'_>) -> Self {
+        Self {
+            expiry: seed.config.approval_expiry_minutes.saturating_mul(60_000),
+        }
+    }
+}
 
 impl Hub {
     pub(super) fn expire(&self, now: u64) {
@@ -16,11 +28,9 @@ impl Hub {
                     cooee_core::note!("cooee: {e}");
                     continue;
                 }
-                let mut due = l
-                    .chat
-                    .items
-                    .iter()
-                    .filter(|i| now >= i.at.saturating_add(self.expiry) && unattended(&l, i));
+                let mut due = l.chat.items.iter().filter(|i| {
+                    now >= i.at.saturating_add(self.areas.expire.expiry) && unattended(&l, i)
+                });
                 due.find_map(|i| i.deny().map(|o| (l.meta.id.clone(), i.id, o.id.clone())))
             };
             let Some((id, item, option)) = due else {
@@ -187,6 +197,44 @@ mod tests {
         assert!(matches!(
             card(&hub, "early").body,
             Body::Approval { tapped: Some(t), card, .. } if t == "allow" && card.by.as_deref() == Some("phone")
+        ));
+    }
+
+    #[test]
+    fn a_background_persona_card_expires_as_the_harnesss_one_time_deny_of_its_request() {
+        let dir = scratch("expire-persona");
+        let sent = fake_shed(&dir);
+        let t0 = super::super::now();
+        let mark = json!({ "id": "r-1", "name": "nightly" });
+        let meta = json!({ "routine": mark, "random_id": "r1" });
+        seed(&dir, "run", &meta, None, t0);
+        let jsonl = dir.join("data/threads/run.jsonl");
+        let you = fs::read_to_string(&jsonl)
+            .unwrap()
+            .lines()
+            .next()
+            .unwrap()
+            .to_owned();
+        let option = |id: &str, kind: &str| json!({ "id": id, "name": id, "kind": kind });
+        let rule = json!({ "effect": "allow", "kind": "run", "pattern": "cargo test *" });
+        let ask = json!({ "id": 2, "at": t0, "seq": 1, "kind": "approval", "tool": "cargo test -p x",
+            "action": "run", "request": { "id": "q7", "allow": "once", "deny": "no", "rule": rule },
+            "options": [option("allow", "allow_once"), option("always", "allow_always"), option("deny", "reject_once")] });
+        fs::write(&jsonl, format!("{you}\n{ask}\n")).unwrap();
+        let hub = hub(&dir);
+        hub.watch(t0 + EXPIRY);
+        hub.watch(t0 + 2 * EXPIRY);
+        let answers: Vec<Value> = (sent.lock().unwrap().iter())
+            .filter(|p| p["name"] == "cooee-run")
+            .map(|p| p["text"].clone())
+            .collect();
+        assert_eq!(
+            answers,
+            [json!("\u{1e}{\"approve\":\"no\",\"request\":\"q7\"}\n")]
+        );
+        assert!(matches!(
+            card(&hub, "run").body,
+            Body::Approval { chosen: Some(c), card, .. } if c == "deny" && card.by.as_deref() == Some(EXPIRED)
         ));
     }
 

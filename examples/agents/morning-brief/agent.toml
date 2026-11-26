@@ -1,6 +1,10 @@
 name = "Morning brief"
 agent = "claude-acp"
 
+[purpose]
+role = "Morning brief"
+use = "today's calendar, the weather and the news"
+
 [[mcp]]
 server = "calendar"
 

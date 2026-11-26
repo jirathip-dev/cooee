@@ -91,7 +91,17 @@ fn a_new_chat_runs_in_its_own_scratch_folder_and_a_folder_attached_takes_later_t
     );
     assert!(run.contains(&format!("--label cooee.thread={id}")), "{run}");
     assert_eq!(shed.calls("kill", &format!("cooee-{id}")).len(), 1);
+    assert_later_turns_go_to_the_moved_session(&cooee, &shed, &id, &moved, &own, &project);
+}
 
+fn assert_later_turns_go_to_the_moved_session(
+    cooee: &Cooee,
+    shed: &FakeShed,
+    id: &str,
+    moved: &str,
+    own: &std::path::Path,
+    project: &std::path::Path,
+) {
     let say = |text: &str, rid: &str| {
         let (status, body) = cooee.post(
             &format!("/threads/{id}/send"),
@@ -101,7 +111,7 @@ fn a_new_chat_runs_in_its_own_scratch_folder_and_a_folder_attached_takes_later_t
     };
     say("and now?", "r1");
     say("again", "r2");
-    let sent = shed.sent(&moved);
+    let sent = shed.sent(moved);
     assert_eq!(sent.len(), 2, "{sent:?}");
     let handover = &sent[0];
     assert!(

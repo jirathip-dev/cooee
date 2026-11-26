@@ -29,15 +29,22 @@ struct Step {
     name: &'static str,
     says: &'static str,
     stop: bool,
+    tap: &'static str,
+    before: fn(&Run),
     check: fn(&Run, &Value) -> Result<(), String>,
 }
 
-const SCENARIO: [Step; 6] = [
+const ALLOW: &str = "allow_once";
+const PROBE: &str = "printf conformance > probe.txt";
+
+const SCENARIO: [Step; 8] = [
     Step {
         n: 1,
         name: "The brief is honoured",
         says: "What is the code word?",
         stop: false,
+        tap: ALLOW,
+        before: |_| {},
         check: |_, reply| holds(reply, "PLOVER-7"),
     },
     Step {
@@ -45,6 +52,8 @@ const SCENARIO: [Step; 6] = [
         name: "A cooee tool is called",
         says: "Keep a note that the check ran, with your remember tool.",
         stop: false,
+        tap: ALLOW,
+        before: |_| {},
         check: |run, _| {
             let memory = fs::read_to_string(run.home.join("memory.md")).unwrap_or_default();
             let noted = memory
@@ -60,13 +69,64 @@ const SCENARIO: [Step; 6] = [
         name: "A skill is read",
         says: "Use your conformance skill.",
         stop: false,
+        tap: ALLOW,
+        before: |_| {},
         check: |_, reply| holds(reply, "HERON"),
+    },
+    Step {
+        n: 4,
+        name: "An approval is raised",
+        says: "Run `printf conformance > probe.txt`.",
+        stop: false,
+        tap: "reject_once",
+        before: |_| {},
+        check: |run, _| {
+            let cards = run.cards();
+            match cards.as_slice() {
+                [c] if c["action"] == "run" && c["tool"] == PROBE && c["chosen"] == "deny" => {}
+                _ => return Err(format!("not one denied run card: {cards:?}")),
+            }
+            let probe = run.folder.join("probe.txt");
+            (!probe.exists())
+                .then_some(())
+                .ok_or("probe.txt exists".to_owned())
+        },
+    },
+    Step {
+        n: 5,
+        name: "A rule answers one",
+        says: "Run `printf conformance > probe.txt`.",
+        stop: false,
+        tap: ALLOW,
+        before: |run| {
+            let rule =
+                json!({ "effect": "allow", "kind": "run", "pattern": "printf conformance*" });
+            let (status, body) = run.cooee.post("/personas/scout/rules", &rule);
+            assert_eq!(status, 200, "{body}");
+        },
+        check: |run, _| {
+            let cards = run.cards().len();
+            let rows = run.items();
+            let row = rows.iter().rfind(|i| i["kind"] == "tool");
+            let ruled = row.map(|r| &r["ruled"]);
+            if cards != 1
+                || ruled.and_then(Value::as_str) != Some("Allow running printf conformance*")
+            {
+                return Err(format!("{cards} cards, the row is ruled {ruled:?}"));
+            }
+            let probe = fs::read_to_string(run.folder.join("probe.txt"));
+            (probe.ok().as_deref() == Some("conformance"))
+                .then_some(())
+                .ok_or("probe.txt was not written".to_owned())
+        },
     },
     Step {
         n: 6,
         name: "Stop works",
         says: "Run `sleep 120`.",
         stop: true,
+        tap: ALLOW,
+        before: |_| {},
         check: |run, reply| {
             if reply["stop_reason"] != "cancelled" {
                 return Err(format!("the turn ended {}", reply["stop_reason"]));
@@ -88,6 +148,8 @@ const SCENARIO: [Step; 6] = [
         name: "A limit is reported",
         says: "",
         stop: false,
+        tap: ALLOW,
+        before: |_| {},
         check: |run, _| {
             if let Some(shed) = &run.fake {
                 shed.limit(&format!("cooee-{}", run.thread.as_deref().unwrap()));
@@ -108,6 +170,8 @@ const SCENARIO: [Step; 6] = [
         name: "Built-ins are off",
         says: "List the names of every tool you have, one per line.",
         stop: false,
+        tap: ALLOW,
+        before: |_| {},
         check: |run, reply| {
             let text = reply["text"].as_str().unwrap_or_default();
             let names: Vec<&str> = text
@@ -127,7 +191,7 @@ const OFF: [(&str, &[&str]); 4] = [
     ("fake", &["Agent", "Workflow", "Skill"]),
     ("claude", &["Agent", "Workflow", "Skill"]),
     ("codex", &["spawn_agent"]),
-    ("gemini", &["save_memory"]),
+    ("antigravity", &["invoke_subagent", "run_workflow"]),
 ];
 
 const FAKE: &str = "[[providers]]\nname = \"fake\"\nbase = \"claude\"\nagent = \"fake-acp\"\nhome = \"FAKE_HOME\"\n\
@@ -176,6 +240,7 @@ struct Run {
     prompts: usize,
     tree: u32,
     fake: Option<FakeShed>,
+    tap: &'static str,
 }
 
 impl Run {
@@ -204,6 +269,7 @@ impl Run {
             prompts: 0,
             tree,
             fake: None,
+            tap: ALLOW,
         }
     }
 
@@ -261,7 +327,7 @@ impl Run {
             if let Some(t) = f(&items) {
                 return Ok(t);
             }
-            self.allow_once(&items);
+            self.answer(&items);
             if at.elapsed() > within {
                 return Err(format!("no {what} within {within:?}"));
             }
@@ -269,7 +335,12 @@ impl Run {
         }
     }
 
-    fn allow_once(&self, items: &[Value]) {
+    fn cards(&self) -> Vec<Value> {
+        let items = self.items().into_iter();
+        items.filter(|i| i["kind"] == "approval").collect()
+    }
+
+    fn answer(&self, items: &[Value]) {
         let open = items
             .iter()
             .filter(|i| i["kind"] == "approval" && i["chosen"].is_null());
@@ -277,7 +348,7 @@ impl Run {
             let options = card["options"].as_array().unwrap();
             let allow = options
                 .iter()
-                .find(|o| o["kind"] == "allow_once")
+                .find(|o| o["kind"] == self.tap)
                 .unwrap_or(&options[0]);
             let tap = json!({ "item": card["id"], "option": allow["id"] });
             let id = self.thread.as_deref().unwrap();
@@ -286,6 +357,8 @@ impl Run {
     }
 
     fn turn(&mut self, step: &Step) -> Result<Value, String> {
+        self.tap = step.tap;
+        (step.before)(self);
         if step.says.is_empty() {
             return Ok(Value::Null);
         }

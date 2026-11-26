@@ -1,13 +1,13 @@
 use cooee_core::{
-    Config, Kind,
+    Config, Kind, Thread,
     agents::Role,
     chief::{self, Carded, Change},
     disk, mcp, secrets,
 };
 
-use super::{Hub, HubError, mcp::Proposed};
+use super::{Hub, HubError, proposals::Proposed};
 
-pub(crate) struct Me(String);
+pub struct Me(String);
 
 impl Me {
     pub(crate) fn thread(&self) -> &str {
@@ -15,21 +15,26 @@ impl Me {
     }
 }
 
+pub(super) fn own_chat(t: &Thread) -> bool {
+    let run = t.routine.is_some() || t.workflow.is_some();
+    t.kind == Kind::Chat && t.room.is_empty() && t.asked_by.is_empty() && !run
+}
+
 impl Hub {
     pub(crate) fn chief_of(&self, id: &str, token: &str) -> Result<Me, HubError> {
         let t = self.token_of(id, token)?;
         let no = |why: &str| Err(HubError::Refused(why.to_owned()));
-        if t.profile != chief::ID || self.persona(&t.profile).role != Role::Chief {
+        if !self.is_chief(&t) {
             return no("NOT_CHIEF: only Chief has this tool");
         }
-        let (asked, run) = (
-            !t.asked_by.is_empty(),
-            t.routine.is_some() || t.workflow.is_some(),
-        );
-        if t.kind != Kind::Chat || !t.room.is_empty() || asked || run {
+        if !own_chat(&t) {
             return no("NOT_HERE: Chief's tools work only in its own chat with the owner");
         }
         Ok(Me(id.to_owned()))
+    }
+
+    pub(super) fn is_chief(&self, t: &Thread) -> bool {
+        t.profile == chief::ID && self.persona(&t.profile).role == Role::Chief
     }
 
     pub(crate) fn propose_change(

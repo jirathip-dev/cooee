@@ -1,0 +1,6 @@
+about = "at most 10 allow attributes across crates/, each with a reason (clippy denies one without)"
+fix = "fix the lint instead of allowing it"
+budget_secs = 5
+versions = ["grep --version"]
+paths = ["crates/**"]
+run = '''n=$(grep -rE 'allow\(' crates | wc -l); echo "allows: $n / 10"; [ "$n" -le 10 ]'''

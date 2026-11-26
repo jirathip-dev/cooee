@@ -25,14 +25,14 @@ internal struct TopicFrames {
         topic("c2", "herdsman release", "herdsman", "v0.31 tagged; notes in CHANGELOG.md", 840, unread: 2),
         topic("c3", "Studio disk", nil, "Freed 41 GB of build folders", 7200),
         topic("c4", "Lesson digest", "cooee", "3 rev FAILs on Swift line caps", 86400, unread: 1),
-        topic("c5", "Fleet hosts", "herdsman", "air is back online", 259_200),
+        topic("c5", "Fleet hosts", "herdsman", "lab is back online", 259_200),
         topic("c8", "Bonjour pairing", "cooee", "#128 merged", 777_600, archived: true),
         topic("c9", "Timer install", "herdsman", "drover timer is current", 1_036_800, archived: true),
     ])
 
     private static let items: [Item] = [
         .you(id: 1, text: "How's cooee's queue?"),
-        .tools(id: 2, rows: [ToolRow("Run drover board cooee", "done"), ToolRow("Run drover asks cooee", "done")]),
+        .tools(id: 2, rows: [ToolRow(.run, "drover board cooee", "done"), ToolRow(.run, "drover asks cooee", "done")]),
         .agent(
             id: 3,
             markdown: [

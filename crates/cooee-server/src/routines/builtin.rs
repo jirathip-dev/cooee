@@ -89,27 +89,36 @@ impl Runner {
                 let Some((news, run)) = news? else {
                     return Ok(());
                 };
-                let home = self
-                    .config
-                    .as_deref()
-                    .and_then(|c| agents::home(c, &p.id).ok());
-                let rule = home.as_ref().map(agents::notify).unwrap_or_default();
-                let rule = if rule.is_empty() {
-                    "none, so stay silent"
-                } else {
-                    &rule
-                };
-                let text = format!(
-                    "{BEAT}\n\nThe owner's notify rule: {rule}\n\nNew since the last run:\n{news}"
-                );
-                let mark = (HEARTBEAT, "Heartbeat");
-                let text = (text.as_str(), run);
-                self.as_persona(&p, (&h.model, &h.effort), mark, text, Some("ask"))
+                self.run_beat(&p, h, &news, run)
             });
             if let Err(e) = ran {
                 cooee_core::note!("cooee: routines: {key}: {e}");
             }
         }
+    }
+
+    fn run_beat(
+        &self,
+        p: &agents::Agent,
+        h: &Heartbeat,
+        news: &str,
+        run: String,
+    ) -> Result<(), HubError> {
+        let home = self
+            .config
+            .as_deref()
+            .and_then(|c| agents::home(c, &p.id).ok());
+        let rule = home.as_ref().map(agents::notify).unwrap_or_default();
+        let rule = if rule.is_empty() {
+            "none, so stay silent"
+        } else {
+            &rule
+        };
+        let text =
+            format!("{BEAT}\n\nThe owner's notify rule: {rule}\n\nNew since the last run:\n{news}");
+        let mark = (HEARTBEAT, "Heartbeat");
+        let text = (text.as_str(), run);
+        self.as_persona(p, (&h.model, &h.effort), mark, text, Some("ask"))
     }
 
     fn as_persona(

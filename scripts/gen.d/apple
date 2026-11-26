@@ -1,0 +1,4 @@
+feature apple/Sources/CooeeFeatures/Chat ChatFeature
+feature apple/Sources/CooeeFeatures/App AppFeature
+screen apple/Sources/CooeeUI/ChatScreen ChatScreen ChatFeature
+screen apple/Sources/CooeeUI/AppRoot AppRoot AppFeature

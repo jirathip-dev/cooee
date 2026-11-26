@@ -23,12 +23,12 @@ keeps them going while the phone is away; cooee talks to shed and pings the phon
 | Crate | Path | Holds | May depend on |
 |---|---|---|---|
 | `cooee-core` | `crates/cooee-core` | config, threads, the store, the chat (shed events → items), paired devices, providers (status, redaction), the shed client; no HTTP | no workspace crate |
-| `cooee-machines` | `crates/cooee-machines` | the first-party plugin `machines` ([plugins.md](plugins.md)): machines' health from shed, its backend and tab module | core |
-| `cooee-terminal` | `crates/cooee-terminal` | the first-party plugin `terminal` ([plugins.md](plugins.md)): the owner's shells through shed, its backend and tab module | core |
+| `cooee-machines` | `crates/cooee-machines` | the first-party plugin `machines` ([plugins/](plugins/README.md)): machines' health from shed, its backend and tab module | core |
+| `cooee-terminal` | `crates/cooee-terminal` | the first-party plugin `terminal` ([plugins/](plugins/README.md)): the owner's shells through shed, its backend and tab module | core |
 | `cooee-server` | `crates/cooee-server` | HTTP, the threads' JSON API and SSE (M1), the Host/pairing gate, push (M2), logins (M3), `GET /machines` (the machines plugin's data, #148) | core, machines |
 | `cooee` | `crates/cooee` | the binary: arguments and wiring only | all |
 
-`scripts/dep-direction.sh` enforces the last column in CI.
+core/arch's `[[layer]]` entries (`.drover/arch/gatekeeper.toml`) enforce the last column in CI.
 
 Each area has its own doc beside this one, `docs/<area>.md`: what it does today, how it works and its API.
 

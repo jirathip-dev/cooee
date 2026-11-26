@@ -66,31 +66,26 @@ fn row(cooee: &Cooee, id: &str) -> Value {
     rows.into_iter().find(|r| r["id"] == id).cloned().unwrap()
 }
 
-#[test]
-fn a_thread_on_a_machine_starts_replies_approves_and_cancels_there_and_is_found_after_a_restart() {
-    let (dir, shed, cooee) = setup("remote-run");
-    let (status, body) = cooee.post("/threads", &start(&dir, "box", "hi", false));
-    assert_eq!(status, 200, "{body}");
-    let id = id_of(&body);
-    let lane = format!("box/cooee-{id}");
-
+fn assert_it_runs_on_box(shed: &FakeShed, cooee: &Cooee, id: &str, lane: &str) {
     let log = shed.cli_log();
     let run = log.lines().rfind(|l| l.contains(" run ")).unwrap();
     assert!(
         run.contains(&format!("--on box run --acp fake-acp --name cooee-{id} ")),
         "{run}"
     );
-    assert_eq!(shed.calls("wait", &lane).len(), 1);
-    assert_eq!(shed.sent(&lane), ["\x1e{\"prompt\":\"hi\"}\n"]);
+    assert_eq!(shed.calls("wait", lane).len(), 1);
+    assert_eq!(shed.sent(lane), ["\x1e{\"prompt\":\"hi\"}\n"]);
     let items = cooee.json(&format!("/threads/{id}/messages"))["items"].clone();
     assert_eq!(
         (&items[0]["kind"], &items[0]["text"]),
         (&json!("note"), &json!("runs on box")),
         "{items}"
     );
-    assert_eq!(row(&cooee, &id)["machine"], "box");
+    assert_eq!(row(cooee, id)["machine"], "box");
+}
 
-    let mut ev = events(&cooee, &id);
+fn reply_approve_and_cancel_go_to_box(shed: &FakeShed, cooee: &Cooee, id: &str, lane: &str) {
+    let mut ev = events(cooee, id);
     let send = |text: &str| {
         let body = json!({ "text": text, "random_id": text });
         cooee.post(&format!("/threads/{id}/send"), &body)
@@ -105,7 +100,7 @@ fn a_thread_on_a_machine_starts_replies_approves_and_cancels_there_and_is_found_
     let path = format!("/threads/{id}/approve");
     assert_eq!(cooee.post(&path, &tap).0, 200);
     assert!(
-        shed.sent(&lane)
+        shed.sent(lane)
             .contains(&"\x1e{\"approve\":\"allow\"}\n".to_owned())
     );
     ev.until(|e| is_item(e, "agent") && e.data["text"] == "Edited.");
@@ -114,10 +109,21 @@ fn a_thread_on_a_machine_starts_replies_approves_and_cancels_there_and_is_found_
     ev.until(|e| e.event == "text");
     let cancel = format!("/threads/{id}/cancel");
     assert_eq!(cooee.post(&cancel, &json!({})).0, 200);
-    assert!(shed.sent(&lane).contains(&"\x1e\"cancel\"\n".to_owned()));
+    assert!(shed.sent(lane).contains(&"\x1e\"cancel\"\n".to_owned()));
     ev.until(|e| is_item(e, "agent") && e.data["stop_reason"] == "cancelled");
+}
 
-    drop(ev);
+#[test]
+fn a_thread_on_a_machine_starts_replies_approves_and_cancels_there_and_is_found_after_a_restart() {
+    let (dir, shed, cooee) = setup("remote-run");
+    let (status, body) = cooee.post("/threads", &start(&dir, "box", "hi", false));
+    assert_eq!(status, 200, "{body}");
+    let id = id_of(&body);
+    let lane = format!("box/cooee-{id}");
+
+    assert_it_runs_on_box(&shed, &cooee, &id, &lane);
+    reply_approve_and_cancel_go_to_box(&shed, &cooee, &id, &lane);
+
     drop(cooee);
     let gets = shed.calls("get", &lane).len();
     let cooee = Cooee::start(&dir, &shed.dir);

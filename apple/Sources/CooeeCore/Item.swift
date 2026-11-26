@@ -6,6 +6,11 @@ public enum Block: Sendable, Equatable {
     case bullets([String])
 }
 
+/// What a tool call does, as the server read it from the agent: never a harness's tool name.
+public enum ToolKind: String, Sendable, CaseIterable {
+    case read, edit, run, search, fetch, tool, other
+}
+
 public struct PlanEntry: Sendable, Equatable {
     public let text: String
     public let done: Bool
@@ -17,6 +22,7 @@ public struct PlanEntry: Sendable, Equatable {
 }
 
 public struct ToolRow: Sendable, Equatable {
+    public let kind: ToolKind
     public let title: String
     public let status: String
     public let frame: String?
@@ -24,7 +30,8 @@ public struct ToolRow: Sendable, Equatable {
 
     public var running: Bool { status == "running" }
 
-    public init(_ title: String, _ status: String, frame: String? = nil, plan: [PlanEntry] = []) {
+    public init(_ kind: ToolKind, _ title: String, _ status: String, frame: String? = nil, plan: [PlanEntry] = []) {
+        self.kind = kind
         self.title = title
         self.status = status
         self.frame = frame
@@ -187,15 +194,15 @@ public enum ChatItems {
     }
 
     private static func row(_ item: APIItem) -> ToolRow {
-        if item.kind == "frame" { return ToolRow(item.text ?? "", "done", frame: item.name) }
+        if item.kind == "frame" { return ToolRow(.other, item.text ?? "", "done", frame: item.name) }
         if item.kind == "plan" {
             let plan = (item.entries ?? []).map {
                 PlanEntry($0.string("content") ?? "", done: $0.string("status") == "completed")
             }
-            return ToolRow("Plan", "done", plan: plan)
+            return ToolRow(.other, "Plan", "done", plan: plan)
         }
         let status = item.status == "completed" ? "done" : item.status == "failed" ? "failed" : "running"
-        return ToolRow(item.title ?? "", status)
+        return ToolRow(ToolKind(rawValue: item.action ?? "") ?? .other, item.title ?? "", status)
     }
 
     private static func fold(_ item: APIItem, into out: inout [Item]) {

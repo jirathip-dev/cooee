@@ -4,12 +4,14 @@ use std::{
 };
 
 use cooee_core::{
+    agents::Agent,
     connectors::{Auth, HttpsUrl, Transport},
-    mcp::Server,
+    mcp::{Pick, Server},
 };
 use serde_json::{Value, json};
 
 use super::{
+    Way,
     calls::{Decision, Permit, decide, offered},
     lock,
 };
@@ -224,6 +226,40 @@ impl super::Connectors {
         Ok(all)
     }
 
+    fn gate(
+        &self,
+        hub: &Hub,
+        (thread, token): (&str, &str),
+        msg: &Value,
+        (persona, pick, s): (&Agent, &Pick, &Server),
+        now: u64,
+    ) -> Result<(), String> {
+        let server = s.name.as_str();
+        let tool = msg
+            .pointer("/params/name")
+            .and_then(Value::as_str)
+            .unwrap_or_default();
+        let args = msg
+            .pointer("/params/arguments")
+            .cloned()
+            .unwrap_or_default();
+        hub.call((thread, token), (server, tool), &args)
+            .map_err(|e| e.to_string())
+            .and_then(|_| match decide(s, tool) {
+                Decision::Allow => Ok(()),
+                Decision::Ask => {
+                    let key = Permit {
+                        thread: thread.to_owned(),
+                        server: server.to_owned(),
+                        tool: tool.to_owned(),
+                        args: args.to_string(),
+                    };
+                    self.ask(hub, (persona, pick), &key, now)
+                }
+                Decision::Deny => Err(format!("tool {tool} isn't offered")),
+            })
+    }
+
     pub(crate) fn rpc(
         &self,
         hub: &Hub,
@@ -237,37 +273,23 @@ impl super::Connectors {
             .map_err(|e| e.to_string())?;
         let method = msg.get("method").and_then(Value::as_str);
         if method == Some("tools/call") {
-            let tool = msg
-                .pointer("/params/name")
-                .and_then(Value::as_str)
-                .unwrap_or_default();
-            let args = msg
-                .pointer("/params/arguments")
-                .cloned()
-                .unwrap_or_default();
-            let gate = hub
-                .call((thread, token), (server, tool), &args)
-                .map_err(|e| e.to_string())
-                .and_then(|_| match decide(&s, tool) {
-                    Decision::Allow => Ok(()),
-                    Decision::Ask => {
-                        let key = Permit {
-                            thread: thread.to_owned(),
-                            server: server.to_owned(),
-                            tool: tool.to_owned(),
-                            args: args.to_string(),
-                        };
-                        self.ask(hub, (&persona, &pick), &key, now)
-                    }
-                    Decision::Deny => Err(format!("tool {tool} isn't offered")),
-                });
+            let gate = self.gate(hub, (thread, token), msg, (&persona, &pick, &s), now);
             if let Err(e) = gate {
                 let id = msg.get("id").cloned().unwrap_or_default();
                 return Ok(vec![error(&id, -32602, &e)]);
             }
         }
-        let (url, transport, _) = super::target(&s)?;
+        let (url, way, _) = super::target(&s)?;
         let headers = self.headers(&s, pick.account.as_deref(), now)?;
+        let transport = match way {
+            Way::Builtin(b) => {
+                return Ok(super::builtin::answer(b, &url, (&headers, now), msg)
+                    .into_iter()
+                    .map(|m| offered(only(m, pick.tools.as_deref()), &s))
+                    .collect());
+            }
+            Way::Mcp(t) => t,
+        };
         let key = (thread.to_owned(), server.to_owned());
         let held = lock(&self.sessions).get(&key).cloned();
         let session = if let Some(h) = held {

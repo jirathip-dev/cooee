@@ -27,8 +27,7 @@ fn set_on(shed: &FakeShed, id: &str) -> Option<String> {
 fn setup(name: &str) -> (FakeShed, Cooee, std::path::PathBuf) {
     let dir = scratch(name);
     let shed = FakeShed::start(&dir.join("shed"), version());
-    let extra = "[[providers]]\nname = \"fake\"\nagent = \"fake-acp\"\nlogin = [\"true\"]\nstatus = [\"true\"]\n\
-                 efforts = [\"low\", \"high\"]\neffort = [\"--effort\", \"{}\"]\n";
+    let extra = "[[providers]]\nname = \"fake\"\nagent = \"fake-acp\"\n";
     let cooee = Cooee::start_with(&dir, &shed.dir, extra);
     fs::create_dir_all(dir.join("root")).unwrap();
     (shed, cooee, dir)
@@ -66,14 +65,18 @@ fn row_34_a_thread_starts_on_its_pick_and_a_new_model_shows() {
     let start = |model: &str, random: &str| start(&cooee, &dir, model, random);
 
     reports(&shed, &["fake-opus-1", "fake-opus-2", "fake-sonnet-1"]);
-    let listed = shed.cli_log().matches(" agents\n").count();
+    let agents = || {
+        let requests = shed.requests.lock().unwrap();
+        requests.iter().filter(|(m, _)| m == "agents").count()
+    };
+    let listed = agents();
     let (code, id) = start("opus", "r1");
     assert_eq!(code, 200, "{id}");
     assert_eq!(set_on(&shed, &id).as_deref(), Some("fake-opus-2"));
     let log = shed.cli_log();
     let line = log.lines().rfind(|l| l.contains(" run ")).unwrap();
-    assert_eq!(log.matches(" agents\n").count(), listed, "{log}");
-    assert!(line.ends_with(" -- env fake-acp --effort high"), "{line}");
+    assert_eq!(agents(), listed, "{log}");
+    assert!(line.ends_with(" --effort high"), "{line}");
     assert_eq!(stored(&dir, &id), (json!("opus"), json!("high")));
     let lists = cooee.json("/models");
     assert_eq!(
@@ -95,7 +98,7 @@ fn row_34_a_thread_starts_on_its_pick_and_a_new_model_shows() {
     let fake = &lists[0];
     assert_eq!(
         (&fake["agent"], &fake["account"]),
-        (&json!("fake-acp"), &json!(""))
+        (&json!("fake-acp"), &json!("auto"))
     );
     assert_eq!(fake["models"][2], json!(["fake-opus-3", "fake-opus-3"]));
     assert_eq!(
@@ -197,10 +200,22 @@ fn a_day_old_list_is_asked_again() {
 }
 
 #[test]
-fn the_agent_list_carries_each_agents_efforts() {
+fn the_agent_list_carries_each_agents_efforts_and_gaps() {
     let (_shed, cooee, _dir) = setup("model-agents");
+    let mut row = cooee.json("/agents");
+    let gaps = row[0].as_object_mut().unwrap().remove("gaps").unwrap();
     assert_eq!(
-        cooee.json("/agents"),
+        row,
         json!([{ "id": "fake-acp", "efforts": ["low", "high"] }])
     );
+    let kinds: Vec<&Value> = gaps
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|g| &g["kind"])
+        .collect();
+    let all = ["read", "edit", "run", "search", "fetch", "tool", "other"].map(|k| json!(k));
+    assert_eq!(kinds[0], &Value::Null, "{gaps}");
+    assert_eq!(&kinds[1..], all.iter().collect::<Vec<_>>(), "{gaps}");
+    assert_eq!(gaps[3]["words"], "It doesn't ask before it runs a command.");
 }

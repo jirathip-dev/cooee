@@ -6,7 +6,7 @@ import Foundation
 public struct MenuFeature: Sendable {
     /// The device-local pages the app draws, never the server: the `settings` component's and the terminal.
     public enum Page: String, CaseIterable, Hashable, Sendable {
-        case look, notifications, appIcon, terminal, themeEditor
+        case look, notifications, appIcon, terminal, themeEditor, connectors
     }
 
     @ObservableState
@@ -19,8 +19,10 @@ public struct MenuFeature: Sendable {
         public var screen: JSONValue?
         @Presents public var page: ScreenFeature.State?
         public var editor: ThemeEditorFeature.State?
+        public var connectors: ConnectorsFeature.State?
         public var saved: String?
         public var busy = false
+        public var alerts: Bool
         public var error: String?
         public var notice: String?
         public var timings = Timings()
@@ -28,6 +30,7 @@ public struct MenuFeature: Sendable {
         public init(server: Server?, settings: Settings) {
             self.server = server
             self.settings = settings
+            alerts = settings.push != nil
             if case .pack(let name, nil) = settings.style { notice = "\(name) is a pack now: cooee theme add \(name)" }
         }
     }
@@ -39,6 +42,7 @@ public struct MenuFeature: Sendable {
         case page(PresentationAction<ScreenFeature.Action>)
         case edit(String?)
         case editor(ThemeEditorFeature.Action)
+        case connectors(ConnectorsFeature.Action)
         case path([Page])
         case load
         case looks(Looks)
@@ -53,11 +57,14 @@ public struct MenuFeature: Sendable {
         case pinRoom(String)
         case push(Bool)
         case pushed(String?)
+        case alerts(Bool)
+        case test
+        case tested
         case failed(String)
     }
 
-    @Dependency(\.settingsStore) private var settingsStore
-    @Dependency(\.push) private var push
+    @Dependency(\.settingsStore) internal var settingsStore
+    @Dependency(\.push) internal var push
     @Dependency(\.threads) private var threads
     @Dependency(\.appIcon) private var appIcon
     @Dependency(\.plugins) private var plugins
@@ -71,9 +78,16 @@ public struct MenuFeature: Sendable {
             case .open, .loaded, .show, .page, .edit, .editor:
                 return navigate(&state, action)
             case .path(let path):
-                let opened = path.last == .look && !state.path.contains(.look)
+                let opened = path.last.flatMap { state.path.contains($0) ? nil : $0 }
                 state.path = path
-                return opened ? load(state) : .none
+                if opened == .connectors, let server = state.server {
+                    state.connectors = ConnectorsFeature.State(server: server)
+                    return .send(.connectors(.task))
+                }
+                if opened == .notifications { return registered(state) }
+                return opened == .look ? load(state) : .none
+            case .connectors:
+                return .none
             case .load:
                 return load(state)
             case .style, .looks:
@@ -86,8 +100,8 @@ public struct MenuFeature: Sendable {
                 return look(&state) { $0.night = night }
             case .sprite(let seed, let coat):
                 return look(&state) { [theme = state.settings.theme] in $0.sprite(seed, coat, in: theme) }
-            case .push(let enabled):
-                return toggle(&state, enabled)
+            case .push, .test, .alerts:
+                return pushing(&state, action)
             default:
                 pick(&state, action)
             }
@@ -95,6 +109,7 @@ public struct MenuFeature: Sendable {
         }
         .ifLet(\.$page, action: \.page) { ScreenFeature() }
         .ifLet(\.editor, action: \.editor) { ThemeEditorFeature() }
+        .ifLet(\.connectors, action: \.connectors) { ConnectorsFeature() }
         .keepsLeftScreens { $0.page.map { [$0] } ?? [] }
     }
 
@@ -126,13 +141,6 @@ public struct MenuFeature: Sendable {
         return .none
     }
 
-    private func load(_ state: State) -> Effect<Action> {
-        guard let server = state.server else { return .none }
-        return .run { [threads] send in
-            if let looks = try? await threads.looks(server) { await send(.looks(looks)) }
-        }
-    }
-
     private func pick(_ state: inout State, _ action: Action) {
         switch action {
         case .scheme(let scheme):
@@ -151,23 +159,16 @@ public struct MenuFeature: Sendable {
         }
         settingsStore.save(state.settings)
     }
-
-    private func pushed(_ state: inout State, _ action: Action) {
-        state.busy = false
-        switch action {
-        case .pushed(let token):
-            state.error = nil
-            state.settings.push = token
-            settingsStore.save(state.settings)
-        case .failed(let error):
-            state.error = error
-        default:
-            break
-        }
-    }
 }
 
 extension MenuFeature {
+    private func load(_ state: State) -> Effect<Action> {
+        guard let server = state.server else { return .none }
+        return .run { [threads] send in
+            if let looks = try? await threads.looks(server) { await send(.looks(looks)) }
+        }
+    }
+
     private func editing(_ state: inout State, _ action: Action) -> Effect<Action> {
         switch action {
         case .edit(let pack):
@@ -216,19 +217,6 @@ extension MenuFeature {
             try await appIcon.set(icon)
         } catch: { _, send in
             await send(.failed("Couldn't change the Home Screen icon. Tap \(icon.name) to try again."))
-        }
-    }
-
-    private func toggle(_ state: inout State, _ enabled: Bool) -> Effect<Action> {
-        guard let server = state.server, enabled != (state.settings.push != nil) else { return .none }
-        state.busy = true
-        let (push, held) = (push, state.settings.push)
-        return .run { send in
-            let token = try await enabled ? push.token() : held ?? ""
-            try await push.register(server, token, enabled)
-            await send(.pushed(enabled ? token : nil))
-        } catch: { error, send in
-            await send(.failed(error.localizedDescription))
         }
     }
 }

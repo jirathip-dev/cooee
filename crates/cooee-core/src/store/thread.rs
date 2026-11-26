@@ -81,6 +81,9 @@ pub struct Thread {
     /// A linked exchange (#156): the thread whose persona asked this one's (`ask_persona`).
     #[serde(default, skip_serializing_if = "String::is_empty")]
     pub asked_by: String,
+    /// A handed chat (#802): Chief's chat that handed the owner to this one's agent.
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    pub handed_by: String,
     /// The agent's open handoff (#164): its card's item id, 0 for none; until the owner hands back, nothing they
     /// send reaches the agent.
     #[serde(default, skip_serializing_if = "is_zero")]
@@ -141,6 +144,9 @@ pub struct Queued {
     /// The approval it denies (#351): once sent it shows under that card, not as a message of its own.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub denied: Option<u64>,
+    /// The blocks reply it answers (#776): once sent it shows under that reply, not as a message of its own.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub acted: Option<u64>,
 }
 
 /// One message in a thread.

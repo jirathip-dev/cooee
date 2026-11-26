@@ -10,6 +10,8 @@ The Swift package (`Package.swift`) is layered (#147); each target imports only 
 - `CooeeUI`: the SwiftUI views, the three styles (Modern, Terminal, Scene), the farm palette and the design fixtures.
 - `CooeeApp`: the composition root: the clients' live values, built from `CooeeAPI`.
 - `Cooee.xcodeproj` + `Cooee/`: the app target on top of `CooeeApp`.
+- `CooeeWidgets/` (#662): the iOS widget extension on `CooeeUI`: the home and lock widgets, the one Live Activity and
+  its island. It reads the App Group copy (`group.com.jirathip.cooee`) the app writes after each Home load.
 
 Design frames: `CooeeUITests`' snapshot test renders each one and compares it with `design/v1/`;
 `COOEE_RECORD=1 swift test --filter SnapshotTests` writes them again. `design/sprites.mjs` rasterises the farm pack's

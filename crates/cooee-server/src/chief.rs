@@ -14,14 +14,14 @@ mod tools;
 
 type Run = fn(&Desk, &Me, Value) -> Result<String, HubError>;
 
-pub(crate) struct Tool(pub &'static str, pub fn() -> Value, pub Run);
+pub(crate) struct Tool(pub &'static str, pub fn(&Hub) -> Value, pub Run);
 
 mod prelude {
     pub(crate) use serde::Deserialize;
     pub(crate) use serde_json::{Value, json};
 
     pub(crate) use super::{Desk, Tool, no, parse};
-    pub(crate) use crate::hub::{HubError, Me};
+    pub(crate) use crate::hub::{Hub, HubError, Me};
 }
 
 pub(crate) struct Desk {
@@ -55,29 +55,22 @@ pub(crate) fn parse<T: DeserializeOwned>(args: Value) -> Result<T, HubError> {
     serde_json::from_value(args).map_err(|e| HubError::Refused(format!("BAD_ARGS: {e}")))
 }
 
-fn wider() -> [Value; 2] {
-    let history = json!({ "name": "history", "description": "Search a persona's past threads (yours, or persona's; query: words; at most 5 hits), or read any thread (thread: its ref; paged with before).",
+fn wider() -> Value {
+    json!({ "name": "history", "description": "Search a persona's past threads (yours, or persona's; query: words; at most 5 hits), or read any thread (thread: its ref; paged with before).",
         "inputSchema": { "type": "object", "properties": {
             "query": { "type": "string" }, "thread": { "type": "string" },
             "persona": { "type": "string", "description": "another persona's id: search its threads" },
             "before": { "type": "integer" }, "limit": { "type": "integer", "description": "fewer hits, at most 5" }
         } }
-    });
-    let ask = json!({ "name": "ask_persona", "description": "Ask any persona and wait for its reply; you speak as yourself. The owner sees the exchange as a linked thread. A refusal starts with DEPTH, TIMEOUT or OFFLINE.",
-        "inputSchema": { "type": "object", "required": ["persona", "message"], "properties": {
-            "persona": { "type": "string", "description": "its id" }, "message": { "type": "string" },
-            "timeout": { "type": "integer", "description": "seconds to wait, at most 600 (default 300)" }
-        } }
-    });
-    [history, ask]
+    })
 }
 
 pub(crate) fn list(hub: &Hub, thread: &str, token: &str) -> Vec<Value> {
     if hub.chief_of(thread, token).is_err() {
         return Vec::new();
     }
-    let mine = tools::ALL.iter().map(|t| (t.1)());
-    mine.chain(wider()).collect()
+    let mine = tools::ALL.iter().map(|t| (t.1)(hub));
+    mine.chain([wider()]).collect()
 }
 
 pub(crate) fn call(

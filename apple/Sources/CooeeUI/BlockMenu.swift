@@ -51,6 +51,7 @@ internal struct MenuBlocks: View {
                         tint: row.string("tone") == "purple"
                             ? look.palette.purple : look.palette.tone(row.string("tone")),
                         value: values[row.string("id") ?? ""] ?? row.string("value") ?? "",
+                        warn: row["warn"]?.bool == true,
                         divider: index < rows.count - 1
                     )
                     .contentShape(.rect)
@@ -83,7 +84,7 @@ extension Fixtures {
                 {"id": "terminal", "title": "Terminal", "symbol": "terminal.fill", "tone": "mute", "value": "mini"}]},
               {"type": "group", "rows": [
                 {"id": "machines", "title": "Machines", "symbol": "desktopcomputer", "tone": "working",
-                 "value": "mini, air · Terminal"},
+                 "value": "mini, lab · Terminal"},
                 {"id": "plugins", "title": "Plugins", "symbol": "puzzlepiece.extension.fill", "tone": "ok", "value": "4"}]},
               {"type": "note", "text": "Machines, Terminal and the plugin sheets open in v2.",
                "mono": "-- v2: these open their screens"}]}

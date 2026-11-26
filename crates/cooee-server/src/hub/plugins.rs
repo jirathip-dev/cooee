@@ -1,10 +1,24 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, sync::Mutex};
 
 use cooee_core::{Plugin, Profile};
 
 use crate::plugin;
 
-use super::{Hub, lock};
+use super::{Hub, Seed, lock, now};
+
+pub(super) struct State {
+    plugins: Mutex<Vec<Plugin>>,
+    served: Mutex<HashMap<String, Option<Vec<Profile>>>>,
+}
+
+impl State {
+    pub(super) fn open(seed: &Seed<'_>) -> Self {
+        Self {
+            plugins: Mutex::new(seed.plugins.clone()),
+            served: Mutex::default(),
+        }
+    }
+}
 
 impl Hub {
     /// Installed plugin `name`'s backend: its first tab's entry (its URL and token).
@@ -20,10 +34,27 @@ impl Hub {
     #[must_use]
     pub fn served(&self, name: &str) -> Option<Vec<Profile>> {
         self.backend(name)?;
-        lock(&self.served)
+        lock(&self.areas.plugins.served)
             .get(name)
             .cloned()
             .unwrap_or(Some(Vec::new()))
+    }
+
+    pub(super) fn report_start(&self, thread: &str, profile: &str) {
+        let own = || cooee_core::agents::find(self.config_dir(), &self.data, profile).ok();
+        let backing = if profile.contains('/') {
+            Some(profile.to_owned())
+        } else {
+            own().and_then(|a| a.profile)
+        };
+        let Some((name, p)) = backing.as_deref().and_then(|b| b.split_once('/')) else {
+            return;
+        };
+        if let Some(b) = self.backend(name)
+            && let Err(e) = plugin::started(&b, thread, p)
+        {
+            cooee_core::note!("cooee: plugin {name}: thread-started: {e}");
+        }
     }
 
     pub(super) fn refresh_served(&self) {
@@ -35,19 +66,23 @@ impl Hub {
             };
             let got = plugin::profiles(&p).or_else(|e| {
                 cooee_core::note!("cooee: plugin {}: its profiles: {e}", p.name);
-                lock(&self.served).get(&name).cloned().ok_or(e)
+                lock(&self.areas.plugins.served)
+                    .get(&name)
+                    .cloned()
+                    .ok_or(e)
             });
             if let Ok(list) = got {
                 fresh.insert(name, list);
             }
         }
-        *lock(&self.served) = fresh;
+        *lock(&self.areas.plugins.served) = fresh;
+        self.surface(now());
     }
 
     /// The plugins: the config's own and the installed ones' tabs.
     #[must_use]
     pub fn plugins(&self) -> Vec<Plugin> {
-        lock(&self.plugins).clone()
+        lock(&self.areas.plugins.plugins).clone()
     }
 
     /// The installed plugin `[[plugins]]` entry `tab` is a tab of: its lock entry's name, else its own (a config's).
@@ -69,6 +104,6 @@ impl Hub {
 
     /// Replaces the plugins (the supervisor, as plugins are installed or removed).
     pub fn set_plugins(&self, plugins: Vec<Plugin>) {
-        *lock(&self.plugins) = plugins;
+        *lock(&self.areas.plugins.plugins) = plugins;
     }
 }

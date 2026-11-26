@@ -2,7 +2,6 @@
 
 #![forbid(unsafe_code)]
 
-mod accounts;
 pub mod action;
 pub mod agents;
 mod blocks;
@@ -21,6 +20,7 @@ pub mod history;
 pub mod library;
 mod login;
 pub mod logs;
+pub mod mail;
 pub mod mcp;
 pub mod memory;
 pub mod migrate;
@@ -33,6 +33,7 @@ pub mod provider;
 mod providers;
 mod root;
 pub mod routines;
+pub mod rules;
 pub mod runner;
 pub mod scratch;
 pub mod secrets;

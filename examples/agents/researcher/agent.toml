@@ -1,5 +1,9 @@
 name = "Researcher"
 agent = "claude-acp"
 
+[purpose]
+role = "Researcher"
+use = "finding and comparing sources on any topic, with links"
+
 [[mcp]]
 server = "search"

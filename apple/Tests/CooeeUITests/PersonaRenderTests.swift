@@ -50,11 +50,14 @@ internal struct PersonaRenderTests {
         #expect(try Self.avatar(picture).differing(from: try Self.avatar(nil), by: 16) > 0.01)
     }
 
-    @Test internal func initialsAndAColourDrawInsteadOfTheSymbol() throws {
+    @Test internal func aPickedCharacterDrawsItsBirdInsteadOfTheHashedOne() throws {
+        let hashed = Persona(Self.chief).mascot
+        let others = Mascot.allCases.filter { $0 != hashed }
         let plain = try Self.avatar(nil)
-        let green = try Self.avatar(Tint.green.avatar)
-        #expect(green.differing(from: plain, by: 16) > 0.01)
-        #expect(try Self.avatar(Tint.amber.avatar).differing(from: green, by: 16) > 0.01)
+        #expect(try Self.avatar(hashed.avatar).differing(from: plain, by: 16) == 0)
+        let first = try Self.avatar(others[0].avatar)
+        #expect(first.differing(from: plain, by: 16) > 0.01)
+        #expect(try Self.avatar(others[1].avatar).differing(from: first, by: 16) > 0.01)
     }
 
     @Test internal func memoryDrawsOnlyTheNewestThreeNotes() throws {

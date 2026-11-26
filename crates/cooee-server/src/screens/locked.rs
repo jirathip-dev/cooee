@@ -1,6 +1,3 @@
-//! The two locked screens (#316): `GET /screens/pairing`, the app's bundled pairing steps, and
-//! `GET /screens/reset-layout`, the one button that puts the default `layout.json` back.
-
 use blocks::{Block, Button, ButtonStyle, Screen, Text};
 use topcoat::{Result, context::Cx, router::route};
 
@@ -12,7 +9,7 @@ const PAIRING: &str =
 /// `{type: screen, source: core, id, title, blocks}`: one `step` block per pairing step, as the app draws them.
 #[route(GET "/screens/pairing")]
 pub async fn pairing(_cx: &Cx) -> Result<Answer<Block>> {
-    Ok(Answer(super::bundled(PAIRING).map(super::core)))
+    Ok(Answer(crate::http::bundled(PAIRING).map(crate::http::core)))
 }
 
 /// `{type: screen, source: core, id, title, blocks}`: a `reset` button posting `POST /layout/reset`.
@@ -32,5 +29,9 @@ pub async fn reset_layout(_cx: &Cx) -> Result<Answer<Block>> {
             Block::Text(Box::new(why)),
             Block::Button(Box::new(reset)),
         ]);
-    Ok(Answer(Ok(super::core(screen))))
+    Ok(Answer(Ok(crate::http::core(screen))))
+}
+
+pub(super) fn routes(b: topcoat::router::RouterBuilder) -> topcoat::router::RouterBuilder {
+    b.route(pairing).route(reset_layout)
 }

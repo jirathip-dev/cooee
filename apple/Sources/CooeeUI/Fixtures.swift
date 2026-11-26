@@ -11,7 +11,7 @@ public enum Fixtures {
                     "Keep renewals.md current. Ask Account Manager for dates; never email a customer yourself.",
                 machine: "mini"
             ),
-            look: PersonaLook(initials: "CH", symbol: "star.fill", tint: .lead, coat: "ch"),
+            look: PersonaLook(initials: "CH", tint: .lead, coat: "ch"),
             state: .done
         ),
         Persona(
@@ -21,16 +21,16 @@ public enum Fixtures {
                 instructions: "Run the tests before you say done. Small commits.", machine: "studio"
             ),
             look: PersonaLook(
-                initials: "CO", symbol: "chevron.left.forwardslash.chevron.right", tint: .cyan, coat: "gry"),
+                initials: "CO", tint: .cyan, coat: "gry"),
             state: .working
         ),
         Persona(
             api: APIPersona(
                 id: "res", name: "Researcher", agent: "Claude Code", model: "sonnet 5.5", effort: "medium",
                 folder: "~/research", character: "Careful; cites every source.",
-                instructions: "Put findings in notes/, one file a company.", machine: "air", canMessage: ["am"]
+                instructions: "Put findings in notes/, one file a company.", machine: "lab", canMessage: ["am"]
             ),
-            look: PersonaLook(initials: "RE", symbol: "magnifyingglass", tint: .purple, coat: "blk"),
+            look: PersonaLook(initials: "RE", tint: .purple, coat: "blk"),
             state: .needs
         ),
         Persona(
@@ -39,7 +39,7 @@ public enum Fixtures {
                 folder: "~/crm", character: "Warm, exact about dates.", instructions: "The CRM export is crm.csv.",
                 machine: "mini"
             ),
-            look: PersonaLook(initials: "AM", symbol: "briefcase.fill", tint: .link, coat: "bay"),
+            look: PersonaLook(initials: "AM", tint: .link, coat: "bay"),
             state: .idle
         ),
         Persona(
@@ -50,7 +50,7 @@ public enum Fixtures {
                 machine: "mini"
             ),
             look: PersonaLook(
-                initials: "CD", symbol: "point.3.connected.trianglepath.dotted", tint: .green, coat: "wht"),
+                initials: "CD", tint: .green, coat: "wht"),
             state: .working
         ),
     ]

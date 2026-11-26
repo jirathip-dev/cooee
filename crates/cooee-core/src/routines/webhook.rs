@@ -106,6 +106,12 @@ impl Inbound {
         })
     }
 
+    /// A POST keyed `key` with `body`, like mail's arrival (#220).
+    #[must_use]
+    pub const fn of(key: String, body: String) -> Self {
+        Self { key, body }
+    }
+
     /// The test button's POST, keyed `test-<now>`.
     #[must_use]
     pub fn test(now: u64) -> Self {
@@ -166,6 +172,7 @@ mod tests {
                 secret: secret.to_owned(),
                 silence: None,
             }),
+            mail: false,
             prompt: "Triage {{title}}".to_owned(),
             script: None,
             place: String::new(),
@@ -215,6 +222,7 @@ mod tests {
                 secret: "BEACON".to_owned(),
                 silence,
             }),
+            mail: false,
             prompt: "Read it".to_owned(),
             script: None,
             place: String::new(),

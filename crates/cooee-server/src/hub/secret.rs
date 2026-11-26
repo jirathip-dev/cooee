@@ -1,7 +1,7 @@
-use cooee_core::{mcp, secrets};
+use cooee_core::{Calls as _, mcp, secrets};
 use serde::Deserialize;
 
-use super::{Hub, HubError, LABEL, mcp::Proposed};
+use super::{Hub, HubError, LABEL, proposals::Proposed};
 
 /// An agent's `secret` (#163): secret `name` typed into shed terminal `terminal`, why, and whether to keep it.
 #[derive(Debug, Deserialize)]
@@ -54,6 +54,13 @@ impl Hub {
                 "{} is an agent's session or the owner's shell: cooee types a secret only into a program's terminal",
                 a.terminal
             )));
+        }
+        if let Some(code) = (a.name == cooee_core::mail::CODE)
+            .then(|| self.mail_code(&persona))
+            .flatten()
+        {
+            self.shed.type_line(&a.terminal, &code)?;
+            return Ok(entered(&a.name));
         }
         let key = secrets::persona(&persona, &a.name);
         let saved = if persona.is_empty() {

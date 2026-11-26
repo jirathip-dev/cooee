@@ -16,6 +16,7 @@ hkdf.workspace = true
 p256.workspace = true
 qrcode = { workspace = true, features = ["svg"] }
 cooee-core.workspace = true
+cooee-desk.workspace = true
 cooee-machines.workspace = true
 flate2.workspace = true
 futures-util.workspace = true
@@ -28,6 +29,7 @@ topcoat.workspace = true
 tokio = { workspace = true, features = ["io-util", "time"] }
 
 [dev-dependencies]
+shed-client = { workspace = true, features = ["fake"] }
 tokio = { workspace = true, features = ["macros", "rt", "test-util"] }
 
 [lints]

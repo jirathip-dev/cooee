@@ -1,0 +1,15 @@
+label = "Gmail"
+publisher = "Google (Google LLC)"
+url = "https://gmail.googleapis.com/gmail/v1/users/me/"
+builtin = "gmail"
+leaves = "What the persona searches for in the mailbox; Google already holds the mail it reads."
+reviewed = 2026-11-20
+
+[auth]
+kind = "oauth"
+issuer = "https://accounts.google.com"
+scopes = ["https://www.googleapis.com/auth/gmail.readonly"]
+client = "owner"
+
+[tools]
+read = ["search_mail", "read_mail"]

@@ -1,5 +1,9 @@
 name = "Travel"
 agent = "claude-acp"
 
+[purpose]
+role = "Trip planner"
+use = "planning trips and day-by-day itineraries"
+
 [[mcp]]
 server = "search"

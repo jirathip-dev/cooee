@@ -169,7 +169,16 @@ fn the_callback_answers_only_its_own_state_and_no_token_leaks() {
         "{head}"
     );
     assert_eq!(open(&back).0, "400", "a used state");
+    assert_the_flow_ended_and_no_token_leaks(&dir, &cooee, &fake, flow, config);
+}
 
+fn assert_the_flow_ended_and_no_token_leaks(
+    dir: &Path,
+    cooee: &Cooee,
+    fake: &Mutex<Fake>,
+    flow: &str,
+    config: String,
+) {
     let ended = cooee.json(&format!("/connectors/flows/{flow}"));
     let listed = cooee.json("/connectors");
     let acme = &listed["connectors"][0];
@@ -204,4 +213,124 @@ fn the_callback_answers_only_its_own_state_and_no_token_leaks() {
         assert_eq!(fake.lock().unwrap().revoked, ["ref-q7q7q7q7"]);
         assert!(!item.exists());
     }
+}
+
+#[test]
+fn the_phone_lists_adds_and_attaches_a_connector_and_the_menu_says_what_needs_sign_in() {
+    let dir = scratch("connectors-phone");
+    let shed = FakeShed::start(&dir.join("shed"), version());
+    write_coder_and_linear_accounts(&dir);
+    let cooee = Cooee::start(&dir, &shed.dir);
+    let menu_row = || {
+        let menu = cooee.json("/screens/menu");
+        let rows = menu["blocks"].as_array().unwrap().iter();
+        let mut rows = rows.flat_map(|g| g["rows"].as_array().cloned().unwrap_or_default());
+        rows.find(|r| r["id"] == "connectors").unwrap()
+    };
+    assert_eq!(menu_row()["value"], "0");
+    assert_notion_is_in_the_catalogue(&cooee);
+
+    let (status, body) = cooee.post("/connectors", &json!({ "catalogue": "linear" }));
+    assert_eq!(status, 200, "{body}");
+    let row = menu_row();
+    assert_eq!(
+        (&row["value"], &row["warn"]),
+        (&json!("1 needs sign-in"), &json!(true)),
+        "{row}"
+    );
+    let rows = cooee.json("/screens/settings/connectors")["blocks"][0]["rows"].clone();
+    assert_eq!(rows[0]["title"], "Linear");
+    assert_eq!(rows[0]["subtitle"]["tone"], "warn", "{rows}");
+
+    let mut coder = cooee.json("/personas/coder");
+    coder["mcp"] = json!([{ "server": "linear", "account": "work" }]);
+    let (status, body) = save_coder(&cooee, &coder);
+    assert_eq!(status, 200, "{body}");
+    let linear = cooee.json("/connectors")["connectors"][0].clone();
+    assert_eq!(linear["source"], "catalogue");
+    let used: Vec<_> = linear["accounts"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|a| a["personas"].clone())
+        .collect();
+    assert_eq!(used, [json!([]), json!(["Coder"])], "{linear}");
+
+    let mut edited = cooee.json("/personas/coder");
+    edited.as_object_mut().unwrap().remove("mcp");
+    edited["character"] = json!("Terse.");
+    assert_eq!(save_coder(&cooee, &edited).0, 200);
+    assert_eq!(
+        cooee.json("/personas/coder")["mcp"],
+        json!([{ "server": "linear", "account": "work" }])
+    );
+    assert_a_removed_connectors_pick_stays_and_an_unknown_one_is_refused(&cooee, coder);
+}
+
+fn assert_notion_is_in_the_catalogue(cooee: &Cooee) {
+    let listed = cooee.json("/connectors");
+    let notion = &listed["catalogue"].as_array().unwrap();
+    let notion = notion.iter().find(|e| e["name"] == "notion").unwrap();
+    assert_eq!(notion["source"], "catalogue");
+    assert_eq!(notion["host"], "mcp.notion.com", "{notion}");
+    assert!(
+        notion["checked"].as_str().unwrap().starts_with("2026-"),
+        "{notion}"
+    );
+    assert!(notion["tools"]["read"].is_array(), "{notion}");
+}
+
+fn save_coder(cooee: &Cooee, values: &Value) -> (u16, String) {
+    let act = json!({ "screen": "/screens/persona/coder", "block": "", "action": "save", "values": values });
+    cooee.post("/screens/action", &act)
+}
+
+fn assert_a_removed_connectors_pick_stays_and_an_unknown_one_is_refused(
+    cooee: &Cooee,
+    mut coder: Value,
+) {
+    let (status, body) = cooee.request("DELETE", "/connectors/linear", None);
+    assert_eq!(status, 200, "{body}");
+    let mut kept = cooee.json("/personas/coder");
+    kept["character"] = json!("Terse, kind.");
+    assert_eq!(
+        save_coder(cooee, &kept).0,
+        200,
+        "a pick of a removed connector stays and saves"
+    );
+    coder["version"] = json!("");
+    coder["mcp"] = json!([{ "server": "nowhere", "account": "main" }]);
+    let (status, body) = save_coder(cooee, &coder);
+    assert_eq!(status, 400, "{body}");
+    assert!(body.contains("no connector nowhere"), "{body}");
+    coder["mcp"] = json!([]);
+    assert_eq!(save_coder(cooee, &coder).0, 200);
+    assert!(cooee.json("/personas/coder").get("mcp").is_none());
+}
+
+fn write_coder_and_linear_accounts(dir: &Path) {
+    fs::create_dir_all(dir.join("profiles")).unwrap();
+    fs::write(
+        dir.join("profiles/coder.toml"),
+        "name = \"coder\"\nlabel = \"Coder\"\nagent = \"fake-acp\"\n",
+    )
+    .unwrap();
+    let account = |name: &str, state: Value| {
+        let mut a = json!({ "connector": "linear", "name": name, "issuer": "", "client": "", "scopes": [],
+                            "since": 0 });
+        a.as_object_mut()
+            .unwrap()
+            .extend(state.as_object().unwrap().clone());
+        a
+    };
+    let accounts = [
+        account(
+            "main",
+            json!({ "state": "needs_sign_in", "why": "the refresh was refused" }),
+        ),
+        account("work", json!({ "state": "signed_in" })),
+    ];
+    fs::create_dir_all(dir.join("data")).unwrap();
+    let file = json!({ "format": 1, "clients": [], "accounts": accounts });
+    fs::write(dir.join("data/connectors.json"), file.to_string()).unwrap();
 }

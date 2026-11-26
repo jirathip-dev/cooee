@@ -1,2 +1,6 @@
 name = "Tutor"
 agent = "claude-acp"
+
+[purpose]
+role = "Tutor"
+use = "learning a topic step by step"

@@ -6,7 +6,7 @@ use std::{
 use cooee_core::{Config, ROOTS_FIX, Shed, ShedError, agents_fix, plugins, shed_fix};
 use cooee_server::machine;
 
-use crate::service::{app_items, label, tailnet_name};
+use crate::service::{app_items, service, tailnet_name};
 
 pub(crate) fn doctor(config: &Config) -> Result<(), String> {
     let mut failed = Vec::new();
@@ -16,11 +16,11 @@ pub(crate) fn doctor(config: &Config) -> Result<(), String> {
             failed.push(format!("FAIL {what}"));
         }
     };
-    let label = label(&config.instance);
-    let loaded = cooee_core::runner::command("launchctl")
-        .args(["list", &label])
-        .output()
-        .is_ok_and(|o| o.status.success());
+    let service = service(config, None, "serve")?;
+    let label = service.label().to_string();
+    let loaded = service
+        .status()
+        .is_ok_and(|s| s.loaded && s.refused.is_none());
     check(
         loaded,
         format!("service {label} loaded (else: cooee install)"),
@@ -37,20 +37,7 @@ pub(crate) fn doctor(config: &Config) -> Result<(), String> {
     let addr = SocketAddr::from((Ipv4Addr::LOCALHOST, port));
     let up = TcpStream::connect_timeout(&addr, Duration::from_secs(2)).is_ok();
     check(up, format!("listening on port {port}"));
-    let shed = Shed::new(config.shed.clone(), config.shed_dir.clone());
-    match shed.hello() {
-        Ok(()) => {
-            check(true, format!("shed at {}", shed.socket.display()));
-            if shed.agents().is_ok_and(|a| a.is_empty()) {
-                cooee_core::say!(
-                    "warn no agents installed in shed\n     fix: {}",
-                    agents_fix()
-                );
-            }
-        }
-        Err(e @ ShedError::Version { .. }) => check(false, format!("shed: {e}")),
-        Err(e) => check(false, format!("shed: {e}\n     fix: {}", shed_fix())),
-    }
+    shed_rows(config, &mut check);
     let data = config.data_dir().ok_or("no data folder")?;
     for (ok, what) in machine::rows(config).into_iter().chain(plugin_rows(&data)) {
         check(ok, what);
@@ -61,21 +48,59 @@ pub(crate) fn doctor(config: &Config) -> Result<(), String> {
     if cooee_core::chief::find(config.dir.as_deref(), &data).is_none() {
         cooee_core::say!("warn no Chief\n     fix: run cooee setup");
     }
-    match cooee_server::Push::new(&data)
+    push_rows(config, &data, &mut check);
+    crate::update::doctor(config);
+    tailnet_rows(config, &mut check);
+    if let Some((up, what)) = hooks(config) {
+        check(up, what);
+    }
+    if failed.is_empty() {
+        Ok(())
+    } else {
+        Err(format!(
+            "{} check(s) failed:\n{}",
+            failed.len(),
+            failed.join("\n")
+        ))
+    }
+}
+
+fn shed_rows(config: &Config, check: &mut impl FnMut(bool, String)) {
+    let shed = Shed::new(config.shed_dir.as_deref());
+    match shed.hello() {
+        Ok(()) => {
+            check(true, format!("shed at {}", shed.socket().display()));
+            if shed.installed().is_ok_and(|a| a.is_empty()) {
+                cooee_core::say!(
+                    "warn no agents installed in shed\n     fix: {}",
+                    agents_fix()
+                );
+            }
+        }
+        Err(e @ ShedError::Version { .. }) => check(false, format!("shed: {e}")),
+        Err(e) => check(false, format!("shed: {e}\n     fix: {}", shed_fix())),
+    }
+}
+
+fn push_rows(config: &Config, data: &std::path::Path, check: &mut impl FnMut(bool, String)) {
+    match cooee_server::Push::new(data)
         .with_apns(config.apns.clone())
         .apns_ready()
     {
         Ok(()) => cooee_core::say!("ok   apns ready"),
         Err(why) => cooee_core::say!("warn apns: {why}: the native app gets no pushes"),
     }
-    match cooee_server::Push::new(&data).has_key() {
+    match cooee_server::Push::new(data).has_key() {
         Ok(true) => cooee_core::say!("ok   push keys stored"),
         Ok(false) => {
             cooee_core::say!("ok   push keys: none yet (made when a phone turns on notifications)");
         }
         Err(e) => check(false, format!("push keys: {e}")),
     }
-    crate::update::doctor(config);
+}
+
+fn tailnet_rows(config: &Config, check: &mut impl FnMut(bool, String)) {
+    let port = config.port;
     match tailnet_name() {
         None => check(false, "tailnet: no name (is Tailscale up?)".to_owned()),
         Some(name) => {
@@ -95,18 +120,6 @@ pub(crate) fn doctor(config: &Config) -> Result<(), String> {
                 ),
             );
         }
-    }
-    if let Some((up, what)) = hooks(config) {
-        check(up, what);
-    }
-    if failed.is_empty() {
-        Ok(())
-    } else {
-        Err(format!(
-            "{} check(s) failed:\n{}",
-            failed.len(),
-            failed.join("\n")
-        ))
     }
 }
 

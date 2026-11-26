@@ -58,6 +58,19 @@ pub struct Server {
     /// A typed URL's tools the owner marked reads; the rest ask.
     #[serde(default)]
     pub read: Vec<String>,
+    /// The harness built-ins it stands in for, which a persona that picks it has off (#503).
+    #[serde(default)]
+    pub provides: Vec<Provides>,
+}
+
+/// A harness built-in a server stands in for (`provides`).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize, Serialize)]
+#[serde(rename_all = "lowercase")]
+pub enum Provides {
+    /// Web search and fetch.
+    Web,
+    /// A browser.
+    Browser,
 }
 
 /// A typed URL's `auth`.
@@ -220,7 +233,18 @@ impl Server {
             k => return Err(format!("mcp {n}: type {k:?} isn't stdio, http or sse")),
         };
         let url = HttpsUrl::try_from(self.url.clone()).map_err(|e| format!("mcp {n}: url {e}"))?;
-        let auth = match self.auth {
+        Ok(Source::Typed {
+            url,
+            transport,
+            auth: self.typed_auth()?,
+            headers: &self.headers,
+            read: &self.read,
+        })
+    }
+
+    fn typed_auth(&self) -> Result<Auth, String> {
+        let n = &self.name;
+        Ok(match self.auth {
             Some(AuthKind::OAuth) => Auth::OAuth {
                 issuer: Some(
                     HttpsUrl::try_from(self.issuer.clone())
@@ -238,13 +262,6 @@ impl Server {
                 help: String::new(),
             },
             Some(AuthKind::None) | None => Auth::None,
-        };
-        Ok(Source::Typed {
-            url,
-            transport,
-            auth,
-            headers: &self.headers,
-            read: &self.read,
         })
     }
 
@@ -291,9 +308,14 @@ impl Server {
     }
 
     fn toml(&self) -> String {
+        let provides = (!self.provides.is_empty()).then(|| {
+            let list = serde_json::to_string(&self.provides).unwrap_or_default();
+            format!("\nprovides = {list}")
+        });
+        let provides = provides.unwrap_or_default();
         if self.catalogue {
             return format!(
-                "name = {}\ncatalogue = true\nenabled = {}",
+                "name = {}\ncatalogue = true\nenabled = {}{provides}",
                 q(&self.name),
                 self.enabled
             );
@@ -331,7 +353,7 @@ impl Server {
             lines.push(format!("read = {read}"));
         }
         lines.push(format!("enabled = {}", self.enabled));
-        lines.join("\n")
+        lines.join("\n") + &provides
     }
 }
 
@@ -578,6 +600,10 @@ read = ["look"]
         assert_eq!(read, ["look"]);
         let saved = with_tables("", &list.iter().map(Server::toml).collect::<Vec<_>>());
         assert_eq!(toml::from_str::<Back>(&saved).unwrap().mcp, list);
+    }
+
+    #[test]
+    fn a_server_with_the_wrong_fields_for_its_source_is_refused() {
         for (bad, says) in [
             ("command = \"x\"\nread = [\"a\"]", "a stdio server"),
             ("command = \"x\"\nauth = \"token\"", "a stdio server"),

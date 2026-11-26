@@ -1,6 +1,6 @@
 use cooee_core::{Body, Item, Thread};
 
-use super::{Live, waits};
+use super::{live::Live, waits};
 
 #[derive(Clone)]
 pub(super) struct Glance {
@@ -42,9 +42,10 @@ pub(super) fn summary(meta: &Thread, items: &[Item], unseen: usize) -> Glance {
         | Body::Ask { text, .. }
         | Body::Handoff { text, .. }
         | Body::Ended { text } => text,
-        Body::Tool { title, .. } => title,
+        Body::Tool { subject, .. } => subject,
         Body::Approval { tool, .. } => tool,
         Body::Plan { .. } => "plan",
+        Body::Blocks(_) => "blocks",
         Body::Routine { name, .. } => name,
     });
     let waiting = items.iter().find_map(|i| match &i.body {

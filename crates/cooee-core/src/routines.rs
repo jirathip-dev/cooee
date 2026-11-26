@@ -101,6 +101,8 @@ pub enum Trigger {
     Github(Github),
     /// A signed POST to `/hooks/in/<id>`.
     Webhook(Webhook),
+    /// Mail arriving at this persona's inbox (#220).
+    Mail(String),
 }
 
 /// Where a routine's runs post.
@@ -200,6 +202,9 @@ pub struct Ask {
     pub github: Option<Github>,
     /// The signed POST.
     pub webhook: Option<Webhook>,
+    /// Mail arriving at the making chat's persona.
+    #[serde(default)]
+    pub mail: bool,
     /// The prompt, but for a script routine.
     #[serde(default)]
     pub prompt: String,
@@ -229,6 +234,28 @@ pub struct Edit {
     pub per_day: Option<String>,
 }
 
+impl Place {
+    fn asked(place: &str, from: &Thread) -> Result<Self, String> {
+        Ok(match place {
+            "" | "chat" => Self::Chat {
+                thread: from.id.clone(),
+            },
+            "new_thread" => Self::NewThread {
+                who: Who {
+                    agent: from.agent.clone(),
+                    account: from.account.clone(),
+                    profile: from.profile.clone(),
+                    folder: from.folder.clone().unwrap_or_default(),
+                    model: from.model.clone(),
+                    effort: from.effort.clone(),
+                    machine: from.machine.clone(),
+                },
+            },
+            p => return Err(format!("BAD_PLACE: {p:?} is neither chat nor new_thread")),
+        })
+    }
+}
+
 impl Routine {
     /// The routine `ask` says, made by thread `from`'s agent at `now` (in UTC offset `offset_min`), among `list`.
     ///
@@ -245,28 +272,20 @@ impl Routine {
             return Err(format!("TOO_MANY: there are {MAX} routines already"));
         }
         let ends_at = end::ends_at(ask.until.as_deref(), (now, offset_min))?;
-        let place = match ask.place.as_str() {
-            "" | "chat" => Place::Chat {
-                thread: from.id.clone(),
-            },
-            "new_thread" => Place::NewThread {
-                who: Who {
-                    agent: from.agent.clone(),
-                    account: from.account.clone(),
-                    profile: from.profile.clone(),
-                    folder: from.folder.clone().unwrap_or_default(),
-                    model: from.model.clone(),
-                    effort: from.effort.clone(),
-                    machine: from.machine.clone(),
-                },
-            },
-            p => return Err(format!("BAD_PLACE: {p:?} is neither chat nor new_thread")),
-        };
-        let trigger = match (ask.when, ask.github, ask.webhook) {
-            (Some(w), None, None) => Trigger::Schedule(Schedule::parse(&w)?),
-            (None, Some(g), None) => Trigger::Github(g.checked()?),
-            (None, None, Some(h)) => Trigger::Webhook(h.checked()?),
-            _ => return Err("BAD_TRIGGER: give one of when, github or webhook".to_owned()),
+        let place = Place::asked(&ask.place, from)?;
+        let trigger = match (ask.when, ask.github, ask.webhook, ask.mail) {
+            (Some(w), None, None, false) => Trigger::Schedule(Schedule::parse(&w)?),
+            (None, Some(g), None, false) => Trigger::Github(g.checked()?),
+            (None, None, Some(h), false) => Trigger::Webhook(h.checked()?),
+            (None, None, None, true) if !from.profile.is_empty() => {
+                Trigger::Mail(from.profile.clone())
+            }
+            _ => {
+                return Err(
+                    "BAD_TRIGGER: give one of when, github, webhook or mail (a persona's chat)"
+                        .to_owned(),
+                );
+            }
         };
         let script = ask.script.map(Script::checked).transpose()?;
         let mut stamp = now;
@@ -381,6 +400,7 @@ impl Routine {
             Trigger::Schedule(s) => s.describe(),
             Trigger::Github(g) => format!("on {} in {}", g.events.join(", "), g.repo),
             Trigger::Webhook(h) => h.describe(),
+            Trigger::Mail(p) => format!("when mail arrives at {p}"),
         }
     }
 
@@ -487,6 +507,7 @@ mod tests {
             when: Some(when.to_owned()),
             github: None,
             webhook: None,
+            mail: false,
             prompt: "Renewals due {{due}}?".to_owned(),
             script: None,
             place: place.to_owned(),

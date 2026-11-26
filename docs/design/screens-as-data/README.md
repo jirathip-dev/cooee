@@ -158,7 +158,7 @@ In a sheet, the sheet's done action sends every form in it.
 { "type": "form", "id": "f", "submit": { "label": "Save", "action": "save" }, "fields": [
   { "type": "text", "name": "branch", "label": "Branch", "value": "staging" },
   { "type": "toggle", "name": "drive", "label": "Drive", "value": true },
-  { "type": "picker", "name": "host", "label": "Host", "value": "mini", "options": ["mini", "air"] },
+  { "type": "picker", "name": "host", "label": "Host", "value": "mini", "options": ["mini", "lab"] },
   { "type": "secret", "name": "GH_TOKEN", "label": "GH_TOKEN", "set": true } ] }
 ```
 
@@ -374,7 +374,7 @@ older app.
 4. **Offline:** the per-screen cache, the offline line, and actions off.
 5. **drover on screens:** herdsman serves Queue, Events, Fleets and its cards in these shapes, attached to the
    Conductor.
-6. **Docs:** `docs/plugins.md` gets the hello example and the block and place reference.
+6. **Docs:** `docs/plugins/` gets the hello example and the block and place reference.
 
 ## Open questions for the owner
 

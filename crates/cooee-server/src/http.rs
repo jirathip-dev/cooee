@@ -58,6 +58,8 @@ pub(crate) fn header<'a>(cx: &'a Cx, name: &str) -> Option<&'a str> {
 
 pub(crate) struct Paired(pub(crate) Device);
 
+pub(crate) struct Asking(pub(crate) String);
+
 pub(crate) struct Caller(pub(crate) Plugin);
 
 path_param!(pub(crate) id: String);
@@ -92,13 +94,18 @@ impl<T: Serialize> IntoResponse for Answer<T> {
             Err(e @ HubError::NoThread(_)) => (404, e.to_string()),
             Err(e @ HubError::Refused(_)) => (400, e.to_string()),
             Err(e @ HubError::Stale(_)) => (409, e.to_string()),
-            Err(HubError::Shed(e)) if e.no_such_terminal() => (
-                410,
-                "Not delivered: this thread's agent is gone.".to_owned(),
-            ),
-            Err(HubError::Shed(
-                e @ (ShedError::Rpc(_) | ShedError::Bad(_) | ShedError::Cli { .. }),
-            )) => {
+            Err(HubError::Shed(e)) if let Some(said) = cooee_core::Shed::all_limited(&e) => {
+                (429, said)
+            }
+            Err(HubError::Shed(e))
+                if e.code() == Some(cooee_core::shed_proto::ErrorCode::NoSuchTerminal) =>
+            {
+                (
+                    410,
+                    "Not delivered: this thread's agent is gone.".to_owned(),
+                )
+            }
+            Err(HubError::Shed(e @ (ShedError::Rpc(_) | ShedError::Bad(_)))) => {
                 cooee_core::note!("cooee: {e}");
                 (
                     502,
@@ -126,25 +133,20 @@ pub(crate) struct Created {
     pub(crate) id: String,
 }
 
-pub(crate) fn provider_name(agent: &str, providers: &[cooee_core::Sheet]) -> String {
-    providers
-        .iter()
-        .find(|s| s.provider.agent == agent)
-        .map_or_else(
-            || agent.strip_suffix("-acp").unwrap_or(agent).to_owned(),
-            |s| s.provider.name.clone(),
-        )
-}
-
 pub(crate) fn recipe(
     logins: &Logins,
-    (data, config, list): (&std::path::Path, Option<&std::path::Path>, &[Agent]),
+    (data, config, list, registry): (
+        &std::path::Path,
+        Option<&std::path::Path>,
+        &[Agent],
+        &[cooee_core::mcp::Server],
+    ),
     (agent, account, id): (&str, Option<&str>, &str),
     folder: PathBuf,
     (mut picked, setup): ((String, String), bool),
 ) -> Result<(String, PathBuf, Recipe), HubError> {
     let (agent, folder, mut recipe) = if id.is_empty() {
-        let (account, launch) = logins.home(agent, account)?;
+        let (account, launch) = logins.home(agent, account);
         let recipe = Recipe {
             account,
             launch,
@@ -154,6 +156,7 @@ pub(crate) fn recipe(
     } else {
         let a = list.iter().find(|a| a.id == id);
         let a = a.ok_or_else(|| refused(format!("no profile {id}")))?;
+        let a = &cooee_core::profiles::onto(a, list).map_err(refused)?;
         if let Some(why) = a.lent.as_ref().and_then(|l| l.hidden.as_ref()) {
             return Err(refused(format!("profile {id} is hidden: {why}")));
         }
@@ -165,11 +168,11 @@ pub(crate) fn recipe(
         let recipe = Recipe {
             mcp: a.mcp.iter().map(|k| k.server.clone()).collect(),
             machine: a.machine.clone(),
-            ..crate::hub::session::persona(logins, a, account, (data, config))?
+            ..crate::hub::persona(logins, a, account, (data, config, registry))?
         };
         (a.agent.clone(), a.work_folder().unwrap_or(folder), recipe)
     };
-    recipe.launch.pick(logins.picks(&agent, &picked.1)?);
+    recipe.launch.effort = logins.effort(&agent, &picked.1)?;
     (recipe.model, recipe.effort) = picked;
     if setup {
         if id.is_empty() || list.iter().any(|a| a.id == id && a.lent.is_some()) {
@@ -203,7 +206,7 @@ pub(crate) fn seated(
     }
     let (_, _, recipe) = recipe(
         logins,
-        (data, config, &list),
+        (data, config, &list, &hub.mcp()?),
         (&seat.agent, seat.account.as_deref(), &t.profile),
         PathBuf::new(),
         (Default::default(), t.setup),
@@ -300,4 +303,38 @@ pub(crate) async fn persona_save(cx: &Cx, p: Agent) -> Result<Answer<Agent>> {
         agents::save(c, d, p)
     })
     .await
+}
+
+pub(crate) fn core(screen: blocks::Screen) -> blocks::Block {
+    blocks::Block::Screen(Box::new(screen.source("core")))
+}
+
+pub(crate) fn bundled(text: &str) -> Result<blocks::Screen, HubError> {
+    match serde_json::from_str(text).map_err(refused)? {
+        blocks::Block::Screen(screen) => Ok(*screen),
+        _ => Err(refused("a bundled screen is no screen")),
+    }
+}
+
+pub(crate) fn fields(value: impl serde::Serialize) -> blocks::Fields {
+    match serde_json::to_value(value) {
+        Ok(serde_json::Value::Object(fields)) => fields,
+        _ => blocks::Fields::new(),
+    }
+}
+
+pub(crate) fn image(name: &std::path::Path) -> Option<&'static str> {
+    let ext = name
+        .extension()
+        .and_then(|e| e.to_str())
+        .unwrap_or_default();
+    match ext.to_ascii_lowercase().as_str() {
+        "png" => Some("image/png"),
+        "jpg" | "jpeg" => Some("image/jpeg"),
+        "gif" => Some("image/gif"),
+        "webp" => Some("image/webp"),
+        "heic" => Some("image/heic"),
+        "avif" => Some("image/avif"),
+        _ => None,
+    }
 }

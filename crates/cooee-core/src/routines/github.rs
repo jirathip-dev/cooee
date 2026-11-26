@@ -233,26 +233,37 @@ mod tests {
         assert_eq!(e.status(), 400);
     }
 
-    #[test]
-    fn an_event_matches_its_repo_events_and_match_fills_the_prompt_and_is_rate_capped() {
+    fn github_ask() -> Ask {
         let github: Github = serde_json::from_value(serde_json::json!({
             "repo": "Owner/App", "events": ["pull_request.opened", "push"],
             "match": { "pull_request.draft": "false" } }))
         .unwrap();
-        let chat = crate::Thread {
-            id: "t-1".to_owned(),
-            ..crate::Thread::default()
-        };
-        let ask = Ask {
+        Ask {
             when: None,
             github: Some(github),
             script: None,
             prompt: "{{event}} on {{repo}}: {{pull_request.title}} #{{ pull_request.number }}{{nope}} {{x".to_owned(),
             name: " Monday renewals ".to_owned(),
             webhook: None,
+            mail: false,
             place: String::new(),
             until: None,
+        }
+    }
+
+    fn pr(action: &str, draft: bool, title: &str) -> Delivery {
+        let payload = serde_json::json!({ "action": action, "repository": { "full_name": "owner/app" },
+            "pull_request": { "title": title, "number": 7, "draft": draft } });
+        Delivery::fetched("g".to_owned(), "pull_request".to_owned(), payload)
+    }
+
+    #[test]
+    fn an_event_matches_its_repo_events_and_match_fills_the_prompt_and_is_rate_capped() {
+        let chat = crate::Thread {
+            id: "t-1".to_owned(),
+            ..crate::Thread::default()
         };
+        let ask = github_ask();
         let e = Routine::make(&[], ask.clone(), &chat, (MON, 0)).unwrap_err();
         assert!(e.starts_with("BAD_PROMPT"), "{e}");
         let ask = Ask {
@@ -264,11 +275,6 @@ mod tests {
             (r.when().as_str(), r.due(MON * 2, 0)),
             ("on pull_request.opened, push in Owner/App", None)
         );
-        let pr = |action: &str, draft: bool, title: &str| {
-            let payload = serde_json::json!({ "action": action, "repository": { "full_name": "owner/app" },
-                "pull_request": { "title": title, "number": 7, "draft": draft } });
-            Delivery::fetched("g".to_owned(), "pull_request".to_owned(), payload)
-        };
         let d = pr("opened", false, "Fix login");
         assert!(r.matches(&d));
         assert!(!r.matches(&pr("closed", false, "x")) && !r.matches(&pr("opened", true, "x")));

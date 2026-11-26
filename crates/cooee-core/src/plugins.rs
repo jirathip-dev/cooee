@@ -1,4 +1,4 @@
-//! Installed plugins (docs/plugins.md): a plugin is a git repo with a `cooee-plugin.toml` at its root. cooee keeps
+//! Installed plugins (docs/plugins/): a plugin is a git repo with a `cooee-plugin.toml` at its root. cooee keeps
 //! it in `<data>/plugins/<name>/`, pins it in `<data>/plugins.lock` and writes its tabs as `[[plugins]]` entries in
 //! `<data>/plugins/plugins.toml`, read beside the config's own. The curated index, `plugins/index.toml`, is built in.
 
@@ -38,11 +38,13 @@ pub struct Manifest {
     /// What it may do: shown when it's attached, refused beyond.
     #[serde(default)]
     pub permissions: Permissions,
-    /// The build command (`sh -c`, in the checkout).
+    /// The build command (`sh -c`, in the checkout); an attach-only plugin's never runs.
+    #[serde(default, skip_serializing_if = "String::is_empty")]
     pub build: String,
     /// The backend command (`sh -c`, in the checkout), with `PORT`, `COOEE_PLUGIN_TOKEN` and `COOEE` (cooee's URL).
+    #[serde(default, skip_serializing_if = "String::is_empty")]
     pub run: String,
-    /// A backend already running at `http://127.0.0.1:<port>`: cooee uses it when it answers, else runs `run` there.
+    /// A backend at `http://127.0.0.1:<port>`: cooee uses it when it answers, else runs `run` there, if any.
     #[serde(default, skip_serializing_if = "String::is_empty")]
     pub attach: String,
     /// The file (`~/` or absolute) holding the token the `attach` backend accepts; cooee calls it with that one.
@@ -260,8 +262,31 @@ impl Manifest {
         if m.tabs.is_empty() && m.places.is_empty() {
             return Err(bad("cooee-plugin.toml: a plugin needs a tab or a place"));
         }
-        let perms = &m.permissions;
-        for p in &m.places {
+        m.check_permissions()?;
+        if !m.attach.is_empty() && m.attach_port().is_none() {
+            return Err(bad(
+                "cooee-plugin.toml: `attach` must be http://127.0.0.1:<port>",
+            ));
+        }
+        if m.run.is_empty() && m.attach.is_empty() {
+            return Err(bad("cooee-plugin.toml: a plugin needs `run` or `attach`"));
+        }
+        let token_ok = m.attach_token.starts_with('/') || m.attach_token.starts_with("~/");
+        if !m.attach_token.is_empty() && (m.attach.is_empty() || !token_ok) {
+            return Err(bad(
+                "cooee-plugin.toml: `attach_token` needs `attach` and a path, ~/ or absolute",
+            ));
+        }
+        for p in &m.profiles {
+            p.check()
+                .map_err(|e| bad(format!("cooee-plugin.toml: {e}")))?;
+        }
+        Ok(m)
+    }
+
+    fn check_permissions(&self) -> io::Result<()> {
+        let perms = &self.permissions;
+        for p in &self.places {
             if !perms.places.contains(&p.kind) {
                 return Err(bad(format!(
                     "cooee-plugin.toml: {:?} is not in [permissions] places",
@@ -284,22 +309,7 @@ impl Manifest {
                 "cooee-plugin.toml: destructive action {a} is not in [permissions] actions"
             )));
         }
-        if !m.attach.is_empty() && m.attach_port().is_none() {
-            return Err(bad(
-                "cooee-plugin.toml: `attach` must be http://127.0.0.1:<port>",
-            ));
-        }
-        let token_ok = m.attach_token.starts_with('/') || m.attach_token.starts_with("~/");
-        if !m.attach_token.is_empty() && (m.attach.is_empty() || !token_ok) {
-            return Err(bad(
-                "cooee-plugin.toml: `attach_token` needs `attach` and a path, ~/ or absolute",
-            ));
-        }
-        for p in &m.profiles {
-            p.check()
-                .map_err(|e| bad(format!("cooee-plugin.toml: {e}")))?;
-        }
-        Ok(m)
+        Ok(())
     }
 
     /// The cooee versions it accepts, as the owner reads them.
@@ -330,6 +340,12 @@ impl Manifest {
             ));
         }
         Ok(())
+    }
+
+    /// Whether it only attaches: no `run`, so cooee never builds or starts it.
+    #[must_use]
+    pub fn attach_only(&self) -> bool {
+        self.run.is_empty()
     }
 
     /// The port of its `attach` backend, when it names one.
@@ -515,6 +531,13 @@ mod tests {
         );
         assert!(Manifest::parse(&tok("relative")).is_err());
         assert!(Manifest::parse(&format!("attach_token = \"/t\"\n{ok}")).is_err());
+        let no_run = ok.replace("build = \"true\"\nrun = \"true\"\n", "");
+        let only = Manifest::parse(&tok("/t").replace(ok, &no_run)).unwrap();
+        assert!(only.attach_only() && only.attach_port() == Some(7777));
+        assert_eq!(only.attach_token_path(), Some(PathBuf::from("/t")));
+        assert!(!Manifest::parse(ok).unwrap().attach_only());
+        let neither = Manifest::parse(&no_run).unwrap_err().to_string();
+        assert!(neither.contains("needs `run` or `attach`"), "{neither}");
     }
 
     #[test]

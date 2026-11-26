@@ -1,8 +1,18 @@
 use std::{fs, sync::Mutex, time::Instant};
 
-use cooee_core::{Body, Change, Item, Kind, Queued, Via, agents, routines::Mark, shed_proto};
+use cooee_core::{
+    Body, Calls as _, Change, Item, Kind, Queued, Via, agents, routines::Mark, shed_proto,
+};
 
-use super::{Hub, HubError, Live, Upload, lock, now, refused};
+use super::{Hub, HubError, live::Live, lock, now, refused};
+
+/// A file sent with a message: its name on the phone and its bytes.
+pub struct Upload {
+    /// The name it had (only its safe characters are kept).
+    pub name: String,
+    /// Its bytes.
+    pub data: Vec<u8>,
+}
 
 impl Hub {
     /// Sends the owner's message with its `files`, sent `via` voice or typed: once per `random_id` (a retry of a
@@ -23,6 +33,9 @@ impl Hub {
         let live = self.live(id)?;
         if lock(&live).meta.kind == Kind::Room {
             return self.room_send(&live, text, random_id, files);
+        }
+        if let Some(item) = self.mentioned(&live, text, random_id, files)? {
+            return Ok(item);
         }
         self.send_after(id, text, random_id, files, "", via)
     }
@@ -102,6 +115,33 @@ impl Hub {
         })
     }
 
+    fn compose(&self, l: &Live, q: &Queued, before: &str) -> String {
+        let spoken = (q.via == Some(Via::Voice)).then(|| {
+            agents::find(self.config_dir(), &self.data, &l.meta.profile)
+                .ok()
+                .and_then(|a| a.spoken)
+                .unwrap_or_else(|| agents::SPOKEN.to_owned())
+        });
+        let text = match spoken.filter(|s| !s.trim().is_empty()) {
+            Some(s) => format!("{}\n\n{}", s.trim_end(), q.text),
+            None => q.text.clone(),
+        };
+        let mut prompt = if before.trim().is_empty() {
+            text
+        } else {
+            format!("{}\n\n{text}", before.trim_end())
+        };
+        if !q.files.is_empty() {
+            prompt.push_str("\n\nAttached files:");
+            for name in &q.files {
+                let path = self.files.join(&l.meta.id).join(name);
+                prompt.push_str("\n- ");
+                prompt.push_str(&path.to_string_lossy());
+            }
+        }
+        prompt
+    }
+
     pub(super) fn deliver(
         &self,
         live: &Mutex<Live>,
@@ -120,29 +160,7 @@ impl Hub {
             } else {
                 super::ask::OWNER_NOTE
             };
-            let spoken = (q.via == Some(Via::Voice)).then(|| {
-                agents::find(self.config_dir(), &self.data, &l.meta.profile)
-                    .ok()
-                    .and_then(|a| a.spoken)
-                    .unwrap_or_else(|| agents::SPOKEN.to_owned())
-            });
-            let text = match spoken.filter(|s| !s.trim().is_empty()) {
-                Some(s) => format!("{}\n\n{}", s.trim_end(), q.text),
-                None => q.text.clone(),
-            };
-            let mut prompt = if before.trim().is_empty() {
-                text
-            } else {
-                format!("{}\n\n{text}", before.trim_end())
-            };
-            if !q.files.is_empty() {
-                prompt.push_str("\n\nAttached files:");
-                for name in &q.files {
-                    let path = self.files.join(&l.meta.id).join(name);
-                    prompt.push_str("\n- ");
-                    prompt.push_str(&path.to_string_lossy());
-                }
-            }
+            let prompt = self.compose(&l, &q, before);
             let ended = l.chat.turn.state == "ended";
             (
                 l.meta.terminal.clone(),
@@ -200,6 +218,7 @@ impl Hub {
         live.sent = Some(start);
         if let Some(card) = q
             .denied
+            .or(q.acted)
             .and_then(|c| live.chat.items.iter().find(|i| i.id == c))
         {
             return Ok(card.clone());
@@ -229,7 +248,9 @@ impl Hub {
     ) -> Result<(), HubError> {
         let got = ended.then(|| self.shed.get(terminal));
         match got {
-            Some(Err(e)) if e.no_such_terminal() => return Err(e.into()),
+            Some(Err(e)) if e.code() == Some(cooee_core::shed_proto::ErrorCode::NoSuchTerminal) => {
+                return Err(e.into());
+            }
             Some(t)
                 if !t
                     .as_ref()
@@ -242,7 +263,7 @@ impl Hub {
             _ => {}
         }
         if let Err(e) = self.shed.prompt(terminal, prompt) {
-            if e.no_link() {
+            if e.code() == Some(cooee_core::shed_proto::ErrorCode::NoLink) {
                 self.reachable(machine)?;
             }
             return Err(e.into());
@@ -263,6 +284,10 @@ impl Hub {
         files: &[Upload],
         via: Option<Via>,
     ) -> Result<Vec<Queued>, HubError> {
+        let live = self.live(id)?;
+        if self.mentioned(&live, text, random_id, files)?.is_some() {
+            return Ok(lock(&live).meta.queue.clone());
+        }
         self.queue_as(id, (text, random_id), files, (None, via))
     }
 
@@ -324,6 +349,9 @@ impl Hub {
             ));
         };
         let q = l.meta.queue.remove(at);
+        if !now {
+            self.unacted(&mut l, &q)?;
+        }
         self.queued(&mut l)?;
         drop(l);
         self.send_next(&live, now.then_some(q))?;

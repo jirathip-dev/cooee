@@ -13,8 +13,10 @@ use crate::{
     devices::{devices_of, now},
 };
 
-pub(super) const USAGE: &str = "send <thread> <text> [--wait [--timeout <secs>]] [--json]";
+pub(super) const USAGE: &str =
+    "send <thread> <text> | send --new <persona> <text> [--wait [--timeout <secs>]] [--json]";
 pub(super) const FLAGS: &[Flag] = &[
+    Flag::Switch("--new"),
     Flag::Switch("--wait"),
     Flag::Switch("--json"),
     Flag::Value("--timeout"),
@@ -34,21 +36,22 @@ pub(super) fn run(inv: &Invocation) -> Result<(), Failed> {
         return Err(Failed::Usage);
     }
     let server = Server::of(&inv.config()?)?;
-    let cursor = server.json("GET", &format!("/threads/{thread}/messages?before=0"), "")?;
-    let cursor = at(&cursor, "cursor")
-        .as_str()
-        .unwrap_or_default()
-        .to_owned();
     let random_id = format!("cli-{}-{}", now(), std::process::id());
-    let body = json!({ "text": text, "random_id": random_id }).to_string();
-    let sent = server.json("POST", &format!("/threads/{thread}/send"), &body)?;
-    let (state, item) = if inv.on("--wait") {
+    let (thread, cursor, sent) = if inv.on("--new") {
+        server.start(thread, text, &random_id)?
+    } else {
+        let cursor = server.cursor(thread)?;
+        let body = json!({ "text": text, "random_id": random_id }).to_string();
+        let sent = server.json("POST", &format!("/threads/{thread}/send"), &body)?;
         let sent = at(&sent, "id").as_u64().unwrap_or_default();
-        server.wait(thread, &cursor, sent, Duration::from_secs(secs))?
+        ((*thread).to_owned(), cursor, sent)
+    };
+    let (state, item) = if inv.on("--wait") {
+        server.wait(&thread, &cursor, sent, Duration::from_secs(secs))?
     } else {
         ("sent", Value::Null)
     };
-    report(thread, state, &item, inv.on("--json"))?;
+    report(&thread, state, &item, inv.on("--json"))?;
     match state {
         "approval" => Err(Failed::Exit(ExitCode::from(3))),
         "ended" => Err(Failed::Exit(ExitCode::FAILURE)),
@@ -149,6 +152,25 @@ impl Server {
             .read_to_string(&mut text)
             .map_err(|e| e.to_string())?;
         serde_json::from_str(&text).map_err(|e| format!("{path}: {e}"))
+    }
+
+    fn cursor(&self, thread: &str) -> Result<String, String> {
+        let slice = self.json("GET", &format!("/threads/{thread}/messages?before=0"), "")?;
+        Ok(at(&slice, "cursor").as_str().unwrap_or_default().to_owned())
+    }
+
+    fn start(
+        &self,
+        persona: &str,
+        text: &str,
+        random_id: &str,
+    ) -> Result<(String, String, u64), String> {
+        let body = json!({ "agent": "", "profile": persona, "text": text, "random_id": random_id });
+        let made = self.json("POST", "/threads", &body.to_string())?;
+        let id = at(&made, "id").as_str().ok_or("POST /threads: no id")?;
+        let cursor = self.cursor(id)?;
+        let boot = cursor.split('.').next().unwrap_or_default();
+        Ok((id.to_owned(), format!("{boot}.0"), 0))
     }
 
     fn wait(

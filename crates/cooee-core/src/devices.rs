@@ -84,6 +84,16 @@ pub enum Claim {
     Paired(String),
 }
 
+/// A new device's request as it stands, read without collecting it: `until` is in Unix milliseconds.
+#[derive(Debug, Clone, PartialEq, Eq)]
+#[expect(missing_docs, reason = "each variant names a state")]
+pub enum Peek {
+    Waiting { word: String, until: u64 },
+    Approved { by: String },
+    Declined { by: String },
+    Gone,
+}
+
 /// An open request as paired devices see it: its id, check word, what asks and when.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub struct Asking {
@@ -427,6 +437,21 @@ impl Devices {
         })
     }
 
+    /// The new device's request, read without collecting it; errors when the file can't be read.
+    #[expect(clippy::missing_errors_doc, reason = "one doc line names the error")]
+    pub fn peek(&self, claim: &str, now: u64) -> io::Result<Peek> {
+        let (hash, mut asks) = (sha256(claim.as_bytes()), self.load()?.asks.into_iter());
+        let found = asks.find(|r| same(&r.claim, &hash) && r.at + ASK_TTL > now);
+        Ok(found.map_or(Peek::Gone, |r| match r.answer {
+            None => Peek::Waiting {
+                word: r.word,
+                until: r.at + ASK_TTL,
+            },
+            Some((true, by)) => Peek::Approved { by },
+            Some((false, by)) => Peek::Declined { by },
+        }))
+    }
+
     /// Drops the new device's request.
     ///
     /// # Errors
@@ -656,9 +681,13 @@ mod tests {
             (open[0].word.as_str(), open[0].label.as_str()),
             (word.as_str(), "iPad")
         );
+        let until = ASK_TTL;
+        assert_eq!(d.peek(&claim, 1).unwrap(), Peek::Waiting { word, until });
         assert!(!d.answer("deadbeef", true, "iPhone", 1).unwrap());
         assert!(d.answer(&open[0].id, true, "iPhone", 1).unwrap());
         assert_eq!(d.asking(1).unwrap(), []);
+        let by = "iPhone".to_owned();
+        assert_eq!(d.peek(&claim, 1).unwrap(), Peek::Approved { by });
         assert!(d.rename(&open[0].id, "Kim's iPad").unwrap());
         let Claim::Paired(token) = d.collect(&claim, 2).unwrap() else {
             panic!("not paired");

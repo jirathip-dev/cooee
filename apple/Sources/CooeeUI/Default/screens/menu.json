@@ -20,7 +20,8 @@
       "id": "more",
       "rows": [
         { "id": "machines", "title": "Machines", "symbol": "desktopcomputer", "tone": "working", "open": "/screens/settings/machines" },
-        { "id": "plugins", "title": "Plugins", "symbol": "puzzlepiece.extension.fill", "tone": "ok", "open": "/screens/settings/plugins" }
+        { "id": "plugins", "title": "Plugins", "symbol": "puzzlepiece.extension.fill", "tone": "ok", "open": "/screens/settings/plugins" },
+        { "id": "connectors", "title": "Connectors", "symbol": "point.3.connected.trianglepath.dotted", "tone": "purple", "page": "connectors" }
       ]
     }
   ]

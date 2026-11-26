@@ -89,6 +89,7 @@ pub(super) struct Client {
 
 impl Client {
     fn pairs<'a>(&'a self, mut pairs: Vec<(&'a str, &'a str)>) -> String {
+        pairs.retain(|(k, v)| *k != "resource" || !v.is_empty());
         pairs.push(("client_id", &self.id));
         if let Some(s) = &self.secret {
             pairs.push(("client_secret", s.expose()));

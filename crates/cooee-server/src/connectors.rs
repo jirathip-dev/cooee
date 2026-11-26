@@ -1,3 +1,4 @@
+mod builtin;
 mod calls;
 #[cfg(test)]
 mod tests;
@@ -15,9 +16,10 @@ use base64::{Engine as _, engine::general_purpose::URL_SAFE_NO_PAD as B64};
 use cooee_core::{
     agents::Agent,
     connectors::{
-        self as core, Auth, Client as Kind, Endpoints, HttpsUrl, Name, Target, Transport,
+        self as core, Auth, Builtin, Client as Kind, Endpoints, HttpsUrl, Name, Target, Tools,
+        Transport,
     },
-    mcp::{Server, Source},
+    mcp::{Pick, Server, Source},
 };
 use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
@@ -117,18 +119,37 @@ fn random(n: usize) -> Result<String, String> {
     cooee_core::random(n).map(|b| B64.encode(b)).map_err(text)
 }
 
-fn target(s: &Server) -> Result<(HttpsUrl, Transport, Auth), String> {
+#[derive(Clone, Copy)]
+enum Way {
+    Mcp(Transport),
+    Builtin(Builtin),
+}
+
+impl Way {
+    fn resource(self, url: &HttpsUrl) -> &str {
+        match self {
+            Self::Mcp(_) => url.as_str(),
+            Self::Builtin(_) => "",
+        }
+    }
+}
+
+fn target(s: &Server) -> Result<(HttpsUrl, Way, Auth), String> {
     match s.source()? {
         Source::Catalogue(e) => match &e.target {
-            Target::Url { url, transport } => Ok((url.clone(), *transport, e.auth.clone())),
-            Target::Builtin(b) => match *b {},
+            Target::Url { url, transport } => {
+                Ok((url.clone(), Way::Mcp(*transport), e.auth.clone()))
+            }
+            Target::Builtin { builtin, url } => {
+                Ok((url.clone(), Way::Builtin(*builtin), e.auth.clone()))
+            }
         },
         Source::Typed {
             url,
             transport,
             auth,
             ..
-        } => Ok((url, transport, auth)),
+        } => Ok((url, Way::Mcp(transport), auth)),
         Source::Command { .. } => Err(format!("{} runs on the Mac: it has no sign-in", s.name)),
     }
 }
@@ -152,14 +173,37 @@ fn first_ok(urls: &[String]) -> Option<Reply> {
         .find_map(|u| fetch("GET", u, &[], None).ok().filter(Reply::ok))
 }
 
+fn bearer(a: &Secret) -> (String, String) {
+    ("Authorization".to_owned(), format!("Bearer {}", a.expose()))
+}
+
+fn authorize_link(
+    (authorize, way): (&HttpsUrl, Way),
+    client: (&str, &str),
+    pkce: (&str, &str),
+    (scopes, resource): (&[String], &str),
+) -> String {
+    let open = core::authorize_url(authorize, client, pkce, scopes, resource);
+    match way {
+        Way::Builtin(b) => format!("{open}&{}", core::form(b.authorize_extra())),
+        Way::Mcp(_) => open,
+    }
+}
+
 fn endpoints(issuer: &HttpsUrl) -> Result<Endpoints, String> {
     let doc = first_ok(&core::issuer_metadata(issuer))
         .ok_or_else(|| format!("{} has no sign-in metadata", issuer.as_str()))?;
     Endpoints::read(issuer, &doc.json())
 }
 
-fn discover(url: &HttpsUrl, pinned: Option<&HttpsUrl>) -> Result<(HttpsUrl, Endpoints), String> {
-    let named = first_ok(&core::resource_metadata(url)).map(|r| core::issuer_of(&r.json()));
+fn discover(
+    (url, way): (&HttpsUrl, Way),
+    pinned: Option<&HttpsUrl>,
+) -> Result<(HttpsUrl, Endpoints), String> {
+    let named = match way {
+        Way::Mcp(_) => first_ok(&core::resource_metadata(url)).map(|r| core::issuer_of(&r.json())),
+        Way::Builtin(_) => None,
+    };
     let same = |a: &HttpsUrl, b: &HttpsUrl| {
         a.as_str().trim_end_matches('/') == b.as_str().trim_end_matches('/')
     };
@@ -296,14 +340,14 @@ impl Connectors {
         id: &str,
         secret: Option<&str>,
     ) -> Result<String, String> {
-        let (url, _, auth) = target(s)?;
+        let (url, way, auth) = target(s)?;
         let Auth::OAuth { issuer, .. } = auth else {
             return Err(format!("{} doesn't sign in with OAuth", s.name));
         };
         if id.is_empty() || id.contains(char::is_control) {
             return Err("a client id is one line".to_owned());
         }
-        let (issuer, _) = discover(&url, issuer.as_ref())?;
+        let (issuer, _) = discover((&url, way), issuer.as_ref())?;
         let reg = Registration {
             issuer: issuer.as_str().to_owned(),
             redirect: String::new(),
@@ -320,6 +364,23 @@ impl Connectors {
         flows.push(flow);
     }
 
+    fn sign_in_client(
+        &self,
+        s: &Server,
+        issuer: &HttpsUrl,
+        (redirect, kind, register): (&str, Kind, Option<&HttpsUrl>),
+    ) -> Result<Registration, String> {
+        match (self.registered(issuer.as_str(), redirect)?, kind, register) {
+            (Some(r), ..) => Ok(r),
+            (None, Kind::Registered, Some(at)) => self.register(at, issuer.as_str(), redirect),
+            _ => Err(format!(
+                "{} needs a sign-in client made once on the service: add it under connectors › {}",
+                issuer.as_str(),
+                s.name
+            )),
+        }
+    }
+
     pub(crate) fn signin(
         &self,
         s: &Server,
@@ -328,7 +389,7 @@ impl Connectors {
         now: u64,
     ) -> Result<Value, String> {
         let account = Name::try_from(account)?.as_str().to_owned();
-        let (url, _, auth) = target(s)?;
+        let (url, way, auth) = target(s)?;
         let id = random(16)?;
         let flow = |pending| Flow {
             id: id.clone(),
@@ -351,30 +412,16 @@ impl Connectors {
             } => (issuer, scopes, client),
         };
         let redirect = redirect(origin, host)?;
-        let (issuer, ends) = discover(&url, issuer.as_ref())?;
-        let client = match (
-            self.registered(issuer.as_str(), &redirect)?,
-            kind,
-            &ends.register,
-        ) {
-            (Some(r), ..) => r,
-            (None, Kind::Registered, Some(at)) => self.register(at, issuer.as_str(), &redirect)?,
-            _ => {
-                return Err(format!(
-                    "{} needs a sign-in client made once on the service: add it under connectors › {}",
-                    issuer.as_str(),
-                    s.name
-                ));
-            }
-        };
+        let (issuer, ends) = discover((&url, way), issuer.as_ref())?;
+        let client = self.sign_in_client(s, &issuer, (&redirect, kind, ends.register.as_ref()))?;
         let (verifier, challenge) = core::pkce(&cooee_core::random(32).map_err(text)?);
         let state = random(24)?;
-        let open = core::authorize_url(
-            &ends.authorize,
+        let resource = way.resource(&url).to_owned();
+        let open = authorize_link(
+            (&ends.authorize, way),
             (&client.client_id, &redirect),
             (&state, &challenge),
-            &scopes,
-            url.as_str(),
+            (&scopes, &resource),
         );
         self.start(
             flow(Pending::OAuth(Box::new(Started {
@@ -384,7 +431,7 @@ impl Connectors {
                 issuer: issuer.as_str().to_owned(),
                 token: ends.token,
                 client,
-                resource: url.as_str().to_owned(),
+                resource,
                 scopes,
             }))),
             now,
@@ -548,7 +595,7 @@ impl Connectors {
         account: &str,
         now: u64,
     ) -> Result<(String, String), String> {
-        let (url, _, auth) = target(s)?;
+        let (url, way, auth) = target(s)?;
         let item = tokens::item(&s.name, account);
         let needs = || format!("{} ({account}) needs sign-in", s.name);
         let read = || {
@@ -556,7 +603,6 @@ impl Connectors {
                 .map_err(text)?
                 .ok_or_else(needs)
         };
-        let bearer = |a: &Secret| ("Authorization".to_owned(), format!("Bearer {}", a.expose()));
         match (read()?, auth) {
             (Credential::Token { value }, Auth::Token { header, prefix, .. }) => {
                 return Ok((header, format!("{prefix}{}", value.expose())));
@@ -587,12 +633,22 @@ impl Connectors {
         let fresh = tokens::refresh(
             &endpoints(&issuer)?.token,
             &self.client_for(&a)?,
-            (old, url.as_str()),
+            (old, way.resource(&url)),
             now,
         );
+        self.refreshed(fresh, (&s.name, account), &item)
+    }
+
+    fn refreshed(
+        &self,
+        fresh: Result<Credential, Refused>,
+        (connector, account): (&str, &str),
+        item: &str,
+    ) -> Result<(String, String), String> {
+        let needs = || format!("{connector} ({account}) needs sign-in");
         match fresh {
             Ok(c) => {
-                tokens::keep(self.vault, &self.data, &item, &c).map_err(text)?;
+                tokens::keep(self.vault, &self.data, item, &c).map_err(text)?;
                 match c {
                     Credential::OAuth { access, .. } => Ok(bearer(&access)),
                     Credential::Token { .. } => Err(needs()),
@@ -603,7 +659,7 @@ impl Connectors {
                     for a in f
                         .accounts
                         .iter_mut()
-                        .filter(|a| a.connector == s.name && a.name == account)
+                        .filter(|a| a.connector == connector && a.name == account)
                     {
                         a.state = State::NeedsSignIn { why: why.clone() };
                     }
@@ -662,58 +718,46 @@ impl Connectors {
 
     pub(crate) fn list(&self, servers: &[Server], personas: &[Agent]) -> Result<Value, String> {
         let file = self.load()?;
-        let kind = |a: &Auth| match a {
-            Auth::None => "none",
-            Auth::Token { .. } => "token",
-            Auth::OAuth { .. } => "oauth",
-        };
-        let catalogue: Vec<Value> = core::catalogue()
-            .iter()
-            .map(|e| json!({
-                "name": e.name.as_str(), "label": e.label, "publisher": e.publisher, "auth": kind(&e.auth),
-                "leaves": e.leaves,
-                "tools": { "read": e.tools.read.len(), "write": e.tools.write.len(), "never": e.tools.never.len() },
-            }))
-            .collect();
-        let mut connectors = Vec::new();
-        for s in servers {
-            let (label, publisher, reviewed, url, auth, leaves) = match s.source() {
-                Ok(Source::Catalogue(e)) => {
-                    let url = match &e.target {
-                        Target::Url { url, .. } => url.as_str().to_owned(),
-                        Target::Builtin(b) => match *b {},
-                    };
-                    (
-                        e.label.as_str(),
-                        e.publisher.as_str(),
-                        true,
-                        url,
-                        kind(&e.auth),
-                        e.leaves.as_str(),
-                    )
-                }
-                Ok(Source::Typed { url, auth, .. }) => (
-                    s.name.as_str(),
-                    "",
-                    false,
-                    url.as_str().to_owned(),
-                    kind(&auth),
-                    "",
-                ),
-                Ok(Source::Command { .. }) | Err(_) => (
-                    s.name.as_str(),
-                    "this Mac",
-                    false,
-                    String::new(),
-                    "none",
-                    "",
-                ),
-            };
-            let tools = calls::tools(s);
+        let row = |(name, e, (source, url, auth)): Shown<'_>,
+                   tools: &Tools,
+                   (enabled, accounts): (bool, Vec<Value>)| {
             let host = url
                 .split_once("://")
                 .map_or("", |(_, r)| r.split('/').next().unwrap_or_default());
-            let accounts: Vec<Value> = file
+            json!({
+                "name": name, "label": e.map_or(name.as_str(), |e| &e.label),
+                "publisher": e.map_or("", |e| &e.publisher), "source": source, "reviewed": e.is_some(),
+                "host": host, "leaves": e.map_or("", |e| &e.leaves), "checked": e.map(|e| e.reviewed.to_string()),
+                "auth": auth, "enabled": enabled, "accounts": accounts,
+                "tools": { "read": tools.read, "write": tools.write, "never": tools.never },
+            })
+        };
+        let catalogue: Vec<Value> = core::catalogue()
+            .iter()
+            .map(|e| row(shown(e), &e.tools, (false, Vec::new())))
+            .collect();
+        let mut connectors = Vec::new();
+        for s in servers {
+            let source = match s.source() {
+                Ok(Source::Catalogue(e)) => shown(e),
+                Ok(Source::Typed { url, auth, .. }) => (
+                    s.name.clone(),
+                    None,
+                    ("typed", url.as_str().to_owned(), auth_kind(&auth)),
+                ),
+                Ok(Source::Command { .. }) | Err(_) => {
+                    (s.name.clone(), None, ("command", String::new(), "none"))
+                }
+            };
+            let used = |account: &str| -> Vec<&str> {
+                let pick = |m: &Pick| m.server == s.name && m.account.as_deref() == Some(account);
+                personas
+                    .iter()
+                    .filter(|p| p.mcp.iter().any(pick))
+                    .map(|p| p.name.as_str())
+                    .collect()
+            };
+            let accounts = file
                 .accounts
                 .iter()
                 .filter(|a| a.connector == s.name)
@@ -722,21 +766,34 @@ impl Connectors {
                         State::SignedIn => ("signed_in", None),
                         State::NeedsSignIn { why } => ("needs_sign_in", Some(why)),
                     };
-                    json!({ "name": a.name, "state": state, "why": why, "scopes": a.scopes, "since": a.since })
+                    json!({ "name": a.name, "state": state, "why": why, "scopes": a.scopes, "since": a.since,
+                            "personas": used(&a.name) })
                 })
                 .collect();
-            let users: Vec<&str> = personas
-                .iter()
-                .filter(|p| p.mcp.iter().any(|m| m.server == s.name))
-                .map(|p| p.name.as_str())
-                .collect();
-            connectors.push(json!({
-                "name": s.name, "label": label, "publisher": publisher, "reviewed": reviewed, "host": host,
-                "leaves": leaves, "auth": auth, "enabled": s.enabled,
-                "tools": { "read": tools.read, "write": tools.write, "never": tools.never },
-                "accounts": accounts, "personas": users,
-            }));
+            connectors.push(row(source, &calls::tools(s), (s.enabled, accounts)));
         }
         Ok(json!({ "catalogue": catalogue, "connectors": connectors }))
     }
+}
+
+type Shown<'a> = (
+    String,
+    Option<&'a core::Entry>,
+    (&'static str, String, &'static str),
+);
+
+fn auth_kind(a: &Auth) -> &'static str {
+    match a {
+        Auth::None => "none",
+        Auth::Token { .. } => "token",
+        Auth::OAuth { .. } => "oauth",
+    }
+}
+
+fn shown(e: &core::Entry) -> Shown<'_> {
+    let url = match &e.target {
+        Target::Url { url, .. } | Target::Builtin { url, .. } => url.as_str().to_owned(),
+    };
+    let how = ("catalogue", url, auth_kind(&e.auth));
+    (e.name.as_str().to_owned(), Some(e), how)
 }

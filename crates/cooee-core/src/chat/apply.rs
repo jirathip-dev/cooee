@@ -1,16 +1,72 @@
-use shed_proto::EventKind;
+use crate::shed_proto::EventKind;
 
 use super::{Body, Card, Change, Chat, Item};
+use crate::action::{Action, Call};
 
 impl Chat {
-    /// Applies shed event `seq` of this thread's terminal at time `at`.
-    pub fn apply(&mut self, at: u64, seq: u64, event: EventKind) -> Vec<Change> {
+    fn tool(
+        &mut self,
+        at: u64,
+        seq: u64,
+        id: String,
+        status: String,
+        read: Action,
+        facts: bool,
+    ) -> Vec<Change> {
+        let ended = matches!(status.as_str(), "completed" | "failed").then_some(at);
+        let found = self.find(|b| matches!(b, Body::Tool { call, .. } if *call == id));
+        let kind = read.kind;
+        let body = move |subject, ruled| Body::Tool {
+            call: id,
+            subject,
+            action: kind,
+            status,
+            ended,
+            ruled,
+        };
+        let item = match found {
+            Some(n) => self.update(n, seq, |b| {
+                let ruled = match b {
+                    Body::Tool { ruled, .. } => ruled.take(),
+                    _ => None,
+                };
+                let subject = match b {
+                    Body::Tool {
+                        subject, action, ..
+                    } if !facts && *action == kind => std::mem::take(subject),
+                    _ => read.subject,
+                };
+                *b = body(subject, ruled);
+            }),
+            None => Some(self.push(at, seq, body(read.subject, None))),
+        };
+        item.map(Change::Item).into_iter().collect()
+    }
+
+    fn account(&mut self, at: u64, seq: u64, account: &str, was: Option<String>) -> Change {
+        let text = was.map_or_else(
+            || format!("on {account}"),
+            |was| format!("{was} hit its limit; now on {account}"),
+        );
+        Change::Item(self.push(at, seq, Body::Note { text }))
+    }
+
+    /// Applies shed event `seq` of this thread's terminal at time `at`, a tool call's action as `read` reads it.
+    pub fn apply(
+        &mut self,
+        at: u64,
+        seq: u64,
+        event: EventKind,
+        read: &dyn Fn(&Call) -> Action,
+    ) -> Vec<Change> {
         match event {
             EventKind::Started
             | EventKind::Resources(_)
             | EventKind::Mode { .. }
             | EventKind::Turn { .. }
-            | EventKind::Session(_) => Vec::new(),
+            | EventKind::Session(_)
+            | EventKind::MemLimit { .. } => Vec::new(),
+            EventKind::Account { account, was, .. } => vec![self.account(at, seq, &account, was)],
             EventKind::Usage(u) => {
                 self.turn.context = Some(u);
                 vec![Change::State(self.turn.clone())]
@@ -21,42 +77,24 @@ impl Chat {
                 vec![Change::Text(text)]
             }
             EventKind::ToolCall {
-                id, title, status, ..
+                id,
+                title,
+                status,
+                kind,
+                locations,
+                raw_input,
             } => {
-                let done = matches!(status.as_str(), "completed" | "failed");
-                let ended = done.then_some(at);
-                let call = |b: &Body| matches!(b, Body::Tool { call, .. } if *call == id);
-                let item = match self.find(call) {
-                    Some(item) => self.update(item, seq, |b| {
-                        *b = Body::Tool {
-                            call: id,
-                            title,
-                            status,
-                            ended,
-                        };
-                    }),
-                    None => Some(self.push(
-                        at,
-                        seq,
-                        Body::Tool {
-                            call: id,
-                            title,
-                            status,
-                            ended,
-                        },
-                    )),
+                let call = Call {
+                    title: &title,
+                    kind: kind.as_deref(),
+                    locations: &locations,
+                    raw_input: raw_input.as_ref(),
                 };
-                item.map(Change::Item).into_iter().collect()
+                let facts = !locations.is_empty() || raw_input.is_some();
+                self.tool(at, seq, id, status, read(&call), facts)
             }
-            EventKind::Plan { entries } => {
-                let plan = |b: &Body| matches!(b, Body::Plan { .. });
-                let item = match self.find(plan) {
-                    Some(item) => self.update(item, seq, |b| *b = Body::Plan { entries }),
-                    None => Some(self.push(at, seq, Body::Plan { entries })),
-                };
-                item.map(Change::Item).into_iter().collect()
-            }
-            EventKind::ApprovalRequest { tool, options } => {
+            EventKind::Plan { entries } => self.plan(at, seq, entries),
+            EventKind::ApprovalRequest { tool, options, .. } => {
                 let body = Body::Approval {
                     tool,
                     options,
@@ -67,26 +105,7 @@ impl Chat {
                 };
                 vec![Change::Item(self.push(at, seq, body))]
             }
-            EventKind::Approved { option } => {
-                let open = self.items.iter().find(|i| {
-                    matches!(
-                        i.body,
-                        Body::Approval {
-                            chosen: None,
-                            plugin: None,
-                            ..
-                        }
-                    )
-                });
-                let item = open.map(|i| i.id).and_then(|id| {
-                    self.update(id, seq, |b| {
-                        if let Body::Approval { chosen, .. } = b {
-                            *chosen = Some(option);
-                        }
-                    })
-                });
-                item.map(Change::Item).into_iter().collect()
-            }
+            EventKind::Approved { option } => self.approved(seq, option),
             EventKind::Reply { text, stop_reason } => self.replied(at, seq, text, stop_reason),
             EventKind::Exited { .. } | EventKind::Killed if self.turn.state == "ended" => {
                 Vec::new()
@@ -99,6 +118,37 @@ impl Chat {
             }
             EventKind::Killed => self.ended(at, seq, "The thread was closed.".to_owned()),
         }
+    }
+
+    fn plan(&mut self, at: u64, seq: u64, entries: Vec<serde_json::Value>) -> Vec<Change> {
+        let plan = |b: &Body| matches!(b, Body::Plan { .. });
+        let item = match self.find(plan) {
+            Some(item) => self.update(item, seq, |b| *b = Body::Plan { entries }),
+            None => Some(self.push(at, seq, Body::Plan { entries })),
+        };
+        item.map(Change::Item).into_iter().collect()
+    }
+
+    fn approved(&mut self, seq: u64, option: String) -> Vec<Change> {
+        let open = self.items.iter().find(|i| {
+            matches!(
+                i.body,
+                Body::Approval {
+                    chosen: None,
+                    plugin: None,
+                    card: Card { request: None, .. },
+                    ..
+                }
+            )
+        });
+        let item = open.map(|i| i.id).and_then(|id| {
+            self.update(id, seq, |b| {
+                if let Body::Approval { chosen, .. } = b {
+                    *chosen = Some(option);
+                }
+            })
+        });
+        item.map(Change::Item).into_iter().collect()
     }
 
     fn replied(&mut self, at: u64, seq: u64, text: String, stop_reason: String) -> Vec<Change> {
@@ -128,6 +178,16 @@ impl Chat {
         )));
         changes.push(self.state("ended", Some(text)));
         changes
+    }
+
+    /// Tool call `call`'s row says the rule that answered its request.
+    pub fn ruled(&mut self, call: &str, words: String) -> Option<Item> {
+        let n = self.find(|b| matches!(b, Body::Tool { call: c, .. } if c == call))?;
+        self.update(n, 0, |b| {
+            if let Body::Tool { ruled, .. } = b {
+                *ruled = Some(words);
+            }
+        })
     }
 
     /// Records `by`'s tap of `option` on approval `id` at `now`. `None` when it isn't an approval or was already
@@ -185,7 +245,7 @@ mod tests {
         let card = chat.push(1, 0, approval(Some("drover"))).id;
         let ask = chat.push(2, 1, approval(None)).id;
         let option = "allow".to_owned();
-        chat.apply(3, 2, EventKind::Approved { option });
+        chat.apply(3, 2, EventKind::Approved { option }, &Action::plain);
         let chosen = |id| match &chat.items.iter().find(|i| i.id == id).unwrap().body {
             Body::Approval { chosen, .. } => chosen.clone(),
             _ => None,
