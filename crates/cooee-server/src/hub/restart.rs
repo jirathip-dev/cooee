@@ -1,8 +1,8 @@
-use std::{collections::BTreeMap, sync::Mutex};
+use std::{collections::BTreeMap, fs, sync::Mutex};
 
 use cooee_core::{Body, Calls as _, Change, Kind, Launch, shed_proto};
 
-use super::{Hub, HubError, LABEL, Recipe, live::Live, lock, now, on_machine};
+use super::{Hub, HubError, LABEL, Recipe, live::Live, lock, now, on_machine, refused};
 
 const FRESH: &str = "The agent started again fresh: it couldn't pick up where it left off.";
 
@@ -16,7 +16,7 @@ impl Hub {
     /// agent can't start.
     pub fn restart(&self, id: &str, recipe: &Recipe) -> Result<(), HubError> {
         let live = self.live(id)?;
-        let (old, machine, agent, folder, session) = {
+        {
             let l = lock(&live);
             let m = &l.meta;
             if m.closed || m.kind == Kind::Room || m.workflow.is_some() || !m.room.is_empty() {
@@ -24,6 +24,15 @@ impl Hub {
                     "only an open chat of your own can restart".to_owned(),
                 ));
             }
+        }
+        self.start_again(id, recipe, &live)
+            .inspect_err(|e| self.restart_failed(&live, e))
+    }
+
+    fn start_again(&self, id: &str, recipe: &Recipe, live: &Mutex<Live>) -> Result<(), HubError> {
+        let (old, machine, agent, folder, session) = {
+            let l = lock(live);
+            let m = &l.meta;
             let folder = m.folder.clone().unwrap_or_else(|| self.scratch.join(id));
             let session = Some(m.session.clone()).filter(|s| !s.is_empty());
             (
@@ -38,6 +47,7 @@ impl Hub {
         if self.shed.get(&old).is_ok_and(runs) {
             return Ok(());
         }
+        fs::create_dir_all(&folder).map_err(|e| refused(&folder, &e))?;
         self.shed.hello()?;
         self.reachable(&machine)?;
         let (launch, labels) = self.restart_launch(id, recipe)?;
@@ -60,16 +70,21 @@ impl Hub {
         let resumed = session.and_then(|s| start(Some(s), "").ok());
         let started = resumed.clone().map_or_else(|| start(None, "f"), Ok);
         let (terminal, ready) = started?;
-        self.restarted(
-            &live,
-            (&old, &terminal),
-            resumed.is_none().then_some(recipe),
-        )?;
+        self.restarted(live, (&old, &terminal), resumed.is_none().then_some(recipe))?;
         if let Err(e) = self.settle(id, &terminal, &ready) {
             cooee_core::note!("cooee: {id}: model: {e}");
         }
         self.shed.close(&old).ok();
         Ok(())
+    }
+
+    fn restart_failed(&self, live: &Mutex<Live>, e: &HubError) {
+        let mut l = lock(live);
+        let text = format!("The agent couldn't start again: {e}");
+        let item = l.chat.push(now(), 0, Body::Note { text });
+        if let Err(e) = l.publish(self, vec![Change::Item(item)]) {
+            cooee_core::note!("cooee: {e}");
+        }
     }
 
     fn restart_launch(
