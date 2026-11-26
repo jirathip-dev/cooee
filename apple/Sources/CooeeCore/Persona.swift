@@ -55,19 +55,15 @@ public enum ChatStyle: String, Codable, Sendable {
 
 public enum Tint: String, Sendable, Equatable, CaseIterable {
     case lead, link, cyan, purple, green, amber
-
-    public var avatar: String { "initials-\(rawValue)" }
 }
 
 public struct PersonaLook: Sendable, Equatable {
     public let initials: String
-    public let symbol: String
     public let tint: Tint
     public let coat: String?
 
-    public init(initials: String, symbol: String, tint: Tint, coat: String? = nil) {
+    public init(initials: String, tint: Tint, coat: String? = nil) {
         self.initials = initials
-        self.symbol = symbol
         self.tint = tint
         self.coat = coat
     }
@@ -85,6 +81,7 @@ public struct Persona: Identifiable, Sendable, Equatable {
     public var name: String { api.name }
     public var figure: String { state.figure }
     public var pose: String { state.pose }
+    public var mascot: Mascot { Mascot(avatar: api.avatar, seed: seed) }
 
     public init(api: APIPersona, look: PersonaLook, state: LaneState, seed: String? = nil) {
         self.api = api
@@ -97,12 +94,8 @@ public struct Persona: Identifiable, Sendable, Equatable {
         let words = api.name.split(separator: " ")
         let initials =
             words.count > 1 ? words.prefix(2).compactMap(\.first).map(String.init).joined() : String(api.name.prefix(2))
-        let picked = api.avatar.flatMap { avatar in Tint.allCases.first { $0.avatar == avatar } }
         let look = PersonaLook(
-            initials: initials.uppercased(),
-            symbol: picked == nil ? "person.fill" : "",
-            tint: picked ?? Tint.allCases[PersonaLook.seed(api.id) % Tint.allCases.count]
-        )
+            initials: initials.uppercased(), tint: Tint.allCases[PersonaLook.seed(api.id) % Tint.allCases.count])
         self.init(api: api, look: look, state: state, seed: seed)
     }
 

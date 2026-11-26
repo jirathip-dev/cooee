@@ -16,36 +16,16 @@ internal struct FigureView: View {
     }
 
     @ViewBuilder private var styled: some View {
-        let palette = look.palette
-        let tint = palette.tint(persona.look.tint)
         switch look.figures {
         case .avatar:
-            Circle()
-                .fill(
-                    LinearGradient(
-                        colors: [tint.opacity(0.95), tint.opacity(0.6)], startPoint: .top, endPoint: .bottom)
-                )
-                .overlay { face.foregroundStyle(palette.dark ? Color.black.opacity(0.75) : .white) }
-                .clipShape(Circle())
-                .frame(width: size, height: size)
-        case .ascii:
-            Text(persona.state.figure(frame: frame)).font(
-                .system(size: size * 0.30, weight: .bold, design: .monospaced)
-            )
-            .foregroundStyle(tint).frame(width: size, height: size)
-            .overlay(Rectangle().strokeBorder(tint.opacity(0.7), lineWidth: 1))
-        case .sprite:
-            StateSprite(persona: persona, frame: frame, size: size)
-        }
-    }
-
-    @ViewBuilder private var face: some View {
-        if let photo = AvatarPicture.image(persona.api.avatar) {
-            Image(decorative: photo, scale: 1).resizable().scaledToFill()
-        } else if persona.look.symbol.isEmpty {
-            Text(persona.look.initials).font(.system(size: size * 0.36, weight: .semibold))
-        } else {
-            Image(systemName: persona.look.symbol).font(.system(size: size * 0.40, weight: .semibold))
+            if let photo = AvatarPicture.image(persona.api.avatar) {
+                Image(decorative: photo, scale: 1).resizable().scaledToFill().frame(width: size, height: size)
+                    .clipShape(Circle())
+            } else {
+                BirdView(persona: persona, size: size)
+            }
+        case .ascii: FaceView(persona: persona, size: size)
+        case .sprite: StateSprite(persona: persona, frame: frame, size: size)
         }
     }
 }
