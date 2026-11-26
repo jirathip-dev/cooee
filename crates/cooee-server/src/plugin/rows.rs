@@ -1,6 +1,9 @@
 use std::{collections::HashSet, io, sync::Arc, time::Duration};
 
-use cooee_core::plugins::rows::{Row, Rows};
+use cooee_core::{
+    Plugin,
+    plugins::rows::{Row, Rows},
+};
 use futures_util::StreamExt;
 
 use super::{Heard, call, events};
@@ -8,8 +11,7 @@ use crate::Hub;
 
 const AGAIN: Duration = Duration::from_secs(2);
 
-/// Follows each installed plugin's rows for `hub` (drover#1571), at the paths its manifest's `[threads]` names: the
-/// open rows on a first connect, then its stream from the last row applied, again after it ends.
+/// Follows each installed plugin's rows for `hub` at the paths its manifest's `[threads]` names.
 pub fn follow_rows(hub: Arc<Hub>) {
     tokio::spawn(async move {
         let mut followed = HashSet::new();
@@ -41,38 +43,46 @@ async fn off<T: Send + 'static>(
         .map_err(io::Error::other)?
 }
 
+async fn first_rows(hub: &Arc<Hub>, name: &str, backend: Plugin, path: String) -> io::Result<u64> {
+    let rows: Rows = off(move || {
+        let reply = call(&backend, "GET", &path, &[], &[], Duration::from_secs(10))?;
+        Ok(serde_json::from_slice(&reply.bytes()?)?)
+    })
+    .await?;
+    let (hub, name) = (Arc::clone(hub), name.to_owned());
+    off(move || {
+        for row in rows.rows {
+            hub.apply_row(&name, row, false);
+        }
+        hub.keep_row_cursor(&name, rows.seq).map(|()| rows.seq)
+    })
+    .await
+}
+
 async fn follow_once(hub: &Arc<Hub>, name: &str) -> io::Result<()> {
     let threads = hub.with_rows(name).and_then(|m| m.threads);
-    let (Some(p), Some(t)) = (hub.backend(name), threads) else {
+    let (Some(backend), Some(paths)) = (hub.backend(name), threads) else {
         return Ok(());
     };
-    let at = match hub.row_cursor(name) {
-        Some(at) => at,
-        None => {
-            let (b, path) = (p.clone(), format!("{}?open=1", t.rows));
-            let rows: Rows = off(move || {
-                let r = call(&b, "GET", &path, &[], &[], Duration::from_secs(10))?;
-                Ok(serde_json::from_slice(&r.bytes()?)?)
-            })
-            .await?;
-            let (h, n) = (Arc::clone(hub), name.to_owned());
-            off(move || {
-                for row in rows.rows {
-                    h.apply_row(&n, row, false);
-                }
-                h.keep_row_cursor(&n, rows.seq).map(|()| rows.seq)
-            })
-            .await?
-        }
+    let mut at = if let Some(at) = hub.row_cursor(name) {
+        at
+    } else {
+        first_rows(hub, name, backend.clone(), format!("{}?open=1", paths.rows)).await?
     };
-    let (b, path) = (p.clone(), t.stream.clone());
     let reply = off(move || {
         let id = at.to_string();
         let headers = [
             ("Accept", "text/event-stream"),
             ("Last-Event-ID", id.as_str()),
         ];
-        call(&b, "GET", &path, &headers, &[], Duration::from_secs(5))
+        call(
+            &backend,
+            "GET",
+            &paths.stream,
+            &headers,
+            &[],
+            Duration::from_secs(5),
+        )
     })
     .await?;
     if !reply.streams() {
@@ -82,12 +92,11 @@ async fn follow_once(hub: &Arc<Hub>, name: &str) -> io::Result<()> {
         )));
     }
     let mut heard = Box::pin(events(reply)?);
-    let mut at = at;
-    while let Some(h) = heard.next().await {
-        let Heard::Event(e) = h else {
+    while let Some(next) = heard.next().await {
+        let Heard::Event(event) = next else {
             continue;
         };
-        let row: Row = match serde_json::from_str(&e.data) {
+        let row: Row = match serde_json::from_str(&event.data) {
             Ok(row) => row,
             Err(e) => {
                 cooee_core::note!("cooee: plugin {name}: a row it sent: {e}");
@@ -95,11 +104,11 @@ async fn follow_once(hub: &Arc<Hub>, name: &str) -> io::Result<()> {
             }
         };
         let (seq, loud) = (row.seq, row.seq > at);
-        let (h, n) = (Arc::clone(hub), name.to_owned());
+        let (hub, name) = (Arc::clone(hub), name.to_owned());
         off(move || {
-            h.apply_row(&n, row, loud);
+            hub.apply_row(&name, row, loud);
             if loud {
-                h.keep_row_cursor(&n, seq)
+                hub.keep_row_cursor(&name, seq)
             } else {
                 Ok(())
             }

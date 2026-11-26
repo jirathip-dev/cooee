@@ -1,5 +1,7 @@
-//! drover's contract v1 samples (drover#1571 C1), copied by `scripts/drover-contract.sh` at the commit in `COMMIT`:
-//! each parses with the types cooee reads rows with, so a drover bump that drops or retypes a key cooee reads fails here.
+#![expect(
+    missing_docs,
+    reason = "drover's contract samples parse with the types cooee reads rows with"
+)]
 
 use std::{fs, path::Path};
 
@@ -19,7 +21,7 @@ fn row_samples() -> Vec<String> {
     let mut names: Vec<String> = fs::read_dir(DIR)
         .unwrap()
         .map(|e| e.unwrap().file_name().to_string_lossy().into_owned())
-        .filter(|n| n.starts_with("row-") && n.ends_with(".json"))
+        .filter(|n| n.starts_with("row-") && Path::new(n).extension().is_some_and(|x| x == "json"))
         .collect();
     names.sort();
     names

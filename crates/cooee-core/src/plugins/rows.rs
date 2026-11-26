@@ -45,18 +45,13 @@ pub struct Row {
     pub push: Option<Push>,
 }
 
-/// Where a row goes.
+/// Where a row goes: a chat by its id, the cards place, or the owner's devices only.
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
 #[serde(tag = "k", rename_all = "kebab-case")]
+#[expect(missing_docs, reason = "the enum's line names each variant in order")]
 pub enum To {
-    /// A chat, by its id.
-    Thread {
-        /// The chat's id.
-        id: String,
-    },
-    /// The cards place.
+    Thread { id: String },
     Desk {},
-    /// The owner's devices only.
     Owner,
 }
 

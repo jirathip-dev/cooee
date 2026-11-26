@@ -29,6 +29,13 @@ impl Default for State {
     }
 }
 
+fn row_of(item: &Item, id: &str) -> Option<String> {
+    match &item.body {
+        Body::Row { plugin, block, .. } if holds(block, id) => Some(plugin.clone()),
+        _ => None,
+    }
+}
+
 fn holds(block: &Value, id: &str) -> bool {
     match block {
         Value::Object(o) => {
@@ -65,18 +72,15 @@ impl Hub {
         fs::read_to_string(file).ok()?.trim().parse().ok()
     }
 
-    /// Keeps `seq` as plugin `name`'s last applied row.
-    ///
-    /// # Errors
-    /// When the file can't be written.
+    /// Keeps `seq` as plugin `name`'s last applied row; fails when the file can't be written.
+    #[expect(clippy::missing_errors_doc, reason = "the line names the error")]
     pub fn keep_row_cursor(&self, name: &str, seq: u64) -> std::io::Result<()> {
         let dir = self.data.join("plugins").join(name);
         fs::create_dir_all(&dir)?;
         fs::write(dir.join("rows.seq"), seq.to_string())
     }
 
-    /// Applies plugin `name`'s row: drawn in its chat by key or kept in the cards place while open; a `loud` one
-    /// (past the cursor) also types its prompt into the chat's agent and sends its push.
+    /// Applies plugin `name`'s row in its chat or the cards place; a `loud` one also types its prompt and sends its push.
     pub fn apply_row(&self, name: &str, row: Row, loud: bool) {
         let Some(m) = self.with_rows(name) else {
             return;
@@ -161,27 +165,20 @@ impl Hub {
         self.areas.rows.changed.subscribe()
     }
 
-    /// `by`'s tap `a` on a plugin row's block in thread `id`, posted to its plugin; none when no row holds the block.
-    ///
-    /// # Errors
-    /// [`HubError::Refused`] for an action the plugin may not take, or when its backend fails or refuses.
+    /// `by`'s tap `a` on a plugin row's block in thread `id`, posted to its plugin; [`HubError::Refused`] when refused.
+    #[expect(clippy::missing_errors_doc, reason = "the line names it")]
     pub fn row_act(&self, id: &str, a: &Action, by: &str) -> Result<Option<Answer>, HubError> {
         let Some(block) = a.block.clone() else {
             return Ok(None);
         };
         let live = self.live(id)?;
-        let name = lock(&live)
+        let Some(name) = lock(&live)
             .chat
             .items
             .iter()
             .rev()
-            .find_map(|i| match &i.body {
-                Body::Row {
-                    plugin, block: b, ..
-                } if holds(b, &block) => Some(plugin.clone()),
-                _ => None,
-            });
-        let Some(name) = name else {
+            .find_map(|i| row_of(i, &block))
+        else {
             return Ok(None);
         };
         let refused = |why: String| HubError::Refused(format!("plugin {name}: {why}"));
@@ -214,15 +211,16 @@ impl Hub {
             .get("toast")
             .and_then(|t| t.get("title"))
             .or_else(|| v.get("line"));
-        let line = toast.and_then(Value::as_str).unwrap_or_default().to_owned();
+        let title = toast.and_then(Value::as_str).unwrap_or_default().to_owned();
         if !(200..300).contains(&status) {
-            return Err(refused(if line.is_empty() {
+            let why = if title.is_empty() {
                 format!("answered {status}")
             } else {
-                line
-            }));
+                title
+            };
+            return Err(refused(why));
         }
-        let toast = (!line.is_empty()).then(|| Toast::new(line));
+        let toast = (!title.is_empty()).then(|| Toast::new(title));
         Ok(Some(Answer {
             toast,
             ..Answer::default()
