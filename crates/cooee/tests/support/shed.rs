@@ -438,6 +438,10 @@ impl FakeShed {
             )
             .unwrap();
         }
+        if run.machine.is_none() && !run.cwd.is_dir() {
+            let why = "pty: No such file or directory (os error 2)";
+            return Err(RpcError::new(ErrorCode::SpawnFailed, why));
+        }
         fs::write(file("cwd"), run.cwd.display().to_string()).unwrap();
         let folder = run
             .cwd
