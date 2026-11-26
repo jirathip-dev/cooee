@@ -41,6 +41,7 @@ pub(super) fn summary(meta: &Thread, items: &[Item], unseen: usize) -> Glance {
         | Body::Link { text, .. }
         | Body::Ask { text, .. }
         | Body::Handoff { text, .. }
+        | Body::Row { text, .. }
         | Body::Ended { text } => text,
         Body::Tool { subject, .. } => subject,
         Body::Approval { tool, .. } => tool,

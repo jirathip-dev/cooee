@@ -259,7 +259,7 @@ fn pretty<T: Serialize>(v: &T) -> Vec<u8> {
     text
 }
 
-#[route(POST "/api/v1/themes/check")]
+#[route(POST "/themes/check")]
 async fn check(cx: &Cx, Json(c): Json<Colours>) -> Result<Response> {
     let both = BTreeMap::from([("dark", report(&c.dark)), ("light", report(&c.light))]);
     Json(both).into_response(cx)
@@ -272,7 +272,7 @@ pub struct Saved {
     pub written: bool,
 }
 
-#[route(PUT "/api/v1/themes/{name}")]
+#[route(PUT "/themes/{name}")]
 async fn save(cx: &Cx, Json(draft): Json<Draft>) -> Result<Answer<Saved>> {
     let name = topcoat::router::path_param::<Name>(cx).to_owned();
     let config = Arc::clone(app_context::<Arc<Config>>(cx));
