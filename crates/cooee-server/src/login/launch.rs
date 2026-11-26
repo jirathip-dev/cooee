@@ -117,7 +117,6 @@ impl Logins {
 }
 
 /// `meta` with the settings file (or folder) `settings` merged in at dotted key `key`; fails when it holds no object.
-#[expect(clippy::missing_errors_doc, reason = "the line names the error")]
 pub fn with_settings(meta: Option<Value>, key: &str, settings: &Path) -> Result<Value, String> {
     let file = if settings.is_dir() {
         settings.join("settings.json")

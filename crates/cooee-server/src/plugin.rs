@@ -426,7 +426,6 @@ pub fn started(p: &Plugin, thread: &str, profile: &str) -> io::Result<()> {
 }
 
 /// Attaches chat `thread` to `repo` at `path` on `p`'s backend (#823); fails when it can't be reached or answers no attach.
-#[expect(clippy::missing_errors_doc, reason = "the line names the error")]
 pub fn attach(p: &Plugin, path: &str, repo: &str, thread: &str) -> io::Result<Attached> {
     let body = serde_json::json!({ "fleet": repo, "thread": thread }).to_string();
     let json = [("Content-Type", "application/json")];

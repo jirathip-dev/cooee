@@ -338,13 +338,12 @@ impl Hub {
         recipe: &Recipe,
     ) -> Result<(), HubError> {
         let live = self.live(id)?;
-        let agent = lock(&live).meta.agent.clone();
-        let recipe = &self.attached(id, &agent, recipe)?;
         let (terminal, agent, folder) = {
             let l = lock(&live);
             let folder = l.meta.folder.clone();
             (l.meta.terminal.clone(), l.meta.agent.clone(), folder)
         };
+        let recipe = &self.attached(id, &agent, recipe)?;
         let folder = if let Some(f) = folder {
             f
         } else {
