@@ -12,8 +12,8 @@
     extension LiveUITestCase {
         @MainActor
         internal func themes(_ app: XCUIApplication, _ new: XCUIElement) {
-            let idles: [(String, String?)] = [
-                ("Kitchen", nil), ("Garden", nil), ("Bush", "having a kip"), ("Farm", "grazing"),
+            let idles = [
+                ("Kitchen", "standing by"), ("Garden", "resting"), ("Bush", "having a kip"), ("Farm", "grazing"),
             ]
             for (theme, idle) in idles {
                 look(app, theme, "Modern")
@@ -24,7 +24,6 @@
                 keep("theme-\(theme.lowercased())-chat")
                 app.buttons["Back"].firstMatch.tap()
                 XCTAssert(new.waitForExistence(timeout: 10))
-                guard let idle else { continue }
                 look(app, theme, "Scene")
                 XCTAssert(app.staticTexts[idle].firstMatch.waitForExistence(timeout: 10))
                 keep("theme-\(theme.lowercased())-scene")

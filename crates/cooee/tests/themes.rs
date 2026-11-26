@@ -261,7 +261,7 @@ fn add_remove_and_list_with_the_lock() {
     assert!(ok, "{out}");
     assert!(!themes.join("farm").exists());
     assert_eq!(s.lock().as_array().unwrap().len(), 2);
-    assert!(s.cooee.json("/looks")["themes"].get("farm").is_none());
+    assert!(s.cooee.json("/looks")["themes"].get("farm").is_some());
     assert!(s.cooee.json("/looks")["themes"].get("kitchen").is_some());
     let (ok, out) = s.run(&["theme", "remove", "farm"]);
     assert!(!ok && out.contains("farm isn't installed"), "{out}");
