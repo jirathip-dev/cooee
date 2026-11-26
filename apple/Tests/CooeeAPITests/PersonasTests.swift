@@ -178,3 +178,14 @@ internal struct PersonasTests {
         #expect(bodies == [["token": "ab12"], ["token": "cd34", "activity": "act-1"]])
     }
 }
+
+extension PersonasTests {
+    @Test internal func theServersTokensAreReadAndATestPushIsPosted() async throws {
+        let server = CannedServer([
+            "/push/endpoints": [Answer(chunks: [#"["ab12"]"#])], "/push/test": [Answer(chunks: ["test alert sent"])],
+        ])
+        #expect(try await server.client().pushed() == ["ab12"])
+        try await server.client().pushTest()
+        #expect(server.requests("/push/test").map(\.httpMethod) == ["POST"])
+    }
+}
