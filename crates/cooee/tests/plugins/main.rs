@@ -10,4 +10,5 @@ mod check;
 mod choice_cards;
 mod proxy;
 mod push;
+mod rows;
 mod setup;

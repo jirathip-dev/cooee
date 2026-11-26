@@ -169,6 +169,17 @@ pub enum Body {
         reason = "#776: show::Reply is the persona's reply as read"
     )]
     Blocks(crate::agents::show::Reply),
+    /// A plugin's row (drover#1571): its block, drawn as the plugin built it; a later row with its key replaces it.
+    Row {
+        /// The plugin.
+        plugin: String,
+        /// The row's key.
+        key: String,
+        /// Its one plain line.
+        text: String,
+        /// Its block.
+        block: Value,
+    },
     /// A line from cooee itself (`model sonnet · effort low from the next start`).
     Note {
         /// The line.

@@ -46,7 +46,7 @@ public struct ServedStyle: Codable, Sendable, Equatable {
     public func encode(to encoder: any Encoder) throws { try style.encode(to: encoder) }
 }
 
-/// The paired server's installed theme packs and colour schemes, `GET /api/v1/looks`.
+/// The paired server's installed theme packs and colour schemes, `GET /looks`.
 public struct Looks: Codable, Sendable, Equatable {
     public var themes: [String: ThemePack]
     public var schemes: [String: ThemeScheme]
