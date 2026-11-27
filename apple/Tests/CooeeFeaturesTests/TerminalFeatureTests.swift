@@ -109,7 +109,7 @@ internal struct TerminalFeatureTests {
         state.sending = true
         let store = store(state)
         await store.send(.key(.ctrl)) { $0.ctrl = true }
-        await store.send(.key(.up)) {
+        await store.send(.key(.upArrow)) {
             $0.ctrl = false
             $0.pending = [.keys(["up"])]
         }

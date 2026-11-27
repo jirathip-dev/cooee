@@ -88,7 +88,7 @@ public struct Keystrokes: Sendable, Equatable, Encodable, CustomStringConvertibl
 public enum TerminalKey: String, CaseIterable, Sendable {
     case esc, tab, ctrl
     case left = "←"
-    case up = "↑"
+    case upArrow = "↑"
     case down = "↓"
     case right = "→"
     case slash = "/"
@@ -101,7 +101,8 @@ public enum TerminalKey: String, CaseIterable, Sendable {
     /// The shed key name it presses (`esc`, `up`), or nil for a symbol typed as text or for ctrl.
     public var name: String? {
         switch self {
-        case .esc, .tab, .left, .up, .down, .right: String(describing: self)
+        case .upArrow: "up"
+        case .esc, .tab, .left, .down, .right: String(describing: self)
         case .ctrl, .slash, .pipe, .tilde, .dash: nil
         }
     }
