@@ -25,13 +25,12 @@ internal struct MicButton: View {
     internal var body: some View {
         let palette = look.palette
         Group {
-            if voice.listening {
-                Image(systemName: "stop.fill").font(.system(size: 11)).foregroundStyle(.white)
-                    .frame(width: 26, height: 26).background(
-                        palette.red, in: look.square ? AnyShape(Rectangle()) : AnyShape(Circle()))
+            if voice.listening || holding.wrappedValue {
+                Image(systemName: voice.listening ? "stop.fill" : "mic.fill").font(.system(size: 15))
+                    .foregroundStyle(.white).frame(width: 42, height: 42)
+                    .background(palette.red, in: look.square ? AnyShape(Rectangle()) : AnyShape(Circle()))
             } else {
-                Image(systemName: "mic").foregroundStyle(holding.wrappedValue ? palette.red : palette.mute)
-                    .frame(width: voice.dictation == nil ? nil : 26, height: voice.dictation == nil ? nil : 26)
+                RoundButton(symbol: "mic", ascii: "mic", size: 42)
             }
         }
         .contentShape(.rect).onTapGesture(perform: voice.mic)

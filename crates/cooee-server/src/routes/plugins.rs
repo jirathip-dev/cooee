@@ -252,32 +252,45 @@ async fn screen_action(cx: &Cx, Json(a): Json<BlockAct>) -> Result<Response> {
     let Some((p, m)) = with_screens(cx) else {
         return plain(404, "no installed plugin with screens has this name");
     };
-    if !m.permissions.actions.contains(&a.action) {
-        return plain(
-            403,
-            &format!("{} isn't in {}'s [permissions] actions", a.action, m.name),
-        );
+    let hub = Arc::clone(app_context::<Arc<Hub>>(cx));
+    if a.block == crate::hub::ACCEPT && a.action == "accept" {
+        let name = m.name.clone();
+        return match tokio::task::spawn_blocking(move || hub.accept(&name)).await? {
+            Ok(true) => {
+                Json(serde_json::json!({ "toast": { "title": "accepted" } })).into_response(cx)
+            }
+            Ok(false) => plain(409, &format!("{} asks for nothing new", m.name)),
+            Err(e) => plain(500, &e.to_string()),
+        };
     }
     let by = request_context::<Paired>(cx).0.label.clone();
     let body = serde_json::json!({
         "screen": a.screen, "block": a.block, "action": a.action, "values": a.values, "by": by,
     });
+    let (name, action) = (m.name.clone(), a.action.clone());
     let reply = tokio::task::spawn_blocking(move || {
+        if !hub.takes(&m.name, &m, &a.action) {
+            return None;
+        }
         let json = [("Content-Type", "application/json")];
         let deadline = Duration::from_secs(10);
-        plugin::call(
+        Some(plugin::call(
             &p,
             "POST",
             "/action",
             &json,
             body.to_string().as_bytes(),
             deadline,
-        )
+        ))
     })
     .await?;
     match reply {
-        Ok(r) => pass_on(cx, r, ops, || true).await,
-        Err(e) => plain(502, &format!("{}: {e}", m.name)),
+        Some(Ok(r)) => pass_on(cx, r, ops, || true).await,
+        Some(Err(e)) => plain(502, &format!("{name}: {e}")),
+        None => plain(
+            403,
+            &format!("{action} isn't in {name}'s [permissions] actions"),
+        ),
     }
 }
 

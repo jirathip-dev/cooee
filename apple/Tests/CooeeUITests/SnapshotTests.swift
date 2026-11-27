@@ -62,15 +62,24 @@ extension Frame {
         .appendingPathComponent("design")
 
     @MainActor
-    internal func matchesItsDesign(_ style: Style = .bundled, in folder: String? = nil) throws {
-        try Self.matches(try #require(render(style)), name, in: folder ?? self.folder)
+    internal func matchesItsDesign(_ style: Style = .bundled, in folder: String? = nil, only area: CGRect? = nil)
+        throws
+    {
+        let rendered = try #require(render(style))
+        let band = area.map { CGRect(x: $0.minX * 2, y: $0.minY * 2, width: $0.width * 2, height: $0.height * 2) }
+        let shown = try #require(band.map { rendered.cropping(to: $0) } ?? rendered)
+        try Self.matches(shown, name, in: folder ?? self.folder, cropped: band)
     }
 
-    internal static func matches(_ rendered: CGImage, _ name: String, in folder: String) throws {
+    internal static func matches(
+        _ rendered: CGImage, _ name: String, in folder: String, cropped: CGRect? = nil
+    ) throws {
         let file = designs.appendingPathComponent(folder).appendingPathComponent("\(name).png")
-        if ProcessInfo.processInfo.environment["COOEE_RECORD"] == "1" { try write(rendered, to: file) }
+        let record = ProcessInfo.processInfo.environment["COOEE_RECORD"] == "1"
+        if record, cropped == nil { try write(rendered, to: file) }
         try keep(rendered, name)
-        let design = try #require(NSImage(contentsOf: file)?.cgImage(forProposedRect: nil, context: nil, hints: nil))
+        let drawn = try #require(NSImage(contentsOf: file)?.cgImage(forProposedRect: nil, context: nil, hints: nil))
+        let design = try #require(cropped.map { drawn.cropping(to: $0) } ?? drawn)
         let got = try #require(Pixels(rendered))
         let want = try #require(Pixels(design))
         #expect(got.width == want.width && got.height == want.height)

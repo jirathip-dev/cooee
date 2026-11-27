@@ -16,11 +16,11 @@
             "type": .string("row"), "id": .string("new"), "title": .string("A new row"),
         ])
 
-        private static func screen(_ blocks: [JSONValue]) -> BlocksView {
+        private static func screen(_ blocks: [JSONValue]) -> BlockScreen {
             let screen = JSONValue.object([
                 "type": .string("screen"), "title": .string("Ask"), "blocks": .array(blocks),
             ])
-            return BlocksView(screen, source: .plugin("edgar"))
+            return BlockScreen(screen, source: .plugin("edgar"))
         }
 
         private static func box(in view: NSView) -> NSTextField? {

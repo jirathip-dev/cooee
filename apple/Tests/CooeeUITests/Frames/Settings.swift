@@ -1,5 +1,5 @@
 import CooeeCore
-import CooeeUI
+@testable import CooeeUI
 import Foundation
 import SwiftUI
 import Testing
@@ -36,7 +36,7 @@ internal struct SettingsFrames {
 
     @MainActor private static func taggedMachines() -> some View {
         let screen = (try? JSONDecoder().decode(JSONValue.self, from: Data(contentsOf: machines))) ?? .null
-        return Color.clear.overlay(alignment: .top) { BlocksView(screen, source: .core).padding(BlocksView.inset) }
+        return Color.clear.overlay(alignment: .top) { BlockScreen(screen, source: .core).padding(BlockScreen.inset) }
             .clipped()
     }
 
@@ -52,4 +52,23 @@ internal struct SettingsFrames {
 
     @MainActor @Test(arguments: all)
     internal func matchesTheDesign(_ frame: Frame) throws { try frame.matchesItsDesign() }
+
+    @MainActor
+    @Test(arguments: [
+        "shell-modern-dark", "shell-modern-light", "shell-scene-light", "shell-terminal-dark", "shell-terminal-light",
+        "machine-terminal-dark",
+    ])
+    internal func theKeyRowIsTheDrawnOne(_ name: String) throws {
+        let palette: Palette = name.hasSuffix("dark") ? .farmDark : .farmLight
+        let style: Style = name.contains("terminal") ? .terminal : name.contains("scene") ? .scene : .bundled
+        let row = TerminalKeyRow(ctrl: name.hasPrefix("machine")).background(palette.background)
+            .frame(width: Frame.phoneWidth, height: 46)
+            .environment(\.look, Look(palette: palette, style: style, still: true))
+            .environment(\.colorScheme, palette.dark ? .dark : .light)
+        let renderer = ImageRenderer(content: row)
+        renderer.scale = 2
+        let top: CGFloat = name.contains("terminal") ? 1098 : 1078
+        let strip = CGRect(x: 0, y: top, width: Frame.phoneWidth * 2, height: 92)
+        try Frame.matches(try #require(renderer.cgImage), name, in: "composer-v2", cropped: strip)
+    }
 }

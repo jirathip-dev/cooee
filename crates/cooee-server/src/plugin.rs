@@ -6,7 +6,10 @@ use std::{
     time::{Duration, Instant},
 };
 
-use cooee_core::{Plugin, Profile, plugins::rows::Attached};
+use cooee_core::{
+    Plugin, Profile,
+    plugins::{Permissions, PlaceKind, rows::Attached},
+};
 use futures_util::{Stream, stream};
 use tokio::io::{AsyncBufReadExt, AsyncReadExt};
 
@@ -401,6 +404,43 @@ pub fn profiles(p: &Plugin) -> io::Result<Option<Vec<Profile>>> {
         }
         code => Err(io::Error::other(format!("the backend answered {code}"))),
     }
+}
+
+/// The `[permissions]` places, actions and destructive ones `p`'s backend serves at `path`, in 5 s.
+pub fn served(p: &Plugin, path: &str) -> io::Result<Permissions> {
+    #[derive(serde::Deserialize)]
+    struct Screen {
+        #[serde(rename = "type")]
+        kind: PlaceKind,
+    }
+    #[derive(serde::Deserialize)]
+    struct Served {
+        #[serde(default)]
+        screens: Vec<Screen>,
+        actions: Vec<String>,
+        #[serde(default)]
+        destructive: Vec<String>,
+    }
+    let r = call(p, "GET", path, &[], &[], Duration::from_secs(5))?;
+    if r.status != 200 {
+        return Err(io::Error::other(format!(
+            "the backend answered {}",
+            r.status
+        )));
+    }
+    let s: Served = serde_json::from_slice(&r.bytes()?)?;
+    let mut places: Vec<PlaceKind> = Vec::new();
+    for k in s.screens.into_iter().map(|s| s.kind) {
+        if !places.contains(&k) {
+            places.push(k);
+        }
+    }
+    Ok(Permissions {
+        places,
+        actions: s.actions,
+        destructive: s.destructive,
+        ..Permissions::default()
+    })
 }
 
 /// Tells `p`'s backend thread `thread` started as its profile `profile`: `POST /cooee/thread-started`
