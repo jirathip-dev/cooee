@@ -79,7 +79,7 @@ internal struct TerminalFeatureTests {
         let store = store(state)
         await store.send(.type(Keystrokes("ls"))) { $0.pending = [.text(Keystrokes("ls"))] }
         await store.send(.press("enter")) { $0.pending.append(.keys(["enter"])) }
-        await store.send(.ctrl) { $0.ctrl = true }
+        await store.send(.key(.ctrl)) { $0.ctrl = true }
         await store.send(.type(Keystrokes("C"))) {
             $0.ctrl = false
             $0.pending.append(.keys(["ctrl+c"]))
@@ -89,6 +89,43 @@ internal struct TerminalFeatureTests {
         await store.receive(\.sent) { $0.pending = [] }
         await store.receive(\.sent) { $0.sending = false }
         #expect(calls.all == ["owner-1 text ls", "owner-1 keys enter", "owner-1 keys ctrl+c"])
+    }
+
+    @Test internal func eachKeyOfTheRowGoesToTheShellAsItsKeyOrItsCharacter() async {
+        let store = store(typing(into: Self.shell))
+        for key in TerminalKey.allCases where key != .ctrl {
+            await store.send(.key(key)) { $0.sending = true }
+            await store.receive(\.sent) { $0.sending = false }
+        }
+        #expect(
+            calls.all == [
+                "owner-1 keys esc", "owner-1 keys tab", "owner-1 keys left", "owner-1 keys up", "owner-1 keys down",
+                "owner-1 keys right", "owner-1 text /", "owner-1 text |", "owner-1 text ~", "owner-1 text -",
+            ])
+    }
+
+    @Test internal func ctrlLatchesForTheNextKeyOnlyThenLetsGo() async {
+        var state = typing(into: Self.shell)
+        state.sending = true
+        let store = store(state)
+        await store.send(.key(.ctrl)) { $0.ctrl = true }
+        await store.send(.key(.up)) {
+            $0.ctrl = false
+            $0.pending = [.keys(["up"])]
+        }
+        await store.send(.key(.ctrl)) { $0.ctrl = true }
+        await store.send(.key(.dash)) {
+            $0.ctrl = false
+            $0.pending.append(.text(Keystrokes("-")))
+        }
+        await store.send(.key(.ctrl)) { $0.ctrl = true }
+        await store.send(.type(Keystrokes("c"))) {
+            $0.ctrl = false
+            $0.pending.append(.keys(["ctrl+c"]))
+        }
+        await store.send(.type(Keystrokes("c"))) { $0.pending.append(.text(Keystrokes("c"))) }
+        await store.send(.key(.ctrl)) { $0.ctrl = true }
+        await store.send(.key(.ctrl)) { $0.ctrl = false }
     }
 
     @Test internal func anAgentsTerminalIsWatchedButTakesNoKeys() async {

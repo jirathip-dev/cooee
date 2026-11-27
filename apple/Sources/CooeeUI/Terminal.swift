@@ -9,15 +9,10 @@ internal struct TerminalActions {
     internal var pick: (Int) -> Void = { _ in }
     internal var type: ((String) -> Void)?
     internal var press: (String) -> Void = { _ in }
-    internal var ctrl: () -> Void = {}
+    internal var key: (TerminalKey) -> Void = { _ in }
 }
 
 public struct TerminalView: View {
-    private static let keys: [(label: String, name: String?)] = [
-        ("esc", "esc"), ("tab", "tab"), ("ctrl", nil), ("←", "left"), ("↑", "up"), ("↓", "down"), ("→", "right"),
-        ("⌃C", "ctrl+c"),
-    ]
-
     @Environment(\.look) private var look
     @FocusState private var typing: Bool
     @State private var field = " "
@@ -28,6 +23,7 @@ public struct TerminalView: View {
     internal let lines: [String]
     internal var note: String?
     internal var ctrl = false
+    internal var keyRow = true
     internal var actions = TerminalActions()
 
     public var body: some View {
@@ -49,7 +45,7 @@ public struct TerminalView: View {
             strip
             if let note { Text(note).ui(13, .regular, look).foregroundStyle(palette.mute).padding(8) }
             screen
-            keyBar
+            if keyRow { keyBar }
         }
         .background(palette.background).foregroundStyle(palette.foreground)
     }
@@ -69,7 +65,7 @@ public struct TerminalView: View {
 
     private func input(_ type: @escaping (String) -> Void) -> some View {
         TextField("", text: $field).focused($typing).opacity(0).frame(width: 1, height: 1)
-            .autocorrectionDisabled()
+            .autocorrectionDisabled().submitLabel(.return)
             .onSubmit {
                 actions.press("enter")
                 typing = true
@@ -105,22 +101,27 @@ public struct TerminalView: View {
     }
 
     private var keyBar: some View {
-        HStack(spacing: 6) {
-            ForEach(Self.keys, id: \.label) { key in
+        let palette = look.palette
+        return HStack(spacing: 4) {
+            ForEach(TerminalKey.allCases, id: \.self) { key in
+                let lit = ctrl && key == .ctrl
+                let word = key.label.count > 1
                 Button {
-                    if let name = key.name { actions.press(name) } else { actions.ctrl() }
+                    actions.key(key)
                 } label: {
-                    Text(key.label).font(.system(size: 14, weight: .medium, design: .monospaced))
-                        .frame(maxWidth: .infinity, minHeight: 36)
-                        .background(
-                            key.name == nil && ctrl ? look.palette.link.opacity(0.4) : look.palette.card,
-                            in: .rect(cornerRadius: look.radius(8)))
+                    Text(key.label).font(.system(size: word ? 13 : 16, weight: .medium, design: .monospaced))
+                        .foregroundStyle(lit ? (palette.dark ? Color.black : .white) : palette.foreground)
+                        .frame(maxWidth: .infinity).frame(height: 34)
+                        .background(lit ? palette.link : palette.card, in: .rect(cornerRadius: look.radius(7)))
+                        .overlay { if look.outline { Rectangle().strokeBorder(palette.edge, lineWidth: 1) } }
+                        .frame(width: word ? 40 : 26)
                 }
                 .buttonStyle(.plain)
             }
         }
-        .padding(.horizontal, 8).padding(.top, 8).padding(.bottom, 40)
-        .background(look.palette.card.opacity(0.5))
+        .padding(6).frame(maxWidth: .infinity)
+        .background(palette.background.opacity(look.outline ? 1 : 0.92))
+        .overlay(alignment: .top) { Rectangle().fill(palette.line).frame(height: 0.5) }
     }
 }
 
@@ -136,15 +137,21 @@ internal struct TerminalSlot: View {
         actions.pick = { store.send(.open(shells[$0].name)) }
         actions.type = store.current?.owner == true ? { store.send(.type(Keystrokes($0))) } : nil
         actions.press = { store.send(.press($0)) }
-        actions.ctrl = { store.send(.ctrl) }
+        actions.key = { store.send(.key($0)) }
         return TerminalView(
             title: "Terminal · \(machine)", back: "You", tabs: shells.map(\.name),
             selected: shells.firstIndex { $0 == store.current } ?? 0, lines: store.screen.lines, note: store.note,
-            ctrl: store.ctrl, actions: actions
+            ctrl: store.ctrl, keyRow: Self.keyRow, actions: actions
         )
         .task { await store.send(.task(size)).finish() }
         .onDisappear { store.send(.close) }
     }
+
+    #if os(macOS)
+        private static let keyRow = false
+    #else
+        private static let keyRow = true
+    #endif
 
     private var size: TerminalSize? {
         TerminalSize(

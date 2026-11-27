@@ -1,5 +1,5 @@
 import CooeeCore
-import CooeeUI
+@testable import CooeeUI
 import Foundation
 import SwiftUI
 import Testing
@@ -29,6 +29,19 @@ internal struct SettingsFrames {
         return (phones + macs + more + tagged).map { $0.filed("v2-settings") }
     }
 
+    internal static let shells: [Frame] = {
+        let looks =
+            [("modern-dark", Palette.farmDark), ("modern-light", .farmLight), ("scene-light", .farmLight)]
+            + [("terminal-dark", Palette.farmDark), ("terminal-light", .farmLight)]
+        let shells = looks.map { look, palette in Frame.phone("shell-\(look)", palette) { TerminalView.own() } }
+        let machine = Frame.phone("machine-terminal-dark", .farmDark) {
+            var view = TerminalView.agents()
+            view.ctrl = true
+            return view
+        }
+        return (shells + [machine]).map { $0.filed("composer-v2/frames") }
+    }()
+
     private static let machines = URL(fileURLWithPath: #filePath)
         .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
         .deletingLastPathComponent().deletingLastPathComponent().appendingPathComponent(
@@ -52,4 +65,11 @@ internal struct SettingsFrames {
 
     @MainActor @Test(arguments: all)
     internal func matchesTheDesign(_ frame: Frame) throws { try frame.matchesItsDesign() }
+
+    @MainActor @Test(arguments: shells)
+    internal func theKeyRowMatchesTheDesign(_ frame: Frame) throws {
+        let style: Style =
+            frame.name.contains("terminal") ? .terminal : frame.name.contains("scene") ? .scene : .bundled
+        try frame.matchesItsDesign(style)
+    }
 }

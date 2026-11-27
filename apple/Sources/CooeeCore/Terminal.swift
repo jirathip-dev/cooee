@@ -83,3 +83,26 @@ public struct Keystrokes: Sendable, Equatable, Encodable, CustomStringConvertibl
         self.text = text
     }
 }
+
+/// One key of the row above the phone's keyboard in a shell: `esc tab ctrl ← ↑ ↓ → / | ~ -`.
+public enum TerminalKey: String, CaseIterable, Sendable {
+    case esc, tab, ctrl
+    case left = "←"
+    case up = "↑"
+    case down = "↓"
+    case right = "→"
+    case slash = "/"
+    case pipe = "|"
+    case tilde = "~"
+    case dash = "-"
+
+    public var label: String { rawValue }
+
+    /// The shed key name it presses (`esc`, `up`), or nil for a symbol typed as text or for ctrl.
+    public var name: String? {
+        switch self {
+        case .esc, .tab, .left, .up, .down, .right: String(describing: self)
+        case .ctrl, .slash, .pipe, .tilde, .dash: nil
+        }
+    }
+}

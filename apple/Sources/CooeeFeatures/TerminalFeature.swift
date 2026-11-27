@@ -49,7 +49,7 @@ public struct TerminalFeature: Sendable {
         case newShell
         case type(Keystrokes)
         case press(String)
-        case ctrl
+        case key(TerminalKey)
         case sent
         case failed(String)
     }
@@ -79,8 +79,9 @@ public struct TerminalFeature: Sendable {
             case .update(let update): state.screen.apply(update)
             case .newShell: return list(state, start: true)
             case .type(let keystrokes): return type(&state, keystrokes)
-            case .press(let key): return input(&state, .keys([key]))
-            case .ctrl: state.ctrl.toggle()
+            case .press(let key): return press(&state, key)
+            case .key(.ctrl): state.ctrl.toggle()
+            case .key(let key): return key.name.map { press(&state, $0) } ?? type(&state, Keystrokes(key.label))
             case .sent: return sent(&state)
             case .failed(let why): state.note = why
             }
@@ -122,10 +123,16 @@ public struct TerminalFeature: Sendable {
     }
 
     private func type(_ state: inout State, _ keystrokes: Keystrokes) -> Effect<Action> {
-        let letter = keystrokes.text.count == 1 && keystrokes.text.allSatisfy(\.isLetter)
-        guard state.ctrl, letter else { return input(&state, .text(keystrokes)) }
+        let ctrl = state.ctrl
         state.ctrl = false
+        let letter = keystrokes.text.count == 1 && keystrokes.text.allSatisfy { $0.isASCII && $0.isLetter }
+        guard ctrl, letter else { return input(&state, .text(keystrokes)) }
         return input(&state, .keys(["ctrl+\(keystrokes.text.lowercased())"]))
+    }
+
+    private func press(_ state: inout State, _ key: String) -> Effect<Action> {
+        state.ctrl = false
+        return input(&state, .keys([key]))
     }
 
     private func input(_ state: inout State, _ input: TerminalInput) -> Effect<Action> {
