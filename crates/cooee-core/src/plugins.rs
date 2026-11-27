@@ -15,6 +15,9 @@ use serde::{Deserialize, Serialize};
 
 use crate::{Plugin, profiles::Profile};
 
+/// A plugin's rows (drover#1571): what cooee reads and writes at its `[threads]` paths.
+pub mod rows;
+
 /// `cooee-plugin.toml`: what a plugin is, builds with and runs.
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize)]
 #[serde(deny_unknown_fields)]
@@ -56,6 +59,9 @@ pub struct Manifest {
     /// The agent profiles it brings, their paths in its checkout.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub profiles: Vec<Profile>,
+    /// Where it serves its rows (drover#1571); none: it has none.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub threads: Option<rows::Threads>,
 }
 
 /// One tab of a plugin: its `[[plugins]]` entry's name, label and UI module.

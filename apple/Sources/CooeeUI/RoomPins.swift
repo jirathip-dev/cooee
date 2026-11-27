@@ -14,7 +14,8 @@ internal struct RoomPin: View {
             }
             if look.stage == nil { Text(room.row.title).ui(12, .medium, look).lineLimit(1) }
             if look.textMarks {
-                Text(state.word).ui(10, .regular, look).foregroundStyle(state == .needs ? palette.red : palette.mute)
+                Text(look.word(state)).ui(10, .regular, look).foregroundStyle(
+                    state == .needs ? palette.red : palette.mute)
             }
         }
         .frame(minWidth: 70)

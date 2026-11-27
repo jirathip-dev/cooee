@@ -5,7 +5,7 @@ import Testing
 
 internal struct LooksClientTests {
     @Test internal func theLooksReadEachPacksSchemesAndSprites() async throws {
-        let server = CannedServer(["/api/v1/looks": [try Fixture.answer("looks.json")]])
+        let server = CannedServer(["/looks": [try Fixture.answer("looks.json")]])
         let looks = try await server.client().looks()
         #expect(looks.themes.keys.sorted() == ["farm", "garden", "kitchen", "plain"])
         #expect(looks.tokens("kitchen", dark: true)?["--bg"] == "#1a1816")
@@ -24,18 +24,18 @@ internal struct LooksClientTests {
     @Test internal func theEditorChecksColoursAndSavesAPackByName() async throws {
         let report = #"{"dark": {"fails": [], "marks": {}}, "light": {"fails": ["x"], "marks": {}}}"#
         let server = CannedServer([
-            "/api/v1/themes/check": [Answer(chunks: [report])],
-            "/api/v1/themes/tidepool": [Answer(chunks: [#"{"written":true}"#]), Answer(status: 400, chunks: ["no"])],
+            "/themes/check": [Answer(chunks: [report])],
+            "/themes/tidepool": [Answer(chunks: [#"{"written":true}"#]), Answer(status: 400, chunks: ["no"])],
         ])
         let client = server.client()
         let reports = try await client.checkTheme(dark: ["--bg": "#000000"], light: [:])
         #expect(reports["light"]?.fails == ["x"] && reports["dark"] == GateReport())
-        let sent = try server.decoded("/api/v1/themes/check", as: [String: [String: String]].self)
+        let sent = try server.decoded("/themes/check", as: [String: [String: String]].self)
         #expect(sent == ["dark": ["--bg": "#000000"], "light": [:]])
         let draft = ThemeDraft(from: "farm", label: "Tidepool", style: "scene", dark: [:], light: [:])
         try await client.saveTheme("tidepool", draft)
-        #expect(server.requests("/api/v1/themes/tidepool").map(\.httpMethod) == ["PUT"])
-        #expect(try server.decoded("/api/v1/themes/tidepool", as: ThemeDraft.self) == draft)
+        #expect(server.requests("/themes/tidepool").map(\.httpMethod) == ["PUT"])
+        #expect(try server.decoded("/themes/tidepool", as: ThemeDraft.self) == draft)
         await #expect(throws: APIError.self) { try await client.saveTheme("tidepool", draft) }
     }
 

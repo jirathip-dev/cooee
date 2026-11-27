@@ -130,7 +130,7 @@ internal struct ChatRow: View {
             if row.state == .working && !look.textMarks {
                 Image(systemName: "ellipsis").font(.system(size: 13, weight: .bold)).foregroundStyle(palette.cyan)
             }
-            if let status = row.status ?? (word ? row.state.word : nil) {
+            if let status = row.status ?? (word ? look.word(row.state) : nil) {
                 Text("\(status) ·").ui(14, .regular, look).foregroundStyle(palette.state(row.state))
             }
             if topics > 1 {

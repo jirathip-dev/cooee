@@ -1,10 +1,10 @@
-use std::{collections::HashMap, sync::Mutex};
+use std::{collections::HashMap, path::Path, sync::Mutex};
 
 use cooee_core::{Plugin, Profile};
 
 use crate::plugin;
 
-use super::{Hub, Seed, lock, now};
+use super::{Hub, HubError, Recipe, Seed, lock, now};
 
 pub(super) struct State {
     plugins: Mutex<Vec<Plugin>>,
@@ -40,18 +40,80 @@ impl Hub {
             .unwrap_or(Some(Vec::new()))
     }
 
-    pub(super) fn report_start(&self, thread: &str, profile: &str) {
+    pub(super) fn backing(&self, profile: &str) -> Option<(String, String)> {
         let own = || cooee_core::agents::find(self.config_dir(), &self.data, profile).ok();
         let backing = if profile.contains('/') {
             Some(profile.to_owned())
         } else {
             own().and_then(|a| a.profile)
         };
-        let Some((name, p)) = backing.as_deref().and_then(|b| b.split_once('/')) else {
+        let (name, p) = backing.as_deref()?.split_once('/')?;
+        Some((name.to_owned(), p.to_owned()))
+    }
+
+    /// Where a chat of `profile` attaches to its plugin; none when it doesn't.
+    #[must_use]
+    pub fn attaches(&self, profile: &str) -> Option<String> {
+        let (name, _) = self.backing(profile)?;
+        let threads = self.with_rows(&name)?.threads?;
+        (!threads.attach.is_empty()).then_some(threads.attach)
+    }
+
+    pub(super) fn attached(
+        &self,
+        id: &str,
+        agent: &str,
+        recipe: &Recipe,
+    ) -> Result<Recipe, HubError> {
+        let mut recipe = recipe.clone();
+        let meta = lock(&*self.live(id)?).meta.clone();
+        let Some(at) = &meta.attach else {
+            return Ok(recipe);
+        };
+        let refused = |why: String| HubError::Refused(format!("attach: {why}"));
+        let path = self
+            .attaches(&meta.profile)
+            .ok_or_else(|| refused("its agent's plugin attaches no chat".to_owned()))?;
+        let name = self
+            .backing(&meta.profile)
+            .map(|(n, _)| n)
+            .unwrap_or_default();
+        let p = self
+            .backend(&name)
+            .ok_or_else(|| refused(format!("plugin {name} is down")))?;
+        let a = plugin::attach(&p, &path, &at.repo, meta.plugin_thread())
+            .map_err(|e| refused(e.to_string()))?;
+        if !a.ok {
+            return Err(refused(format!("{}: {}", a.code, a.message)));
+        }
+        recipe.launch.env.retain(|(k, _)| !a.env.contains_key(k));
+        recipe.launch.env.extend(a.env);
+        if !a.settings.is_empty() {
+            let key = self
+                .providers
+                .for_agent(agent)
+                .map(|p| p.spec().settings.as_str());
+            let key = key
+                .filter(|k| !k.is_empty())
+                .ok_or_else(|| refused(format!("{agent} takes no settings")))?;
+            let meta = recipe.launch.meta.take();
+            let with = crate::login::with_settings(meta, key, Path::new(&a.settings));
+            recipe.launch.meta = Some(with.map_err(refused)?);
+        }
+        let brief = [recipe.instructions.trim(), a.brief.trim()];
+        brief
+            .join("\n\n")
+            .trim()
+            .clone_into(&mut recipe.instructions);
+        Ok(recipe)
+    }
+
+    pub(super) fn report_start(&self, thread: &str, profile: &str) {
+        let Some((name, p)) = self.backing(profile) else {
             return;
         };
-        if let Some(b) = self.backend(name)
-            && let Err(e) = plugin::started(&b, thread, p)
+        if let Some(b) = self.backend(&name)
+            && let Err(e) = plugin::started(&b, thread, &p)
         {
             cooee_core::note!("cooee: plugin {name}: thread-started: {e}");
         }

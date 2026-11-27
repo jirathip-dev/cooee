@@ -18,7 +18,7 @@ internal struct ModelsTests {
         #expect(persona.look == PersonaLook(initials: "AM", tint: .cyan))
         #expect(persona.seed == "am" && persona.with(state: .done).seed == "am")
         #expect(persona.id == "am" && persona.name == "Account Manager" && persona.figure == "(!)")
-        #expect(persona.state.word == "at the gate" && persona.pose == "needs")
+        #expect(persona.state.word == "needs you" && persona.pose == "needs")
         #expect(Persona(coder).look.initials == "CO")
         #expect(persona.with(state: .done).state == .done && persona.with(state: .done).look == persona.look)
     }

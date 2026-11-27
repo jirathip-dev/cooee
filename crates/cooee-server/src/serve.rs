@@ -278,6 +278,7 @@ fn run(
             let listener = tokio::net::TcpListener::from_std(listener)?;
             let addr = listener.local_addr()?;
             hub.listening(format!("http://127.0.0.1:{}", addr.port()));
+            plugin::follow_rows(Arc::clone(&hub));
             manager.supervise(hub, format!("http://127.0.0.1:{}", addr.port()));
             routines::Runner::every(runner, Duration::from_secs(30))?;
             ready(addr);

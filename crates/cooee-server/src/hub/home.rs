@@ -57,6 +57,11 @@ fn row(live: &Live) -> Row {
             routine: g.routine,
             members: rooms::seated(meta),
             asked_by: meta.asked_by.clone(),
+            repo: meta
+                .attach
+                .as_ref()
+                .map(|a| a.repo.clone())
+                .unwrap_or_default(),
         },
         speaker: g.speaker,
         ask: g.ask,

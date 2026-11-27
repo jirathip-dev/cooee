@@ -6,13 +6,15 @@ use std::{
     time::{Duration, Instant},
 };
 
-use cooee_core::{Plugin, Profile};
+use cooee_core::{Plugin, Profile, plugins::rows::Attached};
 use futures_util::{Stream, stream};
 use tokio::io::{AsyncBufReadExt, AsyncReadExt};
 
 mod feed;
+mod rows;
 
 pub use feed::{follow, share};
+pub use rows::follow_rows;
 
 const MAX_BODY: u64 = 16 << 20;
 
@@ -421,6 +423,23 @@ pub fn started(p: &Plugin, thread: &str, profile: &str) -> io::Result<()> {
         200..=299 => Ok(()),
         code => Err(io::Error::other(format!("the backend answered {code}"))),
     }
+}
+
+/// Attaches chat `thread` to `repo` at `path` on `p`'s backend (#823); fails when it can't be reached or answers no attach.
+pub fn attach(p: &Plugin, path: &str, repo: &str, thread: &str) -> io::Result<Attached> {
+    let body = serde_json::json!({ "fleet": repo, "thread": thread }).to_string();
+    let json = [("Content-Type", "application/json")];
+    let reply = call(
+        p,
+        "POST",
+        path,
+        &json,
+        body.as_bytes(),
+        Duration::from_secs(10),
+    )?;
+    let status = reply.status;
+    serde_json::from_slice(&reply.bytes()?)
+        .map_err(|e| io::Error::other(format!("its answer ({status}): {e}")))
 }
 
 #[cfg(test)]

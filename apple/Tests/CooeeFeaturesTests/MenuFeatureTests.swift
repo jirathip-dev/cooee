@@ -205,7 +205,7 @@ extension MenuFeatureTests {
         #expect(store.state.style(for: "farm") == terminal.kept && store.state.notice == nil)
     }
 
-    @Test internal func aThemeWithoutSpritesDrawsModernAndHidesTheSceneRowButKeepsThePick() async throws {
+    @Test internal func aPackWithSpritesDrawsTheSceneAndOneWithoutDrawsModernButKeepsThePick() async throws {
         var looks = kitchen
         looks.themes["plain"] = try JSONDecoder().decode(
             ThemePack.self,
@@ -213,6 +213,7 @@ extension MenuFeatureTests {
         let store = store(style: scene)
         await store.send(.looks(looks)) { $0.looks = looks }
         #expect(store.state.offered.map(\.name) == ["modern", "scene", "terminal"])
+        #expect(store.state.style(for: "kitchen")?.figures == .sprite)
         await store.send(.theme("plain")) { $0.settings.theme = "plain" }
         #expect(store.state.style(for: "plain") == nil && store.state.settings.style == scene)
         #expect(store.state.offered.map(\.name) == ["modern", "terminal"])

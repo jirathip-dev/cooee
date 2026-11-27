@@ -26,6 +26,7 @@ mod relaunch;
 mod restart;
 mod rooms;
 mod route;
+mod rows;
 mod screen;
 mod secret;
 mod send;

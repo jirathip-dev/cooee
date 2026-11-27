@@ -181,7 +181,7 @@ internal struct ThemePreview: View {
         var shown = Look(
             palette: palette, style: style(state, sprites: sprites), still: look.still, art: state.art)
         (shown.drawn, shown.vectors) = (state.drawing.figures, state.drawing.vectors)
-        shown.tokens = state.tokens(dark: dark)
+        (shown.tokens, shown.words) = (state.tokens(dark: dark), state.words)
         return shown
     }
 
@@ -228,7 +228,7 @@ internal struct ThemePreview: View {
                         Sprite(name: "horse-bay-\(pose)", pack: "sprites.svg#s-\(pose)").frame(width: 72, height: 54)
                         VStack(spacing: 0) {
                             Text(chat.persona.name).ui(12, .semibold, shown)
-                            Text(chat.row.state.word).ui(10, .medium, shown)
+                            Text(shown.word(chat.row.state)).ui(10, .medium, shown)
                                 .foregroundStyle(shown.palette.state(chat.row.state))
                         }
                         .lineLimit(1).padding(.horizontal, 8).padding(.vertical, 3)

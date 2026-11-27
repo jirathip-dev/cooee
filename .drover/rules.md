@@ -27,4 +27,4 @@
 - Don't store credentials, tokens, secrets or account folders: shed owns them (enforced by: CI arch-check `generic-password` ban (.drover/arch/boundaries.toml))
 - Don't run VMs or containers, or self-update: shed owns machines and installs (enforced by: CI arch-check `docker` and `releases/` bans (.drover/arch/boundaries.toml))
 - Don't write a shed protocol client: use shed-client (enforced by: CI arch-check `UnixStream` ban (.drover/arch/boundaries.toml))
-- Don't put workflow logic (issues, queues, lanes, reviews, merges) in cooee: drover owns it, and cooee draws its screens (enforced by: review)
+- Don't put workflow logic (issues, queues, lanes, reviews, merges, where a card goes, when to notify) in cooee, or name a plugin route or event kind outside its manifest: draw a row's block, type its prompt, send its push, post its action (enforced by: CI arch-check `api/v1` and `needs-decision` bans (.drover/arch/boundaries.toml), crates/cooee/tests/drover_contract.rs)

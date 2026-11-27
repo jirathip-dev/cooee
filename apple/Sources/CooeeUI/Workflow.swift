@@ -164,7 +164,7 @@ internal struct IssueRow: View {
                 }
                 .ui(16, .semibold, look).lineLimit(1)
                 HStack(spacing: 0) {
-                    Text(row.status ?? row.state.word).foregroundStyle(tint)
+                    Text(row.status ?? look.word(row.state)).foregroundStyle(tint)
                     Text(" · \(row.title)").foregroundStyle(palette.mute)
                 }
                 .ui(14, .regular, look).lineLimit(1)
@@ -183,10 +183,10 @@ internal struct NeutralAvatar: View {
 
     internal var body: some View {
         Circle().fill(look.palette.mute.opacity(0.22)).frame(width: size, height: size).overlay {
-            if persona.look.coat == "" {
+            if persona.look.coat == "" || look.figures != .sprite {
                 Text(persona.look.initials).ui(size * 0.34, .bold, look)
             } else {
-                Sprite(name: "horse-\(look.coat(persona))-\(persona.pose)").frame(width: size * 0.62)
+                StateSprite(persona: persona, size: size * 0.47)
             }
         }
     }

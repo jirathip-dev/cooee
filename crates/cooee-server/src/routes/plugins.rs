@@ -1,6 +1,6 @@
 use std::{io, sync::Arc, time::Duration};
 
-use cooee_core::Plugin;
+use cooee_core::{Plugin, plugins::PlaceKind};
 use futures_util::StreamExt;
 use serde::Deserialize;
 use topcoat::{
@@ -168,6 +168,12 @@ async fn screen(cx: &Cx) -> Result<Response> {
             &format!("{path} isn't under one of {}'s places' screens", m.name),
         );
     }
+    if let Some(stream) = (m.threads.is_some())
+        .then(|| cards_place(&m, path))
+        .flatten()
+    {
+        return cards(cx, Arc::clone(app_context::<Arc<Hub>>(cx)), m.name, stream);
+    }
     let pass: Vec<(&str, String)> = ["accept", "last-event-id"]
         .into_iter()
         .filter_map(|h| Some((h, header(cx, h)?.to_owned())))
@@ -186,6 +192,39 @@ async fn screen(cx: &Cx) -> Result<Response> {
         Ok(r) => pass_on(cx, r, ops, || true).await,
         Err(e) => plain(502, &format!("{}: {e}", path_param::<Name>(cx))),
     }
+}
+
+fn cards_place(m: &cooee_core::plugins::Manifest, path: &str) -> Option<bool> {
+    let place = m.places.iter().find(|pl| {
+        pl.kind == PlaceKind::ChatCards
+            && path
+                .strip_prefix(pl.screen.as_str())
+                .is_some_and(|r| r.is_empty() || r == "/stream")
+    })?;
+    Some(path != place.screen)
+}
+
+fn cards(cx: &Cx, hub: Arc<Hub>, name: String, stream: bool) -> Result<Response> {
+    let drawn = |hub: &Hub, name: &str| serde_json::json!({ "type": "screen", "id": "cards", "blocks": hub.desk_rows(name) });
+    if !stream {
+        return Json(drawn(&hub, &name)).into_response(cx);
+    }
+    let changed = hub.desk_changed();
+    let ticks = futures_util::stream::unfold(
+        (hub, name, changed, true),
+        move |(hub, name, mut changed, first)| async move {
+            if !first {
+                changed.changed().await.ok()?;
+            }
+            let ops =
+                serde_json::json!({ "ops": [{ "op": "screen", "screen": drawn(&hub, &name) }] });
+            let e = Event::new().data(ops.to_string());
+            Some((Result::<Event>::Ok(e), (hub, name, changed, false)))
+        },
+    );
+    Sse::new(ticks)
+        .keep_alive(KeepAlive::new())
+        .into_response(cx)
 }
 
 fn shared(

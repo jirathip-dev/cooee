@@ -74,4 +74,29 @@ internal struct PersonaRenderTests {
             ), persona: "Chief", now: Date(timeIntervalSince1970: 10))
         #expect(all.map(\.key) == ["b", "a"])
     }
+
+    private static func others(_ chat: ListedChat, _ theme: String, _ style: Style = .bundled) throws -> Pixels {
+        let words = try #require(OthersFrames.themes[theme])
+        return try #require(OthersFrames.render([chat], words: words, style: style).flatMap(Pixels.init))
+    }
+
+    @Test(arguments: [("farm", "grazing"), ("kitchen", "standing by"), ("garden", "resting"), ("plain", "idle")])
+    internal func aWorkflowRowInOthersSaysItsThemesWordForItsState(_ theme: String, _ word: String) throws {
+        let said = try Self.others(OthersFrames.lane("#1", .idle), theme)
+        #expect(try Self.others(OthersFrames.lane("#1", .idle, status: word), theme).differing(from: said, by: 16) == 0)
+        let farm = try Self.others(OthersFrames.lane("#1", .idle, status: "grazing"), theme)
+        #expect(theme == "farm" || farm.differing(from: said, by: 16) > 0)
+    }
+
+    @Test internal func aWorkflowRowDrawsAFigureOnlyWhereTheLookDrawsSprites() throws {
+        let lane = OthersFrames.lane("#1", .idle)
+        let initials = PersonaLook(initials: "C", tint: .lead, coat: "")
+        let bare = ListedChat(
+            row: lane.row,
+            persona: Persona(api: lane.persona.api, look: initials, state: .idle, seed: lane.persona.seed),
+            workflow: lane.workflow)
+        #expect(try Self.others(lane, "plain").differing(from: try Self.others(bare, "plain"), by: 16) == 0)
+        #expect(
+            try Self.others(lane, "farm", .scene).differing(from: try Self.others(bare, "farm", .scene), by: 16) > 0)
+    }
 }
