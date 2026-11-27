@@ -97,6 +97,7 @@ internal struct ComposerFrames {
         } withDependencies: {
             $0.threads.send = { _, _, _, _, _ in }
             $0.desk.warm = { _, _ in }
+            $0.continuousClock = TestClock()
         }
         let actions = ChatScreen.actions(store) {}
         let draft = try #require(actions.draft)
