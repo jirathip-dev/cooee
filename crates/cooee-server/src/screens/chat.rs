@@ -436,6 +436,8 @@ async fn begin(cx: &Cx, persona: String, a: &Action) -> Result<blocks::Answer, H
         effort: String::new(),
         machine: None,
         setup: false,
+        repo: Some(word(a, "repo")).filter(|r| !r.is_empty()),
+        adopt: Some(word(a, "adopt")).filter(|r| !r.is_empty()),
     };
     let id = turns::start(cx, start).await?;
     Ok(blocks::Answer {

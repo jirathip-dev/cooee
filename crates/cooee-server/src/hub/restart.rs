@@ -50,6 +50,7 @@ impl Hub {
         fs::create_dir_all(&folder).map_err(|e| refused(&folder, &e))?;
         self.shed.hello()?;
         self.reachable(&machine)?;
+        let recipe = &self.attached(id, &agent, recipe)?;
         let (launch, labels) = self.restart_launch(id, recipe)?;
         let cmd = self.adapter(&agent);
         let stamp = now();

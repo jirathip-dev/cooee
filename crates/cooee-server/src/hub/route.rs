@@ -10,7 +10,9 @@ use cooee_core::{
         self, Agent,
         route::{Mode, Routable, Table, lead},
     },
-    chief, profiles,
+    chief,
+    plugins::rows::Attach,
+    profiles,
 };
 
 use super::{Hub, HubError, Me, Upload, ask::sent_as, chief::own_chat, live::Live, lock, now};
@@ -133,6 +135,10 @@ impl Hub {
             None => self
                 .seat(to.id(), (text, &rid), |r| {
                     from.clone_into(&mut r.handed_by);
+                    r.attach = self.attaches(to.id()).map(|_| Attach {
+                        repo: "all".to_owned(),
+                        adopt: String::new(),
+                    });
                     format!("{}\n\n{before}", r.instructions.trim_end())
                         .trim()
                         .clone_into(&mut r.instructions);

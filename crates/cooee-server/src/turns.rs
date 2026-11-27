@@ -1,6 +1,6 @@
 use std::{path::PathBuf, sync::Arc};
 
-use cooee_core::{Item, Via};
+use cooee_core::{Item, Via, plugins::rows::Attach};
 use cooee_machines::Machines;
 use serde::Deserialize;
 use topcoat::context::{Cx, app_context, request_context};
@@ -32,6 +32,10 @@ pub(crate) struct Start {
     pub(crate) machine: Option<String>,
     #[serde(default)]
     pub(crate) setup: bool,
+    #[serde(default)]
+    pub(crate) repo: Option<String>,
+    #[serde(default)]
+    pub(crate) adopt: Option<String>,
 }
 
 pub(crate) async fn start(cx: &Cx, new: Start) -> Result<String, HubError> {
@@ -54,6 +58,7 @@ pub(crate) async fn start(cx: &Cx, new: Start) -> Result<String, HubError> {
         if let Some(m) = new.machine {
             recipe.machine = m;
         }
+        recipe.attach = attach(&hub, profile, new.repo, new.adopt)?;
         allowed(&machines, &recipe.machine).map_err(HubError::Refused)?;
         let id = if new.background {
             let name = logins.provider_name(&agent);
@@ -69,6 +74,27 @@ pub(crate) async fn start(cx: &Cx, new: Start) -> Result<String, HubError> {
         Ok(id)
     });
     id.await.map_err(|e| HubError::Refused(e.to_string()))?
+}
+
+fn attach(
+    hub: &Hub,
+    profile: &str,
+    repo: Option<String>,
+    adopt: Option<String>,
+) -> Result<Option<Attach>, HubError> {
+    let Some(repo) = repo.filter(|r| !r.trim().is_empty()) else {
+        return match adopt {
+            Some(_) => Err(HubError::Refused("adopt a thread with a repo".to_owned())),
+            None => Ok(None),
+        };
+    };
+    if hub.attaches(profile).is_none() {
+        return Err(HubError::Refused(format!(
+            "{profile}'s chats attach to no plugin"
+        )));
+    }
+    let adopt = adopt.unwrap_or_default().trim().to_owned();
+    Ok(Some(Attach { repo, adopt }))
 }
 
 fn topic_folder(asked: PathBuf, default: PathBuf) -> PathBuf {

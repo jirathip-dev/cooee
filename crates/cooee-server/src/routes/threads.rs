@@ -109,12 +109,13 @@ async fn home_events(cx: &Cx) -> Result<Sse<impl Stream<Item = Result<Event>> + 
 struct Of {
     persona: Option<String>,
     room: Option<String>,
+    repo: Option<String>,
 }
 
 #[route(GET "/threads")]
 async fn thread_list(cx: &Cx) -> Result<Answer<Vec<cooee_core::Summary>>> {
     let of: Option<Of> = parse_query_params(cx).ok();
-    let (persona, room) = of.map_or((None, None), |o| (o.persona, o.room));
+    let (persona, room, repo) = of.map_or((None, None, None), |o| (o.persona, o.room, o.repo));
     let seats = |r: &cooee_core::Summary| {
         let mut seats = r.members.clone();
         seats.sort();
@@ -125,6 +126,7 @@ async fn thread_list(cx: &Cx) -> Result<Answer<Vec<cooee_core::Summary>>> {
             let mut rows = hub.list();
             let room = room.map(|id| rows.iter().find(|r| r.id == id).map(seats));
             rows.retain(|r| persona.as_ref().is_none_or(|p| &r.persona == p));
+            rows.retain(|r| repo.as_ref().is_none_or(|p| &r.repo == p));
             rows.retain(|r| {
                 room.as_ref()
                     .is_none_or(|m| m.as_ref().is_some_and(|m| !m.is_empty() && &seats(r) == m))

@@ -106,6 +106,7 @@ impl Hub {
             }
             l.meta.terminal.clone()
         };
+        let recipe = &self.attached(id, agent, recipe)?;
         let terminal = on_machine(machine, &format!("cooee-{id}-{:x}", now()));
         let session = self.start_terminal(id, (&terminal, folder), agent, recipe)?;
         let mut live = lock(&live);

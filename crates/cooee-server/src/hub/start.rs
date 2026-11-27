@@ -8,8 +8,8 @@ use std::{
 };
 
 use cooee_core::{
-    Agent, Body, Calls as _, Change, Chat, Launch, Thread, provider::Gap, routines::Mark,
-    shed_proto,
+    Agent, Body, Calls as _, Change, Chat, Launch, Thread, plugins::rows::Attach, provider::Gap,
+    routines::Mark, shed_proto,
 };
 
 use super::{Hub, HubError, LABEL, live::Live, lock, now, on_machine, refused};
@@ -19,7 +19,7 @@ const AGENTS_WAIT: Duration = Duration::from_secs(2);
 pub(super) const READY: f64 = 60.0;
 type Listed = Result<Vec<Agent>, String>;
 /// How a thread starts besides its agent, folder and first message.
-#[derive(Debug, Default)]
+#[derive(Debug, Clone, Default)]
 pub struct Recipe {
     /// The account's label, as the header shows it.
     pub account: String,
@@ -49,6 +49,8 @@ pub struct Recipe {
     pub routine: Option<Mark>,
     /// What its persona's harness can't be told on this account (#503).
     pub gaps: Vec<Gap>,
+    /// A plugin agent's chat: what it attaches to (#823).
+    pub attach: Option<Attach>,
 }
 
 const TITLE: usize = 28;
@@ -262,6 +264,7 @@ impl Hub {
             handed_by: recipe.handed_by.clone(),
             setup: recipe.setup,
             routine: recipe.routine.clone(),
+            attach: recipe.attach.clone(),
             ..Thread::default()
         })?;
         if fresh {
@@ -340,6 +343,7 @@ impl Hub {
             let folder = l.meta.folder.clone();
             (l.meta.terminal.clone(), l.meta.agent.clone(), folder)
         };
+        let recipe = &self.attached(id, &agent, recipe)?;
         let folder = if let Some(f) = folder {
             f
         } else {
