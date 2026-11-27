@@ -265,20 +265,20 @@ impl Hub {
         if self.grants(name, m).actions.iter().any(|a| a == action) {
             return true;
         }
-        self.offer(name, m);
+        self.offer(name);
         false
     }
 
     /// Shows once on cooee's card in its cards place what index plugin `name` serves beyond its grants.
-    pub fn offer(&self, name: &str, m: &Manifest) {
-        let Some((p, path)) = self.serving(name) else {
+    pub fn offer(&self, name: &str) {
+        let (Some((p, path)), Some(m)) = (self.serving(name), self.with_rows(name)) else {
             return;
         };
         let served = match crate::plugin::served(&p, &path) {
             Ok(served) => served,
             Err(e) => return cooee_core::note!("cooee: plugin {name}: its manifest: {e}"),
         };
-        let new = beyond(&served, &self.grants(name, m));
+        let new = beyond(&served, &self.grants(name, &m));
         let none = new.actions.is_empty() && new.places.is_empty();
         let mut offered = lock(&self.areas.rows.offered);
         if none {

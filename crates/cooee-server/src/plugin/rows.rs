@@ -28,7 +28,12 @@ pub fn follow_rows(hub: Arc<Hub>) {
 
 async fn follow_one(hub: Arc<Hub>, name: String) {
     loop {
-        if let Err(e) = follow_once(&hub, &name).await {
+        let (asked, named) = (Arc::clone(&hub), name.clone());
+        let offered = off(move || {
+            asked.offer(&named);
+            Ok(())
+        });
+        if let Err(e) = offered.await.and(follow_once(&hub, &name).await) {
             cooee_core::note!("cooee: plugin {name}: its rows: {e}");
         }
         tokio::time::sleep(AGAIN).await;
@@ -60,18 +65,10 @@ async fn first_rows(hub: &Arc<Hub>, name: &str, backend: Plugin, path: String) -
 }
 
 async fn follow_once(hub: &Arc<Hub>, name: &str) -> io::Result<()> {
-    let Some(m) = hub.with_rows(name) else {
+    let threads = hub.with_rows(name).and_then(|m| m.threads);
+    let (Some(backend), Some(paths)) = (hub.backend(name), threads) else {
         return Ok(());
     };
-    let (Some(backend), Some(paths)) = (hub.backend(name), m.threads.clone()) else {
-        return Ok(());
-    };
-    let (asked, named) = (Arc::clone(hub), name.to_owned());
-    off(move || {
-        asked.offer(&named, &m);
-        Ok(())
-    })
-    .await?;
     let mut at = if let Some(at) = hub.row_cursor(name) {
         at
     } else {
