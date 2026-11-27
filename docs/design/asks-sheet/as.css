@@ -1,0 +1,138 @@
+/* #852: the Asks chip, the chat's one line and the Asks sheet, on the native farm palette (CooeeUI/Theme.swift)
+   and its three styles (Modern, Terminal, Scene). Class names: hd the chat header, chp a header chip, th the thread,
+   nl the chat's one "N need you" line, cmp the composer, sh the sheet, grp a group, ak an ask row, opt a button,
+   gone an answered row on its way out, mac the Mac window, sd its sidebar. */
+:root{--bg:#0f1a13;--card:#1d1a12;--edge:#3b3a27;--line:#26301f;--fg:#ece4cc;--mute:#a3a68a;--lead:#ecdba6;
+  --link:#7cc4f0;--green:#7fd06a;--amber:#f29b4b;--red:#ff7d6e;--on-lead:#1d1a12;
+  --font:-apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue",sans-serif;--mono:"SF Mono",ui-monospace,Menlo,monospace;
+  --r-card:16px;--r-btn:999px;--fs:16px;--fs-meta:13px;--ctl:36px;--wood:#7a5a32}
+html[data-mode=light]{--bg:#f5efda;--card:#ebe2c4;--edge:#cbbd90;--line:#e0d6b4;--fg:#29251a;--mute:#5c573f;--lead:#6b3410;
+  --link:#1f639b;--green:#2a6d1c;--amber:#7a5f00;--red:#b81d3c;--on-lead:#f5efda}
+html[data-look=terminal]{--font:var(--mono);--r-card:0;--r-btn:0;--fs:14.5px;--fs-meta:12px;--ctl:32px}
+html[data-look=scene]{--font:"New York","Iowan Old Style",Georgia,serif;--r-card:10px}
+html[data-look=scene][data-mode=dark]{--card:#2a2216;--edge:#6b5434}
+html[data-look=scene][data-mode=light]{--card:#efe2bf;--edge:#a8865a}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--fg);font:400 var(--fs)/1.38 var(--font);-webkit-font-smoothing:antialiased}
+body{min-height:100vh;overflow:hidden}
+b{font-weight:650}
+code{font:var(--fs-meta) var(--mono);color:var(--lead);background:color-mix(in srgb,var(--lead) 12%,transparent);padding:1px 5px;border-radius:5px}
+
+/* The phone: status bar, header, thread, the one line, composer. */
+.phone{position:relative;height:100vh;display:flex;flex-direction:column}
+.sb{flex:none;height:54px;display:flex;align-items:center;justify-content:space-between;padding:6px 30px 0 34px;font:600 17px/1 -apple-system,sans-serif}
+.sb i{font-style:normal;letter-spacing:2px;font-size:13px}
+.hd{flex:none;display:grid;grid-template-columns:auto auto 1fr auto;gap:0 10px;align-items:center;padding:6px 14px 10px;border-bottom:.5px solid var(--line)}
+.rb{width:40px;height:40px;border-radius:50%;border:1px solid var(--edge);display:grid;place-items:center;color:var(--fg);font-size:20px;background:color-mix(in srgb,var(--card) 60%,transparent)}
+html[data-look=terminal] .rb{border:0;background:none;font:700 17px var(--mono);width:auto}
+.av{width:40px;height:40px;border-radius:50%;background:#5aa04a;display:grid;place-items:center;color:#10200c;font:700 15px var(--mono)}
+html[data-look=terminal] .av{border-radius:0;background:none;border:1.5px solid var(--green);color:var(--green);font-size:12px}
+html[data-look=scene] .av{background:none;border-radius:0}.av img{width:52px;height:40px;object-fit:contain}
+.ti{min-width:0}.ti b{display:block;font-size:18px}.ti small{display:inline-block;margin-top:2px;padding:2px 9px;border-radius:999px;background:var(--card);color:var(--mute);font-size:var(--fs-meta);white-space:nowrap}
+html[data-look=terminal] .ti small{border-radius:0;border:1px solid var(--edge);background:none}
+.chips{grid-column:3/5;display:flex;gap:8px;margin-top:8px}
+.chp{display:inline-flex;align-items:center;gap:6px;height:30px;padding:0 12px;border-radius:999px;border:1px solid var(--edge);color:var(--green);font:600 14px/1 var(--font);background:color-mix(in srgb,var(--card) 50%,transparent);white-space:nowrap}
+.chp .n{min-width:20px;height:20px;padding:0 6px;border-radius:10px;display:grid;place-items:center;background:var(--edge);color:var(--fg);font:700 12px/1 var(--font)}
+.chp.ask{color:var(--fg);border-color:color-mix(in srgb,var(--red) 60%,var(--edge))}
+.chp.ask .n{background:var(--red);color:var(--on-lead)}
+.chp.on{background:var(--lead);color:var(--on-lead);border-color:var(--lead)}.chp.on .n{background:var(--on-lead);color:var(--lead)}
+html[data-look=terminal] .chp{border-radius:0;border-style:dashed}html[data-look=terminal] .chp .n{border-radius:0;background:none;color:var(--mute);padding:0}
+html[data-look=terminal] .chp .n::before{content:"["}html[data-look=terminal] .chp .n::after{content:"]"}
+html[data-look=terminal] .chp.ask .n{color:var(--red);background:none}
+html[data-look=terminal] .chp.on{border-style:solid}html[data-look=terminal] .chp.on .n{color:var(--on-lead)}
+html[data-look=scene] .chp{border-color:var(--wood);border-width:1.5px}
+
+.th{flex:1;overflow:hidden;display:flex;flex-direction:column;justify-content:flex-end;gap:12px;padding:12px 16px}
+.me{align-self:flex-end;max-width:80%;padding:10px 16px;border-radius:20px 20px 6px 20px;background:color-mix(in srgb,var(--link) 22%,var(--card))}
+html[data-look=terminal] .me{align-self:stretch;max-width:none;background:none;border-radius:0;padding:0 0 0 10px;color:var(--fg)}
+html[data-look=terminal] .me::before{content:"> ";color:var(--mute)}
+.tool{display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:12px;background:var(--card);font-size:15px}
+.tool code{background:none;color:var(--mute);padding:0}.tool .ok{margin-left:auto;color:var(--green)}.tool .mr{color:var(--mute);font-size:var(--fs-meta)}
+html[data-look=terminal] .tool{border-radius:0;border:1px solid var(--edge);background:none}
+html[data-look=scene] .tool{border:1.5px solid var(--wood)}
+.ag p{margin:0 0 6px}
+
+/* The one line: pinned above the composer, never a message; it updates in place and hides at 0. */
+.nl{flex:none;display:flex;align-items:center;gap:10px;margin:0 12px 8px;padding:0 14px;min-height:44px;border-radius:14px;
+  background:color-mix(in srgb,var(--red) 12%,var(--card));border:1px solid color-mix(in srgb,var(--red) 45%,transparent);font-size:15px}
+.nl .hand{font-size:16px}.nl .top{flex:1;min-width:0;color:var(--mute);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.nl .go{color:var(--mute);font-size:18px}
+html[data-look=terminal] .nl{border-radius:0;border-style:dashed;background:none}
+html[data-look=scene] .nl{border:1.5px solid var(--wood);background:var(--card)}
+.nl .fig{width:37px;height:28px;object-fit:contain;margin-left:-6px}
+.cmp{flex:none;display:flex;align-items:center;gap:10px;padding:0 12px 30px}
+.cmp .in{flex:1;height:44px;border-radius:22px;border:1px solid var(--edge);display:flex;align-items:center;padding:0 16px;color:var(--mute)}
+.cmp .snd{width:44px;height:44px;border-radius:50%;background:var(--link);color:var(--on-lead);display:grid;place-items:center;font-weight:700}
+html[data-look=terminal] .cmp .in{border-radius:0;border-style:dashed}html[data-look=terminal] .cmp .snd{border-radius:0}
+
+/* The sheet. On iPhone: a large-detent sheet over the dimmed chat. On the Mac: a trailing panel beside the chat. */
+.dim{position:absolute;inset:0;background:#000a}
+.sh{position:absolute;left:0;right:0;top:62px;bottom:0;background:var(--bg);border-radius:20px 20px 0 0;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 -8px 30px #0006}
+html[data-look=terminal] .sh{border-radius:0;border-top:1px dashed var(--edge)}
+.grab{width:36px;height:5px;border-radius:3px;background:var(--edge);margin:6px auto 0}
+.shh{flex:none;display:flex;align-items:center;justify-content:space-between;padding:8px 18px 10px}
+.shh b{font-size:19px}.shh b .c{color:var(--mute);font-weight:500;margin-left:6px}.shh a{color:var(--lead);font-weight:650;text-decoration:none}
+.sbd{flex:1;overflow:hidden;padding:0 14px 20px}
+.grp h3{margin:14px 4px 8px;font:650 12px/1 var(--font);letter-spacing:.08em;text-transform:uppercase;color:var(--mute)}
+.grp[data-g=stuck] h3{color:var(--red)}
+html[data-look=terminal] .grp h3::before{content:"## ";letter-spacing:0}
+.ak{position:relative;margin-bottom:10px;padding:12px 14px;border-radius:var(--r-card);background:var(--card);border:1px solid var(--edge)}
+.ak[data-g=stuck]{border-color:var(--red);background:color-mix(in srgb,var(--red) 9%,var(--card))}
+.ak[data-g=needs-human],.ak[data-g=design]{border-color:color-mix(in srgb,var(--amber) 70%,var(--edge))}
+html[data-look=terminal] .ak{border-style:dashed;background:none;border-left:3px solid var(--edge)}
+html[data-look=terminal] .ak[data-g=stuck]{border-left-color:var(--red)}
+html[data-look=terminal] .ak:is([data-g=needs-human],[data-g=design]){border-left-color:var(--amber)}
+html[data-look=scene] .ak{border:2px solid var(--wood);box-shadow:inset 0 0 0 3px color-mix(in srgb,var(--wood) 18%,transparent)}
+html[data-look=scene] .ak[data-g=stuck]{border-color:var(--red)}
+.ah{display:flex;align-items:center;gap:8px;font-size:var(--fs-meta);color:var(--mute)}
+.ah b{color:var(--fg);font-size:14px}.ah .age{margin-left:auto;white-space:nowrap}
+.ah .fig{width:40px;height:30px;object-fit:contain;margin:-6px 0 -6px -6px}
+.ah .tf{font:700 12px/1 var(--mono);color:var(--amber)}.ak[data-g=stuck] .tf{color:var(--red)}.ak[data-g=later] .tf{color:var(--mute)}
+.tag{padding:2px 8px;border-radius:999px;background:color-mix(in srgb,var(--amber) 18%,transparent);color:var(--amber);font:600 12px/1.3 var(--font)}
+.ak[data-g=stuck] .tag{background:color-mix(in srgb,var(--red) 18%,transparent);color:var(--red)}
+.ak[data-g=later] .tag{background:var(--line);color:var(--mute)}
+html[data-look=terminal] .tag{background:none;padding:0}html[data-look=terminal] .tag::before{content:"("}html[data-look=terminal] .tag::after{content:")"}
+.ak h4{margin:6px 0 2px;font-size:var(--fs);font-weight:650;line-height:1.3}
+.ak p{margin:0;color:var(--mute);font-size:14px}
+.imgs{display:flex;gap:8px;margin:10px 0 2px}.imgs img{width:66px;height:132px;object-fit:cover;object-position:top;border-radius:8px;border:1px solid var(--edge)}
+html[data-look=terminal] .imgs img{border-radius:0;border-style:dashed}
+.ops{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.opt{height:var(--ctl);padding:0 16px;border-radius:var(--r-btn);border:1px solid var(--edge);background:var(--bg);color:var(--fg);font:600 15px/1 var(--font);display:inline-flex;align-items:center;white-space:nowrap}
+.opt.p{background:var(--lead);border-color:var(--lead);color:var(--on-lead)}
+.opt.d{color:var(--red)}
+.opt.l{background:none;border-color:transparent;color:var(--mute);padding:0 8px}
+html[data-look=terminal] .opt{border:0;background:none;padding:0 4px;color:var(--link)}
+html[data-look=terminal] .opt::before{content:"[";color:var(--mute)}html[data-look=terminal] .opt::after{content:"]";color:var(--mute)}
+html[data-look=terminal] .opt.p{background:var(--lead);color:var(--on-lead)}html[data-look=terminal] .opt.p::before,html[data-look=terminal] .opt.p::after{color:var(--on-lead)}
+html[data-look=terminal] .opt.d{color:var(--red)}html[data-look=terminal] .opt.l{color:var(--mute)}
+html[data-look=scene] .opt{border:1.5px solid var(--wood)}
+html[data-look=scene] .opt.p{border-color:var(--lead)}
+.ak[data-g=later]{padding:10px 14px}.ak[data-g=later] h4{font-size:15px}.ak[data-g=later] .opt{height:32px;font-size:14px}
+
+/* An answered row on its way out: one ✓ line, then it folds away (240 ms) and the counts drop. */
+.gone{display:flex;align-items:center;gap:8px;margin-bottom:10px;padding:0 14px;height:40px;border-radius:var(--r-card);border:1px dashed var(--edge);color:var(--mute);font-size:14px;opacity:.75}
+.gone .ok{color:var(--green);font-weight:700}.gone b{color:var(--fg);font-weight:600}
+.gone .out{margin-left:auto;font-size:12px}
+
+/* The Mac window (1440 × 900): sidebar, the chat, and the sheet as a trailing panel. */
+.mac{display:grid;grid-template-columns:300px 1fr;height:100vh}
+.mac.open{grid-template-columns:300px 1fr 420px}
+.sd{border-right:1px solid var(--line);background:color-mix(in srgb,var(--card) 35%,var(--bg));padding:14px 8px}
+.sd h2{margin:6px 12px 14px;font-size:20px}
+.sr{display:grid;grid-template-columns:1fr auto;padding:10px 14px;border-radius:12px;margin-bottom:2px}
+.sr.sel{background:var(--card)}.sr b{font-size:15px}.sr small{grid-column:1;color:var(--mute);font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sr .t{grid-row:1/3;grid-column:2;color:var(--mute);font-size:13px;align-self:center;padding-left:10px}
+html[data-look=terminal] .sr{border-radius:0}
+.mac .phone{min-width:0}
+.mac .col{width:100%;max-width:760px;margin:0 auto}
+.mac .hd{grid-template-columns:auto 1fr auto;padding:14px 24px 12px}
+.mac .hd .chips{grid-column:auto;margin:0}
+.mac .th{padding:12px 0}
+.mac .nl{margin:0 auto 10px;width:100%;max-width:760px}
+.mac .cmp{padding:0 0 24px;width:100%;max-width:760px;margin:0 auto}
+.mac .sh{position:static;border-radius:0;border-left:1px solid var(--line);box-shadow:none}
+html[data-look=terminal] .mac .sh{border-top:0;border-left:1px dashed var(--edge)}
+.mac .sbd{padding:0 16px 20px}
+html[data-look=terminal] .chp .n{display:inline;min-width:0;height:auto;white-space:nowrap;font:700 13px/1 var(--mono)}
+.mac .th,.mac .hd{padding-left:32px;padding-right:32px}
+.mac .nl,.mac .cmp{max-width:calc(760px - 64px)}
