@@ -100,13 +100,15 @@ fn serve(s: TcpStream, next: &Mutex<mpsc::Receiver<Value>>, log: &Posted, served
     }
 }
 
-fn drover(serves: &[&str]) -> Drover {
+fn drover(actions: &[&str]) -> Drover {
     let listener = TcpListener::bind("127.0.0.1:0").unwrap();
     let port = listener.local_addr().unwrap().port();
     let (rows, next) = mpsc::channel::<Value>();
     let next = Arc::new(Mutex::new(next));
     let posted = Arc::new(Mutex::new(Vec::new()));
-    let served = Arc::new(Mutex::new(serves.iter().map(|a| (*a).to_owned()).collect()));
+    let served = Arc::new(Mutex::new(
+        actions.iter().map(|a| (*a).to_owned()).collect(),
+    ));
     let (log, menu) = (Arc::clone(&posted), Arc::clone(&served));
     thread::spawn(move || {
         for s in listener.incoming().flatten() {
