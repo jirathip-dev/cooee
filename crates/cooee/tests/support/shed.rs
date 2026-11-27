@@ -19,7 +19,7 @@ use std::{
 
 use cooee_core::shed_proto::{
     ApprovalOption, ErrorCode, Event, EventKind, Hello, Reported, Request, Response, RpcError,
-    State, TerminalInfo,
+    RunParams, State, TerminalInfo,
 };
 use serde_json::{Value, json};
 
@@ -69,14 +69,9 @@ pub struct FakeShed {
 }
 
 const CLI: &str = r#"#!/bin/sh
-# The fake `shed` CLI: `agents` lists one agent, or agents.json's (it fails while the gate `agents-fails` is shut); `run` records its
-# arguments and prints the terminal (it waits while the gate `hold-run` is shut, and fails, as a slow start's CLI
-# would, while `run-fails` is, saying the gate's text and leaving no terminal; in a folder named <f>, it waits while `hold-in-<f>` is shut, and its session never
-# comes up while `fails-in-<f>` is); `machine ls` prints
-# machines.json; `[--on <m>] machine stats` prints stats-<m>.json (stats-local.json), exit 1 when offline; its
-# `history` only the first time, as `--since` the last sample leaves nothing new. A `run` with an adapter command
-# after `--` runs it, as the terminal would: the fake adapter `fake-acp` notes its variables in adapter.env and adapter-<name>.env. A `--mcp`
-# file is kept as mcp-<name>.json, a `--meta` as meta-<name>.json, a `--cwd` as cwd-<name>. `--on <m> run` starts on machine <m> (#149): the terminal is `<m>/<name>`.
+# The fake `shed` CLI (the machines plugin's): `machine ls` prints machines.json; `[--on <m>] machine stats` prints
+# stats-<m>.json (stats-local.json), exit 1 when offline; its `history` only the first time, as `--since` the last
+# sample leaves nothing new.
 gates=$(dirname "$0")
 printf '%s\n' "$*" >>"$gates/cli.log"
 case "$*" in
@@ -87,25 +82,6 @@ case "$*" in
   [ -e "$f" ] || exit 1
   if [ -e "$f.sent" ]; then sed 's/,"history":\[[^]]*\]//' "$f"; else cat "$f"; : >"$f.sent"; fi
   if grep -q '"online":false' "$f"; then exit 1; fi ;;
-*" agents") [ -e "$gates/agents-fails" ] && { echo 'fake shed: agents down' >&2; exit 1; }
-  cat "$gates/agents.json" 2>/dev/null || echo '[{"id":"fake-acp","version":"1.0.0","distribution":"npx","cmd":["fake-acp"]}]' ;;
-*" run "*)
-  while [ $# -gt 0 ]; do
-    [ "$1" = --on ] && on=$2/
-    [ "$1" = --name ] && name=$2
-    [ "$1" = --cwd ] && cwd=$2
-    [ "$1" = --mcp ] && cp "$2" "$gates/mcp-$name.json"
-    [ "$1" = --meta ] && printf '%s' "$2" >"$gates/meta-$name.json"
-    [ "$1" = -- ] && { shift; break; }
-    shift
-  done
-  [ -n "$cwd" ] && printf '%s' "$cwd" >"$gates/cwd-$name"
-  f=${cwd:+${cwd##*/}}
-  while [ -e "$gates/hold-run" ] || [ -e "$gates/hold-in-${f:-/}" ]; do sleep 0.02; done
-  [ -e "$gates/run-fails" ] && { cat "$gates/run-fails" >&2; : >"$gates/failed-$name"; exit 1; }
-  [ -e "$gates/fails-in-${f:-/}" ] && touch "$gates/ready-timeout-$name"
-  [ $# -gt 0 ] && PATH="$gates:$PATH" SHED_NAME="$on$name" "$@" >/dev/null 2>&1
-  printf '{"name":"%s%s","labels":{},"cwd":"/","cmd":[],"keep":false,"state":"running","exit":null,"pid":1,"acp":"fake-acp"}\n' "$on" "$name" ;;
 *) echo "fake shed: $*" >&2; exit 2 ;;
 esac
 "#;
@@ -117,13 +93,6 @@ impl FakeShed {
         let cli = dir.join("shed");
         fs::write(&cli, CLI).unwrap();
         fs::set_permissions(&cli, fs::Permissions::from_mode(0o755)).unwrap();
-        let adapter = dir.join("fake-acp");
-        fs::write(
-            &adapter,
-            "#!/bin/sh\nd=$(dirname \"$0\")\nenv >\"$d/adapter.env\"\nenv >\"$d/adapter-${SHED_NAME##*/}.env\"\n",
-        )
-        .unwrap();
-        fs::set_permissions(&adapter, fs::Permissions::from_mode(0o755)).unwrap();
         Self {
             dir: dir.to_owned(),
             hello,
@@ -291,11 +260,9 @@ impl FakeShed {
     }
 
     pub(super) fn cued(&self, name: &str) -> Option<String> {
-        let log = self.cli_log();
-        let line = log
-            .lines()
-            .find(|l| l.contains(&format!("--name {name} ")))?;
-        let persona = line.split("cooee.member=").nth(1)?.split(' ').next()?;
+        let runs = self.calls("run", name);
+        let persona = runs.first()?["labels"]["cooee.member"].as_str()?.to_owned();
+        let persona = persona.as_str();
         let mut s = self.shared.lock().unwrap();
         let cue = s.cues.get_mut(persona)?;
         if cue.len() > 1 {
@@ -319,23 +286,35 @@ impl FakeShed {
         s.ring.clear();
     }
 
-    /// The variables the fake adapter last ran with, as `env` printed them.
+    /// shed's record of `fake-acp` takes `facts` (its login, status, install) over its efforts `low` and `high`.
+    pub fn record(&self, facts: &Value) {
+        let mut provider = json!({ "id": "fake-acp", "efforts": ["low", "high"] });
+        provider
+            .as_object_mut()
+            .unwrap()
+            .extend(facts.as_object().unwrap().clone());
+        let installed = json!({ "id": "fake-acp", "version": "1.0.0", "distribution": "npx", "cmd": ["fake-acp"] });
+        let agents = json!([{ "id": "fake-acp", "installed": installed, "provider": provider }]);
+        fs::write(self.dir.join("agents.json"), agents.to_string()).unwrap();
+    }
+
+    /// The variables the last ACP `run` with any passed, a `K=V` a line.
     pub fn adapter_env(&self) -> String {
         fs::read_to_string(self.dir.join("adapter.env")).unwrap_or_default()
     }
 
-    /// The `--meta` terminal `name` last started with (ACP `_meta`), if any.
+    /// The `meta` terminal `name` last started with (ACP `_meta`), if any.
     pub fn meta(&self, name: &str) -> Option<Value> {
         let text = fs::read_to_string(self.dir.join(format!("meta-{name}.json"))).ok()?;
         Some(serde_json::from_str(&text).unwrap())
     }
 
-    /// The variables the fake adapter of terminal `name` ran with.
+    /// The variables ACP terminal `name`'s `run` passed, a `K=V` a line.
     pub fn adapter_env_of(&self, name: &str) -> String {
         fs::read_to_string(self.dir.join(format!("adapter-{name}.env"))).unwrap_or_default()
     }
 
-    /// The fake CLI's argument lines.
+    /// The fake CLI's argument lines, and a line in its words for each ACP `run`.
     pub fn cli_log(&self) -> String {
         fs::read_to_string(self.dir.join("cli.log")).unwrap_or_default()
     }
@@ -379,7 +358,131 @@ impl FakeShed {
         self.procs.changed.notify_all();
     }
 
+    fn agents(&self) -> Result<Value, RpcError> {
+        if self.dir.join("agents-fails").exists() {
+            return Err(RpcError::new(ErrorCode::Internal, "fake shed: agents down"));
+        }
+        let fake = json!([{ "id": "fake-acp", "version": "1.0.0", "distribution": "npx", "cmd": ["fake-acp"] }]);
+        let listed = fs::read_to_string(self.dir.join("agents.json"))
+            .map_or(fake, |t| serde_json::from_str(&t).unwrap());
+        let info = |a: &Value| {
+            if a.get("installed").or_else(|| a.get("provider")).is_some() {
+                return a.clone();
+            }
+            let record = json!({ "id": a["id"], "efforts": ["low", "high"] });
+            json!({ "id": a["id"], "installed": a, "provider": record })
+        };
+        Ok(json!(
+            listed
+                .as_array()
+                .unwrap()
+                .iter()
+                .map(info)
+                .collect::<Vec<_>>()
+        ))
+    }
+
+    fn log_line(&self, line: &str) {
+        let mut log = fs::OpenOptions::new()
+            .create(true)
+            .append(true)
+            .open(self.dir.join("cli.log"))
+            .unwrap();
+        writeln!(log, "--dir {} --json {line}", self.dir.display()).unwrap();
+    }
+
+    fn run_line(run: &RunParams, policy: Option<&str>) -> String {
+        let on = run.machine.as_ref().map(|m| format!("--on {m} "));
+        let (acp, name) = (run.acp.as_deref().unwrap(), run.name.as_deref().unwrap());
+        let mut words = vec![format!(
+            "{}run --acp {acp} --name {name} --cwd {}",
+            on.unwrap_or_default(),
+            run.cwd.display()
+        )];
+        words.extend(run.labels.iter().map(|(k, v)| format!("--label {k}={v}")));
+        let meta = run.meta.as_ref().map(|m| json!(m).to_string());
+        let flags = [
+            ("policy", policy),
+            ("account", run.account.as_deref()),
+            ("resume", run.resume.as_deref()),
+            ("effort", run.effort.as_deref()),
+            ("meta", meta.as_deref()),
+        ];
+        words.extend(
+            flags
+                .iter()
+                .filter_map(|(f, v)| Some(format!("--{f} {}", (*v)?))),
+        );
+        if !run.cmd.is_empty() {
+            words.push(format!("-- {}", run.cmd.join(" ")));
+        }
+        words.join(" ")
+    }
+
+    fn run_acp(&self, params: &Value) -> Result<Value, RpcError> {
+        let run: RunParams = serde_json::from_value(params.clone()).unwrap();
+        self.log_line(&Self::run_line(&run, params["policy"].as_str()));
+        let name = run.name.clone().unwrap();
+        let file = |what: &str| self.dir.join(format!("{what}-{name}"));
+        if !run.mcp_servers.is_empty() {
+            fs::write(
+                self.dir.join(format!("mcp-{name}.json")),
+                json!(run.mcp_servers).to_string(),
+            )
+            .unwrap();
+        }
+        if let Some(meta) = &run.meta {
+            fs::write(
+                self.dir.join(format!("meta-{name}.json")),
+                json!(meta).to_string(),
+            )
+            .unwrap();
+        }
+        if run.machine.is_none() && !run.cwd.is_dir() {
+            let why = "pty: No such file or directory (os error 2)";
+            return Err(RpcError::new(ErrorCode::SpawnFailed, why));
+        }
+        fs::write(file("cwd"), run.cwd.display().to_string()).unwrap();
+        let folder = run
+            .cwd
+            .file_name()
+            .map_or("/".into(), |f| f.to_string_lossy());
+        self.hold("hold-run");
+        self.hold(&format!("hold-in-{folder}"));
+        if let Ok(said) = fs::read_to_string(self.dir.join("run-fails")) {
+            fs::write(file("failed"), "").unwrap();
+            let named = said.split_once(": ").and_then(|(code, message)| {
+                let code = ErrorCode::ALL.into_iter().find(|c| c.name() == code)?;
+                Some(RpcError::new(code, message))
+            });
+            return Err(
+                named.unwrap_or_else(|| RpcError::new(ErrorCode::Internal, "fake shed: timed out"))
+            );
+        }
+        if self.dir.join(format!("fails-in-{folder}")).exists() {
+            fs::write(file("ready-timeout"), "").unwrap();
+        }
+        let env = run.env.iter().map(|(k, v)| format!("{k}={v}\n"));
+        let env = env.collect::<Vec<_>>().concat();
+        if !run.env.is_empty() {
+            fs::write(self.dir.join("adapter.env"), &env).unwrap();
+            fs::write(self.dir.join(format!("adapter-{name}.env")), &env).unwrap();
+        }
+        let name = run.machine.map_or(name.clone(), |m| format!("{m}/{name}"));
+        let mut t = Self::info(&name, true, None);
+        t["labels"] = json!(run.labels);
+        Ok(t)
+    }
+
+    fn screen(&self, name: &str) -> Value {
+        let procs = self.procs.by_name.lock().unwrap();
+        json!({ "text": procs[name].screen, "cursor": { "seq": 0, "screen": 0 } })
+    }
+
     pub(super) fn run(&self, params: &Value) -> Result<Value, RpcError> {
+        if params["acp"].is_string() {
+            return self.run_acp(params);
+        }
         let mut name = params["name"].as_str().unwrap().to_owned();
         let mut path = env::var("PATH").unwrap_or_default();
         if let Some(m) = params["machine"].as_str() {
@@ -562,8 +665,12 @@ impl FakeShed {
             "matched"
         };
         let mut t = self.terminal(name)?;
-        if let Ok(session) = fs::read_to_string(self.dir.join("session.json")) {
-            t["session"] = serde_json::from_str(&session).unwrap();
+        let session = fs::read_to_string(self.dir.join("session.json"));
+        if outcome == "matched" {
+            t["session"] = session.map_or_else(
+                |_| json!({ "id": "" }),
+                |s| serde_json::from_str(&s).unwrap(),
+            );
         }
         Ok(json!({ "outcome": outcome, "terminal": t }))
     }
@@ -715,14 +822,12 @@ impl FakeShed {
                 "hello" => self.answer_hello(&req.params),
                 "get" => self.terminal(&name),
                 "run" => self.run(&req.params),
+                "agents" => self.agents(),
                 "ls" => Ok(self.ls(&req.params["labels"])),
                 "resize" | "terminal.resize" | "acp.model" => Ok(json!({})),
                 "screen.watch" => return self.watch(id, &req.params, &mut writer),
                 "terminal.input" | "terminal.keys" => Ok(self.type_keys(&req.params)),
-                "read" => {
-                    let procs = self.procs.by_name.lock().unwrap();
-                    Ok(json!({ "text": procs[&name].screen, "cursor": { "seq": 0, "screen": 0 } }))
-                }
+                "read" => Ok(self.screen(&name)),
                 "keys" => {
                     assert_eq!(req.params["keys"], json!(["enter"]));
                     self.type_in(&name, "\n");

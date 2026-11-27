@@ -179,7 +179,7 @@ pub fn serve(config: &Config, ready: impl FnOnce(SocketAddr)) -> io::Result<()> 
         .ok_or_else(|| io::Error::other("no data folder: set `data` or HOME"))?;
     housekeep(config, &data)?;
     cooee_core::perf::init(&data, config.perf.slow_ms)?;
-    let shed = cooee_core::Shed::new(config.shed.clone(), config.shed_dir.clone());
+    let shed = cooee_core::Shed::new(config.shed_dir.as_deref());
     let theme = default_theme(config)?;
     let providers = cooee_core::Providers::load(config.providers.as_deref(), &shed);
     let logins = Logins::new(shed.clone(), providers.clone(), &data);
@@ -278,6 +278,7 @@ fn run(
             let listener = tokio::net::TcpListener::from_std(listener)?;
             let addr = listener.local_addr()?;
             hub.listening(format!("http://127.0.0.1:{}", addr.port()));
+            plugin::follow_rows(Arc::clone(&hub));
             manager.supervise(hub, format!("http://127.0.0.1:{}", addr.port()));
             routines::Runner::every(runner, Duration::from_secs(30))?;
             ready(addr);

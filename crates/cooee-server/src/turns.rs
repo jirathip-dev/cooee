@@ -8,7 +8,7 @@ use topcoat::context::{Cx, app_context, request_context};
 use crate::{
     Hub, HubError, Logins, Upload,
     http::{Data, Paired, Tag, allowed, blocking, hub, logins, profiles, recipe, seated},
-    pairing, plugin,
+    pairing,
 };
 
 #[derive(Deserialize)]
@@ -66,15 +66,6 @@ pub(crate) async fn start(cx: &Cx, new: Start) -> Result<String, HubError> {
         } else {
             hub.create(&agent, &folder, &new.text, &new.random_id.0, &recipe)?
         };
-        let ours = list.into_iter().find(|a| a.id == profile).and_then(|a| {
-            let name = a.id.split_once('/')?.1.to_owned();
-            Some((hub.backend(&a.lent?.plugin)?, name))
-        });
-        if let Some((b, name)) = ours
-            && let Err(e) = plugin::started(&b, &id, &name)
-        {
-            cooee_core::note!("cooee: plugin {}: thread-started: {e}", b.name);
-        }
         Ok(id)
     });
     id.await.map_err(|e| HubError::Refused(e.to_string()))?
@@ -143,7 +134,11 @@ impl Again {
     ) -> Result<Item, HubError> {
         let send = || self.hub.send(&self.id, text, random_id, files, via);
         match send() {
-            Err(HubError::Shed(e)) if e.no_such_terminal() => self.restart().and_then(|()| send()),
+            Err(HubError::Shed(e))
+                if e.code() == Some(cooee_core::shed_proto::ErrorCode::NoSuchTerminal) =>
+            {
+                self.restart().and_then(|()| send())
+            }
             done => done,
         }
     }
@@ -151,7 +146,11 @@ impl Again {
     pub(crate) fn act(&self, item: u64, a: &blocks::Action, by: &str) -> Result<(), HubError> {
         let act = || self.hub.act(&self.id, item, a, by);
         match act() {
-            Err(HubError::Shed(e)) if e.no_such_terminal() => self.restart().and_then(|()| act()),
+            Err(HubError::Shed(e))
+                if e.code() == Some(cooee_core::shed_proto::ErrorCode::NoSuchTerminal) =>
+            {
+                self.restart().and_then(|()| act())
+            }
             done => done,
         }
     }

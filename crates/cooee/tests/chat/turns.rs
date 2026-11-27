@@ -328,3 +328,63 @@ fn restart_on_the_gone_line_starts_the_agent_and_leaves_ended() {
     assert_eq!(status, 200, "{body}");
     events.until(|e| is_item(e, "agent") && e.data["text"] == "again");
 }
+
+fn gone_scratch_chat(
+    s: &crate::setup::Setup,
+    rid: &str,
+) -> (String, std::path::PathBuf, crate::support::Events) {
+    let new = json!({ "agent": "fake-acp", "text": "hi", "random_id": rid });
+    let (status, body) = s.cooee.post("/threads", &new);
+    assert_eq!(status, 200, "{body}");
+    let id = serde_json::from_str::<Value>(&body).unwrap()["id"]
+        .as_str()
+        .unwrap()
+        .to_owned();
+    let own = s.dir.join("data/scratch").join(&id);
+    let mut events = s.events(&id);
+    events.until(|e| is_item(e, "agent"));
+    s.shed.vanish(&terminal(&id));
+    fs::remove_dir_all(&own).unwrap();
+    (id, own, events)
+}
+
+#[test]
+fn a_gone_chat_whose_scratch_folder_was_deleted_restarts_on_send_and_delivers() {
+    let s = setup("gone-scratch-send");
+    let (id, own, mut events) = gone_scratch_chat(&s, "s0");
+    let (status, body) = s.send(&id, "echo back", "g1");
+    assert_eq!(status, 200, "{body}");
+    events.until(|e| is_item(e, "agent") && e.data["text"] == "back");
+    assert!(own.is_dir(), "{}", own.display());
+}
+
+#[test]
+fn restart_on_the_gone_line_recreates_a_deleted_scratch_folder() {
+    let s = setup("gone-scratch-tap");
+    let (id, _, mut events) = gone_scratch_chat(&s, "s1");
+    let (status, body) = s.cooee.post(&format!("/threads/{id}/restart"), &json!({}));
+    assert_eq!(status, 200, "{body}");
+    assert_eq!(restarts(&s).len(), 1);
+    let (status, body) = s.send(&id, "echo back", "g1");
+    assert_eq!(status, 200, "{body}");
+    events.until(|e| is_item(e, "agent") && e.data["text"] == "back");
+}
+
+#[test]
+fn a_restart_that_fails_says_why_in_the_chat() {
+    let s = setup("gone-restart-fails");
+    let (id, _, _) = gone_scratch_chat(&s, "s2");
+    fs::write(
+        s.shed.dir.join("run-fails"),
+        "SPAWN_FAILED: pty: no tty left",
+    )
+    .unwrap();
+    let (status, body) = s.cooee.post(&format!("/threads/{id}/restart"), &json!({}));
+    assert_ne!(status, 200, "{body}");
+    let said = s.items(&id);
+    let note = said.iter().rev().find(|i| i["kind"] == "note").unwrap();
+    assert!(
+        note["text"].as_str().unwrap().contains("no tty left"),
+        "{note}"
+    );
+}

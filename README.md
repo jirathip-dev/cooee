@@ -51,7 +51,7 @@ On `staging`, each line with the PR or file that proves it:
 - **Samples:** twelve ready agents in [examples/agents/](examples/agents/), built in: `cooee agent add --list` lists them, `cooee agent add --from <sample> [--id <id>]` copies one in (never over a taken id). One whose MCP server isn't in the config says in its first reply what to connect (#362).
 - **Blocks in chat:** a persona with a catalog answers with a form, a choice or a chart through its `show` tool, and the owner's answer is its next turn (#776).
 - **Sign-ins and accounts:** the provider's own login runs from the phone; several accounts per provider, each with usage (#18, #46, #191).
-- **Looks:** Modern built in, Terminal and Scene as style packs ([docs/styles.md](docs/styles.md), #488); farm, kitchen and garden theme packs (#65, #66, #67).
+- **Looks:** Modern built in, Terminal and Scene as style packs ([docs/styles.md](docs/styles.md), #488); farm, kitchen, garden and bush theme packs (#65, #66, #67, #462), built in (#828).
 - **Workflow:** sessions other tools start in shed list beside your chats and open as chats (#61).
 <!-- /today -->
 

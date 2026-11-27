@@ -22,6 +22,12 @@ extension Client {
         _ = try await send(request(enabled ? "POST" : "DELETE", "/push/apns", json: ["token": token]))
     }
 
+    /// This device's push subscriptions on the server: its APNs tokens, lowercased (#373).
+    public func pushed() async throws -> [String] { try await call("GET", "/push/endpoints") }
+
+    /// A test alert to this device's subscriptions (#373).
+    public func pushTest() async throws { _ = try await send(request("POST", "/push/test")) }
+
     /// What the widgets show: the asks, the blocked lanes and what runs (#662).
     public func glance() async throws -> Snapshot { try await call("GET", "/glance") }
 

@@ -5,6 +5,7 @@ internal struct Stage<Content: View>: View {
     @Environment(\.look) private var look
     internal let height: CGFloat
     internal var title: String?
+    internal var night = false
     @ViewBuilder internal let content: Content
 
     internal var body: some View {
@@ -27,7 +28,7 @@ internal struct Stage<Content: View>: View {
 
     @ViewBuilder private var backdrop: some View {
         if let art = look.art {
-            PackArt(art: art, path: "scene.svg").frame(height: height)
+            PackArt(art: art, path: "scene.svg", night: night).frame(height: height)
         } else {
             Sprite(name: "scene-strip").scaledToFill().frame(height: height).clipped()
         }
@@ -46,7 +47,7 @@ internal struct LaneStage: View {
         if let stage = look.stage {
             TimelineView(.everyMinute) { context in
                 let night = look.night ?? Weather.night(at: context.date)
-                strip(stage)
+                strip(stage, night: night)
                     .overlay {
                         if look.sign {
                             Sprite(name: "", pack: "sprites.svg#s-sign-\(SignLevel(scene: block).rawValue)")
@@ -60,8 +61,8 @@ internal struct LaneStage: View {
         }
     }
 
-    private func strip(_ stage: CooeeCore.Stage) -> some View {
-        Stage(height: 180) {
+    private func strip(_ stage: CooeeCore.Stage, night: Bool) -> some View {
+        Stage(height: 180, night: night) {
             Scroller(axis: .horizontal) {
                 HStack(alignment: .bottom, spacing: 2) {
                     ForEach(SceneLane.placed(block.list("lanes"))) { lane in
@@ -85,8 +86,10 @@ internal struct LaneFigure: View {
         let (ink, alert) = (stage.color(\.ink), stage.color(\.alert))
         let needs = lane.state == .needs
         VStack(spacing: 2) {
-            Sprite(name: lane.sprite, pack: look.sign ? "sprites.svg#s-scene-\(lane.state.pose)" : nil)
-                .frame(width: 92, height: 70)
+            Acting(motion: Motion(lane.state)) { pose in
+                Sprite(name: sprite(pose.frame), pack: "sprites.svg#s-\(look.sign ? "scene-" : "")\(lane.state.pose)")
+                    .frame(width: 92, height: 70).acting(pose)
+            }
             Text(lane.name).ui(12, .semibold, look).lineLimit(1).foregroundStyle(ink)
                 .padding(.horizontal, 8).padding(.vertical, 3)
                 .background(stage.color(needs ? \.alertPaper : \.paper).opacity(0.92), in: .capsule)
@@ -95,5 +98,9 @@ internal struct LaneFigure: View {
                 .foregroundStyle(needs || lane.state == .fail ? alert : ink)
         }
         .frame(width: 96).contentShape(.rect)
+    }
+
+    private func sprite(_ frame: Int) -> String {
+        lane.state == .working && look.moving ? "\(lane.sprite)-gait\(frame)" : lane.sprite
     }
 }

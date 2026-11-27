@@ -4,8 +4,8 @@ use super::{Setup, step};
 
 impl Setup {
     pub(super) fn agents(&self, config: &Config) -> Result<(), String> {
-        let have: Vec<String> = Shed::new(config.shed.clone(), config.shed_dir.clone())
-            .agents()
+        let have: Vec<String> = Shed::new(config.shed_dir.as_deref())
+            .installed()
             .map(|a| a.into_iter().map(|a| a.id).collect())
             .unwrap_or_default();
         let mut specs = provider::defaults().into_iter();

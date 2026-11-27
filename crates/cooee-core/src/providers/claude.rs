@@ -15,7 +15,6 @@ pub struct Claude(Spec);
 pub const ENTRY: Entry = Entry {
     name: "claude",
     defaults,
-    keep: &[],
     build: |s| Arc::new(Claude(s)),
 };
 
@@ -30,13 +29,9 @@ const OFFABLE: [(Builtin, &[&str]); 3] = [
 ];
 
 fn defaults() -> Spec {
-    let v = |s: &str| s.split(' ').map(str::to_owned).collect();
     Spec {
         name: "claude".into(),
         agent: "claude-acp".into(),
-        login: v("claude auth login"),
-        status: v("claude auth status"),
-        install: "npm install -g @anthropic-ai/claude-code".into(),
         settings: "claudeCode.options.settings".into(),
         cheapest: "haiku".into(),
         ..Spec::default()

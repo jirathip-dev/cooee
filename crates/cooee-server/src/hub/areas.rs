@@ -1,6 +1,6 @@
 use super::{
     HubError, Seed, ask, desk, events, expire, folders, grants, mail, models, plugins, proposals,
-    rooms, screen, servers, setup, start, surface,
+    rooms, route, rows, screen, servers, setup, start, surface,
 };
 
 pub(super) struct Areas {
@@ -15,6 +15,8 @@ pub(super) struct Areas {
     pub(super) plugins: plugins::State,
     pub(super) proposals: proposals::State,
     pub(super) rooms: rooms::State,
+    pub(super) route: route::State,
+    pub(super) rows: rows::State,
     pub(super) screen: screen::State,
     pub(super) servers: servers::State,
     pub(super) setup: setup::State,
@@ -36,6 +38,8 @@ impl Areas {
             plugins: plugins::State::open(seed),
             proposals: proposals::State::default(),
             rooms: rooms::State::default(),
+            route: route::State::default(),
+            rows: rows::State::default(),
             screen: screen::State::default(),
             servers: servers::State::default(),
             setup: setup::State::default(),

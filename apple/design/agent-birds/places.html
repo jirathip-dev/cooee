@@ -1,0 +1,117 @@
+<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width">
+<title>#827 Where the characters sit</title>
+<link rel="stylesheet" href="ab.css"><script src="cast.js"></script><script src="page.js"></script>
+<style>
+.ph{position:relative;width:390px;background:var(--bg);color:var(--fg);overflow:hidden;flex:none;padding-bottom:20px}
+.dark .ph{background:radial-gradient(420px at 0 0,#ecdba61a,transparent),radial-gradient(520px at 100% 100%,#5fd0c414,transparent),var(--bg)}
+.light .ph{background:radial-gradient(420px at 0 0,#6b341038,transparent),radial-gradient(520px at 100% 100%,#1c6e701f,transparent),var(--bg)}
+.sb{display:flex;justify-content:space-between;align-items:center;height:54px;padding:0 34px 0 40px;font:600 17px/1 var(--font)}
+.isl{position:absolute;top:11px;left:50%;transform:translateX(-50%);height:36px;border-radius:20px;background:#000;display:flex;align-items:center;justify-content:space-between;padding:0 10px;gap:8px;width:124px}
+.isl.on{width:220px}.isl.top{width:150px}.isl .ch{width:24px;height:24px}.isl .tc{--bx:auto;--fs:11px;border:0;width:auto;height:auto}
+.isl small{font:600 12px/1 var(--font);color:#ece4cc;white-space:nowrap}
+.hd{display:flex;align-items:center;justify-content:space-between;padding:6px 16px 4px}
+.hd .me{width:42px;height:42px;border-radius:50%;background:#f29b4b;display:grid;place-items:center;font-weight:700;color:#0f1a13}
+.hd .plus{width:42px;height:42px;border-radius:50%;border:1px solid var(--edge);display:grid;place-items:center;font-size:24px}
+.hd b{font:700 19px/1 var(--font)}
+.pin{display:flex;gap:12px;padding:14px 16px 4px;overflow:hidden}
+.pin .p{position:relative;display:flex;flex-direction:column;align-items:center;gap:6px;width:68px;flex:none}
+.pin .p .ch{width:64px;height:64px}.pin .p small{font:600 13px/1.1 var(--font);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:68px}
+.pin .p i{font:500 11px/1 var(--font);color:var(--mute);font-style:normal;white-space:nowrap}
+.bd{position:absolute;top:0;right:0;min-width:18px;height:18px;border-radius:9px;background:var(--ln);color:var(--bg);font:700 11px/18px var(--font);text-align:center}
+.lt{margin:14px 16px 4px;font:700 22px/1.15 var(--font)}
+.rw{display:flex;gap:12px;align-items:center;padding:8px 16px;position:relative}
+.rw+.rw::before{content:"";position:absolute;top:0;left:76px;right:0;border-top:.5px solid var(--line)}
+.av{width:48px;height:48px;flex:none;position:relative}.av>.ch{width:48px;height:48px}
+.av.grp .ch{position:absolute;width:30px;height:30px}
+.av.grp .ch:nth-child(1){left:-2px;top:0}.av.grp .ch:nth-child(2){right:-2px;top:4px}.av.grp .ch:nth-child(3){left:10px;bottom:-2px}
+.tx{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
+.tx .t{display:flex;gap:6px;align-items:baseline;white-space:nowrap;overflow:hidden}.tx .t b{font:600 16px/1.2 var(--font)}
+.tx .t span{color:var(--mute);font-size:14px;overflow:hidden;text-overflow:ellipsis}
+.tx p{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:14px}
+.rt{display:flex;flex-direction:column;align-items:flex-end;gap:5px;font-size:13px;color:var(--mute)}.rt .n{color:var(--ln)}
+.rt .bd{position:static}
+.sec{padding:18px 16px 6px}.sec h3{margin-bottom:10px}
+.chd{display:flex;align-items:center;gap:10px;height:56px;padding:0 12px;border-radius:14px;background:color-mix(in srgb,var(--card) 75%,transparent)}
+.chd .bk{color:var(--ln);font-size:28px;line-height:0}.chd .ch{width:36px;height:36px}
+.chd div{display:flex;flex-direction:column}.chd b{font:600 16px/1.2 var(--font)}.chd small{color:var(--mute);font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.chd div{min-width:0}
+.la{background:#000;color:#ece4cc;border-radius:26px;padding:14px 16px;display:flex;gap:12px;align-items:center}
+.la .ch{width:44px;height:44px}.la div{flex:1;min-width:0}.la b{font:600 15px/1.2 var(--font)}.la p{color:#a3a68a;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.la .btn{background:#f29b4b;color:#0f1a13;border-radius:999px;padding:7px 12px;font:600 13px/1 var(--font)}
+.isls{display:flex;flex-direction:column;gap:10px;align-items:center}
+.isls .isl{position:static;transform:none}
+.mono .ph,.mono .ph *{font-family:var(--mono)!important}
+.mono .ph{background:var(--bg)!important}
+.mono .tc{--fs:var(--f,12px)}
+.mono .pin .tc{--bx:60px;--fs:13px}.mono .rw .tc{--bx:48px;--fs:11px}.mono .chd .tc{--bx:36px;--fs:8.5px}.mono .la .tc{--bx:44px;--fs:10px;color:var(--tc)}
+.mono .av.grp{display:flex;flex-direction:column;align-items:center;justify-content:center;border:1px solid var(--edge);gap:2px}
+.mono .av.grp .tc{border:0;--bx:auto;width:auto;height:auto;--fs:9px}
+.wide{display:flex;flex-direction:column;gap:24px;padding:28px 32px}
+.row3{display:flex;gap:28px;justify-content:center;align-items:flex-start}
+.row3>div{display:flex;flex-direction:column;gap:8px;align-items:center}
+.mac{border-radius:12px;overflow:hidden;border:1px solid var(--edge);width:100%;max-width:1376px;background:var(--bg)}
+.mb{display:flex;align-items:center;gap:18px;height:28px;padding:0 14px;background:#1d1a12;font:500 13px/1 var(--font);color:#ece4cc}
+.mb .sp{flex:1}.mb .tpl{width:20px;height:20px}
+.tpl{--eye:#1d1a12}.tpl .sk,.tpl path,.tpl ellipse,.tpl rect:not(.ey rect){fill:#ece4cc!important}.tpl .dots,.tpl .bang,.tpl .spark{display:none!important}
+.mw{display:grid;grid-template-columns:300px 1fr;height:560px}
+.side{border-right:1px solid var(--line);padding:10px 8px;display:flex;flex-direction:column;gap:2px;background:color-mix(in srgb,var(--card) 55%,transparent)}
+.side .rw{padding:6px 8px;border-radius:8px}.side .rw::before{display:none}.side .rw.sel{background:color-mix(in srgb,var(--ln) 22%,transparent)}
+.side .av,.side .av>.ch{width:32px;height:32px}.side .av.grp .ch{width:20px;height:20px}.side .tx .t b{font-size:14px}.side .tx p{font-size:12.5px;color:var(--mute)}
+.main{display:flex;flex-direction:column}
+.main .chd{border-radius:0;background:transparent;border-bottom:1px solid var(--line);height:60px;padding:0 18px}
+.msgs{padding:20px 28px;display:flex;flex-direction:column;gap:16px}
+.msg{display:flex;gap:10px;align-items:flex-start;max-width:640px}.msg .ch{width:28px;height:28px;flex:none}
+.msg div{background:color-mix(in srgb,var(--card) 80%,transparent);border-radius:14px;padding:10px 14px;font-size:14px}
+.msg.me{align-self:flex-end}.msg.me div{background:color-mix(in srgb,var(--ln) 30%,transparent)}
+.cap{font:600 13px/1.2 var(--font);color:var(--mute);text-align:center}
+</style>
+<body><div id="root"></div>
+<script>
+const { live, tc, q } = Page, B = Cast.birds, L = Cast.blobs, A = Cast.ascii;
+const sets = {
+  a: { cast: [B[0], B[6], B[1], B[3], B[4]], name: 'A · birds' },
+  b: { cast: [L[0], L[1], L[4], L[2], L[5]], name: 'B · blobs' },
+  t: { cast: [A[1], A[0], A[4], A[6], A[3]], name: 'Terminal' },
+};
+const P = [['Chief', 'done', 'in the nest'], ['Coder', 'working', 'working'], ['Researcher', 'needs', 'needs you'], ['Account Manager', 'idle', 'idle'], ['Conductor', 'working', 'working']];
+const fig = (k, i, st, salt = '') => k === 't' ? tc(sets.t.cast[i], st, salt) : live(sets[k].cast[i], st, salt);
+const phone = k => {
+  const f = (i, st, s) => fig(k, i, st ?? P[i][1], s);
+  const pin = P.map(([n, st, w], i) => `<div class="p">${f(i)}${[0, 2, 1, 0, 0][i] ? `<span class="bd">${[0, 2, 1, 0, 0][i]}</span>` : ''}<small>${n}</small><i>${w}</i></div>`).join('');
+  const row = (av, n, sub, msg, time, badge) => `<div class="rw"><div class="av${av.includes('grp') ? ' grp' : ''}">${av.replace('grp', '')}</div><div class="tx"><div class="t"><b>${n}</b><span>${sub}</span></div><p>${msg}</p></div><div class="rt"><span class="${badge ? 'n' : ''}">${time}</span>${badge ? `<span class="bd">${badge}</span>` : ''}</div></div>`;
+  return `<div class="ph">
+<div class="sb"><span>9:41</span><span>▴▴ ▮</span></div>
+<div class="isl top">${f(1, 'working', 'i')}<small>Coder</small></div>
+<div class="hd">${k === 't' ? '<b>[g]</b><b>~/cooee</b><b>[+]</b>' : '<span class="me">G</span><b>cooee</b><span class="plus">+</span>'}</div>
+<div class="pin bleed">${pin}</div>
+<div class="lt">${k === 't' ? '# chats' : 'Chats'}</div>
+${row(f(1, null, 'r'), 'Coder', 'Flaky e2e on the look sheet', '$ cargo test -p cooee-core', 'now', 2)}
+${row(f(2, null, 'r'), 'Researcher', 'Kestrel filings', '! Allow fetch sec.gov/cgi-bin/browse-edgar', '12m', 1)}
+${row('grp' + (k === 't' ? [0, 1, 2].map(i => fig(k, i, 'idle', 'g')).join('') : [0, 1, 2].map(i => fig(k, i, 'idle', 'g')).join('')), 'Launch room', 'Chief, Coder, Researcher', 'Chief: slides 4–9 are in deck/q3.key', '20m', 3)}
+${row(f(0, null, 'r'), 'Chief', 'Renewals', 'Every Monday at 09:00 I’ll check the renewals', '2m')}
+${row(f(3, null, 'r'), 'Account Manager', 'Birch &amp; Co pricing', 'Due this month: Acme 14 Nov, Birch 21 Nov', '1h')}
+${row(f(4, 'failed', 'r'), 'Conductor', 'cooee queue', 'Stopped: the hub went away', '3h')}
+<div class="sec"><h3>Chat header</h3><div class="chd"><span class="bk">‹</span>${f(1, 'working', 'h')}<div><b>Coder</b><small>working · Flaky e2e on the look sheet</small></div></div></div>
+<div class="sec"><h3>Dynamic Island, compact: each state</h3><div class="isls">
+${[['working', 'Coder · cargo test', 1], ['needs', 'Researcher · approve', 2], ['done', 'Chief · replied', 0], ['failed', 'Conductor · stopped', 4]].map(([st, t, i]) => `<div class="isl on">${f(i, st, 'c')}<small>${t}</small></div>`).join('')}</div></div>
+<div class="sec"><h3>Live Activity</h3><div class="la">${f(2, 'needs', 'l')}<div><b>Researcher needs you</b><p>Allow fetch sec.gov/cgi-bin/browse-edgar</p></div><span class="btn">Review</span></div></div>
+</div>`;
+};
+const mac = () => {
+  const b = sets.a.cast, side = [[0, 'Chief', 'Renewals', 'done'], [1, 'Coder', 'Flaky e2e on the look sheet', 'working', 1], [2, 'Researcher', 'Kestrel filings', 'needs'], [3, 'Account Manager', 'Birch & Co pricing', 'idle'], [4, 'Conductor', 'cooee queue', 'failed']];
+  return `<div class="mac"><div class="mb"><b></b><b>cooee</b><span>File</span><span>Edit</span><span>View</span><span>Window</span><span class="sp"></span>${Cast.svg(B[0], 'idle', 0).replace('class="ch', 'class="ch tpl')}<span>Tue 25 Nov 9:41</span></div>
+<div class="mw"><div class="side">${side.map(([i, n, s, st, sel]) => `<div class="rw${sel ? ' sel' : ''}"><div class="av">${live(b[i], st, 'm')}</div><div class="tx"><div class="t"><b>${n}</b></div><p>${s}</p></div></div>`).join('')}
+<div class="rw"><div class="av grp">${[0, 1, 2].map(i => live(b[i], 'idle', 'mg')).join('')}</div><div class="tx"><div class="t"><b>Launch room</b></div><p>Chief, Coder, Researcher</p></div></div></div>
+<div class="main"><div class="chd">${live(b[1], 'working', 'mh')}<div><b>Coder</b><small>working · Flaky e2e on the look sheet</small></div></div>
+<div class="msgs"><div class="msg me"><div>The look sheet e2e fails about one run in five. Can you find out why?</div></div>
+<div class="msg">${live(b[1], 'idle', 'm1')}<div>It races the theme load: the sheet snapshots before the pack's tokens arrive. Running it 50 times to confirm.</div></div>
+<div class="msg">${live(b[1], 'working', 'm2')}<div>$ cargo test -p cooee-core look_sheet -- --test-threads 1 …</div></div></div></div></div></div>`;
+};
+const f = q.get('f') || 'a';
+if (f === 't') document.body.classList.add('mono');
+root.innerHTML = f === 'wide'
+  ? `<div class="wide"><div><h1>Where the characters sit</h1><p>The home row, chat rows (one a group), the island: A birds, B blobs and Terminal on the same home, then the Mac with A.</p></div>
+<div class="row3">${['a', 'b', 't'].map(k => `<div class="${k === 't' ? 'mono' : ''}"><span class="cap">${sets[k].name}</span>${phone(k)}</div>`).join('')}</div>
+<span class="cap">Mac: sidebar rows, a group, the chat header, message rows, and the menu bar's kookaburra cut (template, right of the menus)</span>${mac()}</div>`
+  : phone(f);
+Page.ready();
+</script>

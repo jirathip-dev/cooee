@@ -4,9 +4,8 @@
 # Uploads run only on a merge to `main` (#180). The ASC_* secrets live in the `testflight` environment, which only
 # `main` and `staging` may deploy from: pull_request and fork runs can't read them.
 # docs/testflight.md has the owner's one-time steps.
-# #365, #565: runs on our own runner (mini-cooee), or on GitHub-hosted xcode-27 with `vars.MAC_RUNNER_TESTFLIGHT=hosted`
-# (docs/ci-runners.md). #568: the archive is unsigned (ad-hoc, for its entitlements) and only the export signs, with
-# Apple's managed distribution certificate, so no run mints a Development certificate. The job's keychain is its own,
+# #786: runs on GitHub-hosted xcode-27 (docs/ci-runners.md). #568: the archive is unsigned (ad-hoc, for its
+# entitlements) and only the export signs, with Apple's managed distribution certificate, so no run mints a Development certificate. The job's keychain is its own,
 # deleted when the job ends. A `workflow_dispatch` without `upload` archives and signs (exports) but uploads nothing.
 # #592: a staging push runs that dry run, and the Mac archive must carry every App Store icon size in its ICNS.
 name: apple-testflight
@@ -38,7 +37,7 @@ jobs:
           - { platform: iOS, asc: IOS, link: ios, device: phone, entitlements: Cooee.entitlements }
           - { platform: macOS, asc: MAC_OS, link: macos, device: Mac, entitlements: Cooee-mac.entitlements }
     name: testflight (${{ matrix.platform }})
-    runs-on: ${{ vars.MAC_RUNNER_TESTFLIGHT == 'hosted' && 'xcode-27' || fromJSON('["self-hosted","macOS","ARM64","cooee-mac"]') }}
+    runs-on: xcode-27
     environment: testflight
     timeout-minutes: 60
     env:
@@ -84,6 +83,22 @@ jobs:
             echo "registered the bundle id $bundle"
           fi
           echo "::add-mask::$team"
+          if [ "${{ matrix.platform }}" = iOS ]; then
+            sed -n 's/.*PRODUCT_BUNDLE_IDENTIFIER = \(.*\);/\1/p' "$pbx" | grep -F "$bundle" | sort -u > "$RUNNER_TEMP/ids"
+            while read -r id; do
+              rid=$(api "bundleIds?filter[identifier]=$id&fields[bundleIds]=identifier" | jq -r --arg b "$id" '.data | map(select(.attributes.identifier == $b))[0].id // empty')
+              if [ -z "$rid" ]; then
+                body=$(jq -n --arg b "$id" '{data: {type: "bundleIds", attributes: {identifier: $b, name: ($b | gsub("\\."; " ")), platform: "IOS"}}}')
+                rid=$(api bundleIds -X POST -d "$body" | jq -r '.data.id')
+                echo "registered the bundle id $id"
+              fi
+              if ! api "bundleIds/$rid/bundleIdCapabilities" | jq -e '.data | any(.attributes.capabilityType == "APP_GROUPS")' > /dev/null; then
+                body=$(jq -n --arg r "$rid" '{data: {type: "bundleIdCapabilities", attributes: {capabilityType: "APP_GROUPS"}, relationships: {bundleId: {data: {type: "bundleIds", id: $r}}}}}')
+                api bundleIdCapabilities -X POST -d "$body" > /dev/null
+                echo "enabled App Groups on $id"
+              fi
+            done < "$RUNNER_TEMP/ids"
+          fi
           app=$(api "apps?filter[bundleId]=$bundle&fields[apps]=bundleId" | jq -r --arg b "$bundle" '.data | map(select(.attributes.bundleId == $b))[0].id // empty')
           if [ -z "$app" ]; then
             echo "::error::No App Store Connect app for $bundle. Create it once (Apps → + → New App): platforms iOS and macOS (Add Platform on an existing record), name cooee: agent chat, primary language English (U.S.), bundle id $bundle, SKU cooee-ios, user access Full Access. Then re-run this workflow."
@@ -141,6 +156,9 @@ jobs:
           touch "$LOG"
           if grep -qiE 'cloud signing permission|no signing certificate|not have permission' "$LOG"; then
             echo "::error::The App Store Connect API key can't cloud-sign. Give the key the Admin role (App Store Connect → Users and Access → Integrations → Team Keys), or ask for another signing route; this workflow adds no fallback secret."
+          fi
+          if grep -qiE 'No profiles for|App Group' "$LOG"; then
+            echo "::error::A profile lacks the App Group. The API can't make or assign one: in Certificates, Identifiers & Profiles → Identifiers, add the App Group group.com.jirathip.cooee once, then on com.jirathip.cooee and com.jirathip.cooee.widgets tick App Groups → Configure → group.com.jirathip.cooee → Save."
           fi
           if grep -qi 'private key is not installed' "$LOG"; then
             echo "::error::A signing certificate's private key is not in the job's keychain (it is made fresh each run). Only the export may sign, with Apple's managed distribution certificate: revoke the \"Created via API\" Apple Development certificates under Certificates, Identifiers & Profiles, and check that no step signs with a Development identity."

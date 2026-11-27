@@ -1,28 +1,16 @@
-# #565: on GitHub-hosted xcode-27 it only selects Xcode 27.2 by path; the rest is for our own Mac.
-# #365: the first step of every macOS job on our own runner (mini-cooee), after a clean checkout. Temp
-# files go to the job's RUNNER_TEMP (emptied by the runner after each job), through a short link that keeps socket
-# paths under macOS's limit; cargo, rustup and the tools the job installs
-# live under the runner's own tool folder, never the account's ~/.cargo or ~/.rustup; git (and cargo, through the git
-# CLI) reads none of the account's git config; Xcode is the one at an explicit path, its version in the log and the summary.
-# #486: the repo pins one Xcode (`pin` below); a runner with another fails here. Our own runner keeps its warm DerivedData
-# (APPLE_DERIVED) and SwiftPM clones (APPLE_PACKAGES) under its tool folder, one pair per runner (a runner runs one
-# job at a time; on hosted they sit in RUNNER_TEMP); a pair over `cap_gb` or built by another Xcode starts again, said in the summary.
+# #365, #565, #786: the first step of every macOS job, on GitHub-hosted xcode-27 (docs/ci-runners.md). Xcode is the one
+# at an explicit path, its version in the log and the summary. #486: the repo pins one Xcode (`pin` below); a runner
+# with another fails here. The build folders (APPLE_DERIVED, APPLE_PACKAGES) sit in RUNNER_TEMP, so every job builds cold.
 name: mac-runner
-description: A macOS job's pinned Xcode and, on our own Mac, its own temp folder, toolchain homes and warm build folders
+description: A macOS job's pinned Xcode and its build folders
 runs:
   using: composite
   steps:
-    - name: temp, toolchain homes, Xcode and warm folders
+    - name: Xcode and build folders
       shell: bash
       run: |
-        pin=27.2 cap_gb=40
+        pin=27.2
         xcode=/Applications/Xcode_27.2.app/Contents/Developer
-        warm="$RUNNER_TEMP/apple"
-        if [ "$RUNNER_ENVIRONMENT" = self-hosted ]; then
-          tools="$RUNNER_TOOL_CACHE/cooee"
-          warm="$tools/apple-$RUNNER_NAME"
-          xcode=/Applications/Xcode.app/Contents/Developer
-        fi
         version=$(DEVELOPER_DIR=$xcode xcodebuild -version | tr '\n' ' ')
         echo "### $RUNNER_NAME: $version" | tee -a "$GITHUB_STEP_SUMMARY"
         [ "$(DEVELOPER_DIR=$xcode xcodebuild -version | sed -n 's/^Xcode //p')" = "$pin" ] || {
@@ -30,29 +18,7 @@ runs:
           echo "$RUNNER_NAME has $version; the repo pins Xcode $pin" >> "$GITHUB_STEP_SUMMARY"
           exit 1
         }
-        if [ "$RUNNER_ENVIRONMENT" = self-hosted ]; then
-          reset=""
-          [ "$(cat "$warm/xcode" 2>/dev/null)" = "$version" ] || reset="built by another Xcode, or none"
-          [ -n "$reset" ] || [ "$(du -sk "$warm" | cut -f1)" -le $((cap_gb * 1048576)) ] || reset="over $cap_gb GB"
-          if [ -n "$reset" ]; then
-            rm -rf "${warm:?}"
-            echo "warm build folders started again ($reset)" | tee -a "$GITHUB_STEP_SUMMARY"
-          else
-            echo "warm build folders kept ($(du -sh "$warm" | cut -f1))" | tee -a "$GITHUB_STEP_SUMMARY"
-          fi
-          mkdir -p "$tools/cargo/bin" "$tools/rustup"
-          ln -shf "$RUNNER_TEMP" "/tmp/$RUNNER_NAME"
-          : > "$RUNNER_TEMP/gitconfig"
-          { echo "TMPDIR=/tmp/$RUNNER_NAME/"
-            echo "CARGO_HOME=$tools/cargo"
-            echo "RUSTUP_HOME=$tools/rustup"
-            echo "GIT_CONFIG_GLOBAL=$RUNNER_TEMP/gitconfig"
-            echo "GIT_CONFIG_NOSYSTEM=1"
-            echo "CARGO_NET_GIT_FETCH_WITH_CLI=true"; } >> "$GITHUB_ENV"
-          echo "$tools/cargo/bin" >> "$GITHUB_PATH"
-        fi
-        mkdir -p "$warm/derived" "$warm/packages"
-        echo "$version" > "$warm/xcode"
-        { echo "APPLE_DERIVED=$warm/derived"
-          echo "APPLE_PACKAGES=$warm/packages"
+        mkdir -p "$RUNNER_TEMP/apple/derived" "$RUNNER_TEMP/apple/packages"
+        { echo "APPLE_DERIVED=$RUNNER_TEMP/apple/derived"
+          echo "APPLE_PACKAGES=$RUNNER_TEMP/apple/packages"
           echo "DEVELOPER_DIR=$xcode"; } >> "$GITHUB_ENV"

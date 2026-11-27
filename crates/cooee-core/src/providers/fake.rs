@@ -11,7 +11,6 @@ pub struct Fake(Spec);
 pub const ENTRY: Entry = Entry {
     name: "fake",
     defaults,
-    keep: &[],
     build: |s| Arc::new(Fake(s)),
 };
 
@@ -19,7 +18,6 @@ fn defaults() -> Spec {
     Spec {
         name: "fake".into(),
         agent: "fake-acp".into(),
-        status: vec!["true".into()],
         ..Spec::default()
     }
 }
@@ -36,6 +34,13 @@ impl Provider for Fake {
 
 #[cfg(test)]
 mod tests {
+    use serde_json::json;
+    use shed_catalog::Catalog;
+    use shed_client::{
+        fake::Server,
+        proto::{ErrorCode, Method, RpcError},
+    };
+
     use super::*;
     use crate::{Providers, provider};
 
@@ -68,24 +73,12 @@ mod tests {
         let row = |base: &str| -> toml::Table {
             toml::from_str(&format!("name = \"fake\"\nbase = \"{base}\"")).unwrap()
         };
-        assert!(provider::specs(Some(&[row("fake")]), &[]).is_ok());
+        let none = Catalog::default();
+        assert!(provider::specs(Some(&[row("fake")]), &none).is_ok());
         assert_eq!(
-            provider::specs(Some(&[row("nope")]), &[]),
+            provider::specs(Some(&[row("nope")]), &none),
             Err("providers: no provider nope to base fake on".to_owned())
         );
-    }
-
-    fn shed(name: &str, agents: &str) -> crate::Shed {
-        use std::os::unix::fs::PermissionsExt;
-        let dir = crate::scratch::owned(
-            std::env::temp_dir().join(format!("cooee-records-{name}-{}", std::process::id())),
-        );
-        std::fs::create_dir_all(&dir).unwrap();
-        std::fs::write(dir.join("agents.json"), agents).unwrap();
-        let bin = dir.join("shed");
-        std::fs::write(&bin, "#!/bin/sh\ncat \"$(dirname \"$0\")/agents.json\"\n").unwrap();
-        std::fs::set_permissions(&bin, std::fs::Permissions::from_mode(0o755)).unwrap();
-        crate::Shed::new(bin, None)
     }
 
     fn specs(p: &Providers) -> Vec<Spec> {
@@ -93,51 +86,37 @@ mod tests {
     }
 
     #[test]
-    fn a_shed_with_no_records_leaves_the_built_in_defaults() {
-        let shed = shed(
-            "none",
-            r#"[{"id":"claude-acp","version":"1.0.0","distribution":"npx","cmd":["claude-acp"]}]"#,
-        );
-        assert_eq!(shed.agents().unwrap()[0].cmd, ["claude-acp"]);
-        assert_eq!(specs(&Providers::load(None, &shed)), provider::defaults());
+    fn a_shed_that_cant_be_asked_leaves_the_defaults_over_the_built_in_records() {
+        let server = Server::start().unwrap();
+        server.fail(Method::Agents, RpcError::new(ErrorCode::Internal, "down"));
+        let all = Providers::load(None, &crate::Shed::new(server.socket().parent()));
+        let defaults = provider::defaults();
+        assert_eq!(specs(&all)[..defaults.len()], defaults);
+        assert!(all.record("claude-acp").is_some_and(|r| r.login.is_some()));
     }
 
     #[test]
-    fn shed_records_set_the_program_facts_and_a_row_changes_only_its_fields() {
-        let shed = shed(
-            "some",
-            r#"[{"id":"fake-acp","source":"built-in","installed":{"id":"fake-acp","version":"2.0.0","distribution":"npx","cmd":["fake-acp"]},
-                 "provider":{"id":"fake-acp","agent":"fake","login":"fake auth login","status":"fake auth status",
-                             "effort_args":["--effort","{effort}"],"efforts":["low","high"],"limit":["hit your limit"]}},
-                {"id":"codex-acp","source":"built-in","installed":null,
-                 "provider":{"id":"codex-acp","agent":"codex","login":"codex login","status":"codex login status","efforts":["xhigh"]}},
-                {"id":"new-acp","source":"/x/new.toml","installed":null,"provider":{"id":"new-acp","agent":"newbie","login":"new in","status":"new st"}},
-                {"id":"half-acp","source":"/x/half.toml","installed":null,"provider":{"id":"half-acp","agent":"half","login":"half in"}}]"#,
+    fn shed_records_add_a_provider_per_program_that_logs_in_and_a_row_changes_only_its_fields() {
+        let server = Server::start().unwrap();
+        server.answer(
+            Method::Agents,
+            json!([
+                {"id":"fake-acp","provider":{"id":"fake-acp","agent":"fake","login":"fake auth login","status":"fake auth status","efforts":["low","high"]}},
+                {"id":"new-acp","provider":{"id":"new-acp","agent":"newbie","login":"new in","status":"new st"}},
+                {"id":"half-acp","provider":{"id":"half-acp","agent":"half","login":"half in"}}
+            ]),
         );
-        let agents = shed.agents().unwrap();
-        assert_eq!(agents.len(), 1, "{agents:?}");
-        assert_eq!((agents[0].id.as_str(), agents[0].version.as_str()), ("fake-acp", "2.0.0"));
-        let all = Providers::load(None, &shed);
-        let words = |s: &str| s.split(' ').map(str::to_owned).collect::<Vec<_>>();
-        let fake = all.for_agent("fake-acp").unwrap();
-        let read = Spec {
-            login: words("fake auth login"),
-            status: words("fake auth status"),
-            efforts: words("low high"),
-            effort: words("--effort {}"),
-            ..defaults()
-        };
-        assert_eq!(fake.spec(), &read);
-        assert_eq!(fake.picks("high"), Some(words("--effort high")));
-        let codex = all.named("codex").unwrap().spec();
-        assert_eq!((codex.login.as_slice(), codex.efforts.as_slice()), (&words("codex login --device-auth")[..], &words("xhigh")[..]));
-        let newbie = all.named("newbie").unwrap().spec();
-        assert_eq!((newbie.agent.as_str(), &newbie.login), ("new-acp", &words("new in")));
+        let all = Providers::load(None, &crate::Shed::new(server.socket().parent()));
+        assert_eq!(all.for_agent("fake-acp").unwrap().spec(), &defaults());
+        assert_eq!(all.record("fake-acp").unwrap().efforts, ["low", "high"]);
+        assert_eq!(all.named("newbie").unwrap().spec().agent, "new-acp");
         assert!(all.named("half").is_none());
 
-        let row: toml::Table = toml::from_str("name = \"fake\"\nefforts = [\"max\"]").unwrap();
-        let records = shed.records().unwrap();
-        let only = provider::specs(Some(std::slice::from_ref(&row)), &records).unwrap();
-        assert_eq!(only, [Spec { efforts: words("max"), ..read }]);
+        let row: toml::Table =
+            toml::from_str("name = \"fake\"\ncheapest = \"tiny\"\nefforts = [\"max\"]").unwrap();
+        let catalog = Catalog::default();
+        let only = provider::specs(Some(std::slice::from_ref(&row)), &catalog).unwrap();
+        let cheapest = "tiny".to_owned();
+        assert_eq!(only, [Spec { cheapest, ..defaults() }]);
     }
 }

@@ -197,6 +197,16 @@ fn said(thread: &str, item: &Item) -> Option<Block> {
         Body::Note { text } | Body::Ended { text } => {
             (Role::System, "cooee", line(text.clone()), vec![])
         }
+        Body::Row {
+            plugin,
+            text,
+            block,
+            ..
+        } => {
+            let drawn =
+                serde_json::from_value(block.clone()).unwrap_or_else(|_| line(text.clone()));
+            (Role::System, plugin.as_str(), drawn, vec![])
+        }
         _ => return None,
     };
     let message = Message::new(role, name)
@@ -358,7 +368,12 @@ pub(super) async fn act(cx: &Cx, a: &Action) -> Option<topcoat::Result<Response>
         begin(cx, persona.to_owned(), a).await
     } else {
         let id = a.screen.strip_prefix(PATH)?.to_owned();
-        on(cx, id, a).await.map(|()| blocks::Answer::default())
+        let by = request_context::<Paired>(cx).0.label.clone();
+        let (at, tap) = (id.clone(), a.clone());
+        match blocking(cx, move |hub| hub.row_act(&at, &tap, &by)).await {
+            Ok(None) => on(cx, id, a).await.map(|()| blocks::Answer::default()),
+            done => done.map(Option::unwrap_or_default),
+        }
     };
     Some(answer(done))
 }

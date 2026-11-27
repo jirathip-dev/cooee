@@ -103,12 +103,12 @@ internal struct PersonaControlsTests {
     @Test internal func aPickedAvatarSavesWithThePersonaAndShowAllOpensEveryNote() async {
         let store = store(coder)
         await store.send(.binding(.set(\.choosingPhoto, true))) { $0.choosingPhoto = true }
-        await store.send(.binding(.set(\.draft.avatar, Tint.green.avatar))) { $0.draft.avatar = "initials-green" }
+        await store.send(.binding(.set(\.draft.avatar, Mascot.galah.avatar))) { $0.draft.avatar = "bird-galah" }
         await store.send(.save) { $0.busy = true }
         var saved = coder
-        saved.avatar = "initials-green"
+        saved.avatar = "bird-galah"
         await store.receive(\.delegate.saved, saved)
-        #expect(calls.all == ["save /screens/persona/coder initials-green"])
+        #expect(calls.all == ["save /screens/persona/coder bird-galah"])
         await store.send(.showAll) { $0.showingAll = true }
     }
 }

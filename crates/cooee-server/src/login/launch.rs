@@ -1,7 +1,7 @@
 use std::{fs, path::Path};
 
 use cooee_core::{
-    Launch,
+    Calls as _, Launch,
     agents::{AUTO, Agent, DEFAULT},
     provider::{Gap, Setup, Want},
     shed_proto::Account,
@@ -75,21 +75,16 @@ impl Logins {
             launch.meta = Some(with_settings(launch.meta.take(), key, settings).map_err(refused)?);
         }
         let (plain, secret) = a.env(data).map_err(refused)?;
-        launch.env.extend(plain);
-        if !secret.is_empty() {
-            let name = cooee_core::random(16).map_err(|e| refused(e.to_string()))?;
-            let name = cooee_core::sha256(&name);
-            launch.secrets = Some((data.join("secrets").join(format!(".run-{name}")), secret));
-        }
+        launch.env.extend(plain.into_iter().chain(secret));
         launch.policy.clone_from(&a.policy);
         Ok((account, launch))
     }
 
-    /// The efforts `agent`'s provider offers (#553 row 34).
+    /// The efforts shed's record of `agent` offers (#553 row 34).
     #[must_use]
     pub fn efforts(&self, agent: &str) -> Vec<String> {
-        let p = self.providers.for_agent(agent);
-        p.map(|p| p.spec().efforts.clone()).unwrap_or_default()
+        let r = self.providers.record(agent);
+        r.map(|r| r.efforts.clone()).unwrap_or_default()
     }
 
     /// What a background run of `agent` picks when it names none (#219): its provider's cheapest model and lowest
@@ -98,24 +93,26 @@ impl Logins {
     pub fn cheapest(&self, agent: &str) -> (String, String) {
         let p = self.providers.for_agent(agent).map(|p| p.spec());
         p.map(|s| {
+            let efforts = self.efforts(agent);
             (
                 s.cheapest.clone(),
-                s.efforts.first().cloned().unwrap_or_default(),
+                efforts.first().cloned().unwrap_or_default(),
             )
         })
         .unwrap_or_default()
     }
 
-    /// The words that start `agent` on `effort` (empty: its default).
-    ///
-    /// # Errors
-    /// [`HubError::Refused`] for an effort its provider doesn't offer.
-    pub fn picks(&self, agent: &str, effort: &str) -> Result<Vec<String>, HubError> {
-        let words = match self.providers.for_agent(agent) {
-            Some(p) => p.picks(effort),
-            None => effort.is_empty().then(Vec::new),
-        };
-        words.ok_or_else(|| HubError::Refused(format!("{agent} offers no effort {effort:?}")))
+    /// # Errors [`HubError::Refused`] for an effort shed's record of `agent` doesn't offer; else the `run`'s effort.
+    pub fn effort(&self, agent: &str, effort: &str) -> Result<Option<String>, HubError> {
+        if effort.is_empty() {
+            return Ok(None);
+        }
+        if !self.efforts(agent).iter().any(|e| e == effort) {
+            return Err(HubError::Refused(format!(
+                "{agent} offers no effort {effort:?}"
+            )));
+        }
+        Ok(Some(effort.to_owned()))
     }
 }
 

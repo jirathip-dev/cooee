@@ -37,8 +37,20 @@ reason = "#762: shed owns installs and updates, cooee never updates itself; #760
 [[ban]]
 pattern = "UnixStream"
 paths = ["crates/*/src/**"]
-except = ["crates/cooee-core/src/shed/client.rs"]
-reason = "#762: cooee talks to shed through shed-client, never its own shed protocol client; #760 empties this list"
+except = []
+reason = "#762: cooee talks to shed through shed-client, never its own shed protocol client; #760 emptied this list"
+
+[[ban]]
+pattern = "api/v1"
+paths = ["crates/*/src/**"]
+except = ["crates/cooee-server/src/screens/settings.rs"]
+reason = "drover#1571: cooee reads a plugin's rows at the paths its manifest names; it holds no plugin route"
+
+[[ban]]
+pattern = "needs-decision"
+paths = ["crates/*/src/**"]
+except = []
+reason = "drover#1571: cooee draws a row's block and never reads a workflow event kind"
 
 [[collect]]
 dir = "ci/cap.d"
@@ -58,13 +70,19 @@ reason = "#664: Chief never answers a card, its own or another persona's"
 pattern = ".send"
 paths = ["crates/cooee-server/src/chief.rs", "crates/cooee-server/src/chief/**"]
 except = []
-reason = "#664: Chief never sends as another persona: ask_persona is the only way to one, and it sends as Chief"
+reason = "#664, #802: Chief never sends as another persona: route is the only way to an agent, and the hub sends"
 
 [[ban]]
 pattern = ".queue("
 paths = ["crates/cooee-server/src/chief.rs", "crates/cooee-server/src/chief/**"]
 except = []
 reason = "#664: a Chief tool never queues a message into a thread; the hub tells Chief its own card's outcome"
+
+[[ban]]
+pattern = "plugin::"
+paths = ["crates/cooee-server/src/chief.rs", "crates/cooee-server/src/chief/**", "crates/cooee-server/src/hub/route.rs", "crates/cooee-server/src/hub/ask.rs"]
+except = []
+reason = "#802: routing never fetches or forwards a plugin's blocks: they go from the plugin's screen through cooee's pass-through to the client"
 
 [[ban]]
 pattern = "thread::sleep"

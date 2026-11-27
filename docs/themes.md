@@ -5,12 +5,13 @@ cooee's look follows herdsman's data-only theme contract (herdsman `docs/themes.
 
 ## Today
 
-- **Looks:** Modern built in, Terminal and Scene as style packs ([docs/styles.md](docs/styles.md), #488); farm, kitchen and garden theme packs (#65, #66, #67).
+- **Looks:** Modern built in, Terminal and Scene as style packs ([docs/styles.md](docs/styles.md), #488); farm, kitchen, garden and bush theme packs (#65, #66, #67, #462), built in (#828).
 
 ## A theme pack: `themes/<name>/`
 
-A theme is one coherent pack: a folder, or a folder of a git repo. Only `plain` is built in;
-`farm`, `kitchen` and `garden` are the first-party packs, from the shared swag repo (below).
+A theme is one coherent pack: a folder, or a folder of a git repo. `plain` and the first-party
+packs `farm`, `kitchen`, `garden` and `bush`, from the shared swag repo (below), are built in (#828): every server offers
+them, and a swag bump brings its new packs with it.
 
 | File | Required | What it is |
 |---|---|---|
@@ -60,7 +61,8 @@ pack, so a bad pack can't ship.
   with only its folder checked out (#363). On start, an old full clone `<data>/themes/<name>.git` is deleted once its
   new form is in place, and the space freed is logged. `cooee theme remove <name>` and `cooee theme list` do the rest.
   `cooee serve` reads them at its next start.
-- `cooee setup` installs farm, then offers the other first-party themes as a pick list; the default is all of them.
+- `cooee setup` installs the style packs; the first-party themes need no install. `cooee theme add <first-party name>
+  --rev R` pins one at another swag commit, and that copy replaces the built-in one.
 - **To share a pack**, push its folder to any git repo; anyone adds it by that URL (`cooee theme add <git-url>`).
 
 An own folder in `themes/` (not added by `cooee theme add`) loads too; one with a built-in's name replaces it. `plain` was `terminal` before #35: a
@@ -72,17 +74,17 @@ Look has **Edit ‹theme›…** and **New theme…**. They open the theme edito
 screens in the draft's colours and style, Style (Modern, Terminal or Scene), the pack's figures, and Dark and Light
 colours. A new theme starts from `packs/starter`'s figures; editing a built-in or first-party pack makes a copy
 (`Farm copy`), as `themes/<built-in name>/` would replace it. The Colours screen runs the theme gate on every change
-(`POST /api/v1/themes/check`: each token's worst check, and the nearest darker or lighter shade that passes) and
+(`POST /themes/check`: each token's worst check, and the nearest darker or lighter shade that passes) and
 offers that shade as a one-tap fix. Save stays off until both modes pass.
 
-Save sends the draft to the Mac (`PUT /api/v1/themes/<name>`). The server writes `theme.json`, `schemes/<name>-dark.json`,
+Save sends the draft to the Mac (`PUT /themes/<name>`). The server writes `theme.json`, `schemes/<name>-dark.json`,
 `schemes/<name>-light.json` and the copied pack's `sprites.svg`, `scene.svg` and `icon.png` to a staging folder, runs
 the gate, then moves it into `themes/<name>/` and pins it in the lock as `made here`. Saving an unchanged pack writes
-nothing. The app reloads `GET /api/v1/looks` and applies the pack, with no restart. Its files are plain: edit them by
+nothing. The app reloads `GET /looks` and applies the pack, with no restart. Its files are plain: edit them by
 hand afterwards.
 
 Each save keeps a last good copy in `<config dir>/.themes-stage/.good/<name>/`. If a hand edit later breaks the pack,
-every load serves that copy instead, and `GET /api/v1/looks` names the pack and its first failure in `broken`, which
+every load serves that copy instead, and `GET /looks` names the pack and its first failure in `broken`, which
 Look shows as one amber line.
 
 ## A scheme: `schemes/<name>.json`
@@ -95,8 +97,7 @@ group tints, and the state colours at least ΔE2000 20 apart. A scheme that fail
 
 ## The pick
 
-The server holds only the default theme (`theme` in `config.toml`; default `farm` when it is installed, else
-`plain`). Each device keeps its own pick
+The server holds only the default theme (`theme` in `config.toml`; default `farm`). Each device keeps its own pick
 in the native app, four choices (#35): Style (Modern, or an installed style pack: `docs/styles.md`), Theme, Figures
 (`sprite`, `ascii` or `none`) and Colours (Appearance `system`, `light` or `dark`, System following the phone live,
 and a scheme per mode). Both styles read the same tokens: a style sets only shape, radius, type and buttons.
@@ -122,6 +123,6 @@ the server's default theme (`theme` in `config.toml`), because a device's own pi
 
 ## The native look sheet's API
 
-The native look sheet's themes (#252): `GET /api/v1/looks` answers the installed packs as they are now, as JSON:
+The native look sheet's themes (#252): `GET /looks` answers the installed packs as they are now, as JSON:
 `{themes: {name: theme.json}, schemes: {name: {label, color-scheme, tokens}}, …}`. Each pack's files are
 at `GET /look/{theme}/sprites.svg`, `scene.svg` and `icon.png`, with no cookie.

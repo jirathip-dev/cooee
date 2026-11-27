@@ -1,6 +1,8 @@
 use std::{fs, sync::Mutex, time::Instant};
 
-use cooee_core::{Body, Change, Item, Kind, Queued, Via, agents, routines::Mark, shed_proto};
+use cooee_core::{
+    Body, Calls as _, Change, Item, Kind, Queued, Via, agents, routines::Mark, shed_proto,
+};
 
 use super::{Hub, HubError, live::Live, lock, now, refused};
 
@@ -31,6 +33,9 @@ impl Hub {
         let live = self.live(id)?;
         if lock(&live).meta.kind == Kind::Room {
             return self.room_send(&live, text, random_id, files);
+        }
+        if let Some(item) = self.mentioned(&live, text, random_id, files)? {
+            return Ok(item);
         }
         self.send_after(id, text, random_id, files, "", via)
     }
@@ -231,6 +236,7 @@ impl Hub {
             live.pending = None;
         }
         live.publish(self, vec![Change::Item(item.clone())])?;
+        self.copy_said(&live.meta.profile, &live.meta.id, &item);
         Ok(item)
     }
 
@@ -243,7 +249,9 @@ impl Hub {
     ) -> Result<(), HubError> {
         let got = ended.then(|| self.shed.get(terminal));
         match got {
-            Some(Err(e)) if e.no_such_terminal() => return Err(e.into()),
+            Some(Err(e)) if e.code() == Some(cooee_core::shed_proto::ErrorCode::NoSuchTerminal) => {
+                return Err(e.into());
+            }
             Some(t)
                 if !t
                     .as_ref()
@@ -256,7 +264,7 @@ impl Hub {
             _ => {}
         }
         if let Err(e) = self.shed.prompt(terminal, prompt) {
-            if e.no_link() {
+            if e.code() == Some(cooee_core::shed_proto::ErrorCode::NoLink) {
                 self.reachable(machine)?;
             }
             return Err(e.into());
@@ -277,6 +285,10 @@ impl Hub {
         files: &[Upload],
         via: Option<Via>,
     ) -> Result<Vec<Queued>, HubError> {
+        let live = self.live(id)?;
+        if self.mentioned(&live, text, random_id, files)?.is_some() {
+            return Ok(lock(&live).meta.queue.clone());
+        }
         self.queue_as(id, (text, random_id), files, (None, via))
     }
 

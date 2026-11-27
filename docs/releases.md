@@ -22,6 +22,19 @@ secure timestamp, identifier `cooee`), notarizes it with an App Store Connect AP
 A failed build, signing or publish step ends its job green with an error annotation and publishes nothing, so the
 workflow never turns a branch red. Staging builds are for verify lanes and TestFlight dry runs; hosts follow main.
 
+### Promoting staging to main (#806)
+
+A promotion is a PR from a branch `release/<sha7>` (pointing at a staging commit) into main, titled
+`release: promote staging at <sha7>`, merged with a merge commit. Its body is free-form: say the pinned sha, that
+staging ci is green there and the PRs it carries. No `## For humans` section is needed.
+
+`ci.yml` runs its gates on PRs into staging only. A PR into main gets `promote.yml` instead, whose one job passes only
+when the `ci` workflow's push run on staging at the PR's head sha ended green. The gates diff a PR against its base,
+and main lags staging by a whole promotion, so `core/arch` and `core/pr-body` would judge every commit since the last
+promotion again, though each passed them on its way into staging and staging's run passed all gates at that exact
+commit. The push to main after the merge runs the full gates again. Open the PR once staging's run at that sha is
+green, or re-run the `promote` job after it is.
+
 ### Secrets
 
 Set by the owner in the repo's `release` environment; only the macOS job reads them (drover's are the same cert and key):

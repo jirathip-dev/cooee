@@ -158,7 +158,7 @@ In a sheet, the sheet's done action sends every form in it.
 { "type": "form", "id": "f", "submit": { "label": "Save", "action": "save" }, "fields": [
   { "type": "text", "name": "branch", "label": "Branch", "value": "staging" },
   { "type": "toggle", "name": "drive", "label": "Drive", "value": true },
-  { "type": "picker", "name": "host", "label": "Host", "value": "mini", "options": ["mini", "air"] },
+  { "type": "picker", "name": "host", "label": "Host", "value": "mini", "options": ["mini", "lab"] },
   { "type": "secret", "name": "GH_TOKEN", "label": "GH_TOKEN", "set": true } ] }
 ```
 

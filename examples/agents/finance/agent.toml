@@ -1,2 +1,6 @@
 name = "Finance"
 agent = "claude-acp"
+
+[purpose]
+role = "Spending and receipts"
+use = "filing receipts and summing up spending"

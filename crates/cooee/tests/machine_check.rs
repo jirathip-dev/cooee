@@ -79,16 +79,17 @@ fn setup(name: &str) -> Setup {
     fs::write(
         dir.join("config.toml"),
         format!(
-            "port = 0\ndata = {}\nshed = {}\nshed_dir = {}\n[[providers]]\nname = \"fake\"\nagent = \"fake-acp\"\n\
-             login = [{}]\nstatus = [{}]\ninstall = \"get fake-cli\"\n",
+            "port = 0\ndata = {}\nshed = {}\nshed_dir = {}\n[[providers]]\nname = \"fake\"\nagent = \"fake-acp\"\n",
             q(dir.join("data")),
             q(shed.dir.join("shed")),
             q(shed.dir.clone()),
-            q(dir.join("bin/fake-cli")),
-            q(dir.join("status.sh")),
         ),
     )
     .unwrap();
+    let (login, status) = (dir.join("bin/fake-cli"), dir.join("status.sh"));
+    shed.record(
+        &serde_json::json!({ "login": login, "status": status, "install": "get fake-cli" }),
+    );
     Setup { dir, shed }
 }
 

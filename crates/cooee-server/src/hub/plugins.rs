@@ -40,6 +40,28 @@ impl Hub {
             .unwrap_or(Some(Vec::new()))
     }
 
+    pub(super) fn backing(&self, profile: &str) -> Option<(String, String)> {
+        let own = || cooee_core::agents::find(self.config_dir(), &self.data, profile).ok();
+        let backing = if profile.contains('/') {
+            Some(profile.to_owned())
+        } else {
+            own().and_then(|a| a.profile)
+        };
+        let (name, p) = backing.as_deref()?.split_once('/')?;
+        Some((name.to_owned(), p.to_owned()))
+    }
+
+    pub(super) fn report_start(&self, thread: &str, profile: &str) {
+        let Some((name, p)) = self.backing(profile) else {
+            return;
+        };
+        if let Some(b) = self.backend(&name)
+            && let Err(e) = plugin::started(&b, thread, &p)
+        {
+            cooee_core::note!("cooee: plugin {name}: thread-started: {e}");
+        }
+    }
+
     pub(super) fn refresh_served(&self) {
         let mut fresh = HashMap::new();
         let installed = cooee_core::plugins::read_lock(&self.data).unwrap_or_default();

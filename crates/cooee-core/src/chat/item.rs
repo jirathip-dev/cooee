@@ -1,6 +1,6 @@
+use crate::shed_proto::ApprovalOption;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
-use shed_proto::ApprovalOption;
 
 use super::Card;
 use crate::action::Kind;
@@ -169,6 +169,16 @@ pub enum Body {
         reason = "#776: show::Reply is the persona's reply as read"
     )]
     Blocks(crate::agents::show::Reply),
+    #[expect(
+        missing_docs,
+        reason = "a plugin row: its plugin, key, one plain line and block"
+    )]
+    Row {
+        plugin: String,
+        key: String,
+        text: String,
+        block: Value,
+    },
     /// A line from cooee itself (`model sonnet · effort low from the next start`).
     Note {
         /// The line.

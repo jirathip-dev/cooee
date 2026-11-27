@@ -241,10 +241,6 @@ internal struct SurfaceFrame: Sendable, CustomTestStringConvertible {
             SurfaceFrame(name: "widgets-scene-light", palette: .farmLight, style: .scene, view: frames[2].1),
         ]
 
-    private static let designs = URL(fileURLWithPath: #filePath).deletingLastPathComponent()
-        .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
-        .appendingPathComponent("design/native-surfaces")
-
     @MainActor
     internal func matchesItsDesign() throws {
         let content = view().frame(width: Frame.phoneWidth, height: Frame.phoneHeight).background(palette.background)
@@ -252,13 +248,7 @@ internal struct SurfaceFrame: Sendable, CustomTestStringConvertible {
             .environment(\.colorScheme, palette.dark ? .dark : .light)
         let renderer = ImageRenderer(content: content)
         renderer.scale = 2
-        let file = Self.designs.appendingPathComponent("\(name).png")
-        let design = try #require(NSImage(contentsOf: file)?.cgImage(forProposedRect: nil, context: nil, hints: nil))
-        let got = try #require(renderer.cgImage.flatMap(Pixels.init))
-        let want = try #require(Pixels(design))
-        #expect(got.width == want.width && got.height == want.height)
-        let off = got.differing(from: want, by: 16)
-        #expect(off <= 0.001, "\(name): \(off * 100)% of pixels differ")
+        try Frame.matches(try #require(renderer.cgImage), name, in: "native-surfaces")
     }
 }
 

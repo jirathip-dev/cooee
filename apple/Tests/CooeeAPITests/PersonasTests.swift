@@ -10,7 +10,7 @@ extension APIPersona {
             character: "Terse.", instructions: "Test first.", plugins: ["hello"]
         )
         coder.avatar = "data:image/png;base64,AA=="
-        coder.machine = "air"
+        coder.machine = "lab"
         coder.role = "orchestrator"
         coder.style = .detailed
         coder.fleets = ["cooee"]
@@ -37,7 +37,7 @@ internal struct PersonasTests {
         #expect(try JSONDecoder().decode(APIPersona.self, from: values) == edited)
         let body = try #require(server.body("/screens/action"))
         #expect(
-            body.contains(#""can_message":["chief"]"#) && body.contains(#""machine":"air""#)
+            body.contains(#""can_message":["chief"]"#) && body.contains(#""machine":"lab""#)
                 && body.contains(#""pinned":true"#)
                 && body.contains(#""role":"orchestrator""#) && body.contains(#""fleets":["cooee"]"#)
                 && body.contains(#""style":"detailed""#) && body.contains(#""version":"v1""#))
@@ -176,5 +176,16 @@ internal struct PersonasTests {
             try JSONDecoder().decode([String: String].self, from: try #require($0.httpBody))
         }
         #expect(bodies == [["token": "ab12"], ["token": "cd34", "activity": "act-1"]])
+    }
+}
+
+extension PersonasTests {
+    @Test internal func theServersTokensAreReadAndATestPushIsPosted() async throws {
+        let server = CannedServer([
+            "/push/endpoints": [Answer(chunks: [#"["ab12"]"#])], "/push/test": [Answer(chunks: ["test alert sent"])],
+        ])
+        #expect(try await server.client().pushed() == ["ab12"])
+        try await server.client().pushTest()
+        #expect(server.requests("/push/test").map(\.httpMethod) == ["POST"])
     }
 }

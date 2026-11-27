@@ -1,2 +1,6 @@
 name = "Analyst"
 agent = "claude-acp"
+
+[purpose]
+role = "Data analyst"
+use = "cleaning data, summing it up and drawing charts"

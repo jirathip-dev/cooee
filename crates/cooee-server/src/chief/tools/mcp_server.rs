@@ -10,7 +10,7 @@ struct Ask {
     name: String,
 }
 
-fn shape() -> Value {
+fn shape(_: &Hub) -> Value {
     json!({ "name": "mcp_server", "description": "Remove an MCP server of cooee's registry, or turn one on or off (add one with propose_server). The owner approves a card with the exact change with Face ID; nothing changes before. A refusal starts with NO_SERVER, IN_USE or BAD_ARGS.",
         "inputSchema": { "type": "object", "required": ["do", "name"], "properties": {
             "do": { "type": "string", "enum": ["remove", "on", "off"] },

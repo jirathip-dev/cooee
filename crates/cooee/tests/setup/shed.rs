@@ -31,10 +31,11 @@ fn a_missing_or_too_old_shed_stops_setup_naming_the_fix_and_changes_nothing() {
     let out = mac.setup(&["--yes"]);
     assert_eq!(out.status.code(), Some(1), "{out:?}");
     let stderr = String::from_utf8_lossy(&out.stderr);
-    let (v, b) = (&version().version, &version().build);
+    let v = &version().version;
     let said = format!(
-        "SHED_VERSION: cooee speaks shed {v} ({b}) protocol {PROTOCOL}; the server runs {v} (fffffff) protocol 0, older than protocol {SHED_MIN_PROTOCOL}; {fix}\nnothing was changed"
+        "SHED_VERSION: this client speaks shed protocol 3 to {PROTOCOL}; the server is {v} (fffffff) protocol 1 to 0; update shed there"
     );
+    assert!(stderr.contains("\nnothing was changed"), "{stderr}");
     assert!(stderr.contains(&said), "{stderr}\nwanted: {said}");
     assert_eq!(files(&mac.home), before);
     assert_eq!(mac.changes(), Vec::<String>::new());
