@@ -43,7 +43,7 @@ internal struct ItemView: View, Equatable {
             }
             .ui(13, .regular, look).frame(maxWidth: .infinity)
         case .card(_, let poster, let block):
-            BlockNode(block: block).environment(\.card, CardContext(poster: poster.map(LayoutSource.plugin) ?? .core))
+            BlockScreen(block, source: poster.map(LayoutSource.plugin) ?? .core)
         case .said(_, let speaker, let time, let blocks):
             Said(speaker: speaker, time: time, blocks: blocks)
         case .divider(_, let text):

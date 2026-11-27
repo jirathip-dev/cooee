@@ -25,8 +25,8 @@ internal struct DiagramFrames {
         _ screen: JSONValue, focus: String? = nil, width: CGFloat? = nil, beside: (String, JSONValue)? = nil
     ) -> some View {
         Color.clear.overlay(alignment: .top) {
-            BlocksView(screen, source: .plugin("drover"), focus: focus, picked: beside?.0, beside: beside?.1).padding(
-                BlocksView.inset
+            BlockScreen(screen, source: .plugin("drover"), focus: focus, picked: beside?.0, beside: beside?.1).padding(
+                BlockScreen.inset
             ).frame(
                 width: width
             ).padding(

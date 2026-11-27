@@ -121,3 +121,18 @@ extension EnvironmentValues {
         set { self[LookKey.self] = newValue }
     }
 }
+
+extension Palette {
+    internal func tone(_ name: String?) -> Color? {
+        switch name {
+        case "ok", "done": green
+        case "warn", "needs": amber
+        case "bad", "fail": red
+        case "info": link
+        case "working": cyan
+        case "accent": lead
+        case "mute", "idle": mute
+        default: nil
+        }
+    }
+}

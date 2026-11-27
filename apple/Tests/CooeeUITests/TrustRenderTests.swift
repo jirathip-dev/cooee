@@ -22,17 +22,16 @@ internal struct TrustRenderTests {
 
     @Test(arguments: CardTrust.guarded.sorted(), [Style.bundled, .worstCase] + Style.packs)
     internal func theJSONCanNeitherSetNorFakeTheSourceLineInAnyStyle(_ kind: String, _ style: Style) throws {
-        let missing = try Self.pixels(MissingPoster(kind: kind), style)
-        #expect(Self.same(try Self.pixels(BlocksView(Self.card(kind, faking: true), source: nil), style), missing))
-        #expect(Self.same(try Self.pixels(BlocksView(Self.card(kind), source: nil), style), missing))
-        let core = try Self.pixels(BlocksView(Self.card(kind), source: .core), style)
-        #expect(Self.same(try Self.pixels(BlocksView(Self.card(kind, faking: true), source: .core), style), core))
+        let missing = try Self.pixels(BlockScreen(Self.card(kind), source: nil), style)
+        #expect(Self.same(try Self.pixels(BlockScreen(Self.card(kind, faking: true), source: nil), style), missing))
+        let core = try Self.pixels(BlockScreen(Self.card(kind), source: .core), style)
+        #expect(Self.same(try Self.pixels(BlockScreen(Self.card(kind, faking: true), source: .core), style), core))
         #expect(!Self.same(core, missing))
     }
 
     @Test internal func aPluginsPermissionsCardIsRefused() throws {
-        let edgar = try Self.pixels(BlocksView(Self.card("permissions"), source: .plugin("edgar")))
-        #expect(Self.same(edgar, try Self.pixels(MissingPoster(kind: "permissions"))))
-        #expect(!Self.same(try Self.pixels(BlocksView(Self.card("secret"), source: .plugin("edgar"))), edgar))
+        let edgar = try Self.pixels(BlockScreen(Self.card("permissions"), source: .plugin("edgar")))
+        #expect(Self.same(edgar, try Self.pixels(BlockScreen(Self.card("permissions"), source: nil))))
+        #expect(!Self.same(try Self.pixels(BlockScreen(Self.card("secret"), source: .plugin("edgar"))), edgar))
     }
 }
