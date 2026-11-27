@@ -28,7 +28,12 @@ pub fn follow_rows(hub: Arc<Hub>) {
 
 async fn follow_one(hub: Arc<Hub>, name: String) {
     loop {
-        if let Err(e) = follow_once(&hub, &name).await {
+        let (asked, named) = (Arc::clone(&hub), name.clone());
+        let offered = off(move || {
+            asked.offer(&named);
+            Ok(())
+        });
+        if let Err(e) = offered.await.and(follow_once(&hub, &name).await) {
             cooee_core::note!("cooee: plugin {name}: its rows: {e}");
         }
         tokio::time::sleep(AGAIN).await;

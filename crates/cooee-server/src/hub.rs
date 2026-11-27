@@ -52,6 +52,7 @@ pub use mail::*;
 pub use proposals::*;
 pub use rooms::*;
 pub use route::*;
+pub use rows::*;
 pub use screen::*;
 pub use secret::*;
 pub use send::*;

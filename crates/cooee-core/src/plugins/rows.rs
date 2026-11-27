@@ -17,6 +17,15 @@ pub struct Threads {
     pub attach: String,
 }
 
+impl Threads {
+    /// Where the plugin serves its own manifest: beside its rows.
+    #[must_use]
+    pub fn manifest(&self) -> String {
+        let dir = self.rows.rsplit_once('/').map_or("", |(dir, _)| dir);
+        format!("{dir}/manifest")
+    }
+}
+
 /// A chat's attachment to its plugin (#823): a repo, `all` or `none`, and the old thread id it adopted.
 #[derive(Debug, Clone, Default, PartialEq, Eq, Deserialize, Serialize)]
 pub struct Attach {
