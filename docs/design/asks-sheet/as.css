@@ -136,3 +136,15 @@ html[data-look=terminal] .mac .sh{border-top:0;border-left:1px dashed var(--edge
 html[data-look=terminal] .chp .n{display:inline;min-width:0;height:auto;white-space:nowrap;font:700 13px/1 var(--mono)}
 .mac .th,.mac .hd{padding-left:32px;padding-right:32px}
 .mac .nl,.mac .cmp{max-width:calc(760px - 64px)}
+
+/* No stuck row open (Chief's approvals and check-ins): the badge and the one line are amber, not red. */
+html:not([data-urgent="1"]) .chp.ask{border-color:color-mix(in srgb,var(--amber) 60%,var(--edge))}
+html:not([data-urgent="1"]) .chp.ask .n{background:var(--amber)}
+html[data-look=terminal]:not([data-urgent="1"]) .chp.ask:not(.on) .n{background:none;color:var(--amber)}
+html:not([data-urgent="1"]) .nl{background:color-mix(in srgb,var(--amber) 12%,var(--card));border-color:color-mix(in srgb,var(--amber) 45%,transparent)}
+html[data-look=terminal]:not([data-urgent="1"]) .nl{background:none}
+.ak[data-g=approvals]{border-color:color-mix(in srgb,var(--amber) 70%,var(--edge))}
+html[data-look=terminal] .ak[data-g=approvals]{border-left-color:var(--amber)}
+.ak[data-g=check-in] .tag{background:color-mix(in srgb,var(--link) 18%,transparent);color:var(--link)}
+html[data-look=terminal] .ak[data-g=check-in]{border-left-color:var(--link)}
+html[data-look=terminal] .ak[data-g=check-in] .tag{background:none}

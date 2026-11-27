@@ -6,7 +6,7 @@ import { extname, join } from 'node:path';
 
 const here = new URL('.', import.meta.url).pathname, root = join(here, '../../..');
 const [chrome, re] = process.argv.slice(2);
-const VIEWS = ['chat', 'sheet'].flatMap(p => ['modern', 'terminal', 'scene'].flatMap(l => ['dark', 'light'].flatMap(m => [390, 1440].map(w => [p, l, m, w]))));
+const VIEWS = ['conductor', 'chief'].flatMap(who => ['chat', 'sheet'].flatMap(p => ['modern', 'terminal', 'scene'].flatMap(l => ['dark', 'light'].flatMap(m => [390, 1440].map(w => [who, p, l, m, w])))));
 const TYPES = { '.html': 'text/html', '.css': 'text/css', '.js': 'text/javascript', '.png': 'image/png', '.json': 'application/json', '.svg': 'image/svg+xml' };
 const srv = createServer((q, r) => {
   try {
@@ -54,14 +54,14 @@ const cmd = (m, p) => send(m, p, s);
 const js = async x => (await cmd('Runtime.evaluate', { expression: x, returnByValue: true, awaitPromise: true })).result.value;
 await cmd('Page.enable');
 let fail = 0;
-for (const [page, look, mode, w] of VIEWS) {
-  const out = `${page}-${look}-${w}-${mode}.png`;
+for (const [who, page, look, mode, w] of VIEWS) {
+  const out = `${who === 'chief' ? 'chief-' : ''}${page}-${look}-${w}-${mode}.png`;
   if (re && !new RegExp(re).test(out)) continue;
   const phone = w < 1000, dpr = phone ? 2 : 1;
   let h = phone ? 844 : 900;
   await cmd('Emulation.setEmulatedMedia', { features: [{ name: 'prefers-color-scheme', value: mode }, { name: 'prefers-reduced-motion', value: 'reduce' }] });
   await cmd('Emulation.setDeviceMetricsOverride', { width: w, height: h, deviceScaleFactor: dpr, mobile: phone });
-  await cmd('Page.navigate', { url: `${base}${page}.html?look=${look}&mode=${mode}` });
+  await cmd('Page.navigate', { url: `${base}${page}.html?persona=${who}&look=${look}&mode=${mode}` });
   for (let i = 0; i < 50 && !(await js('document.body && document.body.dataset.ready')); i++) await sleep(100);
   await js('Promise.all([...document.images].map(i => i.complete || new Promise(ok => { i.onload = i.onerror = ok; })))');
   if (phone && page === 'sheet') {

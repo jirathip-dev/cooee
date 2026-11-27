@@ -1,44 +1,313 @@
 {
+ "conductor": {
   "chat": {
-    "title": "Conductor", "agent": "Claude Code", "model": "opus 5.5",
-    "chips": [{"label": "Queue", "count": 7}, {"label": "Events"}],
-    "thread": [
-      {"who": "you", "text": "How's cooee's queue? Anything I should look at before lunch?"},
-      {"who": "tool", "name": "Run", "arg": "drover status cooee", "more": "2 tools"},
-      {"who": "agent", "md": ["Four in flight on **cooee**, one stuck:", "• #852 asks sheet: **design review**, waiting on you", "• #845 statechart: review 1, PASS so far", "• #851 chat restart: fix 1, 12m in", "• #612 Bonjour: parked for later", "Drive on cooee hasn't finished a pass in 15 minutes: the mini is busy. **Drive now** retries once; **Force** spawns past the load check. #341 hit its round limit on review 3."]},
-      {"who": "you", "text": "OK. What's #341's last finding?"},
-      {"who": "agent", "md": ["The rev's one blocking finding is a test that asserts a constant (`ROUND_LIMIT == 3`), so it catches nothing. The impl fixed the code twice; only that test keeps failing. One more round with the note \"drop the tautological test\" should land it."]}
-    ]
+   "title": "Conductor",
+   "agent": "Claude Code",
+   "model": "opus 5.5",
+   "chips": [
+    {
+     "label": "Queue",
+     "count": 7
+    },
+    {
+     "label": "Events"
+    }
+   ],
+   "thread": [
+    {
+     "who": "you",
+     "text": "How's cooee's queue? Anything I should look at before lunch?"
+    },
+    {
+     "who": "tool",
+     "name": "Run",
+     "arg": "drover status cooee",
+     "more": "2 tools"
+    },
+    {
+     "who": "agent",
+     "md": [
+      "Four in flight on **cooee**, one stuck:",
+      "• #852 asks sheet: **design review**, waiting on you",
+      "• #845 statechart: review 1, PASS so far",
+      "• #851 chat restart: fix 1, 12m in",
+      "• #612 Bonjour: parked for later",
+      "Drive on cooee hasn't finished a pass in 15 minutes: the mini is busy. **Drive now** retries once; **Force** spawns past the load check. #341 hit its round limit on review 3."
+     ]
+    },
+    {
+     "who": "you",
+     "text": "OK. What's #341's last finding?"
+    },
+    {
+     "who": "agent",
+     "md": [
+      "The rev's one blocking finding is a test that asserts a constant (`ROUND_LIMIT == 3`), so it catches nothing. The impl fixed the code twice; only that test keeps failing. One more round with the note \"drop the tautological test\" should land it."
+     ]
+    }
+   ]
   },
   "groups": [
-    {"id": "stuck", "label": "Stuck"},
-    {"id": "needs-human", "label": "Needs human"},
-    {"id": "design", "label": "Design approvals"},
-    {"id": "later", "label": "Later"}
+   {
+    "id": "stuck",
+    "label": "Stuck",
+    "urgent": true
+   },
+   {
+    "id": "needs-human",
+    "label": "Needs human"
+   },
+   {
+    "id": "design",
+    "label": "Design approvals"
+   },
+   {
+    "id": "later",
+    "label": "Later"
+   }
   ],
   "asks": [
-    {"key": "stuck-cooee", "group": "stuck", "fig": "fail", "coat": "bay", "head": "cooee", "tag": "drive", "age": "15m",
-     "title": "Drive is stuck", "text": "No pass finished in 3 ticks. Last: HOST_BUSY, CPU idle 4 % under 10 % on mini.",
-     "options": [{"label": "Drive now", "primary": true}, {"label": "Force"}]},
-    {"key": "q4121", "group": "needs-human", "fig": "needs", "coat": "blk", "head": "cooee #341", "tag": "needs-human", "age": "9m",
-     "title": "chat: older messages page in on scroll", "text": "Round limit: review 3 FAIL, 1 finding (a test of a constant).",
-     "options": [{"label": "one more round", "primary": true, "rec": true}, {"label": "park"}, {"label": "later"}],
-     "answered": {"option": "one more round", "by": "you", "when": "now"}},
-    {"key": "q4122", "group": "needs-human", "fig": "needs", "coat": "ch", "head": "cooee #655", "tag": "needs-human", "age": "21m",
-     "title": "drive: a stale pane after a host reboot", "text": "UPDATE_LIMIT: 3 passed update rounds, still behind staging.",
-     "options": [{"label": "one more round", "primary": true, "rec": true}, {"label": "park"}, {"label": "later"}]},
-    {"key": "q4110", "group": "design", "fig": "needs", "coat": "gry", "head": "cooee #852", "tag": "design", "age": "4m",
-     "title": "Approve the Asks sheet?", "text": "12 frames: the chat's one line, the sheet, Modern, Terminal, Scene.",
-     "images": ["../queue-scene/scene-390-dark.png", "../queue-scene/ask-modern-390-light.png", "../queue-scene/rows-terminal-390-dark.png"],
-     "options": [{"label": "approve", "primary": true, "rec": true}, {"label": "revise"}, {"label": "reject", "danger": true}, {"label": "later"}]},
-    {"key": "q4087", "group": "later", "fig": "idle", "coat": "wht", "head": "herdsman #612", "tag": "needs-human", "age": "later · 2h",
-     "title": "Bonjour: a second Mac on the LAN", "text": "Round limit: review 3 FAIL, 2 findings.",
-     "options": [{"label": "one more round", "primary": true}, {"label": "park"}]}
-  ],
-  "sidebar": [
-    {"name": "Conductor", "sub": "drover · 3 fleets", "age": "now", "sel": true},
-    {"name": "Chief", "sub": "Every Monday at 09:00 I'll check the renewals", "age": "2m"},
-    {"name": "Coder", "sub": "$ cargo test -p cooee-core", "age": "9m"},
-    {"name": "Researcher", "sub": "Fetch sec.gov … company=kestrel", "age": "12m"}
+   {
+    "key": "stuck-cooee",
+    "group": "stuck",
+    "fig": "fail",
+    "coat": "bay",
+    "head": "cooee",
+    "tag": "drive",
+    "age": "15m",
+    "title": "Drive is stuck",
+    "text": "No pass finished in 3 ticks. Last: HOST_BUSY, CPU idle 4 % under 10 % on mini.",
+    "options": [
+     {
+      "label": "Drive now",
+      "primary": true
+     },
+     {
+      "label": "Force"
+     }
+    ]
+   },
+   {
+    "key": "q4121",
+    "group": "needs-human",
+    "fig": "needs",
+    "coat": "blk",
+    "head": "cooee #341",
+    "tag": "needs-human",
+    "age": "9m",
+    "title": "chat: older messages page in on scroll",
+    "text": "Round limit: review 3 FAIL, 1 finding (a test of a constant).",
+    "options": [
+     {
+      "label": "one more round",
+      "primary": true,
+      "rec": true
+     },
+     {
+      "label": "park"
+     },
+     {
+      "label": "later"
+     }
+    ],
+    "answered": {
+     "option": "one more round",
+     "by": "you",
+     "when": "now"
+    }
+   },
+   {
+    "key": "q4122",
+    "group": "needs-human",
+    "fig": "needs",
+    "coat": "ch",
+    "head": "cooee #655",
+    "tag": "needs-human",
+    "age": "21m",
+    "title": "drive: a stale pane after a host reboot",
+    "text": "UPDATE_LIMIT: 3 passed update rounds, still behind staging.",
+    "options": [
+     {
+      "label": "one more round",
+      "primary": true,
+      "rec": true
+     },
+     {
+      "label": "park"
+     },
+     {
+      "label": "later"
+     }
+    ]
+   },
+   {
+    "key": "q4110",
+    "group": "design",
+    "fig": "needs",
+    "coat": "gry",
+    "head": "cooee #852",
+    "tag": "design",
+    "age": "4m",
+    "title": "Approve the Asks sheet?",
+    "text": "12 frames: the chat's one line, the sheet, Modern, Terminal, Scene.",
+    "images": [
+     "../queue-scene/scene-390-dark.png",
+     "../queue-scene/ask-modern-390-light.png",
+     "../queue-scene/rows-terminal-390-dark.png"
+    ],
+    "options": [
+     {
+      "label": "approve",
+      "primary": true,
+      "rec": true
+     },
+     {
+      "label": "revise"
+     },
+     {
+      "label": "reject",
+      "danger": true
+     },
+     {
+      "label": "later"
+     }
+    ]
+   },
+   {
+    "key": "q4087",
+    "group": "later",
+    "fig": "idle",
+    "coat": "wht",
+    "head": "herdsman #612",
+    "tag": "needs-human",
+    "age": "later · 2h",
+    "title": "Bonjour: a second Mac on the LAN",
+    "text": "Round limit: review 3 FAIL, 2 findings.",
+    "options": [
+     {
+      "label": "one more round",
+      "primary": true
+     },
+     {
+      "label": "park"
+     }
+    ]
+   }
   ]
+ },
+ "chief": {
+  "chat": {
+   "title": "Chief",
+   "agent": "Claude Code",
+   "model": "sonnet 5.5",
+   "chips": [],
+   "avatar": "wht",
+   "thread": [
+    {
+     "who": "you",
+     "text": "Can you keep an eye on the renewals for me? Domains, the insurance, that kind of thing."
+    },
+    {
+     "who": "agent",
+     "md": [
+      "Yes. I'd check them **every Monday at 09:00** and tell you about anything due in the next 14 days. That's a new routine, so it needs your OK: it's in **Asks**."
+     ]
+    },
+    {
+     "who": "tool",
+     "name": "Read",
+     "arg": "renewals.md",
+     "more": "3 tools"
+    },
+    {
+     "who": "agent",
+     "md": [
+      "I ran the first check now so you don't wait for Monday. One thing is due soon: `kestrel.dev` renews on **3 Dec**, and the card on file expires at the end of November. It's in **Asks** too."
+     ]
+    }
+   ]
+  },
+  "groups": [
+   {
+    "id": "approvals",
+    "label": "Approvals"
+   },
+   {
+    "id": "check-in",
+    "label": "Check-in"
+   }
+  ],
+  "asks": [
+   {
+    "key": "p31",
+    "group": "approvals",
+    "fig": "needs",
+    "coat": "wht",
+    "head": "Chief",
+    "tag": "new routine",
+    "age": "3m",
+    "title": "Check the renewals every Monday at 09:00",
+    "text": "Reads renewals.md and tells you about anything due in the next 14 days. No tools beyond Read.",
+    "options": [
+     {
+      "label": "approve",
+      "primary": true,
+      "rec": true
+     },
+     {
+      "label": "edit"
+     },
+     {
+      "label": "deny",
+      "danger": true
+     }
+    ]
+   },
+   {
+    "key": "c7",
+    "group": "check-in",
+    "fig": "idle",
+    "coat": "wht",
+    "head": "Chief",
+    "tag": "check-in",
+    "age": "1m",
+    "title": "kestrel.dev renews on 3 Dec",
+    "text": "The card on file expires on 30 Nov, so the renewal will fail unless you update it.",
+    "options": [
+     {
+      "label": "remind me Friday",
+      "primary": true
+     },
+     {
+      "label": "done it"
+     },
+     {
+      "label": "dismiss"
+     }
+    ]
+   }
+  ]
+ },
+ "sidebar": [
+  {
+   "name": "Conductor",
+   "sub": "drover · 3 fleets",
+   "age": "now"
+  },
+  {
+   "name": "Chief",
+   "sub": "Every Monday at 09:00 I'll check the renewals",
+   "age": "2m"
+  },
+  {
+   "name": "Coder",
+   "sub": "$ cargo test -p cooee-core",
+   "age": "9m"
+  },
+  {
+   "name": "Researcher",
+   "sub": "Fetch sec.gov … company=kestrel",
+   "age": "12m"
+  }
+ ]
 }

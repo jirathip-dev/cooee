@@ -9,11 +9,13 @@ const FIG = { fail: 'x_x', needs: '(!)', idle: '-.-' };
 const esc = s => s.replace(/&/g, '&amp;').replace(/</g, '&lt;');
 const md = s => esc(s).replace(/\*\*(.+?)\*\*/g, '<b>$1</b>').replace(/`(.+?)`/g, '<code>$1</code>');
 
-const d = await (await fetch('asks.json')).json();
+const all = await (await fetch('asks.json')).json(), persona = q.get('persona') || 'conductor', d = { ...all[persona], sidebar: all.sidebar };
 const sheet = page === 'sheet';
 const open = d.asks.filter(a => !(sheet && a.answered));
 const rank = Object.fromEntries(d.groups.map((g, i) => [g.id, i]));
 const sorted = [...d.asks].sort((a, b) => rank[a.group] - rank[b.group]);
+const urgent = open.some(a => d.groups.find(g => g.id === a.group).urgent);
+document.documentElement.dataset.urgent = urgent ? '1' : '';
 
 function figure(a) {
   if (look === 'scene') return `<img class="fig" src="${sprite(a.coat, a.fig)}" alt="">`;
@@ -25,7 +27,7 @@ function header() {
   const n = open.length;
   const chips = d.chat.chips.map(c => `<span class="chp">${c.label}${c.count ? `<span class="n">${c.count}</span>` : ''}</span>`).join('')
     + (n ? `<span class="chp ask${sheet ? ' on' : ''}">Asks<span class="n">${n}</span></span>` : '');
-  const av = look === 'scene' ? `<span class="av"><img src="${sprite('bay', 'idle')}" alt=""></span>` : `<span class="av">${look === 'terminal' ? '~o=' : '◉'}</span>`;
+  const av = look === 'scene' ? `<span class="av"><img src="${sprite(d.chat.avatar || 'bay', 'idle')}" alt=""></span>` : `<span class="av">${look === 'terminal' ? '~o=' : '◉'}</span>`;
   const back = wide ? '' : `<span class="rb">${look === 'terminal' ? '[&lt;]' : '‹'}</span>`;
   const more = wide ? '' : `<span class="rb">${look === 'terminal' ? '[…]' : '…'}</span>`;
   return `<div class="hd">${back}${av}<div class="ti"><b>${d.chat.title}</b><small>${d.chat.agent} · ${d.chat.model} ⌄</small></div>${more}<div class="chips">${chips}</div></div>`;
@@ -77,7 +79,7 @@ function sheetView() {
 
 const chat = `<div class="phone">${wide ? '' : '<div class="sb">9:41<i>▂▄▆ ◠ ▭</i></div>'}${header()}<div class="th${wide ? ' col' : ''}">${thread()}</div>${line()}${composer()}</div>`;
 if (wide) {
-  const side = `<aside class="sd"><h2>cooee</h2>${d.sidebar.map(s => `<div class="sr${s.sel ? ' sel' : ''}"><b>${s.name}</b><small>${s.sub}</small><span class="t">${s.age}</span></div>`).join('')}</aside>`;
+  const side = `<aside class="sd"><h2>cooee</h2>${d.sidebar.map(s => `<div class="sr${s.name === d.chat.title ? ' sel' : ''}"><b>${s.name}</b><small>${s.sub}</small><span class="t">${s.age}</span></div>`).join('')}</aside>`;
   document.body.innerHTML = `<div class="mac${sheet ? ' open' : ''}">${side}${chat}${sheet ? sheetView() : ''}</div>`;
 } else {
   document.body.innerHTML = chat + (sheet ? `<div class="dim"></div>${sheetView()}` : '');
