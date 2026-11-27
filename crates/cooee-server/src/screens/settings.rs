@@ -89,6 +89,17 @@ fn time(since: Option<u64>, until: Option<u64>, label: &str) -> Shown {
     })
 }
 
+fn resets_in(at: u64, label: &str) -> Shown {
+    let left = at.saturating_sub(cooee_machines::unix_now());
+    let (d, h, m) = (left / 86_400, left / 3600 % 24, left / 60 % 60);
+    let rel = match (d, h) {
+        (0, 0) => return time(None, Some(at), label),
+        (0, _) => format!("{h}h {m}m"),
+        _ => format!("{d}d {h}h"),
+    };
+    Shown::Text(label.replace("{rel}", &rel))
+}
+
 fn state(a: &Account) -> Label {
     let (text, tone) = match a.state {
         AccountState::Ready => ("signed in", Tone::Ok),
@@ -100,7 +111,7 @@ fn state(a: &Account) -> Label {
         .or_else(|| fullest(a).and_then(|w| w.resets_at));
     let text = match resets {
         Some(at) if a.state == AccountState::Limited => {
-            time(None, Some(at), "at its limit · resets in {rel}")
+            resets_in(at, "at its limit · resets in {rel}")
         }
         _ => text.into(),
     };
@@ -165,7 +176,7 @@ fn usage(a: &Account) -> Vec<Block> {
             });
         match w.resets_at {
             Some(at) => row.subtitle(Toned::Label(Label {
-                text: time(None, Some(at), "resets in {rel}"),
+                text: resets_in(at, "resets in {rel}"),
                 tone: None,
             })),
             None => row,
@@ -217,7 +228,7 @@ fn detail(a: &Account) -> Block {
     blocks.push(Block::Section(Box::new(acts)));
     crate::http::core(
         Screen::default()
-            .id("account")
+            .id(format!("{SIGNINS}/{}/{}", a.provider, a.name))
             .title(name)
             .back("Sign-ins")
             .blocks(blocks),
@@ -339,13 +350,14 @@ pub async fn signin_login(cx: &Cx) -> Result<Answer<Block>> {
         let values = crate::http::fields(serde_json::json!({
             "provider": provider, "account": name,
         }));
-        Ok(login(&format!("{provider} · {name}"), &view, values))
+        let id = format!("{SIGNINS}/{provider}/{name}/login");
+        Ok(login(&id, &format!("{provider} · {name}"), &view, values))
     })
     .await;
     Ok(Answer(shown))
 }
 
-fn login(back: &str, v: &LoginView, values: blocks::Fields) -> Block {
+fn login(id: &str, back: &str, v: &LoginView, values: blocks::Fields) -> Block {
     let text = |id: &str, md: String| Block::Text(Box::new(Text::default().id(id).markdown(md)));
     let blocks = if v.state == "running" {
         let mut blocks = vec![text("screen", format!("```\n{}\n```", v.screen))];
@@ -381,7 +393,7 @@ fn login(back: &str, v: &LoginView, values: blocks::Fields) -> Block {
     };
     crate::http::core(
         Screen::default()
-            .id("login")
+            .id(id)
             .title("Sign in")
             .back(back)
             .refresh(true)

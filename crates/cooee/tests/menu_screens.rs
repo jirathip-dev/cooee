@@ -4,7 +4,11 @@
 
 mod support;
 
-use std::{fs, os::unix::fs::PermissionsExt};
+use std::{
+    fs,
+    os::unix::fs::PermissionsExt,
+    time::{SystemTime, UNIX_EPOCH},
+};
 
 use serde_json::{Value, json};
 use support::{Cooee, FakeShed, scratch, snapshot, version};
@@ -122,8 +126,11 @@ const PROVIDERS: &str = "[[providers]]\nname = \"fake\"\nagent = \"fake-acp\"\nl
 fn signins(name: &str) -> (FakeShed, Cooee) {
     let dir = scratch(name);
     let shed = FakeShed::start(&dir.join("shed"), version());
-    let window =
-        |id: &str, pct: u32, resets: u64| json!({ "id": id, "used_pct": pct, "resets_at": resets });
+    let now = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap()
+        .as_secs();
+    let window = |id: &str, pct: u32, left: u64| json!({ "id": id, "used_pct": pct, "resets_at": now + left + 30 });
     let account = |provider: &str, name: &str, usage: Value| {
         json!({ "provider": provider, "name": name, "state": "ready", "who": format!("{name}@example.com"),
                 "line": "", "usage": usage })
@@ -133,14 +140,14 @@ fn signins(name: &str) -> (FakeShed, Cooee) {
         "fake",
         "work",
         usage(json!([
-            window("5h", 84, 1_800_004_320),
-            window("7d", 41, 1_800_300_000)
+            window("5h", 84, 3600 + 12 * 60),
+            window("7d", 41, 3 * 86_400 + 19 * 3600)
         ])),
     ));
     shed.put_account(account(
         "fake",
         "jk",
-        usage(json!([window("7d", 36, 1_800_300_000)])),
+        usage(json!([window("7d", 36, 3 * 86_400 + 19 * 3600)])),
     ));
     shed.put_account(account("fake", "plain", Value::Null));
     let mut api = account("fake-api", "ci", Value::Null);
@@ -149,10 +156,10 @@ fn signins(name: &str) -> (FakeShed, Cooee) {
     let mut limited = account(
         "fake",
         "max",
-        usage(json!([window("7d", 100, 1_800_300_000)])),
+        usage(json!([window("7d", 100, 3 * 86_400 + 19 * 3600)])),
     );
     limited["state"] = json!("limited");
-    limited["limited_until"] = json!(1_800_008_040u64);
+    limited["limited_until"] = json!(now + 2 * 3600 + 14 * 60 + 30);
     shed.put_account(limited);
     let login = shed.dir.join("login-fake");
     fs::write(&login, "#!/bin/sh\nexit 0\n").unwrap();
@@ -185,8 +192,7 @@ fn sign_ins_list_this_hosts_accounts_with_a_figure_per_usage_window() {
     let mut limited = row(
         "fake/max",
         "fake · max@example.com",
-        &json!({ "text": { "until": "2027-01-15T10:14:00Z", "label": "at its limit · resets in {rel}" },
-                "tone": "warn" }),
+        &json!({ "text": "at its limit · resets in 2h 14m", "tone": "warn" }),
     );
     limited["badge"] = json!({ "text": "7d 100%", "tone": "warn" });
     let blocks = screen["blocks"].as_array().unwrap();
@@ -209,9 +215,9 @@ fn an_accounts_detail_lists_its_windows_and_its_two_buttons() {
         blocks[1]["blocks"][0]["rows"],
         json!([
             { "type": "row", "id": "w/5h", "title": "5h", "badge": { "text": "84%", "tone": "warn" },
-              "subtitle": { "text": { "until": "2027-01-15T09:12:00Z", "label": "resets in {rel}" } } },
+              "subtitle": { "text": "resets in 1h 12m" } },
             { "type": "row", "id": "w/7d", "title": "7d", "badge": { "text": "41%" },
-              "subtitle": { "text": { "until": "2027-01-18T19:20:00Z", "label": "resets in {rel}" } } },
+              "subtitle": { "text": "resets in 3d 19h" } },
             { "type": "row", "id": "read", "title": "Read by shed",
               "value": { "since": "2027-01-15T07:58:00Z", "label": "{} ago" } }
         ])
@@ -242,12 +248,12 @@ fn link_and_code(screen: &Value) -> (Value, Value) {
     )
 }
 
-fn act(cooee: &Cooee, action: &str, name: &str, more: Value) -> (u16, Value) {
+fn act(cooee: &Cooee, on: &str, action: &str, name: &str, more: Value) -> (u16, Value) {
     let mut values = json!({ "provider": "fake", "account": name });
     if let (Some(all), Value::Object(more)) = (values.as_object_mut(), more) {
         all.extend(more);
     }
-    let screen = format!("/screens/settings/signins/fake/{name}");
+    let screen = cooee.json(on)["id"].clone();
     let (status, body) = cooee.post(
         "/screens/action",
         &json!({ "screen": screen, "action": action, "values": values }),
@@ -274,10 +280,11 @@ fn shown(cooee: &Cooee, path: &str, text: &str) -> Value {
 #[test]
 fn an_account_signs_out_through_shed() {
     let (shed, cooee) = signins("signins-out");
-    let (status, body) = act(&cooee, "signin.out", "jk", json!({}));
+    let jk = "/screens/settings/signins/fake/jk";
+    assert_eq!(act(&cooee, jk, "signin.nope", "jk", json!({})).0, 400);
+    let (status, body) = act(&cooee, jk, "signin.out", "jk", json!({}));
     assert_eq!((status, body["close"].clone()), (200, json!(true)));
     assert!(shed.account_of("fake", "jk").is_none());
-    assert_eq!(act(&cooee, "signin.nope", "jk", json!({})).0, 400);
 }
 
 #[test]
@@ -289,7 +296,13 @@ fn sign_in_again_opens_the_login_sheet_with_its_link_and_code_field() {
         "#!/bin/sh\necho 'Open https://login.example.com/here'\necho 'Paste code >'\nread code\nexit 0\n",
     )
     .unwrap();
-    let (status, body) = act(&cooee, "signin.again", "work", json!({}));
+    let (status, body) = act(
+        &cooee,
+        "/screens/settings/signins/fake/work",
+        "signin.again",
+        "work",
+        json!({}),
+    );
     let sheet = "/screens/settings/signins/fake/work/login";
     assert_eq!((status, &body["open"]), (200, &json!(sheet)));
     let screen = shown(&cooee, sheet, "Paste code");
@@ -302,9 +315,9 @@ fn sign_in_again_opens_the_login_sheet_with_its_link_and_code_field() {
     );
     let terminal = shed.runs().last().unwrap().clone();
     let code = json!({ "code": "123456" });
-    assert_eq!(act(&cooee, "signin.code", "work", code).0, 200);
+    assert_eq!(act(&cooee, sheet, "signin.code", "work", code).0, 200);
     assert_eq!(shed.sent(&terminal), ["123456"]);
-    let (status, body) = act(&cooee, "signin.cancel", "work", json!({}));
+    let (status, body) = act(&cooee, sheet, "signin.cancel", "work", json!({}));
     assert_eq!((status, body["close"].clone()), (200, json!(true)));
 }
 
