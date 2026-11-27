@@ -406,8 +406,7 @@ pub fn profiles(p: &Plugin) -> io::Result<Option<Vec<Profile>>> {
     }
 }
 
-/// The `[permissions]` places, actions and destructive ones `p`'s backend serves in its manifest at `path`; fails
-/// unless it answers a 200 with them in 5 s.
+/// The `[permissions]` places, actions and destructive ones `p`'s backend serves at `path`, in 5 s.
 pub fn served(p: &Plugin, path: &str) -> io::Result<Permissions> {
     #[derive(serde::Deserialize)]
     struct Screen {

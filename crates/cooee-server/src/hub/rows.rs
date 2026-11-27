@@ -259,8 +259,7 @@ impl Hub {
         Some((self.backend(name)?, threads.manifest()))
     }
 
-    /// Whether installed plugin `name` takes `action`: its pinned `m`'s or one the owner accepted; else re-reads its
-    /// served manifest, which may ask the owner.
+    /// Whether plugin `name` takes `action`: pinned in `m` or accepted; else re-reads what it serves.
     #[must_use]
     pub fn takes(&self, name: &str, m: &Manifest, action: &str) -> bool {
         if self.grants(name, m).actions.iter().any(|a| a == action) {
@@ -270,8 +269,7 @@ impl Hub {
         false
     }
 
-    /// Re-reads the manifest an index plugin `name` with rows serves; what it asks beyond what the owner granted shows
-    /// once on cooee's own card in its cards place, until accepted.
+    /// Shows once on cooee's card in its cards place what index plugin `name` serves beyond its grants.
     pub fn offer(&self, name: &str, m: &Manifest) {
         let Some((p, path)) = self.serving(name) else {
             return;
