@@ -1,11 +1,10 @@
 import CooeeCore
 import SwiftUI
-import UniformTypeIdentifiers
 
 internal struct Composer: View {
     @Environment(\.look) private var look
     @Environment(\.members) private var members
-    private let picking = State(initialValue: false)
+    private let menu = State(initialValue: false)
     private let sending = State(initialValue: false)
     @FocusState private var typing: Bool
     internal let hint: String
@@ -35,32 +34,28 @@ internal struct Composer: View {
                 Alternatives(unsure: unsure, pick: actions.voice.pick)
             }
             HStack(alignment: .bottom, spacing: 8) {
-                Button {
-                    picking.wrappedValue = true
-                } label: {
-                    RoundButton(symbol: "plus", ascii: "+", size: 42)
-                }
-                .buttonStyle(.plain).accessibilityLabel("Attach")
+                menuButton
                 field
-                sendButton
+                if talking { MicButton(voice: actions.voice) } else { sendButton }
             }
         }
         .padding(.bottom, lifted ? min(rest, 8) : rest)
-        .fileImporter(isPresented: picking.projectedValue, allowedContentTypes: [.item], allowsMultipleSelection: true)
-        { result in
-            actions.attach(((try? result.get()) ?? []).compactMap(Self.attachment))
-        }
+    }
+
+    private var talking: Bool {
+        members.isEmpty
+            && (actions.voice.listening || ((actions.draft?.wrappedValue ?? draft).isEmpty && chips.isEmpty))
     }
 
     private var field: some View {
         let palette = look.palette
-        let dictating = actions.voice.dictation != nil
-        return HStack(alignment: dictating ? .top : .center) {
+        return HStack {
             if let dictation = actions.voice.dictation, dictation.listening {
                 DictationWords(dictation: dictation)
             } else if let text = actions.draft {
                 TextField(members.isEmpty ? shown : "", text: text, axis: .vertical).ui(16, .regular, look)
                     .lineLimit(1...5).textFieldStyle(.plain).onSubmit(send).focused($typing)
+                    .onKeyPress(.return, phases: .down, action: returned)
                     .onChange(of: typing) { _, now in if !now && sending.wrappedValue { post() } }
                     .onChange(of: actions.denying) { _, now in if now { typing = true } }
                     .foregroundStyle(overlaid ? .clear : palette.foreground).accessibilityLabel(shown)
@@ -70,12 +65,16 @@ internal struct Composer: View {
             } else {
                 tokens(draft)
             }
-            Spacer()
-            if members.isEmpty { MicButton(voice: actions.voice) }
         }
-        .padding(.leading, 16).padding(.trailing, dictating ? 8 : 16).padding(.vertical, dictating ? 8 : 0)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.horizontal, 16).padding(.vertical, 10)
         .frame(minHeight: 42)
         .surface(look, radius: 21)
+    }
+
+    private func returned(_ press: KeyPress) -> KeyPress.Result {
+        if press.modifiers.contains(.shift) { actions.newLine() } else { send() }
+        return .handled
     }
 
     private func tokens(_ text: String) -> some View {
@@ -146,14 +145,21 @@ internal struct Composer: View {
         actions.send?()
     }
 
-    private static func attachment(_ url: URL) -> Attachment? {
-        let scoped = url.startAccessingSecurityScopedResource()
-        defer { if scoped { url.stopAccessingSecurityScopedResource() } }
-        return (try? Data(contentsOf: url)).map { Attachment(name: url.lastPathComponent, bytes: $0) }
-    }
 }
 
 extension Composer {
+    private var menuButton: some View {
+        Button {
+            menu.wrappedValue = true
+        } label: {
+            RoundButton(symbol: "line.3.horizontal", ascii: "/", size: 42)
+        }
+        .buttonStyle(.plain).accessibilityLabel("Menu")
+        .popover(isPresented: menu.projectedValue) {
+            ComposerMenu(attach: actions.attach) { menu.wrappedValue = false }
+        }
+    }
+
     private var sendButton: some View {
         let palette = look.palette
         return Button(action: send) {
@@ -167,8 +173,7 @@ extension Composer {
             .foregroundStyle(palette.dark ? Color.black : .white)
             .frame(width: 42, height: 42)
             .background(palette.link, in: look.square ? AnyShape(Rectangle()) : AnyShape(Circle()))
-            .opacity(actions.voice.listening ? 0.35 : 1)
         }
-        .buttonStyle(.plain).accessibilityLabel("Send").allowsHitTesting(!actions.voice.listening)
+        .buttonStyle(.plain).accessibilityLabel("Send")
     }
 }
