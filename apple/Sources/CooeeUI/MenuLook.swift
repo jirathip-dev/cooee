@@ -10,7 +10,7 @@ extension MenuFeature.State {
         look.night = settings.night
         look.sign = art != nil && looks.themes[theme]?.sign == true
         look.sprites = settings.sprites(in: theme)
-        look.words = looks.themes[theme]?.words ?? [:]
+        look.words = looks.themes[theme]?.words ?? Look.farmWords
         return look
     }
 }
