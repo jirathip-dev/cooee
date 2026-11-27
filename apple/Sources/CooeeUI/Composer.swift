@@ -33,7 +33,7 @@ internal struct Composer: View {
             if let unsure = actions.voice.dictation?.heard.unsure.first, !actions.voice.listening {
                 Alternatives(unsure: unsure, pick: actions.voice.pick)
             }
-            HStack(alignment: .bottom, spacing: 8) {
+            HStack(alignment: .bottom, spacing: look.textMarks ? 4 : 8) {
                 menuButton
                 field
                 if talking { MicButton(voice: actions.voice) } else { sendButton }
@@ -49,7 +49,8 @@ internal struct Composer: View {
 
     private var field: some View {
         let palette = look.palette
-        return HStack {
+        return HStack(alignment: .firstTextBaseline, spacing: 0) {
+            if look.textMarks { Text("> ").ui(16, .bold, look).foregroundStyle(palette.lead) }
             if let dictation = actions.voice.dictation, dictation.listening {
                 DictationWords(dictation: dictation)
             } else if let text = actions.draft {
@@ -70,7 +71,7 @@ internal struct Composer: View {
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.horizontal, 16).padding(.vertical, 10)
+        .padding(.horizontal, look.textMarks ? 8 : 16).padding(.vertical, 10)
         .frame(minHeight: 42)
         .surface(look, radius: 21)
     }
@@ -157,7 +158,6 @@ internal struct Composer: View {
         sending.wrappedValue = false
         actions.send?()
     }
-
 }
 
 extension Composer {
@@ -165,7 +165,11 @@ extension Composer {
         Button {
             menu.wrappedValue = true
         } label: {
-            RoundButton(symbol: "line.3.horizontal", ascii: "/", size: 42)
+            if look.textMarks {
+                Text("[/]").ui(15, .bold, look).foregroundStyle(look.palette.foreground).frame(height: 42)
+            } else {
+                RoundButton(symbol: "line.3.horizontal", ascii: "/", size: 42)
+            }
         }
         .buttonStyle(.plain).accessibilityLabel("Menu")
         .popover(isPresented: menu.projectedValue) {
@@ -176,16 +180,20 @@ extension Composer {
     private var sendButton: some View {
         let palette = look.palette
         return Button(action: send) {
-            Group {
-                if actions.sending {
-                    Spinner()
-                } else {
-                    Image(systemName: "arrow.up").font(.system(size: 17, weight: .bold))
+            if look.textMarks && !actions.sending {
+                Text("[send]").ui(15, .bold, look).foregroundStyle(palette.link).frame(height: 42)
+            } else {
+                Group {
+                    if actions.sending {
+                        Spinner()
+                    } else {
+                        Image(systemName: "arrow.up").font(.system(size: 17, weight: .bold))
+                    }
                 }
+                .foregroundStyle(palette.dark ? Color.black : .white)
+                .frame(width: 42, height: 42)
+                .background(palette.link, in: look.square ? AnyShape(Rectangle()) : AnyShape(Circle()))
             }
-            .foregroundStyle(palette.dark ? Color.black : .white)
-            .frame(width: 42, height: 42)
-            .background(palette.link, in: look.square ? AnyShape(Rectangle()) : AnyShape(Circle()))
         }
         .buttonStyle(.plain).accessibilityLabel("Send")
     }

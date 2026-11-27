@@ -62,20 +62,31 @@ extension Frame {
         .appendingPathComponent("design")
 
     @MainActor
-    internal func matchesItsDesign(_ style: Style = .bundled, in folder: String? = nil) throws {
-        try Self.matches(try #require(render(style)), name, in: folder ?? self.folder)
+    internal func matchesItsDesign(_ style: Style = .bundled, in folder: String? = nil, only area: CGRect? = nil)
+        throws
+    {
+        try Self.matches(try #require(render(style)), name, in: folder ?? self.folder, only: area)
     }
 
-    internal static func matches(_ rendered: CGImage, _ name: String, in folder: String) throws {
+    internal static func matches(_ rendered: CGImage, _ name: String, in folder: String, only area: CGRect? = nil)
+        throws
+    {
         let file = designs.appendingPathComponent(folder).appendingPathComponent("\(name).png")
-        if ProcessInfo.processInfo.environment["COOEE_RECORD"] == "1" { try write(rendered, to: file) }
+        let recording = ProcessInfo.processInfo.environment["COOEE_RECORD"] == "1" && area == nil
+        if recording { try write(rendered, to: file) }
         try keep(rendered, name)
         let design = try #require(NSImage(contentsOf: file)?.cgImage(forProposedRect: nil, context: nil, hints: nil))
-        let got = try #require(Pixels(rendered))
-        let want = try #require(Pixels(design))
+        let got = try #require(cropped(rendered, to: area).flatMap(Pixels.init))
+        let want = try #require(cropped(design, to: area).flatMap(Pixels.init))
         #expect(got.width == want.width && got.height == want.height)
         let off = got.differing(from: want, by: channelTolerance)
         #expect(off <= pixelTolerance, "\(name): \(off * 100)% of pixels differ")
+    }
+
+    private static func cropped(_ image: CGImage, to area: CGRect?) -> CGImage? {
+        guard let area else { return image }
+        return image.cropping(
+            to: CGRect(x: area.minX * 2, y: area.minY * 2, width: area.width * 2, height: area.height * 2))
     }
 
     @MainActor
