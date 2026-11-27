@@ -18,7 +18,7 @@ internal struct RoundRow: View {
                 } label: {
                     HStack(spacing: 8) {
                         Text(round.workflow?.stage ?? row.title).ui(15, .semibold, look)
-                        Text(row.status ?? row.state.word).ui(14, .regular, look)
+                        Text(row.status ?? look.word(row.state)).ui(14, .regular, look)
                             .foregroundStyle(palette.state(row.state))
                         Spacer()
                         Text("\(row.ago) ›").ui(14, .regular, look).foregroundStyle(palette.mute)

@@ -101,6 +101,20 @@ pub struct Thread {
     /// The agents that hit a usage limit in it (#76), first capped first, each until it next replies.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub capped: Vec<crate::agents::Capped>,
+    /// A plugin agent's chat attached to its plugin (#823).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub attach: Option<crate::plugins::rows::Attach>,
+}
+
+impl Thread {
+    /// The id its plugin knows it by: the adopted one, else its own.
+    #[must_use]
+    pub fn plugin_thread(&self) -> &str {
+        match &self.attach {
+            Some(a) if !a.adopt.is_empty() => &a.adopt,
+            _ => &self.id,
+        }
+    }
 }
 
 /// What a [`Thread`] is.

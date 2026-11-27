@@ -85,20 +85,28 @@ impl Hub {
         let Some(m) = self.with_rows(name) else {
             return;
         };
-        let url = match &row.to {
-            To::Thread { id } => {
+        let chat = match &row.to {
+            To::Thread { id } => self.chat_of(id),
+            _ => None,
+        };
+        let url = match (&row.to, &chat) {
+            (To::Thread { .. }, Some(id)) => {
                 if let Err(e) = self.row_in(id, name, &row) {
                     cooee_core::note!("cooee: plugin {name}: row {}: {e}", row.key);
                 }
                 format!("/t/{id}")
             }
-            To::Desk {} => {
+            (To::Thread { id }, None) => {
+                cooee_core::note!("cooee: plugin {name}: row {}: no chat {id}", row.key);
+                format!("/p/{name}")
+            }
+            (To::Desk {}, _) => {
                 self.desk_row(name, &row);
                 format!("/p/{name}")
             }
-            To::Owner => format!("/p/{name}"),
+            (To::Owner, _) => format!("/p/{name}"),
         };
-        if let (true, To::Thread { id }, Some(prompt)) = (loud, &row.to, &row.prompt) {
+        if let (true, Some(id), Some(prompt)) = (loud, &chat, &row.prompt) {
             let mark = Mark {
                 id: format!("plugin-{name}"),
                 name: name.to_owned(),
@@ -118,6 +126,13 @@ impl Hub {
                 say: false,
             });
         }
+    }
+
+    fn chat_of(&self, thread: &str) -> Option<String> {
+        self.all().into_iter().find_map(|l| {
+            let l = lock(&l);
+            (l.meta.plugin_thread() == thread).then(|| l.meta.id.clone())
+        })
     }
 
     fn row_in(&self, id: &str, name: &str, row: &Row) -> Result<Item, HubError> {

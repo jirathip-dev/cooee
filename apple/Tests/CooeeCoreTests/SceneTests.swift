@@ -20,7 +20,7 @@ internal struct SceneTests {
         let lanes = try #require(Self.find("lanes", in: try Self.fixture("queue.json"))).list("lanes")
         let placed = SceneLane.placed(lanes.reversed())
         #expect(placed.map(\.id) == ["l-730", "l-655", "l-609", "l-722", "l-641", "l-708", "l-702"])
-        #expect(placed.map(\.state.word).first == "at the gate" && placed[1].state.word == "refused")
+        #expect(placed.map(\.state.word).first == "needs you" && placed[1].state.word == "failed")
         #expect(placed[0].name == "#730 design" && placed[0].sprite.hasSuffix("-needs"))
         #expect(placed[1].sprite.hasSuffix("-fail"))
         #expect(placed[2].source == lanes[4])

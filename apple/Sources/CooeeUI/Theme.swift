@@ -87,7 +87,7 @@ public struct Look: Sendable {
     public var drawn: [String: PixelFigure] = [:]
     public var vectors: [String: String] = [:]
     public var tokens: [String: String] = [:]
-    public var words: [String: String] = [:]
+    public var words = Look.farmWords
 
     public init(palette: Palette = .farmDark, style: Style = .bundled, still: Bool = false, art: URL? = nil) {
         self.palette = palette
@@ -95,6 +95,12 @@ public struct Look: Sendable {
         self.still = still
         self.art = art
     }
+
+    /// The farm theme's state words, the app's own when no server names the theme's.
+    public static let farmWords = [
+        "working": "on the trail", "needs": "at the gate", "done": "in the stable", "idle": "grazing",
+        "fail": "refused", "merged": "over the fence",
+    ]
 
     internal func word(_ state: LaneState) -> String {
         words[state.rawValue] ?? state.word
