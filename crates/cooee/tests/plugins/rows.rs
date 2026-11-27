@@ -18,9 +18,12 @@ struct Drover {
     port: u16,
     rows: mpsc::Sender<Value>,
     posted: Posted,
+    served: Served,
 }
 
 type Posted = Arc<Mutex<Vec<(String, Value)>>>;
+
+type Served = Arc<Mutex<Vec<String>>>;
 
 fn request(s: TcpStream) -> (String, Vec<u8>, TcpStream) {
     let mut r = BufReader::new(s);
@@ -39,7 +42,7 @@ fn request(s: TcpStream) -> (String, Vec<u8>, TcpStream) {
     (path, body, r.into_inner())
 }
 
-fn serve(s: TcpStream, next: &Mutex<mpsc::Receiver<Value>>, log: &Posted) {
+fn serve(s: TcpStream, next: &Mutex<mpsc::Receiver<Value>>, log: &Posted, served: &Served) {
     let (path, body, mut s) = request(s);
     let reply = |s: &mut TcpStream, v: Value| {
         write!(
@@ -81,6 +84,13 @@ fn serve(s: TcpStream, next: &Mutex<mpsc::Receiver<Value>>, log: &Posted) {
             reply(&mut s, a);
         }
         "/health" => reply(&mut s, json!({})),
+        "/manifest" => {
+            let actions = served.lock().unwrap().clone();
+            reply(
+                &mut s,
+                json!({ "name": "drover", "version": "0.1.0", "actions": actions, "destructive": ["config-card"] }),
+            );
+        }
         _ => {
             let body = serde_json::from_slice(&body).unwrap_or(Value::Null);
             log.lock().unwrap().push((path, body));
@@ -95,14 +105,23 @@ fn drover() -> Drover {
     let (rows, next) = mpsc::channel::<Value>();
     let next = Arc::new(Mutex::new(next));
     let posted = Arc::new(Mutex::new(Vec::new()));
-    let log = Arc::clone(&posted);
+    let served = Arc::new(Mutex::new(vec![
+        "answer".to_owned(),
+        "config-card".to_owned(),
+    ]));
+    let (log, menu) = (Arc::clone(&posted), Arc::clone(&served));
     thread::spawn(move || {
         for s in listener.incoming().flatten() {
-            let (next, log) = (Arc::clone(&next), Arc::clone(&log));
-            thread::spawn(move || serve(s, &next, &log));
+            let (next, log, menu) = (Arc::clone(&next), Arc::clone(&log), Arc::clone(&menu));
+            thread::spawn(move || serve(s, &next, &log, &menu));
         }
     });
-    Drover { port, rows, posted }
+    Drover {
+        port,
+        rows,
+        posted,
+        served,
+    }
 }
 
 impl Drover {
@@ -211,6 +230,10 @@ fn an_ask_from_an_attached_chat_is_drovers_own_block_there_and_a_tap_answers_it(
         ),
         (&json!("q2"), &json!("answer"), &json!("split"))
     );
+    let config = json!({ "screen": screen, "block": "q2", "action": "config-card", "values": {} });
+    let (code, body) = cooee.post("/screens/action", &config);
+    assert_eq!(code, 200, "{body}");
+    assert_eq!(d.posted("/action")[1]["action"], "config-card");
 
     let mut settled = the_ask();
     settled["seq"] = json!(7);
@@ -229,6 +252,28 @@ fn an_ask_from_an_attached_chat_is_drovers_own_block_there_and_a_tap_answers_it(
         .filter(|i| i["kind"] == "row")
         .count();
     assert_eq!(rows, 1, "one item per row key");
+}
+
+#[test]
+fn a_card_action_drover_serves_reaches_it_and_one_it_does_not_serve_is_refused() {
+    let (_dir, _shed, cooee, d) = start("rows-served");
+    let tap = |action: &str| {
+        let act = json!({ "screen": "/screens/cards", "block": "m-6", "action": action });
+        cooee.post("/p/drover/action", &act)
+    };
+    let (code, body) = tap("config-card");
+    assert_eq!(code, 200, "{body}");
+    d.served.lock().unwrap().push("secret-card".to_owned());
+    let (code, body) = tap("secret-card");
+    assert_eq!(code, 200, "{body}");
+    let (code, body) = tap("drop");
+    assert_eq!(code, 403, "{body}");
+    let sent: Vec<Value> = d
+        .posted("/action")
+        .iter()
+        .map(|p| p["action"].clone())
+        .collect();
+    assert_eq!(sent, [json!("config-card"), json!("secret-card")]);
 }
 
 #[test]
