@@ -230,10 +230,6 @@ fn an_ask_from_an_attached_chat_is_drovers_own_block_there_and_a_tap_answers_it(
         ),
         (&json!("q2"), &json!("answer"), &json!("split"))
     );
-    let config = json!({ "screen": screen, "block": "q2", "action": "config-card", "values": {} });
-    let (code, body) = cooee.post("/screens/action", &config);
-    assert_eq!(code, 200, "{body}");
-    assert_eq!(d.posted("/action")[1]["action"], "config-card");
 
     let mut settled = the_ask();
     settled["seq"] = json!(7);
@@ -351,6 +347,10 @@ fn a_new_chat_with_a_repo_attaches_its_agent_carries_the_thread_and_a_tap_answer
     let (code, body) = cooee.post("/screens/action", &tap);
     assert_eq!(code, 200, "{body}");
     assert_eq!(d.posted("/action")[0]["values"]["choice"], "split");
+    let config = json!({ "screen": screen, "block": "q2", "action": "config-card", "values": {} });
+    let (code, body) = cooee.post("/screens/action", &config);
+    assert_eq!(code, 200, "{body}");
+    assert_eq!(d.posted("/action")[1]["action"], "config-card");
 }
 
 #[test]
