@@ -63,7 +63,7 @@ private struct MemberPoster: View {
     fileprivate let card: JSONValue
 
     fileprivate var body: some View {
-        if card.string("kind") != nil { Text(look.label(.kind, "·")).ui(11, .bold, look) }
+        if card.string("kind") != nil { Text(look.label(.kind, "·")).ui(11, .bold, look).padding(.leading, -3) }
         FigureView(persona: member, size: 22)
         Text(member.name).ui(15, .semibold, look).foregroundStyle(look.palette.tint(member.look.tint))
     }
