@@ -142,12 +142,8 @@ public struct AppFeature: Sendable {
         .ifLet(\.newRoom, action: \.newRoom) { NewRoomFeature() }
         .ifLet(\.$persona, action: \.persona) { PersonaFeature() }
         .ifLet(\.report, action: \.report) { ReportFeature() }
-        Reduce { state, _ in
-            if let chat = state.chat, case .thread(let id) = chat.target, chat.bar != nil {
-                state.home?.opened[chat.persona.id] = id
-            }
-            return .none
-        }
+        .onChange(of: Self.showing) { _, thread in show(thread) }
+        remembered
         areas
     }
 }

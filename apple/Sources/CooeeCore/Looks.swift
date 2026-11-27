@@ -46,7 +46,7 @@ public struct ServedStyle: Codable, Sendable, Equatable {
     public func encode(to encoder: any Encoder) throws { try style.encode(to: encoder) }
 }
 
-/// The paired server's installed theme packs and colour schemes, `GET /api/v1/looks`.
+/// The paired server's installed theme packs and colour schemes, `GET /looks`.
 public struct Looks: Codable, Sendable, Equatable {
     public var themes: [String: ThemePack]
     public var schemes: [String: ThemeScheme]
@@ -71,7 +71,7 @@ public struct Looks: Codable, Sendable, Equatable {
     /// Whether `theme` has what `style` draws; the app's own farm art, or a theme not answered yet, has it all.
     public func draws(_ style: Style, in theme: String) -> Bool {
         guard theme != Settings.farm, let pack = themes[theme] else { return true }
-        return style.needs.allSatisfy { $0 == .sprites ? pack.sprites : pack.scene?.isEmpty == false }
+        return style.needs.allSatisfy { $0 == .sprites ? pack.sprites : pack.sprites || pack.scene?.isEmpty == false }
     }
 
     /// Where `theme`'s `sprites.svg` and `scene.svg` are on `server`; nil: the app's own farm art.

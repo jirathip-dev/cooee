@@ -86,7 +86,7 @@ public enum Listing {
             id: "", name: name, agent: label?.source ?? thread.agent, model: label?.role ?? "",
             style: .detailed)
         let look = PersonaLook(
-            initials: String(name.prefix(1)).uppercased(), symbol: "", tint: .lead, coat: label == nil ? "" : nil)
+            initials: String(name.prefix(1)).uppercased(), tint: .lead, coat: label == nil ? "" : nil)
         return Persona(api: api, look: look, state: state, seed: thread.id)
     }
 

@@ -32,20 +32,38 @@ internal struct Sprite: View {
 }
 
 internal struct PackArt: View {
+    @Environment(\.look) private var look
     @State private var page = WebPage()
     internal let art: URL
     internal let path: String
     internal var markup: String?
+    internal var night = false
+
+    private static let frames =
+        ".kf1,.f1{opacity:var(--o1,1)}.kf2,.f2{opacity:var(--o2,0);display:inline!important}"
+        + "@property --o1{syntax:'<number>';inherits:true;initial-value:1}"
+        + "@property --o2{syntax:'<number>';inherits:true;initial-value:0}"
+        + "@keyframes fr{0%,49.9%{--o1:1;--o2:0}50%,100%{--o1:0;--o2:1}}"
 
     private var html: String {
-        let url = URL(string: path, relativeTo: art)?.absoluteString ?? ""
+        let parts = path.split(separator: "#", omittingEmptySubsequences: false)
         let shown =
-            markup
-            ?? (path.contains("#")
-                ? "<svg><use href=\"\(url)\" width=\"100%\" height=\"100%\"/></svg>" : "<img src=\"\(url)\">")
+            markup.map { "<div id=a>\($0)</div>" }
+            ?? "<div id=a></div>" + Self.inline(parts.first ?? "", parts.dropFirst().first, night)
         return "<meta name=\"viewport\" content=\"width=device-width\"><style>*{margin:0}"
-            + "html,body,svg,img{width:100%;height:100%;display:block;overflow:hidden;background:none}"
-            + "img{object-fit:cover;object-position:bottom}</style>\(shown)"
+            + "html,body,#a,#a>svg{width:100%;height:100%;display:block;overflow:hidden;background:none}"
+            + Self.frames + (look.moving ? "body{animation:fr 1.2s infinite}" : "") + "</style>\(shown)"
+    }
+
+    private static func inline(_ file: Substring, _ symbol: Substring?, _ night: Bool) -> String {
+        let use = symbol.map { "a.insertAdjacentHTML('beforeend','<svg><use href=\"#\($0)\"/></svg>');" } ?? ""
+        let fit =
+            symbol == nil
+            ? "v.setAttribute('preserveAspectRatio','xMidYMax slice');"
+            : "v.style.cssText='position:absolute;width:0;height:0';"
+        return "<script>fetch('\(file)').then(r=>r.text()).then(t=>{a.innerHTML=t;"
+            + "let v=a.querySelector('svg');if(v){\(fit)}\(use)"
+            + (night ? "location.hash='night';" : "") + "})</script>"
     }
 
     internal var body: some View {

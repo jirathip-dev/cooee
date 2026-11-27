@@ -25,10 +25,10 @@ internal struct MenuFeatureTests {
     private let calls = Calls()
 
     private func store(
-        _ server: Server? = mini, push: String? = nil, style: StylePick = .modern, looks: Looks = Looks()
+        _ server: Server? = mini, style: StylePick = .modern, looks: Looks = Looks()
     ) -> TestStoreOf<MenuFeature> {
         let calls = calls
-        var state = MenuFeature.State(server: server, settings: Settings(style: style, push: push))
+        var state = MenuFeature.State(server: server, settings: Settings(style: style))
         state.looks = looks
         return TestStore(initialState: state) {
             MenuFeature()
@@ -37,8 +37,6 @@ internal struct MenuFeatureTests {
                 calls.record("save \(settings.scheme) \(settings.style.name) \(settings.theme) \(settings.push ?? "-")")
             }
             $0.threads.looks = { _ in kitchen }
-            $0.push.token = { "ab12" }
-            $0.push.register = { _, token, enabled in calls.record("register \(token) \(enabled)") }
             $0.appIcon.set = { icon in calls.record("icon \(icon.asset)") }
             $0.plugins.screen = { _, source, path in
                 calls.record("screen \(source.name)\(path)")
@@ -142,41 +140,6 @@ internal struct MenuFeatureTests {
         await store.send(.style("terminal")) { $0.settings.style = terminal }
         await store.receive(\.failed) { $0.error = "Couldn't change the Home Screen icon. Tap Prompt to try again." }
     }
-
-    @Test internal func pushOnRegistersTheDeviceTokenAndOffRemovesIt() async {
-        let store = store()
-        await store.send(.push(true)) { $0.busy = true }
-        await store.receive(\.pushed) {
-            $0.busy = false
-            $0.settings.push = "ab12"
-        }
-        await store.send(.push(true))
-        await store.send(.push(false)) { $0.busy = true }
-        await store.receive(\.pushed) {
-            $0.busy = false
-            $0.settings.push = nil
-        }
-        #expect(
-            calls.all == [
-                "register ab12 true", "save system modern farm ab12", "register ab12 false",
-                "save system modern farm -",
-            ])
-    }
-
-    @Test internal func aRefusedPushStaysOffWithTheReason() async {
-        let store = store()
-        store.dependencies.push.token = { throw APIError(status: 0, text: "Notifications are off.") }
-        await store.send(.push(true)) { $0.busy = true }
-        await store.receive(\.failed) {
-            $0.busy = false
-            $0.error = "Notifications are off."
-        }
-        #expect(calls.all.isEmpty)
-    }
-
-    @Test internal func withoutAServerPushDoesNothing() async {
-        await store(nil).send(.push(true))
-    }
 }
 
 extension MenuFeatureTests {
@@ -242,7 +205,7 @@ extension MenuFeatureTests {
         #expect(store.state.style(for: "farm") == terminal.kept && store.state.notice == nil)
     }
 
-    @Test internal func aThemeWithoutSpritesDrawsModernAndHidesTheSceneRowButKeepsThePick() async throws {
+    @Test internal func aPackWithSpritesDrawsTheSceneAndOneWithoutDrawsModernButKeepsThePick() async throws {
         var looks = kitchen
         looks.themes["plain"] = try JSONDecoder().decode(
             ThemePack.self,
@@ -250,6 +213,7 @@ extension MenuFeatureTests {
         let store = store(style: scene)
         await store.send(.looks(looks)) { $0.looks = looks }
         #expect(store.state.offered.map(\.name) == ["modern", "scene", "terminal"])
+        #expect(store.state.style(for: "kitchen")?.figures == .sprite)
         await store.send(.theme("plain")) { $0.settings.theme = "plain" }
         #expect(store.state.style(for: "plain") == nil && store.state.settings.style == scene)
         #expect(store.state.offered.map(\.name) == ["modern", "terminal"])

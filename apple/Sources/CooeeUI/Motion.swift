@@ -33,8 +33,7 @@ internal struct StateSprite: View {
 
     internal var body: some View {
         if look.figures == .ascii {
-            Text(persona.state.figure(frame: frame)).ui(size * 0.55, .bold, look)
-                .foregroundStyle(look.palette.tint(persona.look.tint)).fixedSize()
+            FaceView(persona: persona, size: size, bare: true)
         } else {
             Sprite(name: name, pack: "sprites.svg#s-\(persona.pose)").frame(width: size * 1.32, height: size)
         }
