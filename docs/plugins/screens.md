@@ -24,7 +24,9 @@ network = []
 
 cooee answers `GET /p/<plugin>/screens/...` from the backend's `GET /screens/...` (a screen, or its event stream of
 `{seq, ops}`) and passes `POST /p/<plugin>/action` to its `POST /action` with `{screen, block, action, values, by}`.
-An action not in `actions` gets a 403 and never reaches the backend. A plugin with screens only has no tab.
+An action not in `actions` gets a 403 and never reaches the backend; a plugin with `[threads]` (#888) is checked
+against the `actions` of the manifest its backend serves beside its rows (`<rows' folder>/manifest`, read at each
+action), its pinned copy's only when that doesn't answer. A plugin with screens only has no tab.
 A `chat-cards` place's screen (default `/screens/cards`) answers a list of `card` blocks: the app follows its
 `/stream` and draws them at the end of that persona's chats, keyed by card id; a tap posts `screen: "cards"` with the
 tapped choice or run block's `id` as `block`. A 2xx settles the card to `✓ <toast>` until the plugin changes it, a 409

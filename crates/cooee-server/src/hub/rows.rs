@@ -180,6 +180,15 @@ impl Hub {
         self.areas.rows.changed.subscribe()
     }
 
+    /// Whether installed plugin `name` takes `action`: as the manifest its backend serves lists, else its pinned `m`.
+    #[must_use]
+    pub fn takes(&self, name: &str, m: &Manifest, action: &str) -> bool {
+        let served = (m.threads.as_ref().zip(self.backend(name)))
+            .and_then(|(t, p)| plugin::actions(&p, &t.manifest()).ok());
+        let actions = served.as_ref().unwrap_or(&m.permissions.actions);
+        actions.iter().any(|a| a == action)
+    }
+
     /// `by`'s tap `a` on a plugin row's block in thread `id`, posted to its plugin; [`HubError::Refused`] when refused.
     #[expect(clippy::missing_errors_doc, reason = "the line names it")]
     pub fn row_act(&self, id: &str, a: &Action, by: &str) -> Result<Option<Answer>, HubError> {
@@ -200,7 +209,7 @@ impl Hub {
         let m = self
             .with_rows(&name)
             .ok_or_else(|| refused("not installed".to_owned()))?;
-        if !m.permissions.actions.contains(&a.action) {
+        if !self.takes(&name, &m, &a.action) {
             return Err(refused(format!("{} isn't among its actions", a.action)));
         }
         let p = self

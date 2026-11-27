@@ -403,6 +403,25 @@ pub fn profiles(p: &Plugin) -> io::Result<Option<Vec<Profile>>> {
     }
 }
 
+/// The actions `p`'s backend serves in its manifest at `path` (`{"actions": [...]}`).
+///
+/// # Errors
+/// When the backend can't be reached in 5 s, or answers anything but a 200 with actions.
+pub fn actions(p: &Plugin, path: &str) -> io::Result<Vec<String>> {
+    let r = call(p, "GET", path, &[], &[], Duration::from_secs(5))?;
+    if r.status != 200 {
+        return Err(io::Error::other(format!(
+            "the backend answered {}",
+            r.status
+        )));
+    }
+    #[derive(serde::Deserialize)]
+    struct Served {
+        actions: Vec<String>,
+    }
+    Ok(serde_json::from_slice::<Served>(&r.bytes()?)?.actions)
+}
+
 /// Tells `p`'s backend thread `thread` started as its profile `profile`: `POST /cooee/thread-started`
 /// `{thread, profile}`.
 ///
