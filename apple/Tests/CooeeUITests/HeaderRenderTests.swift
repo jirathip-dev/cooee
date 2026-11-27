@@ -1,18 +1,19 @@
 import AppKit
 import CooeeCore
-import CooeeUI
+@testable import CooeeUI
 import Foundation
 import SwiftUI
 import Testing
 
 @MainActor
 internal struct HeaderRenderTests {
-    private static func pixels(_ actions: ChatActions) throws -> Pixels {
+    private static func pixels(_ actions: ChatActions, asks: AsksBar = AsksBar()) throws -> Pixels {
         let persona = Persona(APIPersona(id: "cond", name: "Conductor", agent: "codex"))
         let chat = ChatView(
             persona: persona, items: [], working: false, since: .distantPast, queued: [], back: true, actions: actions
         )
         let view = chat.frame(width: 402, height: 200).environment(\.look, Look(palette: .farmLight, still: true))
+            .environment(\.asks, asks)
         let image = try #require(ImageRenderer(content: view).cgImage)
         return try #require(Pixels(image))
     }
@@ -28,6 +29,14 @@ internal struct HeaderRenderTests {
         let plain = try Self.pixels(Self.strip([nil, nil]))
         #expect(try Self.pixels(Self.strip([7, nil])).differing(from: plain, by: 16) > 0.001)
         #expect(try Self.pixels(Self.strip([])).differing(from: plain, by: 16) < 0.0001)
+    }
+
+    @Test internal func openAsksDrawTheirChipAndOneLineAndNothingAtZero() throws {
+        let plain = try Self.pixels(Self.strip([]))
+        let five = AsksBar(count: 5, urgent: true, top: "cooee: Drive is stuck")
+        #expect(try Self.pixels(Self.strip([]), asks: five).differing(from: plain, by: 16) > 0.001)
+        let none = AsksBar(count: 0, top: "cooee: Drive is stuck")
+        #expect(try Self.pixels(Self.strip([]), asks: none).differing(from: plain, by: 16) < 0.0001)
     }
 
     private static func thread(window: CGFloat) throws -> CGImage {

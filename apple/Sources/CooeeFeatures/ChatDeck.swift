@@ -27,10 +27,20 @@ public struct PluginDeck: Equatable, Sendable {
 
     public init() {}
 
-    public var items: [Item] {
+    public var asks: [OpenAsk] {
         keys.indices.compactMap { index in
-            shown(index).map { .card(id: Self.base + index, poster: $0.plugin, block: $0.block) }
+            shown(index).map { card in
+                var ask = OpenAsk(
+                    id: Self.base + index, plugin: card.plugin, group: card.block.string("group") ?? "",
+                    text: Self.text(card.block), block: card.block, time: Int64(index))
+                ask.settled = self.card(Self.base + index) == nil
+                return ask
+            }
         }
+    }
+
+    private static func text(_ card: JSONValue) -> String {
+        card.list("blocks").first { $0.type == "text" }?.string("markdown") ?? card.string("title") ?? ""
     }
 
     private func shown(_ index: Int) -> Card? {

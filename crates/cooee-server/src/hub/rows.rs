@@ -143,6 +143,8 @@ impl Hub {
             key: row.key.clone(),
             text: row.text.clone(),
             block: row.block.clone(),
+            waits: row.open,
+            group: row.group.clone(),
         };
         let had = l.chat.items.iter().rev().find_map(|i| match &i.body {
             Body::Row { plugin, key, .. } if plugin == name && *key == row.key => Some(i.id),
@@ -160,7 +162,11 @@ impl Hub {
         let mut desk = lock(&self.areas.rows.desk);
         desk.retain(|(p, k, _)| !(p == name && *k == row.key));
         if row.open {
-            desk.push((name.to_owned(), row.key.clone(), row.block.clone()));
+            let mut block = row.block.clone();
+            if let (Value::Object(o), false) = (&mut block, row.group.is_empty()) {
+                o.insert("group".to_owned(), Value::from(row.group.clone()));
+            }
+            desk.push((name.to_owned(), row.key.clone(), block));
         }
         drop(desk);
         self.areas.rows.changed.send_modify(|n| *n += 1);

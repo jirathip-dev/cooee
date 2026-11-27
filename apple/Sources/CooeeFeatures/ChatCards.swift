@@ -14,6 +14,8 @@ extension ChatFeature {
         switch action {
         case .answer(let item, let action) where state.deck.holds(item):
             return play(&state, item, action)
+        case .answer(let item, let action) where state.items.contains { $0.id == item && $0.kind == "row" }:
+            return row(&state, item, action)
         case .answer(let item, let action):
             return answer(&state, item, action)
         case .heard(let plugin, let event):
@@ -26,6 +28,18 @@ extension ChatFeature {
         case .answered(let item, let error):
             if error != nil || !state.awaitsLine(item) { state.answering.remove(item) }
             return error.map { toast(&state, $0) } ?? .none
+        }
+    }
+
+    private func row(_ state: inout State, _ item: Int, _ action: BlockAction) -> Effect<Action> {
+        guard case .thread(let thread) = state.target, !state.answering.contains(item) else { return .none }
+        state.answering.insert(item)
+        let (plugins, server) = (pluginAPI, state.server)
+        return .run { send in
+            _ = try await plugins.act(server, .core, "/screens/chat/\(thread)", action)
+            await send(.cards(.answered(item, nil)))
+        } catch: { error, send in
+            await send(.cards(.answered(item, error.localizedDescription)))
         }
     }
 

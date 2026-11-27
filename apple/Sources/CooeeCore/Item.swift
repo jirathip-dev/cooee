@@ -134,6 +134,7 @@ public enum ChatItems {
     }
 
     internal static func append(_ item: APIItem, to out: inout [Item]) {
+        guard item.waits != true else { return }
         switch item.kind {
         case "you":
             out.append(.you(id: item.id, text: item.text ?? "", files: item.files ?? []))

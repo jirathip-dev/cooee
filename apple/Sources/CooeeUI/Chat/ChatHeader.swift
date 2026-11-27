@@ -3,6 +3,7 @@ import SwiftUI
 
 internal struct ChatHeader: View {
     @Environment(\.look) private var look
+    @Environment(\.asks) private var asks
     internal let persona: Persona
     internal let chips: [String]
     internal var back = true
@@ -49,7 +50,7 @@ internal struct ChatHeader: View {
                 more
             }
             if let status = actions.status { LaneStatusRow(status: status, close: actions.close) }
-            if plugged && (!chips.isEmpty || actions.workflow != nil) { plugins }
+            if plugged && (!chips.isEmpty || actions.workflow != nil || asks.count > 0) { plugins }
         }
         .padding(.horizontal, 14).padding(.vertical, 8)
         .overlay(alignment: .bottom) { Rectangle().fill(palette.line).frame(height: 0.5) }

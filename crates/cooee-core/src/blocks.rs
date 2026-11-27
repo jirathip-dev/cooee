@@ -21,6 +21,8 @@ impl Serialize for Item {
             body: &'a Body,
             #[serde(skip_serializing_if = "Option::is_none")]
             block: Option<Block>,
+            #[serde(skip_serializing_if = "std::ops::Not::not")]
+            waits: bool,
         }
         Wire {
             id: self.id,
@@ -29,6 +31,7 @@ impl Serialize for Item {
             speaker: &self.speaker,
             body: &self.body,
             block: self.block(),
+            waits: self.waits(),
         }
         .serialize(s)
     }
@@ -60,6 +63,12 @@ impl Item {
     pub fn needs_key(&self) -> bool {
         matches!(&self.body, Body::Approval { card, plugin: None, .. }
             if matches!(card.form.as_deref(), Some("mcp" | "routine" | "secret" | "change")))
+    }
+
+    /// An approval no one has answered yet: it sits in the chat's Asks (#852), not the thread.
+    #[must_use]
+    pub fn waits(&self) -> bool {
+        matches!(&self.body, Body::Approval { tapped: None, chosen: None, card, .. } if card.line.is_none())
     }
 
     /// The card block an approval is drawn as: an `ask` (a choice, or a thread to pick), `config` (its diff with
@@ -97,8 +106,7 @@ impl Item {
             blocks.push(Block::Text(Box::new(diff)));
         }
         let answer = format!("{id}-answer");
-        let open =
-            card.until.is_some() || (tapped.is_none() && chosen.is_none() && card.line.is_none());
+        let open = card.until.is_some() || self.waits();
         blocks.extend(open.then(|| match kind {
             CardKind::Secret => {
                 let save = options.first().map_or("save", |o| o.id.as_str());
@@ -220,5 +228,15 @@ mod tests {
         let stored = serde_json::to_string(&open).unwrap();
         assert!(stored.contains("\"block\""));
         assert_eq!(serde_json::from_str::<Item>(&stored).unwrap(), open);
+    }
+
+    #[test]
+    fn only_an_unanswered_approval_waits_in_the_chats_asks_and_the_wire_says_so() {
+        let waits = |item: &Item| serde_json::to_value(item).unwrap()["waits"].clone();
+        let asked = conductors(None, None);
+        assert_eq!(waits(&asked), json!(true));
+        assert_eq!(waits(&conductors(Some("split"), Some(99))), Value::Null);
+        let stored = serde_json::to_string(&asked).unwrap();
+        assert_eq!(serde_json::from_str::<Item>(&stored).unwrap(), asked);
     }
 }

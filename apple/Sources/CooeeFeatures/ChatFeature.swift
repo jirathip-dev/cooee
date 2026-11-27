@@ -69,7 +69,6 @@ public struct ChatFeature: Sendable {
                 (room.map { RoomItems.build(items, names: $0.names, last: $0.round) + $0.cards }
                 ?? ChatItems.build(items, outbox: first + outbox, style: persona.api.style, working: working)
                 .map(applying))
-                + deck.items
         }
 
         private var first: [Outgoing] {

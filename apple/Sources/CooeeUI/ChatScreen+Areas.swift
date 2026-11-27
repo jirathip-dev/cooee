@@ -7,5 +7,6 @@ internal struct ChatScreenAreas: ViewModifier {
 
     internal func body(content: Content) -> some View {
         content
+            .modifier(AsksPresenting(store: store))
     }
 }
