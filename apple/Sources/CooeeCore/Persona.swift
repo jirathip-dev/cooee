@@ -15,12 +15,10 @@ public enum LaneState: String, Sendable, Equatable {
 
     public var word: String {
         switch self {
-        case .working: "on the trail"
-        case .needs: "at the gate"
-        case .done: "in the stable"
-        case .idle: "grazing"
-        case .fail: "refused"
-        case .merged: "over the fence"
+        case .needs: "needs you"
+        case .fail: "failed"
+        case .merged: "done"
+        case .working, .done, .idle: rawValue
         }
     }
 
