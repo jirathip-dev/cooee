@@ -2,6 +2,7 @@ import CooeeCore
 import Foundation
 import Testing
 
+@MainActor
 internal struct ScreenTests {
     private static let fixtures = URL(fileURLWithPath: #filePath)
         .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
@@ -94,31 +95,5 @@ internal struct ScreenTests {
         #expect(Relative.filled("lapses in {rel}", until: now.addingTimeInterval(660), at: now) == "lapses in 11m")
         #expect(Relative.filled("{rel}", until: nil, at: now) == "{rel}")
         #expect(JSONValue.string("x").number == nil && JSONValue.number(1).string == nil && JSONValue.null.bool == nil)
-    }
-
-    @Test internal func aDraggedAccountTakesThePlaceOfTheRowItIsDroppedOn() throws {
-        let role = Self.fixtures.deletingLastPathComponent().deletingLastPathComponent()
-            .appendingPathComponent("fleets-config/fixtures/role.json")
-        let screen = try JSONDecoder().decode(JSONValue.self, from: Data(contentsOf: role))
-        var lists: [JSONValue] = []
-        func walk(_ value: JSONValue) {
-            if value["reorder"] != nil { lists.append(value) }
-            (value.items + value.fields.values).forEach(walk)
-        }
-        walk(screen)
-        let accounts = try #require(lists.first)
-        #expect(accounts.rowOrder(moving: "A", onto: "B") == ["C", "B", "A"])
-        #expect(accounts.rowOrder(moving: "B", onto: "A") == ["B", "A", "C"])
-        #expect(accounts.rowOrder(moving: "Z", onto: "A") == ["A", "C", "B"])
-    }
-
-    @Test internal func aBlockIsKeyedByItsIdAndOnlyOneWithoutOrARepeatByPosition() {
-        let block = { (id: String?) in JSONValue.object(id.map { ["id": .string($0)] } ?? [:]) }
-        let before = [block("a"), block(nil), block("b")].keyed().map(\.id)
-        let after = [block("new"), block("a"), block(nil), block("b"), block("a")].keyed().map(\.id)
-        #expect(before == ["=a", "#1", "=b"])
-        #expect(after == ["=new", "=a", "#2", "=b", "#4"])
-        let fields = JSONValue.object(["name": .string("token")])
-        #expect([fields].keyed(by: "name").map(\.id) == ["=token"])
     }
 }

@@ -23,7 +23,7 @@ internal struct BlockRenderTests {
 
     private static func height(_ block: JSONValue, _ style: Style = .bundled) -> Int {
         let look = Look(palette: .farmLight, style: style, still: true)
-        let view = BlocksView(block, source: .plugin("edgar")).frame(width: 402).environment(\.look, look)
+        let view = BlockScreen(block, source: .plugin("edgar")).frame(width: 402).environment(\.look, look)
         return ImageRenderer(content: view).cgImage?.height ?? 0
     }
 
@@ -58,7 +58,7 @@ internal struct BlockRenderTests {
 
     private static func middle(_ block: JSONValue) throws -> [Int] {
         let look = Look(palette: .farmLight, style: .bundled, still: true)
-        let view = BlocksView(block, source: .plugin("drover")).frame(width: 402).environment(\.look, look)
+        let view = BlockScreen(block, source: .plugin("drover")).frame(width: 402).environment(\.look, look)
         let pixels = try #require(ImageRenderer(content: view).cgImage.flatMap(Pixels.init))
         let start = pixels.height / 2 * pixels.width * 4
         return pixels.bytes[start..<start + pixels.width * 4].map(Int.init)

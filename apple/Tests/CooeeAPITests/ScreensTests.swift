@@ -29,7 +29,7 @@ internal struct ScreensTests {
     @Test internal func anActionPostsTheScreenTheActionAndItsValuesAndGetsOps() async throws {
         let ops = #"{"ops":[{"op":"merge","id":"waves","fields":{"value":"1"}}]}"#
         let server = CannedServer(["/p/hello/action": [Answer(headers: json, chunks: [ops])]])
-        let action = BlockAction(action: "wave", values: ["n": .number(2)], block: "q7")
+        let action = BlockAction(action: "wave", block: "q7", values: ["n": .number(2)])
         let answer = try await server.client().act(.plugin("hello"), screen: "hello", action)
         #expect(answer["ops"]?.items.count == 1)
         let sent = try server.decoded("/p/hello/action", as: JSONValue.self)

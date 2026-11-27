@@ -1,8 +1,9 @@
+import Blocks
 import CooeeCore
 import SwiftUI
 
 extension Look {
-    internal var type: TypeDesign { style.type }
+    internal var type: CooeeCore.TypeDesign { style.type }
     internal var glass: Bool { style.surface == .glass }
     internal var outline: Bool { style.fills == .outline }
     internal var textMarks: Bool { style.marks == .text }
@@ -10,9 +11,12 @@ extension Look {
     internal var figures: Figures { style.figures }
     internal var stage: CooeeCore.Stage? { style.stage }
     internal var square: Bool { style.radius == 0 }
+    internal var blocksStyle: Blocks.Style { (try? JSONValue(style).decode(Blocks.Style.self)) ?? .bundled }
     internal var pill: AnyShape { square ? AnyShape(Rectangle()) : AnyShape(Capsule()) }
 
-    internal func label(_ role: LabelRole, _ text: String) -> String { style.labels[role]?.apply(text) ?? text }
+    internal func label(_ role: CooeeCore.LabelRole, _ text: String) -> String {
+        style.labels[role]?.apply(text) ?? text
+    }
 
     internal func radius(_ value: CGFloat, least: CGFloat = 0) -> CGFloat { max(value * style.radius, least) }
 }

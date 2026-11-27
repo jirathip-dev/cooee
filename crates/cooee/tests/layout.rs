@@ -266,11 +266,10 @@ fn a_layout_that_replaces_a_locked_screen_is_refused_and_reset_still_restores_th
 #[test]
 fn the_app_and_the_server_read_layouts_with_the_same_blocks() {
     let pin = |file: &str, key: &str| {
-        let line = file
-            .lines()
-            .find(|l| l.contains("jirathip-dev/blocks"))
-            .unwrap();
-        line.split(key)
+        file.split("jirathip-dev/blocks")
+            .nth(1)
+            .unwrap()
+            .split(key)
             .nth(1)
             .unwrap()
             .split('"')
@@ -279,7 +278,10 @@ fn the_app_and_the_server_read_layouts_with_the_same_blocks() {
             .to_owned()
     };
     let cargo = pin(include_str!("../../../Cargo.toml"), "rev = \"");
-    let swift = pin(include_str!("../../../apple/Package.swift"), "revision: \"");
+    let swift = pin(
+        include_str!("../../../apple/Package.resolved"),
+        "\"revision\" : \"",
+    );
     assert_eq!(cargo.len(), 40, "{cargo}");
     assert_eq!(swift, cargo);
 }
