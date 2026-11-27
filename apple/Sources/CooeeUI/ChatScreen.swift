@@ -40,7 +40,6 @@ internal struct ChatScreen: View {
 
     private static func extras(_ store: StoreOf<ChatFeature>, _ chat: ChatActions) -> ChatActions {
         var actions = chat
-        actions.newLine = { store.send(.compose(.newLine)) }
         actions.voice = voice(store)
         actions.workflow = store.workflow.map { Workflow.issues($0).count(where: \.needsYou) }
         actions.showWorkflow = { store.send(.workflow(.show(true))) }

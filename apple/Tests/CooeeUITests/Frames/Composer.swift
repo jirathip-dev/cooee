@@ -88,4 +88,30 @@ internal struct ComposerFrames {
         store.send(.compose(.draftChanged("")))
         #expect(try right() != link)
     }
+
+    @MainActor @Test internal func returnSendsWhereverItIsTypedAndShiftReturnAddsALine() throws {
+        let coder = Fixtures.persona("coder")
+        let server = Server(url: URL(filePath: "/mini"), token: "t")
+        let store = Store(initialState: ChatFeature.State(server: server, target: .thread("a1"), persona: coder)) {
+            ChatFeature()
+        } withDependencies: {
+            $0.threads.send = { _, _, _, _, _ in }
+            $0.desk.warm = { _, _ in }
+        }
+        let actions = ChatScreen.actions(store) {}
+        let draft = try #require(actions.draft)
+        let typed = Composer.keyed(draft) { actions.send?() }
+        typed.wrappedValue = "pasted\nlines"
+        #expect(store.draft == "pasted\nlines")
+        typed.wrappedValue = "Rerun it"
+        Composer.pressed(shift: true, draft) { actions.send?() }
+        typed.wrappedValue = "Rerun it\nand post"
+        #expect(store.draft == "Rerun it\nand post")
+        typed.wrappedValue = "Rerun it\nand\n post"
+        #expect(store.draft.isEmpty)
+        #expect(store.outbox.map(\.text) == ["Rerun it\nand post"])
+        typed.wrappedValue = "Then"
+        Composer.pressed(shift: false, draft) { actions.send?() }
+        #expect(store.outbox.map(\.text).last == "Then")
+    }
 }

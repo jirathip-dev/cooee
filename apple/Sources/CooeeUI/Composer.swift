@@ -53,9 +53,12 @@ internal struct Composer: View {
             if let dictation = actions.voice.dictation, dictation.listening {
                 DictationWords(dictation: dictation)
             } else if let text = actions.draft {
-                TextField(members.isEmpty ? shown : "", text: text, axis: .vertical).ui(16, .regular, look)
-                    .lineLimit(1...5).textFieldStyle(.plain).onSubmit(send).focused($typing)
-                    .onKeyPress(.return, phases: .down, action: returned)
+                TextField(members.isEmpty ? shown : "", text: Self.keyed(text, send: send), axis: .vertical)
+                    .ui(16, .regular, look).lineLimit(1...5).textFieldStyle(.plain).onSubmit(send).focused($typing)
+                    .onKeyPress(.return, phases: .down) { press in
+                        Self.pressed(shift: press.modifiers.contains(.shift), text, send: send)
+                        return .handled
+                    }
                     .onChange(of: typing) { _, now in if !now && sending.wrappedValue { post() } }
                     .onChange(of: actions.denying) { _, now in if now { typing = true } }
                     .foregroundStyle(overlaid ? .clear : palette.foreground).accessibilityLabel(shown)
@@ -72,9 +75,19 @@ internal struct Composer: View {
         .surface(look, radius: 21)
     }
 
-    private func returned(_ press: KeyPress) -> KeyPress.Result {
-        if press.modifiers.contains(.shift) { actions.newLine() } else { send() }
-        return .handled
+    internal static func keyed(_ text: Binding<String>, send: @escaping () -> Void) -> Binding<String> {
+        Binding {
+            text.wrappedValue
+        } set: { typed in
+            let old = text.wrappedValue
+            let lines = { (text: String) in text.count { $0 == "\n" } }
+            let returned = lines(typed) == lines(old) + 1 && typed.filter { $0 != "\n" } == old.filter { $0 != "\n" }
+            if returned { send() } else { text.wrappedValue = typed }
+        }
+    }
+
+    internal static func pressed(shift: Bool, _ text: Binding<String>, send: () -> Void) {
+        if shift { text.wrappedValue += "\n" } else { send() }
     }
 
     private func tokens(_ text: String) -> some View {

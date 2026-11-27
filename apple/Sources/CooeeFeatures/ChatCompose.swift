@@ -5,7 +5,6 @@ extension ChatFeature {
     @CasePathable
     public enum Compose: Sendable, Equatable {
         case draftChanged(String)
-        case newLine
         case attach([Attachment])
         case detach(Int)
         case send
@@ -25,11 +24,11 @@ extension ChatFeature {
     private func composed(_ state: inout State, _ action: Compose) -> Effect<Action> {
         switch action {
         case .draftChanged(let text):
-            return returned(state.draft, text) ? send(&state) : typed(&state, text)
-        case .newLine:
-            return typed(&state, state.draft + "\n")
-        case .attach, .detach:
-            filed(&state, action)
+            return typed(&state, text)
+        case .attach(let files):
+            state.files += files
+        case .detach(let index):
+            if state.files.indices.contains(index) { state.files.remove(at: index) }
         case .send:
             return send(&state)
         case .stop:
@@ -53,16 +52,6 @@ extension ChatFeature {
             @Dependency(\.desk) var desk
             try? await desk.warm(server, thread)
         }
-    }
-
-    private func filed(_ state: inout State, _ action: Compose) {
-        if case .attach(let files) = action { state.files += files }
-        if case .detach(let index) = action, state.files.indices.contains(index) { state.files.remove(at: index) }
-    }
-
-    private func returned(_ draft: String, _ text: String) -> Bool {
-        let lines = { (text: String) in text.count { $0 == "\n" } }
-        return lines(text) == lines(draft) + 1 && text.filter { $0 != "\n" } == draft.filter { $0 != "\n" }
     }
 
     private func revise(_ state: inout State, _ action: Compose) {

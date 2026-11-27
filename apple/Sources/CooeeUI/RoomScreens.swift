@@ -29,7 +29,6 @@ internal struct RoomScreen: View {
                 draft: Binding(get: { store.draft }, set: { store.send(.compose(.draftChanged($0))) }),
                 files: store.files.map(\.name),
                 send: { store.send(.compose(.send)) },
-                newLine: { store.send(.compose(.newLine)) },
                 attach: { store.send(.compose(.attach($0))) },
                 detach: { store.send(.compose(.detach($0))) },
                 stop: { store.send(.compose(.stop)) },

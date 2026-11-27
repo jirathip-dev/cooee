@@ -125,19 +125,4 @@ internal struct ChatComposeTests {
         await store.finish()
         #expect(calls.all == ["typing a1", "typing a1"])
     }
-
-    @Test internal func returnSendsWhereverItIsTypedAndShiftReturnAddsALine() async {
-        let store = store(chat())
-        await store.send(.compose(.draftChanged("pasted\nlines"))) { $0.draft = "pasted\nlines" }
-        await store.send(.compose(.draftChanged("Rerun it"))) { $0.draft = "Rerun it" }
-        await store.send(.compose(.newLine)) { $0.draft = "Rerun it\n" }
-        await store.send(.compose(.draftChanged("Rerun it\nand post"))) { $0.draft = "Rerun it\nand post" }
-        await store.send(.compose(.draftChanged("Rerun it\nand\n post"))) {
-            $0.draft = ""
-            $0.outbox = [Outgoing(id: -1, text: "Rerun it\nand post")]
-        }
-        await store.receive(\.outbox.delivered) { $0.outbox = [] }
-        await store.send(.compose(.draftChanged("\n")))
-        #expect(calls.all == ["typing a1", "send a1 Rerun it\nand post 0"])
-    }
 }

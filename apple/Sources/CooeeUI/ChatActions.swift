@@ -5,7 +5,6 @@ public struct ChatActions {
     public var draft: Binding<String>?
     public var files: [String]
     public var send: (() -> Void)?
-    public var newLine: () -> Void
     public var attach: ([Attachment]) -> Void
     public var detach: (Int) -> Void
     public var stop: () -> Void
@@ -55,7 +54,6 @@ public struct ChatActions {
         draft: Binding<String>? = nil,
         files: [String] = [],
         send: (() -> Void)? = nil,
-        newLine: @escaping () -> Void = {},
         attach: @escaping ([Attachment]) -> Void = { _ in },
         detach: @escaping (Int) -> Void = { _ in },
         stop: @escaping () -> Void = {},
@@ -68,7 +66,6 @@ public struct ChatActions {
         self.draft = draft
         self.files = files
         self.send = send
-        self.newLine = newLine
         self.attach = attach
         self.detach = detach
         self.stop = stop
