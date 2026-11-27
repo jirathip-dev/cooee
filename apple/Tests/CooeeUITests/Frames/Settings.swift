@@ -29,19 +29,6 @@ internal struct SettingsFrames {
         return (phones + macs + more + tagged).map { $0.filed("v2-settings") }
     }
 
-    internal static let shells: [Frame] = {
-        let looks =
-            [("modern-dark", Palette.farmDark), ("modern-light", .farmLight), ("scene-light", .farmLight)]
-            + [("terminal-dark", Palette.farmDark), ("terminal-light", .farmLight)]
-        let shells = looks.map { look, palette in Frame.phone("shell-\(look)", palette) { TerminalView.own() } }
-        let machine = Frame.phone("machine-terminal-dark", .farmDark) {
-            var view = TerminalView.agents()
-            view.ctrl = true
-            return view
-        }
-        return (shells + [machine]).map { $0.filed("composer-v2/frames") }
-    }()
-
     private static let machines = URL(fileURLWithPath: #filePath)
         .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
         .deletingLastPathComponent().deletingLastPathComponent().appendingPathComponent(
@@ -66,10 +53,22 @@ internal struct SettingsFrames {
     @MainActor @Test(arguments: all)
     internal func matchesTheDesign(_ frame: Frame) throws { try frame.matchesItsDesign() }
 
-    @MainActor @Test(arguments: shells)
-    internal func theKeyRowMatchesTheDesign(_ frame: Frame) throws {
-        let style: Style =
-            frame.name.contains("terminal") ? .terminal : frame.name.contains("scene") ? .scene : .bundled
-        try frame.matchesItsDesign(style)
+    @MainActor
+    @Test(arguments: [
+        "shell-modern-dark", "shell-modern-light", "shell-scene-light", "shell-terminal-dark", "shell-terminal-light",
+        "machine-terminal-dark",
+    ])
+    internal func theKeyRowIsTheDrawnOne(_ name: String) throws {
+        let palette: Palette = name.hasSuffix("dark") ? .farmDark : .farmLight
+        let style: Style = name.contains("terminal") ? .terminal : name.contains("scene") ? .scene : .bundled
+        let row = TerminalKeyRow(ctrl: name.hasPrefix("machine")).background(palette.background)
+            .frame(width: Frame.phoneWidth, height: 46)
+            .environment(\.look, Look(palette: palette, style: style, still: true))
+            .environment(\.colorScheme, palette.dark ? .dark : .light)
+        let renderer = ImageRenderer(content: row)
+        renderer.scale = 2
+        let top: CGFloat = name.contains("terminal") ? 1098 : 1078
+        let strip = CGRect(x: 0, y: top, width: Frame.phoneWidth * 2, height: 92)
+        try Frame.matches(try #require(renderer.cgImage), name, in: "composer-v2", cropped: strip)
     }
 }

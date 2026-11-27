@@ -45,7 +45,7 @@ public struct TerminalView: View {
             strip
             if let note { Text(note).ui(13, .regular, look).foregroundStyle(palette.mute).padding(8) }
             screen
-            if keyRow { keyBar }
+            if keyRow { TerminalKeyRow(ctrl: ctrl, tap: actions.key) }
         }
         .background(palette.background).foregroundStyle(palette.foreground)
     }
@@ -65,7 +65,7 @@ public struct TerminalView: View {
 
     private func input(_ type: @escaping (String) -> Void) -> some View {
         TextField("", text: $field).focused($typing).opacity(0).frame(width: 1, height: 1)
-            .autocorrectionDisabled().submitLabel(.return)
+            .autocorrectionDisabled()
             .onSubmit {
                 actions.press("enter")
                 typing = true
@@ -99,15 +99,21 @@ public struct TerminalView: View {
         }
         .padding(.horizontal, 12).padding(.bottom, 8)
     }
+}
 
-    private var keyBar: some View {
+internal struct TerminalKeyRow: View {
+    @Environment(\.look) private var look
+    internal let ctrl: Bool
+    internal var tap: (TerminalKey) -> Void = { _ in }
+
+    internal var body: some View {
         let palette = look.palette
-        return HStack(spacing: 4) {
+        HStack(spacing: 4) {
             ForEach(TerminalKey.allCases, id: \.self) { key in
                 let lit = ctrl && key == .ctrl
                 let word = key.label.count > 1
                 Button {
-                    actions.key(key)
+                    tap(key)
                 } label: {
                     Text(key.label).font(.system(size: word ? 13 : 16, weight: .medium, design: .monospaced))
                         .foregroundStyle(lit ? (palette.dark ? Color.black : .white) : palette.foreground)
