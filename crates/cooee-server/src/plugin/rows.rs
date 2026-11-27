@@ -60,10 +60,18 @@ async fn first_rows(hub: &Arc<Hub>, name: &str, backend: Plugin, path: String) -
 }
 
 async fn follow_once(hub: &Arc<Hub>, name: &str) -> io::Result<()> {
-    let threads = hub.with_rows(name).and_then(|m| m.threads);
-    let (Some(backend), Some(paths)) = (hub.backend(name), threads) else {
+    let Some(m) = hub.with_rows(name) else {
         return Ok(());
     };
+    let (Some(backend), Some(paths)) = (hub.backend(name), m.threads.clone()) else {
+        return Ok(());
+    };
+    let (asked, named) = (Arc::clone(hub), name.to_owned());
+    off(move || {
+        asked.offer(&named, &m);
+        Ok(())
+    })
+    .await?;
     let mut at = if let Some(at) = hub.row_cursor(name) {
         at
     } else {

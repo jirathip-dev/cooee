@@ -252,11 +252,21 @@ async fn screen_action(cx: &Cx, Json(a): Json<BlockAct>) -> Result<Response> {
     let Some((p, m)) = with_screens(cx) else {
         return plain(404, "no installed plugin with screens has this name");
     };
+    let hub = Arc::clone(app_context::<Arc<Hub>>(cx));
+    if a.block == crate::hub::ACCEPT && a.action == "accept" {
+        let name = m.name.clone();
+        return match tokio::task::spawn_blocking(move || hub.accept(&name)).await? {
+            Ok(true) => {
+                Json(serde_json::json!({ "toast": { "title": "accepted" } })).into_response(cx)
+            }
+            Ok(false) => plain(409, &format!("{} asks for nothing new", m.name)),
+            Err(e) => plain(500, &e.to_string()),
+        };
+    }
     let by = request_context::<Paired>(cx).0.label.clone();
     let body = serde_json::json!({
         "screen": a.screen, "block": a.block, "action": a.action, "values": a.values, "by": by,
     });
-    let hub = Arc::clone(app_context::<Arc<Hub>>(cx));
     let (name, action) = (m.name.clone(), a.action.clone());
     let reply = tokio::task::spawn_blocking(move || {
         if !hub.takes(&m.name, &m, &a.action) {

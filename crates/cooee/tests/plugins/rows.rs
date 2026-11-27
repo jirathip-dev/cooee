@@ -88,7 +88,8 @@ fn serve(s: TcpStream, next: &Mutex<mpsc::Receiver<Value>>, log: &Posted, served
             let actions = served.lock().unwrap().clone();
             reply(
                 &mut s,
-                json!({ "name": "drover", "version": "0.1.0", "actions": actions, "destructive": ["config-card"] }),
+                json!({ "name": "drover", "version": "0.1.0", "screens": [{ "type": "chat-cards" }],
+                        "actions": actions, "destructive": ["config-card"] }),
             );
         }
         _ => {
@@ -99,16 +100,13 @@ fn serve(s: TcpStream, next: &Mutex<mpsc::Receiver<Value>>, log: &Posted, served
     }
 }
 
-fn drover() -> Drover {
+fn drover(serves: &[&str]) -> Drover {
     let listener = TcpListener::bind("127.0.0.1:0").unwrap();
     let port = listener.local_addr().unwrap().port();
     let (rows, next) = mpsc::channel::<Value>();
     let next = Arc::new(Mutex::new(next));
     let posted = Arc::new(Mutex::new(Vec::new()));
-    let served = Arc::new(Mutex::new(vec![
-        "answer".to_owned(),
-        "config-card".to_owned(),
-    ]));
+    let served = Arc::new(Mutex::new(serves.iter().map(|a| (*a).to_owned()).collect()));
     let (log, menu) = (Arc::clone(&posted), Arc::clone(&served));
     thread::spawn(move || {
         for s in listener.incoming().flatten() {
@@ -135,7 +133,7 @@ impl Drover {
     }
 }
 
-fn install(dir: &Path, port: u16) {
+fn install(dir: &Path, port: u16, listed: bool) {
     let build = dir.join("data/plugins/drover/builds/c0ffee12345");
     fs::create_dir_all(&build).unwrap();
     let manifest = format!(
@@ -146,7 +144,7 @@ fn install(dir: &Path, port: u16) {
     );
     fs::write(build.join("cooee-plugin.toml"), manifest).unwrap();
     let lock = json!([{ "name": "drover", "url": "https://example.com/drover", "commit": "c0ffee12345",
-                        "version": "0.1.0", "listed": true, "tabs": ["drover"], "port": port, "enabled": true }]);
+                        "version": "0.1.0", "listed": listed, "tabs": ["drover"], "port": port, "enabled": true }]);
     fs::write(dir.join("data/plugins.lock"), lock.to_string()).unwrap();
     let entry = format!(
         "[[plugins]]\nname = \"drover\"\nlabel = \"drover\"\nurl = \"http://127.0.0.1:{port}\"\nmodule = \"\"\ntoken = \"{TOKEN}\"\n"
@@ -178,9 +176,17 @@ fn the_ask() -> Value {
 }
 
 fn start(name: &str) -> (std::path::PathBuf, FakeShed, Cooee, Drover) {
+    start_serving(name, &["answer"], true)
+}
+
+fn start_serving(
+    name: &str,
+    serves: &[&str],
+    listed: bool,
+) -> (std::path::PathBuf, FakeShed, Cooee, Drover) {
     let dir = scratch(name);
-    let d = drover();
-    install(&dir, d.port);
+    let d = drover(serves);
+    install(&dir, d.port, listed);
     let shed = FakeShed::start(&dir.join("shed"), version());
     let cooee = Cooee::start(&dir, &shed.dir);
     (dir, shed, cooee, d)
@@ -251,18 +257,39 @@ fn an_ask_from_an_attached_chat_is_drovers_own_block_there_and_a_tap_answers_it(
 }
 
 #[test]
-fn a_card_action_drover_serves_reaches_it_and_one_it_does_not_serve_is_refused() {
-    let (_dir, _shed, cooee, d) = start("rows-served");
-    let tap = |action: &str| {
-        let act = json!({ "screen": "/screens/cards", "block": "m-6", "action": action });
+fn an_action_drovers_served_manifest_adds_reaches_it_once_the_owner_accepts_it_on_cooees_card() {
+    let (_dir, _shed, cooee, d) = start_serving("rows-served", &["answer", "config-card"], true);
+    let cards = "/p/drover/screens/cards";
+    let tap = |block: &str, action: &str| {
+        let act = json!({ "screen": "/screens/cards", "block": block, "action": action });
         cooee.post("/p/drover/action", &act)
     };
-    let (code, body) = tap("config-card");
+    let card = until("cooee's card asking for config-card at connect", || {
+        let shown = cooee.json(cards);
+        holds(&shown, "cooee-permissions").then_some(shown)
+    });
+    assert!(
+        card.to_string()
+            .contains("config-card (always confirmed first)"),
+        "{card}"
+    );
+    let (code, body) = tap("m-6", "config-card");
+    assert_eq!(code, 403, "{body}");
+    let (code, body) = tap("cooee-permissions", "accept");
     assert_eq!(code, 200, "{body}");
+    assert_eq!(cooee.json(cards)["blocks"], json!([]));
+    let (code, body) = tap("m-6", "config-card");
+    assert_eq!(code, 200, "{body}");
+
     d.served.lock().unwrap().push("secret-card".to_owned());
-    let (code, body) = tap("secret-card");
+    let (code, body) = tap("m-6", "secret-card");
+    assert_eq!(code, 403, "{body}");
+    assert!(holds(&cooee.json(cards), "cooee-permissions"));
+    let (code, body) = tap("cooee-permissions", "accept");
     assert_eq!(code, 200, "{body}");
-    let (code, body) = tap("drop");
+    let (code, body) = tap("m-6", "secret-card");
+    assert_eq!(code, 200, "{body}");
+    let (code, body) = tap("m-6", "drop");
     assert_eq!(code, 403, "{body}");
     let sent: Vec<Value> = d
         .posted("/action")
@@ -270,6 +297,16 @@ fn a_card_action_drover_serves_reaches_it_and_one_it_does_not_serve_is_refused()
         .map(|p| p["action"].clone())
         .collect();
     assert_eq!(sent, [json!("config-card"), json!("secret-card")]);
+}
+
+#[test]
+fn a_plugin_installed_from_git_keeps_its_pinned_actions_whatever_its_backend_serves() {
+    let (_dir, _shed, cooee, d) = start_serving("rows-git", &["answer", "config-card"], false);
+    let act = json!({ "screen": "/screens/cards", "block": "m-6", "action": "config-card" });
+    let (code, body) = cooee.post("/p/drover/action", &act);
+    assert_eq!(code, 403, "{body}");
+    assert_eq!(cooee.json("/p/drover/screens/cards")["blocks"], json!([]));
+    assert_eq!(d.posted("/action"), Vec::<Value>::new());
 }
 
 #[test]
@@ -347,10 +384,6 @@ fn a_new_chat_with_a_repo_attaches_its_agent_carries_the_thread_and_a_tap_answer
     let (code, body) = cooee.post("/screens/action", &tap);
     assert_eq!(code, 200, "{body}");
     assert_eq!(d.posted("/action")[0]["values"]["choice"], "split");
-    let config = json!({ "screen": screen, "block": "q2", "action": "config-card", "values": {} });
-    let (code, body) = cooee.post("/screens/action", &config);
-    assert_eq!(code, 200, "{body}");
-    assert_eq!(d.posted("/action")[1]["action"], "config-card");
 }
 
 #[test]

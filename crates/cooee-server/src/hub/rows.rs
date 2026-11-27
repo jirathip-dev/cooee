@@ -1,10 +1,10 @@
-use std::{fs, sync::Mutex, time::Duration};
+use std::{collections::HashMap, fs, io, sync::Mutex, time::Duration};
 
 use blocks::{Action, Answer, Toast};
 use cooee_core::{
-    Body, Change, Item,
+    Body, Change, Item, Plugin,
     plugins::{
-        Manifest,
+        Manifest, Permissions,
         rows::{Row, Said, To},
     },
     routines::Mark,
@@ -18,6 +18,7 @@ use crate::{Note, plugin};
 pub(super) struct State {
     desk: Mutex<Vec<(String, String, Value)>>,
     changed: watch::Sender<u64>,
+    offered: Mutex<HashMap<String, Permissions>>,
 }
 
 impl Default for State {
@@ -25,8 +26,60 @@ impl Default for State {
         Self {
             desk: Mutex::default(),
             changed: watch::channel(0).0,
+            offered: Mutex::default(),
         }
     }
+}
+
+/// The id of the button on cooee's own card that accepts a plugin's grown permissions.
+pub const ACCEPT: &str = "cooee-permissions";
+
+fn missing<T: PartialEq + Clone>(all: &[T], had: &[T]) -> Vec<T> {
+    all.iter().filter(|a| !had.contains(a)).cloned().collect()
+}
+
+fn widen(to: &mut Permissions, by: &Permissions) {
+    to.actions.extend(missing(&by.actions, &to.actions));
+    to.destructive
+        .extend(missing(&by.destructive, &to.destructive));
+    to.places.extend(missing(&by.places, &to.places));
+}
+
+fn beyond(served: &Permissions, had: &Permissions) -> Permissions {
+    let actions = missing(&served.actions, &had.actions);
+    Permissions {
+        places: missing(&served.places, &had.places),
+        destructive: missing(&served.destructive, &had.destructive)
+            .into_iter()
+            .filter(|d| actions.contains(d))
+            .collect(),
+        actions,
+        ..Permissions::default()
+    }
+}
+
+fn asking(name: &str, new: &Permissions) -> Value {
+    let action = |a: &String| {
+        if new.destructive.contains(a) {
+            format!("- {a} (always confirmed first)")
+        } else {
+            format!("- {a}")
+        }
+    };
+    let mut lines: Vec<String> = new.actions.iter().map(action).collect();
+    lines.extend(new.places.iter().map(|p| {
+        format!(
+            "- the {} place",
+            serde_json::json!(p).as_str().unwrap_or_default()
+        )
+    }));
+    serde_json::json!({
+        "type": "card", "id": format!("{ACCEPT}-card"), "kind": "permissions",
+        "title": format!("{name} asks for more"),
+        "subtitle": "its manifest grew since you attached it",
+        "blocks": [{ "type": "text", "id": format!("{ACCEPT}-new"), "markdown": lines.join("\n") }],
+        "buttons": [{ "type": "button", "id": ACCEPT, "label": "accept", "action": "accept", "values": {} }],
+    })
 }
 
 fn row_of(item: &Item, id: &str) -> Option<String> {
@@ -157,10 +210,14 @@ impl Hub {
     }
 
     fn desk_row(&self, name: &str, row: &Row) {
+        self.desk_put(name, &row.key, row.open.then(|| row.block.clone()));
+    }
+
+    fn desk_put(&self, name: &str, key: &str, block: Option<Value>) {
         let mut desk = lock(&self.areas.rows.desk);
-        desk.retain(|(p, k, _)| !(p == name && *k == row.key));
-        if row.open {
-            desk.push((name.to_owned(), row.key.clone(), row.block.clone()));
+        desk.retain(|(p, k, _)| !(p == name && k == key));
+        if let Some(block) = block {
+            desk.push((name.to_owned(), key.to_owned(), block));
         }
         drop(desk);
         self.areas.rows.changed.send_modify(|n| *n += 1);
@@ -180,13 +237,77 @@ impl Hub {
         self.areas.rows.changed.subscribe()
     }
 
-    /// Whether installed plugin `name` takes `action`: as the manifest its backend serves lists, else its pinned `m`.
+    fn granted_file(&self, name: &str) -> std::path::PathBuf {
+        self.data.join("plugins").join(name).join("granted.json")
+    }
+
+    fn grants(&self, name: &str, m: &Manifest) -> Permissions {
+        let mut all = m.permissions.clone();
+        let file = fs::read(self.granted_file(name)).unwrap_or_default();
+        if let Ok(granted) = serde_json::from_slice::<Permissions>(&file) {
+            widen(&mut all, &granted);
+        }
+        all
+    }
+
+    fn serving(&self, name: &str) -> Option<(Plugin, String)> {
+        let installed = cooee_core::plugins::installed(&self.data).ok()?;
+        let (l, m) = installed
+            .iter()
+            .find(|(l, _)| l.name == name && l.enabled)?;
+        let threads = m.threads.as_ref().filter(|_| l.listed)?;
+        Some((self.backend(name)?, threads.manifest()))
+    }
+
+    /// Whether installed plugin `name` takes `action`: its pinned `m`'s or one the owner accepted; else re-reads its
+    /// served manifest, which may ask the owner.
     #[must_use]
     pub fn takes(&self, name: &str, m: &Manifest, action: &str) -> bool {
-        let served = (m.threads.as_ref().zip(self.backend(name)))
-            .and_then(|(t, p)| plugin::actions(&p, &t.manifest()).ok());
-        let actions = served.as_ref().unwrap_or(&m.permissions.actions);
-        actions.iter().any(|a| a == action)
+        if self.grants(name, m).actions.iter().any(|a| a == action) {
+            return true;
+        }
+        self.offer(name, m);
+        false
+    }
+
+    /// Re-reads the manifest an index plugin `name` with rows serves; what it asks beyond what the owner granted shows
+    /// once on cooee's own card in its cards place, until accepted.
+    pub fn offer(&self, name: &str, m: &Manifest) {
+        let Some((p, path)) = self.serving(name) else {
+            return;
+        };
+        let served = match crate::plugin::served(&p, &path) {
+            Ok(served) => served,
+            Err(e) => return cooee_core::note!("cooee: plugin {name}: its manifest: {e}"),
+        };
+        let new = beyond(&served, &self.grants(name, m));
+        let none = new.actions.is_empty() && new.places.is_empty();
+        let mut offered = lock(&self.areas.rows.offered);
+        if none {
+            offered.remove(name);
+        } else if offered.get(name) != Some(&new) {
+            offered.insert(name.to_owned(), new.clone());
+        } else {
+            return;
+        }
+        drop(offered);
+        self.desk_put(name, ACCEPT, (!none).then(|| asking(name, &new)));
+    }
+
+    /// The owner accepts what plugin `name` asked for on cooee's card; false when it asked nothing.
+    #[expect(clippy::missing_errors_doc, reason = "the line names it")]
+    pub fn accept(&self, name: &str) -> io::Result<bool> {
+        let Some(new) = lock(&self.areas.rows.offered).remove(name) else {
+            return Ok(false);
+        };
+        let file = self.granted_file(name);
+        let mut granted: Permissions =
+            serde_json::from_slice(&fs::read(&file).unwrap_or_default()).unwrap_or_default();
+        widen(&mut granted, &new);
+        fs::create_dir_all(self.data.join("plugins").join(name))?;
+        fs::write(&file, serde_json::to_vec(&granted)?)?;
+        self.desk_put(name, ACCEPT, None);
+        Ok(true)
     }
 
     /// `by`'s tap `a` on a plugin row's block in thread `id`, posted to its plugin; [`HubError::Refused`] when refused.
