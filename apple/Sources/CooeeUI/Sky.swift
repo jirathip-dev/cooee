@@ -1,3 +1,4 @@
+import BlocksUI
 import CooeeCore
 import SwiftUI
 
@@ -53,7 +54,7 @@ internal struct SkyButtons: View {
             }
             .buttonStyle(.plain).accessibilityLabel(night ? "Day" : "Night")
             if let next {
-                ActButton(source: next) { RoundButton(symbol: "chevron.right", ascii: "›", size: 32) }
+                ActButton(source: Source(next)) { RoundButton(symbol: "chevron.right", ascii: "›", size: 32) }
                     .accessibilityLabel("Next repo")
             }
         }

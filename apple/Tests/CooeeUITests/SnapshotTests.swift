@@ -65,28 +65,26 @@ extension Frame {
     internal func matchesItsDesign(_ style: Style = .bundled, in folder: String? = nil, only area: CGRect? = nil)
         throws
     {
-        try Self.matches(try #require(render(style)), name, in: folder ?? self.folder, only: area)
+        let rendered = try #require(render(style))
+        let band = area.map { CGRect(x: $0.minX * 2, y: $0.minY * 2, width: $0.width * 2, height: $0.height * 2) }
+        let shown = try #require(band.map { rendered.cropping(to: $0) } ?? rendered)
+        try Self.matches(shown, name, in: folder ?? self.folder, cropped: band)
     }
 
-    internal static func matches(_ rendered: CGImage, _ name: String, in folder: String, only area: CGRect? = nil)
-        throws
-    {
+    internal static func matches(
+        _ rendered: CGImage, _ name: String, in folder: String, cropped: CGRect? = nil
+    ) throws {
         let file = designs.appendingPathComponent(folder).appendingPathComponent("\(name).png")
-        let recording = ProcessInfo.processInfo.environment["COOEE_RECORD"] == "1" && area == nil
-        if recording { try write(rendered, to: file) }
+        let record = ProcessInfo.processInfo.environment["COOEE_RECORD"] == "1"
+        if record, cropped == nil { try write(rendered, to: file) }
         try keep(rendered, name)
-        let design = try #require(NSImage(contentsOf: file)?.cgImage(forProposedRect: nil, context: nil, hints: nil))
-        let got = try #require(cropped(rendered, to: area).flatMap(Pixels.init))
-        let want = try #require(cropped(design, to: area).flatMap(Pixels.init))
+        let drawn = try #require(NSImage(contentsOf: file)?.cgImage(forProposedRect: nil, context: nil, hints: nil))
+        let design = try #require(cropped.map { drawn.cropping(to: $0) } ?? drawn)
+        let got = try #require(Pixels(rendered))
+        let want = try #require(Pixels(design))
         #expect(got.width == want.width && got.height == want.height)
         let off = got.differing(from: want, by: channelTolerance)
         #expect(off <= pixelTolerance, "\(name): \(off * 100)% of pixels differ")
-    }
-
-    private static func cropped(_ image: CGImage, to area: CGRect?) -> CGImage? {
-        guard let area else { return image }
-        return image.cropping(
-            to: CGRect(x: area.minX * 2, y: area.minY * 2, width: area.width * 2, height: area.height * 2))
     }
 
     @MainActor

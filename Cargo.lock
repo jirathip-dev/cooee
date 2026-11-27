@@ -106,7 +106,7 @@ dependencies = [
 [[package]]
 name = "blocks"
 version = "0.1.0"
-source = "git+https://github.com/jirathip-dev/blocks?rev=cf626c63789e8bb46b164ee37b3ca4d589527f11#cf626c63789e8bb46b164ee37b3ca4d589527f11"
+source = "git+https://github.com/jirathip-dev/blocks?rev=a42e7570e1bed499cd927b26913ec23d3e7cb2ae#a42e7570e1bed499cd927b26913ec23d3e7cb2ae"
 dependencies = [
  "schemars",
  "serde",
