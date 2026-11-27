@@ -1,11 +1,10 @@
 import CooeeCore
 import SwiftUI
-import UniformTypeIdentifiers
 
 internal struct Composer: View {
     @Environment(\.look) private var look
     @Environment(\.members) private var members
-    private let picking = State(initialValue: false)
+    private let menu = State(initialValue: false)
     private let sending = State(initialValue: false)
     @FocusState private var typing: Bool
     internal let hint: String
@@ -34,33 +33,33 @@ internal struct Composer: View {
             if let unsure = actions.voice.dictation?.heard.unsure.first, !actions.voice.listening {
                 Alternatives(unsure: unsure, pick: actions.voice.pick)
             }
-            HStack(alignment: .bottom, spacing: 8) {
-                Button {
-                    picking.wrappedValue = true
-                } label: {
-                    RoundButton(symbol: "plus", ascii: "+", size: 42)
-                }
-                .buttonStyle(.plain).accessibilityLabel("Attach")
+            HStack(alignment: .bottom, spacing: look.textMarks ? 4 : 8) {
+                menuButton
                 field
-                sendButton
+                if talking { MicButton(voice: actions.voice) } else { sendButton }
             }
         }
         .padding(.bottom, lifted ? min(rest, 8) : rest)
-        .fileImporter(isPresented: picking.projectedValue, allowedContentTypes: [.item], allowsMultipleSelection: true)
-        { result in
-            actions.attach(((try? result.get()) ?? []).compactMap(Self.attachment))
-        }
+    }
+
+    private var talking: Bool {
+        members.isEmpty
+            && (actions.voice.listening || ((actions.draft?.wrappedValue ?? draft).isEmpty && chips.isEmpty))
     }
 
     private var field: some View {
         let palette = look.palette
-        let dictating = actions.voice.dictation != nil
-        return HStack(alignment: dictating ? .top : .center) {
+        return HStack(alignment: .firstTextBaseline, spacing: 0) {
+            if look.textMarks { Text("> ").ui(16, .bold, look).foregroundStyle(palette.lead) }
             if let dictation = actions.voice.dictation, dictation.listening {
                 DictationWords(dictation: dictation)
             } else if let text = actions.draft {
-                TextField(members.isEmpty ? shown : "", text: text, axis: .vertical).ui(16, .regular, look)
-                    .lineLimit(1...5).textFieldStyle(.plain).onSubmit(send).focused($typing)
+                TextField(members.isEmpty ? shown : "", text: Self.keyed(text, send: send), axis: .vertical)
+                    .ui(16, .regular, look).lineLimit(1...5).textFieldStyle(.plain).onSubmit(send).focused($typing)
+                    .onKeyPress(.return, phases: .down) { press in
+                        Self.pressed(shift: press.modifiers.contains(.shift), text, send: send)
+                        return .handled
+                    }
                     .onChange(of: typing) { _, now in if !now && sending.wrappedValue { post() } }
                     .onChange(of: actions.denying) { _, now in if now { typing = true } }
                     .foregroundStyle(overlaid ? .clear : palette.foreground).accessibilityLabel(shown)
@@ -70,12 +69,26 @@ internal struct Composer: View {
             } else {
                 tokens(draft)
             }
-            Spacer()
-            if members.isEmpty { MicButton(voice: actions.voice) }
         }
-        .padding(.leading, 16).padding(.trailing, dictating ? 8 : 16).padding(.vertical, dictating ? 8 : 0)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.horizontal, look.textMarks ? 8 : 16).padding(.vertical, 10)
         .frame(minHeight: 42)
         .surface(look, radius: 21)
+    }
+
+    internal static func keyed(_ text: Binding<String>, send: @escaping () -> Void) -> Binding<String> {
+        Binding {
+            text.wrappedValue
+        } set: { typed in
+            let old = text.wrappedValue
+            let lines = { (text: String) in text.count { $0 == "\n" } }
+            let returned = lines(typed) == lines(old) + 1 && typed.filter { $0 != "\n" } == old.filter { $0 != "\n" }
+            if returned { send() } else { text.wrappedValue = typed }
+        }
+    }
+
+    internal static func pressed(shift: Bool, _ text: Binding<String>, send: () -> Void) {
+        if shift { text.wrappedValue += "\n" } else { send() }
     }
 
     private func tokens(_ text: String) -> some View {
@@ -145,30 +158,43 @@ internal struct Composer: View {
         sending.wrappedValue = false
         actions.send?()
     }
-
-    private static func attachment(_ url: URL) -> Attachment? {
-        let scoped = url.startAccessingSecurityScopedResource()
-        defer { if scoped { url.stopAccessingSecurityScopedResource() } }
-        return (try? Data(contentsOf: url)).map { Attachment(name: url.lastPathComponent, bytes: $0) }
-    }
 }
 
 extension Composer {
+    private var menuButton: some View {
+        Button {
+            menu.wrappedValue = true
+        } label: {
+            if look.textMarks {
+                Text("[/]").ui(15, .bold, look).foregroundStyle(look.palette.foreground).frame(height: 42)
+            } else {
+                RoundButton(symbol: "line.3.horizontal", ascii: "/", size: 42)
+            }
+        }
+        .buttonStyle(.plain).accessibilityLabel("Menu")
+        .popover(isPresented: menu.projectedValue) {
+            ComposerMenu(attach: actions.attach) { menu.wrappedValue = false }
+        }
+    }
+
     private var sendButton: some View {
         let palette = look.palette
         return Button(action: send) {
-            Group {
-                if actions.sending {
-                    Spinner()
-                } else {
-                    Image(systemName: "arrow.up").font(.system(size: 17, weight: .bold))
+            if look.textMarks && !actions.sending {
+                Text("[send]").ui(15, .bold, look).foregroundStyle(palette.link).frame(height: 42)
+            } else {
+                Group {
+                    if actions.sending {
+                        Spinner()
+                    } else {
+                        Image(systemName: "arrow.up").font(.system(size: 17, weight: .bold))
+                    }
                 }
+                .foregroundStyle(palette.dark ? Color.black : .white)
+                .frame(width: 42, height: 42)
+                .background(palette.link, in: look.square ? AnyShape(Rectangle()) : AnyShape(Circle()))
             }
-            .foregroundStyle(palette.dark ? Color.black : .white)
-            .frame(width: 42, height: 42)
-            .background(palette.link, in: look.square ? AnyShape(Rectangle()) : AnyShape(Circle()))
-            .opacity(actions.voice.listening ? 0.35 : 1)
         }
-        .buttonStyle(.plain).accessibilityLabel("Send").allowsHitTesting(!actions.voice.listening)
+        .buttonStyle(.plain).accessibilityLabel("Send")
     }
 }

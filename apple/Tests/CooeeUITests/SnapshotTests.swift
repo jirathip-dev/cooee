@@ -62,8 +62,13 @@ extension Frame {
         .appendingPathComponent("design")
 
     @MainActor
-    internal func matchesItsDesign(_ style: Style = .bundled, in folder: String? = nil) throws {
-        try Self.matches(try #require(render(style)), name, in: folder ?? self.folder)
+    internal func matchesItsDesign(_ style: Style = .bundled, in folder: String? = nil, only area: CGRect? = nil)
+        throws
+    {
+        let rendered = try #require(render(style))
+        let band = area.map { CGRect(x: $0.minX * 2, y: $0.minY * 2, width: $0.width * 2, height: $0.height * 2) }
+        let shown = try #require(band.map { rendered.cropping(to: $0) } ?? rendered)
+        try Self.matches(shown, name, in: folder ?? self.folder, cropped: band)
     }
 
     internal static func matches(
