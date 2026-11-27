@@ -65,7 +65,7 @@ public struct TerminalView: View {
 
     private func input(_ type: @escaping (String) -> Void) -> some View {
         TextField("", text: $field).focused($typing).opacity(0).frame(width: 1, height: 1)
-            .autocorrectionDisabled()
+            .autocorrectionDisabled().submitLabel(.return)
             .onSubmit {
                 actions.press("enter")
                 typing = true
