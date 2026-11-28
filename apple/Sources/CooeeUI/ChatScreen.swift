@@ -10,9 +10,13 @@ internal struct ChatScreen: View {
     internal var backTo: String?
     internal let onBack: () -> Void
 
+    internal static func typing(_ store: StoreOf<ChatFeature>) -> DraftText {
+        DraftText(get: { store.draft }, set: { store.send(.compose(.draftChanged($0))) })
+    }
+
     internal static func actions(_ store: StoreOf<ChatFeature>, back onBack: @escaping () -> Void) -> ChatActions {
         var actions = ChatActions(
-            draft: Binding(get: { store.draft }, set: { store.send(.compose(.draftChanged($0))) }),
+            draft: ChatScreen.typing(store),
             files: store.files.map(\.name),
             send: { store.send(.compose(.send)) },
             attach: { store.send(.compose(.attach($0))) },

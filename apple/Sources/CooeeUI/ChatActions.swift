@@ -1,8 +1,20 @@
 import CooeeCore
 import SwiftUI
 
+/// The composer's text, bound only where it is drawn so typing redraws the composer alone.
+public struct DraftText {
+    public let get: () -> String
+    public let set: (String) -> Void
+
+    public init(get: @escaping () -> String, set: @escaping (String) -> Void) {
+        (self.get, self.set) = (get, set)
+    }
+
+    public var binding: Binding<String> { Binding(get: get, set: set) }
+}
+
 public struct ChatActions {
-    public var draft: Binding<String>?
+    public var draft: DraftText?
     public var files: [String]
     public var send: (() -> Void)?
     public var attach: ([Attachment]) -> Void
@@ -51,7 +63,7 @@ public struct ChatActions {
     public var voice = VoiceActs()
 
     public init(
-        draft: Binding<String>? = nil,
+        draft: DraftText? = nil,
         files: [String] = [],
         send: (() -> Void)? = nil,
         attach: @escaping ([Attachment]) -> Void = { _ in },
