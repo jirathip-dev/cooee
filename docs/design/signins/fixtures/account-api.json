@@ -1,0 +1,68 @@
+{
+ "type": "screen",
+ "id": "account",
+ "title": "Anthropic API · ci",
+ "back": "Sign-ins",
+ "refresh": true,
+ "blocks": [
+  {
+   "type": "list",
+   "id": "who",
+   "rows": [
+    { "type": "row", "id": "state", "title": "State", "badge": { "text": "signed in", "tone": "ok" } },
+    { "type": "row", "id": "machine", "title": "Machine", "value": "Mini" }
+   ]
+  },
+  {
+   "type": "section",
+   "id": "month",
+   "header": "This month",
+   "footer": "From shed's own session counts on Mini.",
+   "blocks": [
+    {
+     "type": "stat",
+     "id": "month/figures",
+     "items": [
+      { "label": "Tokens", "value": "1.2M" },
+      { "label": "Cost", "value": "$18.40" }
+     ]
+    }
+   ]
+  },
+  {
+   "type": "list",
+   "id": "read",
+   "rows": [
+    { "type": "row", "id": "read", "title": "Read by shed", "value": { "since": "2026-11-23T13:58:00Z", "label": "{} ago" } }
+   ]
+  },
+  {
+   "type": "section",
+   "id": "acts",
+   "blocks": [
+    {
+     "type": "button",
+     "id": "again",
+     "label": "Sign in again",
+     "style": "plain",
+     "action": "signin.again",
+     "values": { "machine": "mini", "provider": "anthropic-api", "account": "ci" }
+    },
+    {
+     "type": "button",
+     "id": "out",
+     "label": "Sign out",
+     "style": "destructive",
+     "action": "signin.out",
+     "values": { "machine": "mini", "provider": "anthropic-api", "account": "ci" },
+     "confirm": {
+      "title": "Sign out Anthropic API · ci on Mini?",
+      "message": "shed removes this sign-in from Mini. To use it there again, sign in again.",
+      "ok": "Sign out",
+      "destructive": true
+     }
+    }
+   ]
+  }
+ ]
+}
