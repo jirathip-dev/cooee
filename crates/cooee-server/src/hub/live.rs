@@ -4,7 +4,7 @@ use std::{
     time::Instant,
 };
 
-use cooee_core::{Body, Change, Chat, Queued, StoreError, Thread, shed_proto::Event};
+use cooee_core::{Body, Change, Chat, Item, Queued, StoreError, Thread, shed_proto::Event};
 use serde_json::json;
 use tokio::sync::broadcast;
 
@@ -74,6 +74,15 @@ impl Live {
             sending: Vec::new(),
             held: Vec::new(),
         }
+    }
+
+    pub(super) fn fill(&mut self, items: Vec<Item>) {
+        let mut chat = Chat::from_versions(items);
+        chat.turn = std::mem::take(&mut self.chat.turn);
+        self.applied = self.applied.max(chat.seq());
+        self.chat = chat;
+        self.unloaded = None;
+        self.used = now();
     }
 
     pub(super) fn trim(&mut self, now: u64) {

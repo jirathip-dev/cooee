@@ -1,10 +1,14 @@
-use std::{path::PathBuf, sync::atomic::Ordering};
+use std::{path::PathBuf, sync::atomic::Ordering, thread};
 
 use cooee_core::{Calls as _, Item, Kind, Queued, Thread, Turn};
 use serde::Serialize;
 use tokio::sync::broadcast;
 
-use super::{Hub, HubError, LAG, Out, Resume, live::REV, lock, now, rooms, waits};
+use super::{
+    Hub, HubError, LAG, Out, Resume,
+    live::{Live, REV},
+    lock, now, rooms, waits,
+};
 
 /// A slice of a thread's items, with the turn in progress and the page event it is current to.
 #[derive(Debug, Clone, Serialize)]
@@ -152,7 +156,7 @@ impl Hub {
     /// # Errors
     /// [`HubError::NoThread`].
     pub fn thread(&self, id: &str) -> Result<(Thread, Turn), HubError> {
-        let live = self.live(id)?;
+        let live = self.entry(id)?;
         let live = lock(&live);
         Ok((live.meta.clone(), live.chat.turn.clone()))
     }
@@ -169,6 +173,11 @@ impl Hub {
         before: usize,
         after: usize,
     ) -> Result<Slice, HubError> {
+        if around.is_none()
+            && let Some(slice) = self.cold_slice(id, before)?
+        {
+            return Ok(slice);
+        }
         let live = self.live(id)?;
         let live = lock(&live);
         let items = &live.chat.items;
@@ -176,10 +185,46 @@ impl Hub {
             Some(at) => (at.saturating_sub(before), (at + after + 1).min(items.len())),
             None => (items.len().saturating_sub(before), items.len()),
         };
-        Ok(Slice {
-            items: items.get(from..to.max(from)).unwrap_or_default().to_vec(),
-            skipped_before: from,
-            skipped_after: items.len() - to.max(from),
+        let page = items.get(from..to.max(from)).unwrap_or_default().to_vec();
+        let waiting = items.iter().find(|i| waits(&i.body)).cloned();
+        Ok(self.slice_of(&live, page, from, items.len() - to.max(from), waiting))
+    }
+
+    fn cold_slice(&self, id: &str, before: usize) -> Result<Option<Slice>, HubError> {
+        let live = self.entry(id)?;
+        let guard = lock(&live);
+        if guard.unloaded.is_none() {
+            return Ok(None);
+        }
+        let Some(tail) = self.store.tail(id, before)? else {
+            return Ok(None);
+        };
+        let waiting = tail.approvals.into_iter().find(|i| waits(&i.body));
+        let slice = self.slice_of(&guard, tail.items, tail.older, 0, waiting);
+        drop(guard);
+        if let Some(hub) = self.me() {
+            let id = id.to_owned();
+            thread::spawn(move || {
+                if let Err(e) = hub.warm(&live) {
+                    cooee_core::note!("cooee: {id}: {e}");
+                }
+            });
+        }
+        Ok(Some(slice))
+    }
+
+    fn slice_of(
+        &self,
+        live: &Live,
+        items: Vec<Item>,
+        skipped_before: usize,
+        skipped_after: usize,
+        waiting: Option<Item>,
+    ) -> Slice {
+        Slice {
+            items,
+            skipped_before,
+            skipped_after,
             turn: live.chat.turn.clone(),
             cursor: format!("{}.{}", self.boot, REV.load(Ordering::Relaxed)),
             pending: live.pending.clone().map(|text| Pending {
@@ -187,9 +232,9 @@ impl Hub {
                 random_id: live.meta.random_id.clone(),
             }),
             queue: live.meta.queue.clone(),
-            waiting: items.iter().find(|i| waits(&i.body)).cloned(),
+            waiting,
             asks: live.asks.open.clone(),
-        })
+        }
     }
 
     /// Subscribes to thread `id`'s page events after `cursor` (`<boot>.<rev>`), in one step under the thread's
@@ -202,7 +247,7 @@ impl Hub {
         id: &str,
         cursor: &str,
     ) -> Result<(Resume, broadcast::Receiver<Out>), HubError> {
-        let live = self.live(id)?;
+        let live = self.entry(id)?;
         let mut live = lock(&live);
         let rev = cursor
             .strip_prefix(&self.boot)

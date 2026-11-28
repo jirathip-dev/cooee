@@ -195,6 +195,28 @@ extension ChatFeatureTests {
         await offline.receive(\.link.toasted) { $0.error = nil }
     }
 
+    @Test internal func aChatWithAKeptCopyDrawsItAtOnceThenSwapsInTheFreshSlice() async {
+        let old = APIItem(id: 1, time: 1, kind: "you", text: "Fix")
+        let copy = KeptSlice(slice: Slice(items: [old], turn: Turn(), cursor: "", queue: []), kept: epoch)
+        let store = store {
+            $0.kept.thread = { _, thread in thread == "a1" ? copy : nil }
+            $0.threads.events = { _, _, _ in
+                AsyncThrowingStream { $0.finish(throwing: APIError(status: 404, text: "Gone.")) }
+            }
+        }
+        let task = await store.send(.task) { $0.items = [old] }
+        await store.receive(\.loaded) {
+            $0.items = slice.items
+            $0.queue = slice.queue
+            $0.turn = slice.turn
+            $0.since = epoch
+            $0.live = LiveReply("Hel")
+            $0.loading = false
+        }
+        await store.receive(\.link.dropped) { ($0.error, $0.status.sync) = ("Gone.", .reconnecting) }
+        await task.cancel()
+    }
+
     @Test internal func aFailedCallToastsWhyUntilItsTimeIsUp() async {
         let store = store { $0.threads.stop = { _, _ in throw APIError(status: 409, text: "Nothing runs.") } }
         await store.send(.compose(.stop)) { $0.status.stopping = true }

@@ -41,6 +41,10 @@ impl Hub {
         self.areas.route.me.set(Arc::downgrade(self)).ok();
     }
 
+    pub(super) fn me(&self) -> Option<Arc<Self>> {
+        self.areas.route.me.get().and_then(Weak::upgrade)
+    }
+
     fn agents_now(&self) -> Vec<Agent> {
         agents::all(self.config_dir(), &self.data, |n| self.served(n))
     }
@@ -197,7 +201,7 @@ impl Hub {
                 self.hand_off(&from, to, rest, false)?;
             }
             Mode::Delegate => {
-                let hub = self.areas.route.me.get().and_then(Weak::upgrade);
+                let hub = self.me();
                 let hub = hub.ok_or_else(|| refused("the hub is stopping"))?;
                 let (to, rest) = (to.clone(), rest.to_owned());
                 thread::spawn(move || hub.answer_mention(&from, &to, &rest));

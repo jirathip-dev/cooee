@@ -176,22 +176,38 @@ impl Hub {
     }
 
     pub(super) fn live(&self, id: &str) -> Result<Arc<Mutex<Live>>, HubError> {
-        let live = lock(&self.threads)
-            .get(id)
-            .cloned()
-            .ok_or_else(|| HubError::NoThread(id.to_owned()))?;
+        let live = self.entry(id)?;
         self.load(&mut lock(&live))?;
         Ok(live)
+    }
+
+    pub(super) fn entry(&self, id: &str) -> Result<Arc<Mutex<Live>>, HubError> {
+        lock(&self.threads)
+            .get(id)
+            .cloned()
+            .ok_or_else(|| HubError::NoThread(id.to_owned()))
     }
 
     pub(super) fn load(&self, live: &mut Live) -> Result<(), StoreError> {
         live.used = now();
         if live.unloaded.is_some() {
-            let mut chat = Chat::from_versions(self.store.items(&live.meta.id)?);
-            chat.turn = std::mem::take(&mut live.chat.turn);
-            live.applied = live.applied.max(chat.seq());
-            live.chat = chat;
-            live.unloaded = None;
+            live.fill(self.store.items(&live.meta.id)?);
+        }
+        Ok(())
+    }
+
+    pub(super) fn warm(&self, live: &Mutex<Live>) -> Result<(), StoreError> {
+        let id = {
+            let live = lock(live);
+            if live.unloaded.is_none() {
+                return Ok(());
+            }
+            live.meta.id.clone()
+        };
+        let items = self.store.items(&id)?;
+        let mut live = lock(live);
+        if live.unloaded.is_some() {
+            live.fill(items);
         }
         Ok(())
     }

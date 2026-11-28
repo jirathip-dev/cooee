@@ -318,10 +318,34 @@ fn a_thread_opened_right_after_start_has_its_items_and_its_row_matches() {
     let row = json!(hub.list());
     assert_eq!(row[0]["unseen"], 3, "{row}");
     let slice = hub.slice("a", None, 100, 0).unwrap();
-    assert!(!unloaded(&hub));
     let ids: Vec<u64> = slice.items.iter().map(|i| i.id).collect();
     assert_eq!(ids, [1, 2, 3, 4, 5, 6]);
     assert_eq!(json!(hub.list()), row);
+}
+
+#[test]
+fn a_cold_open_reads_the_newest_page_and_its_waiting_card_as_the_loaded_chat_has_them() {
+    let dir = scratch("cold");
+    let mut lines = json!({ "id": 1, "at": 1, "seq": 1, "kind": "approval", "tool": "Set up", "options": [], "form": "config" })
+        .to_string()
+        + "\n";
+    for k in 2..=60 {
+        let item = json!({ "id": k, "at": k, "seq": k, "kind": "agent", "text": format!("t{k}"), "stop_reason": "end_turn" });
+        lines += &(item.to_string() + "\n");
+    }
+    seed(&dir, "a", &lines);
+    let hub = hub(&dir);
+    let cold = hub.slice("a", None, 50, 0).unwrap();
+    let warm = hub.slice("a", Some(60), 49, 0).unwrap();
+    let ids: Vec<u64> = cold.items.iter().map(|i| i.id).collect();
+    assert_eq!(ids, (11..=60).collect::<Vec<_>>());
+    assert_eq!((cold.skipped_before, cold.skipped_after), (10, 0));
+    assert_eq!(cold.waiting.as_ref().map(|i| i.id), Some(1));
+    assert_eq!(json!(cold.items), json!(warm.items));
+    assert_eq!(
+        (cold.skipped_before, json!(cold.waiting)),
+        (warm.skipped_before, json!(warm.waiting))
+    );
 }
 
 #[test]
@@ -335,7 +359,7 @@ fn an_idle_threads_chat_unloads_and_reloads_intact() {
     seed(&dir, "a", &(item(1, "one") + &item(2, "two")));
     let hub = hub(&dir);
     let unloaded = |hub: &Hub| lock(&lock(&hub.threads)["a"]).unloaded.is_some();
-    let before = hub.slice("a", None, 10, 0).unwrap();
+    let before = hub.slice("a", Some(2), 10, 0).unwrap();
     assert!(!unloaded(&hub));
     let done = Box::new(Reported {
         state: "done".to_owned(),
@@ -359,7 +383,6 @@ fn an_idle_threads_chat_unloads_and_reloads_intact() {
     assert!(unloaded(&hub));
     assert_eq!(json!(hub.list()), row);
     let after = hub.slice("a", None, 10, 0).unwrap();
-    assert!(!unloaded(&hub));
     assert_eq!(json!(after.items), json!(before.items));
     assert_eq!(after.turn.state, "done");
     assert_eq!(replayed(&hub, &before.cursor), None);
