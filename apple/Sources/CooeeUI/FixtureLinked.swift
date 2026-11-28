@@ -7,7 +7,7 @@ extension Fixtures {
 
     public static let asked: [Item] = [
         .you(id: 1, text: "Add Kestrel's Q3 numbers to the export summary."),
-        .agent(id: 2, markdown: [.text("I'll ask Researcher for the figures.")]),
+        .agent(id: 2, markdown: [.text(Markdown.inline("I'll ask Researcher for the figures."))]),
         .asked(
             id: 3,
             Ask(
@@ -19,8 +19,9 @@ extension Fixtures {
             id: 4,
             markdown: [
                 .text(
-                    "Q3 was **$4.1M** (10-Q, 6 Nov, per your note). It's in export/summary.md. I'll check the discount too."
-                )
+                    Markdown.inline(
+                        "Q3 was **$4.1M** (10-Q, 6 Nov, per your note). It's in export/summary.md. I'll check the discount too."
+                    ))
             ]
         ),
         .asked(
@@ -33,7 +34,9 @@ extension Fixtures {
         .agent(
             id: 6,
             markdown: [
-                .text("I can't reach Account Manager from here; its discount is the one open line in the summary.")
+                .text(
+                    Markdown.inline(
+                        "I can't reach Account Manager from here; its discount is the one open line in the summary."))
             ]
         ),
     ]
@@ -45,7 +48,7 @@ extension Fixtures {
 
     public static let linked: [Item] = [
         .divider(id: 0, text: "Today 09:50 · ask_persona"),
-        .said(id: 1, speaker: "coder", time: "asked · 09:50", markdown: [.text(question)]),
+        .said(id: 1, speaker: "coder", time: "asked · 09:50", markdown: [.text(Markdown.inline(question))]),
         .said(id: -2, speaker: "res", time: "09:50", markdown: []),
         .tools(id: 2, rows: [ToolRow(.search, "sec.gov", "done"), ToolRow(.fetch, "sec.gov", "done")]),
         .you(id: 4, text: note),
@@ -60,8 +63,9 @@ extension Fixtures {
             id: 6, speaker: "res", time: "replied · 09:51",
             markdown: [
                 .text(
-                    "Q3 revenue was **$4.1M**, up 12% on Q2, from the 10-Q filed 6 Nov, as you asked. Their deck agrees."
-                )
+                    Markdown.inline(
+                        "Q3 revenue was **$4.1M**, up 12% on Q2, from the 10-Q filed 6 Nov, as you asked. Their deck agrees."
+                    ))
             ]
         ),
         .divider(id: 7, text: "returned to Coder with your note · 48s"),

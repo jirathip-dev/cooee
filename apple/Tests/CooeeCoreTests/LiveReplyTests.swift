@@ -3,9 +3,10 @@ import Testing
 
 internal struct LiveReplyTests {
     @Test internal func theReplySoFarParsesLikeTheWholeTextWithItsCaretHoweverItIsChunked() {
-        let text = "Done:\n\n```ts\nawait x();\n\n```\n- one\n* two\n\n  \nafter\n\nlast"
+        let text = "Done:\n\n```ts\nawait x();\n\n```\n- one\n- two\n\n  \nafter\n\nlast"
         let whole: [Block] = [
-            .text("Done:"), .code(lang: "ts", "await x();\n"), .bullets(["one", "two"]), .text("after"),
+            .text("Done:"), .code(lang: "ts", "await x();\n"), .list(ListBlock([ListItem("one"), ListItem("two")])),
+            .text("after"),
             .text("last ▍"),
         ]
         #expect(LiveReply(text).blocks == whole && LiveReply().isEmpty && LiveReply().blocks.isEmpty)

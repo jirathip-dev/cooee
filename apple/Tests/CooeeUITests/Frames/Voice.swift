@@ -21,7 +21,11 @@ private enum VoiceScreens {
         let items: [Item] = [
             .you(id: 1, text: "Export Kestrel's filings to CSV, one row a line item."),
             .tools(id: 2, rows: [ToolRow(.run, "cargo run -p export", "ok"), ToolRow(.edit, "kestrel-q2.csv", "ok")]),
-            .agent(id: 3, markdown: [.text("Done: **388 rows** in `kestrel-q2.csv`. The Q3 filing isn't in yet.")]),
+            .agent(
+                id: 3,
+                markdown: [
+                    .text(Markdown.inline("Done: **388 rows** in `kestrel-q2.csv`. The Q3 filing isn't in yet."))
+                ]),
         ]
         let draft = listening ? "" : "\(said) ten Q filing"
         return thread(persona("coder", .done), items) {
@@ -58,10 +62,9 @@ private enum VoiceScreens {
                 rows: [ToolRow(.fetch, "sec.gov/…/kestrel-10q-q3.htm", "ok"), ToolRow(.read, "notes, p. 14", "ok")]),
             .agent(
                 id: 4,
-                markdown: [
-                    .text("As I said on the call: Birch fell to **14%** because its renewal is deferred to January."),
-                    .bullets(["Source: Q3 10-Q, notes p. 14", "Saved to `notes/kestrel.md`"]),
-                ]),
+                markdown: Markdown.blocks(
+                    "As I said on the call: Birch fell to **14%** because its renewal is deferred to January.\n\n"
+                        + "- Source: Q3 10-Q, notes p. 14\n- Saved to `notes/kestrel.md`")),
         ]
         var actions = ChatActions()
         actions.voice.call = {}

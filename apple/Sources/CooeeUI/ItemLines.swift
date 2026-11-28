@@ -23,16 +23,3 @@ internal struct LinkLine: View {
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 }
-
-extension CodeBlock {
-    internal static func diff(_ code: String, _ palette: Palette) -> AttributedString {
-        var out = AttributedString()
-        for (index, line) in code.split(separator: "\n", omittingEmptySubsequences: false).enumerated() {
-            var part = AttributedString((index == 0 ? "" : "\n") + line)
-            if line.hasPrefix("+") { part.foregroundColor = palette.green }
-            if line.hasPrefix("-") { part.foregroundColor = palette.red }
-            out += part
-        }
-        return out
-    }
-}

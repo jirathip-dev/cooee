@@ -11,17 +11,33 @@ internal struct BlockView: View, Equatable {
     internal var body: some View {
         switch block {
         case .text(let text):
-            Text(Self.mentioned(Markdown.inline(text), members, look.palette.link)).ui(16, .regular, look)
+            Text(Self.mentioned(Self.styled(text, look), members, look.palette.link)).ui(16, .regular, look)
                 .fixedSize(horizontal: false, vertical: true)
-        case .bullets(let bullets):
-            VStack(alignment: .leading, spacing: 4) {
-                ForEach(bullets, id: \.self) { bullet in
-                    Text(Markdown.inline("•  " + bullet)).ui(16, .regular, look)
-                }
-            }
-        case .code(let lang, let code):
-            CodeBlock(lang: lang, code: code)
+        case .heading(let level, let text): HeadingView(level: level, text: text)
+        case .list(let list): ListView(list: list, depth: 0)
+        case .quote(let text): QuoteView(text: text)
+        case .table(let table): TableCard(table: table)
+        case .code(let lang, let code): FenceView(lang: lang, code: code)
+        case .rule: RuleView()
+        case .image(let alt, let url): ImageBlock(alt: alt, url: url)
         }
+    }
+
+    internal static func styled(_ text: AttributedString, _ look: Look) -> AttributedString {
+        var out = text
+        let (palette, mono) = (look.palette, look.type == .mono)
+        for run in out.runs {
+            if run.inlinePresentationIntent?.contains(.code) == true {
+                out[run.range].font = .system(size: mono ? 13 : 14.5, design: .monospaced)
+                out[run.range].foregroundColor = mono ? palette.cyan : palette.lead
+                out[run.range].backgroundColor = mono ? nil : palette.edge.opacity(palette.dark ? 0.45 : 0.4)
+            }
+            if run.link != nil {
+                out[run.range].foregroundColor = palette.link
+                out[run.range].underlineStyle = look.glass ? nil : .single
+            }
+        }
+        return out
     }
 
     internal static func mentioned(
