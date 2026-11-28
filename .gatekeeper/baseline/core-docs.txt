@@ -1,0 +1,6 @@
+docs/layout.md: link `architecture/layout-blocks/adr.md.` does not exist
+docs/mcp.md: `tools/list`: no such path
+docs/parity-553-native.md: `crates/server/src/screens.rs`: no such path
+docs/sync.md: `docs/architecture/overview.md`: no such path
+docs/themes.md: `packs/bush/`: no such path
+docs/themes.md: link `docs/styles.md` does not exist

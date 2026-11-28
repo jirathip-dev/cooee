@@ -12,7 +12,5 @@ permissions:
 jobs:
   gates:
     uses: jirathip-dev/gatekeeper/.github/workflows/gates.yml@49e65a3c0e634088282c783f1f16211a7156fc75 # v1.7.0
-    with:
-      scope: ${{ contains(github.event.pull_request.labels.*.name, 'merge-ready') && 'full' || 'light' }}
-    secrets:
-      private-names: ${{ secrets.PRIVATE_NAMES }}
+    with: { scope: "${{ contains(github.event.pull_request.labels.*.name, 'merge-ready') && 'full' || 'light' }}" }
+    secrets: { private-names: "${{ secrets.PRIVATE_NAMES }}" }
