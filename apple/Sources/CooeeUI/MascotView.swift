@@ -10,7 +10,7 @@ internal struct BirdView: View {
         let fills = look.palette.dark ? look.palette : .farmDark
         let sketch = Sketch(bird: Bird.of(persona.mascot), fills: fills, edge: !look.palette.dark)
         let failed = persona.state == .fail
-        Clocked(seed: persona.seed) { time in
+        Clocked(seed: persona.seed, state: persona.state) { time in
             Canvas { context, _ in
                 context.scaleBy(x: size / 100, y: size / 100)
                 sketch.draw(Stance(persona.state, at: time), persona.state, in: context)
@@ -32,7 +32,7 @@ internal struct FaceView: View {
         let face = persona.mascot.face
         let tone = palette.color(face.paint)
         let ink = persona.state == .fail ? tone.mix(with: palette.mute, by: 0.5) : tone
-        Clocked(seed: persona.seed) { time in
+        Clocked(seed: persona.seed, state: persona.state) { time in
             Text(face.text(persona.state, at: time ?? 0)).font(
                 .system(size: size * (bare ? 0.4 : 0.23), weight: .bold, design: .monospaced)
             )
@@ -55,12 +55,13 @@ internal struct FaceView: View {
 private struct Clocked<Content: View>: View {
     @Environment(\.look) private var look
     internal let seed: String
+    internal let state: LaneState
     @ViewBuilder internal let content: (Double?) -> Content
 
     internal var body: some View {
-        if look.moving {
-            TimelineView(.animation) { context in
-                content(context.date.timeIntervalSinceReferenceDate + Mascot.phase(seed) * 4)
+        if look.moving, let beat = Beat.of(state) {
+            TimelineView(beat) { context in
+                content(context.date.timeIntervalSinceReferenceDate + (state == .idle ? 0 : Mascot.phase(seed) * 4))
             }
         } else {
             content(nil)
