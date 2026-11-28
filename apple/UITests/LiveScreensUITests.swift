@@ -82,23 +82,34 @@
             box.tap()
             box.typeText("Show me the cards")
             app.buttons["Send"].firstMatch.tap()
-            XCTAssert(app.buttons["Approve"].waitForExistence(timeout: 30))
+            let line = app.buttons["4 need you"].firstMatch
+            XCTAssert(line.waitForExistence(timeout: 30), "4 open asks show no one chat line")
+            XCTAssert(app.buttons["Asks 4"].exists, "4 open asks show no Asks 4 chip")
+            XCTAssertFalse(app.buttons["Approve"].exists, "an ask card renders inline in the thread")
             keep("chat-cards")
+            line.tap()
+            answersInTheSheet(app)
+            app.buttons["Done"].firstMatch.tap()
+            XCTAssert(app.buttons["1 need you"].waitForExistence(timeout: 10), "the chat line did not update in place")
+            XCTAssert(app.buttons["Asks 1"].exists, "the Asks chip did not count down to 1")
+            XCTAssertFalse(line.exists, "the chat line still says 4")
+            for answered in ["Allow once ✓", "apply ✓", "ran at 3b7e0c55a1d9: exit 0"] {
+                XCTAssert(labelled(app, answered).waitForExistence(timeout: 10), "the thread lacks \(answered)")
+            }
+            keep("chat-cards-answered")
+        }
+
+        @MainActor
+        internal func answersInTheSheet(_ app: XCUIApplication) {
+            XCTAssert(app.buttons["Allow once · recommended"].waitForExistence(timeout: 10), "the sheet holds no ask")
+            keep("asks-sheet")
             app.buttons["Allow once · recommended"].firstMatch.tap()
-            XCTAssert(labelled(app, "Allow once ✓").waitForExistence(timeout: 10))
+            XCTAssert(labelled(app, "Asks 3").waitForExistence(timeout: 10), "answering one left Asks at 4")
             app.buttons["apply"].firstMatch.tap()
-            XCTAssert(labelled(app, "apply ✓").waitForExistence(timeout: 10))
-            app.buttons["EDGAR_API_KEY"].firstMatch.tap()
-            let secret = app.secureTextFields.firstMatch
-            XCTAssert(secret.waitForExistence(timeout: 10))
-            secret.typeText("k3y")
-            app.buttons["OK"].firstMatch.tap()
-            app.buttons["Send to plugin"].firstMatch.tap()
-            XCTAssert(labelled(app, "EDGAR_API_KEY set ✓").waitForExistence(timeout: 10))
+            XCTAssert(labelled(app, "Asks 2").waitForExistence(timeout: 10), "answering one left Asks at 3")
             app.buttons["Approve"].firstMatch.tap()
             app.buttons["Run"].firstMatch.tap()
-            XCTAssert(labelled(app, "ran at 3b7e0c55a1d9: exit 0").waitForExistence(timeout: 10))
-            keep("chat-cards-answered")
+            XCTAssert(labelled(app, "Asks 1").waitForExistence(timeout: 10), "answering one left Asks at 2")
         }
 
         @MainActor
