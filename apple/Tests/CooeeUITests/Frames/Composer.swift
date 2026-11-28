@@ -88,7 +88,7 @@ internal struct ComposerFrames {
             $0.continuousClock = TestClock()
         }
         let actions = ChatScreen.actions(store) {}
-        let draft = try #require(actions.draft)
+        let draft = try #require(actions.draft?.binding)
         let typed = Composer.keyed(draft) { actions.send?() }
         typed.wrappedValue = "pasted\nlines"
         #expect(store.draft == "pasted\nlines")

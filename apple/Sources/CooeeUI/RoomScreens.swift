@@ -26,7 +26,7 @@ internal struct RoomScreen: View {
     private var actions: RoomActions {
         RoomActions(
             chat: ChatActions(
-                draft: Binding(get: { store.draft }, set: { store.send(.compose(.draftChanged($0))) }),
+                draft: ChatScreen.typing(store),
                 files: store.files.map(\.name),
                 send: { store.send(.compose(.send)) },
                 attach: { store.send(.compose(.attach($0))) },

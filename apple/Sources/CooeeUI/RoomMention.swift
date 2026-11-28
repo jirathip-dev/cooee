@@ -4,7 +4,7 @@ import SwiftUI
 internal struct MentionBar: View {
     @Environment(\.look) private var look
     internal let scene: RoomScene
-    internal var draft: Binding<String>?
+    internal var draft: DraftText?
 
     internal var body: some View {
         let mention = scene.mention
@@ -47,7 +47,7 @@ internal struct MentionBar: View {
             ? "mentioned"
             : member.id == mention.match ? "replies \(RoomOrder.ordinal(mention.named.count + 1))" : member.api.machine
         return Button {
-            draft?.wrappedValue = Mentions.pick(member.name, in: scene.draft)
+            draft?.set(Mentions.pick(member.name, in: scene.draft))
         } label: {
             HStack(spacing: 10) {
                 FigureView(persona: member.with(state: .done), size: 30)

@@ -44,7 +44,7 @@ internal struct Composer: View {
 
     private var talking: Bool {
         members.isEmpty
-            && (actions.voice.listening || ((actions.draft?.wrappedValue ?? draft).isEmpty && chips.isEmpty))
+            && (actions.voice.listening || ((actions.draft?.get() ?? draft).isEmpty && chips.isEmpty))
     }
 
     private var field: some View {
@@ -53,7 +53,7 @@ internal struct Composer: View {
             if look.textMarks { Text("> ").ui(16, .bold, look).foregroundStyle(palette.lead) }
             if let dictation = actions.voice.dictation, dictation.listening {
                 DictationWords(dictation: dictation)
-            } else if let text = actions.draft {
+            } else if let text = actions.draft?.binding {
                 TextField(members.isEmpty ? shown : "", text: Self.keyed(text, send: send), axis: .vertical)
                     .ui(16, .regular, look).lineLimit(1...5).textFieldStyle(.plain).onSubmit(send).focused($typing)
                     .onKeyPress(.return, phases: .down) { press in
