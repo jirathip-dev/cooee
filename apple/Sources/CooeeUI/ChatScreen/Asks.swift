@@ -23,9 +23,10 @@ internal struct AsksPresenting: ViewModifier {
         let bar = AsksBar(count: asks.count, urgent: asks.urgent, top: asks.top?.text ?? "") {
             store.send(.area(.asks(.show(true))))
         }
+        let shown = Binding(get: { store.area.asks.open }, set: { store.send(.area(.asks(.show($0)))) })
         content
             .environment(\.asks, bar)
-            .inspector(isPresented: Binding(get: { store.area.asks.open }, set: { store.send(.area(.asks(.show($0)))) })) {
+            .inspector(isPresented: shown) {
                 AsksSheet(asks: asks, answering: store.answering, done: { store.send(.area(.asks(.show(false)))) }) {
                     store.send(.cards(.answer($0, $1)))
                 }
@@ -70,12 +71,14 @@ internal struct AsksChip: View {
 
     internal var body: some View {
         if asks.count > 0 {
+            let tint = asks.urgent ? look.palette.red : look.palette.amber
             Button(action: asks.open) {
                 HStack(spacing: 6) {
                     Text(look.label(.chip, "Asks")).ui(13, .semibold, look)
-                    Badge(count: asks.count, tint: asks.urgent ? look.palette.red : look.palette.amber)
+                    Badge(count: asks.count, tint: tint)
                 }
                 .padding(.horizontal, 12).frame(height: 30).chip(look)
+                .overlay(look.pill.stroke(tint, lineWidth: 1))
             }
             .buttonStyle(.plain).accessibilityLabel("Asks \(asks.count)")
         }
@@ -91,16 +94,25 @@ internal struct AsksLine: View {
             let tint = asks.urgent ? look.palette.red : look.palette.amber
             Button(action: asks.open) {
                 HStack(spacing: 8) {
+                    lead
                     Text("\(asks.count) need you").fontWeight(.semibold)
                     Text("· \(asks.top)").foregroundStyle(look.palette.mute).lineLimit(1)
                     Spacer(minLength: 4)
-                    Text(">").foregroundStyle(look.palette.mute)
+                    Text(look.textMarks ? "[>]" : "›").foregroundStyle(look.palette.mute)
                 }
                 .ui(14, .regular, look).padding(.horizontal, 14).frame(height: 40)
                 .background(tint.opacity(0.12), in: look.pill)
                 .overlay(look.pill.stroke(tint, lineWidth: 1))
             }
             .buttonStyle(.plain).accessibilityLabel("\(asks.count) need you")
+        }
+    }
+
+    @ViewBuilder private var lead: some View {
+        if look.stage != nil {
+            Sprite(name: asks.urgent ? "horse-bay-fail" : "horse-bay-needs").frame(width: 24, height: 18)
+        } else {
+            Text(look.textMarks ? "[!]" : "✋")
         }
     }
 }

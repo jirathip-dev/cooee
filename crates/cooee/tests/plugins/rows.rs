@@ -199,13 +199,7 @@ fn start_serving(
 #[test]
 fn an_ask_from_an_attached_chat_is_drovers_own_block_there_and_a_tap_answers_it() {
     let (dir, shed, cooee, d) = start("rows-chat");
-    let new = json!({ "agent": "fake-acp", "folder": dir.join("root/project"), "text": "Plan it", "random_id": "r1" });
-    let (code, body) = cooee.post("/threads", &new);
-    assert_eq!(code, 200, "{body}");
-    let id = serde_json::from_str::<Value>(&body).unwrap()["id"]
-        .as_str()
-        .unwrap()
-        .to_owned();
+    let id = open_chat(&cooee, &dir);
     let mut ask = the_ask();
     ask["to"] = json!({ "k": "thread", "id": id });
     ask["group"] = json!("needs-human");
@@ -261,6 +255,16 @@ fn an_ask_from_an_attached_chat_is_drovers_own_block_there_and_a_tap_answers_it(
     );
 }
 
+fn open_chat(cooee: &Cooee, dir: &Path) -> String {
+    let new = json!({ "agent": "fake-acp", "folder": dir.join("root/project"), "text": "Plan it", "random_id": "r1" });
+    let (code, body) = cooee.post("/threads", &new);
+    assert_eq!(code, 200, "{body}");
+    serde_json::from_str::<Value>(&body).unwrap()["id"]
+        .as_str()
+        .unwrap()
+        .to_owned()
+}
+
 fn rows_in(cooee: &Cooee, id: &str) -> Vec<Value> {
     let items = cooee.json(&format!("/threads/{id}/messages"))["items"].clone();
     let all = items.as_array().cloned().unwrap_or_default();
@@ -270,13 +274,7 @@ fn rows_in(cooee: &Cooee, id: &str) -> Vec<Value> {
 #[test]
 fn an_open_row_waits_in_its_group_and_the_manifest_lists_the_groups_in_order() {
     let (dir, _shed, cooee, d) = start("rows-asks");
-    let new = json!({ "agent": "fake-acp", "folder": dir.join("root/project"), "text": "Plan it", "random_id": "r1" });
-    let (code, body) = cooee.post("/threads", &new);
-    assert_eq!(code, 200, "{body}");
-    let id = serde_json::from_str::<Value>(&body).unwrap()["id"]
-        .as_str()
-        .unwrap()
-        .to_owned();
+    let id = open_chat(&cooee, &dir);
     let mut ask = the_ask();
     ask["to"] = json!({ "k": "thread", "id": id });
     ask["group"] = json!("stuck");
