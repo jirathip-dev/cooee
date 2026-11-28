@@ -65,7 +65,9 @@ public struct AppRoot: View {
         .preferredColorScheme(preferred)
     }
 
-    private var look: Look { store.menu.look(dark: scheme == .dark, reduceMotion: reduceMotion) }
+    private var look: Look {
+        store.menu.look(dark: scheme == .dark, reduceMotion: reduceMotion || phase == .background)
+    }
 
     private var preferred: ColorScheme? {
         let menu = store.menu

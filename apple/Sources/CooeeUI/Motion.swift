@@ -8,14 +8,49 @@ internal struct Acting<Content: View>: View {
     @ViewBuilder internal let content: (Pose) -> Content
 
     internal var body: some View {
-        if look.moving {
-            TimelineView(.animation(minimumInterval: 1.0 / 30)) { context in
-                content(motion.pose(at: context.date.timeIntervalSince(start)))
+        Group {
+            if look.moving, let every = motion.every {
+                TimelineView(Beat(bar: every, until: motion.ends.map(start.addingTimeInterval))) { context in
+                    content(motion.pose(at: context.date.timeIntervalSince(start)))
+                }
+            } else {
+                content(.rest)
             }
-            .onChange(of: motion) { start = .now }
-        } else {
-            content(.rest)
         }
+        .onChange(of: motion) { start = .now }
+    }
+}
+
+internal struct Beat: TimelineSchedule {
+    internal static let idle = Beat(bar: 4, marks: [0, 2, 3.72, 3.84])
+
+    internal let bar: Double
+    internal var marks = [0.0]
+    internal var until: Date?
+
+    internal static func of(_ state: LaneState) -> Beat? {
+        switch state {
+        case .idle: .idle
+        case .working, .needs: Beat(bar: 1.0 / 15)
+        case .done, .merged, .fail: nil
+        }
+    }
+
+    internal func entries(from date: Date, mode _: TimelineScheduleMode) -> UnfoldFirstSequence<Date> {
+        let first = Date(
+            timeIntervalSinceReferenceDate: (date.timeIntervalSinceReferenceDate / bar).rounded(.down) * bar)
+        return sequence(first: first) { last in
+            let next = beat(after: last)
+            guard let until else { return next }
+            return last < until ? min(next, until) : nil
+        }
+    }
+
+    private func beat(after date: Date) -> Date {
+        let time = date.timeIntervalSinceReferenceDate
+        let start = (time / bar).rounded(.down) * bar
+        let next = (marks + marks.map { $0 + bar } + [2 * bar]).first { start + $0 > time + 0.001 } ?? 2 * bar
+        return Date(timeIntervalSinceReferenceDate: start + next)
     }
 }
 

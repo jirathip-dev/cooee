@@ -72,6 +72,24 @@ public enum Motion: Sendable, Equatable {
         }
     }
 
+    /// Seconds between two of its poses: a walk changes stride every 0.4 s, a still one never changes.
+    public var every: Double? {
+        switch self {
+        case .still: nil
+        case .walk: 0.4
+        case .hop, .pulse, .shake: 1.0 / 15
+        case .loading, .spin: 1.0 / 30
+        }
+    }
+
+    /// When a one-off motion is over and rests, nil for one that loops.
+    public var ends: Double? {
+        switch self {
+        case .hop, .pulse, .shake: Self.moment
+        case .still, .walk, .loading, .spin: nil
+        }
+    }
+
     public func pose(at time: Double) -> Pose {
         let time = max(0, time)
         let frame = Int(time / (self == .walk ? 0.4 : 0.6)) % 2
