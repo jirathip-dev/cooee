@@ -197,16 +197,10 @@ impl Hub {
     }
 
     pub(super) fn warm(&self, live: &Mutex<Live>) -> Result<(), StoreError> {
-        let id = {
-            let live = lock(live);
-            if live.unloaded.is_none() {
-                return Ok(());
-            }
-            live.meta.id.clone()
-        };
-        let items = self.store.items(&id)?;
+        let id = Some(lock(live)).and_then(|l| l.unloaded.is_some().then(|| l.meta.id.clone()));
+        let items = id.map(|id| self.store.items(&id)).transpose()?;
         let mut live = lock(live);
-        if live.unloaded.is_some() {
+        if let Some(items) = items.filter(|_| live.unloaded.is_some()) {
             live.fill(items);
         }
         Ok(())

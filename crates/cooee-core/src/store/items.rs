@@ -16,17 +16,6 @@ pub enum Page {
     After(u64),
 }
 
-/// A thread's newest items, how many are older and all its approvals, read without the rest ([`Store::tail`]).
-#[derive(Debug, Clone)]
-pub struct Tail {
-    /// The newest items, oldest first.
-    pub items: Vec<Item>,
-    /// How many older items there are.
-    pub older: usize,
-    /// Every approval card, oldest first.
-    pub approvals: Vec<Item>,
-}
-
 impl Store {
     /// Stores `item` in thread `id`, replacing an earlier version of it, and waits until its batch is on disk.
     ///
@@ -99,42 +88,18 @@ impl Store {
         Ok(items)
     }
 
-    /// Thread `id`'s newest `n` items without reading it whole (#893); none when part of it is archived.
-    ///
-    /// # Errors
-    ///
-    /// Returns [`StoreError`] if the id is invalid or the items can't be read.
-    pub fn tail(&self, id: &str, n: usize) -> Result<Option<Tail>, StoreError> {
-        self.path(id)?;
-        self.writer.flush_thread(id);
+    /// Thread `id`'s newest `n` items, how many are older and its approvals (#893); none if archived or unreadable.
+    #[must_use]
+    pub fn tail(&self, id: &str, n: usize) -> Option<(Vec<Item>, usize, Vec<Item>)> {
+        self.moved(&self.db(), id).ok()?.is_none().then_some(())?;
+        let items = self.page(id, Page::Last, n).ok()?;
         let db = self.db();
-        if self.moved(&db, id)?.is_some() {
-            return Ok(None);
-        }
-        let limit = u64::try_from(n).map_or(i64::MAX, int);
-        let mut items = self.bodies(
-            &db,
-            "thread = ?1 ORDER BY id DESC LIMIT ?2",
-            params![id, limit],
-        )?;
-        items.reverse();
-        let approvals = self.bodies(
-            &db,
-            "thread = ?1 AND kind = 'approval' ORDER BY id",
-            params![id],
-        )?;
-        let all: i64 = db
-            .prepare_cached("SELECT count(*) FROM items WHERE thread = ?1")
-            .and_then(|mut q| q.query_row(params![id], |r| r.get(0)))
-            .map_err(db_err(&self.path))?;
-        let older = usize::try_from(all)
-            .unwrap_or(0)
-            .saturating_sub(items.len());
-        Ok(Some(Tail {
-            items,
-            older,
-            approvals,
-        }))
+        let approvals = "thread = ?1 AND kind = 'approval' ORDER BY id";
+        let approvals = self.bodies(&db, approvals, params![id]).ok()?;
+        let count = "SELECT count(*) FROM items WHERE thread = ?1";
+        let all: i64 = db.query_row(count, params![id], |r| r.get(0)).ok()?;
+        let older = usize::try_from(all).ok()?.saturating_sub(items.len());
+        Some((items, older, approvals))
     }
 
     /// What thread `id`'s list row needs without reading it whole (#346): its approvals, the owner's newest message and

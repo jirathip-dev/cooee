@@ -27,7 +27,7 @@ fn refused(why: impl Into<String>) -> HubError {
 
 #[derive(Default)]
 pub(super) struct State {
-    me: OnceLock<Weak<Hub>>,
+    pub(super) me: OnceLock<Weak<Hub>>,
 }
 
 /// Where a route went: a delegate's answer by name for Chief, or a hand-off agent's name and nothing of its words.
@@ -39,10 +39,6 @@ pub enum Routed {
 impl Hub {
     pub(super) fn keep_me(self: &Arc<Self>) {
         self.areas.route.me.set(Arc::downgrade(self)).ok();
-    }
-
-    pub(super) fn me(&self) -> Option<Arc<Self>> {
-        self.areas.route.me.get().and_then(Weak::upgrade)
     }
 
     fn agents_now(&self) -> Vec<Agent> {
@@ -201,7 +197,7 @@ impl Hub {
                 self.hand_off(&from, to, rest, false)?;
             }
             Mode::Delegate => {
-                let hub = self.me();
+                let hub = self.areas.route.me.get().and_then(Weak::upgrade);
                 let hub = hub.ok_or_else(|| refused("the hub is stopping"))?;
                 let (to, rest) = (to.clone(), rest.to_owned());
                 thread::spawn(move || hub.answer_mention(&from, &to, &rest));

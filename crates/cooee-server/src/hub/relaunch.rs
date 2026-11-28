@@ -164,10 +164,7 @@ impl Hub {
                 l.meta.terminal.clone()
             };
             let got = self.shed.get(&terminal);
-            if let Err(e) = self.warm(&live) {
-                cooee_core::note!("cooee: {e}");
-                continue;
-            }
+            self.warm(&live).ok();
             let mut live = lock(&live);
             if let Err(e) = self.load(&mut live) {
                 cooee_core::note!("cooee: {e}");

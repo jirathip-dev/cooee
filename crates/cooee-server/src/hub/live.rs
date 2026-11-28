@@ -82,7 +82,6 @@ impl Live {
         self.applied = self.applied.max(chat.seq());
         self.chat = chat;
         self.unloaded = None;
-        self.used = now();
     }
 
     pub(super) fn trim(&mut self, now: u64) {
