@@ -23,13 +23,14 @@ extension Fixtures {
             id: 2, speaker: "chief", time: "09:40",
             markdown: [
                 .text(
-                    "Three things: pricing sign-off, the data export and their Q3 numbers. The export shipped Thursday. @Researcher, can you confirm Q3?"
-                )
+                    Markdown.inline(
+                        "Three things: pricing sign-off, the data export and their Q3 numbers. The export shipped Thursday. @Researcher, can you confirm Q3?"
+                    ))
             ]
         ),
         .said(
             id: 3, speaker: "res", time: "09:41",
-            markdown: [.text("Q3 revenue was **$4.1M**, up 12% on Q2 (10-Q filed 6 Nov).")]),
+            markdown: [.text(Markdown.inline("Q3 revenue was **$4.1M**, up 12% on Q2 (10-Q filed 6 Nov)."))]),
         .tools(
             id: 4,
             rows: [
@@ -38,7 +39,11 @@ extension Fixtures {
         ),
         .said(
             id: 5, speaker: "am", time: "now",
-            markdown: [.text("Pricing: a 3-year term at the Birch & Co rate, 8% off list. I'll draft the order form ▍")]
+            markdown: [
+                .text(
+                    Markdown.inline(
+                        "Pricing: a 3-year term at the Birch & Co rate, 8% off list. I'll draft the order form ▍"))
+            ]
         ),
     ]
 
@@ -88,7 +93,7 @@ extension RoomView {
             .you(id: 1, text: "Where is Kestrel's revenue heading? Use their last three 10-Qs."),
             .said(
                 id: 2, speaker: "chief", time: "10:02",
-                markdown: [.text("@Researcher has the filings; I'll wait for the numbers.")]),
+                markdown: [.text(Markdown.inline("@Researcher has the filings; I'll wait for the numbers."))]),
             .card(id: id, poster: "res", block: block),
         ]
         return RoomView(
@@ -109,8 +114,9 @@ extension RoomView {
                 id: 5, speaker: "am", time: "09:42",
                 markdown: [
                     .text(
-                        "Pricing: a 3-year term at the Birch & Co rate, 8% off list. The order form is in kestrel/order.pdf."
-                    )
+                        Markdown.inline(
+                            "Pricing: a 3-year term at the Birch & Co rate, 8% off list. The order form is in kestrel/order.pdf."
+                        ))
                 ]
             ),
             .divider(id: 6, text: RoomItems.ended(scene.round.turn, passed: ["Coder"])),

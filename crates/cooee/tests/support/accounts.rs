@@ -87,6 +87,13 @@ impl FakeShed {
             .cloned()
     }
 
+    /// Puts `account` (shed's JSON) in this shed's list, as `account.ls` gives it.
+    pub fn put_account(&self, account: Value) {
+        let key = |k: &str| account[k].as_str().unwrap().to_owned();
+        let key = (key("provider"), key("name"));
+        self.shared.lock().unwrap().accounts.insert(key, account);
+    }
+
     /// How many `method` requests shed got.
     pub fn calls_of(&self, method: &str) -> usize {
         self.requests

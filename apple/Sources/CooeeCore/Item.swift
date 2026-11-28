@@ -1,11 +1,5 @@
 import Foundation
 
-public enum Block: Sendable, Equatable {
-    case text(String)
-    case code(lang: String, String)
-    case bullets([String])
-}
-
 /// What a tool call does, as the server read it from the agent: never a harness's tool name.
 public enum ToolKind: String, Sendable, CaseIterable {
     case read, edit, run, search, fetch, tool, other
@@ -106,11 +100,26 @@ public enum Item: Identifiable, Sendable, Equatable {
 extension Block {
     fileprivate var plainText: String {
         switch self {
-        case .text(let text): String(Markdown.inline(text).characters)
+        case .text(let text), .heading(_, let text), .quote(let text): String(text.characters)
         case .code(_, let code): code
-        case .bullets(let bullets):
-            bullets.map { "• " + String(Markdown.inline($0).characters) }.joined(separator: "\n")
+        case .list(let list): list.plainText(depth: 0)
+        case .table(let table):
+            ([table.header] + table.rows).map { $0.map { String($0.characters) }.joined(separator: " | ") }
+                .joined(separator: "\n")
+        case .rule: "---"
+        case .image(let alt, _): alt
         }
+    }
+}
+
+extension ListBlock {
+    fileprivate func plainText(depth: Int) -> String {
+        items.enumerated().map { index, item in
+            let mark = item.done.map { $0 ? "[x]" : "[ ]" } ?? start.map { "\($0 + index)." } ?? "•"
+            let line = String(repeating: "  ", count: depth) + mark + " " + String(item.text.characters)
+            return ([line] + (item.children.map { [$0.plainText(depth: depth + 1)] } ?? [])).joined(separator: "\n")
+        }
+        .joined(separator: "\n")
     }
 }
 
@@ -212,71 +221,5 @@ public enum ChatItems {
             return
         }
         out[out.count - 1] = .tools(id: id, rows: rows + [row(item)])
-    }
-}
-
-public struct Markdown {
-    private var out: [Block] = []
-    private var paragraph: [String] = []
-    private var bullets: [String] = []
-    private var code: (lang: String, lines: [String])?
-
-    /// One block's inline markup (bold, code, links), each line break kept as the source has it.
-    public static func inline(_ markdown: String) -> AttributedString {
-        let options = AttributedString.MarkdownParsingOptions(interpretedSyntax: .inlineOnlyPreservingWhitespace)
-        return (try? AttributedString(markdown: markdown, options: options)) ?? AttributedString(markdown)
-    }
-
-    public static func blocks(_ markdown: String) -> [Block] {
-        var parser = Markdown()
-        for line in markdown.split(separator: "\n", omittingEmptySubsequences: false) {
-            parser.feed(String(line))
-        }
-        return parser.finish()
-    }
-
-    private mutating func feed(_ line: String) {
-        if line.hasPrefix("```") {
-            fence(line)
-        } else if code != nil {
-            code?.lines.append(line)
-        } else if line.hasPrefix("- ") || line.hasPrefix("* ") {
-            if !paragraph.isEmpty { flush() }
-            bullets.append(String(line.dropFirst(2)))
-        } else if line.trimmingCharacters(in: .whitespaces).isEmpty {
-            flush()
-        } else {
-            if !bullets.isEmpty { flush() }
-            paragraph.append(line)
-        }
-    }
-
-    private mutating func fence(_ line: String) {
-        guard let open = code else {
-            flush()
-            code = (String(line.dropFirst(3)).trimmingCharacters(in: .whitespaces), [])
-            return
-        }
-        out.append(.code(lang: open.lang, open.lines.joined(separator: "\n")))
-        code = nil
-    }
-
-    private mutating func flush() {
-        if !paragraph.isEmpty {
-            out.append(.text(paragraph.joined(separator: "\n")))
-            paragraph = []
-        }
-        if !bullets.isEmpty {
-            out.append(.bullets(bullets))
-            bullets = []
-        }
-    }
-
-    private mutating func finish() -> [Block] {
-        if let open = code {
-            out.append(.code(lang: open.lang, open.lines.joined(separator: "\n")))
-        }
-        flush()
-        return out
     }
 }

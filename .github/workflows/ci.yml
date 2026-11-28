@@ -4,13 +4,13 @@ on:
     branches: [main, staging]
   pull_request:
     branches: [staging]
-    types: [opened, synchronize, reopened, edited]
+    types: [opened, synchronize, reopened, edited, labeled]
 
 permissions:
   contents: read
 
 jobs:
   gates:
-    uses: jirathip-dev/gatekeeper/.github/workflows/gates.yml@c76c64fa790a1a5e5e608c25139960e74db8b44d # v1.1.0
-    secrets:
-      private-names: ${{ secrets.PRIVATE_NAMES }}
+    uses: jirathip-dev/gatekeeper/.github/workflows/gates.yml@49e65a3c0e634088282c783f1f16211a7156fc75 # v1.7.0
+    with: { scope: "${{ contains(github.event.pull_request.labels.*.name, 'merge-ready') && 'full' || 'light' }}" }
+    secrets: { private-names: "${{ secrets.PRIVATE_NAMES }}" }

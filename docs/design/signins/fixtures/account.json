@@ -1,0 +1,117 @@
+{
+ "type": "screen",
+ "id": "account",
+ "title": "Claude · work@acme.dev",
+ "back": "Sign-ins",
+ "refresh": true,
+ "blocks": [
+  {
+   "type": "list",
+   "id": "who",
+   "rows": [
+    {
+     "type": "row",
+     "id": "state",
+     "title": "State",
+     "badge": {
+      "text": "signed in",
+      "tone": "ok"
+     }
+    },
+    {
+     "type": "row",
+     "id": "machine",
+     "title": "Machine",
+     "value": "Mini"
+    }
+   ]
+  },
+  {
+   "type": "section",
+   "id": "usage",
+   "header": "Usage",
+   "blocks": [
+    {
+     "type": "list",
+     "id": "windows",
+     "rows": [
+      {
+       "type": "row",
+       "id": "w/5h",
+       "title": "5h",
+       "badge": {
+        "text": "84%",
+        "tone": "warn"
+       },
+       "subtitle": {
+        "text": {
+         "until": "2026-11-23T15:12:00Z",
+         "label": "resets in {rel}"
+        }
+       }
+      },
+      {
+       "type": "row",
+       "id": "w/7d",
+       "title": "7d",
+       "badge": {
+        "text": "41%"
+       },
+       "subtitle": {
+        "text": {
+         "until": "2026-11-27T09:00:00Z",
+         "label": "resets in {rel}"
+        }
+       }
+      },
+      {
+       "type": "row",
+       "id": "read",
+       "title": "Read by shed",
+       "value": {
+        "since": "2026-11-23T13:58:00Z",
+        "label": "{} ago"
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "type": "section",
+   "id": "acts",
+   "blocks": [
+    {
+     "type": "button",
+     "id": "again",
+     "label": "Sign in again",
+     "style": "plain",
+     "action": "signin.again",
+     "values": {
+      "machine": "mini",
+      "provider": "claude",
+      "account": "work"
+     }
+    },
+    {
+     "type": "button",
+     "id": "out",
+     "label": "Sign out",
+     "style": "destructive",
+     "action": "signin.out",
+     "values": {
+      "machine": "mini",
+      "provider": "claude",
+      "account": "work"
+     },
+     "confirm": {
+      "title": "Sign out Claude · work@acme.dev on Mini?",
+      "message": "shed removes this sign-in from Mini. To use it there again, sign in again.",
+      "ok": "Sign out",
+      "destructive": true
+     }
+    }
+   ]
+  }
+ ]
+}

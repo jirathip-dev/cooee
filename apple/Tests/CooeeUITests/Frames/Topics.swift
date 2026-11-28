@@ -36,12 +36,14 @@ internal struct TopicFrames {
         .agent(
             id: 3,
             markdown: [
-                .text("Three in flight on **cooee**:"),
-                .bullets([
-                    "#504 topics: **design review**, waiting on you", "#370 retitle: review 1, PASS so far",
-                    "#432 pinned opens newest: impl, 40m in",
-                ]),
-                .text("#504's frames are up. Approve it and the build issues get filed."),
+                .text(Markdown.inline("Three in flight on **cooee**:")),
+                .list(
+                    ListBlock([
+                        ListItem(Markdown.inline("#504 topics: **design review**, waiting on you")),
+                        ListItem(Markdown.inline("#370 retitle: review 1, PASS so far")),
+                        ListItem(Markdown.inline("#432 pinned opens newest: impl, 40m in")),
+                    ])),
+                .text(Markdown.inline("#504's frames are up. Approve it and the build issues get filed.")),
             ]
         ),
     ]

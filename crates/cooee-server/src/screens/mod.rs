@@ -50,5 +50,8 @@ pub(crate) async fn act(
     if let Some(done) = sessions::act(cx, a).await {
         return Some(done);
     }
+    if let Some(done) = settings::act(cx, a).await {
+        return Some(done);
+    }
     None
 }

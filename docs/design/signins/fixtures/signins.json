@@ -1,0 +1,107 @@
+{
+ "type": "screen",
+ "id": "signins",
+ "title": "Sign-ins",
+ "back": "Settings",
+ "refresh": true,
+ "blocks": [
+  {
+   "type": "section",
+   "id": "m/mini",
+   "header": "Mini · this machine",
+   "blocks": [
+    {
+     "type": "list",
+     "id": "m/mini/accounts",
+     "rows": [
+      {
+       "type": "row",
+       "id": "mini/claude/jk",
+       "title": "Claude · jk@hey.com",
+       "subtitle": { "text": "signed in", "tone": "ok" },
+       "value": "7d 36%",
+       "accessory": "chevron",
+       "tap": { "sheet": "/screens/settings/signins/mini/claude/jk" }
+      },
+      {
+       "type": "row",
+       "id": "mini/claude/work",
+       "title": "Claude · work@acme.dev",
+       "subtitle": { "text": "signed in", "tone": "ok" },
+       "badge": { "text": "5h 84%", "tone": "warn" },
+       "value": "7d 41%",
+       "accessory": "chevron",
+       "tap": { "sheet": "/screens/settings/signins/mini/claude/work" }
+      },
+      {
+       "type": "row",
+       "id": "mini/antigravity/default",
+       "title": "Antigravity · jk@hey.com",
+       "subtitle": { "text": "signed in", "tone": "ok" },
+       "accessory": "chevron",
+       "tap": { "sheet": "/screens/settings/signins/mini/antigravity/default" }
+      },
+      {
+       "type": "row",
+       "id": "mini/anthropic-api/ci",
+       "title": "Anthropic API · ci",
+       "subtitle": { "text": "signed in", "tone": "ok" },
+       "value": "1.2M tok · $18.40",
+       "accessory": "chevron",
+       "tap": { "sheet": "/screens/settings/signins/mini/anthropic-api/ci" }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "type": "section",
+   "id": "m/air",
+   "header": "Air",
+   "blocks": [
+    {
+     "type": "list",
+     "id": "m/air/accounts",
+     "rows": [
+      {
+       "type": "row",
+       "id": "air/claude/air",
+       "title": "Claude · air@acme.dev",
+       "subtitle": { "text": { "until": "2026-11-23T16:14:00Z", "label": "at its limit · resets in {rel}" }, "tone": "warn" },
+       "badge": { "text": "7d 100%", "tone": "warn" },
+       "accessory": "chevron",
+       "tap": { "sheet": "/screens/settings/signins/air/claude/air" }
+      },
+      {
+       "type": "row",
+       "id": "air/codex/default",
+       "title": "Codex · main login",
+       "subtitle": { "text": "signed out", "tone": "bad" },
+       "accessory": "chevron",
+       "tap": { "sheet": "/screens/settings/signins/air/codex/default" }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "type": "section",
+   "id": "m/boat-1",
+   "header": "boat-1",
+   "blocks": [
+    {
+     "type": "list",
+     "id": "m/boat-1/accounts",
+     "rows": [
+      {
+       "type": "row",
+       "id": "boat-1/offline",
+       "title": "offline",
+       "subtitle": { "text": "its shed doesn't answer", "tone": "mute" }
+      }
+     ]
+    }
+   ]
+  }
+ ]
+}
