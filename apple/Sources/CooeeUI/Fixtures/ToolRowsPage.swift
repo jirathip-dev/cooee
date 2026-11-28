@@ -15,7 +15,7 @@ public struct ToolRowsPage: View {
                 VStack(alignment: .leading, spacing: 14) {
                     ItemView(item: .you(id: 1, text: "The export test fails on CI. Can you fix it?", files: []))
                     ToolFold(rows: Self.closed)
-                    ItemView(item: .agent(id: 3, markdown: [.text(Self.said)]))
+                    ItemView(item: .agent(id: 3, markdown: [.text(Markdown.inline(Self.said))]))
                     ToolFold(rows: Self.open, open: true)
                     Rectangle().fill(palette.line).frame(height: 1).padding(.vertical, 10)
                     specimen

@@ -15,13 +15,14 @@ extension Fixtures {
             id: 3,
             markdown: [
                 .text(
-                    "It's a race: the sheet animates in for **240 ms**, and the test taps *Scene* before the button is hit-testable."
-                ),
+                    Markdown.inline(
+                        "It's a race: the sheet animates in for **240 ms**, and the test taps *Scene* before the button is hit-testable."
+                    )),
                 .code(
                     lang: "ts",
                     "await page.getByRole('dialog').waitFor();\nawait expect(sheet).toHaveCSS('opacity', '1');\nawait page.getByText('Scene').click();"
                 ),
-                .text("I'm adding the wait and running it 50 times ▍"),
+                .text(Markdown.inline("I'm adding the wait and running it 50 times ▍")),
             ]
         ),
         .tools(
@@ -35,7 +36,7 @@ extension Fixtures {
 
     public static let cards: [Item] = [
         .you(id: 1, text: "Pull Kestrel's last three 10-Q filings and summarise the revenue lines."),
-        .agent(id: 2, markdown: [.text("I need the web to reach EDGAR. Three things first:")]),
+        .agent(id: 2, markdown: [.text(Markdown.inline("I need the web to reach EDGAR. Three things first:"))]),
         card(
             3, nil,
             #"""
@@ -50,7 +51,10 @@ extension Fixtures {
 
     public static let moreCards: [Item] = [
         .agent(
-            id: 7, markdown: [.text("Allowed. The edgar plugin needs its settings, its key, and a run to install:")]),
+            id: 7,
+            markdown: [
+                .text(Markdown.inline("Allowed. The edgar plugin needs its settings, its key, and a run to install:"))
+            ]),
         card(
             4, "edgar",
             #"""
@@ -85,12 +89,14 @@ extension Fixtures {
         .agent(
             id: 3,
             markdown: [
-                .text("Three in flight on **cooee**:"),
-                .bullets([
-                    "#124 native v1: **design review**, waiting on you", "#126 pairing API: review 1, PASS so far",
-                    "#128 Bonjour: impl, 40m in",
-                ]),
-                .text("#124's screens are up. Approve it and impl starts on the same branch."),
+                .text(Markdown.inline("Three in flight on **cooee**:")),
+                .list(
+                    ListBlock([
+                        ListItem(Markdown.inline("#124 native v1: **design review**, waiting on you")),
+                        ListItem(Markdown.inline("#126 pairing API: review 1, PASS so far")),
+                        ListItem(Markdown.inline("#128 Bonjour: impl, 40m in")),
+                    ])),
+                .text(Markdown.inline("#124's screens are up. Approve it and impl starts on the same branch.")),
             ]
         ),
         card(
