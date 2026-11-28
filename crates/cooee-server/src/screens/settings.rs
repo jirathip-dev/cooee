@@ -342,7 +342,7 @@ pub async fn signin(cx: &Cx) -> Result<Answer<Block>> {
 }
 
 #[route(GET "/screens/settings/signins/{provider}/{name}/login")]
-pub async fn signin_login(cx: &Cx) -> Result<Answer<Block>> {
+pub(crate) async fn signin_login(cx: &Cx) -> Result<Answer<Block>> {
     let provider = path_param::<Provider>(cx).to_owned();
     let name = path_param::<Name>(cx).to_owned();
     let shown = on_logins(cx, move |l| {

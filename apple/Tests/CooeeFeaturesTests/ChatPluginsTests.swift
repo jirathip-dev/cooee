@@ -55,6 +55,7 @@ internal struct ChatPluginsTests {
         await store.receive(\.plugins.loaded) {
             $0.places = [Self.queue]
             $0.attachable = [Self.hello]
+            $0.area.asks.groups = [Self.drover.name: [], Self.hello.name: [], Self.menuOnly.name: []]
         }
         await store.receive(\.plugins.teach) { $0.teach = Self.teach }
         await store.send(.plugins(.open(Self.queue))) {

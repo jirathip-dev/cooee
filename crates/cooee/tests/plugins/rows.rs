@@ -142,6 +142,8 @@ fn install(dir: &Path, port: u16, listed: bool) {
         "name = \"drover\"\nversion = \"0.1.0\"\nattach = \"http://127.0.0.1:{port}\"\n\n\
          [[places]]\ntype = \"chat-cards\"\n\n\
          [permissions]\nplaces = [\"chat-cards\"]\npush = true\nactions = [\"answer\"]\n\n\
+         [[groups]]\nid = \"stuck\"\nlabel = \"Stuck\"\nurgent = true\n\n\
+         [[groups]]\nid = \"needs-human\"\nlabel = \"Needs human\"\n\n\
          [threads]\nrows = \"/rows\"\nstream = \"/stream\"\nsaid = \"/thread/{{id}}/said\"\nattach = \"/attach\"\n"
     );
     fs::write(build.join("cooee-plugin.toml"), manifest).unwrap();
@@ -197,15 +199,10 @@ fn start_serving(
 #[test]
 fn an_ask_from_an_attached_chat_is_drovers_own_block_there_and_a_tap_answers_it() {
     let (dir, shed, cooee, d) = start("rows-chat");
-    let new = json!({ "agent": "fake-acp", "folder": dir.join("root/project"), "text": "Plan it", "random_id": "r1" });
-    let (code, body) = cooee.post("/threads", &new);
-    assert_eq!(code, 200, "{body}");
-    let id = serde_json::from_str::<Value>(&body).unwrap()["id"]
-        .as_str()
-        .unwrap()
-        .to_owned();
+    let id = open_chat(&cooee, &dir);
     let mut ask = the_ask();
     ask["to"] = json!({ "k": "thread", "id": id });
+    ask["group"] = json!("needs-human");
     ask["prompt"] = json!("q2 · split the PR? Answer with drover answer.");
     d.rows.send(ask.clone()).unwrap();
 
@@ -249,13 +246,64 @@ fn an_ask_from_an_attached_chat_is_drovers_own_block_there_and_a_tap_answers_it(
         let shown = cooee.json(&screen);
         (holds(&shown, "q2-settled") && !holds(&shown, "q2")).then_some(())
     });
-    let rows = cooee.json(&format!("/threads/{id}/messages"))["items"]
-        .as_array()
+    let rows = rows_in(&cooee, &id);
+    assert_eq!(rows.len(), 1, "one item per row key");
+    assert_eq!(
+        rows[0]["waits"],
+        Value::Null,
+        "a settled row leaves the Asks"
+    );
+}
+
+fn open_chat(cooee: &Cooee, dir: &Path) -> String {
+    let new = json!({ "agent": "fake-acp", "folder": dir.join("root/project"), "text": "Plan it", "random_id": "r1" });
+    let (code, body) = cooee.post("/threads", &new);
+    assert_eq!(code, 200, "{body}");
+    serde_json::from_str::<Value>(&body).unwrap()["id"]
+        .as_str()
         .unwrap()
-        .iter()
-        .filter(|i| i["kind"] == "row")
-        .count();
-    assert_eq!(rows, 1, "one item per row key");
+        .to_owned()
+}
+
+fn rows_in(cooee: &Cooee, id: &str) -> Vec<Value> {
+    let items = cooee.json(&format!("/threads/{id}/messages"))["items"].clone();
+    let all = items.as_array().cloned().unwrap_or_default();
+    all.into_iter().filter(|i| i["kind"] == "row").collect()
+}
+
+#[test]
+fn an_open_row_waits_in_its_group_and_the_manifest_lists_the_groups_in_order() {
+    let (dir, _shed, cooee, d) = start("rows-asks");
+    let id = open_chat(&cooee, &dir);
+    let mut ask = the_ask();
+    ask["to"] = json!({ "k": "thread", "id": id });
+    ask["group"] = json!("stuck");
+    d.rows.send(ask).unwrap();
+    let row = until("the open row in its chat", || {
+        rows_in(&cooee, &id).into_iter().next()
+    });
+    assert_eq!(
+        (&row["waits"], &row["group"]),
+        (&json!(true), &json!("stuck"))
+    );
+
+    let mut desk = the_ask();
+    desk["key"] = json!("ask-desk");
+    desk["seq"] = json!(8);
+    desk["group"] = json!("needs-human");
+    d.rows.send(desk).unwrap();
+    let card = until("the desk row in the cards place", || {
+        cooee.json("/p/drover/screens/cards")["blocks"]
+            .get(0)
+            .cloned()
+    });
+    assert_eq!(card["group"], "needs-human");
+
+    let installed = cooee.json("/plugins")["installed"][0]["groups"].clone();
+    assert_eq!(
+        installed,
+        json!([{ "id": "stuck", "label": "Stuck", "urgent": true }, { "id": "needs-human", "label": "Needs human" }])
+    );
 }
 
 #[test]

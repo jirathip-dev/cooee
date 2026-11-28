@@ -79,6 +79,8 @@ pub struct Row {
     pub claims: Vec<String>,
     /// Its manifest's `[permissions]`.
     pub permissions: plugins::Permissions,
+    /// Its rows' groups in a chat's Asks (#852).
+    pub groups: Vec<plugins::rows::Group>,
     /// The cooee versions it accepts.
     pub accepts: String,
 }
@@ -805,9 +807,9 @@ impl Manager {
                 (if up(l.port) { "running" } else { "not running" }).to_owned()
             };
             let first_party = self.index.iter().any(|x| x.name == l.name && x.first_party);
-            let (places, claims, permissions, accepts) = plugins::manifest(&self.data, &l)
+            let (places, claims, permissions, groups, accepts) = plugins::manifest(&self.data, &l)
                 .map(|m| (m.accepts(), m))
-                .map(|(a, m)| (m.places, m.claims, m.permissions, a))
+                .map(|(a, m)| (m.places, m.claims, m.permissions, m.groups, a))
                 .unwrap_or_default();
             Row {
                 locked: l,
@@ -816,6 +818,7 @@ impl Manager {
                 places,
                 claims,
                 permissions,
+                groups,
                 accepts,
             }
         });

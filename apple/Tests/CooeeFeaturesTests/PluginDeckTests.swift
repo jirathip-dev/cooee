@@ -28,6 +28,7 @@ internal struct PluginDeckTests {
             ChatFeature()
         } withDependencies: {
             $0.continuousClock = TestClock()
+            $0.date.now = epoch
             $0.plugins.places = { _, _ in [Self.queue, Self.deck] }
             $0.plugins.installed = { _ in [] }
             $0.plugins.screen = { _, _, _ in .object([:]) }
@@ -71,17 +72,16 @@ internal struct PluginDeckTests {
     }
 
     private func line(_ store: TestStoreOf<ChatFeature>, _ index: Int) -> String? {
-        guard case .card(_, _, let block) = store.state.drawn[index] else { return nil }
-        return block.list("blocks").first?.string("markdown")
+        store.state.deck.asks[index].block.list("blocks").first?.string("markdown")
     }
 
-    @Test internal func aChatCardsPlacesCardsShowInTheThreadAndATapGoesToItsPluginWithItsBlock() async {
+    @Test internal func aChatCardsPlacesCardsShowInTheAsksAndATapGoesToItsPluginWithItsBlock() async {
         let store = store()
         let load = await store.send(.plugins(.load))
         await store.receive(\.cards.heard)
         #expect(store.state.places == [Self.queue] && store.state.chipCounts == [2])
-        let (ask, run) = (store.state.drawn[0].id, store.state.drawn[1].id)
-        #expect(store.state.drawn.map(\.id) == [ask, run])
+        let (ask, run) = (store.state.deck.asks[0].id, store.state.deck.asks[1].id)
+        #expect(store.state.asks.waiting.map(\.id) == [ask, run] && store.state.drawn.isEmpty)
         let pick = BlockAction(action: "answer", block: "q7", values: ["choice": .string("2")])
         await store.send(.cards(.answer(ask, pick)))
         await store.receive(\.cards.played)
@@ -104,13 +104,60 @@ internal struct PluginDeckTests {
         let store = store(refusing: true)
         let load = await store.send(.plugins(.load))
         await store.receive(\.cards.heard)
-        let run = store.state.drawn[1].id
+        let run = store.state.deck.asks[1].id
         let approve = BlockAction(action: "run-card", block: "c1", values: ["choice": .string("approve")])
         await store.send(.cards(.answer(run, approve)))
         await store.receive(\.cards.played)
         await store.send(.cards(.answer(run, approve)))
         #expect(line(store, 1) == "card c1 expired" && store.state.error == nil)
         #expect(calls.all.filter { $0.hasPrefix("drover cards") } == ["drover cards run-card c1 approve"])
+        await load.cancel()
+    }
+
+    nonisolated private static func asked(_ id: Int, _ group: String?, at time: Int64, kind: String = "row") -> APIItem
+    {
+        let choice = #"{"type": "choice", "id": "c\#(id)", "action": "answer", "options": [{"value": "go"}]}"#
+        var item = APIItem(
+            id: id, time: time, kind: kind, text: "ask \(id)", plugin: kind == "row" ? "drover" : nil,
+            block: JSONValue(json: #"{"type": "card", "id": "m-\#(id)", "blocks": [\#(choice)]}"#))
+        (item.waits, item.group) = (true, group)
+        return item
+    }
+
+    @Test internal func openAsksLeaveTheThreadForTheAsksStuckFirstAndEachAnswerDropsTheCount() async {
+        let store = store()
+        let groups = [
+            AskGroup(id: "needs-human", label: "Needs human"), AskGroup(id: "stuck", label: "Stuck", urgent: true),
+        ]
+        var plugin = drover
+        plugin.groups = groups
+        store.dependencies.plugins.installed = { [plugin] _ in [plugin] }
+        let you = APIItem(id: 1, time: 1, kind: "you", text: "How's the queue?")
+        let items = [
+            you, Self.asked(2, "needs-human", at: 2), Self.asked(3, "stuck", at: 3),
+            Self.asked(4, nil, at: 4, kind: "approval"),
+        ]
+        await store.send(.loaded(Slice(items: items, turn: Turn(), cursor: "b.4", queue: [])))
+        let load = await store.send(.plugins(.load))
+        await store.receive(\.cards.heard)
+        #expect(store.state.asks.count == 5 && store.state.asks.top?.text == "ask 3" && store.state.asks.urgent)
+        #expect(store.state.asks.sections.map(\.group.id) == ["stuck", "approvals", "needs-human", "other-drover"])
+        #expect(store.state.drawn.map(\.id) == [1])
+        let go = BlockAction(action: "answer", block: "c3", values: ["choice": .string("go")])
+        await store.send(.cards(.answer(3, go)))
+        await store.receive(\.cards.answered)
+        var settled = items[2]
+        settled.waits = nil
+        await store.send(.event(.item(settled)))
+        #expect(store.state.asks.count == 4 && !store.state.asks.urgent && store.state.asks.top?.text == "ask 4")
+        let deck = store.state.asks.sections.last?.asks.first?.id ?? 0
+        await store.send(
+            .cards(.answer(deck, BlockAction(action: "answer", block: "q7", values: ["choice": .string("2")]))))
+        await store.receive(\.cards.played)
+        #expect(
+            store.state.asks.count == 3 && store.state.drawn.allSatisfy { if case .card = $0 { false } else { true } })
+        #expect(
+            calls.all.contains("core /screens/chat/a1 answer c3 go") && calls.all.contains("drover cards answer q7 2"))
         await load.cancel()
     }
 

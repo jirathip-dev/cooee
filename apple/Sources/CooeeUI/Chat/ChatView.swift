@@ -51,6 +51,7 @@ public struct ChatView: View {
                 .environment(\.frames, actions.frames).environment(\.screenActs, actions.screenActs)
                 .environment(\.message, actions.message)
                 VStack(spacing: 8) {
+                    AsksLine()
                     if let waits = actions.waits { WaitsPill(name: persona.name, since: waits) }
                     if working { WorkingPill(persona: persona, since: since, step: actions.step, actions: actions) }
                     if let topics = actions.topics, topics.newing { FolderRow(actions: topics).padding(.bottom, 2) }

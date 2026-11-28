@@ -157,12 +157,13 @@ internal struct StripRow: View {
 }
 
 internal struct TopicOpening: View {
+    @Environment(\.asks) private var asks
     internal let topics: TopicActions
     internal let chips: [String]
     internal let actions: ChatActions
 
     internal var body: some View {
-        if !chips.isEmpty || actions.workflow != nil {
+        if !chips.isEmpty || actions.workflow != nil || asks.count > 0 {
             PluginChips(chips: chips, actions: actions).padding(.vertical, 8)
                 .frame(maxWidth: .infinity, alignment: .leading)
         }

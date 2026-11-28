@@ -65,6 +65,7 @@ public struct PluginRow: Codable, Sendable, Equatable, Identifiable {
     public let places: [PluginPlace]
     public let claims: [String]
     public let permissions: PluginPermissions
+    public var groups: [AskGroup]?
 
     public var id: String { name }
 

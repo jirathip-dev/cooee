@@ -33,4 +33,8 @@ A `chat-cards` place's screen (default `/screens/cards`) answers a list of `card
 `/stream` and draws them at the end of that persona's chats, keyed by card id; a tap posts `screen: "cards"` with the
 tapped choice or run block's `id` as `block`. A 2xx settles the card to `✓ <toast>` until the plugin changes it, a 409
 to its line; the persona's first chip of that plugin counts the open cards (#377).
+These cards, a plugin row that waits in a chat and cooee's own unanswered approvals sit in the chat's **Asks** sheet
+(#852), never in the thread: its `Asks N` chip and one `N need you` line above the composer count them and hide at 0.
+A row names a `group`; the manifest lists them in order (`[[groups]]` with `id`, `label` and `urgent = true` for the
+ones that sort first and turn the chip red). cooee's own come after the urgent ones: `Approvals`, then `Check-in`.
 `docs/plugins/hello-py/` is a whole one: `hello.py`, a live screen in about 30 lines of Python, no dependencies.

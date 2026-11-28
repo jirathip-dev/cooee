@@ -54,6 +54,19 @@ pub struct Attached {
     pub env: BTreeMap<String, String>,
 }
 
+/// One of a manifest's `[[groups]]` (#852): where its open rows sort in a chat's Asks, in the manifest's order.
+#[derive(Debug, Clone, Default, PartialEq, Eq, Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct Group {
+    /// The id its rows name.
+    pub id: String,
+    /// Its heading.
+    pub label: String,
+    /// Its rows sort first and mark the chip red.
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub urgent: bool,
+}
+
 /// A page of a plugin's rows: `seq` is its newest.
 #[derive(Debug, Clone, PartialEq, Deserialize)]
 pub struct Rows {
@@ -78,6 +91,9 @@ pub struct Row {
     pub block: Value,
     /// It still waits for the owner.
     pub open: bool,
+    /// The manifest group it sorts under in a chat's Asks (#852); empty: none.
+    #[serde(default)]
+    pub group: String,
     /// The line typed into the chat's agent.
     #[serde(deserialize_with = "Option::deserialize")]
     pub prompt: Option<String>,

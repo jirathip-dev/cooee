@@ -171,13 +171,17 @@ pub enum Body {
     Blocks(crate::agents::show::Reply),
     #[expect(
         missing_docs,
-        reason = "a plugin row: its plugin, key, one plain line and block"
+        reason = "a plugin row: its plugin, key, one plain line, block, whether it waits and its group"
     )]
     Row {
         plugin: String,
         key: String,
         text: String,
         block: Value,
+        #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+        waits: bool,
+        #[serde(default, skip_serializing_if = "String::is_empty")]
+        group: String,
     },
     /// A line from cooee itself (`model sonnet · effort low from the next start`).
     Note {

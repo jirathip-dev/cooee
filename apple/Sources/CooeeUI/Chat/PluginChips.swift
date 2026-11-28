@@ -26,6 +26,7 @@ internal struct PluginChips: View {
             if let count = actions.workflow {
                 WorkflowChip(count: count, lit: actions.workflowOpen, open: actions.showWorkflow)
             }
+            AsksChip()
         }
     }
 }
