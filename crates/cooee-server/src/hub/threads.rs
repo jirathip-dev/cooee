@@ -152,7 +152,7 @@ impl Hub {
     /// # Errors
     /// [`HubError::NoThread`].
     pub fn thread(&self, id: &str) -> Result<(Thread, Turn), HubError> {
-        let live = self.live(id)?;
+        let live = self.entry(id)?;
         let live = lock(&live);
         Ok((live.meta.clone(), live.chat.turn.clone()))
     }
@@ -169,17 +169,32 @@ impl Hub {
         before: usize,
         after: usize,
     ) -> Result<Slice, HubError> {
-        let live = self.live(id)?;
-        let live = lock(&live);
-        let items = &live.chat.items;
-        let (from, to) = match around.map(|a| items.partition_point(|i| i.id < a)) {
-            Some(at) => (at.saturating_sub(before), (at + after + 1).min(items.len())),
-            None => (items.len().saturating_sub(before), items.len()),
-        };
+        let entry = self.entry(id)?;
+        let mut live = lock(&entry);
+        let cold = around.is_none() && live.unloaded.is_some();
+        let tail = cold.then(|| self.store.tail(id, before)).flatten();
+        let (page, skipped_before, skipped_after, waiting) =
+            if let Some((page, older, cards)) = tail {
+                if let Some(hub) = self.areas.route.me.get().and_then(std::sync::Weak::upgrade) {
+                    let warm = entry.clone();
+                    std::thread::spawn(move || hub.warm(&warm).ok());
+                }
+                (page, older, 0, cards.into_iter().find(|i| waits(&i.body)))
+            } else {
+                self.load(&mut live)?;
+                let items = &live.chat.items;
+                let (from, to) = match around.map(|a| items.partition_point(|i| i.id < a)) {
+                    Some(at) => (at.saturating_sub(before), (at + after + 1).min(items.len())),
+                    None => (items.len().saturating_sub(before), items.len()),
+                };
+                let page = items.get(from..to.max(from)).unwrap_or_default().to_vec();
+                let waiting = items.iter().find(|i| waits(&i.body)).cloned();
+                (page, from, items.len() - to.max(from), waiting)
+            };
         Ok(Slice {
-            items: items.get(from..to.max(from)).unwrap_or_default().to_vec(),
-            skipped_before: from,
-            skipped_after: items.len() - to.max(from),
+            items: page,
+            skipped_before,
+            skipped_after,
             turn: live.chat.turn.clone(),
             cursor: format!("{}.{}", self.boot, REV.load(Ordering::Relaxed)),
             pending: live.pending.clone().map(|text| Pending {
@@ -187,7 +202,7 @@ impl Hub {
                 random_id: live.meta.random_id.clone(),
             }),
             queue: live.meta.queue.clone(),
-            waiting: items.iter().find(|i| waits(&i.body)).cloned(),
+            waiting,
             asks: live.asks.open.clone(),
         })
     }
@@ -202,7 +217,7 @@ impl Hub {
         id: &str,
         cursor: &str,
     ) -> Result<(Resume, broadcast::Receiver<Out>), HubError> {
-        let live = self.live(id)?;
+        let live = self.entry(id)?;
         let mut live = lock(&live);
         let rev = cursor
             .strip_prefix(&self.boot)

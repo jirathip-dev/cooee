@@ -27,7 +27,7 @@ fn refused(why: impl Into<String>) -> HubError {
 
 #[derive(Default)]
 pub(super) struct State {
-    me: OnceLock<Weak<Hub>>,
+    pub(super) me: OnceLock<Weak<Hub>>,
 }
 
 /// Where a route went: a delegate's answer by name for Chief, or a hand-off agent's name and nothing of its words.

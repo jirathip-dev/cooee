@@ -342,3 +342,51 @@ fn with_500_threads_of_1000_items_the_list_answers_within_2_cpu_seconds_of_start
     assert_eq!(skipped + u64::try_from(items.len()).unwrap(), 1000);
     assert_eq!(items.last().unwrap()["text"], "done t7");
 }
+
+#[test]
+fn a_cold_first_open_of_a_20000_item_thread_answers_within_150_ms() {
+    let dir = scratch("perf-cold");
+    let threads = dir.join("data/threads");
+    fs::create_dir_all(&threads).unwrap();
+    let meta = json!({ "format": 1, "thread": { "id": "long", "title": "long", "messages": [], "terminal": "cooee-long" } });
+    fs::write(threads.join("long.json"), meta.to_string()).unwrap();
+    let mut items = String::new();
+    for k in 1..=20_000 {
+        let item = match k % 3 {
+            _ if k == 1 => {
+                json!({ "id": k, "at": k, "kind": "approval", "tool": "Set up", "options": [], "form": "config" })
+            }
+            0 => {
+                json!({ "id": k, "at": k, "kind": "agent", "text": format!("reply {k} {}", "words ".repeat(40)), "stop_reason": "end_turn" })
+            }
+            1 => {
+                json!({ "id": k, "at": k, "kind": "you", "text": format!("ask {k}"), "random_id": format!("r{k}") })
+            }
+            _ => {
+                json!({ "id": k, "at": k, "kind": "tool", "call": format!("c{k}"), "title": "ls", "status": "completed" })
+            }
+        };
+        writeln!(items, "{item}").unwrap();
+    }
+    fs::write(threads.join("long.jsonl"), items).unwrap();
+    drop(cooee_core::Store::open(&dir.join("data")).unwrap());
+    let shed = FakeShed::start(&dir.join("shed"), version());
+    let cooee = Cooee::start_with(&dir, &shed.dir, "[history]\nhot_days = 1000000\n");
+    assert_eq!(cooee.get("/threads").0, 200);
+    let (status, body) = cooee.get("/threads/long/messages");
+    assert_eq!(status, 200, "{body}");
+    let opened: Value = serde_json::from_str(&body).unwrap();
+    let items = opened["items"].as_array().unwrap();
+    assert_eq!(opened["skipped_before"], 20_000 - 50, "{body}");
+    assert_eq!(items.len(), 50);
+    assert_eq!(items.last().unwrap()["id"], 20_000);
+    assert_eq!(opened["waiting"]["id"], 1, "{body}");
+    let warm = cooee.json("/threads/long/messages?around=20000&before=49");
+    for key in ["items", "skipped_before", "skipped_after", "waiting"] {
+        assert_eq!(opened[key], warm[key], "{key}");
+    }
+    let log = lines(&dir);
+    let opens = named(&log, "http", "GET /threads/{id}/messages");
+    let ms = opens[0]["ms"].as_u64().unwrap();
+    assert!(ms < 150, "cold GET /threads/long/messages took {ms} ms");
+}

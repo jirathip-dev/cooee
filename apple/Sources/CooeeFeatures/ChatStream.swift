@@ -67,6 +67,7 @@ extension ChatFeature {
         switch action {
         case .task:
             restore(&state)
+            showKept(&state)
             return open(state)
         case .loaded(let slice):
             load(&state, slice)

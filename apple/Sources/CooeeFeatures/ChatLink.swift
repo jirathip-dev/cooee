@@ -63,6 +63,13 @@ extension ChatFeature {
         return toast(&state, error)
     }
 
+    internal func showKept(_ state: inout State) {
+        guard state.items.isEmpty, case .thread(let thread) = state.target,
+            let copy = kept.thread(state.server, thread)
+        else { return }
+        (state.items, state.queue) = (copy.slice.items, copy.slice.queue)
+    }
+
     internal func open(_ state: State) -> Effect<Action> {
         guard case .thread(let thread) = state.target else { return .none }
         let (threads, clock, server, kept) = (threads, clock, state.server, kept)

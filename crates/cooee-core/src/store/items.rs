@@ -75,15 +75,31 @@ impl Store {
             Page::After(a) => ("id > ?3 ORDER BY id", int(a)),
         };
         let n = u64::try_from(n).map_or(i64::MAX, int);
-        let mut items = self.bodies(
+        let rows = self.rows(
             &db,
             &format!("thread = ?1 AND {sql} LIMIT ?2"),
             params![id, n, at],
         )?;
+        drop(db);
+        let mut items = self.parse(&rows)?;
         if !matches!(from, Page::After(_)) {
             items.reverse();
         }
         Ok(items)
+    }
+
+    /// Thread `id`'s newest `n` items, how many are older and its approvals (#893); none if archived or unreadable.
+    #[must_use]
+    pub fn tail(&self, id: &str, n: usize) -> Option<(Vec<Item>, usize, Vec<Item>)> {
+        self.moved(&self.db(), id).ok()?.is_none().then_some(())?;
+        let items = self.page(id, Page::Last, n).ok()?;
+        let db = self.db();
+        let approvals = "thread = ?1 AND kind = 'approval' ORDER BY id";
+        let approvals = self.bodies(&db, approvals, params![id]).ok()?;
+        let count = "SELECT count(*) FROM items WHERE thread = ?1";
+        let all: i64 = db.query_row(count, params![id], |r| r.get(0)).ok()?;
+        let older = usize::try_from(all).ok()?.saturating_sub(items.len());
+        Some((items, older, approvals))
     }
 
     /// What thread `id`'s list row needs without reading it whole (#346): its approvals, the owner's newest message and
@@ -131,13 +147,25 @@ impl Store {
         filter: &str,
         params: P,
     ) -> Result<Vec<Item>, StoreError> {
+        self.parse(&self.rows(db, filter, params)?)
+    }
+
+    fn rows<P: rusqlite::Params>(
+        &self,
+        db: &Connection,
+        filter: &str,
+        params: P,
+    ) -> Result<Vec<String>, StoreError> {
         db.prepare_cached(&format!("SELECT body FROM items WHERE {filter}"))
             .and_then(|mut q| {
                 q.query_map(params, |r| r.get::<_, String>(0))?
                     .collect::<Result<Vec<_>, _>>()
             })
-            .map_err(db_err(&self.path))?
-            .iter()
+            .map_err(db_err(&self.path))
+    }
+
+    fn parse(&self, rows: &[String]) -> Result<Vec<Item>, StoreError> {
+        rows.iter()
             .map(|body| serde_json::from_str(body))
             .collect::<Result<Vec<Item>, _>>()
             .map_err(|source| StoreError::Parse {

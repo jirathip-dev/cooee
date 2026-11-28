@@ -318,7 +318,6 @@ fn a_thread_opened_right_after_start_has_its_items_and_its_row_matches() {
     let row = json!(hub.list());
     assert_eq!(row[0]["unseen"], 3, "{row}");
     let slice = hub.slice("a", None, 100, 0).unwrap();
-    assert!(!unloaded(&hub));
     let ids: Vec<u64> = slice.items.iter().map(|i| i.id).collect();
     assert_eq!(ids, [1, 2, 3, 4, 5, 6]);
     assert_eq!(json!(hub.list()), row);
@@ -335,7 +334,7 @@ fn an_idle_threads_chat_unloads_and_reloads_intact() {
     seed(&dir, "a", &(item(1, "one") + &item(2, "two")));
     let hub = hub(&dir);
     let unloaded = |hub: &Hub| lock(&lock(&hub.threads)["a"]).unloaded.is_some();
-    let before = hub.slice("a", None, 10, 0).unwrap();
+    let before = hub.slice("a", Some(2), 10, 0).unwrap();
     assert!(!unloaded(&hub));
     let done = Box::new(Reported {
         state: "done".to_owned(),
@@ -359,7 +358,6 @@ fn an_idle_threads_chat_unloads_and_reloads_intact() {
     assert!(unloaded(&hub));
     assert_eq!(json!(hub.list()), row);
     let after = hub.slice("a", None, 10, 0).unwrap();
-    assert!(!unloaded(&hub));
     assert_eq!(json!(after.items), json!(before.items));
     assert_eq!(after.turn.state, "done");
     assert_eq!(replayed(&hub, &before.cursor), None);
