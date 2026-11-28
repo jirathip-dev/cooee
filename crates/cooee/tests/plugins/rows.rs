@@ -252,19 +252,19 @@ fn an_ask_from_an_attached_chat_is_drovers_own_block_there_and_a_tap_answers_it(
         let shown = cooee.json(&screen);
         (holds(&shown, "q2-settled") && !holds(&shown, "q2")).then_some(())
     });
-    let items = cooee.json(&format!("/threads/{id}/messages"))["items"].clone();
-    let rows: Vec<_> = items
-        .as_array()
-        .unwrap()
-        .iter()
-        .filter(|i| i["kind"] == "row")
-        .collect();
+    let rows = rows_in(&cooee, &id);
     assert_eq!(rows.len(), 1, "one item per row key");
     assert_eq!(
         rows[0]["waits"],
         Value::Null,
-        "a settled row leaves the chat's Asks"
+        "a settled row leaves the Asks"
     );
+}
+
+fn rows_in(cooee: &Cooee, id: &str) -> Vec<Value> {
+    let items = cooee.json(&format!("/threads/{id}/messages"))["items"].clone();
+    let all = items.as_array().cloned().unwrap_or_default();
+    all.into_iter().filter(|i| i["kind"] == "row").collect()
 }
 
 #[test]
@@ -282,12 +282,7 @@ fn an_open_row_waits_in_its_group_and_the_manifest_lists_the_groups_in_order() {
     ask["group"] = json!("stuck");
     d.rows.send(ask).unwrap();
     let row = until("the open row in its chat", || {
-        let items = cooee.json(&format!("/threads/{id}/messages"))["items"].clone();
-        items
-            .as_array()?
-            .iter()
-            .find(|i| i["kind"] == "row")
-            .cloned()
+        rows_in(&cooee, &id).into_iter().next()
     });
     assert_eq!(
         (&row["waits"], &row["group"]),
