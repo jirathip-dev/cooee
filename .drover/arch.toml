@@ -1,7 +1,7 @@
 # Written by scripts/gen.sh from .drover/arch/ (docs/architecture/hotspots-2026-11-16). Never edit it.
 frozen = [".github/workflows/ci.yml", "apple/Sources/CooeeAPI/Endpoints.swift", "apple/Sources/CooeeApp/Live.swift", "apple/Sources/CooeeApp/ThreadsClient+Live.swift", "apple/Sources/CooeeCore/Models.swift", "apple/Sources/CooeeFeatures/AppFeature.swift", "apple/Sources/CooeeFeatures/ChatFeature.swift", "apple/Sources/CooeeFeatures/Clients.swift", "apple/Sources/CooeeFeatures/ThreadsClient.swift", "apple/Sources/CooeeUI/Chat.swift", "apple/Sources/CooeeUI/ChatActions.swift", "apple/Sources/CooeeUI/ChatScreen.swift", "apple/Sources/CooeeUI/Items.swift", "apple/Sources/CooeeUI/Root.swift", "apple/Tests/CooeeUITests/Frames.swift", "apple/UITests/LiveUITests.swift", "crates/cooee-core/src/root.rs", "crates/cooee-server/src/mcp/own.rs", "crates/cooee-server/src/root.rs", "crates/cooee-server/src/routes/mcp.rs", "crates/cooee/tests/chat.rs", "crates/cooee/tests/first_run.rs", "crates/cooee/tests/mcp.rs", "crates/cooee/tests/personas.rs", "crates/cooee/tests/plugins.rs", "crates/cooee/tests/profiles.rs", "crates/cooee/tests/reliability.rs", "crates/cooee/tests/setup.rs", "docs/api.md", "docs/architecture.md", "docs/plugins.md", "justfile"]
 generated = [".drover/arch.toml", "Cargo.lock", "README.md", "apple/Sources/CooeeFeatures/AppFeature+Areas.swift", "apple/Sources/CooeeFeatures/ChatFeature+Areas.swift", "apple/Sources/CooeeUI/AppRoot+Areas.swift", "apple/Sources/CooeeUI/ChatScreen+Areas.swift", "crates/cooee-core/src/chat.rs", "crates/cooee-core/src/config.rs", "crates/cooee-core/src/lib.rs", "crates/cooee-core/src/shed.rs", "crates/cooee-core/src/store.rs", "crates/cooee-server/src/chief/tools/mod.rs", "crates/cooee-server/src/hub.rs", "crates/cooee-server/src/hub/areas.rs", "crates/cooee-server/src/lib.rs", "crates/cooee-server/src/login.rs", "crates/cooee-server/src/mcp.rs", "crates/cooee-server/src/mcp/tools/mod.rs", "crates/cooee-server/src/push.rs", "crates/cooee-server/src/routes/mcp/mod.rs", "crates/cooee-server/src/routes/mod.rs", "crates/cooee-server/src/routines.rs", "crates/cooee-server/src/screens/mod.rs", "crates/cooee/src/cmd/mod.rs", "crates/cooee/src/setup.rs", "crates/cooee/tests/chat/main.rs", "crates/cooee/tests/first_run/main.rs", "crates/cooee/tests/mcp/main.rs", "crates/cooee/tests/personas/main.rs", "crates/cooee/tests/plugins/main.rs", "crates/cooee/tests/profiles/main.rs", "crates/cooee/tests/reliability/main.rs", "crates/cooee/tests/setup/main.rs", "crates/cooee/tests/support/mod.rs"]
-shared = [".github/workflows/apple.yml", "Cargo.toml", "apple/Sources/CooeeUI/Chat/ChatHeader.swift", "apple/Sources/CooeeUI/Chat/ChatView.swift", "crates/cooee-core/src/config/keys.rs", "crates/cooee-server/src/serve.rs", "crates/cooee/src/main.rs"]
+shared = [".github/workflows/apple.yml", "Cargo.toml", "apple/Sources/CooeeUI/Chat/ChatHeader.swift", "apple/Sources/CooeeUI/Chat/ChatView.swift", "crates/cooee-core/src/config/keys.rs", "crates/cooee-server/src/serve.rs", "crates/cooee/src/main.rs", "scripts/gen.sh"]
 generate = "scripts/gen.sh"
 
 [[ban]]
@@ -387,6 +387,14 @@ glob = "*.rs"
 [[collect]]
 dir = "apple/Sources/CooeeAPI/Endpoints"
 glob = "*.swift"
+
+[[size]]
+paths = ["scripts/gen.sh"]
+max_file_lines = 12
+
+[[collect]]
+dir = "scripts/gen"
+glob = "*.sh"
 
 [[collect]]
 dir = "crates/cooee/tests"

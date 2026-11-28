@@ -1,0 +1,7 @@
+[[size]]
+paths = ["scripts/gen.sh"]
+max_file_lines = 12
+
+[[collect]]
+dir = "scripts/gen"
+glob = "*.sh"
